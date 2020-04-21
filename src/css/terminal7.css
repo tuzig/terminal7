@@ -12,6 +12,12 @@ body {
   align-items: center;
   font-family: sans-serif;
   color: #525252;
+  background-color: black;
+}
+
+.pane { margin: 1vh 1vw; padding: 1vh 1vw;;
+    border: 0.5vh solid green;
+
 }
 
 a {

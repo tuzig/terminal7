@@ -9,7 +9,7 @@ import "./css/xterm.css"
 
 import { Terminal } from 'xterm'
 
-const term = new Terminal()
+const term = new Terminal({cols: 40, rows: 12})
 let state = 0
 let lastWord = ""
 
@@ -55,7 +55,7 @@ term.onKey( (keys, ev) => {
         lastWord += keys.key
 })
 term.open(document.getElementById('pane0'))
-term.write("Welcome To Terminal 7!\n")
+term.write("\tWelcome To Terminal Seven!\r\n")
 term.write("\nWhere is your host: ")
 
 window.sendMessage = () => {
