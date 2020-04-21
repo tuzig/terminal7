@@ -21,10 +21,11 @@ let lastWord = ""
 
 
 const pane0 = document.getElementById('pane0')
-term.on('key', (keys, ev) => {
-    let key = keys.charCodeAt(0)
-    term.write(key)
-    if (key == 13) {
+console.log(term)
+term.onKey( (keys, ev) => {
+    let code = keys.key.charCodeAt(0)
+    term.write(keys.key)
+    if (code == 13) {
         let pc = new RTCPeerConnection({
             iceServers: [
               {
@@ -41,13 +42,13 @@ term.on('key', (keys, ev) => {
         if (event.candidate === null) {
           let offer = btoa(JSON.stringify(pc.localDescription))
           term.write("offer: "+offer)
-          fetch('https://localhost:8888/connect', {
+          fetch('http://localhost:8888/connect', {
             headers: { "Content-Type": "application/json; charset=utf-8" },
             method: 'POST',
             body: JSON.stringify({Offer: offer}) 
-          }).then(response => response.json())
+          }).then(response => response.text())
             .then(data => {
-              let sd = new RTCSessionDescription(JSON.parse(atob(data)))
+              let sd = new RTCSessionDescription(atob(data))
               term.write("sd: " + sd)
               try {
                 pc.setRemoteDescription(sd)
@@ -55,10 +56,10 @@ term.on('key', (keys, ev) => {
                 alert(e)
         }})}}
         pc.onnegotiationneeded = e =>
-        pc.createOffer().then(d => pc.setLocalDescription(d)).catch(log)
+            pc.createOffer().then(d => pc.setLocalDescription(d))
     }
     else
-        lastWord += e.key
+        lastWord += keys.key
 })
 term.open(document.getElementById('pane0'))
 term.write("Welcome To Terminal 7!\n")
