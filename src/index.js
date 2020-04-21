@@ -1,24 +1,17 @@
-import "./stylesheets/main.css"
-import "./stylesheets/xterm.css"
+import "./css/terminal7.css"
+import "./css/xterm.css"
 
 // Small helpers you might want to keep
-import "./helpers/context_menu.js"
-import "./helpers/external_links.js"
 
 // ----------------------------------------------------------------------------
 // Everything below is just to show you how it works. You can delete all of it.
 // ----------------------------------------------------------------------------
-
-import jetpack from "fs-jetpack"
-import env from "env"
-// import Peer from "peerjs"
 
 import { Terminal } from 'xterm'
 
 const term = new Terminal()
 let state = 0
 let lastWord = ""
-
 
 const pane0 = document.getElementById('pane0')
 console.log(term)
@@ -72,6 +65,4 @@ window.sendMessage = () => {
   }
   sendChannel.send(message)
 }
-
-
 term.focus()
