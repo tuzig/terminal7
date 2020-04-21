@@ -9,16 +9,20 @@ import "./css/xterm.css"
 
 import { Terminal } from 'xterm'
 
-const term = new Terminal({cols: 40, rows: 12})
+const term = new Terminal({cols: 60, rows: 20, convertEol: true})
 let state = 0
-let lastWord = ""
+let host = ""
+let sendChannel = null
 
 const pane0 = document.getElementById('pane0')
 console.log(term)
 term.onKey( (keys, ev) => {
     let code = keys.key.charCodeAt(0)
     term.write(keys.key)
-    if (code == 13) {
+    if (state == 2) {
+        sendChannel.send(keys.key)
+    }
+    else if (code == 13) {
         let pc = new RTCPeerConnection({
             iceServers: [
               {
@@ -26,43 +30,42 @@ term.onKey( (keys, ev) => {
               }
             ]
         })
-        let sendChannel = pc.createDataChannel('tmux -c')
-        sendChannel.onclose = () => console.log('sendChannel has closed')
-        sendChannel.onopen = () => console.log('sendChannel has opened')
-        sendChannel.onmessage = e => log(`Message from DataChannel '${sendChannel.label}' payload '${e.data}'`)
-        pc.oniceconnectionstatechange = e => log(pc.iceConnectionState)
+
+        state = 1
+        sendChannel = pc.createDataChannel('/bin/bash -i')
+        sendChannel.onclose = () => term.write('Data Channel is closed\n')
+        sendChannel.onopen = () => {
+            term.write('Data Channel is open\n')
+            state = 2
+        }
+        sendChannel.onmessage = m => {
+            term.write(m.data)
+        }
+        pc.oniceconnectionstatechange = e => console.log(pc.iceConnectionState)
         pc.onicecandidate = event => {
         if (event.candidate === null) {
           let offer = btoa(JSON.stringify(pc.localDescription))
-          term.write("offer: "+offer)
-          fetch('http://localhost:8888/connect', {
+          term.write("Signaling server...")
+          fetch('http://'+host+'/connect', {
             headers: { "Content-Type": "application/json; charset=utf-8" },
             method: 'POST',
             body: JSON.stringify({Offer: offer}) 
           }).then(response => response.text())
             .then(data => {
-              let sd = new RTCSessionDescription(atob(data))
-              term.write("sd: " + sd)
+              let sd = new RTCSessionDescription(JSON.parse(atob(data)))
+                term.write("Got Session Description\n")
               try {
                 pc.setRemoteDescription(sd)
               } catch (e) {
                 alert(e)
         }})}}
-        pc.onnegotiationneeded = e =>
+        pc.onnegotiationneeded = e => 
             pc.createOffer().then(d => pc.setLocalDescription(d))
     }
     else
-        lastWord += keys.key
+        host += keys.key
 })
 term.open(document.getElementById('pane0'))
 term.write("\tWelcome To Terminal Seven!\r\n")
 term.write("\nWhere is your host: ")
-
-window.sendMessage = () => {
-  let message = document.getElementById('message').value
-  if (message === '') {
-    return alert('Message must not be empty')
-  }
-  sendChannel.send(message)
-}
 term.focus()
