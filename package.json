@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "The terminal incarnated as a fingered tmux client  ",
   "main": ".eslintrc.js",
+  "private": true,
   "bin": {
     "terminal7": "download_browser.js"
   },
@@ -18,6 +19,7 @@
     "publish": null
   },
   "dependencies": {
+    "@blakeembrey/deque": "^1.0.5",
     "xterm": "^4.5.0"
   },
   "devDependencies": {

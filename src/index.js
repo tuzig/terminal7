@@ -1,21 +1,15 @@
 import "./css/terminal7.css"
 import "./css/xterm.css"
+import { Panes } from "./windows.js"
 
-// Small helpers you might want to keep
-
-// ----------------------------------------------------------------------------
-// Everything below is just to show you how it works. You can delete all of it.
-// ----------------------------------------------------------------------------
-
-import { Terminal } from 'xterm'
-
-const term = new Terminal({cols: 60, rows: 20, convertEol: true})
+let panes = new Panes()
+let pane = panes.add({id: "p0", sx: 80, sy: 24})
+let term = pane.t
 let state = 0
 let host = ""
 let sendChannel = null
 
-const pane0 = document.getElementById('pane0')
-console.log(term)
+term.open(document.getElementById('pane0'))
 term.onKey( (keys, ev) => {
     let code = keys.key.charCodeAt(0)
     term.write(keys.key)
@@ -23,6 +17,7 @@ term.onKey( (keys, ev) => {
         sendChannel.send(keys.key)
     }
     else if (code == 13) {
+        term.write("\n\r\n\r")
         let pc = new RTCPeerConnection({
             iceServers: [
               {
@@ -35,7 +30,7 @@ term.onKey( (keys, ev) => {
         sendChannel = pc.createDataChannel('/bin/bash -i')
         sendChannel.onclose = () => term.write('Data Channel is closed\n')
         sendChannel.onopen = () => {
-            term.write('Data Channel is open\n')
+            term.write('Connected to remote bashis open. \n')
             state = 2
         }
         sendChannel.onmessage = m => {
@@ -45,7 +40,7 @@ term.onKey( (keys, ev) => {
         pc.onicecandidate = event => {
         if (event.candidate === null) {
           let offer = btoa(JSON.stringify(pc.localDescription))
-          term.write("Signaling server...")
+          term.write("Signaling server...\n")
           fetch('http://'+host+'/connect', {
             headers: { "Content-Type": "application/json; charset=utf-8" },
             method: 'POST',
@@ -65,7 +60,6 @@ term.onKey( (keys, ev) => {
     else
         host += keys.key
 })
-term.open(document.getElementById('pane0'))
 term.write("\tWelcome To Terminal Seven!\r\n")
 term.write("\nWhere is your host: ")
 term.focus()
