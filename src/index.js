@@ -12,11 +12,12 @@ let sendChannel = null
 term.open(document.getElementById('pane0'))
 term.onKey( (keys, ev) => {
     let code = keys.key.charCodeAt(0)
-    term.write(keys.key)
     if (state == 2) {
         sendChannel.send(keys.key)
+        return
     }
-    else if (code == 13) {
+    term.write(keys.key)
+    if (code == 13) {
         term.write("\n\r\n\r")
         let pc = new RTCPeerConnection({
             iceServers: [
@@ -28,9 +29,9 @@ term.onKey( (keys, ev) => {
 
         state = 1
         sendChannel = pc.createDataChannel('/bin/bash -i')
-        sendChannel.onclose = () => term.write('Data Channel is closed\n')
+        sendChannel.onclose = () => term.write('Data Channel is closed, time to refresh.\n')
         sendChannel.onopen = () => {
-            term.write('Connected to remote bashis open. \n')
+            term.write('Connected to remote bash\n')
             state = 2
         }
         sendChannel.onmessage = m => {
