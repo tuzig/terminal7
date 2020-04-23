@@ -10,9 +10,10 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+    text-align: center;
   font-family: sans-serif;
   color: #525252;
-  background-color: black;
+  background-color: #271D30;
 }
 
 .border { margin: 1vw; padding: 1vh;
@@ -25,21 +26,24 @@ a {
   color: #cb3837;
 }
 
-.container {
-  text-align: center;
+#terminal7 {
+  margin-bottom: 15.5vh;
+}
+.bar {
+    margin: 0;
+    padding: 0.6vh;
+    height: 8vh;
+    font-size: 5.3vh;
+    position: fixed;
+    left: 0;
+    right: 0;
+}
+#navbar {
+    color: #F952F9;
+    bottom: 0;
 }
 
-#navbar {
-    height: 8vh;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-}
 #tabbar {
-    height: 8vh;
-    position: fixed;
     bottom: 7.5vh;
-    left: 0;
-    right: 0;
+    color: #00fafa;
 }
