@@ -40,7 +40,10 @@ term.onKey( (keys, ev) => {
                 }},3000)
         }
         sendChannel.onmessage = m => {
-            if (state == 4) state = 5
+            if (state == 4) {
+                state = 5
+                document.getElementById("tabbar").innerHTML = "bash"
+            }
             term.write(m.data)
         }
         pc.oniceconnectionstatechange = e => console.log(pc.iceConnectionState)

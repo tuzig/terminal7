@@ -79,7 +79,6 @@
 .xterm .composition-view {
     /* TODO: Composition position got messed up somewhere */
     background: #000;
-    color: #00FAFA;
     display: none;
     position: absolute;
     white-space: nowrap;
@@ -92,7 +91,6 @@
 
 .xterm .xterm-viewport {
     /* On OS X this is required in order for the scroll bar to appear fully opaque */
-    background-color: #000;
     overflow-y: scroll;
     cursor: default;
     position: absolute;
