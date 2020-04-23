@@ -31,6 +31,7 @@ class Pane {
             cols: this.p.sx,
             rows: this.p.sy,
             convertEol: true,
+            theme: {foreground: "#00FAFA"}
         })
         this.parent = null
     }

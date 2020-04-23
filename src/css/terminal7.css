@@ -15,9 +15,9 @@ body {
   background-color: black;
 }
 
-.pane { margin: 1vh 1vw; padding: 1vh 1vw;;
-    border: 0.5vh solid green;
-
+.border { margin: 1vw; padding: 1vh;
+    border: 0.5vh solid #C0CA33;
+    box-sizing: border-box;
 }
 
 a {
@@ -27,4 +27,19 @@ a {
 
 .container {
   text-align: center;
+}
+
+#navbar {
+    height: 8vh;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+#tabbar {
+    height: 8vh;
+    position: fixed;
+    bottom: 7.5vh;
+    left: 0;
+    right: 0;
 }

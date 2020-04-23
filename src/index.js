@@ -6,18 +6,20 @@ let panes = new Panes()
 let pane = panes.add({id: "p0", sx: 80, sy: 24})
 let term = pane.t
 let state = 0
-let host = ""
 let sendChannel = null
 
 term.open(document.getElementById('pane0'))
 term.onKey( (keys, ev) => {
     let code = keys.key.charCodeAt(0)
-    if (state == 2) {
+    if (state >= 4) {
         sendChannel.send(keys.key)
         return
     }
     term.write(keys.key)
-    if (code == 13) {
+    if (state<=2 && code == 13) {
+        console.log(state+"=>3")
+        console.log(host)
+        state = 3
         term.write("\n\r\n\r")
         let pc = new RTCPeerConnection({
             iceServers: [
@@ -26,15 +28,19 @@ term.onKey( (keys, ev) => {
               }
             ]
         })
-
-        state = 1
         sendChannel = pc.createDataChannel('/bin/bash -i')
         sendChannel.onclose = () => term.write('Data Channel is closed, time to refresh.\n')
         sendChannel.onopen = () => {
-            term.write('Connected to remote bash\n')
-            state = 2
+            term.write('Connected to remote shell\n')
+            state = 4
+            setTimeout(() => {
+                if (state == 4) {
+                    term.write("Sorry, didn't get a prompt from the server.")
+                    term.write("Please refresh.")
+                }},3000)
         }
         sendChannel.onmessage = m => {
+            if (state == 4) state = 5
             term.write(m.data)
         }
         pc.oniceconnectionstatechange = e => console.log(pc.iceConnectionState)
@@ -58,9 +64,18 @@ term.onKey( (keys, ev) => {
         pc.onnegotiationneeded = e => 
             pc.createOffer().then(d => pc.setLocalDescription(d))
     }
-    else
+    else if (state == 1) {
+        console.log("1=>2")
+        console.log(host)
+        host = keys.key
+        state = 2
+    } else if (state == 2)
+        console.log("2")
         host += keys.key
 })
 term.write("\tWelcome To Terminal Seven!\r\n")
-term.write("\nWhere is your host: ")
+let url=window.location.href
+let host= url.substring(7, url.indexOf(":", 7))+":8888"
+term.write("\nWhere is your host: ("+host+") ")
+state = 1
 term.focus()
