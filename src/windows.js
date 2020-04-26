@@ -1,5 +1,8 @@
 import { Deque } from '@blakeembrey/deque'
 import { Terminal } from 'xterm'
+import { FitAddon } from 'xterm-addon-fit';
+
+const THEME = {foreground: "#00FAFA", background: "#271d30"}
 
 class Panes {
     constructor() {
@@ -37,8 +40,14 @@ class Pane extends Cell {
             cols: this.p.sx,
             rows: this.p.sy,
             convertEol: true,
-            theme: {foreground: "#00FAFA", background: "#271d30"}
+            theme: THEME,
         })
+        this.fitAddon = new FitAddon()
+        this.t.loadAddon(this.fitAddon)
+    }
+    fit() {
+        console.log("fitting")
+         this.fitAddon.fit()
     }
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {

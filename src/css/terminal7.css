@@ -11,7 +11,7 @@ body {
   justify-content: center;
   align-items: center;
     text-align: center;
-  font-family: sans-serif;
+  font-family: courier;
   color: #525252;
   background-color: #271D30;
 }
@@ -26,8 +26,16 @@ a {
   color: #cb3837;
 }
 
+footer {
+    font-size: 80%;
+}
+
 #terminal7 {
-  margin-bottom: 15.5vh;
+    position: fixed;
+    top:0;
+    right:0;
+    margin-bottom: 20vh;
+    padding: 1vw 1vh;
 }
 .bar {
     margin: 0;

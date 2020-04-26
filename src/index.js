@@ -5,7 +5,7 @@ import * as Hammer from 'hammerjs';
 
 var host
 let panes = new Panes()
-let pane = panes.add({id: "p0", sx: 80, sy: 24})
+let pane = panes.add({id: "p0", sx: 144, sy: 42})
 let term = pane.t
 let state = 0
 let sendChannel = null
@@ -27,6 +27,8 @@ hammertime.on('pan', function(ev) {
 
 
 term.open(document.getElementById('pane0'))
+//TODO: fix this as it does nothing
+// pane.fit()
 term.onKey( (keys, ev) => {
     let code = keys.key.charCodeAt(0)
     if (state >= 4) {
@@ -64,9 +66,10 @@ term.onKey( (keys, ev) => {
         sendChannel.onmessage = m => {
             if (state == 4) {
                 state = 5
-                document.getElementById("tabbar").innerHTML = "bash"
+                document.getElementById("tabbar").innerHTML = "zsh"
             }
-            term.write(m.data)
+            if (state > 4) 
+                term.write(m.data)
         }
         pc.oniceconnectionstatechange = e => {
             console.log(pc.iceConnectionState)
