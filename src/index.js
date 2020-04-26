@@ -1,7 +1,9 @@
 import "./css/terminal7.css"
 import "./css/xterm.css"
 import { Panes } from "./windows.js"
+import { Hammer } from "hammerjs"
 
+var host
 let panes = new Panes()
 let pane = panes.add({id: "p0", sx: 80, sy: 24})
 let term = pane.t
@@ -28,8 +30,12 @@ term.onKey( (keys, ev) => {
               }
             ]
         })
-        sendChannel = pc.createDataChannel('/bin/bash -i')
-        sendChannel.onclose = () => term.write('Data Channel is closed, time to refresh.\n')
+        sendChannel = pc.createDataChannel('/usr/bin/zsh')
+        sendChannel.onclose = () => {
+            term.write('Data Channel is closed, reconnecting.\n')
+            pc.close()
+            Connect()
+        }
         sendChannel.onopen = () => {
             term.write('Connected to remote shell\n')
             state = 4
@@ -46,7 +52,13 @@ term.onKey( (keys, ev) => {
             }
             term.write(m.data)
         }
-        pc.oniceconnectionstatechange = e => console.log(pc.iceConnectionState)
+        pc.oniceconnectionstatechange = e => {
+            console.log(pc.iceConnectionState)
+            if (pc.iceConnectionState == 'disconnected') {
+                term.write("\nServer disconnected.\n.\n")
+                Connect()
+            }
+        }
         pc.onicecandidate = event => {
         if (event.candidate === null) {
           let offer = btoa(JSON.stringify(pc.localDescription))
@@ -76,9 +88,12 @@ term.onKey( (keys, ev) => {
         console.log("2")
         host += keys.key
 })
+
+function Connect() {
+    host = window.location.href.substring(7, window.location.href.indexOf(":", 7))+":8888"
+    term.write("\nWhere is your host: ("+host+") ")
+    state = 1
+    term.focus()
+}
 term.write("\tWelcome To Terminal Seven!\r\n")
-let url=window.location.href
-let host= url.substring(7, url.indexOf(":", 7))+":8888"
-term.write("\nWhere is your host: ("+host+") ")
-state = 1
-term.focus()
+Connect()
