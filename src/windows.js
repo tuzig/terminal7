@@ -31,6 +31,21 @@ class LayoutCell extends Cell {
         super(props)
         this.sons = Deque();
     }
+    redraw() {
+        if (this.p.type == "rightleft") {
+            let l = this.sons.size
+            let w = this.p.sx / l
+            let xoff = 0
+            for (s in this.sons.entries()) {
+                s.p.sx = w
+                s.p.xoff = xoff
+                xoff += w
+                s.redraw()
+            }       
+        }
+    }
+
+
 }
 
 class Pane extends Cell {
@@ -45,36 +60,55 @@ class Pane extends Cell {
         this.fitAddon = new FitAddon()
         this.t.loadAddon(this.fitAddon)
     }
+    open(elem) {
+        this.e = elem
+        this.t.open(elem)
+        this.fit()
+    }
+    redraw() {
+        this.e.width = this.sx
+        this.e.height = this.sy
+        this.e.top = yoff
+        this.e.left = xoff
+    }
     fit() {
         console.log("fitting")
          this.fitAddon.fit()
     }
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {
+        if (this.parent && this.parent.type != type) {
+            // Add layout_cell
         // create a layout based on this.p
-        let l_props = JSON.parse(JSON.stringify(this.p))
-        l_props.type = type
-        let l = new LayoutCell(l_props)
-        l.parent = this.parent
-        this.parent = l
-        if (type == "topbottom") {
-            let netRows = this.sy - 1 // save a row for the border
-            let halfSize = netRows / 2 // rounded down
-            this.p.sy = halfSize + netRows%2
-            // TODO: resize t.term
-            p_props = {sx: this.sx, sy: halfSize,
-                       yoff: this.p.sy+1, xoff: this.p.xoff} 
+            let l_props = JSON.parse(JSON.stringify(this.p))
+            l_props.type = type
+            let l = new LayoutCell(l_props)
+            l.parent = this.parent
+            this.parent = l
+            if (type == "topbottom") {
+                let netRows = this.sy - 1 // save a row for the border
+                let halfSize = netRows / 2 // rounded down
+                this.p.sy = halfSize + netRows%2
+                // TODO: resize t.term
+                p_props = {sx: this.sx, sy: halfSize,
+                           yoff: this.p.sy+1, xoff: this.p.xoff} 
+            }
+            else if (type == "rightleft") {
+                let netCols = this.sx - 1
+                let halfSize = netCols / 2
+                this.p.sx = halfSize  + netCols%2
+                p_props = {sx: halfSize, sy: this.sy,
+                           yoff: this.sy, xoff: this.p.sx+1} 
+                
+            }
+            var p = new Pane(p_props)
+            l.sons.extend([this, p])
+            l.redraw()
+                
         }
-        else if (type == "rightleft") {
-            let netCols = this.sx - 1
-            let halfSize = netCols / 2
-            this.p.sx = halfSize  + netCols%2
-            p_props = {sx: halfSize, sy: this.sy,
-                       yoff: this.sy, xoff: this.p.sx+1} 
-            
+        else {
+            console.log("TODO: just squeeze another pane in")
         }
-        var p = new Pane(p_props)
-        l.sons.extend([this, p])
     }
     output(buf) {
         this.t.write(buf)

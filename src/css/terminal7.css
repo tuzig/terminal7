@@ -33,9 +33,10 @@ footer {
 #terminal7 {
     position: fixed;
     top:0;
-    right:0;
+    left:0;
     margin-bottom: 20vh;
     padding: 1vw 1vh;
+    height: 80%;
 }
 .bar {
     margin: 0;
