@@ -5,12 +5,12 @@ import * as Hammer from 'hammerjs';
 
 var host
 let panes = new Panes()
-let pane = panes.add({id: "p0"}) // , sx: 144, sy: 42})
+let pane = panes.add({id: "p0", sx: 20, sy: 20})
 let term = pane.t
 let state = 0
 let sendChannel = null
 let pane0 = document.getElementById('pane0')
-let hammertime = new Hammer(pane0, {});
+// let hammertime = new Hammer(pane0, {});
 
 /*
 hammertime.get('pan').set({ direction: Hammer.DIRECTION_ALL });
@@ -22,11 +22,11 @@ hammertime.on('tap', (ev) => {
 hammertime.on('pan', function(ev) {
 	console.log(ev);
 });
-*/
 hammertime.on('swipe', function(ev) {
 	console.log(ev);
 	pane.split("rightleft");
 });
+*/
 
 
 pane.open(document.getElementById('pane0'))

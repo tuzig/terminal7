@@ -26,17 +26,30 @@ a {
   color: #cb3837;
 }
 
+#terminal7 { overflow: hidden; }
+.pane {overflow: hidden; }
 footer {
+    position:fixed;
+    margin: 0 auto;
+    bottom: 16vh;
+    left: 0;
+    text-align: center;
+    width: 100%;
     font-size: 80%;
 }
 
-#terminal7 {
+.pane div {
+    overflow:hidden
+}
+.full {
+    padding:1vh;
     position: fixed;
     top:0;
+    overflow: hidden;
+
     left:0;
-    margin-bottom: 20vh;
-    padding: 1vw 1vh;
-    height: 80%;
+    width: 95%;
+    height: 82vh;
 }
 .bar {
     margin: 0;

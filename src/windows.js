@@ -1,8 +1,9 @@
 import { Deque } from '@blakeembrey/deque'
 import { Terminal } from 'xterm'
-import { FitAddon } from 'xterm-addon-fit';
 
 const THEME = {foreground: "#00FAFA", background: "#271d30"}
+const MINIMUM_COLS = 2
+const MINIMUM_ROWS = 1
 
 class Panes {
     constructor() {
@@ -52,13 +53,11 @@ class Pane extends Cell {
     constructor(props) {
         super(props)
         this.t = new Terminal({
-            cols: this.p.sx,
-            rows: this.p.sy,
+            // cols: this.p.sx,
+            // rows: this.p.sy,
             convertEol: true,
             theme: THEME,
         })
-        this.fitAddon = new FitAddon()
-        this.t.loadAddon(this.fitAddon)
     }
     open(elem) {
         this.e = elem
@@ -71,9 +70,43 @@ class Pane extends Cell {
         this.e.top = yoff
         this.e.left = xoff
     }
+    proposeDimensions() {
+        if (!this.t) {
+          return undefined
+        }
+
+        if (!this.t.element || !this.t.element.parentElement) {
+          return undefined
+        }
+
+        const core = this.t._core
+
+        const parentElementStyle = window.getComputedStyle(this.e.parentElement)
+        const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'))
+        const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')))
+        const elementStyle = window.getComputedStyle(this.t.element)
+        const elementPadding = {
+          top: parseInt(elementStyle.getPropertyValue('padding-top')),
+          bottom: parseInt(elementStyle.getPropertyValue('padding-bottom')),
+          right: parseInt(elementStyle.getPropertyValue('padding-right')),
+          left: parseInt(elementStyle.getPropertyValue('padding-left'))
+        }
+        const elementPaddingVer = elementPadding.top + elementPadding.bottom
+        const elementPaddingHor = elementPadding.right + elementPadding.left
+        const availableHeight = parentElementHeight - elementPaddingVer
+        const availableWidth = parentElementWidth - elementPaddingHor - core.viewport.scrollBarWidth
+        const geometry = {
+          cols: Math.max(MINIMUM_COLS, Math.floor(availableWidth / core._renderService.dimensions.actualCellWidth)),
+          rows: Math.max(MINIMUM_ROWS, Math.floor(availableHeight / core._renderService.dimensions.actualCellHeight))
+        }
+        return geometry
+    }
     fit() {
-        console.log("fitting")
-         this.fitAddon.fit()
+        const dims = this.proposeDimensions()
+        if (this.t.rows !== dims.rows || this.t.cols !== dims.cols) {
+              this.t._core._renderService.clear();
+              this.t.resize(dims.cols, dims.rows);
+        }
     }
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {
