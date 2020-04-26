@@ -15,25 +15,30 @@ class Panes {
 }
 // let windows = new Deque()
 // windows.add = props => this.push(Pane(props))
-
-class LayoutCell {
-    constructor(parent, props) {
-        this.parent  = parent
+class Cell {
+    constructor(props) {
         this.p = props
+        this.parent = null
+    }
+}
+
+
+class LayoutCell extends Cell {
+    constructor(props) {
+        super(props)
         this.sons = Deque();
     }
 }
 
-class Pane {
+class Pane extends Cell {
     constructor(props) {
-        this.p = props
+        super(props)
         this.t = new Terminal({
             cols: this.p.sx,
             rows: this.p.sy,
             convertEol: true,
             theme: {foreground: "#00FAFA", background: "#271d30"}
         })
-        this.parent = null
     }
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {
