@@ -28,13 +28,13 @@ hammertime.on('swipe', function(ev) {
 });
 */
 
-
-pane.open(document.getElementById('pane0'))
+window.onresize = () => pane.onresize()
+pane.openTerminal(document.getElementById('pane0'))
 //TODO: fix this as it does nothing
 term.onKey( (keys, ev) => {
     let code = keys.key.charCodeAt(0)
-    if (state >= 4) {
-        sendChannel.send(keys.key)
+    if (pane.state == 3) {
+        pane.d.send(keys.key)
         return
     }
     term.write(keys.key)
@@ -50,29 +50,6 @@ term.onKey( (keys, ev) => {
               }
             ]
         })
-        sendChannel = pc.createDataChannel('/usr/bin/zsh')
-        sendChannel.onclose = () => {
-            term.write('Data Channel is closed, reconnecting.\n')
-            pc.close()
-            Connect()
-        }
-        sendChannel.onopen = () => {
-            term.write('Connected to remote shell\n')
-            state = 4
-            setTimeout(() => {
-                if (state == 4) {
-                    term.write("Sorry, didn't get a prompt from the server.")
-                    term.write("Please refresh.")
-                }},3000)
-        }
-        sendChannel.onmessage = m => {
-            if (state == 4) {
-                state = 5
-                document.getElementById("tabbar").innerHTML = "zsh"
-            }
-            if (state > 4) 
-                term.write(m.data)
-        }
         pc.oniceconnectionstatechange = e => {
             console.log(pc.iceConnectionState)
             if (pc.iceConnectionState == 'disconnected') {
@@ -99,6 +76,10 @@ term.onKey( (keys, ev) => {
         }})}}
         pc.onnegotiationneeded = e => 
             pc.createOffer().then(d => pc.setLocalDescription(d))
+        pane.openDC(pc, () =>  {
+            pc.close()
+            Connect()
+        })
     }
     else if (state == 1) {
         console.log("1=>2")

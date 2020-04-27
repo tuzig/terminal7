@@ -5,6 +5,7 @@ import { FitAddon } from 'xterm-addon-fit';
 const THEME = {foreground: "#00FAFA", background: "#271d30"}
 const MINIMUM_COLS = 2
 const MINIMUM_ROWS = 1
+const SET_SIZE_PREFIX = "A($%JFDS*(;dfjmlsdk9-0"
 
 class Panes {
     constructor() {
@@ -49,7 +50,6 @@ class LayoutCell extends Cell {
 
 
 }
-
 class Pane extends Cell {
     constructor(props) {
         super(props)
@@ -61,18 +61,52 @@ class Pane extends Cell {
         })
         this.fitAddon = new FitAddon()
         this.t.loadAddon(this.fitAddon)
+        this.state = 0
     }
-    open(elem) {
+    openTerminal(elem) {
+        // opens the terminal
         this.e = elem
         this.t.open(elem)
         this.fit()
+        this.state = 1
     }
+    openDC(pc, onClose) {
+        const that = this
+        this.d = pc.createDataChannel('/usr/bin/zsh')
+        this.d.onclose = () => {
+            that.state = 0
+            that.t.write('Data Channel is closed.\n')
+            onClose()
+        }
+        this.d.onopen = () => {
+            that.t.write('Connected to remote shell\n')
+            that.state = 2
+            that.sendSize()
+            setTimeout(() => {
+                if (that.state == 2) {
+                    that.t.write("Sorry, didn't get a prompt from the server.")
+                    that.t.write("Please refresh.")
+                }},3000)
+        }
+        this.d.onmessage = m => {
+            if (that.state == 2) {
+                that.state = 3
+                //TODO: remove demo hack
+                document.getElementById("tabbar").innerHTML = "zsh"
+            }
+            if (that.state == 3) 
+                that.t.write(m.data)
+        }
+        return this.d
+    }
+
     redraw() {
         this.e.width = this.sx
         this.e.height = this.sy
         this.e.top = yoff
         this.e.left = xoff
     }
+    // TODO: delete this
     proposeDimensions() {
         if (!this.t) {
           return undefined
@@ -105,13 +139,19 @@ class Pane extends Cell {
         return geometry
     }
     fit() {
-         this.fitAddon.fit()
-        return
-        const dims = this.proposeDimensions()
-        if (this.t.rows !== dims.rows || this.t.cols !== dims.cols) {
-              this.t._core._renderService.clear();
-              this.t.resize(dims.cols, dims.rows);
-        }
+        this.fitAddon.fit()
+    }
+    sendSize() {
+        this.d.send(SET_SIZE_PREFIX+JSON.stringify({
+            Rows: this.t.rows,
+            Cols: this.t.cols,
+            X: 0,
+            Y: 0
+        }))
+    }
+    onresize() {
+        this.fit()
+        this.sendSize()
     }
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {
