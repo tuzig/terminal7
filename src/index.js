@@ -12,18 +12,6 @@ let pane0 = document.getElementById('pane0')
 // let hammertime = new Hammer(pane0, {});
 
 /*
-hammertime.get('pan').set({ direction: Hammer.DIRECTION_ALL });
-hammertime.get('swipe').set({ direction: Hammer.DIRECTION_ALL });
-
-hammertime.on('tap', (ev) => {
-	console.log(ev);
-});
-hammertime.on('pan', function(ev) {
-	console.log(ev);
-});
-hammertime.on('swipe', function(ev) {
-	console.log(ev);
-	pane.split("rightleft");
 });
 */
 

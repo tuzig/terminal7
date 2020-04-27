@@ -20,8 +20,7 @@ class Panes {
         return this[props.id]
     }
 }
-// let windows = new Deque()
-// windows.add = props => this.push(Pane(props))
+
 class Cell {
     constructor(props) {
         this.p = props
@@ -35,17 +34,16 @@ class LayoutCell extends Cell {
         super(props)
         this.sons = new Deque()
     }
-    redraw() {
-        debugger
+    relocate() {
         if (this.p.type == "rightleft") {
             let l = this.sons.size
-            let w = this.p.sx / l
+            let w = this.t.cols / l
             let xoff = 0
             for (s in this.sons.entries()) {
-                s.p.sx = w
-                s.p.xoff = xoff
+                s.t.cols = w
+                s.xoff = xoff
                 xoff += w
-                s.redraw()
+                s.relocate()
             }       
         }
     }
@@ -55,7 +53,6 @@ class LayoutCell extends Cell {
 class Pane extends Cell {
     constructor(props) {
         super(props)
-        const that = this
         this.t = new Terminal({
             convertEol: true,
             theme: THEME,
@@ -63,11 +60,9 @@ class Pane extends Cell {
         this.fitAddon = new FitAddon()
         this.t.loadAddon(this.fitAddon)
         this.state = 0
-        this.h = new Hammer(pane0, {});
-        this.h.on('swipe', (ev) => {
-            console.log(ev)
-            that.split("rightleft")
-        });
+        this.xoff = 0
+        this.yoff = 0
+        this.d = null
     }
     createElement(elemClass) {
         // creates the div element that will hold the term
@@ -76,6 +71,21 @@ class Pane extends Cell {
         if (typeof elemClass !== "undefined")
             this.e.classList.add(elemClass)
 
+        this.h = new Hammer(this.e, {});
+        this.h.get('pan').set({ direction: Hammer.DIRECTION_ALL });
+        this.h.get('swipe').set({ direction: Hammer.DIRECTION_ALL });
+
+        const that = this
+        this.h.on('tap', (ev) => {
+            console.log(ev);
+        });
+        this.h.on('pan', function(ev) {
+            console.log(ev);
+        });
+        this.h.on('swipe', (ev) => {
+            console.log(ev)
+            that.split("rightleft")
+        });
         document.getElementById('terminal7').appendChild(this.e)
     }
     openTerminal() {
@@ -113,11 +123,11 @@ class Pane extends Cell {
         return this.d
     }
 
-    redraw() {
-        this.e.width = this.sx
-        this.e.height = this.sy
-        this.e.top = this.yoff
-        this.e.left = this.xoff
+    relocate() {
+        this.e.width = this.sx * core._renderService.dimensions.actualCellWidth
+        this.e.height = this.sy * core._renderService.dimensions.actualCellHeight
+        this.e.top = this.yoff * core._renderService.dimensions.actualCellHeight
+        this.e.left = this.xoff * core._renderService.dimensions.actualCellWidth
         this.fit()
         this.sendSize()
     }
@@ -166,10 +176,12 @@ class Pane extends Cell {
     }
     onresize() {
         this.fit()
-        this.sendSize()
+        if (this.d)
+            this.sendSize()
     }
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {
+        console.log("spliting " + type)
         if (this.parent == null || this.parent.type != type) {
             // Add layout_cell
             // create a layout based on this.p
@@ -195,11 +207,13 @@ class Pane extends Cell {
                            yoff: this.sy, xoff: this.p.sx+1} 
                 
             }
-            var newPane = windows.panes.add(p_props)
+            var newPane = window.panes.add(p_props)
             newPane.parent = l
+            newPane.createElement()
+            newPane.openTerminal()
 
             l.sons.extend([this, newPane])
-            l.redraw()
+            l.relocate()
                 
         }
         else {
