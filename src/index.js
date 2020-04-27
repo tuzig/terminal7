@@ -3,8 +3,8 @@ import "./css/xterm.css"
 import { Panes } from "./windows.js"
 
 var host
-let panes = new Panes()
-let pane = panes.add({id: "p0", sx: 20, sy: 20})
+window.panes = new Panes()
+let pane = window.panes.add({id: "p0", sx: 20, sy: 20})
 let term = pane.t
 let state = 0
 let sendChannel = null
@@ -28,7 +28,9 @@ hammertime.on('swipe', function(ev) {
 */
 
 window.onresize = () => pane.onresize()
-pane.openTerminal(document.getElementById('pane0'))
+pane.createElement("full")
+pane.openTerminal()
+pane.fit()
 //TODO: fix this as it does nothing
 term.onKey( (keys, ev) => {
     let code = keys.key.charCodeAt(0)

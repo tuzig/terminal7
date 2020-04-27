@@ -69,11 +69,18 @@ class Pane extends Cell {
             that.split("rightleft")
         });
     }
-    openTerminal(elem) {
-        // opens the terminal
-        this.e = elem
-        this.t.open(elem)
-        this.fit()
+    createElement(elemClass) {
+        // creates the div element that will hold the term
+        this.e = document.createElement("div")
+        this.e.classList.add("border", "pane")
+        if (typeof elemClass !== "undefined")
+            this.e.classList.add(elemClass)
+
+        document.getElementById('terminal7').appendChild(this.e)
+    }
+    openTerminal() {
+        // creates the elment and opens the terminal
+        this.t.open(this.e)
         this.state = 1
     }
     openDC(pc, onClose) {
@@ -188,8 +195,10 @@ class Pane extends Cell {
                            yoff: this.sy, xoff: this.p.sx+1} 
                 
             }
-            var p = new Pane(p_props)
-            l.sons.extend([this, p])
+            var newPane = windows.panes.add(p_props)
+            newPane.parent = l
+
+            l.sons.extend([this, newPane])
             l.redraw()
                 
         }
