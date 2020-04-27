@@ -1,5 +1,6 @@
 import { Deque } from '@blakeembrey/deque'
 import { Terminal } from 'xterm'
+import { FitAddon } from 'xterm-addon-fit';
 
 const THEME = {foreground: "#00FAFA", background: "#271d30"}
 const MINIMUM_COLS = 2
@@ -58,6 +59,8 @@ class Pane extends Cell {
             convertEol: true,
             theme: THEME,
         })
+        this.fitAddon = new FitAddon()
+        this.t.loadAddon(this.fitAddon)
     }
     open(elem) {
         this.e = elem
@@ -102,6 +105,8 @@ class Pane extends Cell {
         return geometry
     }
     fit() {
+         this.fitAddon.fit()
+        return
         const dims = this.proposeDimensions()
         if (this.t.rows !== dims.rows || this.t.cols !== dims.cols) {
               this.t._core._renderService.clear();

@@ -16,9 +16,8 @@ body {
   background-color: #271D30;
 }
 
-.border { margin: 1vw; padding: 1vh;
-    border: 0.5vh solid #C0CA33;
-    box-sizing: border-box;
+.border { margin: 1vmin; padding: 1vmin;
+    border: 0.5vmin solid #C0CA33;
 }
 
 a {
@@ -26,8 +25,6 @@ a {
   color: #cb3837;
 }
 
-#terminal7 { overflow: hidden; }
-.pane {overflow: hidden; }
 footer {
     position:fixed;
     margin: 0 auto;
@@ -38,27 +35,24 @@ footer {
     font-size: 80%;
 }
 
-.pane div {
-    overflow:hidden
-}
 .full {
-    padding:1vh;
+    margin: 0;
+    padding: 0.5em;
     position: fixed;
     top:0;
-    overflow: hidden;
-
     left:0;
-    width: 95%;
-    height: 82vh;
+    width: 98%;
+    height: 78vh;
 }
 .bar {
     margin: 0;
-    padding: 0.6vh;
+    padding: 0.6vh 0.6vw;
     height: 8vh;
     font-size: 5.3vh;
     position: fixed;
     left: 0;
     right: 0;
+    box-sizing: border-box;
 }
 #navbar {
     color: #F952F9;
