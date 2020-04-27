@@ -1,6 +1,7 @@
 import { Deque } from '@blakeembrey/deque'
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit';
+import * as Hammer from 'hammerjs';
 
 const THEME = {foreground: "#00FAFA", background: "#271d30"}
 const MINIMUM_COLS = 2
@@ -32,9 +33,10 @@ class Cell {
 class LayoutCell extends Cell {
     constructor(props) {
         super(props)
-        this.sons = Deque();
+        this.sons = new Deque()
     }
     redraw() {
+        debugger
         if (this.p.type == "rightleft") {
             let l = this.sons.size
             let w = this.p.sx / l
@@ -53,15 +55,19 @@ class LayoutCell extends Cell {
 class Pane extends Cell {
     constructor(props) {
         super(props)
+        const that = this
         this.t = new Terminal({
-            // cols: this.p.sx,
-            // rows: this.p.sy,
             convertEol: true,
             theme: THEME,
         })
         this.fitAddon = new FitAddon()
         this.t.loadAddon(this.fitAddon)
         this.state = 0
+        this.h = new Hammer(pane0, {});
+        this.h.on('swipe', (ev) => {
+            console.log(ev)
+            that.split("rightleft")
+        });
     }
     openTerminal(elem) {
         // opens the terminal
@@ -103,8 +109,10 @@ class Pane extends Cell {
     redraw() {
         this.e.width = this.sx
         this.e.height = this.sy
-        this.e.top = yoff
-        this.e.left = xoff
+        this.e.top = this.yoff
+        this.e.left = this.xoff
+        this.fit()
+        this.sendSize()
     }
     // TODO: delete this
     proposeDimensions() {
@@ -155,13 +163,14 @@ class Pane extends Cell {
     }
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {
-        if (this.parent && this.parent.type != type) {
+        if (this.parent == null || this.parent.type != type) {
             // Add layout_cell
-        // create a layout based on this.p
+            // create a layout based on this.p
+            var p_props
             let l_props = JSON.parse(JSON.stringify(this.p))
             l_props.type = type
             let l = new LayoutCell(l_props)
-            l.parent = this.parent
+            l.parent = this.prent
             this.parent = l
             if (type == "topbottom") {
                 let netRows = this.sy - 1 // save a row for the border
@@ -172,7 +181,7 @@ class Pane extends Cell {
                            yoff: this.p.sy+1, xoff: this.p.xoff} 
             }
             else if (type == "rightleft") {
-                let netCols = this.sx - 1
+                let netCols = this.t.cols - 1
                 let halfSize = netCols / 2
                 this.p.sx = halfSize  + netCols%2
                 p_props = {sx: halfSize, sy: this.sy,

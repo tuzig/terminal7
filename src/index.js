@@ -1,7 +1,6 @@
 import "./css/terminal7.css"
 import "./css/xterm.css"
 import { Panes } from "./windows.js"
-import * as Hammer from 'hammerjs';
 
 var host
 let panes = new Panes()
