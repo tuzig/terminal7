@@ -38,8 +38,6 @@ class Cell {
             this.e.style.height = setPx(this.sy * core._renderService.dimensions.actualCellHeight)
             this.e.style.top = setPx(this.yoff * core._renderService.dimensions.actualCellHeight)
             this.e.style.left = setPx(this.xoff * core._renderService.dimensions.actualCellWidth)
-            this.e.style.display = 'none'
-            this.e.style.display = 'block'
         }
     }
 }
@@ -54,21 +52,25 @@ class LayoutCell extends Cell {
         this.xoff = pane.xoff
         this.yoff = pane.yoff
     }
+    removeChild(child) {
+        this.sons.delete(this.sons.indexOf(child))
+        this.relocate()
+    }
     relocate(sx, sy, xoff, yoff) {
         super.relocate(sx, sy, xoff, yoff)
         if (this.type == "rightleft") {
             let w = this.sx / this.sons.size
-            let off=xoff
+            let off = this.xoff
             for (let s of this.sons.entries()) {
-                s.relocate(w, sy, off, yoff)
+                s.relocate(w,  this.sy, off,  this.yoff)
                 off += w
             }       
         }
         else {
             let h = Math.floor(this.sy / this.sons.size)
-            let off = yoff
+            let off =  this.yoff
             for (let s of this.sons.entries()) {
-                s.relocate(sx, h, xoff, off)
+                s.relocate( this.sx, h,  this.xoff, off)
                 off += h+1
             }       
         }
@@ -111,7 +113,7 @@ class Pane extends Cell {
         });
         this.h.on('swipe', (ev) => {
             console.log(ev)
-            that.split("rightleft")
+            that.split((ev.deltaY>ev.deltaX)?"topbottom":"rightleft")
         });
         document.getElementById('terminal7').appendChild(this.e)
     }
@@ -120,32 +122,34 @@ class Pane extends Cell {
         this.t.open(this.e)
         this.state = 1
     }
-    openDC(pc, onClose) {
-        const that = this
-        this.d = pc.createDataChannel('/usr/bin/zsh')
+    openDC() {
+        this.d = window.pc.createDataChannel('/usr/bin/zsh')
         this.d.onclose = () => {
-            that.state = 0
-            that.t.write('Data Channel is closed.\n')
-            onClose()
+            this.state = 0
+            this.t.write('Data Channel is closed.\n')
+            this.e.parentNode.removeChild(this.e);
+            if (this.parent)
+                this.parent.removeChild(this)
+            // TODO: if it's the last one, we need to call Connect()
         }
         this.d.onopen = () => {
-            that.t.write('Connected to remote shell\n')
-            that.state = 2
-            that.sendSize()
+            this.t.write('Connected to remote shell\n')
+            this.state = 2
+            this.sendSize()
             setTimeout(() => {
-                if (that.state == 2) {
-                    that.t.write("Sorry, didn't get a prompt from the server.")
-                    that.t.write("Please refresh.")
+                if (this.state == 2) {
+                    this.t.write("Sorry, didn't get a prompt from the server.")
+                    this.t.write("Please refresh.")
                 }},3000)
         }
         this.d.onmessage = m => {
-            if (that.state == 2) {
-                that.state = 3
+            if (this.state == 2) {
+                this.state = 3
                 //TODO: remove demo hack
                 document.getElementById("tabbar").innerHTML = "zsh"
             }
-            if (that.state == 3) 
-                that.t.write(m.data)
+            if (this.state == 3) 
+                this.t.write(m.data)
         }
         return this.d
     }
@@ -196,12 +200,17 @@ class Pane extends Cell {
     }
     sendSize() {
         if (this.d)
-            this.d.send(SET_SIZE_PREFIX+JSON.stringify({
-                Cols: this.sx,
-                Rows: this.sy,
-                X: 0,
-                Y: 0
-            }))
+            try {
+                this.d.send(SET_SIZE_PREFIX+JSON.stringify({
+                    Cols: this.sx,
+                    Rows: this.sy,
+                    X: 0,
+                    Y: 0
+                }))
+            } catch(err) {
+                setTimeout(this.sendSize, 1000)
+            }
+
     }
     onresize() {
         this.fit()
@@ -212,42 +221,20 @@ class Pane extends Cell {
     split(type) {
         console.log("spliting " + type)
         if (this.parent == null || this.parent.type != type) {
-            // Add layout_cell
-            // create a layout based on this.p
             let l = new LayoutCell(this)
-            l.type = "topdown"
             l.parent = this.prent
             this.parent = l
-            // calc the vars of the new pane we're going to create
             let lsx=this.sx, lsy=this.sy, lxoff=this.xoff, lyoff=this.yoff
-            /*
-            var sx, sy, xoff, yoff
-            if (type == "rightleft") {
-                let netY = this.sy - 1 // save a row for the new border
-                let halfSize = Math.floor(netY / 2) // rounded down
-                this.sy = halfSize + netY%2
-                sx = this.sx
-                sy = halfSize
-                yoff = this.yoff+this.sy+1
-                xoff = this.xoff 
-            }
-            else if (type == "topdown") {
-                let netX = this.sx - 1
-                let halfSize = Math.floor(netX / 2)
-                this.sx = halfSize  + netX%2
-                sx = halfSize
-                sy = this.sy
-                yoff = this.sy
-                xoff = this.xoff + this.sx + 1 
-            }
-            // finally creating the pane
-                // */
+            if (type == "rightleft") 
+                l.type = "topdown"
+            else 
+                l.type = "rightleft"
             var newPane = window.panes.add()
             newPane.parent = l
-            // newPane.relocate(sx, sy, xoff, yoff)
             newPane.createElement()
             newPane.openTerminal()
-
+            newPane.openDC()
+            newPane.t.onKey( (keys, ev) => newPane.d.send(keys.key))
             l.sons.extend([this, newPane])
             l.relocate(lsx, lsy, lxoff, lyoff)
         }

@@ -8,19 +8,21 @@ let pane = window.panes.add({id: "p0", sx: 20, sy: 20})
 let term = pane.t
 let state = 0
 let sendChannel = null
-let pane0 = document.getElementById('pane0')
-// let hammertime = new Hammer(pane0, {});
-
 /*
 });
 */
-
+window.pc = new RTCPeerConnection({
+    iceServers: [
+      {
+        urls: 'stun:stun.l.google.com:19302'
+      }
+    ]
+})
 window.onresize = () => pane.onresize()
 pane.createElement("full")
 pane.openTerminal()
 pane.fit()
-//TODO: fix this as it does nothing
-term.onKey( (keys, ev) => {
+pane.t.onKey( (keys, ev) => {
     let code = keys.key.charCodeAt(0)
     if (pane.state == 3) {
         pane.d.send(keys.key)
@@ -32,13 +34,6 @@ term.onKey( (keys, ev) => {
         console.log(host)
         state = 3
         term.write("\n\r\n\r")
-        let pc = new RTCPeerConnection({
-            iceServers: [
-              {
-                urls: 'stun:stun.l.google.com:19302'
-              }
-            ]
-        })
         pc.oniceconnectionstatechange = e => {
             console.log(pc.iceConnectionState)
             if (pc.iceConnectionState == 'disconnected') {
@@ -65,10 +60,7 @@ term.onKey( (keys, ev) => {
         }})}}
         pc.onnegotiationneeded = e => 
             pc.createOffer().then(d => pc.setLocalDescription(d))
-        pane.openDC(pc, () =>  {
-            pc.close()
-            Connect()
-        })
+        pane.openDC()
     }
     else if (state == 1) {
         console.log("1=>2")
