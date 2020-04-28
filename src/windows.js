@@ -53,7 +53,19 @@ class LayoutCell extends Cell {
         this.yoff = pane.yoff
     }
     removeChild(child) {
-        this.sons.delete(this.sons.indexOf(child))
+        let i = this.sons.indexOf(child)
+        this.sons.delete(i)
+        if (this.sons.size == 0) {
+            if (this.parent) {
+                this.parent.sons.delete(this.parent.sons.indexOf(this))
+                this.parent.relocate()
+                return
+            } else {
+                console.log("Removing last layout cell, what now?")
+            }
+        } else {
+            this.sons.peek((i>0)?i-1:0).t.focus()
+        }
         this.relocate()
     }
     relocate(sx, sy, xoff, yoff) {
@@ -67,7 +79,7 @@ class LayoutCell extends Cell {
             }       
         }
         else {
-            let h = Math.floor(this.sy / this.sons.size)
+            let h = Math.floor((this.sy - 1) / this.sons.size)
             let off =  this.yoff
             for (let s of this.sons.entries()) {
                 s.relocate( this.sx, h,  this.xoff, off)
@@ -112,8 +124,9 @@ class Pane extends Cell {
             console.log(ev);
         });
         this.h.on('swipe', (ev) => {
+            let topb = Math.abs(ev.deltaY) > Math.abs(ev.deltaX)
             console.log(ev)
-            that.split((ev.deltaY>ev.deltaX)?"topbottom":"rightleft")
+            that.split((topb)?"topbottom":"rightleft")
         });
         document.getElementById('terminal7').appendChild(this.e)
     }
@@ -133,7 +146,6 @@ class Pane extends Cell {
             // TODO: if it's the last one, we need to call Connect()
         }
         this.d.onopen = () => {
-            this.t.write('Connected to remote shell\n')
             this.state = 2
             this.sendSize()
             setTimeout(() => {
@@ -195,8 +207,10 @@ class Pane extends Cell {
         this.fitAddon.fit()
         this.sx = this.t.cols
         this.sy = this.t.rows
+        /*
         this.xoff = 0
         this.yoff = 0
+        */
     }
     sendSize() {
         if (this.d)
@@ -220,13 +234,12 @@ class Pane extends Cell {
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {
         console.log("spliting " + type)
-        if (this.parent == null || this.parent.type != type) {
+        if (this.parent == null || this.parent.type == type) {
             let l = new LayoutCell(this)
             l.parent = this.prent
             this.parent = l
-            let lsx=this.sx, lsy=this.sy, lxoff=this.xoff, lyoff=this.yoff
             if (type == "rightleft") 
-                l.type = "topdown"
+                l.type = "topbottom"
             else 
                 l.type = "rightleft"
             var newPane = window.panes.add()
@@ -236,10 +249,21 @@ class Pane extends Cell {
             newPane.openDC()
             newPane.t.onKey( (keys, ev) => newPane.d.send(keys.key))
             l.sons.extend([this, newPane])
-            l.relocate(lsx, lsy, lxoff, lyoff)
+            l.relocate()
+            newPane.t.focus()
         }
         else {
             console.log("TODO: just squeeze another pane in")
+            let l = this.parent
+            let newPane = window.panes.add()
+            newPane.parent = l
+            newPane.createElement()
+            newPane.openTerminal()
+            newPane.openDC()
+            newPane.t.onKey( (keys, ev) => newPane.d.send(keys.key))
+            l.sons.insert(l.sons.indexOf(this)+1, newPane)
+            l.relocate()
+            newPane.t.focus()
         }
     }
     output(buf) {
