@@ -88,8 +88,6 @@ class LayoutCell extends Cell {
         }
 
     }
-
-
 }
 class Pane extends Cell {
     constructor(props) {
@@ -104,6 +102,7 @@ class Pane extends Cell {
         this.xoff = 0
         this.yoff = 0
         this.d = null
+        this.zommed = false
     }
     createElement(elemClass) {
         // creates the div element that will hold the term
@@ -112,21 +111,45 @@ class Pane extends Cell {
         if (typeof elemClass !== "undefined")
             this.e.classList.add(elemClass)
 
-        this.h = new Hammer(this.e, {});
-        this.h.get('pan').set({ direction: Hammer.DIRECTION_ALL });
-        this.h.get('swipe').set({ direction: Hammer.DIRECTION_ALL });
-
-        const that = this
-        this.h.on('tap', (ev) => {
-            console.log(ev);
+        const h = new Hammer.Manager(this.e, {});
+        h.add(new Hammer.Tap({event: "doubletap", pointers: 2}))
+        h.add(new Hammer.Swipe({threshold: 300, velocity: 1}))
+        h.on('doubletap', (ev) => {
+            if (this.zoomed) {
+                this.e.className = this.className
+                this.e.style.top = this.top
+                this.e.style.left = this.left
+                this.e.style.width = this.width
+                this.e.style.height = this.height
+                Array.prototype.forEach.call(document.getElementsByClassName("pane"), 
+                    e => e.style.display = 'block') 
+                Array.prototype.forEach.call(document.getElementsByClassName("bar"), 
+                    e => e.style.display = 'block')   // , ...document.getElementsByClassName("tab")]
+            } else {
+                Array.prototype.forEach.call(document.getElementsByClassName("pane"), 
+                    e => { if (e != this.e) e.style.display = 'none'})
+                Array.prototype.forEach.call(document.getElementsByClassName("bar"), 
+                    e => { if (e != this.e) e.style.display = 'none'})
+                this.top = this.e.style.top
+                this.left = this.e.style.left
+                this.className = this.e.className
+                this.e.className = "pane zoom"
+                this.e.style.left = 0
+                this.width = this.e.style.width
+                this.height = this.e.style.height
+                this.e.style.width = "100%"
+                this.e.style.height = "100%"
+                this.e.style.top = 0
+            }
+            setTimeout(() => {
+                this.fit()
+                this.sendSize()
+                this.zoomed = !this.zommed
+            }, 10);
         });
-        this.h.on('pan', function(ev) {
-            console.log(ev);
-        });
-        this.h.on('swipe', (ev) => {
+        h.on('swipe', (ev) => {
             let topb = Math.abs(ev.deltaY) > Math.abs(ev.deltaX)
-            console.log(ev)
-            that.split((topb)?"topbottom":"rightleft")
+            this.split((topb)?"topbottom":"rightleft")
         });
         document.getElementById('terminal7').appendChild(this.e)
     }
@@ -233,7 +256,6 @@ class Pane extends Cell {
     }
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {
-        console.log("spliting " + type)
         if (this.parent == null || this.parent.type == type) {
             let l = new LayoutCell(this)
             l.parent = this.prent
@@ -253,7 +275,6 @@ class Pane extends Cell {
             newPane.t.focus()
         }
         else {
-            console.log("TODO: just squeeze another pane in")
             let l = this.parent
             let newPane = window.panes.add()
             newPane.parent = l

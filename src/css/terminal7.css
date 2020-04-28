@@ -40,6 +40,14 @@ footer {
     margin: 0;
     width:98%;
 }
+.zoom {
+    top:0;
+    left:0;
+    height: 100%;
+    width: 100%;
+    padding: 0.2em;
+    z-index: 100;
+}
 .full {
     top:0;
     left:0;

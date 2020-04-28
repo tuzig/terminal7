@@ -8,9 +8,7 @@ let pane = window.panes.add({id: "p0", sx: 20, sy: 20})
 let term = pane.t
 let state = 0
 let sendChannel = null
-/*
-});
-*/
+
 window.pc = new RTCPeerConnection({
     iceServers: [
       {
