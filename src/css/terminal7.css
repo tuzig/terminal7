@@ -37,16 +37,17 @@ footer {
 
 .pane {
     position: fixed;
+    margin: 0;
+    width:98%;
 }
 .full {
-    margin: 0;
-    padding: 0.5em;
     top:0;
     left:0;
-    width: 98%;
     height: 78vh;
 }
 .bar {
+    margin: 0;
+    padding: 0.5em;
     margin: 0;
     padding: 0.6vh 0.6vw;
     height: 8vh;

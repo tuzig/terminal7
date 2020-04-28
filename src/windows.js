@@ -14,38 +14,65 @@ class Panes {
     }
     newID() { return "l"+ this.lastID++}
     add(props) {
-        if (!props.id)
-            props.id = panes.newID()
+        if (props === undefined) props = {}
+        if (!props.id) props.id = this.newID()
         this[props.id] = new Pane(props)
         return this[props.id]
     }
 }
+function setPx(i) { return i.toString()+"px" }
 
 class Cell {
     constructor(props) {
         this.p = props
         this.parent = null
     }
+    relocate(sx, sy, xoff, yoff) {
+        if (sx !== undefined) this.sx = sx
+        if (sy !== undefined) this.sy = sy
+        if (yoff !== undefined) this.yoff = yoff
+        if (xoff !== undefined) this.xoff = xoff
+        if (this.e && this.t) {
+            const core = this.t._core
+            this.e.style.width = setPx(this.sx * core._renderService.dimensions.actualCellWidth)
+            this.e.style.height = setPx(this.sy * core._renderService.dimensions.actualCellHeight)
+            this.e.style.top = setPx(this.yoff * core._renderService.dimensions.actualCellHeight)
+            this.e.style.left = setPx(this.xoff * core._renderService.dimensions.actualCellWidth)
+            this.e.style.display = 'none'
+            this.e.style.display = 'block'
+        }
+    }
 }
 
 
 class LayoutCell extends Cell {
-    constructor(props) {
-        super(props)
+    constructor(pane) {
+        super(pane.props)
         this.sons = new Deque()
+        this.sx = pane.sx
+        this.sy = pane.sy
+        this.xoff = pane.xoff
+        this.yoff = pane.yoff
     }
-    relocate() {
-        if (this.p.type == "rightleft") {
-            let l = this.sons.size
-            let w = this.t.cols / l
-            let xoff = 0
-            for (s in this.sons.entries()) {
-                s.t.cols = w
-                s.xoff = xoff
-                xoff += w
-                s.relocate()
+    relocate(sx, sy, xoff, yoff) {
+        super.relocate(sx, sy, xoff, yoff)
+        if (this.type == "rightleft") {
+            let w = this.sx / this.sons.size
+            let off=xoff
+            for (let s of this.sons.entries()) {
+                s.relocate(w, sy, off, yoff)
+                off += w
             }       
         }
+        else {
+            let h = Math.floor(this.sy / this.sons.size)
+            let off = yoff
+            for (let s of this.sons.entries()) {
+                s.relocate(sx, h, xoff, off)
+                off += h+1
+            }       
+        }
+
     }
 
 
@@ -123,11 +150,8 @@ class Pane extends Cell {
         return this.d
     }
 
-    relocate() {
-        this.e.width = this.sx * core._renderService.dimensions.actualCellWidth
-        this.e.height = this.sy * core._renderService.dimensions.actualCellHeight
-        this.e.top = this.yoff * core._renderService.dimensions.actualCellHeight
-        this.e.left = this.xoff * core._renderService.dimensions.actualCellWidth
+    relocate(sx, sy, xoff, yoff) {
+        super.relocate(sx, sy, xoff, yoff)
         this.fit()
         this.sendSize()
     }
@@ -165,14 +189,19 @@ class Pane extends Cell {
     }
     fit() {
         this.fitAddon.fit()
+        this.sx = this.t.cols
+        this.sy = this.t.rows
+        this.xoff = 0
+        this.yoff = 0
     }
     sendSize() {
-        this.d.send(SET_SIZE_PREFIX+JSON.stringify({
-            Rows: this.t.rows,
-            Cols: this.t.cols,
-            X: 0,
-            Y: 0
-        }))
+        if (this.d)
+            this.d.send(SET_SIZE_PREFIX+JSON.stringify({
+                Cols: this.sx,
+                Rows: this.sy,
+                X: 0,
+                Y: 0
+            }))
     }
     onresize() {
         this.fit()
@@ -185,36 +214,42 @@ class Pane extends Cell {
         if (this.parent == null || this.parent.type != type) {
             // Add layout_cell
             // create a layout based on this.p
-            var p_props
-            let l_props = JSON.parse(JSON.stringify(this.p))
-            l_props.type = type
-            let l = new LayoutCell(l_props)
+            let l = new LayoutCell(this)
+            l.type = "topdown"
             l.parent = this.prent
             this.parent = l
-            if (type == "topbottom") {
-                let netRows = this.sy - 1 // save a row for the border
-                let halfSize = netRows / 2 // rounded down
-                this.p.sy = halfSize + netRows%2
-                // TODO: resize t.term
-                p_props = {sx: this.sx, sy: halfSize,
-                           yoff: this.p.sy+1, xoff: this.p.xoff} 
+            // calc the vars of the new pane we're going to create
+            let lsx=this.sx, lsy=this.sy, lxoff=this.xoff, lyoff=this.yoff
+            /*
+            var sx, sy, xoff, yoff
+            if (type == "rightleft") {
+                let netY = this.sy - 1 // save a row for the new border
+                let halfSize = Math.floor(netY / 2) // rounded down
+                this.sy = halfSize + netY%2
+                sx = this.sx
+                sy = halfSize
+                yoff = this.yoff+this.sy+1
+                xoff = this.xoff 
             }
-            else if (type == "rightleft") {
-                let netCols = this.t.cols - 1
-                let halfSize = netCols / 2
-                this.p.sx = halfSize  + netCols%2
-                p_props = {sx: halfSize, sy: this.sy,
-                           yoff: this.sy, xoff: this.p.sx+1} 
-                
+            else if (type == "topdown") {
+                let netX = this.sx - 1
+                let halfSize = Math.floor(netX / 2)
+                this.sx = halfSize  + netX%2
+                sx = halfSize
+                sy = this.sy
+                yoff = this.sy
+                xoff = this.xoff + this.sx + 1 
             }
-            var newPane = window.panes.add(p_props)
+            // finally creating the pane
+                // */
+            var newPane = window.panes.add()
             newPane.parent = l
+            // newPane.relocate(sx, sy, xoff, yoff)
             newPane.createElement()
             newPane.openTerminal()
 
             l.sons.extend([this, newPane])
-            l.relocate()
-                
+            l.relocate(lsx, lsy, lxoff, lyoff)
         }
         else {
             console.log("TODO: just squeeze another pane in")
