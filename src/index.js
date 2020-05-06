@@ -2,24 +2,18 @@ import "./css/terminal7.css"
 import "./css/xterm.css"
 import { TouchTmux } from "./windows.js"
 
-var host
-window.ttmux = new TouchTmux()
-let pane = window.ttmux.addPane({id: "p0", sx: 20, sy: 20})
+var host, pc
+let ttmux = new TouchTmux()
+let pane = ttmux.addPane({id: "p0", sx: 20, sy: 20})
 let term = pane.t
 let state = 0
 let sendChannel = null
 
-window.pc = new RTCPeerConnection({
-    iceServers: [
-      {
-        urls: 'stun:stun.l.google.com:19302'
-      }
-    ]
-})
-window.onresize = () => pane.onresize()
 pane.createElement("full")
 pane.openTerminal()
 pane.fit()
+if (window)
+    window.onresize = () => pane.onresize()
 pane.t.onKey( (keys, ev) => {
     let code = keys.key.charCodeAt(0)
     if (pane.state == 3) {
@@ -32,6 +26,14 @@ pane.t.onKey( (keys, ev) => {
         console.log(host)
         state = 3
         term.write("\n\r\n\r")
+        pc = new RTCPeerConnection({
+            iceServers: [
+              {
+                urls: 'stun:stun.l.google.com:19302'
+              }
+            ]
+        })
+
         pc.oniceconnectionstatechange = e => {
             console.log(pc.iceConnectionState)
             if (pc.iceConnectionState == 'disconnected') {
@@ -58,7 +60,7 @@ pane.t.onKey( (keys, ev) => {
         }})}}
         pc.onnegotiationneeded = e => 
             pc.createOffer().then(d => pc.setLocalDescription(d))
-        window.ttmux.openDC()
+        ttmux.openDC(pc)
     }
     else if (state == 1) {
         console.log("1=>2")

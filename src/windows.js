@@ -1,4 +1,4 @@
-import { Deque } from '@blakeembrey/deque'
+import { Denque } from 'denque'
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit';
 import * as Hammer from 'hammerjs';
@@ -46,9 +46,9 @@ class TouchTmux {
             this.d.send("list-windows\n")
         }, 0)
     }
-    openDC() {
+    openDC(pc) {
         this.buffer = []
-        this.d = window.pc.createDataChannel('/usr/local/bin/tmux -CC new')
+        this.d = pc.createDataChannel('/usr/local/bin/tmux -CC new')
         this.d.onclose = () =>{
             this.state = 0
             this.write('Data Channel is closed.\n')
@@ -157,42 +157,50 @@ class Cell {
 class LayoutCell extends Cell {
     constructor(pane) {
         super(pane.props)
-        this.sons = new Deque()
+        this.sons = new Denque()
         this.sx = pane.sx
         this.sy = pane.sy
         this.xoff = pane.xoff
         this.yoff = pane.yoff
     }
+    findChild(child) {
+        for (let i = 0; i < this.sons.length; i++)
+            if (this.sons.peekAt(i) == child) {
+                return i
+            }
+    }
+
+
     removeChild(child) {
-        let i = this.sons.indexOf(child)
-        this.sons.delete(i)
-        if (this.sons.size == 0) {
+        let i = this.findChild(child)
+        this.sons.remove(i)
+        if (this.sons.length == 0) {
             if (this.parent) {
-                this.parent.sons.delete(this.parent.sons.indexOf(this))
+                this.parent.removeChild(this)
                 this.parent.relocate()
                 return
             } else {
                 console.log("Removing last layout cell, what now?")
             }
         } else {
-            this.sons.peek((i>0)?i-1:0).t.focus()
+            this.sons.peekAt((i>0)?i-1:0).t.focus()
         }
         this.relocate()
     }
     relocate(sx, sy, xoff, yoff) {
         super.relocate(sx, sy, xoff, yoff)
         if (this.type == "rightleft") {
-            let w = this.sx / this.sons.size
+            let w = this.sx / this.sons.length
             let off = this.xoff
-            for (let s of this.sons.entries()) {
+            for (let s of this.sons.toArray()) {
                 s.relocate(w,  this.sy, off,  this.yoff)
                 off += w
             }       
         }
         else {
-            let h = Math.floor((this.sy - 1) / this.sons.size)
+            let h = Math.floor((this.sy - 1) / this.sons.length)
             let off =  this.yoff
-            for (let s of this.sons.entries()) {
+            for (let s of this.sons.toArray()) {
                 s.relocate( this.sx, h,  this.xoff, off)
                 off += h+1
             }       
@@ -262,7 +270,14 @@ class Pane extends Cell {
             let topb = Math.abs(ev.deltaY) > Math.abs(ev.deltaX)
             this.split((topb)?"topbottom":"rightleft")
         });
-        document.getElementById('terminal7').appendChild(this.e)
+        let terminal7 = document.getElementById('terminal7')
+        if (!terminal7) {
+            terminal7 = document.createElement('div')
+            terminal7.id = "terminal7"
+            document.body.appendChild(terminal7)
+        }
+
+        terminal7.appendChild(this.e)
     }
     removeElment() {
         this.e.parentNode.removeChild(this.e);
@@ -356,7 +371,8 @@ class Pane extends Cell {
             newPane.openTerminal()
             newPane.openDC()
             newPane.t.onKey( (keys, ev) => newPane.d.send(keys.key))
-            l.sons.extend([this, newPane])
+            l.sons.push(this)
+            l.sons.push(newPane)
             l.relocate()
             newPane.t.focus()
         }
@@ -368,7 +384,7 @@ class Pane extends Cell {
             newPane.openTerminal()
             newPane.openDC()
             newPane.t.onKey( (keys, ev) => newPane.d.send(keys.key))
-            l.sons.insert(l.sons.indexOf(this)+1, newPane)
+            l.sons.splice(l.sons.findChild(this)+1, 0, newPane)
             l.relocate()
             newPane.t.focus()
         }
