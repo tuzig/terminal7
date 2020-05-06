@@ -1,10 +1,10 @@
 import "./css/terminal7.css"
 import "./css/xterm.css"
-import { Panes } from "./windows.js"
+import { TouchTmux } from "./windows.js"
 
 var host
-window.panes = new Panes()
-let pane = window.panes.add({id: "p0", sx: 20, sy: 20})
+window.ttmux = new TouchTmux()
+let pane = window.ttmux.addPane({id: "p0", sx: 20, sy: 20})
 let term = pane.t
 let state = 0
 let sendChannel = null
@@ -58,7 +58,7 @@ pane.t.onKey( (keys, ev) => {
         }})}}
         pc.onnegotiationneeded = e => 
             pc.createOffer().then(d => pc.setLocalDescription(d))
-        pane.openDC()
+        window.ttmux.openDC()
     }
     else if (state == 1) {
         console.log("1=>2")

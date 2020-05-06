@@ -8,19 +8,130 @@ const MINIMUM_COLS = 2
 const MINIMUM_ROWS = 1
 const SET_SIZE_PREFIX = "A($%JFDS*(;dfjmlsdk9-0"
 
-class Panes {
-    constructor() {
+class TouchTmux {
+    constructor(pc) {
+        this.pc = pc
+        this.state = 0
         this.lastID = 0
+        this.panes = {}
+        this.windows = {}
     }
-    newID() { return "l"+ this.lastID++}
-    add(props) {
+
+    write(data, paneId) {
+        if (paneId)
+            if (pane[paneId])
+                pane.t.write(data)
+            else {
+                this.addPane(paneId)
+            }
+                
+        else if (this.lastPane)
+            this.lastPane.t.write(data)
+        else
+            console.log("No currentT, logging here: " + data)
+    }
+
+    refreshWindows(b) {
+        console.log(">> refresh windows")
+        for (let l of b) {
+            console.log(l)
+        }
+        console.log("<< refresh windows")
+    }
+
+    onFirstContact(buffer) {
+        this.onOutput = (buffer) => this.refreshWindows
+        setTimeout(() => {
+            console.log("sending list windows")
+            this.d.send("list-windows\n")
+        }, 0)
+    }
+    openDC() {
+        this.buffer = []
+        this.d = window.pc.createDataChannel('/usr/local/bin/tmux -CC new')
+        this.d.onclose = () =>{
+            this.state = 0
+            this.write('Data Channel is closed.\n')
+            // TODO: What now?
+        }
+        this.d.onopen = () => {
+            this.state = 2
+            // TODO: set our size by sending "refresh-client -C <width>x<height>"
+            setTimeout(() => {
+                if (this.state == 2) {
+                    this.write("Sorry, didn't get a prompt from the server.")
+                    this.write("Please refresh.")
+                }},3000)
+        }
+        this.d.onmessage = m => {
+            if (this.state == 2) {
+                this.state = 3
+                this.onOutput = this.onFirstContact
+                //TODO: remove demo hack
+                document.getElementById("tabbar").innerHTML = "zsh"
+            }
+            if (this.state == 4) {
+                this.buffer.push(m.data)
+            }
+            if (this.state >= 3) {
+                var rows = m.data.split("\r\n")
+                for (let row of rows)
+                    if (row)
+                        this.parse(row)
+            }
+        }
+        return this.d
+    }
+    parse(row) {
+        console.log("parsing: "+row)
+        if (row.substring(1, 7) == "P1000p")
+            row = row.substring(7)
+        const w = row.split(" ")
+        if (w[0][0] == "%") {
+            switch (w[0]) {
+            case "%begin":
+                if (this.state == 4)
+                    console.log("ERROR: got %begin when expecting data or %end")
+                this.buffer = []
+                this.state = 4
+                break;
+            case "%end":
+                if (this.state == 3)
+                    console.log("ERROR: got %end when expecting commands")
+                if (this.onOutput)
+                    this.onOutput(this.buffer)
+                this.state = 3
+                break;
+            case "%output":
+                if (this.state != 3)
+                    console.log("ERROR: got %output  when state is "+this.state)
+                var paneId = w[1],
+                    payload = w.slice(2).join(" ")
+                this.write(payload, this.panes[paneId])
+                break;
+            case "%window-add":
+                this.windows[w[1]] = new Window(w[2])
+                break;
+            }
+        }
+    }
+    addPane(props) {
         if (props === undefined) props = {}
         if (!props.id) props.id = this.newID()
-        this[props.id] = new Pane(props)
-        return this[props.id]
+        var p = new Pane(props)
+        this.panes[props.id] = p
+        this.lastPane = p
+        return p
+    }
+    newID() { return "l"+ this.lastID++}
+}
+
+function setPx(i) { return i.toString()+"px" }
+
+class Window {
+    constructor () {
     }
 }
-function setPx(i) { return i.toString()+"px" }
 
 class Cell {
     constructor(props) {
@@ -153,40 +264,15 @@ class Pane extends Cell {
         });
         document.getElementById('terminal7').appendChild(this.e)
     }
+    removeElment() {
+        this.e.parentNode.removeChild(this.e);
+        if (this.parent)
+            this.parent.removeChild(this)
+    }
     openTerminal() {
         // creates the elment and opens the terminal
         this.t.open(this.e)
         this.state = 1
-    }
-    openDC() {
-        this.d = window.pc.createDataChannel('/usr/bin/zsh')
-        this.d.onclose = () => {
-            this.state = 0
-            this.t.write('Data Channel is closed.\n')
-            this.e.parentNode.removeChild(this.e);
-            if (this.parent)
-                this.parent.removeChild(this)
-            // TODO: if it's the last one, we need to call Connect()
-        }
-        this.d.onopen = () => {
-            this.state = 2
-            this.sendSize()
-            setTimeout(() => {
-                if (this.state == 2) {
-                    this.t.write("Sorry, didn't get a prompt from the server.")
-                    this.t.write("Please refresh.")
-                }},3000)
-        }
-        this.d.onmessage = m => {
-            if (this.state == 2) {
-                this.state = 3
-                //TODO: remove demo hack
-                document.getElementById("tabbar").innerHTML = "zsh"
-            }
-            if (this.state == 3) 
-                this.t.write(m.data)
-        }
-        return this.d
     }
 
     relocate(sx, sy, xoff, yoff) {
@@ -264,7 +350,7 @@ class Pane extends Cell {
                 l.type = "topbottom"
             else 
                 l.type = "rightleft"
-            var newPane = window.panes.add()
+            var newPane = window.ttmux.addPane()
             newPane.parent = l
             newPane.createElement()
             newPane.openTerminal()
@@ -276,7 +362,7 @@ class Pane extends Cell {
         }
         else {
             let l = this.parent
-            let newPane = window.panes.add()
+            let newPane = window.ttmux.addPane()
             newPane.parent = l
             newPane.createElement()
             newPane.openTerminal()
@@ -291,4 +377,4 @@ class Pane extends Cell {
         this.t.write(buf)
     }
 }
-export { Panes, Pane, LayoutCell }
+export { TouchTmux , Pane, LayoutCell }
