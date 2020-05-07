@@ -8,14 +8,13 @@ const MINIMUM_COLS = 2
 const MINIMUM_ROWS = 1
 const SET_SIZE_PREFIX = "A($%JFDS*(;dfjmlsdk9-0"
 
-class TouchTmux {
-    constructor(pc) {
-        this.pc = pc
-        this.state = 0
-        this.lastID = 0
-        this.panes = {}
-        this.windows = {}
-    }
+const TouchTmux = {
+    state: 0,
+    lastID: 0,
+    panes: {},
+    windows: {},
+    d: {},
+    buffer: [],
 
     write(data, paneId) {
         if (paneId)
@@ -29,7 +28,7 @@ class TouchTmux {
             this.lastPane.t.write(data)
         else
             console.log("No currentT, logging here: " + data)
-    }
+    },
 
     refreshWindows(b) {
         console.log(">> refresh windows")
@@ -37,7 +36,7 @@ class TouchTmux {
             console.log(l)
         }
         console.log("<< refresh windows")
-    }
+    },
 
     onFirstContact(buffer) {
         this.onOutput = (buffer) => this.refreshWindows
@@ -45,9 +44,10 @@ class TouchTmux {
             console.log("sending list windows")
             this.d.send("list-windows\n")
         }, 0)
-    }
+    },
     openDC(pc) {
         this.buffer = []
+        this.pc = pc
         this.d = pc.createDataChannel('/usr/local/bin/tmux -CC new')
         this.d.onclose = () =>{
             this.state = 0
@@ -81,7 +81,7 @@ class TouchTmux {
             }
         }
         return this.d
-    }
+    },
     parse(row) {
         console.log("parsing: "+row)
         if (row.substring(1, 7) == "P1000p")
@@ -114,7 +114,7 @@ class TouchTmux {
                 break;
             }
         }
-    }
+    },
     addPane(props) {
         if (props === undefined) props = {}
         if (!props.id) props.id = this.newID()
@@ -122,7 +122,7 @@ class TouchTmux {
         this.panes[props.id] = p
         this.lastPane = p
         return p
-    }
+    },
     newID() { return "l"+ this.lastID++}
 }
 
@@ -135,8 +135,14 @@ class Window {
 
 class Cell {
     constructor(props) {
-        this.p = props
+        this.id = props.id
+        this.sx = props.sx || 80
+        this.sy = props.sy || 24
+        this.xoff = props.xoff || 0
+        this.yoff = props.yoff || 0
         this.parent = null
+        this.e = null
+        this.t = null
     }
     relocate(sx, sy, xoff, yoff) {
         if (sx !== undefined) this.sx = sx
@@ -144,6 +150,7 @@ class Cell {
         if (yoff !== undefined) this.yoff = yoff
         if (xoff !== undefined) this.xoff = xoff
         if (this.e && this.t) {
+            // move tand resize the dom element
             const core = this.t._core
             this.e.style.width = setPx(this.sx * core._renderService.dimensions.actualCellWidth)
             this.e.style.height = setPx(this.sy * core._renderService.dimensions.actualCellHeight)
@@ -152,7 +159,6 @@ class Cell {
         }
     }
 }
-
 
 class LayoutCell extends Cell {
     constructor(pane) {
@@ -393,4 +399,4 @@ class Pane extends Cell {
         this.t.write(buf)
     }
 }
-export { TouchTmux , Pane, LayoutCell }
+export { TouchTmux , Cell, Pane, LayoutCell }

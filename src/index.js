@@ -3,8 +3,7 @@ import "./css/xterm.css"
 import { TouchTmux } from "./windows.js"
 
 var host, pc
-let ttmux = new TouchTmux()
-let pane = ttmux.addPane({id: "p0", sx: 20, sy: 20})
+let pane = TouchTmux.addPane({id: "p0", sx: 20, sy: 20})
 let term = pane.t
 let state = 0
 let sendChannel = null
@@ -60,7 +59,7 @@ pane.t.onKey( (keys, ev) => {
         }})}}
         pc.onnegotiationneeded = e => 
             pc.createOffer().then(d => pc.setLocalDescription(d))
-        ttmux.openDC(pc)
+        TouchTmux.openDC(pc)
     }
     else if (state == 1) {
         console.log("1=>2")

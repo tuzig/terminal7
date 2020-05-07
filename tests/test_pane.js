@@ -1,12 +1,31 @@
-import { Pane } from "../src/windows.js"
+import { Cell } from "../src/windows.js"
 import { assert } from "chai"
 
 
-describe("A pane", () => {
-    it("Can be constructed using the defaults", () => {
-        let pane = new Pane()
-        assert.equal(pane.id, "l0")
-        assert.equal(pane.sx, 80)
-        assert.equal(pane.sy, 24)
+describe("A Cell", () => {
+    it("Can be constructed using the defaults", function() {
+        let cell = new Cell({id: "foo"})
+        assert.equal(cell.id, "foo")
+        assert.equal(cell.sx, 80)
+        assert.equal(cell.sy, 24)
+        assert.equal(cell.xoff, 0)
+        assert.equal(cell.yoff, 0)
     })
+    it("Can be constructed using properties", function() {
+        let cell = new Cell({id: "bar", sx: 120, sy: 10, xoff: 18, yoff: 13})
+        assert.equal(cell.id, "bar")
+        assert.equal(cell.sx, 120)
+        assert.equal(cell.sy, 10)
+        assert.equal(cell.xoff, 18)
+        assert.equal(cell.yoff, 13)
+    })
+    it("Can be relocated without an elment", function () {
+        let cell = new Cell({id: "bar", sx: 20, sy: 10})
+        cell.relocate(30, 15, 1, 2)
+        assert.equal(cell.sx, 30)
+        assert.equal(cell.sy, 15)
+        assert.equal(cell.xoff, 1)
+        assert.equal(cell.yoff, 2)
+    })
+
 })
