@@ -1,6 +1,5 @@
-// Karma configuration
-// Generated on Wed May 06 2020 12:50:13 GMT+0000 (Coordinated Universal Time)
 var webpackConfig = require('./webpack.config.js')
+webpackConfig.devtool = 'inline-cheap-source-map'
 
 module.exports = function(config) {
   config.set({
@@ -24,12 +23,6 @@ module.exports = function(config) {
     // list of files / patterns to exclude
     exclude: [
     ],
-
-
-    // preprocess matching files before serving them to the browser
-    // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
-    preprocessors: {
-    },
 
 
     // test results reporter to use
@@ -65,8 +58,8 @@ module.exports = function(config) {
     singleRun: true,
     preprocessors: {
       // add webpack as preprocessor
-      'tests/*.js': ['webpack'],
-      'src/*.js': ['webpack'],
+      'tests/*.js': ['webpack', 'sourcemap'],
+      'src/*.js': ['webpack', 'sourcemap'],
     },
 
     webpack: webpackConfig,

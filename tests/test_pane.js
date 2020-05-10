@@ -1,8 +1,8 @@
-import { Cell } from "../src/windows.js"
+import { Cell, Layout } from "../src/windows.js"
 import { assert } from "chai"
 
 
-describe("A Cell", () => {
+describe("A Cell", function() {
     it("Can be constructed using the defaults", function() {
         let cell = new Cell({id: "foo"})
         assert.equal(cell.id, "foo")
@@ -28,4 +28,15 @@ describe("A Cell", () => {
         assert.equal(cell.yoff, 2)
     })
 
+})
+describe("A Layout", function() {
+    it("can be created", function() {
+        let cell = new Cell({id: "bar", sx: 120, sy: 10, xoff: 18, yoff: 13})
+        assert.equal(cell.id, "bar")
+        let layout = new Layout("foo", cell)
+        assert.equal(layout.sx, 120)
+        assert.equal(layout.sy, 10)
+        assert.equal(layout.xoff, 18)
+        assert.equal(layout.yoff, 13)
+    })
 })

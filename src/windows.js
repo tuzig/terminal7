@@ -1,4 +1,4 @@
-import { Denque } from 'denque'
+import { Denque } from './denque.js'
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit';
 import * as Hammer from 'hammerjs';
@@ -140,9 +140,9 @@ class Cell {
         this.sy = props.sy || 24
         this.xoff = props.xoff || 0
         this.yoff = props.yoff || 0
-        this.parent = null
-        this.e = null
-        this.t = null
+        this.parent = props.parent || null
+        this.e = props.e || null
+        this.t = props.t || null
     }
     relocate(sx, sy, xoff, yoff) {
         if (sx !== undefined) this.sx = sx
@@ -161,8 +161,9 @@ class Cell {
 }
 
 class Layout extends Cell {
-    constructor(basedOn) {
-        super(basedOn.props)
+    constructor(id, basedOn) {
+        super(basedOn)
+        this.id = id
         this.sons = new Denque()
         this.sx = basedOn.sx
         this.sy = basedOn.sy
