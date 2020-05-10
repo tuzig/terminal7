@@ -160,14 +160,14 @@ class Cell {
     }
 }
 
-class LayoutCell extends Cell {
-    constructor(pane) {
-        super(pane.props)
+class Layout extends Cell {
+    constructor(basedOn) {
+        super(basedOn.props)
         this.sons = new Denque()
-        this.sx = pane.sx
-        this.sy = pane.sy
-        this.xoff = pane.xoff
-        this.yoff = pane.yoff
+        this.sx = basedOn.sx
+        this.sy = basedOn.sy
+        this.xoff = basedOn.xoff
+        this.yoff = basedOn.yoff
     }
     findChild(child) {
         for (let i = 0; i < this.sons.length; i++)
@@ -364,7 +364,7 @@ class Pane extends Cell {
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {
         if (this.parent == null || this.parent.type == type) {
-            let l = new LayoutCell(this)
+            let l = new Layout(this)
             l.parent = this.prent
             this.parent = l
             if (type == "rightleft") 
@@ -399,4 +399,4 @@ class Pane extends Cell {
         this.t.write(buf)
     }
 }
-export { TouchTmux , Cell, Pane, LayoutCell }
+export { TouchTmux , Cell, Pane, Layout }
