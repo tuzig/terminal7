@@ -172,12 +172,10 @@ class Layout extends Cell {
     }
     findChild(child) {
         for (let i = 0; i < this.sons.length; i++)
-            if (this.sons.peekAt(i) == child) {
+            if (this.sons.peekAt(i) == child)
                 return i
-            }
+        return null
     }
-
-
     removeChild(child) {
         let i = this.findChild(child)
         this.sons.remove(i)
@@ -218,18 +216,13 @@ class Layout extends Cell {
 class Pane extends Cell {
     constructor(props) {
         super(props)
-        this.t = new Terminal({
-            convertEol: true,
-            theme: THEME,
-        })
-        this.fitAddon = new FitAddon()
-        this.t.loadAddon(this.fitAddon)
         this.state = 0
         this.xoff = 0
         this.yoff = 0
         this.d = null
         this.zommed = false
     }
+
     createElement(elemClass) {
         // creates the div element that will hold the term
         this.e = document.createElement("div")
@@ -283,7 +276,6 @@ class Pane extends Cell {
             terminal7.id = "terminal7"
             document.body.appendChild(terminal7)
         }
-
         terminal7.appendChild(this.e)
     }
     removeElment() {
@@ -292,7 +284,14 @@ class Pane extends Cell {
             this.parent.removeChild(this)
     }
     openTerminal() {
-        // creates the elment and opens the terminal
+        this.t = new Terminal({
+            convertEol: true,
+            theme: THEME,
+            cols: this.sx,
+            rows: this.sy 
+        })
+        this.fitAddon = new FitAddon()
+        this.t.loadAddon(this.fitAddon)
         this.t.open(this.e)
         this.state = 1
     }
