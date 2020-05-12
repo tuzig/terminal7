@@ -1,18 +1,16 @@
 import "./css/terminal7.css"
 import "./css/xterm.css"
-import { TouchTmux } from "./windows.js"
+import { Terminal7 } from "./windows.js"
 
 var host, pc
-let pane = TouchTmux.addPane({id: "p0", sx: 20, sy: 20})
+let pane = Terminal7.addPane({id: "p0", sx: 80, sy: 24})
 let term = pane.t
 let state = 0
 let sendChannel = null
-
-pane.createElement("full")
-pane.openTerminal()
 pane.fit()
 if (window)
     window.onresize = () => pane.onresize()
+
 pane.t.onKey( (keys, ev) => {
     let code = keys.key.charCodeAt(0)
     if (pane.state == 3) {
@@ -59,7 +57,7 @@ pane.t.onKey( (keys, ev) => {
         }})}}
         pc.onnegotiationneeded = e => 
             pc.createOffer().then(d => pc.setLocalDescription(d))
-        TouchTmux.openDC(pc)
+        Terminal7.openDC(pc)
     }
     else if (state == 1) {
         console.log("1=>2")
@@ -72,10 +70,13 @@ pane.t.onKey( (keys, ev) => {
 })
 
 function Connect() {
+    if (!term)
+        return
     host = window.location.href.substring(7, window.location.href.indexOf(":", 7))+":8888"
     term.write("\nWhere is your host: ("+host+") ")
     state = 1
     term.focus()
 }
-term.write("\tWelcome To Terminal Seven!\r\n")
+if (term)
+    term.write("\tWelcome To Terminal Seven!\r\n")
 Connect()

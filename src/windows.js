@@ -8,21 +8,34 @@ const MINIMUM_COLS = 2
 const MINIMUM_ROWS = 1
 const SET_SIZE_PREFIX = "A($%JFDS*(;dfjmlsdk9-0"
 
-const TouchTmux = {
+const Terminal7 = {
     state: 0,
     lastID: 0,
+    lastPane: null,
+    lastWindow: null,
     panes: {},
     windows: {},
-    d: {},
+    d: null,
     buffer: [],
 
-    write(data, paneId) {
-        if (paneId)
-            if (pane[paneId])
-                pane.t.write(data)
-            else {
-                this.addPane(paneId)
-            }
+    windowAdd(id) {
+        this.windows[id] = new Window()
+    },
+    onSessionsChanged() {
+        // TODO: why do we care?
+    },
+    onSessionChanged(id, name) {
+        // TODO: why do we care?
+    },
+    renameWindow(id, name) {
+        this.windows.name = name
+    },
+    write(paneId, data) {
+        if (paneId) {
+            if (!(paneId in this.panes))
+                this.addPane({id: paneId})
+            this.panes[paneId].write(data)
+        }
                 
         else if (this.lastPane)
             this.lastPane.t.write(data)
@@ -39,10 +52,10 @@ const TouchTmux = {
     },
 
     onFirstContact(buffer) {
-        this.onOutput = (buffer) => this.refreshWindows
+        this.onEnd = (buffer) => this.refreshWindows
         setTimeout(() => {
             console.log("sending list windows")
-            this.d.send("list-windows\n")
+            Terminal7.d.send("list-windows\n")
         }, 0)
     },
     openDC(pc) {
@@ -66,7 +79,7 @@ const TouchTmux = {
         this.d.onmessage = m => {
             if (this.state == 2) {
                 this.state = 3
-                this.onOutput = this.onFirstContact
+                this.onEnd = this.onFirstContact
                 //TODO: remove demo hack
                 document.getElementById("tabbar").innerHTML = "zsh"
             }
@@ -98,16 +111,17 @@ const TouchTmux = {
             case "%end":
                 if (this.state == 3)
                     console.log("ERROR: got %end when expecting commands")
-                if (this.onOutput)
-                    this.onOutput(this.buffer)
+                if (this.onEnd)
+                    this.onEnd(this.buffer)
                 this.state = 3
                 break;
             case "%output":
                 if (this.state != 3)
                     console.log("ERROR: got %output  when state is "+this.state)
                 var paneId = w[1],
-                    payload = w.slice(2).join(" ")
-                this.write(payload, this.panes[paneId])
+                    payload = w.slice(2).join(" ").replace(/\\\d{3}/g, (match) =>
+                        String.fromCharCode(parseInt(match.slice(1), 8)))
+                this.write(paneId, payload)
                 break;
             case "%window-add":
                 this.windows[w[1]] = new Window(w[2])
@@ -119,6 +133,16 @@ const TouchTmux = {
         if (props === undefined) props = {}
         if (!props.id) props.id = this.newID()
         var p = new Pane(props)
+        p.createElement()
+        p.openTerminal()
+        // p.fit()
+        p.relocate(p.t.cols, p.t.rows, 0, 0)
+        p.t.onKey((keys, ev) =>  {
+            if (Terminal7.d && Terminal7.d.readyState == "open") {
+                console.log(keys)
+                Terminal7.d.send("send " + keys.key + "\n")
+            }
+        })
         this.panes[props.id] = p
         this.lastPane = p
         return p
@@ -272,6 +296,7 @@ class Pane extends Cell {
         });
         let terminal7 = document.getElementById('terminal7')
         if (!terminal7) {
+            // create the conbtainer element
             terminal7 = document.createElement('div')
             terminal7.id = "terminal7"
             document.body.appendChild(terminal7)
@@ -345,7 +370,7 @@ class Pane extends Cell {
     sendSize() {
         if (this.d)
             try {
-                this.d.send(SET_SIZE_PREFIX+JSON.stringify({
+                Terminal7.d.send(SET_SIZE_PREFIX+JSON.stringify({
                     Cols: this.sx,
                     Rows: this.sy,
                     X: 0,
@@ -371,12 +396,11 @@ class Pane extends Cell {
                 l.type = "topbottom"
             else 
                 l.type = "rightleft"
-            var newPane = window.ttmux.addPane()
+            var newPane = Terminal7.addPane()
             newPane.parent = l
             newPane.createElement()
             newPane.openTerminal()
             newPane.openDC()
-            newPane.t.onKey( (keys, ev) => newPane.d.send(keys.key))
             l.sons.push(this)
             l.sons.push(newPane)
             l.relocate()
@@ -384,19 +408,19 @@ class Pane extends Cell {
         }
         else {
             let l = this.parent
-            let newPane = window.ttmux.addPane()
+            let newPane = Terminal7.addPane()
             newPane.parent = l
             newPane.createElement()
             newPane.openTerminal()
             newPane.openDC()
-            newPane.t.onKey( (keys, ev) => newPane.d.send(keys.key))
             l.sons.splice(l.sons.findChild(this)+1, 0, newPane)
             l.relocate()
             newPane.t.focus()
         }
     }
-    output(buf) {
-        this.t.write(buf)
+    write(buf) {
+        if (buf)
+            this.t.write(buf)
     }
 }
-export { TouchTmux , Cell, Pane, Layout }
+export { Terminal7 , Cell, Pane, Layout }
