@@ -3,11 +3,11 @@ import "./css/xterm.css"
 import { Terminal7 } from "./windows.js"
 
 var host, pc
-let pane = Terminal7.addPane({id: "p0", sx: 80, sy: 24})
+var terminal7 = new Terminal7()
+let pane = terminal7.panes[0]
 let term = pane.t
 let state = 0
 let sendChannel = null
-pane.fit()
 if (window)
     window.onresize = () => pane.onresize()
 

@@ -8,62 +8,56 @@ const MINIMUM_COLS = 2
 const MINIMUM_ROWS = 1
 const SET_SIZE_PREFIX = "A($%JFDS*(;dfjmlsdk9-0"
 
-const Terminal7 = {
-    state: 0,
-    lastID: 0,
-    lastPane: null,
-    lastWindow: null,
-    panes: {},
-    windows: {},
-    d: null,
-    buffer: [],
+class Terminal7 {
+    constructor() {
+        this.state = 0
+        this.panes = []
+        this.d = null
+        this.buffer = []
+        this.windows = []
+        this.panes = []
+        let w = this.addWindow()
+        let p = w.addPane()
+        this.activeP = p
+        this.activeW = w
+    }
 
-    windowAdd(id) {
-        this.windows[id] = new Window()
-    },
+    open (e) {
+        this.e = e
+    }
+    addWindow(name) {
+        let w = new Window(name)
+        w.t7 = this
+        this.windows.push(w)
+        return w
+    }
     onSessionsChanged() {
         // TODO: why do we care?
-    },
+    }
     onSessionChanged(id, name) {
         // TODO: why do we care?
-    },
-    renameWindow(id, name) {
-        this.windows.name = name
-    },
-    write(paneId, data) {
-        if (paneId) {
-            if (!(paneId in this.panes))
-                this.addPane({id: paneId})
-            this.panes[paneId].write(data)
-        }
-                
-        else if (this.lastPane)
-            this.lastPane.t.write(data)
-        else
-            console.log("No currentT, logging here: " + data)
-    },
-
+    }
     refreshWindows(b) {
         console.log(">> refresh windows")
         for (let l of b) {
             console.log(l)
         }
         console.log("<< refresh windows")
-    },
+    }
 
     onFirstContact(buffer) {
         this.onEnd = (buffer) => this.refreshWindows
         setTimeout(() => {
             console.log("sending list windows")
-            Terminal7.d.send("list-windows\n")
+            this.d.send("list-windows\n")
         }, 0)
-    },
+    }
     openDC(pc) {
         this.buffer = []
         this.pc = pc
         this.d = pc.createDataChannel('/usr/local/bin/tmux -CC new')
         this.d.onclose = () =>{
-            this.state = 0
+            this.state = "disconnected"
             this.write('Data Channel is closed.\n')
             // TODO: What now?
         }
@@ -77,6 +71,7 @@ const Terminal7 = {
                 }},3000)
         }
         this.d.onmessage = m => {
+            // TODO:
             if (this.state == 2) {
                 this.state = 3
                 this.onEnd = this.onFirstContact
@@ -94,72 +89,37 @@ const Terminal7 = {
             }
         }
         return this.d
-    },
-    parse(row) {
-        console.log("parsing: "+row)
-        if (row.substring(1, 7) == "P1000p")
-            row = row.substring(7)
-        const w = row.split(" ")
-        if (w[0][0] == "%") {
-            switch (w[0]) {
-            case "%begin":
-                if (this.state == 4)
-                    console.log("ERROR: got %begin when expecting data or %end")
-                this.buffer = []
-                this.state = 4
-                break;
-            case "%end":
-                if (this.state == 3)
-                    console.log("ERROR: got %end when expecting commands")
-                if (this.onEnd)
-                    this.onEnd(this.buffer)
-                this.state = 3
-                break;
-            case "%output":
-                if (this.state != 3)
-                    console.log("ERROR: got %output  when state is "+this.state)
-                var paneId = w[1],
-                    payload = w.slice(2).join(" ").replace(/\\\d{3}/g, (match) =>
-                        String.fromCharCode(parseInt(match.slice(1), 8)))
-                this.write(paneId, payload)
-                break;
-            case "%window-add":
-                this.windows[w[1]] = new Window(w[2])
-                break;
-            }
-        }
-    },
-    addPane(props) {
-        if (props === undefined) props = {}
-        if (!props.id) props.id = this.newID()
-        var p = new Pane(props)
-        p.createElement()
-        p.openTerminal()
-        // p.fit()
-        p.relocate(p.t.cols, p.t.rows, 0, 0)
-        p.t.onKey((keys, ev) =>  {
-            if (Terminal7.d && Terminal7.d.readyState == "open") {
-                console.log(keys)
-                Terminal7.d.send("send " + keys.key + "\n")
-            }
-        })
-        this.panes[props.id] = p
-        this.lastPane = p
-        return p
-    },
-    newID() { return "l"+ this.lastID++}
+    }
 }
 
 function setPx(i) { return i.toString()+"px" }
 
 class Window {
-    constructor () {
+    constructor (name) {
+        this.name = name
+        this.cells = []
+    }
+    addPane(props) {
+        var p = new Pane(props || {})
+        this.t7.panes.push(p)
+        p.id = this.t7.panes.length - 1
+        p.w = this
+        p.t7 = this.t7
+        p.createElement()
+        p.openTerminal()
+        p.t.onKey((keys, ev) =>  {
+            if (this.t7.d && this.t7.d.readyState == "open") {
+                console.log(keys)
+                this.t7.d.send("send " + keys.key + "\n")
+            }
+        })
+        this.cells.push(p)
+        return p
     }
 }
 
 class Cell {
     constructor(props) {
-        this.id = props.id
         this.sx = props.sx || 80
         this.sy = props.sy || 24
         this.xoff = props.xoff || 0
@@ -185,9 +145,8 @@ class Cell {
 }
 
 class Layout extends Cell {
-    constructor(id, basedOn) {
+    constructor(basedOn) {
         super(basedOn)
-        this.id = id
         this.sons = new Denque()
         this.sx = basedOn.sx
         this.sy = basedOn.sy
@@ -240,13 +199,17 @@ class Layout extends Cell {
 class Pane extends Cell {
     constructor(props) {
         super(props)
-        this.state = 0
+        this.state = "init"
         this.xoff = 0
         this.yoff = 0
         this.d = null
         this.zommed = false
     }
 
+    write(data) {
+        this.t.write(data)
+    }
+                
     createElement(elemClass) {
         // creates the div element that will hold the term
         this.e = document.createElement("div")
@@ -311,62 +274,27 @@ class Pane extends Cell {
     openTerminal() {
         this.t = new Terminal({
             convertEol: true,
-            theme: THEME,
-            cols: this.sx,
-            rows: this.sy 
+            theme: THEME
         })
         this.fitAddon = new FitAddon()
         this.t.loadAddon(this.fitAddon)
         this.t.open(this.e)
-        this.state = 1
+        this.fit()
+        this.state = "ready"
     }
 
     relocate(sx, sy, xoff, yoff) {
         super.relocate(sx, sy, xoff, yoff)
         this.fit()
-        this.sendSize()
-    }
-    // TODO: delete this
-    proposeDimensions() {
-        if (!this.t) {
-          return undefined
-        }
-
-        if (!this.t.element || !this.t.element.parentElement) {
-          return undefined
-        }
-
-        const core = this.t._core
-
-        const parentElementStyle = window.getComputedStyle(this.e.parentElement)
-        const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'))
-        const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')))
-        const elementStyle = window.getComputedStyle(this.t.element)
-        const elementPadding = {
-          top: parseInt(elementStyle.getPropertyValue('padding-top')),
-          bottom: parseInt(elementStyle.getPropertyValue('padding-bottom')),
-          right: parseInt(elementStyle.getPropertyValue('padding-right')),
-          left: parseInt(elementStyle.getPropertyValue('padding-left'))
-        }
-        const elementPaddingVer = elementPadding.top + elementPadding.bottom
-        const elementPaddingHor = elementPadding.right + elementPadding.left
-        const availableHeight = parentElementHeight - elementPaddingVer
-        const availableWidth = parentElementWidth - elementPaddingHor - core.viewport.scrollBarWidth
-        const geometry = {
-          cols: Math.max(MINIMUM_COLS, Math.floor(availableWidth / core._renderService.dimensions.actualCellWidth)),
-          rows: Math.max(MINIMUM_ROWS, Math.floor(availableHeight / core._renderService.dimensions.actualCellHeight))
-        }
-        return geometry
+        //TODO: move this to the handlers of commands that cause a resize
+        // this.sendSize()
     }
     fit() {
         this.fitAddon.fit()
         this.sx = this.t.cols
         this.sy = this.t.rows
-        /*
-        this.xoff = 0
-        this.yoff = 0
-        */
     }
+    //TODO: move this to the handlers of commands that cause a resize
     sendSize() {
         if (this.d)
             try {
@@ -381,11 +309,6 @@ class Pane extends Cell {
             }
 
     }
-    onresize() {
-        this.fit()
-        if (this.d)
-            this.sendSize()
-    }
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {
         if (this.parent == null || this.parent.type == type) {
@@ -396,11 +319,12 @@ class Pane extends Cell {
                 l.type = "topbottom"
             else 
                 l.type = "rightleft"
-            var newPane = Terminal7.addPane()
+            var newPane = this.w.addPane()
             newPane.parent = l
             newPane.createElement()
             newPane.openTerminal()
-            newPane.openDC()
+            // TODO:Open the datachannel
+            // this.openDC()
             l.sons.push(this)
             l.sons.push(newPane)
             l.relocate()
@@ -408,7 +332,7 @@ class Pane extends Cell {
         }
         else {
             let l = this.parent
-            let newPane = Terminal7.addPane()
+            let newPane = this.t7.addPane()
             newPane.parent = l
             newPane.createElement()
             newPane.openTerminal()

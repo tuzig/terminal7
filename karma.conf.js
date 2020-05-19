@@ -1,5 +1,6 @@
 var webpackConfig = require('./webpack.config.js')
 webpackConfig.devtool = 'inline-source-map'
+process.env.CHROME_BIN = require('puppeteer').executablePath()
 
 module.exports = function(config) {
   config.set({
@@ -51,11 +52,15 @@ module.exports = function(config) {
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
     browsers: ['ChromeHeadless'],
+    customLaunchers: {
+      ChromeHeadlessNoSandbox: {
+        base: 'ChromeHeadless',
+        flags: ['--disable-web-security', '--disable-site-isolation-trials']
+      }
+},
 
-
-    // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: false,
+    singleRun: true,
     preprocessors: {
       // add webpack as preprocessor
       'tests/*.js': ['webpack', 'sourcemap'],
