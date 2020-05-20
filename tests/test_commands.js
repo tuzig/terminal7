@@ -12,6 +12,7 @@ describe("terminal7", function() {
     })
 
     it("opens with a window and pane", () => {
+        assert.exists(undefined)
         assert.exists(t.windows[0])
         assert.exists(t.panes[0])
         assert.equal(t.panes[0].parent, t.windows[0])
