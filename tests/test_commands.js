@@ -11,13 +11,13 @@ describe("terminal7", function() {
         t.open(e)
     })
 
-    it("opens with a window and pane", () => {
+    it("opens with a window and a pane", () => {
         assert.exists(undefined)
         assert.exists(t.windows[0])
         assert.exists(t.panes[0])
         assert.equal(t.panes[0].parent, t.windows[0])
     })
-    describe("widnow", () => {
+    describe("window", () => {
         it("can be added", function() {
             let w = t.addWindow("gothic")
             assert.exists(t.windows[1])
@@ -31,7 +31,7 @@ describe("terminal7", function() {
             assert.exists(t.panes[1])
             assert.equal(t.panes[1].parent, t.panes[0])
         })
-        it("can be writen to", () =>{
+        it("can be written to", () =>{
             p = t.panes[0]
             assert.notExists(Terminal7.panes.bar)
             p.setEcho(true)

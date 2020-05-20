@@ -1,7 +1,7 @@
 {
   "name": "terminal7",
   "version": "0.1.0",
-  "description": "The terminal incarnated as a fingered tmux client  ",
+  "description": "The terminal incarnated as a fingered tmux client",
   "main": "src/index.js",
   "private": true,
   "bin": {
@@ -57,7 +57,7 @@
     "webrtc"
   ],
   "author": "Benny Daon",
-  "license": "MIT",
+  "license": "GPLv3",
   "bugs": {
     "url": "https://github.com/afittestide/terminal7/issues"
   },
