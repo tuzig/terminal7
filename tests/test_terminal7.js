@@ -3,19 +3,19 @@ import { assert } from "chai"
 
 
 describe("terminal7", function() {
-    var t, e
+    var t
+    var e = document.createElement("div")
     beforeEach(() => {
         t = new Terminal7()
-        e = document.createElement("div")
+        e.innerHTML = ""
         console.log("before")
         t.open(e)
     })
 
     it("opens with a window and a pane", () => {
-        assert.exists(undefined)
         assert.exists(t.windows[0])
         assert.exists(t.panes[0])
-        assert.equal(t.panes[0].parent, t.windows[0])
+        assert.equal(t.panes[0].w, t.windows[0])
     })
     describe("window", () => {
         it("can be added", function() {
@@ -24,6 +24,7 @@ describe("terminal7", function() {
             assert.exists(t.windows[1].name, "gothic")
         })
     })
+
 
     describe("pane", () => {
         it("can be split", () => {
@@ -43,6 +44,20 @@ describe("terminal7", function() {
         it("can resize", function () {
         })
         it("can die nicely, with parent resizing|dieing", function () {
+        })
+        it("can send updates when size changes", () => {
+                // a simple data channel mock
+            var d = {
+                called: 0,
+                send(data) {
+                    d.called++
+                    d.lastSentData = data
+                }
+            }
+            pane.d = d
+            pane.sendSize()
+            assert.equal(d.called, 1)
+            assert.equal(d.lastSentData, 'A($%JFDS*(;dfjmlsdk9-0{"Cols":120,"Rows":10,"X":0,"Y":0}')
         })
     })
 })
