@@ -1,6 +1,6 @@
 var webpackConfig = require('./webpack.config.js')
 webpackConfig.devtool = 'inline-source-map'
-process.env.CHROME_BIN = require('puppeteer').executablePath()
+// process.env.CHROME_BIN = require('puppeteer').executablePath()
 
 module.exports = function(config) {
   config.set({
@@ -16,7 +16,7 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'src/*.js',
+      'src/terminal7.js',
       'tests/*.js'
     ],
 
@@ -51,7 +51,7 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['MyHeadlessChrome'],
+    browsers: ['Chrome'],
     // browsers: ['Firefox'],
     customLaunchers: {
       MyHeadlessChrome: {
@@ -62,7 +62,7 @@ module.exports = function(config) {
 
 
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: true,
+    singleRun: false,
     preprocessors: {
       // add webpack as preprocessor
       'tests/*.js': ['webpack', 'sourcemap'],

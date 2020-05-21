@@ -3,12 +3,14 @@ import { assert } from "chai"
 
 
 describe("terminal7", function() {
-    var t
-    var e = document.createElement("div")
+    var t, e
+    before(() => {
+            e = document.createElement('div')
+            document.body.appendChild(e)
+    })
     beforeEach(() => {
-        t = new Terminal7()
         e.innerHTML = ""
-        console.log("before")
+        t = new Terminal7()
         t.open(e)
     })
 
@@ -16,6 +18,7 @@ describe("terminal7", function() {
         assert.exists(t.windows[0])
         assert.exists(t.panes[0])
         assert.equal(t.panes[0].w, t.windows[0])
+        assert.equal(t.panes[0].parent, null)
     })
     describe("window", () => {
         it("can be added", function() {
@@ -30,8 +33,9 @@ describe("terminal7", function() {
         it("can be split", () => {
             t.panes[0].split("rightleft")
             assert.exists(t.panes[1])
-            assert.equal(t.panes[1].parent, t.panes[0])
+            assert.equal(t.panes[1].parent, t.panes[0].parent)
         })
+        /*
         it("can be written to", () =>{
             p = t.panes[0]
             assert.notExists(Terminal7.panes.bar)
@@ -39,14 +43,9 @@ describe("terminal7", function() {
             p.write("hello world")
             assert.equal(p.getText(0, 0, 0, 11), "hello world")
         })
-        it("can zoom, hiding all other panes", function () {
-        })
-        it("can resize", function () {
-        })
-        it("can die nicely, with parent resizing|dieing", function () {
-        })
         it("can send updates when size changes", () => {
                 // a simple data channel mock
+            var p = t.panes[0]
             var d = {
                 called: 0,
                 send(data) {
@@ -54,10 +53,17 @@ describe("terminal7", function() {
                     d.lastSentData = data
                 }
             }
-            pane.d = d
-            pane.sendSize()
+            p.d = d
+            p.sendSize()
             assert.equal(d.called, 1)
             assert.equal(d.lastSentData, 'A($%JFDS*(;dfjmlsdk9-0{"Cols":120,"Rows":10,"X":0,"Y":0}')
+        })
+        */
+        it("can zoom, hiding all other panes", function () {
+        })
+        it("can resize", function () {
+        })
+        it("can die nicely, with parent resizing|dieing", function () {
         })
     })
 })

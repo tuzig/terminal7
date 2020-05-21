@@ -106,13 +106,6 @@ class Window {
         p.w = this
         p.t7 = this.t7
         p.createElement()
-        p.openTerminal()
-        p.t.onKey((keys, ev) =>  {
-            if (this.t7.d && this.t7.d.readyState == "open") {
-                console.log(keys)
-                this.t7.d.send("send " + keys.key + "\n")
-            }
-        })
         this.cells.push(p)
         return p
     }
@@ -277,8 +270,14 @@ class Pane extends Cell {
             theme: THEME
         })
         this.fitAddon = new FitAddon()
-        this.t.loadAddon(this.fitAddon)
         this.t.open(this.e)
+        this.t.loadAddon(this.fitAddon)
+        this.t.onKey((keys, ev) =>  {
+            if (this.t7.d && this.t7.d.readyState == "open") {
+                console.log(keys)
+                this.t7.d.send("send " + keys.key + "\n")
+            }
+        })
         this.fit()
         this.state = "ready"
     }
@@ -290,9 +289,8 @@ class Pane extends Cell {
         // this.sendSize()
     }
     fit() {
-        this.fitAddon.fit()
-        this.sx = this.t.cols
-        this.sy = this.t.rows
+        if (this.fitAddon !== undefined)
+            this.fitAddon.fit()
     }
     //TODO: move this to the handlers of commands that cause a resize
     sendSize() {
@@ -309,11 +307,18 @@ class Pane extends Cell {
             }
 
     }
+    focus() {
+        if (this.t !== null)
+            this.t.focus()
+        this.active = true
+        this.w.active = true
+    }
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {
         if (this.parent == null || this.parent.type == type) {
+            console.log("Adding new layout")
             let l = new Layout(this)
-            l.parent = this.prent
+            l.parent = this.parent
             this.parent = l
             if (type == "rightleft") 
                 l.type = "topbottom"
@@ -321,21 +326,17 @@ class Pane extends Cell {
                 l.type = "rightleft"
             var newPane = this.w.addPane()
             newPane.parent = l
-            newPane.createElement()
-            newPane.openTerminal()
             // TODO:Open the datachannel
             // this.openDC()
             l.sons.push(this)
             l.sons.push(newPane)
             l.relocate()
-            newPane.t.focus()
+            newPane.focus()
         }
         else {
             let l = this.parent
-            let newPane = this.t7.addPane()
+            let newPane = this.w.addPane()
             newPane.parent = l
-            newPane.createElement()
-            newPane.openTerminal()
             newPane.openDC()
             l.sons.splice(l.sons.findChild(this)+1, 0, newPane)
             l.relocate()
