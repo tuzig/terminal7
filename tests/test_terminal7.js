@@ -20,6 +20,7 @@ describe("terminal7", function() {
         assert.equal(t.panes[0].w, t.windows[0])
         assert.equal(t.panes[0].parent, null)
     })
+
     describe("window", () => {
         it("can be added", function() {
             let w = t.addWindow("gothic")
@@ -28,20 +29,21 @@ describe("terminal7", function() {
         })
     })
 
-
     describe("pane", () => {
         it("can be split", () => {
+            let originalSx = t.panes[0].sx
+            let originalSy = t.panes[0].sy
             t.panes[0].split("rightleft")
             assert.exists(t.panes[1])
             assert.equal(t.panes[1].parent, t.panes[0].parent)
         })
         /*
         it("can be written to", () =>{
-            p = t.panes[0]
-            assert.notExists(Terminal7.panes.bar)
-            p.setEcho(true)
-            p.write("hello world")
-            assert.equal(p.getText(0, 0, 0, 11), "hello world")
+            let p = t.panes[0]
+            p.openTerminal()
+            p.write('\\n\\nfoo\\n\\n\\rbar\\n\\n\\rbaz')
+            p.t.selectAll()
+            assert.equal(p.t.getSelection(), '\n\nfoo\n\nbar\n\nbaz')
         })
         it("can send updates when size changes", () => {
                 // a simple data channel mock

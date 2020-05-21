@@ -10,14 +10,20 @@ const SET_SIZE_PREFIX = "A($%JFDS*(;dfjmlsdk9-0"
 
 class Terminal7 {
     constructor() {
+        // constants
+        this.paneMargins = 0.02
+        // vars
         this.state = 0
         this.panes = []
         this.d = null
         this.buffer = []
         this.windows = []
         this.panes = []
-        let w = this.addWindow()
-        let p = w.addPane()
+
+        let w = this.addWindow(),
+            l = 1.0-this.paneMargins,
+            p = w.addPane({sx:l, sy:l})
+        //p.sx = p.sy = l
         this.activeP = p
         this.activeW = w
     }
@@ -100,12 +106,15 @@ class Window {
         this.cells = []
     }
     addPane(props) {
+        // CONGRATS! a new pane is born. props must include at keast sx & sy
         var p = new Pane(props || {})
         this.t7.panes.push(p)
         p.id = this.t7.panes.length - 1
         p.w = this
         p.t7 = this.t7
         p.createElement()
+        p.sx = props.sx 
+        p.sy = props.sy 
         this.cells.push(p)
         return p
     }
@@ -113,13 +122,14 @@ class Window {
 
 class Cell {
     constructor(props) {
+        // TODO: move create element here and call it now 
+        /*
         this.sx = props.sx || 80
         this.sy = props.sy || 24
         this.xoff = props.xoff || 0
         this.yoff = props.yoff || 0
         this.parent = props.parent || null
-        this.e = props.e || null
-        this.t = props.t || null
+        */
     }
     relocate(sx, sy, xoff, yoff) {
         if (sx !== undefined) this.sx = sx
@@ -193,10 +203,8 @@ class Pane extends Cell {
     constructor(props) {
         super(props)
         this.state = "init"
-        this.xoff = 0
-        this.yoff = 0
         this.d = null
-        this.zommed = false
+        this.zoomed = false
     }
 
     write(data) {
@@ -258,16 +266,25 @@ class Pane extends Cell {
             document.body.appendChild(terminal7)
         }
         terminal7.appendChild(this.e)
+        return this.e
     }
     removeElment() {
         this.e.parentNode.removeChild(this.e);
         if (this.parent)
             this.parent.removeChild(this)
     }
+    setEcho(echoOn) {
+        if (this.echo === undefined) {
+            this.t.onData((data) => this.echo && this.t.write(data))
+        }
+        this.echo = echoOn
+    }
     openTerminal() {
         this.t = new Terminal({
             convertEol: true,
-            theme: THEME
+            theme: THEME,
+            rows:24,
+            cols:80
         })
         this.fitAddon = new FitAddon()
         this.t.open(this.e)
@@ -280,6 +297,7 @@ class Pane extends Cell {
         })
         this.fit()
         this.state = "ready"
+        return this.t
     }
 
     relocate(sx, sy, xoff, yoff) {
@@ -308,23 +326,30 @@ class Pane extends Cell {
 
     }
     focus() {
-        if (this.t !== null)
+        if (this.t !== undefined)
             this.t.focus()
         this.active = true
         this.w.active = true
     }
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {
+        var sx, sy, type, l
+        if (type == "rightleft") {
+            sx = this.sx
+            sy = this.sy / 2.0
+            this.sy = sy
+        }
+        else  {
+            sy = this.sy
+            sx = this.sx / 2.0
+            this.sx = sx
+        }
         if (this.parent == null || this.parent.type == type) {
             console.log("Adding new layout")
-            let l = new Layout(this)
+            l = new Layout(this)
             l.parent = this.parent
             this.parent = l
-            if (type == "rightleft") 
-                l.type = "topbottom"
-            else 
-                l.type = "rightleft"
-            var newPane = this.w.addPane()
+            var newPane = this.w.addPane(sx, sy)
             newPane.parent = l
             // TODO:Open the datachannel
             // this.openDC()
@@ -334,18 +359,43 @@ class Pane extends Cell {
             newPane.focus()
         }
         else {
-            let l = this.parent
-            let newPane = this.w.addPane()
+            l = this.parent
+            let newPane = this.w.addPane(sx, sy)
             newPane.parent = l
             newPane.openDC()
             l.sons.splice(l.sons.findChild(this)+1, 0, newPane)
             l.relocate()
             newPane.t.focus()
         }
+        if (type=="rightleft")
+            l.type = "topleft"
+        else
+            l.type ="rightleft"
+
     }
-    write(buf) {
-        if (buf)
-            this.t.write(buf)
+    get sx() {
+        return parseFloat(this.e.style.width.slice(0,-1))
+    }
+    set sx(val) {
+        this.e.style.width = String(val) + "%"
+    }
+    get sy() {
+        return parseFloat(this.e.style.height.slice(0,-1))
+    }
+    set sy(val) {
+        this.e.style.height = String(val) + "%"
+    }
+    get xoff() {
+        return parseFloat(this.e.style.left.slice(0,-1))
+    }
+    set xoff(val) {
+        this.e.style.left = String(val) + "%"
+    }
+    get yoff() {
+        return parseFloat(this.e.style.top.slice(0,-1))
+    }
+    set yoff(val) {
+        this.e.style.top = String(val) + "%"
     }
 }
 export { Terminal7 , Cell, Pane, Layout }
