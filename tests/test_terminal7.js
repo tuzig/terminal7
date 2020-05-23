@@ -8,6 +8,9 @@ describe("terminal7", function() {
             e = document.createElement('div')
             document.body.appendChild(e)
     })
+    after(() => {
+        document.body.innerHTML = ""
+    })
     beforeEach(() => {
         e.innerHTML = ""
         t = new Terminal7()
