@@ -11,7 +11,7 @@ const SET_SIZE_PREFIX = "A($%JFDS*(;dfjmlsdk9-0"
 class Terminal7 {
     constructor() {
         // constants
-        this.paneMargins = 0.02
+        this.paneMargin = 0.02
         // vars
         this.state = 0
         this.panes = []
@@ -21,14 +21,14 @@ class Terminal7 {
         this.panes = []
 
         let w = this.addWindow(),
-            l = 1.0-this.paneMargins,
+            l = 1.0-this.paneMargin,
             p = w.addPane({sx:l, sy:l})
         //p.sx = p.sy = l
         this.activeP = p
         this.activeW = w
     }
 
-    open (e) {
+    open(e) {
         this.e = e
     }
     addWindow(name) {
@@ -50,7 +50,6 @@ class Terminal7 {
         }
         console.log("<< refresh windows")
     }
-
     onFirstContact(buffer) {
         this.onEnd = (buffer) => this.refreshWindows
         setTimeout(() => {
@@ -112,9 +111,6 @@ class Window {
         p.id = this.t7.panes.length - 1
         p.w = this
         p.t7 = this.t7
-        p.createElement()
-        p.sx = props.sx 
-        p.sy = props.sy 
         this.cells.push(p)
         return p
     }
@@ -123,13 +119,12 @@ class Window {
 class Cell {
     constructor(props) {
         // TODO: move create element here and call it now 
-        /*
-        this.sx = props.sx || 80
-        this.sy = props.sy || 24
+        this.createElement()
+        this.sx = props.sx || 0.8
+        this.sy = props.sy || 0.8
         this.xoff = props.xoff || 0
         this.yoff = props.yoff || 0
         this.parent = props.parent || null
-        */
     }
     relocate(sx, sy, xoff, yoff) {
         if (sx !== undefined) this.sx = sx
@@ -144,6 +139,87 @@ class Cell {
             this.e.style.top = setPx(this.yoff * core._renderService.dimensions.actualCellHeight)
             this.e.style.left = setPx(this.xoff * core._renderService.dimensions.actualCellWidth)
         }
+    }
+    createElement(elemClass) {
+        // creates the div element that will hold the term
+        this.e = document.createElement("div")
+        this.e.classList.add("border", "pane")
+        if (typeof elemClass !== "undefined")
+            this.e.classList.add(elemClass)
+
+        const h = new Hammer.Manager(this.e, {});
+        h.add(new Hammer.Tap({event: "doubletap", pointers: 2}))
+        h.add(new Hammer.Swipe({threshold: 300, velocity: 1}))
+        h.on('doubletap', (ev) => {
+            if (this.zoomed) {
+                this.e.className = this.className
+                this.e.style.top = this.top
+                this.e.style.left = this.left
+                this.e.style.width = this.width
+                this.e.style.height = this.height
+                Array.prototype.forEach.call(document.getElementsByClassName("pane"), 
+                    e => e.style.display = 'block') 
+                Array.prototype.forEach.call(document.getElementsByClassName("bar"), 
+                    e => e.style.display = 'block')   // , ...document.getElementsByClassName("tab")]
+            } else {
+                Array.prototype.forEach.call(document.getElementsByClassName("pane"), 
+                    e => { if (e != this.e) e.style.display = 'none'})
+                Array.prototype.forEach.call(document.getElementsByClassName("bar"), 
+                    e => { if (e != this.e) e.style.display = 'none'})
+                this.top = this.e.style.top
+                this.left = this.e.style.left
+                this.className = this.e.className
+                this.e.className = "pane zoom"
+                this.e.style.left = 0
+                this.width = this.e.style.width
+                this.height = this.e.style.height
+                this.e.style.width = "100%"
+                this.e.style.height = "100%"
+                this.e.style.top = 0
+            }
+            setTimeout(() => {
+                this.fit()
+                this.sendSize()
+                this.zoomed = !this.zommed
+            }, 10);
+        });
+        h.on('swipe', (ev) => {
+            let topb = Math.abs(ev.deltaY) > Math.abs(ev.deltaX)
+            this.split((topb)?"topbottom":"rightleft")
+        });
+        let terminal7 = document.getElementById('terminal7')
+        if (!terminal7) {
+            // create the conbtainer element
+            terminal7 = document.createElement('div')
+            terminal7.id = "terminal7"
+            document.body.appendChild(terminal7)
+        }
+        terminal7.appendChild(this.e)
+        return this.e
+    }
+    get sx() {
+        return parseFloat(this.e.style.width.slice(0,-1)) / 100.0
+    }
+    set sx(val) {
+        this.e.style.width = String(val*100) + "%"
+    }
+    get sy() {
+        return parseFloat(this.e.style.height.slice(0,-1)) / 100.0
+    }
+    set sy(val) {
+        this.e.style.height = String(val*100) + "%"
+    }
+    get xoff() {
+        return parseFloat(this.e.style.left.slice(0,-1)) / 100.0
+    }
+    set xoff(val) {
+        this.e.style.left = String(val*100) + "%"
+    }
+    get yoff() {
+        return parseFloat(this.e.style.top.slice(0,-1)) / 100.0
+    }
+    set yoff(val) {
+        this.e.style.top = String(val*100) + "%"
     }
 }
 
@@ -205,69 +281,13 @@ class Pane extends Cell {
         this.state = "init"
         this.d = null
         this.zoomed = false
+        this.active = false
     }
 
     write(data) {
         this.t.write(data)
     }
                 
-    createElement(elemClass) {
-        // creates the div element that will hold the term
-        this.e = document.createElement("div")
-        this.e.classList.add("border", "pane")
-        if (typeof elemClass !== "undefined")
-            this.e.classList.add(elemClass)
-
-        const h = new Hammer.Manager(this.e, {});
-        h.add(new Hammer.Tap({event: "doubletap", pointers: 2}))
-        h.add(new Hammer.Swipe({threshold: 300, velocity: 1}))
-        h.on('doubletap', (ev) => {
-            if (this.zoomed) {
-                this.e.className = this.className
-                this.e.style.top = this.top
-                this.e.style.left = this.left
-                this.e.style.width = this.width
-                this.e.style.height = this.height
-                Array.prototype.forEach.call(document.getElementsByClassName("pane"), 
-                    e => e.style.display = 'block') 
-                Array.prototype.forEach.call(document.getElementsByClassName("bar"), 
-                    e => e.style.display = 'block')   // , ...document.getElementsByClassName("tab")]
-            } else {
-                Array.prototype.forEach.call(document.getElementsByClassName("pane"), 
-                    e => { if (e != this.e) e.style.display = 'none'})
-                Array.prototype.forEach.call(document.getElementsByClassName("bar"), 
-                    e => { if (e != this.e) e.style.display = 'none'})
-                this.top = this.e.style.top
-                this.left = this.e.style.left
-                this.className = this.e.className
-                this.e.className = "pane zoom"
-                this.e.style.left = 0
-                this.width = this.e.style.width
-                this.height = this.e.style.height
-                this.e.style.width = "100%"
-                this.e.style.height = "100%"
-                this.e.style.top = 0
-            }
-            setTimeout(() => {
-                this.fit()
-                this.sendSize()
-                this.zoomed = !this.zommed
-            }, 10);
-        });
-        h.on('swipe', (ev) => {
-            let topb = Math.abs(ev.deltaY) > Math.abs(ev.deltaX)
-            this.split((topb)?"topbottom":"rightleft")
-        });
-        let terminal7 = document.getElementById('terminal7')
-        if (!terminal7) {
-            // create the conbtainer element
-            terminal7 = document.createElement('div')
-            terminal7.id = "terminal7"
-            document.body.appendChild(terminal7)
-        }
-        terminal7.appendChild(this.e)
-        return this.e
-    }
     removeElment() {
         this.e.parentNode.removeChild(this.e);
         if (this.parent)
@@ -333,15 +353,15 @@ class Pane extends Cell {
     }
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {
-        var sx, sy, type, l
+        var sx, sy, l
         if (type == "rightleft") {
             sx = this.sx
-            sy = this.sy / 2.0
+            sy = (this.sy - this.t7.paneMargin) / 2.0
             this.sy = sy
         }
         else  {
             sy = this.sy
-            sx = this.sx / 2.0
+            sx = (this.sx - this.t7.paneMargin) / 2.0
             this.sx = sx
         }
         if (this.parent == null || this.parent.type == type) {
@@ -349,53 +369,29 @@ class Pane extends Cell {
             l = new Layout(this)
             l.parent = this.parent
             this.parent = l
-            var newPane = this.w.addPane(sx, sy)
+            var newPane = this.w.addPane({sx: sx, sy: sy})
             newPane.parent = l
             // TODO:Open the datachannel
             // this.openDC()
             l.sons.push(this)
             l.sons.push(newPane)
-            l.relocate()
+            // l.relocate()
             newPane.focus()
         }
         else {
             l = this.parent
-            let newPane = this.w.addPane(sx, sy)
+            let newPane = this.w.addPane({sx: sx, sy: sy})
             newPane.parent = l
-            newPane.openDC()
-            l.sons.splice(l.sons.findChild(this)+1, 0, newPane)
-            l.relocate()
-            newPane.t.focus()
+            // newPane.openDC()
+            l.sons.splice(l.findChild(this)+1, 0, newPane)
+            // l.relocate()
+            newPane.focus()
         }
         if (type=="rightleft")
             l.type = "topleft"
         else
             l.type ="rightleft"
 
-    }
-    get sx() {
-        return parseFloat(this.e.style.width.slice(0,-1))
-    }
-    set sx(val) {
-        this.e.style.width = String(val) + "%"
-    }
-    get sy() {
-        return parseFloat(this.e.style.height.slice(0,-1))
-    }
-    set sy(val) {
-        this.e.style.height = String(val) + "%"
-    }
-    get xoff() {
-        return parseFloat(this.e.style.left.slice(0,-1))
-    }
-    set xoff(val) {
-        this.e.style.left = String(val) + "%"
-    }
-    get yoff() {
-        return parseFloat(this.e.style.top.slice(0,-1))
-    }
-    set yoff(val) {
-        this.e.style.top = String(val) + "%"
     }
 }
 export { Terminal7 , Cell, Pane, Layout }

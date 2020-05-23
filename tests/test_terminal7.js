@@ -1,4 +1,4 @@
-import { Terminal7 } from "../src/windows.js"
+import { Terminal7, Cell } from "../src/windows.js"
 import { assert } from "chai"
 
 
@@ -30,15 +30,58 @@ describe("terminal7", function() {
             assert.exists(t.windows[1])
             assert.exists(t.windows[1].name, "gothic")
         })
+        it("can be activated", function() {
+            let w = t.addWindow("gothic")
+            // w.active = true
+        })
+    })
+
+    describe("cell", () => {
+        it("can set and get sizes", () => {
+            let c = new Cell({sx: 12, sy: 34})
+            assert.equal(c.sx, 12)
+            assert.equal(c.sy, 34)
+
+        })
     })
 
     describe("pane", () => {
-        it("can be split", () => {
-            let originalSx = t.panes[0].sx
-            let originalSy = t.panes[0].sy
+        it("can be split right to left", () => {
+            let sx0 = t.panes[0].sx
+            let sy0 = t.panes[0].sy
             t.panes[0].split("rightleft")
             assert.exists(t.panes[1])
             assert.equal(t.panes[1].parent, t.panes[0].parent)
+            assert.equal(t.panes[0].sx, sx0)
+            assert.equal(t.panes[0].sy, t.panes[1].sy)
+            assert.equal(t.panes[0].sy, (sy0 - t.paneMargin) / 2)
+        })
+        it("can be split top to bottom", () => {
+            let sx0 = t.panes[0].sx
+            let sy0 = t.panes[0].sy
+            t.panes[0].split("topbottom")
+            assert.exists(t.panes[1])
+            assert.equal(t.panes[1].parent, t.panes[0].parent)
+            assert.equal(t.panes[0].sy, sy0)
+            assert.equal(t.panes[0].sx, t.panes[1].sx)
+            assert.equal(t.panes[0].sx, (sx0 - t.paneMargin) / 2)
+        })
+        it("can be split twice", () => {
+            let sx0 = t.panes[0].sx
+            let sy0 = t.panes[0].sy
+            console.log(sx0, sy0)
+            t.panes[0].split("topbottom")
+            t.panes[1].split("topbottom")
+            assert.exists(t.panes[2])
+            assert.equal(t.panes[1].parent, t.panes[0].parent)
+            assert.equal(t.panes[2].parent, t.panes[1].parent)
+            assert.equal(t.panes[0].sy, sy0)
+            assert.equal(t.panes[1].sy, sy0)
+            assert.equal(t.panes[2].sy, sy0)
+            assert.equal(t.panes[1].sx, t.panes[2].sx)
+            assert.closeTo(t.panes[0].sx, 
+                           (t.panes[2].sx + t.panes[1].sx) + t.paneMargin,
+                           0.00001)
         })
         /*
         it("can be written to", () =>{
