@@ -7,11 +7,11 @@ const THEME = {foreground: "#00FAFA", background: "#271d30"}
 const MINIMUM_COLS = 2
 const MINIMUM_ROWS = 1
 const SET_SIZE_PREFIX = "A($%JFDS*(;dfjmlsdk9-0"
+const PANE_MARGIN = 0.02
 
 class Terminal7 {
     constructor() {
         // constants
-        this.paneMargin = 0.02
         // vars
         this.state = 0
         this.panes = []
@@ -21,7 +21,7 @@ class Terminal7 {
         this.panes = []
 
         let w = this.addWindow(),
-            l = 1.0-this.paneMargin,
+            l = 1.0 - PANE_MARGIN,
             p = w.addPane({sx:l, sy:l})
         //p.sx = p.sy = l
         this.activeP = p
@@ -122,8 +122,8 @@ class Cell {
         this.createElement()
         this.sx = props.sx || 0.8
         this.sy = props.sy || 0.8
-        this.xoff = props.xoff || 0
-        this.yoff = props.yoff || 0
+        this.xoff = props.xoff || PANE_MARGIN / 2.0
+        this.yoff = props.yoff || PANE_MARGIN / 2.0
         this.parent = props.parent || null
     }
     relocate(sx, sy, xoff, yoff) {
@@ -356,12 +356,12 @@ class Pane extends Cell {
         var sx, sy, l
         if (type == "rightleft") {
             sx = this.sx
-            sy = (this.sy - this.t7.paneMargin) / 2.0
+            sy = (this.sy - PANE_MARGIN) / 2.0
             this.sy = sy
         }
         else  {
             sy = this.sy
-            sx = (this.sx - this.t7.paneMargin) / 2.0
+            sx = (this.sx - PANE_MARGIN) / 2.0
             this.sx = sx
         }
         if (this.parent == null || this.parent.type == type) {
@@ -394,4 +394,4 @@ class Pane extends Cell {
 
     }
 }
-export { Terminal7 , Cell, Pane, Layout }
+export { Terminal7 , Cell, Pane, Layout, PANE_MARGIN }

@@ -1,4 +1,4 @@
-import { Terminal7, Cell } from "../src/terminal7.js"
+import { Terminal7, Cell, PANE_MARGIN } from "../src/terminal7.js"
 import { assert } from "chai"
 
 
@@ -54,7 +54,7 @@ describe("terminal7", function() {
             assert.equal(t.panes[1].parent, t.panes[0].parent)
             assert.equal(t.panes[0].sx, sx0)
             assert.equal(t.panes[0].sy, t.panes[1].sy)
-            assert.equal(t.panes[0].sy, (sy0 - t.paneMargin) / 2)
+            assert.equal(t.panes[0].sy, (sy0 - PANE_MARGIN) / 2)
         })
         it("can be split top to bottom", () => {
             let sx0 = t.panes[0].sx
@@ -64,7 +64,7 @@ describe("terminal7", function() {
             assert.equal(t.panes[1].parent, t.panes[0].parent)
             assert.equal(t.panes[0].sy, sy0)
             assert.equal(t.panes[0].sx, t.panes[1].sx)
-            assert.equal(t.panes[0].sx, (sx0 - t.paneMargin) / 2)
+            assert.equal(t.panes[0].sx, (sx0 - PANE_MARGIN) / 2)
         })
         it("can be split twice", () => {
             let sx0 = t.panes[0].sx
@@ -80,7 +80,7 @@ describe("terminal7", function() {
             assert.equal(t.panes[2].sy, sy0)
             assert.equal(t.panes[1].sx, t.panes[2].sx)
             assert.closeTo(t.panes[0].sx, 
-                           (t.panes[2].sx + t.panes[1].sx) + t.paneMargin,
+                           (t.panes[2].sx + t.panes[1].sx) + PANE_MARGIN,
                            0.00001)
         })
         /*
