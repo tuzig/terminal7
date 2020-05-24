@@ -1,15 +1,14 @@
 import "./css/terminal7.css"
 import "./css/xterm.css"
-import { Terminal7 } from "./terminal.js"
+import { Terminal7 } from "./terminal7.js"
 
 var host, pc
-var terminal7 = new Terminal7()
+var terminal7 = new Terminal7({paneMargin: 0.01})
+terminal7.open(document.getElementById('terminal7'))
 let pane = terminal7.panes[0]
-let term = pane.t
+let term = pane.openTerminal()
 let state = 0
 let sendChannel = null
-if (window)
-    window.onresize = () => pane.onresize()
 
 pane.t.onKey( (keys, ev) => {
     let code = keys.key.charCodeAt(0)
@@ -79,4 +78,10 @@ function Connect() {
 }
 if (term)
     term.write("\tWelcome To Terminal Seven!\r\n")
+let p2 = pane.split("rightleft")
+p2.openTerminal()
+p2.t.write("Another pane")
+let p3 = p2.split("topbottom")
+p3.openTerminal()
+p3.t.write("\tLast pane")
 Connect()

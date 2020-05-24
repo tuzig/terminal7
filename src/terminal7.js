@@ -3,7 +3,7 @@ import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit';
 import * as Hammer from 'hammerjs';
 
-const THEME = {foreground: "#00FAFA", background: "#271d30"}
+const THEME = {foreground: "#00FAFA", background: "#000"}
 const MINIMUM_COLS = 2
 const MINIMUM_ROWS = 1
 const SET_SIZE_PREFIX = "A($%JFDS*(;dfjmlsdk9-0"
@@ -28,12 +28,19 @@ class Terminal7 {
      * it adds the first window and pane.
      */
     open(e) {
+        if (!e) {
+            // create the conbtainer element
+            e = document.createElement('div')
+            e.id = "terminal7"
+            document.body.appendChild(e)
+        }
         this.e = e
 
         let w = this.addWindow(),
             l = 1.0 - this.paneMargin * 2,
             off = this.paneMargin,
-            p = w.addPane({sx:l, sy:l,
+            // TODO the .15 sould be for landscape, portrait is another issue
+            p = w.addPane({sx:l, sy:l-0.15,
                            xoff: off, yoff: off})
         this.activeP = p
         this.activeW = w
@@ -126,8 +133,7 @@ class Window {
 
 class Cell {
     constructor(props) {
-        // TODO: move create element here and call it now 
-        this.createElement()
+        this.createElement(props.className)
         this.t7 = props.t7 || null
         this.w = props.w || null
         this.layout = props.layout || null
@@ -137,12 +143,12 @@ class Cell {
         this.xoff = props.xoff || this.t7 && this.t7.paneMargin
         this.yoff = props.yoff || this.t7 && this.t7.paneMarginthis.t7 && this.t7.paneMargin
     }
-    createElement(elemClass) {
+    createElement(className) {
         // creates the div element that will hold the term
         this.e = document.createElement("div")
-        this.e.classList.add("border", "pane")
-        if (typeof elemClass !== "undefined")
-            this.e.classList.add(elemClass)
+        this.e.classList.add("cell")
+        if (typeof className !== "undefined")
+            this.e.classList.add(className)
 
         const h = new Hammer.Manager(this.e, {});
         h.add(new Hammer.Tap({event: "doubletap", pointers: 2}))
@@ -154,12 +160,12 @@ class Cell {
                 this.e.style.left = this.left
                 this.e.style.width = this.width
                 this.e.style.height = this.height
-                Array.prototype.forEach.call(document.getElementsByClassName("pane"), 
+                Array.prototype.forEach.call(document.getElementsByClassName("cell"), 
                     e => e.style.display = 'block') 
                 Array.prototype.forEach.call(document.getElementsByClassName("bar"), 
                     e => e.style.display = 'block')   // , ...document.getElementsByClassName("tab")]
             } else {
-                Array.prototype.forEach.call(document.getElementsByClassName("pane"), 
+                Array.prototype.forEach.call(document.getElementsByClassName("cell"), 
                     e => { if (e != this.e) e.style.display = 'none'})
                 Array.prototype.forEach.call(document.getElementsByClassName("bar"), 
                     e => { if (e != this.e) e.style.display = 'none'})
@@ -222,7 +228,10 @@ class Cell {
 
 class Layout extends Cell {
     constructor(type, basedOn) {
-        super(basedOn)
+        super({sx: basedOn.sx, sy: basedOn.sy,
+               xoff: basedOn.xoff, yoff: basedOn,
+               w: basedOn.w, t7: basedOn.t7,
+               className: "layout"})
         this.type = type
         this.sons = []
         basedOn.layout = this
@@ -266,6 +275,7 @@ class Layout extends Cell {
 }
 class Pane extends Cell {
     constructor(props) {
+        props.className = "pane"
         super(props)
         this.state = "init"
         this.d = null
@@ -358,9 +368,10 @@ class Pane extends Cell {
             xoff = this.xoff + sx + this.t7.paneMargin
             this.sx = sx
         }
+        this.fit()
         let newPane = this.w.addPane({sx: sx, sy: sy, 
                                       xoff: xoff, yoff: yoff,
-                                      parent: this})
+            parent: this, className: 'layout'})
         // if we need to create a new layout do it and add us and new pane as sons
         if (this.layout == null || this.layout.type != type) {
             l = new Layout(type, this)
@@ -375,6 +386,7 @@ class Pane extends Cell {
         }
         newPane.layout = l
         newPane.focus()
+        return newPane
     }
 }
 export { Terminal7 , Cell, Pane, Layout } 

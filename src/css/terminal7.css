@@ -4,9 +4,6 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-}
-
-body {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -38,8 +35,18 @@ footer {
 .pane {
     position: fixed;
     margin: 0;
-    width:98%;
+    padding: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    -webkit-mask-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAA5JREFUeNpiYGBgAAgwAAAEAAGbA+oJAAAAAElFTkSuQmCC); /* this fixes the overflow:hidden in Chrome/Opera */
 }
+.layout {
+    position: fixed;
+    margin: 0;
+    padding: 0;
+    display: none;
+}
+
 .zoom {
     top:0;
     left:0;
