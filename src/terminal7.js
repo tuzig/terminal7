@@ -7,15 +7,15 @@ const THEME = {foreground: "#00FAFA", background: "#271d30"}
 const MINIMUM_COLS = 2
 const MINIMUM_ROWS = 1
 const SET_SIZE_PREFIX = "A($%JFDS*(;dfjmlsdk9-0"
-const PANE_MARGIN = 0.02
 
 class Terminal7 {
     /*
      * Terminal7 constructor, all properties should be initiated here
      */
-    constructor() {
+    constructor(props) {
         this.panes = []
         this.d = null
+        this.paneMargin = props && props.paneMargin || 0.02
         this.buffer = []
         this.windows = []
         this.panes = []
@@ -31,8 +31,8 @@ class Terminal7 {
         this.e = e
 
         let w = this.addWindow(),
-            l = 1.0 - PANE_MARGIN * 2,
-            off = PANE_MARGIN,
+            l = 1.0 - this.paneMargin * 2,
+            off = this.paneMargin,
             p = w.addPane({sx:l, sy:l,
                            xoff: off, yoff: off})
         this.activeP = p
@@ -114,11 +114,11 @@ class Window {
     }
     addPane(props) {
         // CONGRATS! a new pane is born. props must include at keast sx & sy
+        props.w = this
+        props.t7 = this.t7
+        props.id = this.t7.panes.length
         var p = new Pane(props || {})
         this.t7.panes.push(p)
-        p.id = this.t7.panes.length - 1
-        p.w = this
-        p.t7 = this.t7
         this.cells.push(p)
         return p
     }
@@ -128,12 +128,14 @@ class Cell {
     constructor(props) {
         // TODO: move create element here and call it now 
         this.createElement()
+        this.t7 = props.t7 || null
+        this.w = props.w || null
         this.layout = props.layout || null
         this.parent = props.parent || null
         this.sx = props.sx || 0.8
         this.sy = props.sy || 0.8
-        this.xoff = props.xoff || PANE_MARGIN
-        this.yoff = props.yoff || PANE_MARGIN
+        this.xoff = props.xoff || this.t7 && this.t7.paneMargin
+        this.yoff = props.yoff || this.t7 && this.t7.paneMarginthis.t7 && this.t7.paneMargin
     }
     createElement(elemClass) {
         // creates the div element that will hold the term
@@ -342,7 +344,7 @@ class Pane extends Cell {
     split(type) {
         var sx, sy, xoff, yoff, l
         if (type == "rightleft") {
-            sy = (this.sy - PANE_MARGIN) / 2.0
+            sy = (this.sy - this.t7.paneMargin) / 2.0
             sx = this.sx
             xoff = this.xoff
             console.log(this.yoff, this.sy, sy)
@@ -351,9 +353,9 @@ class Pane extends Cell {
         }
         else  {
             sy = this.sy
-            sx = (this.sx - PANE_MARGIN) / 2.0
+            sx = (this.sx - this.t7.paneMargin) / 2.0
             yoff = this.yoff
-            xoff = this.xoff + sx + PANE_MARGIN
+            xoff = this.xoff + sx + this.t7.paneMargin
             this.sx = sx
         }
         let newPane = this.w.addPane({sx: sx, sy: sy, 
@@ -375,4 +377,4 @@ class Pane extends Cell {
         newPane.focus()
     }
 }
-export { Terminal7 , Cell, Pane, Layout, PANE_MARGIN }
+export { Terminal7 , Cell, Pane, Layout } 

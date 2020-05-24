@@ -1,4 +1,4 @@
-import { Terminal7, Cell, PANE_MARGIN } from "../src/terminal7.js"
+import { Terminal7, Cell } from "../src/terminal7.js"
 import { assert } from "chai"
 
 
@@ -13,7 +13,7 @@ describe("terminal7", function() {
     })
     beforeEach(() => {
         e.innerHTML = ""
-        t = new Terminal7()
+        t = new Terminal7({paneMargin: 0.02})
         t.open(e)
     })
 
@@ -22,8 +22,8 @@ describe("terminal7", function() {
         assert.exists(t.panes[0])
         assert.equal(t.panes[0].w, t.windows[0])
         assert.equal(t.panes[0].parent, null)
-        assert.equal(t.panes[0].xoff, PANE_MARGIN)
-        assert.equal(t.panes[0].yoff, PANE_MARGIN)
+        assert.equal(t.panes[0].xoff, 0.02)
+        assert.equal(t.panes[0].yoff, 0.02)
     })
 
     describe("window", () => {
