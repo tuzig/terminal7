@@ -1,4 +1,4 @@
-import { Terminal7, Cell } from "../src/windows.js"
+import { Terminal7, Cell } from "../src/terminal7.js"
 import { assert } from "chai"
 
 

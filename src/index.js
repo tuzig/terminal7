@@ -1,6 +1,6 @@
 import "./css/terminal7.css"
 import "./css/xterm.css"
-import { Terminal7 } from "./windows.js"
+import { Terminal7 } from "./terminal.js"
 
 var host, pc
 var terminal7 = new Terminal7()
