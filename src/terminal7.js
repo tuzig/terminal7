@@ -10,9 +10,10 @@ const SET_SIZE_PREFIX = "A($%JFDS*(;dfjmlsdk9-0"
 const PANE_MARGIN = 0.02
 
 class Terminal7 {
+    /*
+     * Terminal7 constructor, all properties should be initiated here
+     */
     constructor() {
-        // constants
-        // vars
         this.state = 0
         this.panes = []
         this.d = null
@@ -20,16 +21,24 @@ class Terminal7 {
         this.windows = []
         this.panes = []
 
-        let w = this.addWindow(),
-            l = 1.0 - PANE_MARGIN,
-            p = w.addPane({sx:l, sy:l})
-        //p.sx = p.sy = l
-        this.activeP = p
-        this.activeW = w
     }
 
+    /*
+     * Opens the terminal on the given DOM element.
+     * If the optional `silent` argument is true it does nothing but 
+     * point the `e` property at the given element. Otherwise and by default
+     * it adds the first window and pane.
+     */
     open(e) {
         this.e = e
+
+        let w = this.addWindow(),
+            l = 1.0 - PANE_MARGIN,
+            off = PANE_MARGIN / 2,
+            p = w.addPane({sx:l, sy:l,
+                           xoff: off, yoff: off})
+        this.activeP = p
+        this.activeW = w
     }
     addWindow(name) {
         let w = new Window(name)
