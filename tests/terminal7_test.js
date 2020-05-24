@@ -22,6 +22,8 @@ describe("terminal7", function() {
         assert.exists(t.panes[0])
         assert.equal(t.panes[0].w, t.windows[0])
         assert.equal(t.panes[0].parent, null)
+        assert.equal(t.panes[0].xoff, PANE_MARGIN)
+        assert.equal(t.panes[0].yoff, PANE_MARGIN)
     })
 
     describe("window", () => {
@@ -37,52 +39,77 @@ describe("terminal7", function() {
     })
 
     describe("cell", () => {
+        beforeEach(() => {
+            t.panes[0].sx = 0.8
+            t.panes[0].sy = 0.6
+            t.panes[0].xoff = 0.1
+            t.panes[0].yoff = 0.2
+        })
         it("can set and get sizes", () => {
-            let c = new Cell({sx: 12, sy: 34})
-            assert.equal(c.sx, 12)
-            assert.equal(c.sy, 34)
+            let c = new Cell({sx: 0.12, sy: 0.34})
+            assert.equal(c.sx, 0.12)
+            assert.equal(c.sy, 0.34)
 
         })
-    })
+        it("can set and get offsets", () => {
+            let c = new Cell({xoff: 0.12, yoff: 0.34})
+            assert.equal(c.xoff, 0.12)
+            assert.equal(c.yoff, 0.34)
 
-    describe("pane", () => {
+        })
+        
         it("can be split right to left", () => {
-            let sx0 = t.panes[0].sx
-            let sy0 = t.panes[0].sy
             t.panes[0].split("rightleft")
+            // test parents
             assert.exists(t.panes[1])
-            assert.equal(t.panes[1].parent, t.panes[0].parent)
-            assert.equal(t.panes[0].sx, sx0)
+            assert.equal(t.panes[1].parent, t.panes[0])
+            // test sizes
+            assert.equal(t.panes[0].sx, 0.8)
             assert.equal(t.panes[0].sy, t.panes[1].sy)
-            assert.equal(t.panes[0].sy, (sy0 - PANE_MARGIN) / 2)
+            assert.equal(t.panes[0].sy, 0.58 / 2.0)
+            // Test offsets
+            assert.equal(t.panes[0].xoff, 0.1)
+            assert.equal(t.panes[0].yoff, 0.2)
+            assert.equal(t.panes[1].xoff, 0.1)
+            assert.equal(t.panes[1].yoff, 0.51)
         })
         it("can be split top to bottom", () => {
-            let sx0 = t.panes[0].sx
-            let sy0 = t.panes[0].sy
             t.panes[0].split("topbottom")
             assert.exists(t.panes[1])
-            assert.equal(t.panes[1].parent, t.panes[0].parent)
-            assert.equal(t.panes[0].sy, sy0)
+            assert.equal(t.panes[1].parent, t.panes[0])
+            assert.equal(t.panes[0].sy, 0.6)
             assert.equal(t.panes[0].sx, t.panes[1].sx)
-            assert.equal(t.panes[0].sx, (sx0 - PANE_MARGIN) / 2)
+            assert.equal(t.panes[0].sx, 0.39)
         })
         it("can be split twice", () => {
-            let sx0 = t.panes[0].sx
-            let sy0 = t.panes[0].sy
-            console.log(sx0, sy0)
             t.panes[0].split("topbottom")
             t.panes[1].split("topbottom")
             assert.exists(t.panes[2])
-            assert.equal(t.panes[1].parent, t.panes[0].parent)
-            assert.equal(t.panes[2].parent, t.panes[1].parent)
-            assert.equal(t.panes[0].sy, sy0)
-            assert.equal(t.panes[1].sy, sy0)
-            assert.equal(t.panes[2].sy, sy0)
-            assert.equal(t.panes[1].sx, t.panes[2].sx)
-            assert.closeTo(t.panes[0].sx, 
-                           (t.panes[2].sx + t.panes[1].sx) + PANE_MARGIN,
-                           0.00001)
+            assert.equal(t.panes[1].parent, t.panes[0])
+            assert.equal(t.panes[2].parent, t.panes[1])
+            assert.equal(t.panes[2].layout, t.panes[1].layout)
+            assert.equal(t.panes[1].layout, t.panes[0].layout)
+            assert.equal(t.panes[0].sy, 0.6)
+            assert.equal(t.panes[1].sy, 0.6)
+            assert.equal(t.panes[2].sy, 0.6)
+            assert.equal(t.panes[0].sx, 0.39)
+            assert.equal(t.panes[1].sx, 0.185)
+            assert.equal(t.panes[2].sx, 0.185)
+            assert.equal(t.panes[0].xoff, 0.1)
+            assert.equal(t.panes[1].xoff, 0.51)
+            assert.equal(t.panes[2].xoff, 0.715)
+            assert.equal(t.panes[0].yoff, 0.2)
+            assert.equal(t.panes[1].yoff, 0.2)
+            assert.equal(t.panes[2].yoff, 0.2)
         })
+        it("can zoom, hiding all other panes", function () {
+        })
+        it("can resize", function () {
+        })
+        it("can die nicely, with parent resizing|dieing", function () {
+        })
+    })
+    describe("pane", () => {
         /*
         it("can be written to", () =>{
             let p = t.panes[0]
@@ -107,11 +134,5 @@ describe("terminal7", function() {
             assert.equal(d.lastSentData, 'A($%JFDS*(;dfjmlsdk9-0{"Cols":120,"Rows":10,"X":0,"Y":0}')
         })
         */
-        it("can zoom, hiding all other panes", function () {
-        })
-        it("can resize", function () {
-        })
-        it("can die nicely, with parent resizing|dieing", function () {
-        })
     })
 })

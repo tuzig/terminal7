@@ -31,8 +31,8 @@ class Terminal7 {
         this.e = e
 
         let w = this.addWindow(),
-            l = 1.0 - PANE_MARGIN,
-            off = PANE_MARGIN / 2,
+            l = 1.0 - PANE_MARGIN * 2,
+            off = PANE_MARGIN,
             p = w.addPane({sx:l, sy:l,
                            xoff: off, yoff: off})
         this.activeP = p
@@ -128,25 +128,12 @@ class Cell {
     constructor(props) {
         // TODO: move create element here and call it now 
         this.createElement()
+        this.layout = props.layout || null
+        this.parent = props.parent || null
         this.sx = props.sx || 0.8
         this.sy = props.sy || 0.8
-        this.xoff = props.xoff || PANE_MARGIN / 2.0
-        this.yoff = props.yoff || PANE_MARGIN / 2.0
-        this.parent = props.parent || null
-    }
-    relocate(sx, sy, xoff, yoff) {
-        if (sx !== undefined) this.sx = sx
-        if (sy !== undefined) this.sy = sy
-        if (yoff !== undefined) this.yoff = yoff
-        if (xoff !== undefined) this.xoff = xoff
-        if (this.e && this.t) {
-            // move tand resize the dom element
-            const core = this.t._core
-            this.e.style.width = setPx(this.sx * core._renderService.dimensions.actualCellWidth)
-            this.e.style.height = setPx(this.sy * core._renderService.dimensions.actualCellHeight)
-            this.e.style.top = setPx(this.yoff * core._renderService.dimensions.actualCellHeight)
-            this.e.style.left = setPx(this.xoff * core._renderService.dimensions.actualCellWidth)
-        }
+        this.xoff = props.xoff || PANE_MARGIN
+        this.yoff = props.yoff || PANE_MARGIN
     }
     createElement(elemClass) {
         // creates the div element that will hold the term
@@ -232,23 +219,15 @@ class Cell {
 }
 
 class Layout extends Cell {
-    constructor(basedOn) {
+    constructor(type, basedOn) {
         super(basedOn)
-        this.sons = new Denque()
-        this.sx = basedOn.sx
-        this.sy = basedOn.sy
-        this.xoff = basedOn.xoff
-        this.yoff = basedOn.yoff
-    }
-    findChild(child) {
-        for (let i = 0; i < this.sons.length; i++)
-            if (this.sons.peekAt(i) == child)
-                return i
-        return null
+        this.type = type
+        this.sons = []
+        basedOn.layout = this
     }
     removeChild(child) {
-        let i = this.findChild(child)
-        this.sons.remove(i)
+        let i = this.sons.indexOf(child)
+        this.sons.splice(i, 1)
         if (this.sons.length == 0) {
             if (this.parent) {
                 this.parent.removeChild(this)
@@ -258,7 +237,7 @@ class Layout extends Cell {
                 console.log("Removing last layout cell, what now?")
             }
         } else {
-            this.sons.peekAt((i>0)?i-1:0).t.focus()
+            this.sons[(i>0)?i-1:0].t.focus()
         }
         this.relocate()
     }
@@ -297,9 +276,9 @@ class Pane extends Cell {
     }
                 
     removeElment() {
+        if (this.layout)
+            this.layout.removeChild(this)
         this.e.parentNode.removeChild(this.e);
-        if (this.parent)
-            this.parent.removeChild(this)
     }
     setEcho(echoOn) {
         if (this.echo === undefined) {
@@ -361,45 +340,39 @@ class Pane extends Cell {
     }
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {
-        var sx, sy, l
+        var sx, sy, xoff, yoff, l
         if (type == "rightleft") {
-            sx = this.sx
             sy = (this.sy - PANE_MARGIN) / 2.0
+            sx = this.sx
+            xoff = this.xoff
+            console.log(this.yoff, this.sy, sy)
+            yoff = this.yoff + this.sy - sy
             this.sy = sy
         }
         else  {
             sy = this.sy
             sx = (this.sx - PANE_MARGIN) / 2.0
+            yoff = this.yoff
+            xoff = this.xoff + sx + PANE_MARGIN
             this.sx = sx
         }
-        if (this.parent == null || this.parent.type == type) {
-            console.log("Adding new layout")
-            l = new Layout(this)
-            l.parent = this.parent
-            this.parent = l
-            var newPane = this.w.addPane({sx: sx, sy: sy})
-            newPane.parent = l
-            // TODO:Open the datachannel
-            // this.openDC()
+        let newPane = this.w.addPane({sx: sx, sy: sy, 
+                                      xoff: xoff, yoff: yoff,
+                                      parent: this})
+        // if we need to create a new layout do it and add us and new pane as sons
+        if (this.layout == null || this.layout.type != type) {
+            l = new Layout(type, this)
+            this.layout = l
             l.sons.push(this)
             l.sons.push(newPane)
-            // l.relocate()
-            newPane.focus()
+            // TODO:Open the webexec channel
+            // this.openDC()
+        } else {
+            l = this.layout
+            l.sons.splice(l.sons.indexOf(this), 0, newPane)
         }
-        else {
-            l = this.parent
-            let newPane = this.w.addPane({sx: sx, sy: sy})
-            newPane.parent = l
-            // newPane.openDC()
-            l.sons.splice(l.findChild(this)+1, 0, newPane)
-            // l.relocate()
-            newPane.focus()
-        }
-        if (type=="rightleft")
-            l.type = "topleft"
-        else
-            l.type ="rightleft"
-
+        newPane.layout = l
+        newPane.focus()
     }
 }
 export { Terminal7 , Cell, Pane, Layout, PANE_MARGIN }
