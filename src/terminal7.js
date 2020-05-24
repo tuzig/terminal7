@@ -14,15 +14,13 @@ class Terminal7 {
      * Terminal7 constructor, all properties should be initiated here
      */
     constructor() {
-        this.state = 0
         this.panes = []
         this.d = null
         this.buffer = []
         this.windows = []
         this.panes = []
-
+        this.state = "initiated"
     }
-
     /*
      * Opens the terminal on the given DOM element.
      * If the optional `silent` argument is true it does nothing but 
@@ -39,6 +37,7 @@ class Terminal7 {
                            xoff: off, yoff: off})
         this.activeP = p
         this.activeW = w
+        this.state = "open"
     }
     addWindow(name) {
         let w = new Window(name)
