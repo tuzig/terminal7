@@ -110,6 +110,11 @@ describe("terminal7", function() {
         })
     })
     describe("pane", () => {
+        it("can open a web page", () =>{
+            let p = t.panes[0]
+            p.openURL({})
+        })
+
         /*
         it("can be written to", () =>{
             let p = t.panes[0]

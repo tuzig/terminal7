@@ -10,6 +10,8 @@ let term = pane.openTerminal()
 let state = 0
 let sendChannel = null
 
+// pane.openURL()
+pane.openTerminal()
 pane.t.onKey( (keys, ev) => {
     let code = keys.key.charCodeAt(0)
     if (pane.state == 3) {

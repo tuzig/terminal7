@@ -1,4 +1,3 @@
-import { Denque } from './denque.js'
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit';
 import * as Hammer from 'hammerjs';
@@ -20,6 +19,7 @@ class Terminal7 {
         this.windows = []
         this.panes = []
         this.state = "initiated"
+        this.defaultUrl = "https://he.wikipedia.org/wiki/%D7%A2%D7%9E%D7%95%D7%93_%D7%A8%D7%90%D7%A9%D7%99"
     }
     /*
      * Opens the terminal on the given DOM element.
@@ -143,14 +143,35 @@ class Cell {
         this.xoff = props.xoff || this.t7 && this.t7.paneMargin
         this.yoff = props.yoff || this.t7 && this.t7.paneMarginthis.t7 && this.t7.paneMargin
     }
+    /*
+     * Creates the HTML elment that will store our dimensions and content
+     */
     createElement(className) {
         // creates the div element that will hold the term
         this.e = document.createElement("div")
         this.e.classList.add("cell")
-        if (typeof className !== "undefined")
+        if (typeof className == "string")
             this.e.classList.add(className)
 
-        const h = new Hammer.Manager(this.e, {});
+        let terminal7 = document.getElementById('terminal7')
+        if (!terminal7) {
+            // create the container element if missing
+            terminal7 = document.createElement('div')
+            terminal7.id = "terminal7"
+            document.body.appendChild(terminal7)
+        }
+        terminal7.appendChild(this.e)
+        this.catchFingers()
+        return this.e
+    }
+    /*
+     * Catches gestures on an elment using hammerjs.
+     * If an element is not passed in, `this.e` is used
+     */
+    catchFingers(elem) {
+        let e = elem || this.e
+        let h = new Hammer.Manager(e, {})
+        
         h.add(new Hammer.Tap({event: "doubletap", pointers: 2}))
         h.add(new Hammer.Swipe({threshold: 300, velocity: 1}))
         h.on('doubletap', (ev) => {
@@ -188,17 +209,9 @@ class Cell {
         });
         h.on('swipe', (ev) => {
             let topb = Math.abs(ev.deltaY) > Math.abs(ev.deltaX)
-            this.split((topb)?"topbottom":"rightleft")
+            let t = this.split((topb)?"topbottom":"rightleft")
+            t.openTerminal()
         });
-        let terminal7 = document.getElementById('terminal7')
-        if (!terminal7) {
-            // create the conbtainer element
-            terminal7 = document.createElement('div')
-            terminal7.id = "terminal7"
-            document.body.appendChild(terminal7)
-        }
-        terminal7.appendChild(this.e)
-        return this.e
     }
     get sx() {
         return parseFloat(this.e.style.width.slice(0,-1)) / 100.0
@@ -298,6 +311,26 @@ class Pane extends Cell {
         }
         this.echo = echoOn
     }
+    /*
+     * Opens and iframe with the requested address or source
+     *
+     * The props object can have values to `url` and/or `src` both are copied
+     * to the new iframe as `src` and `srcdoc`.
+     */
+    openURL(props) {
+        let p = props || {}
+        let e = document.createElement('iframe')
+        e.allow = "fullscreen"
+        e.setAttribute('height', this.e.clientHeight)
+        e.setAttribute('width', this.e.clientWidth)
+        this.e.innerHTML = ""
+        this.e.appendChild(e)
+        e.onload = () => this.catchFingers(e.contentWindow.document.body)
+        e.setAttribute('src', p.url || this.t7.defaultUrl)
+        // this.catchFingers(e)
+        if (typeof srcdoc == 'string')
+            e.setAttribute('srcdoc', p.src)
+    }
     openTerminal() {
         this.t = new Terminal({
             convertEol: true,
@@ -316,6 +349,7 @@ class Pane extends Cell {
         })
         this.fit()
         this.state = "ready"
+        this.t.write("READY\n")
         return this.t
     }
 
