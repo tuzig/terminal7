@@ -46,19 +46,21 @@ describe("terminal7", function() {
             t.panes[0].yoff = 0.2
         })
         it("can set and get sizes", () => {
-            let c = new Cell({sx: 0.12, sy: 0.34})
+            let c = new Cell({sx: 0.12, sy: 0.34, t7: t})
             assert.equal(c.sx, 0.12)
             assert.equal(c.sy, 0.34)
 
         })
         it("can set and get offsets", () => {
-            let c = new Cell({xoff: 0.12, yoff: 0.34})
+            let c = new Cell({xoff: 0.12, yoff: 0.34, t7: t})
             assert.equal(c.xoff, 0.12)
             assert.equal(c.yoff, 0.34)
 
         })
         
         it("can be split right to left", () => {
+            var es = document.getElementsByClassName('layout')
+            assert.equal(es.length, 0)
             t.panes[0].split("rightleft")
             // test parents
             assert.exists(t.panes[1])
@@ -106,7 +108,33 @@ describe("terminal7", function() {
         })
         it("can resize", function () {
         })
-        it("can die nicely, with parent resizing|dieing", function () {
+        it("can close nicely, with parent resizing|dieing", function () {
+            t.panes[0].split("topbottom")
+            t.panes[1].split("rightleft")
+            let es = document.getElementsByClassName('layout')
+            assert.equal(es.length, 2)
+            assert.equal(t.panes[1].sy, 0.29)
+            t.panes[2].close()
+            assert.equal(t.panes[1].sy, 0.6)
+            t.panes[1].close()
+            assert.equal(t.panes[0].sy, 0.6)
+            assert.equal(t.panes[0].sx, 0.8)
+            es = document.getElementsByClassName('layout')
+            assert.equal(es.length, 1)
+        })
+        it("can close out of order", function () {
+            t.panes[0].split("topbottom")
+            t.panes[1].split("rightleft")
+            t.panes[0].close()
+            assert.equal(t.panes[1].sy, 0.6)
+            t.panes[1].close()
+            assert.equal(t.panes[0].sy, 0.6)
+            assert.equal(t.panes[0].sx, 0.8)
+            es = document.getElementsByClassName('layout')
+            assert.equal(es.length, 1)
+            t.panes[0].close()
+            es = document.getElementsByClassName('layout')
+            assert.equal(es.length, 0)
         })
     })
     describe("pane", () => {

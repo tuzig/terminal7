@@ -121,27 +121,36 @@ class Window {
     }
     addPane(props) {
         // CONGRATS! a new pane is born. props must include at keast sx & sy
-        props.w = this
-        props.t7 = this.t7
-        props.id = this.t7.panes.length
-        var p = new Pane(props || {})
-        this.t7.panes.push(p)
-        this.cells.push(p)
-        return p
+        let p = props || {}
+        p.w = this
+        p.t7 = this.t7
+        p.id = this.t7.panes.length
+        var pane = new Pane(p)
+        this.t7.panes.push(pane)
+        this.cells.push(pane)
+        return pane
+    }
+    findChild(c) {
+        for (var i = 0; i < this.cells.length; i++)
+            if (this.cells[i].parent == c)
+               return this.cells[i] 
+        return null
     }
 }
 
 class Cell {
     constructor(props) {
-        this.createElement(props.className)
         this.t7 = props.t7 || null
         this.w = props.w || null
+        this.parent = null
+        this.id = props.id || undefined
         this.layout = props.layout || null
         this.parent = props.parent || null
+        this.createElement(props.className)
         this.sx = props.sx || 0.8
         this.sy = props.sy || 0.8
         this.xoff = props.xoff || this.t7 && this.t7.paneMargin
-        this.yoff = props.yoff || this.t7 && this.t7.paneMarginthis.t7 && this.t7.paneMargin
+        this.yoff = props.yoff || this.t7 && this.t7.paneMargin
     }
     /*
      * Creates the HTML elment that will store our dimensions and content
@@ -154,13 +163,7 @@ class Cell {
             this.e.classList.add(className)
 
         let terminal7 = document.getElementById('terminal7')
-        if (!terminal7) {
-            // create the container element if missing
-            terminal7 = document.createElement('div')
-            terminal7.id = "terminal7"
-            document.body.appendChild(terminal7)
-        }
-        terminal7.appendChild(this.e)
+        this.t7.e.appendChild(this.e)
         this.catchFingers()
         return this.e
     }
@@ -237,22 +240,68 @@ class Cell {
     set yoff(val) {
         this.e.style.top = String(val*100) + "%"
     }
+    close() {
+        let p = this.parent
+        if (p == null) p = this.w.findChild(this)
+        if (p == null) {
+            this.w.close()
+            return
+        }
+        if (this.layout && (this.layout != null)) {
+            if (this.layout.cells.length == 1) {
+                // remove the layout if we're the last cell there
+                this.layout.close()
+                if (p !== null) {
+                    this.layout = p.layout
+                }
+                else {
+                    this.layout = null
+                    this.e.remove()
+                    // TODO: remove the window
+                    return
+                }
+            }
+            if (this.layout.type == "rightleft") {
+                p.sy += this.sy + this.t7.paneMargin
+                if (this.yoff < p.yoff)
+                    p.yoff = this.yoff
+            } else {
+                p.sx += this.sx + this.t7.paneMargin
+                if (this.xoff < p.xoff)
+                    p.xoff = this.xoff
+            }
+            // remove this from the layout
+            this.layout.cells.splice(this.layout.cells.indexOf(this), 1)
+            p.fit()
+        }
+        // remove this from the window
+        this.w.cells.splice(this.w.cells.indexOf(this), 1)
+        this.e.remove()
+        p.focus()
+    }
+
 }
 
 class Layout extends Cell {
+    /*
+     * Layout contructor creates a `Layout` object based on a cell.
+     * The new object wraps the `basedOn` cell and makes it his first son
+     */
     constructor(type, basedOn) {
+        console.log("creating layout")
         super({sx: basedOn.sx, sy: basedOn.sy,
                xoff: basedOn.xoff, yoff: basedOn,
                w: basedOn.w, t7: basedOn.t7,
                className: "layout"})
+        console.log(type)
         this.type = type
-        this.sons = []
+        this.cells = [basedOn]
         basedOn.layout = this
     }
     removeChild(child) {
-        let i = this.sons.indexOf(child)
-        this.sons.splice(i, 1)
-        if (this.sons.length == 0) {
+        let i = this.cells.indexOf(child)
+        this.cells.splice(i, 1)
+        if (this.cells.length == 0) {
             if (this.parent) {
                 this.parent.removeChild(this)
                 this.parent.relocate()
@@ -261,29 +310,31 @@ class Layout extends Cell {
                 console.log("Removing last layout cell, what now?")
             }
         } else {
-            this.sons[(i>0)?i-1:0].t.focus()
+            this.cells[(i>0)?i-1:0].t.focus()
         }
         this.relocate()
     }
     relocate(sx, sy, xoff, yoff) {
         super.relocate(sx, sy, xoff, yoff)
         if (this.type == "rightleft") {
-            let w = this.sx / this.sons.length
+            let w = this.sx / this.cells.length
             let off = this.xoff
-            for (let s of this.sons.toArray()) {
+            for (let s of this.cells.toArray()) {
                 s.relocate(w,  this.sy, off,  this.yoff)
                 off += w
             }       
         }
         else {
-            let h = Math.floor((this.sy - 1) / this.sons.length)
+            let h = Math.floor((this.sy - 1) / this.cells.length)
             let off =  this.yoff
-            for (let s of this.sons.toArray()) {
+            for (let s of this.cells.toArray()) {
                 s.relocate( this.sx, h,  this.xoff, off)
                 off += h+1
             }       
         }
-
+    }
+    close() {
+        this.e.remove()
     }
 }
 class Pane extends Cell {
@@ -341,11 +392,13 @@ class Pane extends Cell {
         this.fitAddon = new FitAddon()
         this.t.open(this.e)
         this.t.loadAddon(this.fitAddon)
-        this.t.onKey((keys, ev) =>  {
-            if (this.t7.d && this.t7.d.readyState == "open") {
-                console.log(keys)
+        this.t.onKey((ev) =>  {
+            if ((ev.domEvent.ctrlKey == true) && (ev.domEvent.key == 'c'))
+                this.close()
+            else if (this.t7.d && this.t7.d.readyState == "open")
                 this.t7.d.send("send " + keys.key + "\n")
-            }
+            else
+                this.t.write(ev.key)
         })
         this.fit()
         this.state = "ready"
@@ -390,7 +443,6 @@ class Pane extends Cell {
             sy = (this.sy - this.t7.paneMargin) / 2.0
             sx = this.sx
             xoff = this.xoff
-            console.log(this.yoff, this.sy, sy)
             yoff = this.yoff + this.sy - sy
             this.sy = sy
         }
@@ -405,17 +457,17 @@ class Pane extends Cell {
         let newPane = this.w.addPane({sx: sx, sy: sy, 
                                       xoff: xoff, yoff: yoff,
             parent: this, className: 'layout'})
-        // if we need to create a new layout do it and add us and new pane as sons
+        // if we need to create a new layout do it and add us and new pane as cells
         if (this.layout == null || this.layout.type != type) {
             l = new Layout(type, this)
             this.layout = l
-            l.sons.push(this)
-            l.sons.push(newPane)
+            l.parent = this.parent
+            l.cells.push(newPane)
             // TODO:Open the webexec channel
             // this.openDC()
         } else {
             l = this.layout
-            l.sons.splice(l.sons.indexOf(this), 0, newPane)
+            l.cells.splice(l.cells.indexOf(this), 0, newPane)
         }
         newPane.layout = l
         newPane.focus()

@@ -17,7 +17,6 @@ module.exports = function(config) {
 
         // list of files / patterns to load in the browser
         files: [
-          'src/terminal7.js',
           'tests/*.js'
         ],
 
@@ -47,7 +46,8 @@ module.exports = function(config) {
 
         autoWatch: true,
         // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-        browsers: ['MyHeadlessChrome'],
+        // browsers: ['MyHeadlessChrome'],
+        browsers: ['Chrome', 'MyHeadlessChrome'],
         customLaunchers: {
           MyHeadlessChrome: {
             base: 'ChromeHeadless',
