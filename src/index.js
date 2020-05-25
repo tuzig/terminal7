@@ -74,16 +74,23 @@ function Connect() {
     if (!term)
         return
     host = window.location.href.substring(7, window.location.href.indexOf(":", 7))+":8888"
+    term.write("\n +-+-+  +---+  +--\\     +   +    +  +  +     +     +      777777")
+    term.write("\n   |    |      |   )   +++ +++   |  ++ |    +++    |         77")
+    term.write("\n   |    +--+   +--/    + +++ +   |  +--+   ++ ++   |       777")
+    term.write("\n   |    |      |  \\   +   +   +  |  | ++  +-----+  |      77")
+    term.write("\n   +    +---+  |   \\  +       +  +  +  +  +     +  +---+  7")
+
+    term.write("\n\nWelcome To Terminal Seven,\r\n")
     term.write("\nWhere is your host: ("+host+") ")
     state = 1
     term.focus()
 }
-if (term)
-    term.write("\tWelcome To Terminal Seven!\r\n")
-let p2 = pane.split("rightleft")
-p2.openTerminal()
-p2.t.write("Another pane")
-let p3 = p2.split("topbottom")
-p3.openTerminal()
-p3.t.write("\tLast pane")
+let p2 = pane.split("topbottom")
+p2.openURL()
+//p2.openTerminal()
+// p2.t.write("Another pane")
+let p3 = p2.split("rightleft")
+p3.openURL()
+// p3.openTerminal()
+// p3.t.write("\tLast pane")
 Connect()

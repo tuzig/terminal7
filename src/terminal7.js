@@ -40,7 +40,7 @@ class Terminal7 {
             l = 1.0 - this.paneMargin * 2,
             off = this.paneMargin,
             // TODO the .15 sould be for landscape, portrait is another issue
-            p = w.addPane({sx:l, sy:l-0.15,
+            p = w.addPane({sx:l, sy:l-0.16-this.paneMargin,
                            xoff: off, yoff: off})
         this.activeP = p
         this.activeW = w
@@ -349,7 +349,6 @@ class Pane extends Cell {
         })
         this.fit()
         this.state = "ready"
-        this.t.write("READY\n")
         return this.t
     }
 
