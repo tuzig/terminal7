@@ -129,17 +129,11 @@ class Window {
         let p = props || {}
         p.w = this
         p.t7 = this.t7
-        p.id = this.t7.cells.length
         var pane = new Pane(p)
+        pane.id = this.t7.cells.length
         this.t7.cells.push(pane)
         this.cells.push(pane)
         return pane
-    }
-    findChild(c) {
-        for (var i = 0; i < this.cells.length; i++)
-            if (this.cells[i].parent == c)
-               return this.cells[i] 
-        return null
     }
     close() {
         console.log("TODO: close window")
@@ -266,22 +260,22 @@ class Cell {
         this.e.style.top = String(val*100) + "%"
     }
     close() {
-        // the layout makes things complex
         var p
-        if (this.layout && (this.layout != null)) {
-            // if this is the single pane in the layout, drop the layout
+        // only the first pane in the window doesn't have a layout
+        if (this.layout != null) {
+            // if this is the only pane in the layout, drop the layout
             if (this.layout.cells.length == 1) {
                 this.layout.close()
                 this.e.remove()
                 return
             }
-            else {
-                p = this.layout.findPeer(this)// w.findChild(this)
-                if (p === undefined) {
-                    this.w.close()
-                    return
-                }
+            p = this.layout.findPeer(this)
+            // if no peer it means we're removing the last pane in the window
+            if (p === undefined) {
+                this.w.close()
+                return
             }
+            // give our area to our peer
             if (this.layout.type == "rightleft") {
                 p.sy += this.sy + this.t7.paneMargin
                 if (this.yoff < p.yoff)
@@ -536,7 +530,7 @@ class Pane extends Cell {
         this.fit()
         let newPane = this.w.addPane({sx: sx, sy: sy, 
                                       xoff: xoff, yoff: yoff,
-            parent: this, className: 'layout'})
+                                      parent: this, className: 'layout'})
         // if we need to create a new layout do it and add us and new pane as cells
         if (this.layout == null || this.layout.type != type) {
             l = this.w.addLayout(type, this)
