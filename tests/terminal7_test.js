@@ -167,6 +167,9 @@ describe("terminal7", function() {
                 p3 = p2.split("topbottom")
             p1.close()
             expect(p2.sy).to.equal(0.6)
+            expect(p3.sy).to.equal(0.6)
+            expect(p2.yoff).to.equal(0.2)
+            expect(p3.yoff).to.equal(0.2)
         })
 
     })

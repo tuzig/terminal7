@@ -319,6 +319,9 @@ class Layout extends Cell {
         basedOn.parent = null
 
     }
+    fit() {
+        this.cells.forEach((c) => (typeof c.t == "object") && c.fit())
+    }
     findPeer(c) {
         let i = this.cells.indexOf(c)
         return (i > 0)?this.cells[i-1]:this.cells[1]
@@ -346,7 +349,7 @@ class Layout extends Cell {
      * update the sx of all cells
      */
     set sx(val) {
-        let p = String(val * 100 + "%")
+        let p = String(val * 100) + "%"
         this.e.style.width = p
         if (this.cells !== undefined)
             // this doesn't happen on init and that's fine
@@ -359,7 +362,7 @@ class Layout extends Cell {
      * Update the y size for all cells
      */
     set sy(val) {
-        let p = String(val * 100 + "%")
+        let p = String(val * 100) + "%"
         this.e.style.height = p
         if (this.cells !== undefined)
             this.cells.forEach((c) => c.e.style.height = p)
@@ -371,7 +374,7 @@ class Layout extends Cell {
      * Update the X offset for all cells
      */
     set xoff(val) {
-        let p = String(val * 100 + "%")
+        let p = String(val * 100) + "%"
         this.e.style.left = p
         if (this.cells !== undefined)
             this.cells.forEach((c) => c.e.style.left = p)
@@ -383,7 +386,7 @@ class Layout extends Cell {
      * Update the Y offset for all cells
      */
     set yoff(val) {
-        let p = String(val * 100 + "%")
+        let p = String(val * 100) + "%"
         this.e.style.top = p
         if (this.cells !== undefined)
             this.cells.forEach((c) => c.e.style.top = p)
