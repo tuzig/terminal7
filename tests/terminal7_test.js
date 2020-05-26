@@ -150,7 +150,7 @@ describe("terminal7", function() {
             t.cells[0].close()
             assert.equal(t.cells[1].sy, 0.6)
         })
-        it("can open and and close a |- layout ", function () {
+        it("can open a |- layout ", function () {
             let p0 = t.cells[0],
                 p1 = p0.split("topbottom"),
                 p2 = p1.split("rightleft")
@@ -160,9 +160,18 @@ describe("terminal7", function() {
             expect(p1.sx).to.equal(0.8)
             expect(p2.sx).to.equal(0.8)
         })
+        it("can handle three splits", function() {
+            let p0 = t.cells[0],
+                p1 = p0.split("topbottom"),
+                p2 = p1.split("rightleft"),
+                p3 = p2.split("topbottom")
+            p1.close()
+            expect(p2.sy).to.equal(0.6)
+        })
+
     })
     describe("pane", () => {
-        it("can open a web page", () =>{
+        it("can open a web page", function() {
             let p = t.cells[0]
             p.openURL({})
         })
