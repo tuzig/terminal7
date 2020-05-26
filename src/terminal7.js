@@ -262,7 +262,6 @@ class Cell {
     close() {
         var p
         // only the first pane in the window doesn't have a layout
-        debugger
         if (this.layout != null) {
             // if this is the only pane in the layout, drop the layout
             if (this.layout.cells.length == 1) {
