@@ -18,12 +18,12 @@ describe("terminal7", function() {
     })
 
     it("opens with a window and a pane", () => {
-        assert.exists(t.windows[0])
-        assert.exists(t.panes[0])
-        assert.equal(t.panes[0].w, t.windows[0])
-        assert.equal(t.panes[0].parent, null)
-        assert.equal(t.panes[0].xoff, 0.02)
-        assert.equal(t.panes[0].yoff, 0.02)
+        expect(t.windows[0]).to.exist
+        expect(t.cells[0]).to.exist
+        assert.equal(t.cells[0].w, t.windows[0])
+        assert.equal(t.cells[0].parent, null)
+        assert.equal(t.cells[0].xoff, 0.02)
+        assert.equal(t.cells[0].yoff, 0.02)
     })
 
     describe("window", () => {
@@ -40,10 +40,10 @@ describe("terminal7", function() {
 
     describe("cell", () => {
         beforeEach(() => {
-            t.panes[0].sx = 0.8
-            t.panes[0].sy = 0.6
-            t.panes[0].xoff = 0.1
-            t.panes[0].yoff = 0.2
+            t.cells[0].sx = 0.8
+            t.cells[0].sy = 0.6
+            t.cells[0].xoff = 0.1
+            t.cells[0].yoff = 0.2
         })
         it("can set and get sizes", () => {
             let c = new Cell({sx: 0.12, sy: 0.34, t7: t})
@@ -61,91 +61,115 @@ describe("terminal7", function() {
         it("can be split right to left", () => {
             var es = document.getElementsByClassName('layout')
             assert.equal(es.length, 0)
-            t.panes[0].split("rightleft")
+            t.cells[0].split("rightleft")
             // test parents
-            assert.exists(t.panes[1])
-            assert.equal(t.panes[1].parent, t.panes[0])
+            assert.exists(t.cells[1])
+            assert.equal(t.cells[1].parent, t.cells[0])
             // test sizes
-            assert.equal(t.panes[0].sx, 0.8)
-            assert.equal(t.panes[0].sy, t.panes[1].sy)
-            assert.equal(t.panes[0].sy, 0.58 / 2.0)
+            assert.equal(t.cells[0].sx, 0.8)
+            assert.equal(t.cells[0].sy, t.cells[1].sy)
+            assert.equal(t.cells[0].sy, 0.58 / 2.0)
             // Test offsets
-            assert.equal(t.panes[0].xoff, 0.1)
-            assert.equal(t.panes[0].yoff, 0.2)
-            assert.equal(t.panes[1].xoff, 0.1)
-            assert.equal(t.panes[1].yoff, 0.51)
+            assert.equal(t.cells[0].xoff, 0.1)
+            assert.equal(t.cells[0].yoff, 0.2)
+            assert.equal(t.cells[1].xoff, 0.1)
+            assert.equal(t.cells[1].yoff, 0.51)
         })
         it("can be split top to bottom", () => {
-            t.panes[0].split("topbottom")
-            assert.exists(t.panes[1])
-            assert.equal(t.panes[1].parent, t.panes[0])
-            assert.equal(t.panes[0].sy, 0.6)
-            assert.equal(t.panes[0].sx, t.panes[1].sx)
-            assert.equal(t.panes[0].sx, 0.39)
+            t.cells[0].split("topbottom")
+            assert.exists(t.cells[1])
+            assert.equal(t.cells[0].layout, t.cells[1].layout)
+            assert.equal(t.cells[0].layout.type, "topbottom")
+            assert.equal(t.cells[0].layout, t.cells[1].layout)
+
+            expect(t.cells[0].layout.cells[0]).to.equal(t.cells[0])
+            expect(t.cells[0].layout).not.to.be.a('null')
+            expect(t.cells[0].layout.cells.length).to.equal(2)
+
+            expect(t.cells[0].sy).to.equal(0.6)
+            expect(t.cells[0].sx).to.equal(t.cells[1].sx)
+            expect(t.cells[0].sx).to.equal(0.39)
         })
         it("can be split twice", () => {
-            t.panes[0].split("topbottom")
-            t.panes[1].split("topbottom")
-            assert.exists(t.panes[2])
-            assert.equal(t.panes[1].parent, t.panes[0])
-            assert.equal(t.panes[2].parent, t.panes[1])
-            assert.equal(t.panes[2].layout, t.panes[1].layout)
-            assert.equal(t.panes[1].layout, t.panes[0].layout)
-            assert.equal(t.panes[0].sy, 0.6)
-            assert.equal(t.panes[1].sy, 0.6)
-            assert.equal(t.panes[2].sy, 0.6)
-            assert.equal(t.panes[0].sx, 0.39)
-            assert.equal(t.panes[1].sx, 0.185)
-            assert.equal(t.panes[2].sx, 0.185)
-            assert.equal(t.panes[0].xoff, 0.1)
-            assert.equal(t.panes[1].xoff, 0.51)
-            assert.equal(t.panes[2].xoff, 0.715)
-            assert.equal(t.panes[0].yoff, 0.2)
-            assert.equal(t.panes[1].yoff, 0.2)
-            assert.equal(t.panes[2].yoff, 0.2)
+            let p0 = t.cells[0],
+                p1 = p0.split("topbottom"),
+                p2 = p1.split("topbottom")
+            assert.exists(p2)
+            assert.equal(p1.parent, p0)
+            assert.equal(p2.parent, p1)
+            expect(p0.layout).not.to.be.a('null')
+            expect(p1.layout).equal(p0.layout)
+            expect(p2.layout).equal(p1.layout)
+            assert.equal(p0.layout, p1.layout)
+            assert.equal(p1.layout, p2.layout)
+            assert.equal(p0.sy, 0.6)
+            assert.equal(p1.sy, 0.6)
+            assert.equal(p2.sy, 0.6)
+            assert.equal(p0.sx, 0.39)
+            assert.equal(p1.sx, 0.185)
+            assert.equal(p2.sx, 0.185)
+            assert.equal(p0.xoff, 0.1)
+            assert.equal(p1.xoff, 0.51)
+            assert.equal(p2.xoff, 0.715)
+            assert.equal(p0.yoff, 0.2)
+            assert.equal(p1.yoff, 0.2)
+            assert.equal(p2.yoff, 0.2)
         })
-        it("can zoom, hiding all other panes", function () {
+        it("can zoom, hiding all other cells", function () {
         })
         it("can resize", function () {
         })
         it("can close nicely, with parent resizing|dieing", function () {
-            t.panes[0].split("topbottom")
-            t.panes[1].split("rightleft")
+            let p0 = t.cells[0],
+                p1 = p0.split("topbottom"),
+                p2 = p1.split("rightleft")
+            expect(p0.layout).not.null
+            expect(p1.layout).not.null
+            expect(p1.layout).equal(p2.layout)
+            expect(p0.layout).not.equal(p1.layout)
+            expect(p1.layout.parent).equal(p0)
+            expect(p0.layout.cells).eql([p0, p1.layout])
+            expect(p1.layout.cells).eql([p1, p2])
+            expect(p2.parent).equal(p1)
+            expect(p1.parent).equal(null)
+            expect(p0.parent).equal(null)
             let es = document.getElementsByClassName('layout')
             assert.equal(es.length, 2)
-            assert.equal(t.panes[1].sy, 0.29)
-            t.panes[2].close()
-            assert.equal(t.panes[1].sy, 0.6)
-            t.panes[1].close()
-            assert.equal(t.panes[0].sy, 0.6)
-            assert.equal(t.panes[0].sx, 0.8)
+            assert.equal(p1.sy, 0.29)
+            p2.close()
+            assert.equal(p1.yoff, 0.2)
+            assert.equal(p1.sy, 0.6)
+            p1.close()
+            expect(p0.sy).equal(0.6)
+            expect(p0.sx).equal(0.8)
             es = document.getElementsByClassName('layout')
             assert.equal(es.length, 1)
         })
         it("can close out of order", function () {
-            t.panes[0].split("topbottom")
-            t.panes[1].split("rightleft")
-            t.panes[0].close()
-            assert.equal(t.panes[1].sy, 0.6)
-            t.panes[1].close()
-            assert.equal(t.panes[0].sy, 0.6)
-            assert.equal(t.panes[0].sx, 0.8)
-            es = document.getElementsByClassName('layout')
-            assert.equal(es.length, 1)
-            t.panes[0].close()
-            es = document.getElementsByClassName('layout')
-            assert.equal(es.length, 0)
+            t.cells[0].split("topbottom")
+            t.cells[0].close()
+            assert.equal(t.cells[1].sy, 0.6)
+        })
+        it("can open and and close a |- layout ", function () {
+            let p0 = t.cells[0],
+                p1 = p0.split("topbottom"),
+                p2 = p1.split("rightleft")
+            p0.close()
+            expect(p1.sy).to.equal(0.29)
+            expect(p2.sy).to.equal(0.29)
+            expect(p1.sx).to.equal(0.8)
+            expect(p2.sx).to.equal(0.8)
         })
     })
     describe("pane", () => {
         it("can open a web page", () =>{
-            let p = t.panes[0]
+            let p = t.cells[0]
             p.openURL({})
         })
 
         /*
         it("can be written to", () =>{
-            let p = t.panes[0]
+            let p = t.cells[0]
             p.openTerminal()
             p.write('\\n\\nfoo\\n\\n\\rbar\\n\\n\\rbaz')
             p.t.selectAll()
@@ -153,7 +177,7 @@ describe("terminal7", function() {
         })
         it("can send updates when size changes", () => {
                 // a simple data channel mock
-            var p = t.panes[0]
+            var p = t.cells[0]
             var d = {
                 called: 0,
                 send(data) {

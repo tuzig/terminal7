@@ -12,12 +12,11 @@ class Terminal7 {
      * Terminal7 constructor, all properties should be initiated here
      */
     constructor(props) {
-        this.panes = []
         this.d = null
         this.paneMargin = props && props.paneMargin || 0.02
         this.buffer = []
         this.windows = []
-        this.panes = []
+        this.cells = []
         this.state = "initiated"
         this.defaultUrl = "https://he.wikipedia.org/wiki/%D7%A2%D7%9E%D7%95%D7%93_%D7%A8%D7%90%D7%A9%D7%99"
     }
@@ -119,14 +118,22 @@ class Window {
         this.name = name
         this.cells = []
     }
+    addLayout(type, basedOn) {
+        let l = new Layout(type, basedOn)
+        l.id = this.t7.cells.length
+        this.cells.push(l)
+        this.t7.cells.push(l)
+        return l
+
+    }
     addPane(props) {
         // CONGRATS! a new pane is born. props must include at keast sx & sy
         let p = props || {}
         p.w = this
         p.t7 = this.t7
-        p.id = this.t7.panes.length
+        p.id = this.t7.cells.length
         var pane = new Pane(p)
-        this.t7.panes.push(pane)
+        this.t7.cells.push(pane)
         this.cells.push(pane)
         return pane
     }
@@ -136,6 +143,10 @@ class Window {
                return this.cells[i] 
         return null
     }
+    close() {
+        console.log("TODO: close window")
+    }
+
 }
 
 class Cell {
@@ -168,6 +179,22 @@ class Cell {
         return this.e
     }
     /*
+     * Set the focus on the cell
+     */
+    focus() {
+        this.active = true
+        this.w.active = true
+        this.t7.activeP.e.classList.remove("focused")
+        this.e.classList.add("focused")
+        this.t7.activeP = this
+    }
+    /*
+     * Used to grow/shrink the terminal based on containing element dimensions
+     * Should be overide
+     */
+    fit() {
+    }
+    /*
      * Catches gestures on an elment using hammerjs.
      * If an element is not passed in, `this.e` is used
      */
@@ -176,7 +203,7 @@ class Cell {
         let h = new Hammer.Manager(e, {})
         
         h.add(new Hammer.Tap({event: "doubletap", pointers: 2}))
-        h.add(new Hammer.Swipe({threshold: 300, velocity: 1}))
+        h.add(new Hammer.Swipe({threshold: 200, velocity: 0.7}))
         h.on('doubletap', (ev) => {
             if (this.zoomed) {
                 this.e.className = this.className
@@ -241,23 +268,19 @@ class Cell {
         this.e.style.top = String(val*100) + "%"
     }
     close() {
-        let p = this.parent
-        if (p == null) p = this.w.findChild(this)
-        if (p == null) {
-            this.w.close()
-            return
-        }
+        // the layout makes things complex
+        var p
         if (this.layout && (this.layout != null)) {
+            // if this is the single pane in the layout, drop the layout
             if (this.layout.cells.length == 1) {
-                // remove the layout if we're the last cell there
                 this.layout.close()
-                if (p !== null) {
-                    this.layout = p.layout
-                }
-                else {
-                    this.layout = null
-                    this.e.remove()
-                    // TODO: remove the window
+                this.e.remove()
+                return
+            }
+            else {
+                p = this.layout.findPeer(this)// w.findChild(this)
+                if (p === undefined) {
+                    this.w.close()
                     return
                 }
             }
@@ -288,15 +311,25 @@ class Layout extends Cell {
      * The new object wraps the `basedOn` cell and makes it his first son
      */
     constructor(type, basedOn) {
-        console.log("creating layout")
         super({sx: basedOn.sx, sy: basedOn.sy,
                xoff: basedOn.xoff, yoff: basedOn,
                w: basedOn.w, t7: basedOn.t7,
                className: "layout"})
-        console.log(type)
+        // take the place of basedOn in its layout
         this.type = type
         this.cells = [basedOn]
+        this.layout = basedOn.layout
+        // if we're in a layout we need replace basedOn there
+        if (this.layout != null)
+            this.layout.cells.splice(this.layout.cells.indexOf(basedOn), 1, this)
         basedOn.layout = this
+        this.parent = basedOn.parent
+        basedOn.parent = null
+
+    }
+    findPeer(c) {
+        let i = this.cells.indexOf(c)
+        return (i > 0)?this.cells[i-1]:this.cells[1]
     }
     removeChild(child) {
         let i = this.cells.indexOf(child)
@@ -314,6 +347,57 @@ class Layout extends Cell {
         }
         this.relocate()
     }
+    get sx() {
+        return parseFloat(this.e.style.width.slice(0,-1)) / 100.0
+    }
+    /*
+     * update the sx of all cells
+     */
+    set sx(val) {
+        let p = String(val * 100 + "%")
+        this.e.style.width = p
+        if (this.cells !== undefined)
+            // this doesn't happen on init and that's fine
+            this.cells.forEach((c) => c.e.style.width = p)
+    }
+    get sy() {
+        return parseFloat(this.e.style.height.slice(0,-1)) / 100.0
+    }
+    /*
+     * Update the y size for all cells
+     */
+    set sy(val) {
+        let p = String(val * 100 + "%")
+        this.e.style.height = p
+        if (this.cells !== undefined)
+            this.cells.forEach((c) => this.e.style.height = p)
+    }
+    get xoff() {
+        return parseFloat(this.e.style.left.slice(0,-1)) / 100.0
+    }
+    /*
+     * Update the X offset for all cells
+     */
+    set xoff(val) {
+        let p = String(val * 100 + "%")
+        this.e.style.left = p
+        if (this.cells !== undefined)
+            this.cells.forEach((c) => c.e.style.left = p)
+    }
+    get yoff() {
+        return parseFloat(this.e.style.top.slice(0,-1)) / 100.0
+    }
+    /*
+     * Update the Y offset for all cells
+     */
+    set yoff(val) {
+        let p = String(val * 100 + "%")
+        this.e.style.top = p
+        if (this.cells !== undefined)
+            this.cells.forEach((c) => c.e.style.top = p)
+    }
+    // TODO: old code, probably need to refactor to `spread` with the layout
+    // as argument.
     relocate(sx, sy, xoff, yoff) {
         super.relocate(sx, sy, xoff, yoff)
         if (this.type == "rightleft") {
@@ -332,9 +416,6 @@ class Layout extends Cell {
                 off += h+1
             }       
         }
-    }
-    close() {
-        this.e.remove()
     }
 }
 class Pane extends Cell {
@@ -393,12 +474,14 @@ class Pane extends Cell {
         this.t.open(this.e)
         this.t.loadAddon(this.fitAddon)
         this.t.onKey((ev) =>  {
-            if ((ev.domEvent.ctrlKey == true) && (ev.domEvent.key == 'c'))
+            // if ((ev.domEvent.ctrlKey == true) && (ev.domEvent.key == 'c'))
                 this.close()
+            /*
             else if (this.t7.d && this.t7.d.readyState == "open")
                 this.t7.d.send("send " + keys.key + "\n")
             else
                 this.t.write(ev.key)
+                */
         })
         this.fit()
         this.state = "ready"
@@ -431,10 +514,9 @@ class Pane extends Cell {
 
     }
     focus() {
+        super.focus()
         if (this.t !== undefined)
             this.t.focus()
-        this.active = true
-        this.w.active = true
     }
     // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
     split(type) {
@@ -459,9 +541,7 @@ class Pane extends Cell {
             parent: this, className: 'layout'})
         // if we need to create a new layout do it and add us and new pane as cells
         if (this.layout == null || this.layout.type != type) {
-            l = new Layout(type, this)
-            this.layout = l
-            l.parent = this.parent
+            l = this.w.addLayout(type, this)
             l.cells.push(newPane)
             // TODO:Open the webexec channel
             // this.openDC()

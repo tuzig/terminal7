@@ -5,7 +5,7 @@ import { Terminal7 } from "./terminal7.js"
 var host, pc
 var terminal7 = new Terminal7({paneMargin: 0.01})
 terminal7.open(document.getElementById('terminal7'))
-let pane = terminal7.panes[0]
+let pane = terminal7.cells[0]
 let term = pane.openTerminal()
 let state = 0
 let sendChannel = null
