@@ -262,6 +262,7 @@ class Cell {
     close() {
         var p
         // only the first pane in the window doesn't have a layout
+        debugger
         if (this.layout != null) {
             // if this is the only pane in the layout, drop the layout
             if (this.layout.cells.length == 1) {
@@ -304,7 +305,7 @@ class Layout extends Cell {
      */
     constructor(type, basedOn) {
         super({sx: basedOn.sx, sy: basedOn.sy,
-               xoff: basedOn.xoff, yoff: basedOn,
+               xoff: basedOn.xoff, yoff: basedOn.yoff,
                w: basedOn.w, t7: basedOn.t7,
                className: "layout"})
         // take the place of basedOn in its layout
@@ -362,7 +363,7 @@ class Layout extends Cell {
         let p = String(val * 100 + "%")
         this.e.style.height = p
         if (this.cells !== undefined)
-            this.cells.forEach((c) => this.e.style.height = p)
+            this.cells.forEach((c) => c.e.style.height = p)
     }
     get xoff() {
         return parseFloat(this.e.style.left.slice(0,-1)) / 100.0
