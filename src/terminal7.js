@@ -111,8 +111,6 @@ class Terminal7 {
     }
 }
 
-function setPx(i) { return i.toString()+"px" }
-
 class Window {
     constructor (name) {
         this.name = name
