@@ -3,7 +3,7 @@ import "./css/xterm.css"
 import { Terminal7 } from "./terminal7.js"
 
 var host, pc
-var terminal7 = new Terminal7({paneMargin: 0.01})
+var terminal7 = new Terminal7({paneMargin: 0})
 terminal7.open(document.getElementById('terminal7'))
 let pane = terminal7.cells[0]
 let term = pane.openTerminal()
@@ -11,7 +11,6 @@ let state = 0
 let sendChannel = null
 
 // pane.openURL()
-pane.openTerminal()
 pane.t.onKey( (keys, ev) => {
     let code = keys.key.charCodeAt(0)
     if (pane.state == 3) {

@@ -13,7 +13,7 @@ class Terminal7 {
      */
     constructor(props) {
         this.d = null
-        this.paneMargin = props && props.paneMargin || 0.02
+        this.paneMargin = 0
         this.buffer = []
         this.windows = []
         this.cells = []
@@ -167,9 +167,9 @@ class Cell {
 
         let terminal7 = document.getElementById('terminal7')
         this.t7.e.appendChild(this.e)
-        this.catchFingers()
         return this.e
     }
+
     /*
      * Set the focus on the cell
      */
@@ -191,51 +191,25 @@ class Cell {
      * If an element is not passed in, `this.e` is used
      */
     catchFingers(elem) {
-        let e = elem || this.e
+        let e = (typeof elem == 'undefined')?this.e:elem
         let h = new Hammer.Manager(e, {})
-        
+        h.options.domEvents=true; // enable dom events
+        h.add(new Hammer.Tap({event: "tap", pointers: 1}))
         h.add(new Hammer.Tap({event: "doubletap", pointers: 2}))
         h.add(new Hammer.Swipe({threshold: 200, velocity: 0.7}))
-        h.on('doubletap', (ev) => {
-            if (this.zoomed) {
-                this.e.className = this.className
-                this.e.style.top = this.top
-                this.e.style.left = this.left
-                this.e.style.width = this.width
-                this.e.style.height = this.height
-                Array.prototype.forEach.call(document.getElementsByClassName("cell"), 
-                    e => e.style.display = 'block') 
-                Array.prototype.forEach.call(document.getElementsByClassName("bar"), 
-                    e => e.style.display = 'block')   // , ...document.getElementsByClassName("tab")]
-            } else {
-                Array.prototype.forEach.call(document.getElementsByClassName("cell"), 
-                    e => { if (e != this.e) e.style.display = 'none'})
-                Array.prototype.forEach.call(document.getElementsByClassName("bar"), 
-                    e => { if (e != this.e) e.style.display = 'none'})
-                this.top = this.e.style.top
-                this.left = this.e.style.left
-                this.className = this.e.className
-                this.e.className = "pane zoom"
-                this.e.style.left = 0
-                this.width = this.e.style.width
-                this.height = this.e.style.height
-                this.e.style.width = "100%"
-                this.e.style.height = "100%"
-                this.e.style.top = 0
-            }
-            setTimeout(() => {
-                this.fit()
-                this.sendSize()
-                this.zoomed = !this.zommed
-            }, 10);
-        });
+        h.on('tap', (ev) => { console.log(ev); ev.srcEvent.stopPropagation(); this.focus()})
+        h.on('doubletap', this.toggleZoom)
+
         h.on('swipe', (ev) => {
-            let topb = Math.abs(ev.deltaY) > Math.abs(ev.deltaX)
-            let t = this.split((topb)?"topbottom":"rightleft")
-            t.openTerminal()
+            if (!this.zoomed)  {
+                let topb = Math.abs(ev.deltaY) > Math.abs(ev.deltaX)
+                let t = this.split((topb)?"topbottom":"rightleft")
+                t.openTerminal()
+            }
         });
+        this.mc = h
     }
-    get sx() {
+    get sx(){
         return parseFloat(this.e.style.width.slice(0,-1)) / 100.0
     }
     set sx(val) {
@@ -293,6 +267,38 @@ class Cell {
         this.w.cells.splice(this.w.cells.indexOf(this), 1)
         this.e.remove()
         p.focus()
+    }
+    toggleZoom(ev) {
+        if (this.zoomed) {
+            // Zoom out
+            // this.e.className = this.unzoomed[0]
+            this.xoff = this.unzoomed[1]
+            this.yoff = this.unzoomed[2]
+            this.sx = this.unzoomed[3]
+            this.sy = this.unzoomed[4]
+            Array.prototype.forEach.call(document.getElementsByClassName("cell"), 
+                e => e.style.display = 'block') 
+            Array.prototype.forEach.call(document.getElementsByClassName("bar"), 
+                e => e.style.display = 'block')   // , ...document.getElementsByClassName("tab")]
+        } else {
+            this.unzoomed = [this.e.className,
+                             this.xoff, this.yoff,
+                             this.sx, this.sy]
+            // hide all the other elements
+            Array.prototype.forEach.call(
+                document.getElementsByClassName("cell"), 
+                e => { if (e != this.e) e.style.display = 'none'})
+            Array.prototype.forEach.call(
+                document.getElementsByClassName("bar"), 
+                e => { if (e != this.e) e.style.display = 'none'})
+            // this.e.className = "pane zoom"
+            this.xoff = 0
+            this.sx = 1.0
+            this.sy = 1.0
+            this.yoff = 0
+        }
+        this.fit()
+        this.zoomed = !this.zoomed
     }
 
 }
@@ -417,6 +423,7 @@ class Pane extends Cell {
     constructor(props) {
         props.className = "pane"
         super(props)
+        this.catchFingers()
         this.state = "init"
         this.d = null
         this.zoomed = false
@@ -454,7 +461,6 @@ class Pane extends Cell {
         this.e.appendChild(e)
         e.onload = () => this.catchFingers(e.contentWindow.document.body)
         e.setAttribute('src', p.url || this.t7.defaultUrl)
-        // this.catchFingers(e)
         if (typeof srcdoc == 'string')
             e.setAttribute('srcdoc', p.src)
     }
@@ -470,13 +476,10 @@ class Pane extends Cell {
         this.t.loadAddon(this.fitAddon)
         this.t.onKey((ev) =>  {
             // if ((ev.domEvent.ctrlKey == true) && (ev.domEvent.key == 'c'))
+            if (ev.key == "z")
+                this.toggleZoom()
+            else if (ev.key == "d")
                 this.close()
-            /*
-            else if (this.t7.d && this.t7.d.readyState == "open")
-                this.t7.d.send("send " + keys.key + "\n")
-            else
-                this.t.write(ev.key)
-                */
         })
         this.fit()
         this.state = "ready"

@@ -32,13 +32,23 @@ footer {
     font-size: 80%;
 }
 
+.focused {
+    border-style: solid !important;
+}
+
 .pane {
     position: fixed;
-    margin: 0;
     padding: 0;
     border-radius: 12px;
     overflow: hidden;
     -webkit-mask-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAA5JREFUeNpiYGBgAAgwAAAEAAGbA+oJAAAAAElFTkSuQmCC); /* this fixes the overflow:hidden in Chrome/Opera */
+    box-sizing: border-box;
+    border: 3px double;
+    border-color: #C0CA33;
+    background-color: black;
+}
+.xterm {
+    margin:10px;
 }
 .layout {
     position: fixed;
@@ -47,14 +57,6 @@ footer {
     display: none;
 }
 
-.zoom {
-    top:0;
-    left:0;
-    height: 100%;
-    width: 100%;
-    padding: 0.2em;
-    z-index: 100;
-}
 .full {
     top:0;
     left:0;

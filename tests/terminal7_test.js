@@ -13,7 +13,7 @@ describe("terminal7", function() {
     })
     beforeEach(() => {
         e.innerHTML = ""
-        t = new Terminal7({paneMargin: 0.02})
+        t = new Terminal7({paneMargin: 0})
         t.open(e)
     })
 
@@ -22,8 +22,8 @@ describe("terminal7", function() {
         expect(t.cells[0]).to.exist
         assert.equal(t.cells[0].w, t.windows[0])
         assert.equal(t.cells[0].parent, null)
-        assert.equal(t.cells[0].xoff, 0.02)
-        assert.equal(t.cells[0].yoff, 0.02)
+        assert.equal(t.cells[0].xoff, 0)
+        assert.equal(t.cells[0].yoff, 0)
     })
 
     describe("window", () => {
@@ -68,12 +68,12 @@ describe("terminal7", function() {
             // test sizes
             assert.equal(t.cells[0].sx, 0.8)
             assert.equal(t.cells[0].sy, t.cells[1].sy)
-            assert.equal(t.cells[0].sy, 0.58 / 2.0)
+            assert.equal(t.cells[0].sy, 0.3)
             // Test offsets
             assert.equal(t.cells[0].xoff, 0.1)
             assert.equal(t.cells[0].yoff, 0.2)
             assert.equal(t.cells[1].xoff, 0.1)
-            assert.equal(t.cells[1].yoff, 0.51)
+            assert.equal(t.cells[1].yoff, 0.5)
         })
         it("can be split top to bottom", () => {
             t.cells[0].split("topbottom")
@@ -88,7 +88,7 @@ describe("terminal7", function() {
 
             expect(t.cells[0].sy).to.equal(0.6)
             expect(t.cells[0].sx).to.equal(t.cells[1].sx)
-            expect(t.cells[0].sx).to.equal(0.39)
+            expect(t.cells[0].sx).to.equal(0.4)
         })
         it("can be split twice", () => {
             let p0 = t.cells[0],
@@ -105,12 +105,12 @@ describe("terminal7", function() {
             assert.equal(p0.sy, 0.6)
             assert.equal(p1.sy, 0.6)
             assert.equal(p2.sy, 0.6)
-            assert.equal(p0.sx, 0.39)
-            assert.equal(p1.sx, 0.185)
-            assert.equal(p2.sx, 0.185)
+            assert.equal(p0.sx, 0.4)
+            assert.equal(p1.sx, 0.2)
+            assert.equal(p2.sx, 0.2)
             assert.equal(p0.xoff, 0.1)
-            assert.equal(p1.xoff, 0.51)
-            assert.equal(p2.xoff, 0.715)
+            assert.equal(p1.xoff, 0.5)
+            assert.equal(p2.xoff, 0.7)
             assert.equal(p0.yoff, 0.2)
             assert.equal(p1.yoff, 0.2)
             assert.equal(p2.yoff, 0.2)
@@ -135,7 +135,7 @@ describe("terminal7", function() {
             expect(p0.parent).equal(null)
             let es = document.getElementsByClassName('layout')
             assert.equal(es.length, 2)
-            assert.equal(p1.sy, 0.29)
+            assert.equal(p1.sy, 0.3)
             p2.close()
             assert.equal(p1.yoff, 0.2)
             assert.equal(p1.sy, 0.6)
@@ -155,8 +155,8 @@ describe("terminal7", function() {
                 p1 = p0.split("topbottom"),
                 p2 = p1.split("rightleft")
             p0.close()
-            expect(p1.sy).to.equal(0.29)
-            expect(p2.sy).to.equal(0.29)
+            expect(p1.sy).to.equal(0.3)
+            expect(p2.sy).to.equal(0.3)
             expect(p1.sx).to.equal(0.8)
             expect(p2.sx).to.equal(0.8)
         })
@@ -170,6 +170,23 @@ describe("terminal7", function() {
             expect(p3.sy).to.equal(0.6)
             expect(p2.yoff).to.equal(0.2)
             expect(p3.yoff).to.equal(0.2)
+        })
+        it("can zoom in-out-in", function() {
+            let p0 = t.cells[0],
+                p1 = p0.split("topbottom")
+            expect(p0.e.style.display).to.equal('')
+            expect(p0.sx).to.equal(0.4)
+            p0.toggleZoom()
+            expect(p0.sx).to.equal(1)
+            expect(p1.e.style.display).to.equal('none')
+            p0.toggleZoom()
+            expect(p0.sx).to.equal(0.4)
+            expect(p1.e.style.display).to.equal('block')
+            p0.toggleZoom()
+            expect(p0.e.style.display).to.equal('block')
+            expect(p0.sx).to.equal(1)
+            expect(p0.sy).to.equal(1)
+            expect(p1.e.style.display).to.equal('none')
         })
 
     })
