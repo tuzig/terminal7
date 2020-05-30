@@ -13,7 +13,7 @@ describe("terminal7", function() {
     })
     beforeEach(() => {
         e.innerHTML = ""
-        t = new Terminal7({paneMargin: 0})
+        t = new Terminal7()
         t.open(e)
     })
 

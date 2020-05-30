@@ -11,9 +11,8 @@ class Terminal7 {
     /*
      * Terminal7 constructor, all properties should be initiated here
      */
-    constructor(props) {
+    constructor() {
         this.d = null
-        this.paneMargin = 0
         this.buffer = []
         this.windows = []
         this.cells = []
@@ -36,11 +35,9 @@ class Terminal7 {
         this.e = e
 
         let w = this.addWindow(),
-            l = 1.0 - this.paneMargin * 2,
-            off = this.paneMargin,
-            // TODO the .15 sould be for landscape, portrait is another issue
-            p = w.addPane({sx:l, sy:l-0.16-this.paneMargin,
-                           xoff: off, yoff: off})
+            l = 1.0,
+            p = w.addPane({sx:l, sy:l-0.16,
+                           xoff: 0, yoff: 0})
         this.activeP = p
         this.activeW = w
         this.state = "open"
@@ -152,8 +149,8 @@ class Cell {
         this.createElement(props.className)
         this.sx = props.sx || 0.8
         this.sy = props.sy || 0.8
-        this.xoff = props.xoff || this.t7 && this.t7.paneMargin
-        this.yoff = props.yoff || this.t7 && this.t7.paneMargin
+        this.xoff = props.xoff || 0
+        this.yoff = props.yoff || 0
     }
     /*
      * Creates the HTML elment that will store our dimensions and content
@@ -251,11 +248,11 @@ class Cell {
             }
             // give our area to our peer
             if (this.layout.type == "rightleft") {
-                p.sy += this.sy + this.t7.paneMargin
+                p.sy += this.sy
                 if (this.yoff < p.yoff)
                     p.yoff = this.yoff
             } else {
-                p.sx += this.sx + this.t7.paneMargin
+                p.sx += this.sx
                 if (this.xoff < p.xoff)
                     p.xoff = this.xoff
             }
@@ -520,17 +517,17 @@ class Pane extends Cell {
     split(type) {
         var sx, sy, xoff, yoff, l
         if (type == "rightleft") {
-            sy = (this.sy - this.t7.paneMargin) / 2.0
+            sy = this.sy / 2.0
             sx = this.sx
             xoff = this.xoff
-            yoff = this.yoff + this.sy - sy
+            yoff = this.yoff + sy
             this.sy = sy
         }
         else  {
             sy = this.sy
-            sx = (this.sx - this.t7.paneMargin) / 2.0
+            sx = this.sx / 2.0
             yoff = this.yoff
-            xoff = this.xoff + sx + this.t7.paneMargin
+            xoff = this.xoff + sx
             this.sx = sx
         }
         this.fit()

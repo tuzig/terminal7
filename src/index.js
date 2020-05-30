@@ -3,7 +3,7 @@ import "./css/xterm.css"
 import { Terminal7 } from "./terminal7.js"
 
 var host, pc
-var terminal7 = new Terminal7({paneMargin: 0})
+var terminal7 = new Terminal7()
 terminal7.open(document.getElementById('terminal7'))
 let pane = terminal7.cells[0]
 let term = pane.openTerminal()
