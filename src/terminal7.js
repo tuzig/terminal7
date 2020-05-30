@@ -142,10 +142,8 @@ class Cell {
     constructor(props) {
         this.t7 = props.t7 || null
         this.w = props.w || null
-        this.parent = null
         this.id = props.id || undefined
         this.layout = props.layout || null
-        this.parent = props.parent || null
         this.createElement(props.className)
         this.sx = props.sx || 0.8
         this.sy = props.sy || 0.8
@@ -231,39 +229,12 @@ class Cell {
         this.e.style.top = String(val*100) + "%"
     }
     close() {
-        var p
-        // only the first pane in the window doesn't have a layout
         if (this.layout != null) {
-            // if this is the only pane in the layout, drop the layout
-            if (this.layout.cells.length == 1) {
-                this.layout.close()
-                this.e.remove()
-                return
-            }
-            p = this.layout.findPeer(this)
-            // if no peer it means we're removing the last pane in the window
-            if (p === undefined) {
-                this.w.close()
-                return
-            }
-            // give our area to our peer
-            if (this.layout.type == "rightleft") {
-                p.sy += this.sy
-                if (this.yoff < p.yoff)
-                    p.yoff = this.yoff
-            } else {
-                p.sx += this.sx
-                if (this.xoff < p.xoff)
-                    p.xoff = this.xoff
-            }
-            // remove this from the layout
-            this.layout.cells.splice(this.layout.cells.indexOf(this), 1)
-            p.fit()
+            this.layout.onClose(this)
         }
         // remove this from the window
         this.w.cells.splice(this.w.cells.indexOf(this), 1)
         this.e.remove()
-        p.focus()
     }
     toggleZoom(ev) {
         if (this.zoomed) {
@@ -318,32 +289,39 @@ class Layout extends Cell {
         if (this.layout != null)
             this.layout.cells.splice(this.layout.cells.indexOf(basedOn), 1, this)
         basedOn.layout = this
-        this.parent = basedOn.parent
-        basedOn.parent = null
 
+    }
+    /*
+     * On a cell going away, resize the other elements
+     */
+    onClose(c) {
+        // if this is the only pane in the layout, remove the layout
+        if (this.cells.length == 1) {
+            this.layout.onClose(this)
+            this.e.remove()
+        } else {
+            let i = this.cells.indexOf(c), 
+                p = (i > 0)?this.cells[i-1]:this.cells[1]
+            // if no peer it means we're removing the last pane in the window
+            if (p === undefined) {
+                this.w.close()
+                return
+            }
+            if (this.type == "rightleft") {
+                p.sy += c.sy
+                if (c.yoff < p.yoff)
+                    p.yoff = c.yoff
+            } else {
+                p.sx += c.sx
+                if (c.xoff < p.xoff)
+                    p.xoff = c.xoff
+            }
+            // remove this from the layout
+            this.cells.splice(i, 1)
+        }
     }
     fit() {
         this.cells.forEach((c) => (typeof c.t == "object") && c.fit())
-    }
-    findPeer(c) {
-        let i = this.cells.indexOf(c)
-        return (i > 0)?this.cells[i-1]:this.cells[1]
-    }
-    removeChild(child) {
-        let i = this.cells.indexOf(child)
-        this.cells.splice(i, 1)
-        if (this.cells.length == 0) {
-            if (this.parent) {
-                this.parent.removeChild(this)
-                this.parent.relocate()
-                return
-            } else {
-                console.log("Removing last layout cell, what now?")
-            }
-        } else {
-            this.cells[(i>0)?i-1:0].t.focus()
-        }
-        this.relocate()
     }
     get sx() {
         return parseFloat(this.e.style.width.slice(0,-1)) / 100.0
@@ -394,27 +372,6 @@ class Layout extends Cell {
         if (this.cells !== undefined)
             this.cells.forEach((c) => c.e.style.top = p)
     }
-    // TODO: old code, probably need to refactor to `spread` with the layout
-    // as argument.
-    relocate(sx, sy, xoff, yoff) {
-        super.relocate(sx, sy, xoff, yoff)
-        if (this.type == "rightleft") {
-            let w = this.sx / this.cells.length
-            let off = this.xoff
-            for (let s of this.cells.toArray()) {
-                s.relocate(w,  this.sy, off,  this.yoff)
-                off += w
-            }       
-        }
-        else {
-            let h = Math.floor((this.sy - 1) / this.cells.length)
-            let off =  this.yoff
-            for (let s of this.cells.toArray()) {
-                s.relocate( this.sx, h,  this.xoff, off)
-                off += h+1
-            }       
-        }
-    }
 }
 class Pane extends Cell {
     constructor(props) {
@@ -431,11 +388,6 @@ class Pane extends Cell {
         this.t.write(data)
     }
                 
-    removeElment() {
-        if (this.layout)
-            this.layout.removeChild(this)
-        this.e.parentNode.removeChild(this.e);
-    }
     setEcho(echoOn) {
         if (this.echo === undefined) {
             this.t.onData((data) => this.echo && this.t.write(data))
@@ -483,12 +435,6 @@ class Pane extends Cell {
         return this.t
     }
 
-    relocate(sx, sy, xoff, yoff) {
-        super.relocate(sx, sy, xoff, yoff)
-        this.fit()
-        //TODO: move this to the handlers of commands that cause a resize
-        // this.sendSize()
-    }
     fit() {
         if (this.fitAddon !== undefined)
             this.fitAddon.fit()
@@ -533,7 +479,7 @@ class Pane extends Cell {
         this.fit()
         let newPane = this.w.addPane({sx: sx, sy: sy, 
                                       xoff: xoff, yoff: yoff,
-                                      parent: this, className: 'layout'})
+                                      className: 'layout'})
         // if we need to create a new layout do it and add us and new pane as cells
         if (this.layout == null || this.layout.type != type) {
             l = this.w.addLayout(type, this)

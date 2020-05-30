@@ -21,7 +21,6 @@ describe("terminal7", function() {
         expect(t.windows[0]).to.exist
         expect(t.cells[0]).to.exist
         assert.equal(t.cells[0].w, t.windows[0])
-        assert.equal(t.cells[0].parent, null)
         assert.equal(t.cells[0].xoff, 0)
         assert.equal(t.cells[0].yoff, 0)
     })
@@ -62,9 +61,7 @@ describe("terminal7", function() {
             var es = document.getElementsByClassName('layout')
             assert.equal(es.length, 0)
             t.cells[0].split("rightleft")
-            // test parents
             assert.exists(t.cells[1])
-            assert.equal(t.cells[1].parent, t.cells[0])
             // test sizes
             assert.equal(t.cells[0].sx, 0.8)
             assert.equal(t.cells[0].sy, t.cells[1].sy)
@@ -95,8 +92,6 @@ describe("terminal7", function() {
                 p1 = p0.split("topbottom"),
                 p2 = p1.split("topbottom")
             assert.exists(p2)
-            assert.equal(p1.parent, p0)
-            assert.equal(p2.parent, p1)
             expect(p0.layout).not.to.be.a('null')
             expect(p1.layout).equal(p0.layout)
             expect(p2.layout).equal(p1.layout)
@@ -119,7 +114,9 @@ describe("terminal7", function() {
         })
         it("can resize", function () {
         })
-        it("can close nicely, with parent resizing|dieing", function () {
+        it("can close nicely, even with just a single cell", function () {
+        })
+        it("can close nicely, with layout resizing", function () {
             let p0 = t.cells[0],
                 p1 = p0.split("topbottom"),
                 p2 = p1.split("rightleft")
@@ -127,12 +124,8 @@ describe("terminal7", function() {
             expect(p1.layout).not.null
             expect(p1.layout).equal(p2.layout)
             expect(p0.layout).not.equal(p1.layout)
-            expect(p1.layout.parent).equal(p0)
             expect(p0.layout.cells).eql([p0, p1.layout])
             expect(p1.layout.cells).eql([p1, p2])
-            expect(p2.parent).equal(p1)
-            expect(p1.parent).equal(null)
-            expect(p0.parent).equal(null)
             let es = document.getElementsByClassName('layout')
             assert.equal(es.length, 2)
             assert.equal(p1.sy, 0.3)
@@ -170,6 +163,19 @@ describe("terminal7", function() {
             expect(p3.sy).to.equal(0.6)
             expect(p2.yoff).to.equal(0.2)
             expect(p3.yoff).to.equal(0.2)
+        })
+        it("can handle another three splits", function() {
+            let p0 = t.cells[0],
+                p1 = p0.split("topbottom"),
+                p2 = p1.split("rightleft"),
+                p3 = p2.split("topbottom")
+            p0.close()
+            expect(p1.sx).to.equal(0.8)
+            expect(p2.sx).to.equal(0.4)
+            expect(p3.sx).to.equal(0.4)
+            expect(p1.sy).to.equal(0.3)
+            expect(p2.sy).to.equal(0.3)
+            expect(p3.sy).to.equal(0.3)
         })
         it("can zoom in-out-in", function() {
             let p0 = t.cells[0],
