@@ -5,7 +5,7 @@ import { Terminal7 } from "./terminal7.js"
 var host, pc
 var terminal7 = new Terminal7()
 terminal7.open(document.getElementById('terminal7'))
-let pane = terminal7.cells[0]
+let pane = terminal7.activeP
 let term = pane.openTerminal()
 let state = 0
 let sendChannel = null
@@ -84,6 +84,7 @@ function Connect() {
     state = 1
     term.focus()
 }
+/*
 let p2 = pane.split("topbottom")
 // p2.openURL()
 p2.openTerminal()
@@ -92,4 +93,5 @@ let p3 = p2.split("rightleft")
 // p3.openURL()
 p3.openTerminal()
  p3.t.write("\tLast pane")
+*/
 Connect()

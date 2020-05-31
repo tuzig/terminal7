@@ -34,17 +34,20 @@ class Terminal7 {
         }
         this.e = e
 
-        let w = this.addWindow(),
+        let w = this.addWindow('Welcome'),
             l = 1.0,
-            p = w.addPane({sx:l, sy:l-0.16,
-                           xoff: 0, yoff: 0})
+            props = {sx:l, sy:l-0.16,
+                     xoff: 0, yoff: 0,
+                     t7: this, w: w
+                    },
+            layout = w.addLayout("TBD", props),
+            p = layout.addPane(props)
         this.activeP = p
         this.activeW = w
         this.state = "open"
     }
     addWindow(name) {
-        let w = new Window(name)
-        w.t7 = this
+        let w = new Window({name:name, t7: this, id: this.windows.length})
         this.windows.push(w)
         return w
     }
@@ -106,31 +109,25 @@ class Terminal7 {
         }
         return this.d
     }
+    // TODO: loop on all windows and get their layout
+    get layout() {
+    }
 }
 
 class Window {
-    constructor (name) {
+    constructor (props) {
         this.name = name
+        this.t7 = props.t7
+        this.id = props.id
         this.cells = []
     }
-    addLayout(type, basedOn) {
-        let l = new Layout(type, basedOn)
+    addLayout(dir, basedOn) {
+        let l = new Layout(dir, basedOn)
         l.id = this.t7.cells.length
         this.cells.push(l)
         this.t7.cells.push(l)
         return l
 
-    }
-    addPane(props) {
-        // CONGRATS! a new pane is born. props must include at keast sx & sy
-        let p = props || {}
-        p.w = this
-        p.t7 = this.t7
-        var pane = new Pane(p)
-        pane.id = this.t7.cells.length
-        this.t7.cells.push(pane)
-        this.cells.push(pane)
-        return pane
     }
     close() {
         console.log("TODO: close window")
@@ -171,8 +168,10 @@ class Cell {
     focus() {
         this.active = true
         this.w.active = true
-        this.t7.activeP.e.classList.remove("focused")
-        this.e.classList.add("focused")
+        if (this.t7.activeP !== undefined) {
+            this.t7.activeP.e.classList.remove("focused")
+            this.e.classList.add("focused")
+        }
         this.t7.activeP = this
     }
     /*
@@ -229,9 +228,7 @@ class Cell {
         this.e.style.top = String(val*100) + "%"
     }
     close() {
-        if (this.layout != null) {
-            this.layout.onClose(this)
-        }
+        this.layout.onClose(this)
         // remove this from the window
         this.w.cells.splice(this.w.cells.indexOf(this), 1)
         this.e.remove()
@@ -276,20 +273,24 @@ class Layout extends Cell {
      * Layout contructor creates a `Layout` object based on a cell.
      * The new object wraps the `basedOn` cell and makes it his first son
      */
-    constructor(type, basedOn) {
+    constructor(dir, basedOn) {
         super({sx: basedOn.sx, sy: basedOn.sy,
                xoff: basedOn.xoff, yoff: basedOn.yoff,
                w: basedOn.w, t7: basedOn.t7,
                className: "layout"})
-        // take the place of basedOn in its layout
-        this.type = type
-        this.cells = [basedOn]
-        this.layout = basedOn.layout
-        // if we're in a layout we need replace basedOn there
-        if (this.layout != null)
-            this.layout.cells.splice(this.layout.cells.indexOf(basedOn), 1, this)
-        basedOn.layout = this
-
+        this.dir = dir
+        // if we're based on a cell, we make it our first cell
+        if (basedOn instanceof Cell) {
+            console.log("Creating a layout based on cell ", basedOn.id)
+            this.layout = basedOn.layout
+            basedOn.layout = this
+            this.cells = [basedOn]
+            // if we're in a layout we need replace basedOn there
+            if (this.layout != null)
+                this.layout.cells.splice(this.layout.cells.indexOf(basedOn), 1, this)
+        }
+        else
+            this.cells = []
     }
     /*
      * On a cell going away, resize the other elements
@@ -307,7 +308,7 @@ class Layout extends Cell {
                 this.w.close()
                 return
             }
-            if (this.type == "rightleft") {
+            if (this.dir == "rightleft") {
                 p.sy += c.sy
                 if (c.yoff < p.yoff)
                     p.yoff = c.yoff
@@ -316,13 +317,69 @@ class Layout extends Cell {
                 if (c.xoff < p.xoff)
                     p.xoff = c.xoff
             }
+            p.fit()
             // remove this from the layout
             this.cells.splice(i, 1)
         }
     }
+    /*
+     * Replace an old cell with a new cell, used when a pane
+     * is replaced with a layout
+     */
+    replace(o, n) {
+        this.cells.splice(this.cells.indexOf(o), 1, n)
+    }
+    /*
+     * Adds a new cell - `n` - to the layout, just after `o`
+     */
+    addPane(props) {
+        // CONGRATS! a new pane is born. props must include at keast sx & sy
+        let p = props || {}
+        p.w = this.w
+        p.t7 = this.t7
+        p.layout = this
+        p.id = this.t7.cells.length
+        let pane = new Pane(p)
+        this.t7.cells.push(pane)
+        if (p.parent instanceof Cell)
+            this.cells.splice(this.cells.indexOf(p.parent)+1, 0, pane)
+        else
+            this.cells.push(pane)
+        // TODO:Open the webexec channel
+        // this.openDC()
+        pane.focus()
+        return pane
+    }
     fit() {
         this.cells.forEach((c) => (typeof c.t == "object") && c.fit())
     }
+    toText() {
+        // r is the text we return, start with our own dimensions & position
+        let r = (this.dir=="rightleft")?"[":"{"
+        let that = this
+        // get the dimensions of all the cell, recurse if a layout is found
+        this.cells.forEach((c, i) => {
+            if (i > 0)
+                r += ','
+            try {
+                r += `${c.sx.toFixed(3)}x${c.sy.toFixed(3)}`
+            }
+            catch(e) {
+                console.log(i, c)
+            }
+            r += `,${c.xoff.toFixed(3)},${c.yoff.toFixed(3)}`
+            if (c == that)
+                console.log("ERROR: layout shouldn't have `this` in his cells")
+            // TODO: remove this workaround - `c != that`
+            if ((c != that) && (typeof c.toText == "function"))
+                r += c.toText()
+            else
+                r += `,${c.id}`
+        })
+        r += (this.dir=="rightleft")?"]":"}"
+        return r
+    }
+
     get sx() {
         return parseFloat(this.e.style.width.slice(0,-1)) / 100.0
     }
@@ -459,10 +516,23 @@ class Pane extends Cell {
         if (this.t !== undefined)
             this.t.focus()
     }
-    // splitting the pane, receivees a type-  either "topbottom" or "rightleft"
-    split(type) {
+    /*
+     * splitting the pane, receivees a dir-  either "topbottom" or "rightleft"
+     * returns the new pane
+     */
+    split(dir) {
         var sx, sy, xoff, yoff, l
-        if (type == "rightleft") {
+        // if the current dir is `TBD` we can swing it our way
+        if ((this.layout.dir == "TBD") || (this.layout.cells.length == 1))
+            this.layout.dir = dir
+        // if we need to create a new layout do it and add us and new pane as cells
+        if (this.layout.dir != dir)
+            l = this.w.addLayout(dir, this)
+        else 
+            l = this.layout
+
+        // update the dimensions & position
+        if (dir == "rightleft") {
             sy = this.sy / 2.0
             sx = this.sx
             xoff = this.xoff
@@ -477,22 +547,11 @@ class Pane extends Cell {
             this.sx = sx
         }
         this.fit()
-        let newPane = this.w.addPane({sx: sx, sy: sy, 
-                                      xoff: xoff, yoff: yoff,
-                                      className: 'layout'})
-        // if we need to create a new layout do it and add us and new pane as cells
-        if (this.layout == null || this.layout.type != type) {
-            l = this.w.addLayout(type, this)
-            l.cells.push(newPane)
-            // TODO:Open the webexec channel
-            // this.openDC()
-        } else {
-            l = this.layout
-            l.cells.splice(l.cells.indexOf(this), 0, newPane)
-        }
-        newPane.layout = l
-        newPane.focus()
-        return newPane
+
+        // add the new pane
+        return l.addPane({sx: sx, sy: sy, 
+                          xoff: xoff, yoff: yoff,
+                          parent: this})
     }
 }
 export { Terminal7 , Cell, Pane, Layout } 
