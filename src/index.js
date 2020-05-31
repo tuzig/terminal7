@@ -84,7 +84,6 @@ function Connect() {
     state = 1
     term.focus()
 }
-/*
 let p2 = pane.split("topbottom")
 // p2.openURL()
 p2.openTerminal()
@@ -93,5 +92,4 @@ let p3 = p2.split("rightleft")
 // p3.openURL()
 p3.openTerminal()
  p3.t.write("\tLast pane")
-*/
 Connect()
