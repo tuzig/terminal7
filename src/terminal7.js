@@ -296,7 +296,7 @@ class Layout extends Cell {
      * On a cell going away, resize the other elements
      */
     onClose(c) {
-        // if this is the only pane in the layout, remove the layout
+        // if this is the only pane in the layout, close the layout
         if (this.cells.length == 1) {
             this.layout.onClose(this)
             this.e.remove()
@@ -387,11 +387,11 @@ class Layout extends Cell {
      * update the sx of all cells
      */
     set sx(val) {
-        let p = String(val * 100) + "%"
-        this.e.style.width = p
+        let r = val/this.sx
+        this.e.style.width = String(val * 100) + "%"
         if (this.cells !== undefined)
             // this doesn't happen on init and that's fine
-            this.cells.forEach((c) => c.e.style.width = p)
+            this.cells.forEach((c) => c.sx *= r)
     }
     get sy() {
         return parseFloat(this.e.style.height.slice(0,-1)) / 100.0
@@ -400,10 +400,10 @@ class Layout extends Cell {
      * Update the y size for all cells
      */
     set sy(val) {
-        let p = String(val * 100) + "%"
-        this.e.style.height = p
+        let r = val/this.sy
+        this.e.style.height = String(val * 100) + "%"
         if (this.cells !== undefined)
-            this.cells.forEach((c) => c.e.style.height = p)
+            this.cells.forEach((c) => c.sy *= r)
     }
     get xoff() {
         return parseFloat(this.e.style.left.slice(0,-1)) / 100.0
@@ -412,10 +412,18 @@ class Layout extends Cell {
      * Update the X offset for all cells
      */
     set xoff(val) {
-        let p = String(val * 100) + "%"
-        this.e.style.left = p
+        let x=val
+        this.e.style.left = String(val * 100) + "%"
         if (this.cells !== undefined)
-            this.cells.forEach((c) => c.e.style.left = p)
+            this.cells.forEach((c) => {
+                console.log(this.dir)
+                if (this.dir == "rightleft")
+                    c.xoff = val
+                else {
+                    c.xoff = x
+                    x += c.sx
+                }
+            })
     }
     get yoff() {
         return parseFloat(this.e.style.top.slice(0,-1)) / 100.0
@@ -424,10 +432,17 @@ class Layout extends Cell {
      * Update the Y offset for all cells
      */
     set yoff(val) {
-        let p = String(val * 100) + "%"
-        this.e.style.top = p
+        let y = val
+        this.e.style.top = String(val * 100) + "%"
         if (this.cells !== undefined)
-            this.cells.forEach((c) => c.e.style.top = p)
+            this.cells.forEach((c) => {
+                if (this.dir =="topbottom")
+                    c.yoff = val
+                else {
+                    c.yoff = y
+                    y += c.sy
+                }
+            })
     }
 }
 class Pane extends Cell {
