@@ -264,8 +264,15 @@ class Cell {
 
         h.on('swipe', (ev) => {
             if (!this.zoomed)  {
-                let topb = Math.abs(ev.deltaY) > Math.abs(ev.deltaX)
-                let t = this.split((topb)?"topbottom":"rightleft")
+                var l
+                let topb = (ev.direction == Hammer.DIRECTION_UP) ||
+                           (ev.direction == Hammer.DIRECTION_DOWN)
+                if (topb)
+                    l = ev.center.x / document.body.offsetWidth
+                else
+                    l = ev.center.y / document.body.offsetHeight
+                console.log(l, ev.center.x, ev.center.y)
+                let t = this.split((topb)?"topbottom":"rightleft", l)
             }
         });
         this.mc = h
@@ -607,7 +614,7 @@ class Pane extends Cell {
      * splitting the pane, receivees a dir-  either "topbottom" or "rightleft"
      * returns the new pane
      */
-    split(dir) {
+    split(dir, s) {
         var sx, sy, xoff, yoff, l
         // if the current dir is `TBD` we can swing it our way
         if ((this.layout.dir == "TBD") || (this.layout.cells.length == 1))
@@ -620,18 +627,18 @@ class Pane extends Cell {
 
         // update the dimensions & position
         if (dir == "rightleft") {
-            sy = this.sy / 2.0
+            sy = this.sy * (1 - s)
             sx = this.sx
             xoff = this.xoff
-            yoff = this.yoff + sy
-            this.sy = sy
+            this.sy -= sy
+            yoff = this.yoff + this.sy
         }
         else  {
             sy = this.sy
-            sx = this.sx / 2.0
+            sx = this.sx * (1 - s)
             yoff = this.yoff
-            xoff = this.xoff + sx
-            this.sx = sx
+            this.sx -= sx
+            xoff = this.xoff + this.sx
         }
         this.fit()
 
