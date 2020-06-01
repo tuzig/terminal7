@@ -360,6 +360,11 @@ class Layout extends Cell {
                     p.xoff = c.xoff
             }
             p.fit()
+            if (p instanceof Layout)
+                // just picked the first cell
+                p.cells[0].focus()
+            else
+                p.focus()
             // remove this from the layout
             this.cells.splice(i, 1)
         }
