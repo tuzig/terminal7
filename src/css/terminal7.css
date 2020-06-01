@@ -36,6 +36,13 @@ footer {
     border-style: solid !important;
 }
 
+.window {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 84%; /* TODO: make responsive */
+}
 .pane {
     position: fixed;
     padding: 0;
@@ -63,15 +70,15 @@ footer {
     height: 78%;
 }
 .bar {
-    margin: 0;
-    padding: 0.5em;
-    margin: 0;
-    padding: 0.6vh 0.6vw;
-    height: 8vh;
-    font-size: 5.3vh;
+    border-radius: 12px;
     position: fixed;
     left: 0;
     right: 0;
+    height: 8vh;
+    width: 100%;
+    margin: 0;
+    padding: 0.6vh 0.6vw;
+    font-size: 5.3vh;
     box-sizing: border-box;
 }
 #navbar {
@@ -82,4 +89,26 @@ footer {
 #tabbar {
     bottom: 7.5vh;
     color: #00fafa;
+    padding-top: 0;
+}
+#tabbar i, #tabbar a { padding-top: 0.6vh; }
+#tabbar-buttons {
+    float: right;
+    margin-right: 12px;
+}
+#window-names span {
+  width: 100%;
+  text-align: center;
+}
+.tabs { list-style: none; margin: 0; }
+.tabs li { display: inline; }
+.tabs li a { float: left; display: block; padding: 4px 0.5em; 
+left: 1px; text-decoration: none; 
+border-right: 2px solid #C0CA33;
+color: inherit;}
+.tabs li a:hover { background: black; }
+
+#tab1:target, #tab2:target, #tab3:target, #tab4:target, #tab5:target,
+#tab6:target, #tab7:target, #tab8:target, #tab9:target {
+  z-index: 1;
 }

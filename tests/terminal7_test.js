@@ -12,7 +12,8 @@ describe("terminal7", function() {
         document.body.innerHTML = ""
     })
     beforeEach(() => {
-        e.innerHTML = ""
+        // just a place holder for window names
+        e.innerHTML = "<div id='window-names'></div>"
         t = new Terminal7()
         t.open(e)
     })
@@ -45,13 +46,13 @@ describe("terminal7", function() {
             t.activeP.yoff = 0.2
         })
         it("can set and get sizes", () => {
-            let c = new Cell({sx: 0.12, sy: 0.34, t7: t})
+            let c = new Cell({sx: 0.12, sy: 0.34, t7: t, w: t.activeW})
             assert.equal(c.sx, 0.12)
             assert.equal(c.sy, 0.34)
 
         })
         it("can set and get offsets", () => {
-            let c = new Cell({xoff: 0.12, yoff: 0.34, t7: t})
+            let c = new Cell({xoff: 0.12, yoff: 0.34, t7: t, w: t.activeW})
             assert.equal(c.xoff, 0.12)
             assert.equal(c.yoff, 0.34)
         })

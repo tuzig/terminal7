@@ -18,6 +18,8 @@ class Terminal7 {
         this.cells = []
         this.state = "initiated"
         this.defaultUrl = "https://he.wikipedia.org/wiki/%D7%A2%D7%9E%D7%95%D7%93_%D7%A8%D7%90%D7%A9%D7%99"
+        // TODO make it responsive
+        this.bottomMargin = 0.18
     }
     /*
      * Opens the terminal on the given DOM element.
@@ -27,28 +29,65 @@ class Terminal7 {
      */
     open(e) {
         if (!e) {
-            // create the conbtainer element
+            // create the container element
             e = document.createElement('div')
             e.id = "terminal7"
             document.body.appendChild(e)
         }
         this.e = e
+        // open the first window
+        let w = this.addWindow('Welcome')
+        // watch the buttons
+        let b = document.getElementById("add-tab")
+        if (b != null) 
+            b.onclick = (e) => this.addWindow()
 
-        let w = this.addWindow('Welcome'),
-            l = 1.0,
-            props = {sx:l, sy:l-0.16,
-                     xoff: 0, yoff: 0,
-                     t7: this, w: w
-                    },
-            layout = w.addLayout("TBD", props),
-            p = layout.addPane(props)
-        this.activeP = p
-        this.activeW = w
         this.state = "open"
     }
+    /*
+     * Change the active window, all other windows and
+     * mark its name in the tabbar as the chosen one
+     */
+    activateWindow(w) {
+        if (this.activeW instanceof Window)
+            this.activeW.nameE.style.backgroundColor = "#271D30"
+        w.nameE.style.backgroundColor = "black"
+        this.activeW = w
+        window.location.href=`#tab${w.id+1}`
+    }
+    /*
+     * Adds a window, complete with a first layout and pane
+     */
     addWindow(name) {
+        let i = this.windows.length
+        if (!(name instanceof String))
+            name = `Tab ${i+1}`
         let w = new Window({name:name, t7: this, id: this.windows.length})
+        //TODO: move this to Window.open()
+        w.e = document.createElement('div')
+        w.e.className = "window"
+        w.e.id = `tab${w.id+1}`
+        this.e.appendChild(w.e)
         this.windows.push(w)
+        // create the first layout and pane
+        let l = 1.0,
+            props = {sx:l, sy:l-this.bottomMargin,
+                     xoff: 0, yoff: 0,
+                     t7: this, w: w},
+            layout = w.addLayout("TBD", props)
+            
+        this.activeP = layout.addPane(props)
+        // Add the name with link at #window-names
+        let li = document.createElement('li'),
+            a = document.createElement('a')
+        a.id = w.e.id+'-name'
+        a.setAttribute('href', `#${w.e.id}`)
+        a.innerHTML = `Tab ${w.id+1}`
+        a.onclick = (e) => this.activateWindow(w)
+        li.appendChild(a)
+        w.nameE = a
+        document.getElementById("window-names").appendChild(li)
+        this.activateWindow(w)
         return w
     }
     onSessionsChanged() {
@@ -120,6 +159,7 @@ class Window {
         this.t7 = props.t7
         this.id = props.id
         this.cells = []
+        this.e = null
     }
     addLayout(dir, basedOn) {
         let l = new Layout(dir, basedOn)
@@ -138,7 +178,10 @@ class Window {
 class Cell {
     constructor(props) {
         this.t7 = props.t7 || null
-        this.w = props.w || null
+        if (props.w instanceof Window)
+            this.w = props.w
+        else
+            throw "Can not create a Cell without an instance of Window in props.w"
         this.id = props.id || undefined
         this.layout = props.layout || null
         this.createElement(props.className)
@@ -158,7 +201,7 @@ class Cell {
             this.e.classList.add(className)
 
         let terminal7 = document.getElementById('terminal7')
-        this.t7.e.appendChild(this.e)
+        this.w.e.appendChild(this.e)
         return this.e
     }
 
@@ -281,7 +324,6 @@ class Layout extends Cell {
         this.dir = dir
         // if we're based on a cell, we make it our first cell
         if (basedOn instanceof Cell) {
-            console.log("Creating a layout based on cell ", basedOn.id)
             this.layout = basedOn.layout
             basedOn.layout = this
             this.cells = [basedOn]
@@ -416,7 +458,6 @@ class Layout extends Cell {
         this.e.style.left = String(val * 100) + "%"
         if (this.cells !== undefined)
             this.cells.forEach((c) => {
-                console.log(this.dir)
                 if (this.dir == "rightleft")
                     c.xoff = val
                 else {
