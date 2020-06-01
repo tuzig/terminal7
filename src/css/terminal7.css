@@ -46,7 +46,7 @@ footer {
 .pane {
     position: fixed;
     padding: 0;
-    border-radius: 12px;
+    border-radius: 6px;
     overflow: hidden;
     -webkit-mask-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAA5JREFUeNpiYGBgAAgwAAAEAAGbA+oJAAAAAElFTkSuQmCC); /* this fixes the overflow:hidden in Chrome/Opera */
     box-sizing: border-box;
@@ -70,7 +70,7 @@ footer {
     height: 78%;
 }
 .bar {
-    border-radius: 12px;
+    border-radius: 6px;
     position: fixed;
     left: 0;
     right: 0;

@@ -1,5 +1,6 @@
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit';
+import Casts from './movies.js';
 import * as Hammer from 'hammerjs';
 
 const THEME = {foreground: "#00FAFA", background: "#000"}
@@ -20,6 +21,30 @@ class Terminal7 {
         this.defaultUrl = "https://he.wikipedia.org/wiki/%D7%A2%D7%9E%D7%95%D7%93_%D7%A8%D7%90%D7%A9%D7%99"
         // TODO make it responsive
         this.bottomMargin = 0.18
+        this.cast = 0
+    }
+    play(pane, frame) {
+        var d
+        let m = Casts[pane.cast]
+
+        if ((typeof m !== "undefined") && (frame == m.length))
+            frame = 2
+
+        if (typeof frame === "undefined") {
+            frame = 1
+            pane.cast = this.cast
+            m = Casts[pane.cast]
+            this.cast++
+            if (this.cast == Casts.length)
+                this.cast = 0
+            d = m[frame][0]
+        } else {
+            d = m[frame][0] - m[frame-1][0]
+        }
+        window.setTimeout(() => {
+            pane.write(m[frame][2])
+            this.play(pane, frame+1)
+        }, d*1000)
     }
     /*
      * Opens the terminal on the given DOM element.
@@ -241,7 +266,6 @@ class Cell {
             if (!this.zoomed)  {
                 let topb = Math.abs(ev.deltaY) > Math.abs(ev.deltaX)
                 let t = this.split((topb)?"topbottom":"rightleft")
-                t.openTerminal()
             }
         });
         this.mc = h
@@ -361,7 +385,7 @@ class Layout extends Cell {
             }
             p.fit()
             if (p instanceof Layout)
-                // just picked the first cell
+                // just pick the first cell
                 p.cells[0].focus()
             else
                 p.focus()
@@ -395,6 +419,7 @@ class Layout extends Cell {
         // TODO:Open the webexec channel
         // this.openDC()
         pane.focus()
+        pane.openTerminal()
         return pane
     }
     fit() {
@@ -550,6 +575,7 @@ class Pane extends Cell {
         })
         this.fit()
         this.state = "ready"
+        this.t7.play(this)
         return this.t
     }
 
