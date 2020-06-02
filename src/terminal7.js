@@ -55,7 +55,7 @@ class Terminal7 {
             this.activeW.nameE.classList.remove("active")
         w.nameE.classList.add("active")
         this.activeW = w
-        // w.activeP.focus()
+        w.activeP.focus()
         window.location.href=`#tab${w.id+1}`
     }
     /*
@@ -79,7 +79,8 @@ class Terminal7 {
                      t7: this, w: w},
             layout = w.addLayout("TBD", props)
             
-        this.activeP = layout.addPane(props)
+        w.activeP = layout.addPane(props)
+        this.activeP = w.activeP
         // Add the name with link at #window-names
         let li = document.createElement('li'),
             a = document.createElement('a')
@@ -273,6 +274,7 @@ class Cell {
     focus() {
         this.active = true
         this.w.active = true
+        this.w.activeP = this
         if (this.t7.activeP !== undefined) {
             this.t7.activeP.e.classList.remove("focused")
             this.e.classList.add("focused")
@@ -296,7 +298,7 @@ class Cell {
         h.add(new Hammer.Tap({event: "tap", pointers: 1}))
         h.add(new Hammer.Tap({event: "doubletap", pointers: 2}))
         h.add(new Hammer.Swipe({threshold: 200, velocity: 0.7}))
-        h.on('tap', (ev) => { console.log(ev); ev.srcEvent.stopPropagation(); this.focus()})
+        h.on('tap', (ev) => this.focus())
         h.on('doubletap', this.toggleZoom)
 
         h.on('swipe', (ev) => {
