@@ -52,8 +52,8 @@ class Terminal7 {
      */
     activateWindow(w) {
         if (this.activeW instanceof Window)
-            this.activeW.nameE.style.backgroundColor = "#271D30"
-        w.nameE.style.backgroundColor = "black"
+            this.activeW.nameE.classList.remove("active")
+        w.nameE.classList.add("active")
         this.activeW = w
         // w.activeP.focus()
         window.location.href=`#tab${w.id+1}`

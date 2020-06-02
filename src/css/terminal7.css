@@ -89,7 +89,7 @@ footer {
 #tabbar {
     bottom: 7.5vh;
     color: #00fafa;
-    padding-top: 0;
+    padding: 0;
 }
 #tabbar i, #tabbar a { padding-top: 0.6vh; }
 #tabbar-buttons {
@@ -101,7 +101,11 @@ footer {
   background-color: black;
   color: inherit;
 }
-.tabs { list-style: none; margin: 0; }
+.tabs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
 .tabs li { display: inline; }
 .tabs li a { float: left; display: block; padding: 4px 0.5em; 
 left: 1px; text-decoration: none; 
@@ -114,4 +118,8 @@ color: inherit;}
 #tab1:target, #tab2:target, #tab3:target, #tab4:target, #tab5:target,
 #tab6:target, #tab7:target, #tab8:target, #tab9:target {
   z-index: 1;
+}
+.active {
+    color: #C0CA33 !important;
+    background-color: black;
 }
