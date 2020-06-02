@@ -106,6 +106,8 @@ footer {
 .tabs li a { float: left; display: block; padding: 4px 0.5em; 
 left: 1px; text-decoration: none; 
 border-right: 2px solid #C0CA33;
+font-size: 3vh;
+line-height: 6vh;
 color: inherit;}
 .tabs li a:hover { background: black; }
 
