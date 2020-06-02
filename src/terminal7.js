@@ -94,7 +94,7 @@ class Terminal7 {
         h.add(new Hammer.Tap({event: "switch", pointers: 1}))
         h.on("rename", (ev) => 
              // For some reason this works much better with a timeout
-             window.setTimeout(() => this.renameWindow(ev.target), 0))
+             window.setTimeout(() => this.renameWindow(w), 0))
         h.on('switch', (ev) => this.activateWindow(w))
                 
         li.appendChild(a)
@@ -108,10 +108,10 @@ class Terminal7 {
      * name when the field is changed. If we lose focus, we drop the changes.
      * In any case we remove the input field.
      */
-    renameWindow(e) {
-        let name = e.innerHTML
-
-        e.innerHTML= `<input size='12' name='window-name'>`
+    renameWindow(w) {
+        let e = w.nameE
+        this.activateWindow(w)
+        e.innerHTML= `<input size='10' name='window-name'>`
         let i = e.children[0]
         i.focus()
         // On losing focus, replace the input element with the name
@@ -615,7 +615,7 @@ class Pane extends Cell {
             if (ev.key == "z")
                 this.toggleZoom()
             else if (ev.key == ",") 
-                this.t7.renameWindow(document.getElementById(`tab${this.w.id+1}-name`))
+                this.t7.renameWindow(this.w)
             else if (ev.key == "d")
                 this.close()
         })
