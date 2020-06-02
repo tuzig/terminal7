@@ -65,7 +65,7 @@ describe("terminal7", function() {
         
         it("can be split right to left", () => {
             let p0 = t.activeP,
-                p1 = p0.split("rightleft")
+                p1 = p0.split("rightleft", 0.5)
 
             expect(p0.layout.dir).to.equal("rightleft")
             expect(p0.layout.toText()).equal(

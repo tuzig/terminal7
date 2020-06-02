@@ -96,9 +96,10 @@ footer {
     float: right;
     margin-right: 12px;
 }
-#window-names span {
-  width: 100%;
-  text-align: center;
+#window-names input {
+  font-size: 3vh;
+  background-color: black;
+  color: inherit;
 }
 .tabs { list-style: none; margin: 0; }
 .tabs li { display: inline; }

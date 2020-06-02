@@ -23,29 +23,6 @@ class Terminal7 {
         this.bottomMargin = 0.18
         this.cast = 0
     }
-    play(pane, frame) {
-        var d
-        let m = Casts[pane.cast]
-
-        if ((typeof m !== "undefined") && (frame == m.length))
-            frame = 2
-
-        if (typeof frame === "undefined") {
-            frame = 1
-            pane.cast = this.cast
-            m = Casts[pane.cast]
-            this.cast++
-            if (this.cast == Casts.length)
-                this.cast = 0
-            d = m[frame][0]
-        } else {
-            d = m[frame][0] - m[frame-1][0]
-        }
-        window.setTimeout(() => {
-            pane.write(m[frame][2])
-            this.play(pane, frame+1)
-        }, d*1000)
-    }
     /*
      * Opens the terminal on the given DOM element.
      * If the optional `silent` argument is true it does nothing but 
@@ -78,6 +55,7 @@ class Terminal7 {
             this.activeW.nameE.style.backgroundColor = "#271D30"
         w.nameE.style.backgroundColor = "black"
         this.activeW = w
+        // w.activeP.focus()
         window.location.href=`#tab${w.id+1}`
     }
     /*
@@ -106,14 +84,50 @@ class Terminal7 {
         let li = document.createElement('li'),
             a = document.createElement('a')
         a.id = w.e.id+'-name'
+        a.w = w
         a.setAttribute('href', `#${w.e.id}`)
         a.innerHTML = `Tab ${w.id+1}`
-        a.onclick = (e) => this.activateWindow(w)
+        // Add gestures on the window name for rename and drag to trash
+        let h = new Hammer.Manager(a, {})
+        h.options.domEvents=true; // enable dom events
+        h.add(new Hammer.Press({event: "rename", pointers: 1}))
+        h.add(new Hammer.Tap({event: "switch", pointers: 1}))
+        h.on("rename", (ev) => 
+             // For some reason this works much better with a timeout
+             window.setTimeout(() => this.renameWindow(ev.target), 0))
+        h.on('switch', (ev) => this.activateWindow(w))
+                
         li.appendChild(a)
         w.nameE = a
         document.getElementById("window-names").appendChild(li)
         this.activateWindow(w)
         return w
+    }
+    /*
+     * Replace the window name with an input field and updates the window
+     * name when the field is changed. If we lose focus, we drop the changes.
+     * In any case we remove the input field.
+     */
+    renameWindow(e) {
+        let name = e.innerHTML
+
+        e.innerHTML= `<input size='12' name='window-name'>`
+        let i = e.children[0]
+        i.focus()
+        // On losing focus, replace the input element with the name
+        // TODO: chrome fires too many blur events and wher remove
+        // the input element too soon
+        i.addEventListener('blur', (e) => {
+            console.log("blur", e)
+            let p = e.target.parentNode
+            setTimeout(() => p.innerHTML = p.w.name, 0)
+        }, { once: true })
+        i.addEventListener('change', (e) => {
+            console.log("change", e)
+            let p = e.target.parentNode
+            p.w.name = e.target.value
+            setTimeout(() => p.innerHTML = p.w.name, 0)
+        })
     }
     onSessionsChanged() {
         // TODO: why do we care?
@@ -173,7 +187,30 @@ class Terminal7 {
         }
         return this.d
     }
-    // TODO: loop on all windows and get their layout
+    play(pane, frame) {
+        var d
+        let m = Casts[pane.cast]
+
+        if ((typeof m !== "undefined") && (frame == m.length))
+            frame = 2
+
+        if (typeof frame === "undefined") {
+            frame = 1
+            pane.cast = this.cast
+            m = Casts[pane.cast]
+            this.cast++
+            if (this.cast == Casts.length)
+                this.cast = 0
+            d = m[frame][0]
+        } else {
+            d = m[frame][0] - m[frame-1][0]
+        }
+        window.setTimeout(() => {
+            pane.write(m[frame][2])
+            this.play(pane, frame+1)
+        }, d*1000)
+    }
+    // TODO: loop on all windows and get their layout. returns a string
     get layout() {
     }
 }
@@ -577,6 +614,8 @@ class Pane extends Cell {
             // if ((ev.domEvent.ctrlKey == true) && (ev.domEvent.key == 'c'))
             if (ev.key == "z")
                 this.toggleZoom()
+            else if (ev.key == ",") 
+                this.t7.renameWindow(document.getElementById(`tab${this.w.id+1}-name`))
             else if (ev.key == "d")
                 this.close()
         })
@@ -611,12 +650,15 @@ class Pane extends Cell {
             this.t.focus()
     }
     /*
-     * splitting the pane, receivees a dir-  either "topbottom" or "rightleft"
-     * returns the new pane
+     * Splitting the pane, receivees a dir-  either "topbottom" or "rightleft"
+     * and the relative size (0-1) of the area left for us.
+     * Returns the new pane.
      */
     split(dir, s) {
         var sx, sy, xoff, yoff, l
         // if the current dir is `TBD` we can swing it our way
+        if (typeof s == "undefined")
+            s = 0.5
         if ((this.layout.dir == "TBD") || (this.layout.cells.length == 1))
             this.layout.dir = dir
         // if we need to create a new layout do it and add us and new pane as cells
