@@ -77,18 +77,19 @@ footer {
     height: 8vh;
     width: 100%;
     margin: 0;
-    padding: 0.6vh 0.6vw;
-    font-size: 5.3vh;
     box-sizing: border-box;
 }
 #navbar {
     color: #F952F9;
+    padding: 1.3vh 0.6vw;
+    font-size: 4.5vh;
     bottom: 0;
 }
 
 #tabbar {
     bottom: 7.5vh;
     color: #00fafa;
+    font-size: 4.5vh;
     padding: 0;
 }
 #tabbar i, #tabbar a { padding-top: 0.6vh; }
