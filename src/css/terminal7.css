@@ -14,7 +14,7 @@ body {
 }
 
 .border { margin: 1vmin; padding: 1vmin;
-    border: 0.5vmin solid #C0CA33;
+    border: 0.5vmin solid #D9F505;
 }
 
 a {
@@ -51,7 +51,7 @@ footer {
     -webkit-mask-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAA5JREFUeNpiYGBgAAgwAAAEAAGbA+oJAAAAAElFTkSuQmCC); /* this fixes the overflow:hidden in Chrome/Opera */
     box-sizing: border-box;
     border: 3px double;
-    border-color: #C0CA33;
+    border-color: #D9F505;
     background-color: black;
 }
 .xterm {
@@ -110,7 +110,7 @@ footer {
 .tabs li { display: inline; }
 .tabs li a { float: left; display: block; padding: 4px 0.5em; 
 left: 1px; text-decoration: none; 
-border-right: 2px solid #C0CA33;
+border-right: 2px solid #D9F505;
 font-size: 3vh;
 line-height: 6vh;
 color: inherit;}
@@ -121,6 +121,6 @@ color: inherit;}
   z-index: 1;
 }
 .active {
-    color: #C0CA33 !important;
+    color: #D9F505 !important;
     background-color: black;
 }
