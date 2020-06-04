@@ -252,6 +252,8 @@ class Cell {
         this.sy = props.sy || 0.8
         this.xoff = props.xoff || 0
         this.yoff = props.yoff || 0
+        this.zoomed = false
+        this.zoomedE = null
     }
     /*
      * Creates the HTML elment that will store our dimensions and content
@@ -292,25 +294,30 @@ class Cell {
      * If an element is not passed in, `this.e` is used
      */
     catchFingers(elem) {
-        let e = (typeof elem == 'undefined')?this.e:elem
-        let h = new Hammer.Manager(e, {})
-        h.options.domEvents=true; // enable dom events
-        h.add(new Hammer.Tap({event: "tap", pointers: 1}))
-        h.add(new Hammer.Tap({event: "doubletap", pointers: 2}))
-        h.add(new Hammer.Swipe({threshold: 200, velocity: 0.7}))
-        h.on('tap', (ev) => this.focus())
-        h.on('doubletap', this.toggleZoom)
+        let e = (typeof elem == 'undefined')?this.e:elem,
+            h = new Hammer.Manager(e, {}),
+        // h.options.domEvents=true; // enable dom events
+            singleTap = new Hammer.Tap({event: "tap"}),
+            doubleTap = new Hammer.Tap({event: "doubletap", taps: 2})
+        h.add([singleTap,
+            doubleTap,
+            new Hammer.Tap({event: "twofingerstap", pointers: 2}),
+            new Hammer.Swipe({threshold: 200, velocity: 0.7})])
 
-        h.on('swipe', (ev) => {
+
+        h.on('tap', e => this.focus())
+        h.on('twofingerstap', e => this.toggleZoom())
+        h.on('doubletap', e => this.toggleZoom())
+
+        h.on('swipe', e => {
             if (!this.zoomed)  {
                 var l
-                let topb = (ev.direction == Hammer.DIRECTION_UP) ||
-                           (ev.direction == Hammer.DIRECTION_DOWN)
+                let topb = (e.direction == Hammer.DIRECTION_UP) ||
+                           (e.direction == Hammer.DIRECTION_DOWN)
                 if (topb)
-                    l = ev.center.x / document.body.offsetWidth
+                    l = e.center.x / document.body.offsetWidth
                 else
-                    l = ev.center.y / document.body.offsetHeight
-                console.log(l, ev.center.x, ev.center.y)
+                    l = e.center.y / document.body.offsetHeight
                 let t = this.split((topb)?"topbottom":"rightleft", l)
             }
         });
@@ -346,36 +353,24 @@ class Cell {
         this.w.cells.splice(this.w.cells.indexOf(this), 1)
         this.e.remove()
     }
-    toggleZoom(ev) {
+    toggleZoom() {
         if (this.zoomed) {
             // Zoom out
-            // this.e.className = this.unzoomed[0]
-            this.xoff = this.unzoomed[1]
-            this.yoff = this.unzoomed[2]
-            this.sx = this.unzoomed[3]
-            this.sy = this.unzoomed[4]
-            Array.prototype.forEach.call(document.getElementsByClassName("cell"), 
-                e => e.style.display = 'block') 
-            Array.prototype.forEach.call(document.getElementsByClassName("bar"), 
-                e => e.style.display = 'block')   // , ...document.getElementsByClassName("tab")]
+            let te = this.zoomedE.children[0]
+            this.e.appendChild(te)
+            document.body.removeChild(this.zoomedE)
+            this.zoomedE = null
         } else {
-            this.unzoomed = [this.e.className,
-                             this.xoff, this.yoff,
-                             this.sx, this.sy]
-            // hide all the other elements
-            Array.prototype.forEach.call(
-                document.getElementsByClassName("cell"), 
-                e => { if (e != this.e) e.style.display = 'none'})
-            Array.prototype.forEach.call(
-                document.getElementsByClassName("bar"), 
-                e => { if (e != this.e) e.style.display = 'none'})
-            // this.e.className = "pane zoom"
-            this.xoff = 0
-            this.sx = 1.0
-            this.sy = 1.0
-            this.yoff = 0
+            let e = document.createElement('div'),
+                te = this.e.removeChild(this.e.children[0])
+            e.classList.add("pane", "zoomed", "focused")
+            this.catchFingers(e)
+            e.appendChild(te)
+            document.body.appendChild(e)
+            this.zoomedE = e
         }
         this.fit()
+        this.focus()
         this.zoomed = !this.zoomed
     }
 

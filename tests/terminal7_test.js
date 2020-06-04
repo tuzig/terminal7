@@ -199,20 +199,27 @@ describe("terminal7", function() {
         })
         it("can zoom in-out-in", function() {
             let p0 = t.activeP,
+                term = p0.t,
+                c0 = term.cols,
+                r0 = term.rows,
                 p1 = p0.split("topbottom")
             expect(p0.e.style.display).to.equal('')
+            expect(term.rows).to.equal(r0)
             expect(p0.sx).to.equal(0.4)
             p0.toggleZoom()
-            expect(p0.sx).to.equal(1)
-            expect(p1.e.style.display).to.equal('none')
+            expect(p0.t.cols).to.equal(c0)
+            expect(p0.t.rows).above(r0)
+            expect(p0.zoomedE).to.exist
+            expect(p0.zoomedE.classList.contains("zoomed")).to.be.true
+            expect(p0.zoomedE.classList.contains("pane")).to.be.true
+            expect(p0.zoomedE.classList.contains("pane")).to.be.true
             p0.toggleZoom()
+            expect(p0.zoomedE).to.be.null
             expect(p0.sx).to.equal(0.4)
-            expect(p1.e.style.display).to.equal('block')
             p0.toggleZoom()
-            expect(p0.e.style.display).to.equal('block')
-            expect(p0.sx).to.equal(1)
-            expect(p0.sy).to.equal(1)
-            expect(p1.e.style.display).to.equal('none')
+            expect(p0.zoomedE).to.exist
+            expect(p0.zoomedE.classList.contains("zoomed")).to.be.true
+            expect(p0.zoomedE.classList.contains("pane")).to.be.true
         })
 
     })
