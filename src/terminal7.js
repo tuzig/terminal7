@@ -412,7 +412,6 @@ class Cell {
             document.body.appendChild(e)
             this.zoomedE = e
         }
-        this.fit()
         this.focus()
         this.zoomed = !this.zoomed
     }
@@ -758,6 +757,10 @@ class Pane extends Cell {
             }
         }
         return this.d
+    }
+    toggleZoom() {
+        super.toggleZoom()
+        this.fit()
     }
 }
 export { Terminal7 , Cell, Pane, Layout } 
