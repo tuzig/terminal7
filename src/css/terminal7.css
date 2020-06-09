@@ -89,9 +89,10 @@ footer {
     font-size: 4.5vh;
     padding: 0;
 }
-#tabbar i, #tabbar a { padding-top: 0.6vh; }
 #tabbar-buttons {
     float: right;
+    padding: 1.3vh 0.6vw;
+    font-size: 4.5vh;
     margin-right: 12px;
 }
 #window-names input {
