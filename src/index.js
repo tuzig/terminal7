@@ -9,64 +9,31 @@ let pane = terminal7.activeP
 let term = pane.t
 let state = 0
 let sendChannel = null
+var firstTime = true
 
-// pane.openURL()
+// Handle pane keys before connecting to the remote
 pane.t.onKey( (keys, ev) => {
-    let code = keys.key.charCodeAt(0)
-    if (pane.state == 3) {
-        pane.d.send(keys.key)
+    if (pane.state != "opened")
         return
-    }
+    let code = keys.key.charCodeAt(0)
     term.write(keys.key)
-    if (state<=2 && code == 13) {
+    if (code == 13) {
         console.log(state+"=>3")
         console.log(host)
         state = 3
         term.write("\n\r\n\r")
-        pc = new RTCPeerConnection({
-            iceServers: [
-              {
-                urls: 'stun:stun.l.google.com:19302'
-              }
-            ]
-        })
-
-        pc.oniceconnectionstatechange = e => {
-            console.log(pc.iceConnectionState)
-            if (pc.iceConnectionState == 'disconnected') {
-                term.write("\nServer disconnected.\n.\n")
-                Connect()
-            }
-        }
-        pc.onicecandidate = event => {
-        if (event.candidate === null) {
-          let offer = btoa(JSON.stringify(pc.localDescription))
-          term.write("Signaling server...\n")
-          fetch('http://'+host+'/connect', {
-            headers: { "Content-Type": "application/json; charset=utf-8" },
-            method: 'POST',
-            body: JSON.stringify({Offer: offer}) 
-          }).then(response => response.text())
-            .then(data => {
-              let sd = new RTCSessionDescription(JSON.parse(atob(data)))
-                term.write("Got Session Description\n")
-              try {
-                pc.setRemoteDescription(sd)
-              } catch (e) {
-                alert(e)
-        }})}}
-        pc.onnegotiationneeded = e => 
-            pc.createOffer().then(d => pc.setLocalDescription(d))
-        Terminal7.openDC(pc)
+        terminal7.connect(host)
+        pane.openDC()
     }
-    else if (state == 1) {
+    else if (firstTime) {
         console.log("1=>2")
         console.log(host)
         host = keys.key
-        state = 2
-    } else if (state == 2)
+        firstTime = false
+    } else {
         console.log("2")
         host += keys.key
+    }
 })
 
 function Connect() {
@@ -81,7 +48,6 @@ function Connect() {
 
     term.write("\n\nWelcome To Terminal Seven,\r\n")
     term.write("\nWhere is your host: ("+host+") ")
-    state = 1
     term.focus()
 }
 /*
@@ -93,5 +59,5 @@ let p3 = p2.split("rightleft")
 // p3.openURL()
 p3.openTerminal()
  p3.t.write("\tLast pane")
-Connect()
     */
+Connect()
