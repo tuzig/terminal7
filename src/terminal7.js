@@ -22,9 +22,45 @@ class Terminal7 {
         // TODO make it responsive
         this.bottomMargin = 0.18
         this.cast = 0
+        this.pc = null
+        this.pendingCDCMsgs = []
+        this.lastMsgId = 1
+        this.cdc = null
     }
     /*
-     * Opens the terminal on the given DOM element.
+     * connect connects to a remote host
+     */
+    connect(host) {
+        this.pc = new RTCPeerConnection({ iceServers: [
+                  { urls: 'stun:stun.l.google.com:19302' }
+                ] })
+
+        this.pc.oniceconnectionstatechange = e => {
+            console.log("ice connection state change: " + this.pc.iceConnectionState)
+        }
+        this.pc.onicecandidate = event => {
+            if (event.candidate === null) {
+              let offer = btoa(JSON.stringify(this.pc.localDescription))
+              console.log("Signaling server...\n")
+              fetch('http://'+host+'/connect', {
+                headers: { "Content-Type": "application/json; charset=utf-8" },
+                method: 'POST',
+                body: JSON.stringify({Offer: offer}) 
+              }).then(response => response.text())
+                .then(data => {
+                  let sd = new RTCSessionDescription(JSON.parse(atob(data)))
+                    console.log("Got Session Description\n")
+                  try {
+                    this.pc.setRemoteDescription(sd)
+                  } catch (e) {
+                    alert(e)
+        }})}}
+        this.pc.onnegotiationneeded = e => 
+            this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
+    }
+
+    /*
+     * Opens terminal7 on the given DOM element.
      * If the optional `silent` argument is true it does nothing but 
      * point the `e` property at the given element. Otherwise and by default
      * it adds the first window and pane.
@@ -36,7 +72,7 @@ class Terminal7 {
             e.id = "terminal7"
             document.body.appendChild(e)
         }
-        this.e = e
+        else this.e = e
         // open the first window
         let w = this.addWindow('Welcome')
         // watch the buttons
@@ -45,6 +81,51 @@ class Terminal7 {
             b.onclick = (e) => this.addWindow()
 
         this.state = "open"
+    }
+    openCDC() {
+        var cdc = this.pc.createDataChannel('%')
+        var enc = new TextDecoder("utf-8");
+        cdc.onclose = () =>{
+            this.state = "disconnected"
+            this.write('Control Channel is closed.\n')
+            // TODO: What now?
+        }
+        cdc.onopen = () => {
+            this.cdc = cdc
+            this.pendingCDCMsgs.forEach((m) => this.cdc.send(m))
+            this.pendingCDCMsgs = []
+        }
+        cdc.onmessage = m => {
+            // TODO: Handle control messages
+            console.log("got cdc message:", this.state, m.data)
+        }
+        this.cdc = cdc
+    }
+    /*
+     * Send the pane's size to the server
+     */
+    sendSize(pane) {
+        if (this.pc == null)
+            return
+        var msg = JSON.stringify({
+                    time: 0,
+                    message_id: this.lastMsgId++,
+                    resize_pty: {
+                        id: pane.serverId,
+                        sx: pane.t.cols,
+                        sy: pane.t.rows
+                    }})
+        if (!this.cdc) {
+            this.pendingCDCMsgs.push(msg)
+            this.openCDC()
+        }
+        else
+            try {
+                this.cdc.send(msg)
+            } catch(err) {
+                setTimeout(this.sendSize, 1000)
+            }
+
     }
     /*
      * Change the active window, all other windows and
@@ -149,44 +230,6 @@ class Terminal7 {
             console.log("sending list windows")
             this.d.send("list-windows\n")
         }, 0)
-    }
-    openDC(pc) {
-        this.buffer = []
-        this.pc = pc
-        this.d = pc.createDataChannel('/usr/local/bin/tmux -CC new')
-        this.d.onclose = () =>{
-            this.state = "disconnected"
-            this.write('Data Channel is closed.\n')
-            // TODO: What now?
-        }
-        this.d.onopen = () => {
-            this.state = 2
-            // TODO: set our size by sending "refresh-client -C <width>x<height>"
-            setTimeout(() => {
-                if (this.state == 2) {
-                    this.write("Sorry, didn't get a prompt from the server.")
-                    this.write("Please refresh.")
-                }},3000)
-        }
-        this.d.onmessage = m => {
-            // TODO:
-            if (this.state == 2) {
-                this.state = 3
-                this.onEnd = this.onFirstContact
-                //TODO: remove demo hack
-                document.getElementById("tabbar").innerHTML = "zsh"
-            }
-            if (this.state == 4) {
-                this.buffer.push(m.data)
-            }
-            if (this.state >= 3) {
-                var rows = m.data.split("\r\n")
-                for (let row of rows)
-                    if (row)
-                        this.parse(row)
-            }
-        }
-        return this.d
     }
     play(pane, frame) {
         var d
@@ -405,7 +448,8 @@ class Layout extends Cell {
     onClose(c) {
         // if this is the only pane in the layout, close the layout
         if (this.cells.length == 1) {
-            this.layout.onClose(this)
+            if (this.layout != null)
+                this.layout.onClose(this)
             this.e.remove()
         } else {
             let i = this.cells.indexOf(c), 
@@ -458,9 +502,10 @@ class Layout extends Cell {
         else
             this.cells.push(pane)
         // TODO:Open the webexec channel
-        // this.openDC()
-        pane.focus()
         pane.openTerminal()
+        if (this.t7.pc != null)
+            pane.openDC()
+        pane.focus()
         return pane
     }
     fit() {
@@ -608,38 +653,28 @@ class Pane extends Cell {
         this.t.open(this.e)
         this.t.loadAddon(this.fitAddon)
         this.t.onKey((ev) =>  {
-            // if ((ev.domEvent.ctrlKey == true) && (ev.domEvent.key == 'c'))
-            if (ev.key == "z")
-                this.toggleZoom()
-            else if (ev.key == ",") 
-                this.t7.renameWindow(this.w)
-            else if (ev.key == "d")
-                this.close()
+            if (ev.domEvent.ctrlKey == true) {
+                if (ev.domEvent.key == "z")
+                    this.toggleZoom()
+                else if (ev.domEvent.key == ",") 
+                    this.t7.renameWindow(this.w)
+                else if (ev.domEvent.key == "d")
+                    this.close()
+            }
+            else
+                if (this.d != null)
+                    this.d.send(ev.key)
         })
         this.fit()
-        this.state = "ready"
-        this.t7.play(this)
+        this.state = "opened"
+        // this.t7.play(this)
         return this.t
     }
 
     fit() {
         if (this.fitAddon !== undefined)
             this.fitAddon.fit()
-    }
-    //TODO: move this to the handlers of commands that cause a resize
-    sendSize() {
-        if (this.d)
-            try {
-                Terminal7.d.send(SET_SIZE_PREFIX+JSON.stringify({
-                    Cols: this.sx,
-                    Rows: this.sy,
-                    X: 0,
-                    Y: 0
-                }))
-            } catch(err) {
-                setTimeout(this.sendSize, 1000)
-            }
-
+        this.t7.sendSize(this)
     }
     focus() {
         super.focus()
@@ -685,6 +720,44 @@ class Pane extends Cell {
         return l.addPane({sx: sx, sy: sy, 
                           xoff: xoff, yoff: yoff,
                           parent: this})
+    }
+    openDC() {
+        var tSize = this.t.rows+'x'+this.t.cols
+        this.buffer = []
+
+        this.d = this.t7.pc.createDataChannel(tSize + ' zsh')
+        this.d.onclose = () =>{
+            this.state = "disconnected"
+            this.write('Data Channel is closed.\n')
+            // TODO: What now?
+        }
+        this.d.onopen = () => {
+            this.state = "opened"
+            // TODO: set our size by sending "refresh-client -C <width>x<height>"
+            setTimeout(() => {
+                if (this.state == "opened") {
+                    this.write("Sorry, didn't get a prompt from the server.")
+                    this.write("Please refresh.")
+                }},3000)
+        }
+        this.d.onmessage = m => {
+            // TODO:
+            console.log("got message:", this.state, m.data)
+            if (this.state == "opened") {
+                var enc = new TextDecoder("utf-16"),
+                    str = enc.decode(m.data)
+                this.state = "ready"
+                this.onEnd = this.onFirstContact
+                this.serverId = parseInt(str)
+            }
+            else if (this.state == "disconnected") {
+                this.buffer.push(new Uint8Array(m.data))
+            }
+            else if (this.state == "ready") {
+                this.write(new Uint8Array(m.data))
+            }
+        }
+        return this.d
     }
 }
 export { Terminal7 , Cell, Pane, Layout } 

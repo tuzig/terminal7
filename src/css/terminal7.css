@@ -54,9 +54,6 @@ footer {
     border-color: #D9F505;
     background-color: black;
 }
-.xterm {
-    margin:10px;
-}
 .layout {
     position: fixed;
     margin: 0;
