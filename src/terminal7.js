@@ -729,7 +729,7 @@ class Pane extends Cell {
         this.d.onclose = () =>{
             this.state = "disconnected"
             this.write('Data Channel is closed.\n')
-            // TODO: What now?
+            this.close()
         }
         this.d.onopen = () => {
             this.state = "opened"
