@@ -26,6 +26,7 @@ class Terminal7 {
         this.pendingCDCMsgs = []
         this.lastMsgId = 1
         this.cdc = null
+        this.breadcrumbs = []
     }
     /*
      * connect connects to a remote host
@@ -132,12 +133,17 @@ class Terminal7 {
      * mark its name in the tabbar as the chosen one
      */
     activateWindow(w) {
-        if (this.activeW instanceof Window)
+        if (typeof w == "undefined") {
+            this.breadcrumbs.pop()
+            w = this.breadcrumbs.pop()
+        }
+        else if (this.activeW instanceof Window)
             this.activeW.nameE.classList.remove("active")
         w.nameE.classList.add("active")
         this.activeW = w
         w.activeP.focus()
         window.location.href=`#tab${w.id+1}`
+        this.breadcrumbs.push(w)
     }
     /*
      * Adds a window, complete with a first layout and pane
@@ -276,7 +282,9 @@ class Window {
 
     }
     close() {
-        console.log("TODO: close window")
+        // remove the window name
+        this.nameE.parentNode.remove()
+        this.e.remove()
     }
 
 }
@@ -449,6 +457,11 @@ class Layout extends Cell {
         if (this.cells.length == 1) {
             if (this.layout != null)
                 this.layout.onClose(this)
+            else {
+                // activate the next window
+                this.t7.activateWindow()
+                this.w.close()
+            }
             this.e.remove()
         } else {
             let i = this.cells.indexOf(c), 
