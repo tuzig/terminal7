@@ -21,7 +21,8 @@
   "dependencies": {
     "hammerjs": "^2.0.8",
     "xterm": "^4.5.0",
-    "xterm-addon-fit": "^0.3.0"
+    "xterm-addon-fit": "^0.3.0",
+    "websocket-extensions": ">=0.1.4"
   },
   "devDependencies": {
     "chai": "^4.2.0",
