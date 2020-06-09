@@ -44,7 +44,7 @@
     "webpack-dev-server": "^3.11.0"
   },
   "scripts": {
-    "start": "webpack-dev-server",
+    "dev": "webpack-dev-server",
     "test": "karma start --single-run karma.conf.js",
     "build": "npx webpack --output dist/terminal7.js"
   },
