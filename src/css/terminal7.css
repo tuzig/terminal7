@@ -22,16 +22,6 @@ a {
   color: #cb3837;
 }
 
-footer {
-    position:fixed;
-    margin: 0 auto;
-    bottom: 16vh;
-    left: 0;
-    text-align: center;
-    width: 100%;
-    font-size: 80%;
-}
-
 .focused {
     border-style: solid !important;
 }
@@ -71,7 +61,7 @@ footer {
     position: fixed;
     left: 0;
     right: 0;
-    height: 8vh;
+    height: 8%;
     width: 100%;
     margin: 0;
     box-sizing: border-box;

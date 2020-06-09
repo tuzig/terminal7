@@ -19,8 +19,8 @@ class Terminal7 {
         this.cells = []
         this.state = "initiated"
         this.defaultUrl = "https://he.wikipedia.org/wiki/%D7%A2%D7%9E%D7%95%D7%93_%D7%A8%D7%90%D7%A9%D7%99"
-        // TODO make it responsive
-        this.bottomMargin = 0.18
+        // TODO make the bottom bars height responsive
+        this.bottomMargin = 0.16
         this.cast = 0
         this.pc = null
         this.pendingCDCMsgs = []
@@ -642,6 +642,8 @@ class Pane extends Cell {
             e.setAttribute('srcdoc', p.src)
     }
     openTerminal() {
+        var afterLeader = false
+
         this.t = new Terminal({
             convertEol: true,
             theme: THEME,
@@ -652,13 +654,19 @@ class Pane extends Cell {
         this.t.open(this.e)
         this.t.loadAddon(this.fitAddon)
         this.t.onKey((ev) =>  {
-            if (ev.domEvent.ctrlKey == true) {
-                if (ev.domEvent.key == "z")
+            if (afterLeader) {
+                if (ev.domEvent.key == "z") 
                     this.toggleZoom()
                 else if (ev.domEvent.key == ",") 
                     this.t7.renameWindow(this.w)
                 else if (ev.domEvent.key == "d")
                     this.close()
+                afterLeader = false
+            }
+            // TODO: make the leader key configurable
+            else if ((ev.domEvent.ctrlKey == true) && (ev.domEvent.key == "a")) {
+                afterLeader = true
+                return
             }
             else
                 if (this.d != null)
