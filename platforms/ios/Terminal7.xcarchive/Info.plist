@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ApplicationProperties</key>
+	<dict>
+		<key>ApplicationPath</key>
+		<string>Applications/Terminal7.app</string>
+		<key>CFBundleIdentifier</key>
+		<string>dev.afittestide.terminal7</string>
+		<key>CFBundleShortVersionString</key>
+		<string>1.0.0</string>
+		<key>CFBundleVersion</key>
+		<string>1.0.0</string>
+		<key>SigningIdentity</key>
+		<string>Apple Development: benny@tuzig.com (68RSD4WMA4)</string>
+		<key>Team</key>
+		<string>59BB4382H4</string>
+	</dict>
+	<key>ArchiveVersion</key>
+	<integer>2</integer>
+	<key>CreationDate</key>
+	<date>2020-06-10T09:12:42Z</date>
+	<key>Name</key>
+	<string>Terminal7</string>
+	<key>SchemeName</key>
+	<string>Terminal7</string>
+</dict>
+</plist>

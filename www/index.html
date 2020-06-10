@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://kit.fontawesome.com/ff85edf54b.js" crossorigin="anonymous"></script>
+  <title>Terminal Seven</title>
+</head>
+<body>
+  <div id="terminal7">
+  </div>
+  <div id="tabbar" class="bar border"> 
+      <div id="tabbar-buttons">
+          <i id="add-tab" class="fas fa-plus"></i>
+          <i id="break-pane" class="fas fa-exclamation"
+              onclick="console.log('TODO: spawn a pane')"></i>
+      </div>
+      <ul id="window-names" class="tabs">
+      </ul>
+  </div>
+   
+  <div id="navbar" class="bar border">
+  <i style="float:left" class="fas fa-server"></i>
+  <i style="margin-right: 10vh" class="fas fa-trash"></i>
+  <i class="fas fa-search"></i>
+  <i class="fas fa-external-link-square-alt"></i>
+  <b>:</b>
+  <i class="fas fa-clipboard"></i>
+  <i style="float:right;" class="fas fa-cogs"></i>
+  <i style="float:right;padding-right:0.8vh" class="fas fa-share-alt"></i>
+
+  <script type="module" src="terminal7.bundle.js"></script>
+  <script>
+      function onDeviceReady() {
+          StatusBar.hide();
+      }
+</body>
+</html>

@@ -5,3 +5,12 @@ Thumbs.db
 /dist
 /tmp
 /build
+*.bundle.js
+plugins/
+# iOS Platform
+platforms/ios/build/
+platforms/ios/www/
+platforms/ios/cordova/console.log
+*.xcuserdatad
+# broswer
+platforms/browser/www

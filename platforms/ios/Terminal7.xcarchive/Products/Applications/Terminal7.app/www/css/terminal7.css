@@ -1,0 +1,131 @@
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+    text-align: center;
+  font-family: courier;
+  color: #525252;
+  background-color: #271D30;
+}
+
+.border { margin: 1vmin; padding: 1vmin;
+    border: 0.5vmin solid #D9F505;
+}
+
+a {
+  text-decoration: none;
+  color: #cb3837;
+}
+
+footer {
+    position:fixed;
+    margin: 0 auto;
+    bottom: 16vh;
+    left: 0;
+    text-align: center;
+    width: 100%;
+    font-size: 80%;
+}
+
+.focused {
+    border-style: solid !important;
+}
+
+.window {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 84%; /* TODO: make responsive */
+}
+.pane {
+    position: fixed;
+    padding: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    -webkit-mask-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAA5JREFUeNpiYGBgAAgwAAAEAAGbA+oJAAAAAElFTkSuQmCC); /* this fixes the overflow:hidden in Chrome/Opera */
+    box-sizing: border-box;
+    border: 3px double;
+    border-color: #D9F505;
+    background-color: black;
+}
+.layout {
+    position: fixed;
+    margin: 0;
+    padding: 0;
+    display: none;
+}
+
+.full {
+    top:0;
+    left:0;
+    height: 78%;
+}
+.bar {
+    border-radius: 6px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    height: 8vh;
+    width: 100%;
+    margin: 0;
+    box-sizing: border-box;
+}
+#navbar {
+    color: #F952F9;
+    padding: 1.3vh 0.6vw;
+    font-size: 4.5vh;
+    bottom: 0;
+}
+
+#tabbar {
+    bottom: 7.5vh;
+    color: #00fafa;
+    font-size: 4.5vh;
+    padding: 0;
+}
+#tabbar-buttons {
+    float: right;
+    padding: 1.3vh 0.6vw;
+    font-size: 4.5vh;
+    margin-right: 12px;
+}
+#window-names input {
+  font-size: 3vh;
+  background-color: black;
+  color: inherit;
+}
+.tabs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.tabs li { display: inline; }
+.tabs li a { float: left; display: block; padding: 4px 0.5em; 
+left: 1px; text-decoration: none; 
+border-right: 2px solid #D9F505;
+font-size: 3vh;
+line-height: 6vh;
+color: inherit;}
+.tabs li a:hover { background: black; }
+
+#tab1:target, #tab2:target, #tab3:target, #tab4:target, #tab5:target,
+#tab6:target, #tab7:target, #tab8:target, #tab9:target {
+  z-index: 1;
+}
+.active {
+    color: #D9F505 !important;
+    background-color: black;
+}
+.zoomed {
+    z-index: 2;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}

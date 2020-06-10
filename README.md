@@ -26,13 +26,21 @@ open pseaudo terminals, execute commands and pipe it all to Terminal 7.
 npm i
 ```
 
-## Running a dev Server
+## Running
+
+To start a dev server run:
 
 ```console
 npm run dev
 ```
 
-and point your browser at http://localhost:808
+and point your browser at http://localhost:8080.
+
+If you have an iPad connected over USB you can run the app on the ipad using:
+
+```console
+npm run ios
+```
 
 ## Testing
 
