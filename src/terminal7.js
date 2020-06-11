@@ -2,7 +2,6 @@ import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit';
 import Casts from './movies.js';
 import * as Hammer from 'hammerjs';
-
 const THEME = {foreground: "#00FAFA", background: "#000"}
 const MINIMUM_COLS = 2
 const MINIMUM_ROWS = 1
@@ -80,7 +79,6 @@ class Terminal7 {
         let b = document.getElementById("add-tab")
         if (b != null) 
             b.onclick = (e) => this.addWindow()
-
         this.state = "open"
     }
     openCDC() {
@@ -316,6 +314,10 @@ class Cell {
         this.e.classList.add("cell")
         if (typeof className == "string")
             this.e.classList.add(className)
+        // net 3 lines are used to prevent tab key from switching panes
+        this.e.addEventListener('keydown', (e) => { 
+          if (e.keyCode == 9) e.preventDefault(); 
+        })
 
         let terminal7 = document.getElementById('terminal7')
         this.w.e.appendChild(this.e)
