@@ -367,12 +367,15 @@ class Cell {
                 let topb = (e.direction == Hammer.DIRECTION_UP) ||
                            (e.direction == Hammer.DIRECTION_DOWN)
                 if (topb)
-                    l = e.center.x / document.body.offsetWidth
+                    l = (e.center.x / document.body.offsetWidth - this.xoff) /
+                        this.sx
+
                 else
-                    l = e.center.y / document.body.offsetHeight
+                    l = (e.center.y / document.body.offsetHeight - this.yoff) /
+                        this.sy
                 let t = this.split((topb)?"topbottom":"rightleft", l)
             }
-        });
+        })
         this.mc = h
     }
     get sx(){
