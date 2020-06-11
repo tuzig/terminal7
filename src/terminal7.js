@@ -135,6 +135,7 @@ class Terminal7 {
     activateWindow(w) {
         if (typeof w == "undefined") {
             this.breadcrumbs.pop()
+            // TODO: what if it's the first crumb we just deleted?
             w = this.breadcrumbs.pop()
         }
         else if (this.activeW instanceof Window)
@@ -692,9 +693,10 @@ class Pane extends Cell {
     }
 
     fit() {
-        if (this.fitAddon !== undefined)
+        if (this.fitAddon !== undefined) {
             this.fitAddon.fit()
-        this.t7.sendSize(this)
+            this.t7.sendSize(this)
+        }
     }
     focus() {
         super.focus()
