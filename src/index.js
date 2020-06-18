@@ -22,8 +22,8 @@ setTimeout(() => {
             console.log(host)
             state = 3
             pane.t.write("\n\r\n\r")
-            terminal7.connect(host)
-            pane.openDC()
+            terminal7.connect(host, "guest", "wishingUsSuccess")
+            terminal7.openCDC().then(() => { console.log("CDC"); pane.openDC()})
         }
         else if (firstTime) {
             console.log("1=>2")

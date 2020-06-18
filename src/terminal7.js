@@ -28,9 +28,9 @@ class Terminal7 {
         this.breadcrumbs = []
     }
     /*
-     * connect connects to a remote host
+     * connect and authenticate xxx connects to a remote host
      */
-    connect(host) {
+    connect(host, user, pass) {
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: 'stun:stun.l.google.com:19302' }
                 ] })
@@ -54,11 +54,41 @@ class Terminal7 {
                     this.pc.setRemoteDescription(sd)
                   } catch (e) {
                     alert(e)
+
         }})}}
         this.pc.onnegotiationneeded = e => 
             this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
+        this.authenticate(user, pass)
     }
 
+    /*
+     * sencCTRLMsg gets a control message and sends it if we have a control
+     * channle open or adds it to the queue if we're early to the part
+     */
+    sendCTRLMsg(msg) {
+        console.log("sending ctrl message ", msg)
+        if (!this.cdc)
+            this.pendingCDCMsgs.push(msg)
+        else
+            try {
+                this.cdc.send(msg)
+            } catch(err) {
+                setTimeout(this.sendSize, 1000)
+            }
+    }
+    /*
+     * authenticate send the authentication message over the control channel
+     */
+    authenticate(user, pass) {
+        var msg = JSON.stringify({
+                    time: 0,
+                    message_id: this.lastMsgId++,
+                    auth: {
+                        username: user,
+                        password: pass,
+                    }})
+        this.sendCTRLMsg(msg)
+    }
     /*
      * Opens terminal7 on the given DOM element.
      * If the optional `silent` argument is true it does nothing but 
@@ -82,23 +112,31 @@ class Terminal7 {
         this.state = "open"
     }
     openCDC() {
-        var cdc = this.pc.createDataChannel('%')
-        var enc = new TextDecoder("utf-8");
-        cdc.onclose = () =>{
-            this.state = "disconnected"
-            this.write('Control Channel is closed.\n')
-            // TODO: What now?
-        }
-        cdc.onopen = () => {
+        return new Promise((resolve, reject) => {
+            var cdc = this.pc.createDataChannel('%')
+            console.log("<opening cdc")
+            cdc.onclose = () =>{
+                this.state = "disconnected"
+                this.write('Control Channel is closed.\n')
+                // TODO: What now?
+            }
+            cdc.onopen = () => {
+                if (this.pendingCDCMsgs.length > 0)
+                    // TODO: why the time out? why 100mili?
+                    setTimeout(() => {
+                        console.log("sending pending messages:", this.pendingCDCMsgs)
+                        this.pendingCDCMsgs.forEach((m) => this.cdc.send(m), 10)
+                        this.pendingCDCMsgs = []
+                    }, 100)
+            }
+            cdc.onmessage = m => {
+                // TODO: Handle control messages
+                console.log("got cdc message:", this.state, m)
+                // TODO: validate it's out auth msg ack 
+                resolve("cdc opened!")
+            }
             this.cdc = cdc
-            this.pendingCDCMsgs.forEach((m) => this.cdc.send(m))
-            this.pendingCDCMsgs = []
-        }
-        cdc.onmessage = m => {
-            // TODO: Handle control messages
-            console.log("got cdc message:", this.state, m.data)
-        }
-        this.cdc = cdc
+        })
     }
     /*
      * Send the pane's size to the server
@@ -114,16 +152,7 @@ class Terminal7 {
                         sx: pane.t.cols,
                         sy: pane.t.rows
                     }})
-        if (!this.cdc) {
-            this.pendingCDCMsgs.push(msg)
-            this.openCDC()
-        }
-        else
-            try {
-                this.cdc.send(msg)
-            } catch(err) {
-                setTimeout(this.sendSize, 1000)
-            }
+        this.sendCTRLMsg(msg)
 
     }
     /*
