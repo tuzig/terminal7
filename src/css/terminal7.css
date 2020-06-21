@@ -13,6 +13,10 @@ body {
   background-color: #271D30;
 }
 
+#terminal7 {
+    height: 84%; /* TODO: make responsive */
+}
+
 .border { margin: 1vmin; padding: 1vmin;
     border: 0.5vmin solid #D9F505;
 }
@@ -31,7 +35,7 @@ a {
     top: 0;
     left: 0;
     width: 100%;
-    height: 84%; /* TODO: make responsive */
+    height: 100%%; /* TODO: make responsive */
 }
 .pane {
     position: fixed;
@@ -97,11 +101,13 @@ a {
 }
 .tabs li { display: inline; }
 .tabs li a { float: left; display: block; padding: 4px 0.5em; 
-left: 1px; text-decoration: none; 
-border-right: 2px solid #D9F505;
-font-size: 3vh;
-line-height: 6vh;
-color: inherit;}
+    left: 1px; 
+    text-decoration: none; 
+    border-right: 2px solid #D9F505;
+    font-size: 3vh;
+    line-height: 6vh;
+    color: inherit;
+}
 .tabs li a:hover { background: black; }
 
 #tab1:target, #tab2:target, #tab3:target, #tab4:target, #tab5:target,
@@ -118,4 +124,58 @@ color: inherit;}
     left: 0;
     width: 100%;
     height: 100%;
+}
+#home {
+    width: 100%;
+    max-width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* #peers { float: left; } */
+#peers li { 
+    display: block;
+    float: left;
+    height: 100px;
+    width: 100px;
+    background-color: #00fafa;
+}
+#peers li a {
+    float: left;
+    display: block;
+    font-size: 20em;
+    text-decoration: none; 
+    color: #525252;
+}
+#add-peer {
+    display: block;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30em;
+    align: left;
+}
+#add-peer input[type=text], #add-peer input[type=password] {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+#add-peer label {
+    align: left;
+}
+.modal {
+    z-index: 3;
+}
+.modal .close {
+  /* Position it in the top right corner outside of the modal */
+  position: absolute;
+  right: 25px;
+  top: 0; 
+  font-size: 35px;
+  font-weight: bold;
 }

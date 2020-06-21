@@ -7,6 +7,34 @@
 </head>
 <body>
   <div id="terminal7">
+      <div id="home">
+          <h1>Welcome to Terminal Seven!</h1>
+          <ul id="peers">
+              <li id="plus-host" class="border">
+                  <i class="fas fa-plus"><a href="#add-peer"></a></i>
+              </li>
+          </ul>
+      </div>
+      <div id="add-peer" class="modal border" >
+          <form id="add-peer-form">
+            <span onclick="this.parentNode.style.display='none'" 
+class="close" title="Close Modal">&times;</span>
+
+        <label for="uname"><b>Host</b></label>
+        <input type="text" placeholder="IP or host name" name="host" required>
+        <label for="uname"><b>Username</b></label>
+        <input type="text" placeholder="Enter Username" name="username" required>
+
+        <label for="psw"><b>Password</b></label>
+        <input type="password" placeholder="Enter Password" name="password" required>
+
+        <label>
+          <input type="checkbox" checked="checked" name="remember"> Remember host
+        </label>
+        <button type="submit">Connect</button>
+          </form>
+      </div>
+  </div>
   </div>
   <div id="tabbar" class="bar border"> 
       <div id="tabbar-buttons">
@@ -19,7 +47,7 @@
   </div>
    
   <div id="navbar" class="bar border">
-  <i style="float:left" class="fas fa-server"></i>
+      <i style="float:left" class="fas fa-server"><a href="#home"></a></i>
   <div style="float:left" class="static">[current host]</div>
   <i style="width: 20" class="fas fa-trash"></i>
   <i class="fas fa-search"></i>

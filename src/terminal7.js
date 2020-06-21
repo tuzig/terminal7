@@ -26,11 +26,25 @@ class Terminal7 {
         this.lastMsgId = 1
         this.cdc = null
         this.breadcrumbs = []
+        this.activeW = null
+        this.hosts = JSON.parse(localStorage.getItem('hosts'))
     }
+    /*
+     * savePeers syrializes the 
     /*
      * connect and authenticate xxx connects to a remote host
      */
-    connect(host, user, pass) {
+    connect(addr, user, secret, remember) {
+        if (typeof addr == "object") {
+            let host = addr
+            addr = host.addr
+            user = host.user
+            secret = host.secret
+        }
+        if (this.activeW == null)
+            // open the first window
+            this.activeW = this.addWindow('Welcome')
+
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: 'stun:stun.l.google.com:19302' }
                 ] })
@@ -42,14 +56,21 @@ class Terminal7 {
             if (event.candidate === null) {
               let offer = btoa(JSON.stringify(this.pc.localDescription))
               console.log("Signaling server...\n")
-              fetch('http://'+host+'/connect', {
+              fetch('http://'+addr+'/connect', {
                 headers: { "Content-Type": "application/json; charset=utf-8" },
                 method: 'POST',
                 body: JSON.stringify({Offer: offer}) 
               }).then(response => response.text())
                 .then(data => {
                   let sd = new RTCSessionDescription(JSON.parse(atob(data)))
-                    console.log("Got Session Description\n")
+                  console.log("Got Session Description\n")
+                  if (remember) {
+                      console.log(`adding ${user}@${addr} & saving hosts`)
+                      if (this.hosts == null)
+                          this.hosts = {}
+                      this.hosts.push({sd: sd, addr: addr, user: user})
+                      localStorage.setItem('hosts', JSON.stringify(this.hosts))
+                  }
                   try {
                     this.pc.setRemoteDescription(sd)
                   } catch (e) {
@@ -58,7 +79,7 @@ class Terminal7 {
         }})}}
         this.pc.onnegotiationneeded = e => 
             this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
-        this.authenticate(user, pass)
+        this.authenticate(user, secret)
     }
 
     /*
@@ -73,19 +94,20 @@ class Terminal7 {
             try {
                 this.cdc.send(msg)
             } catch(err) {
+                //TODO: this is silly, remove this
                 setTimeout(this.sendSize, 1000)
             }
     }
     /*
      * authenticate send the authentication message over the control channel
      */
-    authenticate(user, pass) {
+    authenticate(user, secret) {
         var msg = JSON.stringify({
                     time: 0,
                     message_id: this.lastMsgId++,
                     auth: {
                         username: user,
-                        password: pass,
+                        secret: secret,
                     }})
         this.sendCTRLMsg(msg)
     }
@@ -103,13 +125,32 @@ class Terminal7 {
             document.body.appendChild(e)
         }
         else this.e = e
-        // open the first window
-        let w = this.addWindow('Welcome')
         // watch the buttons
         let b = document.getElementById("add-tab")
         if (b != null) 
             b.onclick = (e) => this.addWindow()
         this.state = "open"
+        // update the home page with the hosts
+        this.refreshHosts()
+    }
+    refreshHosts() {
+        this.hosts = JSON.parse(localStorage.getItem('hosts'))
+        this.hosts != null && this.hosts.forEach((h) => {
+            let li = document.createElement('li'),
+                a = document.createElement('a')
+            // a.id = w.e.id+'-name'
+            a.innerHTML = `<h3> ${h.user}</h3><h2>@</h2><h3>${h.addr}</h3>`
+
+            // Add gestures on the window name for rename and drag to trash
+            let hm = new Hammer.Manager(a, {})
+            hm.options.domEvents=true; // enable dom events
+            hm.add(new Hammer.Press({event: "edit", pointers: 1}))
+            hm.add(new Hammer.Tap({event: "connect", pointers: 1}))
+            hm.on("edit", (ev) => console.log("TODO: add host editing"))
+            hm.on('connect', (ev) => this.connect(h))
+            li.appendChild(a)
+            document.getElementById("plus-host").parentNode.prepend(li)
+        })
     }
     openCDC() {
         return new Promise((resolve, reject) => {
@@ -362,9 +403,10 @@ class Cell {
         this.w.activeP = this
         if (this.t7.activeP !== undefined) {
             this.t7.activeP.e.classList.remove("focused")
-            this.e.classList.add("focused")
         }
+        this.e.classList.add("focused")
         this.t7.activeP = this
+        
     }
     /*
      * Used to grow/shrink the terminal based on containing element dimensions
@@ -552,10 +594,10 @@ class Layout extends Cell {
         // for 10 msecs to let the new layout refresh
         setTimeout(() => {
             pane.openTerminal()
+            pane.focus()
             if (this.t7.pc != null)
                 pane.openDC()
         }, 10)
-        pane.focus()
         return pane
     }
     fit() {
