@@ -253,10 +253,10 @@ class Terminal7 {
              // For some reason this works much better with a timeout
              window.setTimeout(() => this.renameWindow(w), 0))
         h.on('switch', (ev) => this.activateWindow(w))
-                
         li.appendChild(a)
         w.nameE = a
-        document.getElementById("window-names").appendChild(li)
+        let wn = document.getElementById("window-names")
+        wn != null && wn.appendChild(li)
         this.activateWindow(w)
         return w
     }
@@ -592,12 +592,12 @@ class Layout extends Cell {
             this.cells.push(pane)
         // opening the terminal and the datachannel are heavy so we wait
         // for 10 msecs to let the new layout refresh
-        setTimeout(() => {
+        // setTimeout(() => {
             pane.openTerminal()
             pane.focus()
             if (this.t7.pc != null)
                 pane.openDC()
-        }, 10)
+        // }, 10)
         return pane
     }
     fit() {

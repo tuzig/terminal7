@@ -4,6 +4,9 @@ import { assert } from "chai"
 
 describe("terminal7", function() {
     var t, e
+    /*
+     * The parent element is added before the tests begin
+     */
     before(() => {
             e = document.createElement('div')
             document.body.appendChild(e)
@@ -11,26 +14,28 @@ describe("terminal7", function() {
     after(() => {
         document.body.innerHTML = ""
     })
+    /*
+     * Every tests gets a fresh copy of terminal7 and a fresh dom element
+     */
     beforeEach(() => {
-        // just a place holder for window names
-        e.innerHTML = "<div id='window-names'></div>"
         t = new Terminal7()
+        e.innerHTML = ""
         t.open(e)
     })
 
-    it("opens with a window and a pane", () => {
-        expect(t.windows[0]).to.exist
-        expect(t.cells[0]).to.exist
-        assert.equal(t.cells[0].w, t.windows[0])
-        assert.equal(t.cells[0].xoff, 0)
-        assert.equal(t.cells[0].yoff, 0)
+    it("opens with no windows", () => {
+        expect(t.windows.length).to.equal(0)
+        expect(t.cells.length).to.equal(0)
     })
-
     describe("window", () => {
-        it("can be added", function() {
+        it("is added with a cell", function() {
             let w = t.addWindow("gothic")
-            assert.exists(t.windows[1])
-            assert.exists(t.windows[1].name, "gothic")
+            assert.exists(t.windows[0])
+            assert.exists(t.windows[0].name, "gothic")
+            expect(t.cells[0]).to.exist
+            assert.equal(t.cells[0].w, t.windows[0])
+            assert.equal(t.cells[0].xoff, 0)
+            assert.equal(t.cells[0].yoff, 0)
         })
         it("can be activated", function() {
             let w = t.addWindow("gothic")
@@ -40,6 +45,7 @@ describe("terminal7", function() {
 
     describe("cell", () => {
         beforeEach(() => {
+            t.addWindow("1,2,3 testing")
             t.activeP.sx = 0.8
             t.activeP.sy = 0.6
             t.activeP.xoff = 0.1
@@ -225,10 +231,6 @@ describe("terminal7", function() {
 
     })
     describe("pane", () => {
-        it("can open a web page", function() {
-            let p = t.activeP
-            p.openURL({})
-        })
 
         /*
         it("can be written to", () =>{
