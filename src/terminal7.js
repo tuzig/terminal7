@@ -27,59 +27,9 @@ class Terminal7 {
         this.cdc = null
         this.breadcrumbs = []
         this.activeW = null
-        this.hosts = JSON.parse(localStorage.getItem('hosts'))
-    }
-    /*
-     * savePeers syrializes the 
-    /*
-     * connect and authenticate xxx connects to a remote host
-     */
-    connect(addr, user, secret, remember) {
-        if (typeof addr == "object") {
-            let host = addr
-            addr = host.addr
-            user = host.user
-            secret = host.secret
-        }
-        if (this.activeW == null)
-            // open the first window
-            this.activeW = this.addWindow('Welcome')
-
-        this.pc = new RTCPeerConnection({ iceServers: [
-                  { urls: 'stun:stun.l.google.com:19302' }
-                ] })
-
-        this.pc.oniceconnectionstatechange = e => {
-            console.log("ice connection state change: " + this.pc.iceConnectionState)
-        }
-        this.pc.onicecandidate = event => {
-            if (event.candidate === null) {
-              let offer = btoa(JSON.stringify(this.pc.localDescription))
-              console.log("Signaling server...\n")
-              fetch('http://'+addr+'/connect', {
-                headers: { "Content-Type": "application/json; charset=utf-8" },
-                method: 'POST',
-                body: JSON.stringify({Offer: offer}) 
-              }).then(response => response.text())
-                .then(data => {
-                  let sd = new RTCSessionDescription(JSON.parse(atob(data)))
-                  console.log("Got Session Description\n")
-                  if (remember) {
-                      console.log(`adding ${user}@${addr} & saving hosts`)
-                      if (this.hosts == null)
-                          this.hosts = {}
-                      this.hosts.push({sd: sd, addr: addr, user: user})
-                      localStorage.setItem('hosts', JSON.stringify(this.hosts))
-                  }
-                  try {
-                    this.pc.setRemoteDescription(sd)
-                  } catch (e) {
-                    alert(e)
-
-        }})}}
-        this.pc.onnegotiationneeded = e => 
-            this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
-        this.authenticate(user, secret)
+        let hs = JSON.parse(localStorage.getItem('hosts'))
+        this.hosts = []
+        hs != null && hs.forEach((props) => this.hosts.push(new Host(props)))
     }
 
     /*
@@ -134,15 +84,15 @@ class Terminal7 {
         this.refreshHosts()
     }
     refreshHosts() {
-        this.hosts = JSON.parse(localStorage.getItem('hosts'))
-        this.hosts != null && this.hosts.forEach((h) => {
+        const hs = JSON.parse(localStorage.getItem('hosts'))
+        this.hosts = []
+        hs != null && hs.forEach((h) => {
+            // create the elments <li><a></a></li>
             let li = document.createElement('li'),
                 a = document.createElement('a')
-            // a.id = w.e.id+'-name'
             a.innerHTML = `<h3> ${h.user}</h3><h2>@</h2><h3>${h.addr}</h3>`
-
             // Add gestures on the window name for rename and drag to trash
-            let hm = new Hammer.Manager(a, {})
+            let hm = new Hammer.Manager(li, {})
             hm.options.domEvents=true; // enable dom events
             hm.add(new Hammer.Press({event: "edit", pointers: 1}))
             hm.add(new Hammer.Tap({event: "connect", pointers: 1}))
@@ -150,7 +100,17 @@ class Terminal7 {
             hm.on('connect', (ev) => this.connect(h))
             li.appendChild(a)
             document.getElementById("plus-host").parentNode.prepend(li)
+            this.hosts.push(new Host(h))
         })
+    }
+    storeHost(h) { 
+        console.log(`adding ${user}@${addr} & saving hosts`)
+        if (this.hosts == null)
+            this.hosts = []
+        this.hosts.push(h)
+        const out = JSON.stringify(this.hosts)
+        console.log("storing: ", out)
+        localStorage.setItem('hosts', out)
     }
     openCDC() {
         return new Promise((resolve, reject) => {
@@ -334,9 +294,55 @@ class Terminal7 {
     }
 }
 
+class Host {
+    constructor (props) {
+        this.addr = props.addr
+        this.user = props.user
+        this.secret = props.secret
+        this.name = `${this.user}@${this.addr}`
+        this.pc = null
+    }
+    /*
+     * connect and authenticate xxx connects to a remote host
+     */
+    connect() {
+        if (this.activeW == null)
+            // open the first window
+            this.activeW = this.addWindow('Welcome')
+
+        this.pc = new RTCPeerConnection({ iceServers: [
+                  { urls: 'stun:stun.l.google.com:19302' }
+                ] })
+
+        this.pc.oniceconnectionstatechange = e => {
+            console.log("ice connection state change: " + this.pc.iceConnectionState)
+        }
+        this.pc.onicecandidate = event => {
+            if (event.candidate === null) {
+              let offer = btoa(JSON.stringify(this.pc.localDescription))
+              console.log("Signaling server...\n")
+              fetch('http://'+addr+'/connect', {
+                headers: { "Content-Type": "application/json; charset=utf-8" },
+                method: 'POST',
+                body: JSON.stringify({Offer: offer}) 
+              }).then(response => response.text())
+                .then(data => {
+                  let sd = new RTCSessionDescription(JSON.parse(atob(data)))
+                  console.log("Got Session Description\n")
+                  try {
+                    this.pc.setRemoteDescription(sd)
+                  } catch (e) {
+                    alert(e)
+
+        }})}}
+        this.pc.onnegotiationneeded = e => 
+            this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
+        this.authenticate(user, secret)
+    }
+}
 class Window {
     constructor (props) {
-        this.name = name
+        this.name = props.name
         this.t7 = props.t7
         this.id = props.id
         this.cells = []

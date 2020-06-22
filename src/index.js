@@ -20,12 +20,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // display the home page
     document.getElementById('add-peer-form').onsubmit = (ev) => {
         let remember = ev.target.querySelector('[name="remember"]').value
-        console.log("rememeber ", remember)
-        terminal7.connect(ev.target.querySelector('[name="host"]').value,
-                          ev.target.querySelector('[name="username"]').value,
-                          ev.target.querySelector('[name="password"]').value,
-                          remember == "on"
-        )
+        let h = new Host({addr: ev.target.querySelector('[name="host"]').value,
+                          user: ev.target.querySelector('[name="username"]').value,
+                          secret: ev.target.querySelector('[name="password"]').value
+        })
+        if (remember == "on") {
+            terminal7.storeHost(h)
+        }
+        h.connect()
         terminal7.openCDC().then(() => {console.log("hhhh"); terminal7.activeP.openDC()})
         ev.target.parentNode.style.display = 'none'
         return false

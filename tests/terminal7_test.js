@@ -230,31 +230,40 @@ describe("terminal7", function() {
         })
 
     })
-    describe("pane", () => {
+    describe("host", function() {
+        beforeEach(function() { localStorage.removeItem('hosts') })
+        it("can be stored", function() {
+            t.storeHost({
+                addr: 'localhost',
+                user: 'guest',
+            })
+            let s = localStorage.getItem('hosts')
+            expect(s.length).to.equal(1)
+            expect(s[0].addr).to.equal("localhost")
+            expect(s[0].user).to.equal("guest")
+            t.storeHost({
+                addr: 'badwolf',
+                user: 'root',
+            })
+            s = localStorage.getItem('hosts')
+            expect(s.length).to.equal(2)
+        })
+        it("can be loaded", function() {
+            console.log("WTF")
+            t.storeHost({
+                addr: 'localhost',
+                user: 'guest',
+            })
+            t.storeHost({
+                addr: 'badwolf',
+                user: 'root',
+            })
+            const mem = JSON.stringify(t.hosts)
+            t.hosts = NULL
+            t.refreshHosts()
+            s = localStorage.getItem("hosts")
+            expect(s).to.equal(989898)
+        })
 
-        /*
-        it("can be written to", () =>{
-            let p = t.cells[0]
-            p.openTerminal()
-            p.write('\\n\\nfoo\\n\\n\\rbar\\n\\n\\rbaz')
-            p.t.selectAll()
-            assert.equal(p.t.getSelection(), '\n\nfoo\n\nbar\n\nbaz')
-        })
-        it("can send updates when size changes", () => {
-                // a simple data channel mock
-            var p = t.cells[0]
-            var d = {
-                called: 0,
-                send(data) {
-                    d.called++
-                    d.lastSentData = data
-                }
-            }
-            p.d = d
-            p.sendSize()
-            assert.equal(d.called, 1)
-            assert.equal(d.lastSentData, 'A($%JFDS*(;dfjmlsdk9-0{"Cols":120,"Rows":10,"X":0,"Y":0}')
-        })
-        */
     })
 })
