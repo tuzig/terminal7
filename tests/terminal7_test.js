@@ -18,7 +18,9 @@ describe("terminal7", function() {
      * Every tests gets a fresh copy of terminal7 and a fresh dom element
      */
     beforeEach(() => {
+        localStorage.removeItem("hosts")
         t = new Terminal7()
+        t.hosts = []
         e.innerHTML = ""
         t.open(e)
     })
@@ -237,7 +239,7 @@ describe("terminal7", function() {
                 addr: 'localhost',
                 user: 'guest',
             })
-            let s = localStorage.getItem('hosts')
+            let s = JSON.parse(localStorage.getItem('hosts'))
             expect(s.length).to.equal(1)
             expect(s[0].addr).to.equal("localhost")
             expect(s[0].user).to.equal("guest")
@@ -245,7 +247,7 @@ describe("terminal7", function() {
                 addr: 'badwolf',
                 user: 'root',
             })
-            s = localStorage.getItem('hosts')
+            s = JSON.parse(localStorage.getItem('hosts'))
             expect(s.length).to.equal(2)
         })
         it("can be loaded", function() {
@@ -259,10 +261,8 @@ describe("terminal7", function() {
                 user: 'root',
             })
             const mem = JSON.stringify(t.hosts)
-            t.hosts = NULL
             t.refreshHosts()
-            s = localStorage.getItem("hosts")
-            expect(s).to.equal(989898)
+            expect(t.hosts.length).to.equal(2)
         })
 
     })

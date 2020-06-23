@@ -99,12 +99,14 @@ class Terminal7 {
             hm.on("edit", (ev) => console.log("TODO: add host editing"))
             hm.on('connect', (ev) => this.connect(h))
             li.appendChild(a)
-            document.getElementById("plus-host").parentNode.prepend(li)
+
+            const plusHost = document.getElementById("plus-host")
+            plusHost != null && plusHost.parentNode.prepend(li)
             this.hosts.push(new Host(h))
         })
     }
     storeHost(h) { 
-        console.log(`adding ${user}@${addr} & saving hosts`)
+        console.log(`adding ${h.user}@${h.addr} & saving hosts`)
         if (this.hosts == null)
             this.hosts = []
         this.hosts.push(h)
@@ -786,10 +788,8 @@ class Pane extends Cell {
         if (this.fitAddon !== undefined)
             // wait a bit so the display refreshes before we do the heavy lifting
             // lifitinof resizing the terminal
-            setTimeout(() => {
-                this.fitAddon.fit()
-                this.t7.sendSize(this)
-            }, 10)
+            this.fitAddon.fit()
+            this.t7.sendSize(this)
     }
     focus() {
         super.focus()
