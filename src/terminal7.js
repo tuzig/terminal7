@@ -26,6 +26,7 @@ class Terminal7 {
         this.lastMsgId = 1
         this.cdc = null
         this.breadcrumbs = []
+        this.onack = {}
         this.activeW = null
         let hs = JSON.parse(localStorage.getItem('hosts'))
         this.hosts = []
@@ -38,28 +39,38 @@ class Terminal7 {
      */
     sendCTRLMsg(msg) {
         console.log("sending ctrl message ", msg)
+        // helps us ensure every message gets only one Id
+        if (msg.message_id === undefined) 
+            msg.message_id = this.lastMsgId++
+        if (msg.time == undefined)
+            msg.time = Date.now()
         if (!this.cdc)
             this.pendingCDCMsgs.push(msg)
-        else
+        else {
+            const s = JSON.stringify(msg)
             try {
-                this.cdc.send(msg)
+                this.cdc.send(s)
             } catch(err) {
-                //TODO: this is silly, remove this
-                setTimeout(this.sendSize, 1000)
+                //TODO: this is silly, count proper retries
+                setTimeout(() => this.sendCTRLMsg(msg), 1000)
             }
+        }
+        return msg.message_id
     }
     /*
      * authenticate send the authentication message over the control channel
      */
-    authenticate(user, secret) {
-        var msg = JSON.stringify({
-                    time: 0,
-                    message_id: this.lastMsgId++,
-                    auth: {
-                        username: user,
-                        secret: secret,
-                    }})
-        this.sendCTRLMsg(msg)
+    authenticate(p) {
+        let msgId = this.sendCTRLMsg({auth: {
+                            username: p.user,
+                            secret: p.secret
+        }})
+
+        this.onack[msgId] = (t) => {
+            if (p.remember) {
+                this.storeHost({addr: p.addr, user: p.user, secert: t})
+            }
+        }
     }
     /*
      * Opens terminal7 on the given DOM element.
@@ -90,6 +101,7 @@ class Terminal7 {
             // create the elments <li><a></a></li>
             let li = document.createElement('li'),
                 a = document.createElement('a')
+            li.classList.add("border")
             a.innerHTML = `<h3> ${h.user}</h3><h2>@</h2><h3>${h.addr}</h3>`
             // Add gestures on the window name for rename and drag to trash
             let hm = new Hammer.Manager(li, {})
@@ -99,11 +111,51 @@ class Terminal7 {
             hm.on("edit", (ev) => console.log("TODO: add host editing"))
             hm.on('connect', (ev) => this.connect(h))
             li.appendChild(a)
+            li.onclick = () => this.connect(h)
 
             const plusHost = document.getElementById("plus-host")
             plusHost != null && plusHost.parentNode.prepend(li)
             this.hosts.push(new Host(h))
         })
+    }
+    /*
+     * connect and authenticate xxx connects to a remote host
+     */
+    connect(h) {
+        // TODO: if we're already connected just popup the host's active w
+        if (this.activeW == null)
+            // add the first window
+            this.activeW = this.addWindow('Welcome')
+
+        this.pc = new RTCPeerConnection({ iceServers: [
+                  { urls: 'stun:stun.l.google.com:19302' }
+                ] })
+
+        this.pc.oniceconnectionstatechange = e => {
+            console.log("ice connection state change: " + this.pc.iceConnectionState)
+        }
+        this.pc.onicecandidate = event => {
+            if (event.candidate === null) {
+              let offer = btoa(JSON.stringify(this.pc.localDescription))
+              console.log("Signaling server...\n")
+              fetch('http://'+h.addr+'/connect', {
+                headers: { "Content-Type": "application/json; charset=utf-8" },
+                method: 'POST',
+                body: JSON.stringify({Offer: offer}) 
+              }).then(response => response.text())
+                .then(data => {
+                  let sd = new RTCSessionDescription(JSON.parse(atob(data)))
+                  console.log("Got Session Description\n")
+                  try {
+                    this.pc.setRemoteDescription(sd)
+                  } catch (e) {
+                    alert(e)
+
+        }})}}
+        this.pc.onnegotiationneeded = e => 
+            this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
+        // store the host to local storage
+        this.authenticate(h)
     }
     storeHost(h) { 
         console.log(`adding ${h.user}@${h.addr} & saving hosts`)
@@ -117,6 +169,7 @@ class Terminal7 {
     openCDC() {
         return new Promise((resolve, reject) => {
             var cdc = this.pc.createDataChannel('%')
+            this.cdc = cdc
             console.log("<opening cdc")
             cdc.onclose = () =>{
                 this.state = "disconnected"
@@ -128,17 +181,27 @@ class Terminal7 {
                     // TODO: why the time out? why 100mili?
                     setTimeout(() => {
                         console.log("sending pending messages:", this.pendingCDCMsgs)
-                        this.pendingCDCMsgs.forEach((m) => this.cdc.send(m), 10)
+                        this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m), 10)
                         this.pendingCDCMsgs = []
                     }, 100)
             }
             cdc.onmessage = m => {
-                // TODO: Handle control messages
-                console.log("got cdc message:", this.state, m)
-                // TODO: validate it's out auth msg ack 
-                resolve("cdc opened!")
+                const d = new TextDecoder("utf-8"),
+                      msg = JSON.parse(d.decode(m.data))
+
+                // handle Ack
+                if (msg.ack !== undefined) {
+                    const handler = this.onack[msg.ack.ref]
+                    console.log("got cdc message:", this.state, msg)
+                    resolve("cdc opened!")
+                    if (handler != undefined) {
+                        handler(msg.ack.body)
+                        delete this.onack[msg.ack.ref]
+                    }
+                    else
+                        console.log("Got a cdc ack with no handler", msg)
+                }
             }
-            this.cdc = cdc
         })
     }
     /*
@@ -147,16 +210,12 @@ class Terminal7 {
     sendSize(pane) {
         if (this.pc == null)
             return
-        var msg = JSON.stringify({
-                    time: 0,
-                    message_id: this.lastMsgId++,
-                    resize_pty: {
-                        id: pane.serverId,
-                        sx: pane.t.cols,
-                        sy: pane.t.rows
-                    }})
-        this.sendCTRLMsg(msg)
-
+        this.sendCTRLMsg({resize_pty: {
+                            id: pane.serverId,
+                            sx: pane.t.cols,
+                            sy: pane.t.rows
+                          }}
+        )
     }
     /*
      * Change the active window, all other windows and
@@ -303,43 +362,6 @@ class Host {
         this.secret = props.secret
         this.name = `${this.user}@${this.addr}`
         this.pc = null
-    }
-    /*
-     * connect and authenticate xxx connects to a remote host
-     */
-    connect() {
-        if (this.activeW == null)
-            // open the first window
-            this.activeW = this.addWindow('Welcome')
-
-        this.pc = new RTCPeerConnection({ iceServers: [
-                  { urls: 'stun:stun.l.google.com:19302' }
-                ] })
-
-        this.pc.oniceconnectionstatechange = e => {
-            console.log("ice connection state change: " + this.pc.iceConnectionState)
-        }
-        this.pc.onicecandidate = event => {
-            if (event.candidate === null) {
-              let offer = btoa(JSON.stringify(this.pc.localDescription))
-              console.log("Signaling server...\n")
-              fetch('http://'+addr+'/connect', {
-                headers: { "Content-Type": "application/json; charset=utf-8" },
-                method: 'POST',
-                body: JSON.stringify({Offer: offer}) 
-              }).then(response => response.text())
-                .then(data => {
-                  let sd = new RTCSessionDescription(JSON.parse(atob(data)))
-                  console.log("Got Session Description\n")
-                  try {
-                    this.pc.setRemoteDescription(sd)
-                  } catch (e) {
-                    alert(e)
-
-        }})}}
-        this.pc.onnegotiationneeded = e => 
-            this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
-        this.authenticate(user, secret)
     }
 }
 class Window {

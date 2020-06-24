@@ -1,6 +1,6 @@
 import "./css/terminal7.css"
 import "./css/xterm.css"
-import { Terminal7 } from "./terminal7.js"
+import { Terminal7, Host } from "./terminal7.js"
 
 var host, pc
 let state = 0
@@ -17,18 +17,19 @@ document.addEventListener("DOMContentLoaded", () => {
         pane = terminal7.activeP
 
     terminal7.open(document.getElementById('terminal7'))
-    // display the home page
-    document.getElementById('add-peer-form').onsubmit = (ev) => {
+    // display the home page, starting with the plus button
+    const plusHost = document.getElementById('plus-host')
+    if (plusHost != null)
+        plusHost.onclick = (ev) => 
+            document.getElementById("add-host").style.display="block"
+    document.getElementById('add-host-form').onsubmit = (ev) => {
         let remember = ev.target.querySelector('[name="remember"]').value
-        let h = new Host({addr: ev.target.querySelector('[name="host"]').value,
-                          user: ev.target.querySelector('[name="username"]').value,
-                          secret: ev.target.querySelector('[name="password"]').value
+        terminal7.connect({addr: ev.target.querySelector('[name="host"]').value,
+                    user: ev.target.querySelector('[name="username"]').value,
+                    secret: ev.target.querySelector('[name="password"]').value,
+                    remember: remember == "on"
         })
-        if (remember == "on") {
-            terminal7.storeHost(h)
-        }
-        h.connect()
-        terminal7.openCDC().then(() => {console.log("hhhh"); terminal7.activeP.openDC()})
+        terminal7.openCDC().then(() => terminal7.activeP.openDC())
         ev.target.parentNode.style.display = 'none'
         return false
     }
