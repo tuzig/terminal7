@@ -23,13 +23,14 @@ document.addEventListener("DOMContentLoaded", () => {
         plusHost.onclick = (ev) => 
             document.getElementById("add-host").style.display="block"
     document.getElementById('add-host-form').onsubmit = (ev) => {
-        let remember = ev.target.querySelector('[name="remember"]').value
-        terminal7.connect({addr: ev.target.querySelector('[name="host"]').value,
+        let remember = ev.target.querySelector('[name="remember"]').value,
+            h = terminal7.addHost({
+                    addr: ev.target.querySelector('[name="host"]').value,
                     user: ev.target.querySelector('[name="username"]').value,
                     secret: ev.target.querySelector('[name="password"]').value,
-                    remember: remember == "on"
-        })
-        terminal7.openCDC().then(() => terminal7.activeP.openDC())
+                    store: remember == "on"
+            })
+        h.connect()
         ev.target.parentNode.style.display = 'none'
         return false
     }

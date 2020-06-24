@@ -13,26 +13,185 @@ class Terminal7 {
      */
     constructor() {
         this.d = null
-        this.buffer = []
-        this.windows = []
+        this.lastWId = 0
+        this.lastPId = 0
         this.cells = []
         this.state = "initiated"
-        this.defaultUrl = "https://he.wikipedia.org/wiki/%D7%A2%D7%9E%D7%95%D7%93_%D7%A8%D7%90%D7%A9%D7%99"
         // TODO make the bottom bars height responsive
-        this.bottomMargin = 0.16
-        this.cast = 0
-        this.pc = null
-        this.pendingCDCMsgs = []
-        this.lastMsgId = 1
         this.cdc = null
         this.breadcrumbs = []
-        this.onack = {}
-        this.activeW = null
         let hs = JSON.parse(localStorage.getItem('hosts'))
         this.hosts = []
-        hs != null && hs.forEach((props) => this.hosts.push(new Host(props)))
+        if (hs != null)
+            hs.forEach((props) => {
+                this.hosts.push(new Host(props))
+                this.lastPId = Math.max(this.lastPID, props.id)
+            })
     }
 
+    /*
+     * Opens terminal7 on the given DOM element.
+     * If the optional `silent` argument is true it does nothing but 
+     * point the `e` property at the given element. Otherwise and by default
+     * it adds the first window and pane.
+     */
+    open(e) {
+        if (!e) {
+            // create the container element
+            e = document.createElement('div')
+            e.id = "terminal7"
+            document.body.appendChild(e)
+        }
+        else this.e = e
+        this.state = "open"
+        // load the stored hosts, widnows and panes
+        const hs = JSON.parse(localStorage.getItem('hosts'))
+        this.hosts.forEach((h) => h.remove())
+        this.hosts = []
+        const plusHost = document.getElementById("plus-host")
+        if (hs != null) hs.forEach((p) => {
+            p.store = true
+            let h = new Host(p)
+            this.hosts.push(h)
+        })
+    }
+    addHost(p) {
+        console.log(`adding ${h.user}@${h.addr} & saving hosts`)
+        out = []
+        // add the id
+        p.id = this.hosts.length
+        let h = new Host(p)
+        this.hosts.push(h)
+    }
+    storeHosts() { 
+        let out = []
+        this.hosts.forEach((h) => {
+            if (h.store) {
+                let ws = []
+                h.windows.forEach((w) => ws.push(w.id))
+                out.push({addr: p.addr, user: p.user, secret: p.secret,
+                    name:p.name, windows: ws})
+            }
+        })
+        console.log("Storing hosts:", out)
+        localStorage.setItem('hosts', JSON.stringify(out))
+        return h
+    }
+    play(pane, frame) {
+        var d
+        let m = Casts[pane.cast]
+
+        if ((typeof m !== "undefined") && (frame == m.length))
+            frame = 2
+
+        if (typeof frame === "undefined") {
+            frame = 1
+            pane.cast = this.cast
+            m = Casts[pane.cast]
+            this.cast++
+            if (this.cast == Casts.length)
+                this.cast = 0
+            d = m[frame][0]
+        } else {
+            d = m[frame][0] - m[frame-1][0]
+        }
+        window.setTimeout(() => {
+            pane.write(m[frame][2])
+            this.play(pane, frame+1)
+        }, d*1000)
+    }
+    // TODO: loop on all windows and get their layout. returns a string
+    get layout() {
+    }
+}
+
+class Host {
+    constructor (props) {
+        this.pc = null
+        this.windows = []
+        this.activeW = null
+        this.activeP = null
+        this.state = "initiated"
+        // given properties
+        this.id = props.id
+        this.t7 = props.t7
+        this.addr = props.addr
+        this.user = props.user
+        this.secret = props.secret
+        this.store = props.store
+        this.name = (!props.name)?`${this.user}@${this.addr}`:props.name
+        this.pendingCDCMsgs = []
+        this.lastMsgId = 1
+        this.onack = {}
+        const plusHost = document.getElementById("plus-host")
+        if (plusHost != null) {
+            // Add our home page box 
+            let li = document.createElement('li'),
+                a = document.createElement('a')
+            li.classList.add("border")
+            a.innerHTML = `<h3> ${h.user}</h3><h2>@</h2><h3>${h.addr}</h3>`
+            // Add gestures on the window name for rename and drag to trash
+            let hm = new Hammer.Manager(li, {})
+            hm.options.domEvents=true; // enable dom events
+            hm.add(new Hammer.Press({event: "edit", pointers: 1}))
+            hm.add(new Hammer.Tap({event: "connect", pointers: 1}))
+            hm.on("edit", (ev) => console.log("TODO: add host editing"))
+            hm.on("connect", (ev) => this.connect())
+            li.appendChild(a)
+            li.onclick = () => this.connect()
+            plusHost.parentNode.prepend(li)
+        }
+    }
+
+    connect() {
+        // TODO: if we're already connected just popup the host's active w
+        return new Promise((resolve, reject) => {
+            if (this.activeW == null)
+                // add the first window
+                this.activeW = this.addWindow('Welcome')
+
+            this.pc = new RTCPeerConnection({ iceServers: [
+                      { urls: 'stun:stun.l.google.com:19302' }
+                    ] })
+
+            this.pc.oniceconnectionstatechange = e => {
+                console.log("ice connection state change: " + this.pc.iceConnectionState)
+            }
+            this.pc.onicecandidate = event => {
+                if (event.candidate === null) {
+                  let offer = btoa(JSON.stringify(this.pc.localDescription))
+                  console.log("Signaling server...\n")
+                  fetch('http://'+h.addr+'/connect', {
+                    headers: { "Content-Type": "application/json; charset=utf-8" },
+                    method: 'POST',
+                    body: JSON.stringify({Offer: offer}) 
+                  }).then(response => response.text())
+                    .then(data => {
+                      let sd = new RTCSessionDescription(JSON.parse(atob(data)))
+                      console.log("Got Session Description\n")
+                      try {
+                        this.pc.setRemoteDescription(sd)
+                      } catch (e) {
+                        alert(e)
+                      }
+                      this.state = "connected"
+                      this.openCDC().then(() =>
+                          this.authenticate()
+                          .then((m) => {
+                                // watch the add tab button
+                                let b = document.getElementById("add-tab")
+                                if (b != null) 
+                                    b.onclick = (e) => this.addWindow()
+                                // add the windows and connect to the panes
+                                resolve(m)
+                          })
+                          .catch((m) => reject(m)))
+            })}}
+            this.pc.onnegotiationneeded = e => 
+                this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
+            // store the host to local storage
+        })
+    }
     /*
      * sencCTRLMsg gets a control message and sends it if we have a control
      * channle open or adds it to the queue if we're early to the part
@@ -60,111 +219,37 @@ class Terminal7 {
     /*
      * authenticate send the authentication message over the control channel
      */
-    authenticate(p) {
-        let msgId = this.sendCTRLMsg({auth: {
-                            username: p.user,
-                            secret: p.secret
-        }})
+    authenticate() {
+        return new Promise((resolve, reject) => {
+            let resolved = false
+            let msgId = this.sendCTRLMsg({auth: {
+                                username: this.user,
+                                secret: this.secret
+            }})
 
-        this.onack[msgId] = (t) => {
-            if (p.remember) {
-                this.storeHost({addr: p.addr, user: p.user, secert: t})
+            this.onack[msgId] = (t) => {
+                this.secret = t
+                if (this.store) {
+                    this.t7.storeHosts()
+                }
+                resolved = true
+                resolve(`got auth ack with token ${t}`)
             }
-        }
-    }
-    /*
-     * Opens terminal7 on the given DOM element.
-     * If the optional `silent` argument is true it does nothing but 
-     * point the `e` property at the given element. Otherwise and by default
-     * it adds the first window and pane.
-     */
-    open(e) {
-        if (!e) {
-            // create the container element
-            e = document.createElement('div')
-            e.id = "terminal7"
-            document.body.appendChild(e)
-        }
-        else this.e = e
-        // watch the buttons
-        let b = document.getElementById("add-tab")
-        if (b != null) 
-            b.onclick = (e) => this.addWindow()
-        this.state = "open"
-        // update the home page with the hosts
-        this.refreshHosts()
-    }
-    refreshHosts() {
-        const hs = JSON.parse(localStorage.getItem('hosts'))
-        this.hosts = []
-        hs != null && hs.forEach((h) => {
-            // create the elments <li><a></a></li>
-            let li = document.createElement('li'),
-                a = document.createElement('a')
-            li.classList.add("border")
-            a.innerHTML = `<h3> ${h.user}</h3><h2>@</h2><h3>${h.addr}</h3>`
-            // Add gestures on the window name for rename and drag to trash
-            let hm = new Hammer.Manager(li, {})
-            hm.options.domEvents=true; // enable dom events
-            hm.add(new Hammer.Press({event: "edit", pointers: 1}))
-            hm.add(new Hammer.Tap({event: "connect", pointers: 1}))
-            hm.on("edit", (ev) => console.log("TODO: add host editing"))
-            hm.on('connect', (ev) => this.connect(h))
-            li.appendChild(a)
-            li.onclick = () => this.connect(h)
-
-            const plusHost = document.getElementById("plus-host")
-            plusHost != null && plusHost.parentNode.prepend(li)
-            this.hosts.push(new Host(h))
+            setTimeout(() => if (!resolved) reject("Timeout on auth ack"), 1000)
         })
     }
     /*
-     * connect and authenticate xxx connects to a remote host
+     * Adds a window, complete with a first layout and pane
      */
-    connect(h) {
-        // TODO: if we're already connected just popup the host's active w
-        if (this.activeW == null)
-            // add the first window
-            this.activeW = this.addWindow('Welcome')
-
-        this.pc = new RTCPeerConnection({ iceServers: [
-                  { urls: 'stun:stun.l.google.com:19302' }
-                ] })
-
-        this.pc.oniceconnectionstatechange = e => {
-            console.log("ice connection state change: " + this.pc.iceConnectionState)
-        }
-        this.pc.onicecandidate = event => {
-            if (event.candidate === null) {
-              let offer = btoa(JSON.stringify(this.pc.localDescription))
-              console.log("Signaling server...\n")
-              fetch('http://'+h.addr+'/connect', {
-                headers: { "Content-Type": "application/json; charset=utf-8" },
-                method: 'POST',
-                body: JSON.stringify({Offer: offer}) 
-              }).then(response => response.text())
-                .then(data => {
-                  let sd = new RTCSessionDescription(JSON.parse(atob(data)))
-                  console.log("Got Session Description\n")
-                  try {
-                    this.pc.setRemoteDescription(sd)
-                  } catch (e) {
-                    alert(e)
-
-        }})}}
-        this.pc.onnegotiationneeded = e => 
-            this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
-        // store the host to local storage
-        this.authenticate(h)
-    }
-    storeHost(h) { 
-        console.log(`adding ${h.user}@${h.addr} & saving hosts`)
-        if (this.hosts == null)
-            this.hosts = []
-        this.hosts.push(h)
-        const out = JSON.stringify(this.hosts)
-        console.log("storing: ", out)
-        localStorage.setItem('hosts', out)
+    addWindow(name) {
+        let id = this.windows.length
+        if (!(name instanceof String))
+            name = `Tab ${id+1}`
+        let w = new Window({name:name, host: this, id: id})
+        //TODO: move this to Window.open()
+        this.windows.push(w)
+        w.open(this.t7.e)
+        return w
     }
     openCDC() {
         return new Promise((resolve, reject) => {
@@ -172,7 +257,7 @@ class Terminal7 {
             this.cdc = cdc
             console.log("<opening cdc")
             cdc.onclose = () =>{
-                this.state = "disconnected"
+                this.state = "closed"
                 this.write('Control Channel is closed.\n')
                 // TODO: What now?
             }
@@ -205,6 +290,11 @@ class Terminal7 {
         })
     }
     /*
+     * remove close the connection and removes the host from the UI
+     */
+    remove() {
+    }
+    /*
      * Send the pane's size to the server
      */
     sendSize(pane) {
@@ -217,54 +307,38 @@ class Terminal7 {
                           }}
         )
     }
-    /*
-     * Change the active window, all other windows and
-     * mark its name in the tabbar as the chosen one
-     */
-    activateWindow(w) {
-        if (typeof w == "undefined") {
-            this.breadcrumbs.pop()
-            // TODO: what if it's the first crumb we just deleted?
-            w = this.breadcrumbs.pop()
-        }
-        else if (this.activeW instanceof Window)
-            this.activeW.nameE.classList.remove("active")
-        w.nameE.classList.add("active")
-        this.activeW = w
-        w.activeP.focus()
-        window.location.href=`#tab${w.id+1}`
-        this.breadcrumbs.push(w)
+}
+class Window {
+    constructor (props) {
+        this.host = props.home
+        this.id = props.id
+        this.name = props.name || `Tab ${this.id+1}`
+        this.cells = []
+        this.e = null
+        this.activeP = null
     }
-    /*
-     * Adds a window, complete with a first layout and pane
-     */
-    addWindow(name) {
-        let i = this.windows.length
-        if (!(name instanceof String))
-            name = `Tab ${i+1}`
-        let w = new Window({name:name, t7: this, id: this.windows.length})
-        //TODO: move this to Window.open()
-        w.e = document.createElement('div')
-        w.e.className = "window"
-        w.e.id = `tab${w.id+1}`
-        this.e.appendChild(w.e)
-        this.windows.push(w)
+    open(e) {
+        this.e = document.createElement('div')
+        this.e.className = "window"
+        this.e.id = `tab-${this.host.id}.${this.id}`
+        e.appendChild(this.e)
         // create the first layout and pane
         let l = 1.0,
-            props = {sx:l, sy:l-this.bottomMargin,
+            props = {sx:l, sy:l, // -this.t7/bottomMargin,
                      xoff: 0, yoff: 0,
-                     t7: this, w: w},
-            layout = w.addLayout("TBD", props)
+                     w: w,
+                     host: this.host},
+            layout = this.addLayout("TBD", props)
             
-        w.activeP = layout.addPane(props)
+        this.activeP = layout.addPane(props)
         this.activeP = w.activeP
         // Add the name with link at #window-names
         let li = document.createElement('li'),
             a = document.createElement('a')
-        a.id = w.e.id+'-name'
-        a.w = w
-        a.setAttribute('href', `#${w.e.id}`)
-        a.innerHTML = `Tab ${w.id+1}`
+        a.id = this.e.id+'-name'
+        a.w = this
+        a.setAttribute('href', `#${this.e.id}`)
+        a.innerHTML = this.name
         // Add gestures on the window name for rename and drag to trash
         let h = new Hammer.Manager(a, {})
         h.options.domEvents=true; // enable dom events
@@ -272,23 +346,49 @@ class Terminal7 {
         h.add(new Hammer.Tap({event: "switch", pointers: 1}))
         h.on("rename", (ev) => 
              // For some reason this works much better with a timeout
-             window.setTimeout(() => this.renameWindow(w), 0))
-        h.on('switch', (ev) => this.activateWindow(w))
+             window.setTimeout(() => w.rename(), 0))
+        h.on('switch', (ev) => w.focus())
         li.appendChild(a)
-        w.nameE = a
+        this.nameE = a
         let wn = document.getElementById("window-names")
-        wn != null && wn.appendChild(li)
-        this.activateWindow(w)
-        return w
+        if (wn != null)
+            wn.appendChild(li)
+        this.focus()
+    }
+    /*
+     * Change the active window, all other windows and
+     * mark its name in the tabbar as the chosen one
+     */
+    focus() {
+        /* use the breadcrumbs
+        if (typeof w == "undefined") {
+            this.breadcrumbs.pop()
+            // TODO: what if it's the first crumb we just deleted?
+            w = this.breadcrumbs.pop()
+        }
+        this.breadcrumbs.push(w)
+        */
+        this.host.activeW.nameE.classList.remove("active")
+        this.nameE.classList.add("active")
+        this.host.activeW = this
+        this.activeP.focus()
+        window.location.href=`#tab$_{this.host.id}.${this.id+1}`
+    }
+    addLayout(dir, basedOn) {
+        let l = new Layout(dir, basedOn)
+        l.id = this.t7.cells.length
+        this.cells.push(l)
+        return l
+
     }
     /*
      * Replace the window name with an input field and updates the window
      * name when the field is changed. If we lose focus, we drop the changes.
      * In any case we remove the input field.
      */
-    renameWindow(w) {
-        let e = w.nameE
-        this.activateWindow(w)
+    rename() {
+        let e = this.nameE
+        this.focus()
         e.innerHTML= `<input size='10' name='window-name'>`
         let i = e.children[0]
         i.focus()
@@ -296,7 +396,6 @@ class Terminal7 {
         // TODO: chrome fires too many blur events and wher remove
         // the input element too soon
         i.addEventListener('blur', (e) => {
-            console.log("blur", e)
             let p = e.target.parentNode
             setTimeout(() => p.innerHTML = p.w.name, 0)
         }, { once: true })
@@ -307,90 +406,17 @@ class Terminal7 {
             setTimeout(() => p.innerHTML = p.w.name, 0)
         })
     }
-    onSessionsChanged() {
-        // TODO: why do we care?
-    }
-    onSessionChanged(id, name) {
-        // TODO: why do we care?
-    }
-    refreshWindows(b) {
-        console.log(">> refresh windows")
-        for (let l of b) {
-            console.log(l)
-        }
-        console.log("<< refresh windows")
-    }
-    onFirstContact(buffer) {
-        this.onEnd = (buffer) => this.refreshWindows
-        setTimeout(() => {
-            console.log("sending list windows")
-            this.d.send("list-windows\n")
-        }, 0)
-    }
-    play(pane, frame) {
-        var d
-        let m = Casts[pane.cast]
-
-        if ((typeof m !== "undefined") && (frame == m.length))
-            frame = 2
-
-        if (typeof frame === "undefined") {
-            frame = 1
-            pane.cast = this.cast
-            m = Casts[pane.cast]
-            this.cast++
-            if (this.cast == Casts.length)
-                this.cast = 0
-            d = m[frame][0]
-        } else {
-            d = m[frame][0] - m[frame-1][0]
-        }
-        window.setTimeout(() => {
-            pane.write(m[frame][2])
-            this.play(pane, frame+1)
-        }, d*1000)
-    }
-    // TODO: loop on all windows and get their layout. returns a string
-    get layout() {
-    }
-}
-
-class Host {
-    constructor (props) {
-        this.addr = props.addr
-        this.user = props.user
-        this.secret = props.secret
-        this.name = `${this.user}@${this.addr}`
-        this.pc = null
-    }
-}
-class Window {
-    constructor (props) {
-        this.name = props.name
-        this.t7 = props.t7
-        this.id = props.id
-        this.cells = []
-        this.e = null
-    }
-    addLayout(dir, basedOn) {
-        let l = new Layout(dir, basedOn)
-        l.id = this.t7.cells.length
-        this.cells.push(l)
-        this.t7.cells.push(l)
-        return l
-
-    }
     close() {
         // remove the window name
         this.nameE.parentNode.remove()
         this.e.remove()
     }
-
 }
 
 class Cell {
     constructor(props) {
         this.t7 = props.t7 || null
+        this.host = props.host || null
         if (props.w instanceof Window)
             this.w = props.w
         else
@@ -530,7 +556,6 @@ class Cell {
         this.focus()
         this.zoomed = !this.zoomed
     }
-
 }
 
 class Layout extends Cell {
@@ -542,7 +567,8 @@ class Layout extends Cell {
         super({sx: basedOn.sx, sy: basedOn.sy,
                xoff: basedOn.xoff, yoff: basedOn.yoff,
                w: basedOn.w, t7: basedOn.t7,
-               className: "layout"})
+               className: "layout",
+               host: basedOn.host})
         this.dir = dir
         // if we're based on a cell, we make it our first cell
         if (basedOn instanceof Cell) {
@@ -612,6 +638,7 @@ class Layout extends Cell {
         let p = props || {}
         p.w = this.w
         p.t7 = this.t7
+        p.host = this.host
         p.layout = this
         p.id = this.t7.cells.length
         let pane = new Pane(p)
@@ -723,6 +750,7 @@ class Layout extends Cell {
                 }
             })
     }
+
 }
 class Pane extends Cell {
     constructor(props) {
@@ -745,25 +773,6 @@ class Pane extends Cell {
         }
         this.echo = echoOn
     }
-    /*
-     * Opens and iframe with the requested address or source
-     *
-     * The props object can have values to `url` and/or `src` both are copied
-     * to the new iframe as `src` and `srcdoc`.
-     */
-    openURL(props) {
-        let p = props || {}
-        let e = document.createElement('iframe')
-        e.allow = "fullscreen"
-        e.setAttribute('height', this.e.clientHeight)
-        e.setAttribute('width', this.e.clientWidth)
-        this.e.innerHTML = ""
-        this.e.appendChild(e)
-        e.onload = () => this.catchFingers(e.contentWindow.document.body)
-        e.setAttribute('src', p.url || this.t7.defaultUrl)
-        if (typeof srcdoc == 'string')
-            e.setAttribute('srcdoc', p.src)
-    }
     openTerminal() {
         var afterLeader = false
 
@@ -781,7 +790,7 @@ class Pane extends Cell {
                 if (ev.domEvent.key == "z") 
                     this.toggleZoom()
                 else if (ev.domEvent.key == ",") 
-                    this.t7.renameWindow(this.w)
+                    this.w.rename()
                 else if (ev.domEvent.key == "d")
                     this.close()
                 afterLeader = false
@@ -805,13 +814,13 @@ class Pane extends Cell {
     fit() {
         if (this.fitAddon !== undefined) {
             this.fitAddon.fit()
-            this.t7.sendSize(this)
+            this.host.sendSize(this)
         }
         if (this.fitAddon !== undefined)
             // wait a bit so the display refreshes before we do the heavy lifting
             // lifitinof resizing the terminal
             this.fitAddon.fit()
-            this.t7.sendSize(this)
+            this.host.sendSize(this)
     }
     focus() {
         super.focus()
@@ -884,7 +893,6 @@ class Pane extends Cell {
                 var enc = new TextDecoder("utf-16"),
                     str = enc.decode(m.data)
                 this.state = "ready"
-                this.onEnd = this.onFirstContact
                 this.serverId = parseInt(str)
             }
             else if (this.state == "disconnected") {

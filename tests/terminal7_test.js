@@ -18,7 +18,7 @@ describe("terminal7", function() {
      * Every tests gets a fresh copy of terminal7 and a fresh dom element
      */
     beforeEach(() => {
-        localStorage.removeItem("hosts")
+        localStorage.clear()
         t = new Terminal7()
         t.hosts = []
         e.innerHTML = ""
@@ -233,7 +233,6 @@ describe("terminal7", function() {
 
     })
     describe("host", function() {
-        beforeEach(function() { localStorage.removeItem('hosts') })
         it("can be stored", function() {
             t.storeHost({
                 addr: 'localhost',
@@ -243,12 +242,14 @@ describe("terminal7", function() {
             expect(s.length).to.equal(1)
             expect(s[0].addr).to.equal("localhost")
             expect(s[0].user).to.equal("guest")
+            expect(s[0].id).to.equal(0)
             t.storeHost({
                 addr: 'badwolf',
                 user: 'root',
             })
             s = JSON.parse(localStorage.getItem('hosts'))
             expect(s.length).to.equal(2)
+            expect(s[1].addr).to.equal("badwolf")
         })
         it("can be loaded", function() {
             console.log("WTF")
