@@ -18,28 +18,22 @@ describe("terminal7", function() {
         t.open(e)
     })
 
-    it("opens with a window and a pane", () => {
-        expect(t.windows[0]).to.exist
-        expect(t.cells[0]).to.exist
-        assert.equal(t.cells[0].w, t.windows[0])
-        assert.equal(t.cells[0].xoff, 0)
-        assert.equal(t.cells[0].yoff, 0)
+    it("starts with no windows and no panes", () => {
+        expect(t.windows.length).to.equal(0)
+        expect(t.cells.length).to.equal(0)
     })
 
     describe("window", () => {
         it("can be added", function() {
             let w = t.addWindow("gothic")
-            assert.exists(t.windows[1])
-            assert.exists(t.windows[1].name, "gothic")
-        })
-        it("can be activated", function() {
-            let w = t.addWindow("gothic")
-            // w.active = true
+            assert.exists(t.windows[0])
+            assert.exists(t.windows[0].name, "gothic")
         })
     })
 
     describe("cell", () => {
         beforeEach(() => {
+            t.addWindow("1,2,3, testing")
             t.activeP.sx = 0.8
             t.activeP.sy = 0.6
             t.activeP.xoff = 0.1
@@ -225,12 +219,12 @@ describe("terminal7", function() {
 
     })
     describe("pane", () => {
+        /*
         it("can open a web page", function() {
             let p = t.activeP
             p.openURL({})
         })
 
-        /*
         it("can be written to", () =>{
             let p = t.cells[0]
             p.openTerminal()

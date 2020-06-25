@@ -592,12 +592,10 @@ class Layout extends Cell {
             this.cells.push(pane)
         // opening the terminal and the datachannel are heavy so we wait
         // for 10 msecs to let the new layout refresh
-        setTimeout(() => {
-            pane.openTerminal()
-            pane.focus()
-            if (this.t7.pc != null)
-                pane.openDC()
-        }, 10)
+        pane.openTerminal()
+        pane.focus()
+        if (this.t7.pc != null)
+            pane.openDC()
         return pane
     }
     fit() {
