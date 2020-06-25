@@ -9,18 +9,19 @@
   <div id="terminal7">
       <div id="home">
           <h1>Welcome to Terminal Seven!</h1>
-          <ul id="peers">
+          <ul id="hosts">
               <li id="plus-host" class="border">
-                  <i class="fas fa-plus"><a href="#add-peer"></a></i>
+                  <i class="fas fa-plus"></i>
               </li>
           </ul>
       </div>
-      <div id="add-peer" class="modal border" >
-          <form id="add-peer-form">
-            <span onclick="this.parentNode.style.display='none'" 
+      <div id="add-host" class="hidden modal border" >
+          <form id="add-host-form">
+            <span onclick="this.parentNode.parentNode.style.display='none'" 
 class="close" title="Close Modal">&times;</span>
+            <h2>Add a Host</h2>
 
-        <label for="uname"><b>Host</b></label>
+        <label for="uname"><b>Address</b></label>
         <input type="text" placeholder="IP or host name" name="host" required>
         <label for="uname"><b>Username</b></label>
         <input type="text" placeholder="Enter Username" name="username" required>

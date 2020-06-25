@@ -7,12 +7,14 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-    text-align: center;
+  text-align: center;
   font-family: courier;
-  color: #525252;
+  color: #00fafa;
   background-color: #271D30;
 }
 
+h3 { margin: 0.2em; }
+h2 { margin: 0.3em; }
 #terminal7 {
     height: 84%; /* TODO: make responsive */
 }
@@ -30,6 +32,17 @@ a {
     border-style: solid !important;
 }
 
+.modal {
+    z-index: 3;
+}
+.modal .close {
+  /* Position it in the top right corner outside of the modal */
+  position: absolute;
+  right: 25px;
+  top: 0; 
+  font-size: 35px;
+  font-weight: bold;
+}
 .window {
     position: fixed;
     top: 0;
@@ -133,23 +146,25 @@ a {
     left: 0;
 }
 
-/* #peers { float: left; } */
-#peers li { 
+#plus-host {
+    color: #F952F9;
+    font-size: 80px;
+    line-height: 100px;
+}
+/* #hosts { float: left; } */
+#hosts li {
     display: block;
     float: left;
     height: 100px;
-    width: 100px;
-    background-color: #00fafa;
+    min-width: 100px;
 }
-#peers li a {
+#hosts li a {
     float: left;
     display: block;
-    font-size: 20em;
     text-decoration: none; 
-    color: #525252;
+    color: #F952F9;
 }
-#add-peer {
-    display: block;
+#add-host {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -157,7 +172,7 @@ a {
     width: 30em;
     align: left;
 }
-#add-peer input[type=text], #add-peer input[type=password] {
+#add-host input[type=text], #add-host input[type=password] {
   width: 100%;
   padding: 12px 20px;
   margin: 8px 0;
@@ -165,17 +180,14 @@ a {
   border: 1px solid #ccc;
   box-sizing: border-box;
 }
-#add-peer label {
-    align: left;
+#add-host {
+    text-align: left;
+    padding: 0.5em;
 }
-.modal {
-    z-index: 3;
+#add-host button {
+    float:right;
+    clear:both;
+    margin-top:2em;
 }
-.modal .close {
-  /* Position it in the top right corner outside of the modal */
-  position: absolute;
-  right: 25px;
-  top: 0; 
-  font-size: 35px;
-  font-weight: bold;
-}
+.hidden { display: none; }
+#add-host-form { padding: 2vmin; }

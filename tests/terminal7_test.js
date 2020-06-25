@@ -4,6 +4,9 @@ import { assert } from "chai"
 
 describe("terminal7", function() {
     var t, e
+    /*
+     * The parent element is added before the tests begin
+     */
     before(() => {
             e = document.createElement('div')
             document.body.appendChild(e)
@@ -11,10 +14,14 @@ describe("terminal7", function() {
     after(() => {
         document.body.innerHTML = ""
     })
+    /*
+     * Every tests gets a fresh copy of terminal7 and a fresh dom element
+     */
     beforeEach(() => {
-        // just a place holder for window names
-        e.innerHTML = "<div id='window-names'></div>"
+        localStorage.clear()
         t = new Terminal7()
+        t.hosts = []
+        e.innerHTML = ""
         t.open(e)
     })
 
@@ -22,44 +29,47 @@ describe("terminal7", function() {
         expect(t.windows.length).to.equal(0)
         expect(t.cells.length).to.equal(0)
     })
-
     describe("window", () => {
-        it("can be added", function() {
-            let w = t.addWindow("gothic")
-            assert.exists(t.windows[0])
-            assert.exists(t.windows[0].name, "gothic")
+        it("is added with a cell", function() {
+            let h = t.addHost({t7: t})
+            let w = h.addWindow("gothic")
+            assert.exists(h.windows[0])
+            assert.exists(h.windows[0].name, "gothic")
         })
     })
 
     describe("cell", () => {
+        var h, w, p0
         beforeEach(() => {
-            t.addWindow("1,2,3, testing")
-            t.activeP.sx = 0.8
-            t.activeP.sy = 0.6
-            t.activeP.xoff = 0.1
-            t.activeP.yoff = 0.2
+            h = t.addHost({t7:t})
+            w = h.addWindow("1,2,3 testing")
+            h.activeP.sx = 0.8
+            h.activeP.sy = 0.6
+            h.activeP.xoff = 0.1
+            h.activeP.yoff = 0.2
+            p0 = h.activeP
         })
         it("can set and get sizes", () => {
-            let c = new Cell({sx: 0.12, sy: 0.34, t7: t, w: t.activeW})
+            let c = new Cell({sx: 0.12, sy: 0.34, t7: t, w: w})
             assert.equal(c.sx, 0.12)
             assert.equal(c.sy, 0.34)
 
         })
         it("can set and get offsets", () => {
-            let c = new Cell({xoff: 0.12, yoff: 0.34, t7: t, w: t.activeW})
+            let c = new Cell({xoff: 0.12, yoff: 0.34,
+                t7: t,
+                w: w})
             assert.equal(c.xoff, 0.12)
             assert.equal(c.yoff, 0.34)
         })
         it("has a layout", () => {
-            let p0 = t.activeP
             expect(p0.layout.dir).to.equal("TBD")
             expect(p0.layout.cells).to.eql([p0])
 
         })
         
         it("can be split right to left", () => {
-            let p0 = t.activeP,
-                p1 = p0.split("rightleft", 0.5)
+            let p1 = p0.split("rightleft", 0.5)
 
             expect(p0.layout.dir).to.equal("rightleft")
             expect(p0.layout.toText()).equal(
@@ -75,8 +85,7 @@ describe("terminal7", function() {
             assert.equal(p1.yoff, 0.5)
         })
         it("can be split top to bottom", () => {
-            let p0 = t.activeP,
-                p1 = p0.split("topbottom")
+            let p1 = p0.split("topbottom")
             assert.exists(p1)
             assert.equal(p0.layout, t.cells[1].layout)
             assert.equal(p0.layout.dir, "topbottom")
@@ -93,8 +102,7 @@ describe("terminal7", function() {
             expect(p0.sx).to.equal(0.4)
         })
         it("can be split twice", () => {
-            let p0 = t.activeP,
-                p1 = p0.split("topbottom"),
+            let p1 = p0.split("topbottom"),
                 p2 = p1.split("topbottom")
             expect(p0.layout.toText()).to.equal(
                 "{0.400x0.600,0.100,0.200,1,0.200x0.600,0.500,0.200,2,0.200x0.600,0.700,0.200,3}")
@@ -124,8 +132,7 @@ describe("terminal7", function() {
         it("can close nicely, even with just a single cell", function () {
         })
         it("can close nicely, with layout resizing", function () {
-            let p0 = t.activeP,
-                p1 = p0.split("topbottom")
+            let p1 = p0.split("topbottom")
             expect(p0.layout.toText()).to.equal(
                 "{0.400x0.600,0.100,0.200,1,0.400x0.600,0.500,0.200,2}")
             let p2 = p1.split("rightleft")
@@ -150,14 +157,12 @@ describe("terminal7", function() {
             assert.equal(es.length, 1)
         })
         it("can close out of order", function () {
-            let p0 = t.activeP,
-                p1 = p0.split("topbottom")
+            let p1 = p0.split("topbottom")
             p1.close()
             assert.equal(p0.sy, 0.6)
         })
         it("can open a |- layout ", function () {
-            let p0 = t.activeP,
-                p1 = p0.split("topbottom"),
+            let p1 = p0.split("topbottom"),
                 p2 = p1.split("rightleft")
             p0.close()
             expect(p1.sy).to.equal(0.3)
@@ -166,8 +171,7 @@ describe("terminal7", function() {
             expect(p2.sx).to.equal(0.8)
         })
         it("can handle three splits", function() {
-            let p0 = t.activeP,
-                p1 = p0.split("topbottom"),
+            let p1 = p0.split("topbottom"),
                 p2 = p1.split("rightleft"),
                 p3 = p2.split("topbottom")
             p1.close()
@@ -177,8 +181,7 @@ describe("terminal7", function() {
             expect(p3.yoff).to.equal(0.2)
         })
         it("can handle another three splits", function() {
-            let p0 = t.activeP,
-                p1 = p0.split("topbottom"),
+            let p1 = p0.split("topbottom"),
                 p2 = p1.split("rightleft"),
                 p3 = p2.split("topbottom")
             expect(p0.layout.toText()).to.equal(
@@ -192,16 +195,10 @@ describe("terminal7", function() {
             expect(p3.sy).to.equal(0.3)
         })
         it("can zoom in-out-in", function() {
-            let p0 = t.activeP,
-                term = p0.t,
-                c0 = term.cols,
-                r0 = term.rows,
-                p1 = p0.split("topbottom")
+            let p1 = p0.split("topbottom")
             expect(p0.e.style.display).to.equal('')
-            expect(term.rows).to.equal(r0)
             expect(p0.sx).to.equal(0.4)
             p0.toggleZoom()
-            expect(p0.t.cols).to.equal(c0)
             //TODO: test the terminal is changing size 
             //expect(p0.t.rows).above(r0)
             expect(p0.zoomedE).to.exist
@@ -219,34 +216,23 @@ describe("terminal7", function() {
 
     })
     describe("pane", () => {
-        /*
-        it("can open a web page", function() {
-            let p = t.activeP
-            p.openURL({})
+        it("can be loaded", function() {
+            console.log("WTF")
+            t.addHost({
+                addr: 'localhost',
+                user: 'guest',
+                store: true
+            })
+            t.addHost({
+                addr: 'badwolf',
+                user: 'root',
+                store: true
+            })
+            let t2 = new Terminal7()
+            expect(t2.hosts.length).to.equal(2)
+            expect(t2.hosts[0].user).to.equal("guest")
+            expect(t2.hosts[1].user).to.equal("root")
         })
 
-        it("can be written to", () =>{
-            let p = t.cells[0]
-            p.openTerminal()
-            p.write('\\n\\nfoo\\n\\n\\rbar\\n\\n\\rbaz')
-            p.t.selectAll()
-            assert.equal(p.t.getSelection(), '\n\nfoo\n\nbar\n\nbaz')
-        })
-        it("can send updates when size changes", () => {
-                // a simple data channel mock
-            var p = t.cells[0]
-            var d = {
-                called: 0,
-                send(data) {
-                    d.called++
-                    d.lastSentData = data
-                }
-            }
-            p.d = d
-            p.sendSize()
-            assert.equal(d.called, 1)
-            assert.equal(d.lastSentData, 'A($%JFDS*(;dfjmlsdk9-0{"Cols":120,"Rows":10,"X":0,"Y":0}')
-        })
-        */
     })
 })
