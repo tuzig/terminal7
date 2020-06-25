@@ -154,7 +154,7 @@ class Host {
 
         // if we're already connected, just focus
         if (this.state == "connected") {
-            this.activeW.focus()
+            // this.activeW.focus()
             resolve("focused")
             return
         }
@@ -348,7 +348,6 @@ class Window {
                      host: this.host},
             layout = this.addLayout("TBD", props)
             
-        this.activeP = layout.addPane(props)
         // Add the name with link at #window-names
         let li = document.createElement('li'),
             a = document.createElement('a')
@@ -370,6 +369,7 @@ class Window {
         let wn = document.getElementById("window-names")
         if (wn != null)
             wn.appendChild(li)
+        this.activeP = layout.addPane(props)
         this.activeP.focus()
     }
     /*
@@ -385,10 +385,10 @@ class Window {
         }
         this.breadcrumbs.push(w)
         */
-        this.host.activeW.nameE.classList.remove("active")
+        if (this.host.activeW)
+            this.host.activeW.nameE.classList.remove("active")
         this.nameE.classList.add("active")
         this.host.activeW = this
-        this.activeP.focus()
         window.location.href=`#tab$_{this.host.id}.${this.id+1}`
     }
     addLayout(dir, basedOn) {
@@ -471,8 +471,8 @@ class Cell {
      * Set the focus on the cell
      */
     focus() {
+        this.w.focus()
         this.active = true
-        this.w.active = true
         this.w.activeP = this
         if (this.host.activeP !== null) {
             this.host.activeP.e.classList.remove("focused")
