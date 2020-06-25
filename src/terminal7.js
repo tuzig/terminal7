@@ -43,7 +43,7 @@ class Terminal7 {
         else this.e = e
         this.state = "open"
         const plusHost = document.getElementById("plus-host")
-        if (plusHost != null) {
+        if (plusHost != null)  {
             const padre = plusHost.parentNode
             // Add the hosts boxes to the home page
             this.hosts.forEach((host) => {
@@ -61,7 +61,7 @@ class Terminal7 {
                 li.appendChild(a)
                 li.onclick = () => host.connect()
                 // use prepend to keep the "+" last
-                papdre.prepend(li)
+                padre.prepend(li)
             })
         }
     }
@@ -148,60 +148,58 @@ class Host {
      */
     connect() {
         // TODO: if we're already connected just popup the host's active w
-        return new Promise((resolve, reject) => {
-            if (this.activeW == null)
-                // add the first window
-                this.activeW = this.addWindow('Welcome')
-    
-            // if we're already connected, just focus
-            if (this.state == "connected") {
-                this.activeW.focus()
-                resolve("focused")
-                return
-            }
+        if (this.activeW == null)
+            // add the first window
+            this.activeW = this.addWindow('Welcome')
 
-            this.pc = new RTCPeerConnection({ iceServers: [
-                      { urls: 'stun:stun.l.google.com:19302' }
-                    ] })
+        // if we're already connected, just focus
+        if (this.state == "connected") {
+            this.activeW.focus()
+            resolve("focused")
+            return
+        }
 
-            this.pc.onnegotiationneeded = e => 
-                this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
-            this.pc.onicecandidate = event => {
-                if (event.candidate === null) {
-                  let offer = btoa(JSON.stringify(this.pc.localDescription))
-                  console.log("Signaling server...\n")
-                  fetch('http://'+h.addr+'/connect', {
-                    headers: { "Content-Type": "application/json; charset=utf-8" },
-                    method: 'POST',
-                    body: JSON.stringify({Offer: offer}) 
-                  }).then(response => response.text())
-                    .then(data => {
-                      let sd = new RTCSessionDescription(JSON.parse(atob(data)))
-                      console.log("Got Session Description\n")
-                      try {
-                        this.pc.setRemoteDescription(sd)
-                      } catch (e) {
-                        alert(e)
-                      }
-                      this.state = "connected"
-                      this.openCDC().then(() => {
-                          this.authenticate()
-                          .then((m) => {
-                                // watch the add tab button
-                                let b = document.getElementById("add-tab")
-                                if (b != null) 
-                                    b.onclick = (e) => this.addWindow()
-                                // add the windows and connect to the panes
-                                resolve(m)
-                          })
-                          .catch((m) => reject(m))
-                      })
-                })
-              }
-            }
-            this.pc.oniceconnectionstatechange = e => {
-                console.log("ice connection state change: " + this.pc.iceConnectionState)
-            }})
+        this.pc = new RTCPeerConnection({ iceServers: [
+                  { urls: 'stun:stun2.l.google.com:19302' }
+                ] })
+        this.pc.oniceconnectionstatechange = (e) => {
+            console.log("ice connection state change: "
+                + this.pc.iceConnectionState)
+        }
+        this.pc.onicecandidate = event => {
+            console.log("got ice candidate: ", event)
+            if (event.candidate) {
+              let offer = btoa(JSON.stringify(this.pc.localDescription))
+              console.log("Signaling server...\n")
+              fetch('http://'+this.addr+'/connect', {
+                headers: {"Content-Type": "application/json;charset=utf-8"},
+                method: 'POST',
+                body: JSON.stringify({Offer: offer}) 
+              }).then(response => response.text())
+                .then(data => {
+                  let sd = new RTCSessionDescription(JSON.parse(atob(data)))
+                  console.log("Got Session Description\n")
+                  try {
+                    this.pc.setRemoteDescription(sd)
+                  } catch (e) {
+                    alert(e)
+                  }
+                  this.state = "connected"
+            })
+          }
+        }
+        this.pc.onnegotiationneeded = e => {
+            console.log("on negotiation needed", e)
+            this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
+        }
+        this.openCDC().then(() => {
+            console.log("After cdc open")
+        }).catch(e => {
+            console.log(e)
+            alert("Failed to open CDC, check the log for the reason")
+        })
+        // suthenticate starts the ball rolling
+        this.login()
     }
     /*
      * sencCTRLMsg gets a control message and sends it if we have a control
@@ -231,26 +229,31 @@ class Host {
     /*
      * authenticate send the authentication message over the control channel
      */
-    authenticate() {
-        return new Promise((resolve, reject) => {
-            let resolved = false
-            let msgId = this.sendCTRLMsg({auth: {
-                                username: this.user,
-                                secret: this.secret
-            }})
+    login() {
+        let resolved = false
+        let msgId = this.sendCTRLMsg({auth: {
+                            username: this.user,
+                            secret: this.secret
+        }})
 
-            this.onack[msgId] = (t) => {
+        this.onack[msgId] = (t) => {
+            console.log("In auth ack")
+            if (this.secret != t) {
                 this.secret = t
-                if (this.store) {
+                if (this.store)
                     this.t7.storeHosts()
-                }
-                resolved = true
-                resolve(`got auth ack with token ${t}`)
             }
-            setTimeout(() => {
-                if (!resolved)
-                    reject("Timeout on auth ack"), 1000
-            })
+            resolved = true
+            let b = document.getElementById("add-tab")
+            if (b != null) 
+                b.onclick = (e) => this.addWindow()
+            // add the windows and connect to the panes
+            console.log("before callingresolve")
+            setTimeout(e => this.activeP.openDC(), 10)
+        }
+        setTimeout(() => {
+            if (!resolved)
+                console.log("Timeout on auth ack"), 1000
         })
     }
     /*
@@ -296,6 +299,7 @@ class Host {
                     resolve("cdc opened!")
                     if (handler != undefined) {
                         handler(msg.ack.body)
+                        // just to make sure we don't call it twice
                         delete this.onack[msg.ack.ref]
                     }
                     else
@@ -338,8 +342,7 @@ class Window {
         this.e.id = `tab-${this.host.id}.${this.id}`
         e.appendChild(this.e)
         // create the first layout and pane
-        let l = 1.0,
-            props = {sx:l, sy:l, // -this.t7/bottomMargin,
+        let props = {sx: 1.0, sy: 0.84, // -this.t7/bottomMargin,
                      xoff: 0, yoff: 0,
                      w: this,
                      host: this.host},
@@ -885,7 +888,7 @@ class Pane extends Cell {
         var tSize = this.t.rows+'x'+this.t.cols
         this.buffer = []
 
-        this.d = this.t7.pc.createDataChannel(tSize + ' zsh')
+        this.d = this.host.pc.createDataChannel(tSize + ' zsh')
         this.d.onclose = () =>{
             this.state = "disconnected"
             this.write('Data Channel is closed.\n')
