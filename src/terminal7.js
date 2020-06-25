@@ -82,7 +82,7 @@ class Terminal7 {
             if (h.store) {
                 let ws = []
                 h.windows.forEach((w) => ws.push(w.id))
-                out.push({addr: h.addr, user: h.user, secret: h.secret,
+                out.push({id: h.id, addr: h.addr, user: h.user, secret: h.secret,
                     name:h.name, windows: ws})
             }
         })
@@ -192,12 +192,7 @@ class Host {
             console.log("on negotiation needed", e)
             this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
         }
-        this.openCDC().then(() => {
-            console.log("After cdc open")
-        }).catch(e => {
-            console.log(e)
-            alert("Failed to open CDC, check the log for the reason")
-        })
+        this.openCDC()
         // suthenticate starts the ball rolling
         this.login()
     }
@@ -213,7 +208,7 @@ class Host {
         // don't change the time if it's a retransmit
         if (msg.time == undefined)
             msg.time = Date.now()
-        if (!this.cdc)
+        if (!this.cdc || this.cdc.readyState != "open")
             this.pendingCDCMsgs.push(msg)
         else {
             const s = JSON.stringify(msg)
@@ -221,7 +216,7 @@ class Host {
                 this.cdc.send(s)
             } catch(err) {
                 //TODO: this is silly, count proper retries
-                setTimeout(() => this.sendCTRLMsg(msg), 1000)
+                console.log("Got error trying to send ctrl message", err)
             }
         }
         return msg.message_id
@@ -270,43 +265,41 @@ class Host {
         return w
     }
     openCDC() {
-        return new Promise((resolve, reject) => {
-            var cdc = this.pc.createDataChannel('%')
-            this.cdc = cdc
-            console.log("<opening cdc")
-            cdc.onclose = () =>{
-                this.state = "closed"
-                this.write('Control Channel is closed.\n')
-                // TODO: What now?
-            }
-            cdc.onopen = () => {
-                if (this.pendingCDCMsgs.length > 0)
-                    // TODO: why the time out? why 100mili?
-                    setTimeout(() => {
-                        console.log("sending pending messages:", this.pendingCDCMsgs)
-                        this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m), 10)
-                        this.pendingCDCMsgs = []
-                    }, 100)
-            }
-            cdc.onmessage = m => {
-                const d = new TextDecoder("utf-8"),
-                      msg = JSON.parse(d.decode(m.data))
+        var cdc = this.pc.createDataChannel('%')
+        this.cdc = cdc
+        console.log("<opening cdc")
+        cdc.onclose = () =>{
+            this.state = "closed"
+            this.write('Control Channel is closed.\n')
+            // TODO: What now?
+        }
+        cdc.onopen = () => {
+            if (this.pendingCDCMsgs.length > 0)
+                // TODO: why the time out? why 100mili?
+                setTimeout(() => {
+                    console.log("sending pending messages:", this.pendingCDCMsgs)
+                    this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m), 10)
+                    this.pendingCDCMsgs = []
+                }, 100)
+        }
+        cdc.onmessage = m => {
+            const d = new TextDecoder("utf-8"),
+                  msg = JSON.parse(d.decode(m.data))
 
-                // handle Ack
-                if (msg.ack !== undefined) {
-                    const handler = this.onack[msg.ack.ref]
-                    console.log("got cdc message:", this.state, msg)
-                    resolve("cdc opened!")
-                    if (handler != undefined) {
-                        handler(msg.ack.body)
-                        // just to make sure we don't call it twice
-                        delete this.onack[msg.ack.ref]
-                    }
-                    else
-                        console.log("Got a cdc ack with no handler", msg)
+            // handle Ack
+            if (msg.ack !== undefined) {
+                const handler = this.onack[msg.ack.ref]
+                console.log("got cdc message:", this.state, msg)
+                if (handler != undefined) {
+                    handler(msg.ack.body)
+                    // just to make sure we don't call it twice
+                    delete this.onack[msg.ack.ref]
                 }
+                else
+                    console.log("Got a cdc ack with no handler", msg)
             }
-        })
+        }
+        return cdc
     }
     /*
      * remove close the connection and removes the host from the UI
@@ -389,7 +382,7 @@ class Window {
             this.host.activeW.nameE.classList.remove("active")
         this.nameE.classList.add("active")
         this.host.activeW = this
-        window.location.href=`#tab$_{this.host.id}.${this.id+1}`
+        window.location.href=`#tab-${this.host.id}.${this.id+1}`
     }
     addLayout(dir, basedOn) {
         let l = new Layout(dir, basedOn)
