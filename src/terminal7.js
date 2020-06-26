@@ -59,7 +59,6 @@ class Terminal7 {
                 hm.on("edit", (ev) => console.log("TODO: add host editing"))
                 hm.on("connect", (ev) => host.connect())
                 li.appendChild(a)
-                li.onclick = () => host.connect()
                 // use prepend to keep the "+" last
                 padre.prepend(li)
             })
