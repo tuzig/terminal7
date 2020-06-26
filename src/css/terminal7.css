@@ -123,10 +123,6 @@ a {
 }
 .tabs li a:hover { background: black; }
 
-#tab1:target, #tab2:target, #tab3:target, #tab4:target, #tab5:target,
-#tab6:target, #tab7:target, #tab8:target, #tab9:target {
-  z-index: 1;
-}
 .active {
     color: #D9F505 !important;
     background-color: black;
@@ -138,12 +134,17 @@ a {
     width: 100%;
     height: 100%;
 }
+#home:target {
+    z-index: 2
+}
 #home {
     width: 100%;
     max-width: 100%;
     position: absolute;
     top: 0;
     left: 0;
+    background-color: black;
+    height: 84%;
 }
 
 #plus-host {

@@ -154,8 +154,7 @@ class Host {
 
         // if we're already connected, just focus
         if (this.state == "connected") {
-            // this.activeW.focus()
-            resolve("focused")
+            this.activeP.focus()
             return
         }
 
@@ -244,7 +243,8 @@ class Host {
                 b.onclick = (e) => this.addWindow()
             // add the windows and connect to the panes
             console.log("before callingresolve")
-            setTimeout(e => this.activeP.openDC(), 10)
+            if (!this.activeP.d)
+                setTimeout(e => this.activeP.openDC(), 10)
         }
         setTimeout(() => {
             if (!resolved)
@@ -378,8 +378,13 @@ class Window {
         }
         this.breadcrumbs.push(w)
         */
-        if (this.host.activeW)
-            this.host.activeW.nameE.classList.remove("active")
+        // turn off the current active
+        let a = this.host.activeW
+        if (a) {
+            a.nameE.classList.remove("active")
+            a.e.style.zIndex = 0
+        }
+        this.e.style.zIndex = 1
         this.nameE.classList.add("active")
         this.host.activeW = this
         window.location.href=`#tab-${this.host.id}.${this.id+1}`
@@ -664,7 +669,11 @@ class Layout extends Cell {
         // if we're connected, open the data channel
         if (this.host.pc != null)
             // TODO: add a timeout, so display will update
-            pane.openDC()
+            try {
+                pane.openDC()
+            } catch (e) {
+                console.log("failed to open DC", e)
+            }
         return pane
     }
     fit() {
