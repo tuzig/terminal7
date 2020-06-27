@@ -33,7 +33,7 @@ a {
 }
 
 .modal {
-    z-index: 3;
+    z-index: 6;
 }
 .modal .close {
   /* Position it in the top right corner outside of the modal */
@@ -135,7 +135,7 @@ a {
     height: 100%;
 }
 #home:target {
-    z-index: 2
+    z-index: 5
 }
 #home {
     width: 100%;
@@ -143,7 +143,8 @@ a {
     position: absolute;
     top: 0;
     left: 0;
-    height: 84%;
+    height: 92%;
+    background-color: #271D30;
 }
 
 #plus-host {
