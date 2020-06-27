@@ -30,7 +30,7 @@ class Terminal7 {
     }
 
     /*
-     * Opens terminal7 on the given DOM element.
+     * Opens terminal7 on the given DOM element and opens all the hosts.
      * If  no element is given it adds its parnet element
      */
     open(e) {
@@ -42,27 +42,7 @@ class Terminal7 {
         }
         else this.e = e
         this.state = "open"
-        const plusHost = document.getElementById("plus-host")
-        if (plusHost != null)  {
-            const padre = plusHost.parentNode
-            // Add the hosts boxes to the home page
-            this.hosts.forEach((host) => {
-                let li = document.createElement('li'),
-                    a = document.createElement('a')
-                li.classList.add("border")
-                a.innerHTML = `<h3> ${host.user}</h3><h2>@</h2><h3>${host.addr}</h3>`
-                // Add gestures on the window name for rename and drag to trash
-                let hm = new Hammer.Manager(li, {})
-                hm.options.domEvents=true; // enable dom events
-                hm.add(new Hammer.Press({event: "edit", pointers: 1}))
-                hm.add(new Hammer.Tap({event: "connect", pointers: 1}))
-                hm.on("edit", (ev) => console.log("TODO: add host editing"))
-                hm.on("connect", (ev) => host.connect())
-                li.appendChild(a)
-                // use prepend to keep the "+" last
-                padre.prepend(li)
-            })
-        }
+        this.hosts.forEach((host) => host.open(e))
     }
     addHost(p) {
         let out = []
@@ -140,21 +120,58 @@ class Host {
         this.onack = {}
     }
 
+    open(e) {
+        // create the host element - holding the tabs, windows and tab bar
+        this.e = document.createElement('div')
+        this.e.className = "host"
+        this.e.style.display = "none"
+        this.e.id = `host-${this.id}`
+        e.appendChild(this.e)
+        // add the tab bar
+        let t = document.getElementById("tabbar-template")
+        if (t) {
+            t = t.content.cloneNode(true)
+            let b = t.querySelector(".add-tab")
+            b.onclick = (e) => this.addWindow()
+            this.e.appendChild(t)
+        }
+        const plusHost = document.getElementById("plus-host")
+        if (plusHost != null)  {
+            // Add the hosts boxes to the home page
+            let li = document.createElement('li'),
+                a = document.createElement('a')
+            li.classList.add("border")
+            a.innerHTML = `<h3> ${this.user}</h3><h2>@</h2><h3>${this.addr}</h3>`
+            // Add gestures on the window name for rename and drag to trash
+            let hm = new Hammer.Manager(li, {})
+            hm.options.domEvents=true; // enable dom events
+            hm.add(new Hammer.Press({event: "edit", pointers: 1}))
+            hm.add(new Hammer.Tap({event: "connect", pointers: 1}))
+            hm.on("edit", (ev) => console.log("TODO: add host editing"))
+            hm.on("connect", (ev) => this.connect())
+            li.appendChild(a)
+            // use prepend to keep the "+" last
+            plusHost.parentNode.prepend(li)
+        }
+    }
+            
     /*
      * connect opens a webrtc peer connection the the host then it opens
      * the control channel, authenticates.eturns a promise which is resolved
      * on receiving the authentication ack.
      */
     connect() {
-        // TODO: if we're already connected just popup the host's active w
-        if (this.activeW == null)
-            // add the first window
-            this.activeW = this.addWindow('Welcome')
-
         // if we're already connected, just focus
         if (this.state == "connected") {
             this.activeP.focus()
             return
+        }
+
+        // TODO: if we're already connected just popup the host's active w
+        if (this.activeW == null) {
+            // add the first window
+            this.e.style.display = "block"
+            this.activeW = this.addWindow('Welcome')
         }
 
         this.pc = new RTCPeerConnection({ iceServers: [
@@ -237,9 +254,6 @@ class Host {
                     this.t7.storeHosts()
             }
             resolved = true
-            let b = document.getElementById("add-tab")
-            if (b != null) 
-                b.onclick = (e) => this.addWindow()
             // add the windows and connect to the panes
             console.log("before callingresolve")
             if (!this.activeP.d)
@@ -260,7 +274,7 @@ class Host {
         let w = new Window({name:name, host: this, id: id})
         //TODO: move this to Window.open()
         this.windows.push(w)
-        w.open(this.t7.e)
+        w.open(this.e)
         return w
     }
     openCDC() {
@@ -340,7 +354,7 @@ class Window {
                      host: this.host},
             layout = this.addLayout("TBD", props)
             
-        // Add the name with link at #window-names
+        // Add the name with link to tab bar
         let li = document.createElement('li'),
             a = document.createElement('a')
         a.id = this.e.id+'-name'
@@ -358,7 +372,7 @@ class Window {
         h.on('switch', (ev) => this.focus())
         li.appendChild(a)
         this.nameE = a
-        let wn = document.getElementById("window-names")
+        let wn = this.host.e.querySelector(".tabs")
         if (wn != null)
             wn.appendChild(li)
         this.activeP = layout.addPane(props)
@@ -381,9 +395,12 @@ class Window {
         let a = this.host.activeW
         if (a) {
             a.nameE.classList.remove("active")
-            a.e.style.zIndex = 0
+            a.host.e.style.zIndex = 0
+            a.e.style.zIndex = 2
         }
-        this.e.style.zIndex = 1
+        this.host.e.style.zIndex = 1
+        this.e.style.zIndex = 2
+        this.host.e.style.display = "block"
         this.nameE.classList.add("active")
         this.host.activeW = this
         window.location.href=`#tab-${this.host.id}.${this.id+1}`

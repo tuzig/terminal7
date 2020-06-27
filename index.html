@@ -37,15 +37,6 @@ class="close" title="Close Modal">&times;</span>
       </div>
   </div>
   </div>
-  <div id="tabbar" class="bar border"> 
-      <div id="tabbar-buttons">
-          <i id="add-tab" class="fas fa-plus"></i>
-          <i id="break-pane" class="fas fa-exclamation"
-              onclick="console.log('TODO: spawn a pane')"></i>
-      </div>
-      <ul id="window-names" class="tabs">
-      </ul>
-  </div>
    
   <div id="navbar" class="bar border">
   <a href="#home"><i style="float:left" class="fas fa-server"></i></a>
@@ -56,6 +47,18 @@ class="close" title="Close Modal">&times;</span>
   <i class="fas fa-clipboard"></i>
   <i style="float:right;" class="fas fa-cogs"></i>
   <i style="float:right;padding-right:0.8vh" class="fas fa-share-alt"></i>
+
+  <template id="tabbar-template">
+  <div class="tabbar bar border"> 
+      <div class="tabbar-buttons">
+          <a class="add-tab"><i class="fas fa-plus"></i></a>
+          <a class="break-pane"><i class="fas fa-exclamation"
+                                  onclick="console.log('TODO: spawn a pane')"></i></a>
+      </div>
+      <ul class="tabs">
+      </ul>
+  </div>
+  </template>
 
   <script src="terminal7.bundle.js"></script>
 </body>
