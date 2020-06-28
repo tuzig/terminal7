@@ -14,3 +14,4 @@ platforms/ios/cordova/console.log
 *.xcuserdatad
 # broswer
 platforms/browser/www
+Terminal7.xcarchive/
