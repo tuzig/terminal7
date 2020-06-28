@@ -7,31 +7,64 @@
 </head>
 <body>
   <div id="terminal7">
-  </div>
-  <div id="tabbar" class="bar border"> 
-      <div id="tabbar-buttons">
-          <i id="add-tab" class="fas fa-plus"></i>
-          <i id="break-pane" class="fas fa-exclamation"
-              onclick="console.log('TODO: spawn a pane')"></i>
+      <div id="home">
+          <h1>Welcome to Terminal Seven!</h1>
+          <ul id="hosts">
+              <li id="plus-host" class="border">
+                  <i class="fas fa-plus"></i>
+              </li>
+          </ul>
       </div>
-      <ul id="window-names" class="tabs">
-      </ul>
+      <div id="add-host" class="hidden modal border" >
+          <form id="add-host-form">
+            <span onclick="this.parentNode.parentNode.style.display='none'" 
+class="close" title="Close Modal">&times;</span>
+            <h2>Add a Host</h2>
+
+        <label for="uname"><b>Address</b></label>
+        <input type="text" placeholder="IP or host name" name="host" required>
+        <label for="uname"><b>Username</b></label>
+        <input type="text" placeholder="Enter Username" name="username" required>
+
+        <label for="psw"><b>Password</b></label>
+        <input type="password" placeholder="Enter Password" name="password" required>
+
+        <label>
+          <input type="checkbox" checked="checked" name="remember"> Remember host
+        </label>
+        <button type="submit">Connect</button>
+          </form>
+      </div>
+  </div>
   </div>
    
   <div id="navbar" class="bar border">
-  <i style="float:left" class="fas fa-server"></i>
-  <i style="margin-right: 10vh" class="fas fa-trash"></i>
+  <a href="#home"><i style="float:left" class="fas fa-server"></i></a>
+  <div style="float:left" class="static"></div>
+  <i style="width: 20" class="fas fa-trash"></i>
   <i class="fas fa-search"></i>
   <i class="fas fa-external-link-square-alt"></i>
-  <b>:</b>
   <i class="fas fa-clipboard"></i>
   <i style="float:right;" class="fas fa-cogs"></i>
   <i style="float:right;padding-right:0.8vh" class="fas fa-share-alt"></i>
 
-  <script type="module" src="terminal7.bundle.js"></script>
+  <template id="tabbar-template">
+  <div class="tabbar bar border"> 
+      <div class="tabbar-buttons">
+          <a class="add-tab"><i class="fas fa-plus"></i></a>
+          <a class="break-pane"><i class="fas fa-exclamation"
+                                  onclick="console.log('TODO: spawn a pane')"></i></a>
+      </div>
+      <ul class="tabs">
+      </ul>
+  </div>
+  </template>
+
   <script>
       function onDeviceReady() {
           StatusBar.hide();
       }
+</script>
+  <script src="terminal7.bundle.js"></script>
 </body>
 </html>
