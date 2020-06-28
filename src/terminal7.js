@@ -1,6 +1,5 @@
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit';
-import Casts from './movies.js';
 import * as Hammer from 'hammerjs';
 const THEME = {foreground: "#00FAFA", background: "#000"}
 const MINIMUM_COLS = 2
@@ -74,32 +73,6 @@ class Terminal7 {
         })
         console.log("Storing hosts:", out)
         localStorage.setItem("hosts", JSON.stringify(out))
-    }
-    /*
-     * asciinema .cast file player, for demo puposes
-     */
-    play(pane, frame) {
-        var d
-        let m = Casts[pane.cast]
-
-        if ((typeof m !== "undefined") && (frame == m.length))
-            frame = 2
-
-        if (typeof frame === "undefined") {
-            frame = 1
-            pane.cast = this.cast
-            m = Casts[pane.cast]
-            this.cast++
-            if (this.cast == Casts.length)
-                this.cast = 0
-            d = m[frame][0]
-        } else {
-            d = m[frame][0] - m[frame-1][0]
-        }
-        window.setTimeout(() => {
-            pane.write(m[frame][2])
-            this.play(pane, frame+1)
-        }, d*1000)
     }
 }
 
