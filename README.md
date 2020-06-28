@@ -20,6 +20,19 @@ On first connection to the server Terminal 7 will download the `webexec` binary
 and launch it to start WebRTC signalling, handle the connection, 
 open pseaudo terminals, execute commands and pipe it all to Terminal 7.
 
+## Layout
+
+Terminal7 screen is built from seven layers:
+
+0 Basic Controls
+1 Host controls
+2 hosts
+3 Windows
+4 active host & windows
+5 Home page
+6 Modal & Zoomed
+
+
 ## Installing
 
 ```console
