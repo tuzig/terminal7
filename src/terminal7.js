@@ -43,7 +43,10 @@ class Terminal7 {
         }
         else this.e = e
         this.state = "open"
-        this.hosts.forEach((host) => host.open(e))
+        this.hosts.forEach((host) => {
+            host.open(e)
+            host.e.style.display = "none"
+        })
     }
     addHost(p) {
         let out = []
@@ -119,7 +122,6 @@ class Host {
         this.pc = null
         this.windows = []
         this.activeW = null
-        this.activeP = null
         this.state = "initiated"
         this.pendingCDCMsgs = []
         this.lastMsgId = 1
@@ -131,6 +133,7 @@ class Host {
         // create the host element - holding the tabs, windows and tab bar
         this.e = document.createElement('div')
         this.e.className = "host"
+        this.e.style.zIndex = 2
         this.e.id = `host-${this.id}`
         e.appendChild(this.e)
         // add the tab bar
@@ -164,11 +167,9 @@ class Host {
         // first unfocus the current focus
         let activeH = this.t7.activeH
         if (activeH) {
-            activeH.e.style.zIndex = 2
-            if (activeH.activeW)
-                activeH.activeW.e.style.zIndex = 2
+            activeH.e.style.display = "none"
         }
-        this.e.style.zIndex = 4
+        this.e.style.display = "block"
         this.t7.activeH = this
         if (this.activeW)
             this.activeW.focus()
@@ -187,7 +188,7 @@ class Host {
         if (this.activeW == null) {
             // add the first window
             this.e.style.display = "block"
-            this.activeW = this.addWindow('Welcome')
+            this.addWindow('Welcome')
         }
 
         this.pc = new RTCPeerConnection({ iceServers: [
@@ -271,8 +272,9 @@ class Host {
             }
             resolved = true
             // add the windows and connect to the panes
-            if (!this.activeP.d)
-                setTimeout(e => this.activeP.openDC(), 10)
+            let aP = this.activeW.activeP 
+            if (!aP.d)
+                setTimeout(e => aP.openDC(), 10)
         }
         setTimeout(() => {
             if (!resolved)
@@ -287,10 +289,9 @@ class Host {
         if (!(name instanceof String))
             name = `Tab ${id+1}`
         let w = new Window({name:name, host: this, id: id})
-        //TODO: move this to Window.open()
         this.windows.push(w)
         w.open(this.e)
-        // w.focus()
+        this.activeW = w
         return w
     }
     openCDC() {
@@ -348,6 +349,9 @@ class Window {
         this.e = null
         this.activeP = null
     }
+    /*
+     * Window.open opens a window on an elment.
+     */
     open(e) {
         this.e = document.createElement('div')
         this.e.className = "window"
@@ -382,7 +386,7 @@ class Window {
         if (wn != null)
             wn.appendChild(li)
         this.activeP = layout.addPane(props)
-        this.activeP.focus()
+        this.focus()
     }
     /*
      * Change the active window, all other windows and
@@ -401,12 +405,13 @@ class Window {
         let a = this.host.activeW
         if (a) {
             a.nameE.classList.remove("active")
-            a.e.style.zIndex = 3
+            a.e.style.display = "none"
         }
-        this.e.style.zIndex = 4
+        this.e.style.display = "block"
         this.nameE.classList.add("active")
         this.host.activeW = this
         window.location.href=`#tab-${this.host.id}.${this.id+1}`
+        this.activeP.focus()
     }
     addLayout(dir, basedOn) {
         let l = new Layout(dir, basedOn)
@@ -467,11 +472,12 @@ class Cell {
     }
     /*
      * Creates the HTML elment that will store our dimensions and content
+     * get an optional className to be added to the element
      */
     createElement(className) {
         // creates the div element that will hold the term
         this.e = document.createElement("div")
-        this.e.classList.add("cell")
+        this.e.classList = "cell"
         if (typeof className == "string")
             this.e.classList.add(className)
         // net 3 lines are used to prevent tab key from switching panes
@@ -486,14 +492,12 @@ class Cell {
      * Set the focus on the cell
      */
     focus() {
-        this.w.focus()
         this.active = true
-        this.w.activeP = this
-        if (this.host.activeP !== null) {
-            this.host.activeP.e.classList.remove("focused")
+        if (this.w.activeP !== null) {
+            this.w.activeP.e.classList.remove("focused")
         }
+        this.w.activeP = this
         this.e.classList.add("focused")
-        this.host.activeP = this
         
     }
     /*
@@ -868,6 +872,8 @@ class Pane extends Cell {
         super.focus()
         if (this.t !== undefined)
             this.t.focus()
+        else 
+            console.log("can't focus, this.t is undefined")
     }
     /*
      * Splitting the pane, receivees a dir-  either "topbottom" or "rightleft"
