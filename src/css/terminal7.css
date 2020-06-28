@@ -73,6 +73,9 @@ a {
     left:0;
     height: 78%;
 }
+.bar a {
+    color: green;
+}
 .bar {
     border-radius: 6px;
     position: fixed;
@@ -95,6 +98,7 @@ a {
     color: #00fafa;
     font-size: 4.5vh;
     padding: 0;
+    background-color: #271D30;
 }
 .tabbar-buttons {
     float: right;
