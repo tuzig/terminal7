@@ -18,6 +18,7 @@ class Terminal7 {
         this.cells = []
         this.state = "initiated"
         this.breadcrumbs = []
+        this.activeH = null
         // Load hosts from local storage
         let hs = JSON.parse(localStorage.getItem('hosts'))
         if (hs != null)
@@ -54,6 +55,8 @@ class Terminal7 {
         console.log(`adding ${h.user}@${h.addr} & saving hosts`)
         this.hosts.push(h)
         this.storeHosts()
+        h.open(this.e)
+        this.activeH = h
         return h
     }
     storeHosts() { 
@@ -125,7 +128,6 @@ class Host {
         // create the host element - holding the tabs, windows and tab bar
         this.e = document.createElement('div')
         this.e.className = "host"
-        this.e.style.display = "none"
         this.e.id = `host-${this.id}`
         e.appendChild(this.e)
         // add the tab bar
@@ -155,20 +157,30 @@ class Host {
             plusHost.parentNode.prepend(li)
         }
     }
+    focus() {
+        // first unfocus the current focus
+        let activeH = this.t7.activeH
+        if (activeH) {
+            activeH.e.style.zIndex = 2
+            if (activeH.activeW)
+                activeH.activeW.e.style.zIndex = 2
+        }
+        this.e.style.zIndex = 4
+        this.t7.activeH = this
+        if (this.activeW)
+            this.activeW.focus()
+    }
             
     /*
-     * connect opens a webrtc peer connection the the host then it opens
-     * the control channel, authenticates.eturns a promise which is resolved
-     * on receiving the authentication ack.
+     * connect opens a webrtc peer connection to the host and then opens
+     * the control channel and authenticates.
      */
     connect() {
         // if we're already connected, just focus
         if (this.state == "connected") {
-            this.activeP.focus()
+            this.focus()
             return
         }
-
-        // TODO: if we're already connected just popup the host's active w
         if (this.activeW == null) {
             // add the first window
             this.e.style.display = "block"
@@ -256,7 +268,6 @@ class Host {
             }
             resolved = true
             // add the windows and connect to the panes
-            console.log("before callingresolve")
             if (!this.activeP.d)
                 setTimeout(e => this.activeP.openDC(), 10)
         }
@@ -276,6 +287,7 @@ class Host {
         //TODO: move this to Window.open()
         this.windows.push(w)
         w.open(this.e)
+        // w.focus()
         return w
     }
     openCDC() {
@@ -324,10 +336,10 @@ class Host {
      * Send the pane's size to the server
      */
     sendSize(pane) {
-        if (this.pc == null)
+        if (this.pc == null || this.channelId == null)
             return
         this.sendCTRLMsg({resize_pty: {
-                            id: pane.serverId,
+                            id: pane.channelId,
                             sx: pane.t.cols,
                             sy: pane.t.rows
                           }}
@@ -396,12 +408,9 @@ class Window {
         let a = this.host.activeW
         if (a) {
             a.nameE.classList.remove("active")
-            a.host.e.style.zIndex = 0
-            a.e.style.zIndex = 2
+            a.e.style.zIndex = 3
         }
-        this.host.e.style.zIndex = 1
-        this.e.style.zIndex = 2
-        this.host.e.style.display = "block"
+        this.e.style.zIndex = 4
         this.nameE.classList.add("active")
         this.host.activeW = this
         window.location.href=`#tab-${this.host.id}.${this.id+1}`
@@ -476,8 +485,6 @@ class Cell {
         this.e.addEventListener('keydown', (e) => { 
           if (e.keyCode == 9) e.preventDefault(); 
         })
-
-        let terminal7 = document.getElementById('terminal7')
         this.w.e.appendChild(this.e)
         return this.e
     }
@@ -579,6 +586,7 @@ class Cell {
         } else {
             let e = document.createElement('div'),
                 te = this.e.removeChild(this.e.children[0])
+            e.style.zIndex = 6
             e.classList.add("pane", "zoomed", "focused")
             this.catchFingers(e)
             e.appendChild(te)
@@ -624,8 +632,8 @@ class Layout extends Cell {
                 this.layout.onClose(this)
             else {
                 // activate the next window
-                this.t7.activateWindow()
                 this.w.close()
+                window.location.href = "#home"
             }
             this.e.remove()
         } else {
@@ -679,18 +687,20 @@ class Layout extends Cell {
             this.cells.splice(this.cells.indexOf(p.parent)+1, 0, pane)
         else
             this.cells.push(pane)
+        
         // opening the terminal and the datachannel are heavy so we wait
         // for 10 msecs to let the new layout refresh
         pane.openTerminal()
         pane.focus()
         // if we're connected, open the data channel
         if (this.host.pc != null)
-            // TODO: add a timeout, so display will update
-            try {
-                pane.openDC()
-            } catch (e) {
-                console.log("failed to open DC", e)
-            }
+            setTimeout(() => {
+                try {
+                    pane.openDC()
+                } catch (e) {
+                    console.log("failed to open DC", e)
+                }
+            }, 10)
         return pane
     }
     fit() {
@@ -797,12 +807,16 @@ class Pane extends Cell {
         this.d = null
         this.zoomed = false
         this.active = false
+        this.channelId = null
     }
 
     write(data) {
         this.t.write(data)
     }
                 
+    /*
+     * setEcho sets the terminal's echo to on or off
+     */
     setEcho(echoOn) {
         if (this.echo === undefined) {
             this.t.onData((data) => this.echo && this.t.write(data))
@@ -840,6 +854,7 @@ class Pane extends Cell {
                 if (this.d != null)
                     this.d.send(ev.key)
         })
+        // this.focus()
         this.fit()
         this.state = "opened"
         // this.t7.play(this)
@@ -932,7 +947,7 @@ class Pane extends Cell {
                 var enc = new TextDecoder("utf-16"),
                     str = enc.decode(m.data)
                 this.state = "ready"
-                this.serverId = parseInt(str)
+                this.channelId = parseInt(str)
             }
             else if (this.state == "disconnected") {
                 this.buffer.push(new Uint8Array(m.data))
