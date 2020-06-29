@@ -25,9 +25,8 @@ describe("terminal7", function() {
         t.open(e)
     })
 
-    it("starts with no windows and no panes", () => {
-        expect(t.windows.length).to.equal(0)
-        expect(t.cells.length).to.equal(0)
+    it("starts with no hosts", () => {
+        expect(t.hosts.length).to.equal(0)
     })
     describe("window", () => {
         it("is added with a cell", function() {
