@@ -4,7 +4,6 @@ import * as Hammer from 'hammerjs';
 const THEME = {foreground: "#00FAFA", background: "#000"}
 const MINIMUM_COLS = 2
 const MINIMUM_ROWS = 1
-const SET_SIZE_PREFIX = "A($%JFDS*(;dfjmlsdk9-0"
 
 class Terminal7 {
     /*
@@ -12,7 +11,6 @@ class Terminal7 {
      */
     constructor() {
         this.hosts = []
-        this.windows = []
         this.cells = []
         this.state = "initiated"
         this.breadcrumbs = []
@@ -27,6 +25,7 @@ class Terminal7 {
                 // h.restore()
                 this.hosts.push(h)
             })
+        console.log(this.hosts)
     }
 
     /*
