@@ -26,7 +26,6 @@ class Terminal7 {
                 // h.restore()
                 this.hosts.push(h)
             })
-        console.log(this.hosts)
     }
 
     /*
@@ -329,7 +328,8 @@ class Window {
         this.activeP = null
     }
     /*
-     * Window.open opens a window on an elment.
+     * Window.open opens creates the window's element and the first layout and
+     * pane
      */
     open(e) {
         this.e = document.createElement('div')
@@ -830,10 +830,7 @@ class Pane extends Cell {
                 if (this.d != null)
                     this.d.send(ev.key)
         })
-        // this.focus()
-        this.fit()
         this.state = "opened"
-        // this.t7.play(this)
         return this.t
     }
 
