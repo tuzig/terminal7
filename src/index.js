@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     secret: ev.target.querySelector('[name="password"]').value,
                     store: remember == "on"
             })
+        h.connect()
         // hide the modal
         ev.target.parentNode.style.display = "none"
         return false

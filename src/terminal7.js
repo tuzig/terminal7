@@ -25,7 +25,6 @@ class Terminal7 {
                 // h.restore()
                 this.hosts.push(h)
             })
-        console.log(this.hosts)
     }
 
     /*
@@ -59,7 +58,6 @@ class Terminal7 {
         h.focus()
         */
         h.open(this.e)
-        h.connect()
         this.activeH = h
         return h
     }
@@ -322,7 +320,8 @@ class Window {
         this.activeP = null
     }
     /*
-     * Window.open opens a window on an elment.
+     * Window.open opens creates the window's element and the first layout and
+     * pane
      */
     open(e) {
         this.e = document.createElement('div')
@@ -823,10 +822,7 @@ class Pane extends Cell {
                 if (this.d != null)
                     this.d.send(ev.key)
         })
-        // this.focus()
-        this.fit()
         this.state = "opened"
-        // this.t7.play(this)
         return this.t
     }
 
@@ -928,6 +924,10 @@ class Pane extends Cell {
         super.toggleZoom()
         this.fit()
     }
+    /*
+     * Host.sendSize sends a resize message to the server.
+     * If there's no active connection nothing is happening
+     */
     sendSize(pane) {
         if (this.pc == null || this.channelId == null)
             return
