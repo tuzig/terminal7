@@ -308,14 +308,12 @@ class Host {
      * Send the pane's size to the server
      */
     sendSize(pane) {
-        if (this.pc == null || this.channelId == null)
-            return
-        this.sendCTRLMsg({resize_pty: {
-                            id: pane.channelId,
-                            sx: pane.t.cols,
-                            sy: pane.t.rows
-                          }}
-        )
+        if (this.pc != null)
+            this.sendCTRLMsg({resize_pty: {
+                                channel_id: pane.channelId,
+                                sx: pane.t.cols,
+                                sy: pane.t.rows
+                              }})
     }
 }
 class Window {
@@ -811,6 +809,7 @@ class Pane extends Cell {
         this.fitAddon = new FitAddon()
         this.t.open(this.e)
         this.t.loadAddon(this.fitAddon)
+        this.fitAddon.fit()
         this.t.onKey((ev) =>  {
             if (afterLeader) {
                 if (ev.domEvent.key == "z") 
@@ -919,7 +918,7 @@ class Pane extends Cell {
             // TODO:
             console.log("got message:", this.state, m.data)
             if (this.state == "opened") {
-                var enc = new TextDecoder("utf-16"),
+                var enc = new TextDecoder("utf-8"),
                     str = enc.decode(m.data)
                 this.state = "ready"
                 this.channelId = parseInt(str)
