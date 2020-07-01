@@ -74,7 +74,7 @@ a {
     height: 78%;
 }
 .bar a {
-    color: green;
+    color: #00fafa;
 }
 .bar {
     border-radius: 6px;
@@ -87,7 +87,7 @@ a {
     box-sizing: border-box;
 }
 #navbar {
-    color: #F952F9;
+    color: #00fafa;
     padding: 1.3vh 0.6vw;
     font-size: 4.5vh;
     bottom: 0;

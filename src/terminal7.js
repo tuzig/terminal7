@@ -44,6 +44,8 @@ class Terminal7 {
             host.open(e)
             host.e.style.display = "none"
         })
+        let b = document.querySelector(".trash")
+        if (b) b.onclick = (e) => this.activeH.activeW.activeP.close()
     }
     addHost(p) {
         let out = []
@@ -55,7 +57,6 @@ class Terminal7 {
         this.hosts.push(h)
         this.storeHosts()
         h.open(this.e)
-        this.activeH = h
         return h
     }
     storeHosts() { 
@@ -149,8 +150,8 @@ class Host {
      */
     connect() {
         // if we're already connected, just focus
+        this.focus()
         if (this.state == "connected") {
-            this.focus()
             return
         }
         if (this.activeW == null) {
