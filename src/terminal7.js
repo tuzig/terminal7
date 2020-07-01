@@ -4,6 +4,7 @@ import * as Hammer from 'hammerjs';
 const THEME = {foreground: "#00FAFA", background: "#000"}
 const MINIMUM_COLS = 2
 const MINIMUM_ROWS = 1
+const RETRIES = 3
 
 class Terminal7 {
     /*
@@ -54,9 +55,6 @@ class Terminal7 {
         console.log(`adding ${h.user}@${h.addr} & saving hosts`)
         this.hosts.push(h)
         this.storeHosts()
-        /*
-        h.focus()
-        */
         h.open(this.e)
         this.activeH = h
         return h
@@ -309,6 +307,16 @@ class Host {
     /*
      * Send the pane's size to the server
      */
+    sendSize(pane) {
+        if (this.pc == null || this.channelId == null)
+            return
+        this.sendCTRLMsg({resize_pty: {
+                            id: pane.channelId,
+                            sx: pane.t.cols,
+                            sy: pane.t.rows
+                          }}
+        )
+    }
 }
 class Window {
     constructor (props) {
@@ -828,13 +836,18 @@ class Pane extends Cell {
 
     // fit a pane
     fit() {
-        if (this.fitAddon !== undefined)
-            setTimeout(() => {
-                this.fitAddon.fit()
-                this.sendSize()
-            }, 10)
-        else
-            alert ("Where is the fitAddon?")
+        try {
+            this.fitAddon.fit()
+        } catch {
+            if (this.retries < RETRIES) {
+                this.retries++
+                setTimeout(this.fit, 20*this.retries)
+            }
+            else
+                console.log("fit failed RETRIES times. giving up")
+            return
+        }
+        this.host.sendSize(this)
     }
     focus() {
         super.focus()

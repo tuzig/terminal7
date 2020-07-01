@@ -42,8 +42,8 @@ describe("terminal7", function() {
         var h, w, p0
         beforeEach(() => {
             h = t.addHost({t7:t})
+            h.open(e)
             w = h.addWindow("1,2,3 testing")
-            w.open(e)
             w.activeP.sx = 0.8
             w.activeP.sy = 0.6
             w.activeP.xoff = 0.1
