@@ -6,6 +6,7 @@ const THEME = {foreground: "#00FAFA", background: "#000"}
 const MINIMUM_COLS = 2
 const MINIMUM_ROWS = 1
 const SET_SIZE_PREFIX = "A($%JFDS*(;dfjmlsdk9-0"
+const RETRIES = 3
 
 class Terminal7 {
     /*
@@ -847,15 +848,18 @@ class Pane extends Cell {
 
     // fit a pane
     fit() {
-        if (this.fitAddon !== undefined) {
+        try {
             this.fitAddon.fit()
-            this.host.sendSize(this)
+        } catch {
+            if (this.retries < RETRIES) {
+                this.retries++
+                setTimeout(this.fit, 20*this.retries)
+            }
+            else
+                console.log("fit failed RETRIES times. giving up")
+            return
         }
-        if (this.fitAddon !== undefined)
-            // wait a bit so the display refreshes before we do the heavy lifting
-            // lifitinof resizing the terminal
-            this.fitAddon.fit()
-            this.host.sendSize(this)
+        this.host.sendSize(this)
     }
     focus() {
         super.focus()

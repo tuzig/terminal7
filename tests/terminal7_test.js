@@ -32,6 +32,7 @@ describe("terminal7", function() {
     describe("window", () => {
         it("is added with a cell", function() {
             let h = t.addHost({t7: t})
+            h.open(e)
             let w = h.addWindow("gothic")
             assert.exists(h.windows[0])
             assert.exists(h.windows[0].name, "gothic")
@@ -42,6 +43,7 @@ describe("terminal7", function() {
         var h, w, p0
         beforeEach(() => {
             h = t.addHost({t7:t})
+            h.open(e)
             w = h.addWindow("1,2,3 testing")
             h.activeP.sx = 0.8
             h.activeP.sy = 0.6
