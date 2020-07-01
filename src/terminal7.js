@@ -13,8 +13,7 @@ class Terminal7 {
     constructor() {
         this.hosts = []
         this.cells = []
-        this.state = "initiated"
-        this.breadcrumbs = []
+        this.state = "init"
         this.activeH = null
         // Load hosts from local storage
         let hs = JSON.parse(localStorage.getItem('hosts'))
@@ -90,11 +89,12 @@ class Host {
         this.pc = null
         this.windows = []
         this.activeW = null
-        this.state = "initiated"
+        this.state = "init"
         this.pendingCDCMsgs = []
         this.lastMsgId = 1
         // a mapping of refrence number to function called on received ack
         this.onack = {}
+        this.breadcrumbs = []
     }
 
     open(e) {
@@ -268,7 +268,7 @@ class Host {
         console.log("<opening cdc")
         cdc.onclose = () =>{
             this.state = "closed"
-            this.write('Control Channel is closed.\n')
+            console.log('Control Channel is closed')
             // TODO: What now?
         }
         cdc.onopen = () => {
@@ -300,9 +300,15 @@ class Host {
         return cdc
     }
     /*
-     * remove close the connection and removes the host from the UI
+     * close the connection and removes the host from the UI
      */
-    remove() {
+    close() {
+        // this.e.innerHTML=""
+        this.pc.close()
+        this.state = "init"
+        this.windows = []
+        this.activeW = null
+        this.breadcrumbs = []
     }
     /*
      * Send the pane's size to the server
@@ -370,14 +376,7 @@ class Window {
      * mark its name in the tabbar as the chosen one
      */
     focus() {
-        /* TODO: use the breadcrumbs
-        if (typeof w == "undefined") {
-            this.breadcrumbs.pop()
-            // TODO: what if it's the first crumb we just deleted?
-            w = this.breadcrumbs.pop()
-        }
-        this.breadcrumbs.push(w)
-        */
+        this.host.breadcrumbs.push(this)
         // turn off the current active
         let a = this.host.activeW
         if (a) {
@@ -426,6 +425,16 @@ class Window {
         // remove the window name
         this.nameE.parentNode.remove()
         this.e.remove()
+        this.host.windows.splice(this.host.windows.indexOf(this), 1)
+        this.host.activeW = null
+        // remove myself from the breadcrumbs
+        this.host.breadcrumbs.pop()
+        if (this.host.windows.length == 0) {
+            this.host.close()
+            window.location.href = "#home"
+        }
+        else
+            this.host.breadcrumbs.pop().focus()
     }
 }
 
@@ -603,7 +612,6 @@ class Layout extends Cell {
             else {
                 // activate the next window
                 this.w.close()
-                window.location.href = "#home"
             }
             this.e.remove()
         } else {
@@ -806,7 +814,7 @@ class Pane extends Cell {
         this.fitAddon = new FitAddon()
         this.t.open(this.e)
         this.t.loadAddon(this.fitAddon)
-        this.fitAddon.fit()
+        this.fit()
         this.t.onKey((ev) =>  {
             if (afterLeader) {
                 if (ev.domEvent.key == "z") 
