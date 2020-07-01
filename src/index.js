@@ -31,6 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     store: remember == "on"
             })
         // hide the modal
+        h.connect()
         ev.target.parentNode.style.display = "none"
         return false
     }
