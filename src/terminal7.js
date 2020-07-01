@@ -798,6 +798,7 @@ class Pane extends Cell {
 
         this.t = new Terminal({
             convertEol: true,
+            fontSize: 12,
             theme: THEME,
             rows:24,
             cols:80
