@@ -149,10 +149,14 @@ class Host {
      * the control channel and authenticates.
      */
     connect() {
+        let reconnect = false
         // if we're already connected, just focus
         this.focus()
         if (this.state == "connected") {
             return
+        }
+        if ((this.state == "disconnected") || (this.state == "failed")) {
+            reconnect = true
         }
         if (this.activeW == null) {
             // add the first window
@@ -164,6 +168,7 @@ class Host {
                   { urls: 'stun:stun2.l.google.com:19302' }
                 ] })
         this.pc.oniceconnectionstatechange = (e) => {
+            this.state = this.pc.iceConnectionState
             console.log("ice connection state change: "
                 + this.pc.iceConnectionState)
         }
