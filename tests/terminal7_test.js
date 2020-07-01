@@ -31,6 +31,7 @@ describe("terminal7", function() {
     describe("window", () => {
         it("is added with a cell", function() {
             let h = t.addHost({t7: t})
+            h.open(e)
             let w = h.addWindow("gothic")
             assert.exists(h.windows[0])
             assert.exists(h.windows[0].name, "gothic")
@@ -42,11 +43,12 @@ describe("terminal7", function() {
         beforeEach(() => {
             h = t.addHost({t7:t})
             w = h.addWindow("1,2,3 testing")
-            h.activeP.sx = 0.8
-            h.activeP.sy = 0.6
-            h.activeP.xoff = 0.1
-            h.activeP.yoff = 0.2
-            p0 = h.activeP
+            w.open(e)
+            w.activeP.sx = 0.8
+            w.activeP.sy = 0.6
+            w.activeP.xoff = 0.1
+            w.activeP.yoff = 0.2
+            p0 = w.activeP
         })
         it("can set and get sizes", () => {
             let c = new Cell({sx: 0.12, sy: 0.34, t7: t, w: w})
@@ -71,11 +73,10 @@ describe("terminal7", function() {
             let p1 = p0.split("rightleft", 0.5)
 
             expect(p0.layout.dir).to.equal("rightleft")
-            expect(p0.layout.toText()).equal(
-                '[0.800x0.300,0.100,0.200,1,0.800x0.300,0.100,0.500,2]' )
+            expect(p0.layout.toText()).to.match(
+                /^\[0.800x0.300,0.100,0.200,\d+,0.800x0.300,0.100,0.500,\d+\]/)
             // test sizes
             assert.equal(p0.sx, 0.8)
-            assert.equal(p0.sy, t.cells[1].sy)
             assert.equal(p0.sy, 0.3)
             // Test offsets
             assert.equal(p0.xoff, 0.1)
