@@ -457,10 +457,6 @@ class Cell {
         this.e.classList = "cell"
         if (typeof className == "string")
             this.e.classList.add(className)
-        // net 3 lines are used to prevent tab key from switching panes
-        this.e.addEventListener('keydown', (e) => { 
-          if (e.keyCode == 9) e.preventDefault(); 
-        })
         this.w.e.appendChild(this.e)
         return this.e
     }
