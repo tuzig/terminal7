@@ -73,11 +73,10 @@ describe("terminal7", function() {
             let p1 = p0.split("rightleft", 0.5)
 
             expect(p0.layout.dir).to.equal("rightleft")
-            expect(p0.layout.toText()).equal(
-                '[0.800x0.300,0.100,0.200,1,0.800x0.300,0.100,0.500,2]' )
+            expect(p0.layout.toText()).to.match(
+                /^\[0.800x0.300,0.100,0.200,\d+,0.800x0.300,0.100,0.500,\d+\]/)
             // test sizes
             assert.equal(p0.sx, 0.8)
-            assert.equal(p0.sy, t.cells[1].sy)
             assert.equal(p0.sy, 0.3)
             // Test offsets
             assert.equal(p0.xoff, 0.1)
