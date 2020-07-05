@@ -1,6 +1,6 @@
 /*
- * This file contains the code that makes terminal seven -
- * a touchable terminal multiplexer.
+ * This file contains the code that makes terminal seven - a tmux inspired
+ * touchable terminal multiplexer running over wertc's data channels.
  */
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit';
