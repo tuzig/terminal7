@@ -1,3 +1,7 @@
+/*
+ * This file contains the code that makes terminal seven -
+ * a touchable terminal multiplexer.
+ */
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit';
 import * as Hammer from 'hammerjs';
