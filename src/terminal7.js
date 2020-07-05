@@ -200,7 +200,7 @@ class Host {
         }
         this.openCDC()
         // suthenticate starts the ball rolling
-        this.login()
+        this.login(reconnect)
     }
     /*
      * sencCTRLMsg gets a control message and sends it if we have a control
@@ -230,7 +230,7 @@ class Host {
     /*
      * authenticate send the authentication message over the control channel
      */
-    login() {
+    login(reconnect) {
         let resolved = false
         let msgId = this.sendCTRLMsg({auth: {
                             username: this.user,
@@ -245,13 +245,23 @@ class Host {
                     this.t7.storeHosts()
             }
             resolved = true
-            // add the windows and connect to the panes
-            let aP = this.activeW.activeP 
-            if (!aP.d)
-                setTimeout(e => aP.openDC(), 10)
+            if (reconnect)
+                // reconnect to open panes
+                this.cells.forEach((c) => {
+                    if (c.openDC != undefined) {
+                        c.openDC(reconnect)
+                    }
+                })
+            else  {
+                // add the windows and connect to the panes
+                let aP = this.activeW.activeP 
+                if (!aP.d)
+                    setTimeout(e => aP.openDC(), 10)
+            }
         }
         setTimeout(() => {
             if (!resolved)
+                // TODO: handle expired timeout
                 console.log("Timeout on auth ack"), 1000
         })
     }
@@ -320,8 +330,8 @@ class Host {
      * Send the pane's size to the server
      */
     sendSize(pane) {
-        if (this.pc != null)
-            this.sendCTRLMsg({resize_pty: {
+        if (pane.pc != null)
+            pane.sendCTRLMsg({resize_pty: {
                                 channel_id: pane.channelId,
                                 sx: pane.t.cols,
                                 sy: pane.t.rows
@@ -837,7 +847,7 @@ class Pane extends Cell {
                 return
             }
             else
-                if (this.d != null)
+                if ((this.d != null) && (this.d.readyState == "open"))
                     this.d.send(ev.key)
         })
         this.state = "opened"
@@ -906,15 +916,20 @@ class Pane extends Cell {
                           xoff: xoff, yoff: yoff,
                           parent: this})
     }
-    openDC() {
+    openDC(reconnect) {
         var tSize = this.t.rows+'x'+this.t.cols
         this.buffer = []
 
-        this.d = this.host.pc.createDataChannel(tSize + ' zsh')
+        if (reconnect)
+            this.d = this.host.pc.createDataChannel(
+                `${tSize} >${this.channelId}`)
+        else
+            this.d = this.host.pc.createDataChannel(tSize + ' zsh')
+
         this.d.onclose = () =>{
             this.state = "disconnected"
             this.write('Data Channel is closed.\n')
-            this.close()
+            // this.close()
         }
         this.d.onopen = () => {
             this.state = "opened"
@@ -946,20 +961,6 @@ class Pane extends Cell {
     toggleZoom() {
         super.toggleZoom()
         this.fit()
-    }
-    /*
-     * Host.sendSize sends a resize message to the server.
-     * If there's no active connection nothing is happening
-     */
-    sendSize(pane) {
-        if (this.pc == null || this.channelId == null)
-            return
-        this.sendCTRLMsg({resize_pty: {
-                            id: pane.channelId,
-                            sx: pane.t.cols,
-                            sy: pane.t.rows
-                          }}
-        )
     }
 }
 export { Terminal7 , Cell, Pane, Layout } 
