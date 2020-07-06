@@ -29,7 +29,6 @@ class="close" title="Close Modal">&times;</span>
 
         <label for="psw"><b>Password</b></label>
         <input type="password" placeholder="Enter Password" name="password" required>
-
         <label>
           <input type="checkbox" checked="checked" name="remember"> Remember host
         </label>
@@ -49,17 +48,39 @@ class="close" title="Close Modal">&times;</span>
   <i style="float:right;" class="fas fa-cogs"></i>
   <i style="float:right;padding-right:0.8vh" class="fas fa-share-alt"></i>
 
-  <template id="tabbar-template">
-  <div class="tabbar bar border"> 
+  <!-- The following templates are used by terminal7's code to generate 
+      complex elements -->
+    <template id="disconnected-template">
+        <div class="modal border">
+            <h1>Server Disconnected</h1>
+            
+            <p>Sorry for the incovenience.<br /> What would you like to do next?</p>
+            <a class="reconnect">Reconnect</a>
+            <a class="reset">reset</a>
+
+        </div>
+    </template>
+    <template id="tabbar-template">
+    <div class="tabbar bar border"> 
       <div class="tabbar-buttons">
           <a class="add-tab"><i class="fas fa-plus"></i></a>
           <i class="fas fa-exclamation"></i>
       </div>
       <ul class="tabs">
       </ul>
-  </div>
-  </template>
+    </div>
+    </template>
+    <template id="tabbar-template">
+    <div class="tabbar bar border"> 
+      <div class="tabbar-buttons">
+          <a class="add-tab"><i class="fas fa-plus"></i></a>
+          <i class="fas fa-exclamation"></i>
+      </div>
+      <ul class="tabs">
+      </ul>
+    </div>
+    </template>
 
-  <script src="terminal7.bundle.js"></script>
+    <script src="terminal7.bundle.js"></script>
 </body>
 </html>

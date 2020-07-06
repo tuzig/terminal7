@@ -149,6 +149,20 @@ class Host {
     }
             
     /*
+     * onDisconnect is called when the connection is drop.
+     * It puts the terminal into "limbo" state and displays a model that let's
+     * the user reconnect or 
+     */
+    onDisconnect() {
+        let t = document.getElementById("disconnected-template")
+        if (t) {
+            t = t.content.cloneNode(true)
+            let b = t.querySelector(".reconnect")
+            b.onclick = (e) => this.login(true)
+            this.e.appendChild(t)
+        }
+    }
+    /*
      * connect opens a webrtc peer connection to the host and then opens
      * the control channel and authenticates.
      */
@@ -173,6 +187,8 @@ class Host {
                 ] })
         this.pc.oniceconnectionstatechange = (e) => {
             this.state = this.pc.iceConnectionState
+            if ((this.state == "disconnected")) // || (this.state == "failed")) {
+                this.onDisconnect()
             console.log("ice connection state change: "
                 + this.pc.iceConnectionState)
         }
