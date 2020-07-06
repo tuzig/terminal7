@@ -1,3 +1,4 @@
+    text-align: left;
 html,
 body {
   width: 100%;
@@ -12,13 +13,34 @@ body {
   color: #00fafa;
   background-color: #271D30;
 }
+b, p, label { color: #00fafa; }
 
-h3 { margin: 0.2em; }
-h2 { margin: 0.3em; }
-#terminal7 {
-    height: 84%; /* TODO: make responsive */
+h1, h2, h3 {
+  text-align: center;
+  color: #F952F9;
 }
-
+h1 { margin: 0.5em; }
+h2 { margin: 0.3em; }
+h3 { margin: 0.2em; }
+#terminal7 {
+    height: 100%; 
+}
+#terminal7::after {
+    content: "T7"
+}
+#terminal7 button {
+  background-color: #271D30;
+  border: 0.5vmin solid #D9F505;
+  color: #00fafa;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 3vmin;
+  font-weight: bold;
+  margin-top: 4vmin;
+}
+  .modal-buttons { text-align: center; }
 .border { margin: 1vmin; padding: 1vmin;
     border: 0.5vmin solid #D9F505;
 }
@@ -35,19 +57,22 @@ a {
 .modal {
     z-index: 6;
     background-color: #271D30;
+    padding: 2%;
     position: fixed;
-    top: 50%;
+    bottom: 6%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, 0);
     width: 30em;
 }
+.modal p {
+    font-size: 3vmin;
+    text-align: center
+}
+.modal h2 { margin-top: 0; }
 .modal .close {
   /* Position it in the top right corner outside of the modal */
-  position: absolute;
-  right: 25px;
-  top: 0; 
-  font-size: 35px;
-  font-weight: bold;
+  color: inherit;
+  float:left;
 }
 .window {
     position: fixed;
@@ -66,6 +91,7 @@ a {
     border: 3px double;
     border-color: #D9F505;
     background-color: black;
+    height: 92%;
 }
 .layout {
     position: fixed;
@@ -97,6 +123,8 @@ a {
     padding: 1.3vh 0.6vw;
     font-size: 4.5vh;
     bottom: 0;
+    text-align: center;
+    background-color: #271D30;
 }
 
 .tabbar {
@@ -176,6 +204,7 @@ a {
     color: #F952F9;
 }
 #add-host {
+    text-align: left;
     align: left;
 }
 #add-host input[type=text], #add-host input[type=password] {
@@ -186,22 +215,11 @@ a {
   border: 1px solid #ccc;
   box-sizing: border-box;
 }
-#add-host {
-    text-align: left;
-    padding: 0.5em;
-}
-#add-host button {
-    float:right;
-    clear:both;
-    margin-top:2em;
-}
 .hidden { display: none; }
-#add-host-form { padding: 2vmin; }
 .host {
     width: 100%;
     max-width: 100%;
     position: absolute;
     top: 0;
     left: 0;
-    height: 92%;
 }

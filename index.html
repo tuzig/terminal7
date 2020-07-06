@@ -18,8 +18,6 @@
       </div>
       <div id="add-host" class="hidden modal border" >
           <form id="add-host-form">
-            <span onclick="this.parentNode.parentNode.style.display='none'" 
-class="close" title="Close Modal">&times;</span>
             <h2>Add a Host</h2>
 
         <label for="uname"><b>Address</b></label>
@@ -32,7 +30,13 @@ class="close" title="Close Modal">&times;</span>
         <label>
           <input type="checkbox" checked="checked" name="remember"> Remember host
         </label>
-        <button type="submit">Connect</button>
+        <div class="modal-buttons">
+            <button type="submit">Connect</button>
+            <!-- TODO: turn this into a template and get rid of the 
+                embeded code -->
+            <button onclick="this.parentNode.parentNode.parentNode.style.display='none'" 
+                class="close" title="Close Modal">&times;</button>
+        </div>
           </form>
       </div>
   </div>
@@ -55,26 +59,16 @@ class="close" title="Close Modal">&times;</span>
             <h1>Server Disconnected</h1>
             
             <p>Sorry for the incovenience.<br /> What would you like to do next?</p>
-            <a class="reconnect">Reconnect</a>
-            <a class="reset">reset</a>
-
+        <div class="modal-buttons">
+            <button class="reset">Reset</a>
+            <button class="reconnect">Reconnect</a>
         </div>
     </template>
     <template id="tabbar-template">
     <div class="tabbar bar border"> 
       <div class="tabbar-buttons">
           <a class="add-tab"><i class="fas fa-plus"></i></a>
-          <i class="fas fa-exclamation"></i>
-      </div>
-      <ul class="tabs">
-      </ul>
-    </div>
-    </template>
-    <template id="tabbar-template">
-    <div class="tabbar bar border"> 
-      <div class="tabbar-buttons">
-          <a class="add-tab"><i class="fas fa-plus"></i></a>
-          <i class="fas fa-exclamation"></i>
+          <a class="bang"><i class="fas fa-exclamation"></i></a>
       </div>
       <ul class="tabs">
       </ul>

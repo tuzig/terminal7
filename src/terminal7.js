@@ -94,7 +94,7 @@ class Host {
         this.pc = null
         this.windows = []
         this.activeW = null
-        this.state = "init"
+        this.state = this.updateState("init")
         this.pendingCDCMsgs = []
         this.lastMsgId = 1
         // a mapping of refrence number to function called on received ack
@@ -113,8 +113,10 @@ class Host {
         let t = document.getElementById("tabbar-template")
         if (t) {
             t = t.content.cloneNode(true)
-            let b = t.querySelector(".add-tab")
-            b.onclick = (e) => this.addWindow()
+            let a = t.querySelector(".add-tab")
+            a.onclick = (e) => this.addWindow()
+            let b = t.querySelector(".bang")
+            b.onclick = (e) => this.updateState("disconnected")
             this.e.appendChild(t)
         }
         const plusHost = document.getElementById("plus-host")
@@ -149,18 +151,25 @@ class Host {
     }
             
     /*
-     * onDisconnect is called when the connection is drop.
-     * It puts the terminal into "limbo" state and displays a model that let's
-     * the user reconnect or 
+     * updateState(state) is used to change the host's state and the place
+     * of host's state machine
      */
-    onDisconnect() {
-        let t = document.getElementById("disconnected-template")
-        if (t) {
-            t = t.content.cloneNode(true)
-            let b = t.querySelector(".reconnect")
-            b.onclick = (e) => this.login(true)
-            this.e.appendChild(t)
+    updateState(state) {
+        this.state = state 
+        if (state == "disconnected") {
+            let t = document.getElementById("disconnected-template")
+            if (t) {
+                let e = t.content.cloneNode(true),
+                    b = e.querySelector(".reconnect")
+                this.e.appendChild(e)
+                b.onclick = ev => {
+                    ev.target.parentNode.parentNode.remove()
+                    this.connect()
+                }
+            }
         }
+        console.log("ice connection state change: "
+            + this.state)
     }
     /*
      * connect opens a webrtc peer connection to the host and then opens
@@ -185,13 +194,9 @@ class Host {
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: 'stun:stun2.l.google.com:19302' }
                 ] })
-        this.pc.oniceconnectionstatechange = (e) => {
-            this.state = this.pc.iceConnectionState
-            if ((this.state == "disconnected")) // || (this.state == "failed")) {
-                this.onDisconnect()
-            console.log("ice connection state change: "
-                + this.pc.iceConnectionState)
-        }
+        this.pc.oniceconnectionstatechange = e =>
+            this.updateState(this.pc.iceConnectionState)
+
         let offer = ""
         this.pc.onicecandidate = event => {
             console.log("got ice candidate: ", event)
@@ -211,9 +216,9 @@ class Host {
                   } catch (e) {
                     alert(e)
                   }
-                  this.state = "connected"
+                  this.state = this.updateState("connected")
                 }).catch(error => {
-                  this.activeW.activeP.write(`Failed to connect to host: ${error}`)
+                  this.activeW.activeP.write(`Failed to connect to host: ${error}\n`)
                 })
             }
         }
@@ -344,7 +349,7 @@ class Host {
     close() {
         // this.e.innerHTML=""
         this.pc.close()
-        this.state = "init"
+        this.state = this.updateState("close")
         this.windows = []
         this.activeW = null
         this.breadcrumbs = []
