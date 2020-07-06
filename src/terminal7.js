@@ -137,7 +137,7 @@ class Host {
         }
     }
     focus() {
-        // first unfocus the current focus
+        // first hide the current focused host
         let activeH = this.t7.activeH
         if (activeH) {
             activeH.e.style.display = "none"
@@ -192,10 +192,11 @@ class Host {
             console.log("ice connection state change: "
                 + this.pc.iceConnectionState)
         }
+        let offer = ""
         this.pc.onicecandidate = event => {
             console.log("got ice candidate: ", event)
-            if (event.candidate) {
-              let offer = btoa(JSON.stringify(this.pc.localDescription))
+            if (event.candidate && !offer) {
+              offer = btoa(JSON.stringify(this.pc.localDescription))
               console.log("Signaling server...\n")
               fetch('http://'+this.addr+'/connect', {
                 headers: {"Content-Type": "application/json;charset=utf-8"},
@@ -211,8 +212,10 @@ class Host {
                     alert(e)
                   }
                   this.state = "connected"
-            })
-          }
+                }).catch(error => {
+                  this.activeW.activeP.write(`Failed to connect to host: ${error}`)
+                })
+            }
         }
         this.pc.onnegotiationneeded = e => {
             console.log("on negotiation needed", e)
@@ -833,7 +836,7 @@ class Pane extends Cell {
      */
     setEcho(echoOn) {
         if (this.echo === undefined) {
-            this.t.onData((data) => this.echo && this.t.write(data))
+            this.t.onData((data) => this.echo && this.write(data))
         }
         this.echo = echoOn
     }
