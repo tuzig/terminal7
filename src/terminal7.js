@@ -113,6 +113,7 @@ class Host {
         this.onack = {}
         this.breadcrumbs = []
         this.log = []
+        this.peer = null
     }
 
     /*
