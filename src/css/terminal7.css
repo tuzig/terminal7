@@ -12,7 +12,6 @@ body {
   color: #00fafa;
   background-color: #271D30;
 }
-b, p, h1, h2, h3, label { color: #00fafa; }
 
 h1, h2, h3 {
   text-align: center;
@@ -103,7 +102,7 @@ a {
     height: 78%;
 }
 .bar a {
-    color: #00fafa;
+    color: #F952F9;
 }
 .bar {
     border-radius: 6px;
@@ -116,7 +115,7 @@ a {
     box-sizing: border-box;
 }
 #navbar {
-    color: #00fafa;
+    color: #F952F9;
     padding: 1.3vh 0.6vw;
     font-size: 4.5vh;
     bottom: 0;
