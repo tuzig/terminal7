@@ -170,7 +170,6 @@ class Host {
      * Host.updateState(state) is the place for the host state machine
      */
     updateState(state) {
-        this.state = state 
         if ((state == "disconnected") || (state == "unreachable")) {
             let t = document.getElementById("disconnected-template")
             if (t) {
@@ -191,7 +190,20 @@ class Host {
                 h1.textContent = `Host ${state}`
             }
         }
+        else if (state == "connected")
+            this.clearLog()
         console.log("host state change: ", this.state)
+        this.state = state 
+    }
+    /*
+     * Host.clearLog cleans the log and the status modals
+     */
+    clearLog() {
+        this.log.forEach(m => m.remove())
+        this.log = []
+        // clear the disconnect modal
+        let es = this.e.querySelector(".disconnect")
+        if (es) es.forEach(e => e.remove())
     }
     /*
      * Host.peerConnect connects the webrtc session with the peer
@@ -222,7 +234,7 @@ class Host {
             this.addWindow('Welcome')
         }
 
-        this.log.forEach(m => m.remove())
+        this.clearLog()
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: 'stun:stun2.l.google.com:19302' }
                 ] })
@@ -359,6 +371,9 @@ class Host {
         this.activeW = w
         return w
     }
+    /*
+     * Host.openCDC opens the control channel and handle incoming messages
+     */
     openCDC() {
         var cdc = this.pc.createDataChannel('%')
         this.cdc = cdc
@@ -410,8 +425,7 @@ class Host {
         this.windows = []
         this.activeW = null
         this.breadcrumbs = []
-        this.log.forEach(m => m.remove())
-        this.log = []
+        this.clearLog()
         this.e.style.display = "none"
     }
     /*
@@ -1025,7 +1039,6 @@ class Pane extends Cell {
 
         this.d.onclose = () =>{
             this.state = "disconnected"
-            this.write('Data Channel is closed.\n')
             // this.close()
         }
         this.d.onopen = () => {
@@ -1033,7 +1046,7 @@ class Pane extends Cell {
             // TODO: set our size by sending "refresh-client -C <width>x<height>"
             setTimeout(() => {
                 if (this.state == "opened") {
-                    this.notify("Data channel is opened, but no first message")
+                    this.host.notify("Data channel is opened, but no first message")
                     this.updateState("disconnected")
                 }},TIMEOUT)
         }
