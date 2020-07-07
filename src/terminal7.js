@@ -935,6 +935,11 @@ class Pane extends Cell {
     fit() {
         try {
             this.fitAddon.fit()
+            // TODO: we should realy fix the fit addon or fix how way we use it
+            let r = this.e.offsetHeight & this.t.rows
+            console.log("height & rows: ", r)
+            if (r < 20)
+                this.t.resize(this.t.cols, this.t.rows-1)
         } catch {
             if (this.retries < RETRIES) {
                 this.retries++
