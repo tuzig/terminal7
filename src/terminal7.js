@@ -940,6 +940,7 @@ class Pane extends Cell {
             this.t.focus()
         else 
             console.log("can't focus, this.t is undefined")
+        window.location.href = `#${this.e.id}`
     }
     /*
      * Splitting the pane, receivees a dir-  either "topbottom" or "rightleft"
