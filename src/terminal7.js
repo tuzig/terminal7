@@ -100,7 +100,7 @@ class Host {
         // a mapping of refrence number to function called on received ack
         this.onack = {}
         this.breadcrumbs = []
-        this.logM = []
+        this.log = []
     }
 
     open(e) {
@@ -161,11 +161,17 @@ class Host {
             let t = document.getElementById("disconnected-template")
             if (t) {
                 let e = t.content.cloneNode(true),
-                    b = e.querySelector(".reconnect")
+                    r = e.querySelector(".reconnect"),
+                    s = e.querySelector(".shutdown")
                 this.e.appendChild(e)
-                b.onclick = ev => {
+                r.onclick = ev => {
                     ev.target.parentNode.parentNode.remove()
                     this.connect()
+                }
+                s.onclick = ev => {
+                    ev.target.parentNode.parentNode.remove()
+                    this.close()
+                    window.location.href = "#home"
                 }
             }
         }
@@ -192,7 +198,7 @@ class Host {
             this.addWindow('Welcome')
         }
 
-        this.logM.forEach(m => m.remove())
+        this.log.forEach(m => m.remove())
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: 'stun:stun2.l.google.com:19302' }
                 ] })
@@ -220,7 +226,7 @@ class Host {
                   }
                   this.state = this.updateState("connected")
                 }).catch(error => {
-                    this.log(error.message)
+                    this.notify(error.message)
                     // redisplay the disconnected modal
                     this.updateState("disconnected")
                 })
@@ -235,9 +241,9 @@ class Host {
         this.login(reconnect)
     }
     /*
-     * Host.log logs a message on the message-list
+     * Host.noitify adds a message to the host's log
      */
-    log(message) {    
+    notify(message) {    
         let ul = document.getElementById("log-msgs"),
             li = document.createElement("li"),
             close = document.createElement("button")
@@ -249,7 +255,7 @@ class Host {
         close.onclick = (ev) => ev.target.parentNode.remove()
         li.appendChild(close)
         ul.appendChild(li)
-        this.logM.push(li)
+        this.log.push(li)
     }
     /*
      * sencCTRLMsg gets a control message and sends it if we have a control
@@ -334,6 +340,7 @@ class Host {
         cdc.onclose = () =>{
             this.state = "closed"
             console.log('Control Channel is closed')
+            this.close(true)
             // TODO: What now?
         }
         cdc.onopen = () => {
@@ -365,15 +372,20 @@ class Host {
         return cdc
     }
     /*
-     * close the connection and removes the host from the UI
+     * Host.close closes the peer connection and removes the host from the UI
      */
-    close() {
+    close(verify) {
         // this.e.innerHTML=""
+        if (verify)
+            console.log("TODO: verify close")
         this.pc.close()
         this.state = this.updateState("close")
+        this.windows.forEach(w => w.close)
         this.windows = []
         this.activeW = null
         this.breadcrumbs = []
+        this.log.forEach(m => m.remove())
+        this.log = []
     }
     /*
      * Send the pane's size to the server
@@ -388,7 +400,7 @@ class Host {
     }
 }
 class Window {
-    constructor (props) {
+    constructor(props) {
         this.host = props.host
         this.id = props.id
         this.name = props.name || `Tab ${this.id+1}`
@@ -614,6 +626,9 @@ class Cell {
     set yoff(val) {
         this.e.style.top = String(val*100) + "%"
     }
+    /*
+     * Cell.close removes a cell's elment and removes itself from the window
+     */
     close() {
         this.layout.onClose(this)
         // remove this from the window

@@ -1,20 +1,24 @@
 # ChangeLog
 
-All notable changes to Terminal Seven will be documented in this file.
+All notable changes to Terminal Seven - the touchable terminal multiplexer 
+will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added 
+
+- App icons
+- Host disconnected view with reconnect and shutdown buttons
+
 ### Fixed
 
 - Windows now close properly
 - Display a message when connection attempt fails
-
-### Added 
-
-- App icons
+- Home page gravitates to the bottom
+- Add host gravitates to the bottom
 
 ## 0.2.0 - 2020/06/30
 
