@@ -1021,8 +1021,8 @@ class Pane extends Cell {
             // TODO: set our size by sending "refresh-client -C <width>x<height>"
             setTimeout(() => {
                 if (this.state == "opened") {
-                    this.write("Sorry, didn't get a prompt from the server.")
-                    this.write("Please refresh.")
+                    this.notify("Data channel is opened, but no first message")
+                    this.updateState("disconnected")
                 }},TIMEOUT)
         }
         this.d.onmessage = m => {
