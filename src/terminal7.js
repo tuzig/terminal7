@@ -50,6 +50,7 @@ class Terminal7 {
         })
         let b = document.querySelector(".trash")
         if (b) b.onclick = (e) => this.activeH.activeW.activeP.close()
+        window.location.href = "#home"
     }
     addHost(p) {
         let out = []
@@ -418,7 +419,7 @@ class Window {
         this.e.id = `tab-${this.host.id}.${this.id}`
         e.appendChild(this.e)
         // create the first layout and pane
-        let props = {sx: 1.0, sy: 0.84, // -this.t7/bottomMargin,
+        let props = {sx: 1.0, sy: 0.865, // -this.t7/bottomMargin,
                      xoff: 0, yoff: 0,
                      w: this,
                      host: this.host},

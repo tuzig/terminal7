@@ -121,14 +121,18 @@ a {
     bottom: 0;
     text-align: center;
     background-color: #271D30;
+    width: 92%;
+    margin: 0 auto;
 }
 
 .tabbar {
-    bottom: 7.5vh;
+    bottom: 6.5vh;
     color: #00fafa;
     font-size: 4.5vh;
     padding: 0;
     background-color: #271D30;
+    width: 96%;
+    margin: 0 auto;
 }
 .tabbar-buttons {
     float: right;
@@ -172,7 +176,6 @@ a {
     z-index: 5
 }
 #home {
-    z-index: 5;
     width: 80%;
     background-color: #271D30;
     position: absolute;
@@ -221,6 +224,7 @@ a {
     position: absolute;
     top: 0;
     left: 0;
+    background-color: inherit;
 }
 #log {
     position: absolute;

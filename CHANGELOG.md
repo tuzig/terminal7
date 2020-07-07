@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - App icons
 - Host disconnected view with reconnect and shutdown buttons
+- 2.5D design
 
 ### Fixed
 

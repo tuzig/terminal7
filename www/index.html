@@ -8,8 +8,13 @@
 </head>
 <body>
   <div id="terminal7">
-      <div id="home">
+      <div id="log" class="border">
+          <ul id="log-msgs">
+          </ul>
+      </div>
+      <div id="home" class="border">
           <h1>Welcome to Terminal Seven!</h1>
+          <h2>Please choose your destination:</h2>
           <ul id="hosts">
               <li id="plus-host" class="border">
                   <i class="fas fa-plus"></i>
@@ -18,8 +23,6 @@
       </div>
       <div id="add-host" class="hidden modal border" >
           <form id="add-host-form">
-            <span onclick="this.parentNode.parentNode.style.display='none'" 
-class="close" title="Close Modal">&times;</span>
             <h2>Add a Host</h2>
 
         <label for="uname"><b>Address</b></label>
@@ -29,11 +32,16 @@ class="close" title="Close Modal">&times;</span>
 
         <label for="psw"><b>Password</b></label>
         <input type="password" placeholder="Enter Password" name="password" required>
-
         <label>
           <input type="checkbox" checked="checked" name="remember"> Remember host
         </label>
-        <button type="submit">Connect</button>
+        <div class="modal-buttons">
+            <button type="submit">Connect</button>
+            <!-- TODO: turn this into a template and get rid of the 
+                embeded code -->
+            <button onclick="this.parentNode.parentNode.parentNode.style.display='none'" 
+                class="close" title="Close Modal">&times;</button>
+        </div>
           </form>
       </div>
   </div>
@@ -42,28 +50,39 @@ class="close" title="Close Modal">&times;</span>
   <div id="navbar" class="bar border">
   <a href="#home"><i style="float:left" class="fas fa-server"></i></a>
   <div style="float:left" class="static"></div>
-  <i style="width: 20" class="fas fa-trash"></i>
+  <i style="width: 20" class="trash fas fa-trash"></i>
   <i class="fas fa-search"></i>
   <i class="fas fa-external-link-square-alt"></i>
   <i class="fas fa-clipboard"></i>
   <i style="float:right;" class="fas fa-cogs"></i>
   <i style="float:right;padding-right:0.8vh" class="fas fa-share-alt"></i>
 
-  <template id="tabbar-template">
-  <div class="tabbar bar border"> 
+  <!-- The following templates are used by terminal7's code to generate 
+      complex elements -->
+    <template id="disconnected-template">
+        <div class="modal border">
+            <h1>Server Disconnected</h1>
+            
+            <p>Sorry for the incovenience.<br /> What would you like to do next?</p>
+        <div class="modal-buttons">
+            <button class="shutdown">Shutdown</a>
+            <button class="reconnect">Reconnect</a>
+        </div>
+    </template>
+    <template id="tabbar-template">
+    <div class="tabbar bar border"> 
       <div class="tabbar-buttons">
           <a class="add-tab"><i class="fas fa-plus"></i></a>
-          <a class="break-pane"><i class="fas fa-exclamation"
-                                  onclick="console.log('TODO: spawn a pane')"></i></a>
+          <a class="bang"><i class="fas fa-exclamation"></i></a>
       </div>
       <ul class="tabs">
       </ul>
-  </div>
-  </template>
+    </div>
+    </template>
 
   <script>
       function onDeviceReady() {
-          StatusBar.hide();
+          StatusBar.hide()
       }
 </script>
   <script src="terminal7.bundle.js"></script>
