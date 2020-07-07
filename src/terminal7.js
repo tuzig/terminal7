@@ -100,6 +100,7 @@ class Host {
         // a mapping of refrence number to function called on received ack
         this.onack = {}
         this.breadcrumbs = []
+        this.logM = []
     }
 
     open(e) {
@@ -191,6 +192,7 @@ class Host {
             this.addWindow('Welcome')
         }
 
+        this.logM.forEach(m => m.remove())
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: 'stun:stun2.l.google.com:19302' }
                 ] })
@@ -218,7 +220,9 @@ class Host {
                   }
                   this.state = this.updateState("connected")
                 }).catch(error => {
-                  this.activeW.activeP.write(`Failed to connect to host: ${error}\n`)
+                    this.log(error.message)
+                    // redisplay the disconnected modal
+                    this.updateState("disconnected")
                 })
             }
         }
@@ -229,6 +233,23 @@ class Host {
         this.openCDC()
         // suthenticate starts the ball rolling
         this.login(reconnect)
+    }
+    /*
+     * Host.log logs a message on the message-list
+     */
+    log(message) {    
+        let ul = document.getElementById("log-msgs"),
+            li = document.createElement("li"),
+            close = document.createElement("button")
+
+        li.textContent = message
+        li.classList = "log-msg"
+        close.classList = "close"
+        close.innerHTML = "&times;"
+        close.onclick = (ev) => ev.target.parentNode.remove()
+        li.appendChild(close)
+        ul.appendChild(li)
+        this.logM.push(li)
     }
     /*
      * sencCTRLMsg gets a control message and sends it if we have a control

@@ -30,17 +30,14 @@ h3 { margin: 0.2em; }
 }
 #terminal7 button {
   background-color: #271D30;
-  border: 0.5vmin solid #D9F505;
   color: #00fafa;
-  padding: 15px 32px;
   text-align: center;
   text-decoration: none;
   display: inline-block;
   font-size: 3vmin;
   font-weight: bold;
-  margin-top: 4vmin;
 }
-  .modal-buttons { text-align: center; }
+.modal-buttons { text-align: center; }
 .border { margin: 1vmin; padding: 1vmin;
     border: 0.5vmin solid #D9F505;
 }
@@ -69,6 +66,11 @@ a {
     text-align: center
 }
 .modal h2 { margin-top: 0; }
+.modal button {
+  margin-top: 4vmin;
+  padding: 15px 32px;
+  border: 0.5vmin solid #D9F505;
+}
 .modal .close {
   /* Position it in the top right corner outside of the modal */
   color: inherit;
@@ -222,4 +224,34 @@ a {
     position: absolute;
     top: 0;
     left: 0;
+}
+#log {
+    position: absolute;
+    left: 10%;
+    top: 0%;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    z-index: 6;
+    width: 80%;
+    background-color: #271D30;
+}
+#log-msgs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.log-msg {
+    font-size: 3vh;
+    width:100%;
+    color: #00FAFA;
+    margin: 2%;
+}
+.log-msg .close {
+  /* Position it in the top right corner outside of the modal */
+    float: right;
+    margin-right: 3vmin;
+    border: none;
+    position: relative;
+    top: -1vmin;
 }
