@@ -32,8 +32,8 @@ class Terminal7 {
     }
 
     /*
-     * Opens terminal7 on the given DOM element and opens all the hosts.
-     * If  no element is given it adds its parnet element
+     * Terminal7.open opens terminal on the given DOM element,
+     * loads the hosts from local storage and redirects to home
      */
     open(e) {
         if (!e) {
@@ -48,10 +48,18 @@ class Terminal7 {
             host.open(e)
             host.e.style.display = "none"
         })
-        let b = document.querySelector(".trash")
-        if (b) b.onclick = (e) => this.activeH.activeW.activeP.close()
+        // buttons
+        let t = document.querySelector(".trash")
+        if (t) t.onclick = (ev) => this.activeH.activeW.activeP.close()
+        let c = document.querySelector(".modal .close")
+        if (c) c.onclick = (ev) => {
+             ev.target.parentNode.parentNode.parentNode.style.display="none"
+        }
         window.location.href = "#home"
     }
+    /*
+     * Terminal7.addHost is used to add a host with properties p to terminal 7
+     */
     addHost(p) {
         let out = []
         // add the id
@@ -104,6 +112,9 @@ class Host {
         this.log = []
     }
 
+    /*
+     * Host.open opens a host element on the given element
+     */
     open(e) {
         // create the host element - holding the tabs, windows and tab bar
         this.e = document.createElement('div')
@@ -381,12 +392,13 @@ class Host {
             console.log("TODO: verify close")
         this.pc.close()
         this.state = this.updateState("close")
-        this.windows.forEach(w => w.close)
+        this.windows.forEach(w => w.close())
         this.windows = []
         this.activeW = null
         this.breadcrumbs = []
         this.log.forEach(m => m.remove())
         this.log = []
+        this.e.style.display = "none"
     }
     /*
      * Send the pane's size to the server

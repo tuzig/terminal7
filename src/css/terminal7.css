@@ -28,12 +28,12 @@ h3 { margin: 0.2em; }
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  font-size: 3vmin;
+  font-size: 4vmin;
   font-weight: bold;
 }
 .modal-buttons { text-align: center; }
 .border { margin: 1vmin; padding: 1vmin;
-    border: 0.5vmin solid #D9F505;
+    border: 0.3vmin solid #D9F505;
 }
 
 a {
@@ -50,7 +50,7 @@ a {
     background-color: #271D30;
     padding: 2%;
     position: fixed;
-    bottom: 6%;
+    bottom: 8%;
     left: 50%;
     transform: translate(-50%, 0);
     width: 30em;
@@ -186,10 +186,9 @@ a {
 #home h1 {
     padding-bottom: 2%;
 }
-#plus-host {
-    color: #F952F9;
-    font-size: 80px;
-    line-height: 100px;
+#plus-host  i {
+    font-size: 7vh;
+    padding: 0.5vh 0 1.5vh;
 }
 #hosts { margin: 8% auto 0; }
 

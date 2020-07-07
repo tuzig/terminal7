@@ -17,7 +17,10 @@
           <h2>Please choose your destination:</h2>
           <ul id="hosts">
               <li id="plus-host" class="border">
-                  <i class="fas fa-plus"></i>
+                  <a>
+                      <i class="fas fa-plus"></i>
+                      <h3>Add Host</h3>
+                  </a>
               </li>
           </ul>
       </div>
@@ -37,10 +40,7 @@
         </label>
         <div class="modal-buttons">
             <button type="submit">Connect</button>
-            <!-- TODO: turn this into a template and get rid of the 
-                embeded code -->
-            <button onclick="this.parentNode.parentNode.parentNode.style.display='none'" 
-                class="close" title="Close Modal">&times;</button>
+            <button type="button" class="close" title="Close">&times;</button>
         </div>
           </form>
       </div>
@@ -62,7 +62,6 @@
     <template id="disconnected-template">
         <div class="modal border">
             <h1>Server Disconnected</h1>
-            
             <p>Sorry for the incovenience.<br /> What would you like to do next?</p>
         <div class="modal-buttons">
             <button class="shutdown">Shutdown</a>
