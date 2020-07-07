@@ -1,3 +1,10 @@
+/*
+ * Main colors:
+ * yellow - #D9F505
+ * magenta - #F952F9
+ * light blue - #00FAFA
+ * background - #271D30
+ */
 html,
 body {
   width: 100%;
@@ -9,10 +16,14 @@ body {
   align-items: center;
   text-align: center;
   font-family: courier;
-  color: #00fafa;
+  color: #00FAFA;
   background-color: #271D30;
 }
 
+time {
+    color: #F952F9;
+    font-family: Courier;
+}
 h1, h2, h3 {
   text-align: center;
 }
@@ -34,8 +45,9 @@ h3 { margin: 0.2em; }
 .modal-buttons { text-align: center; }
 .border { margin: 1vmin; padding: 1vmin;
     border: 0.3vmin solid #D9F505;
+    box-shadow: 1vh 1vw #171320;
+    border-radius: 6px;
 }
-
 a {
   text-decoration: none;
   color: #cb3837;
@@ -80,7 +92,6 @@ a {
 .pane {
     position: fixed;
     padding: 0;
-    border-radius: 6px;
     overflow: hidden;
     -webkit-mask-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAA5JREFUeNpiYGBgAAgwAAAEAAGbA+oJAAAAAElFTkSuQmCC); /* this fixes the overflow:hidden in Chrome/Opera */
     box-sizing: border-box;
@@ -105,7 +116,6 @@ a {
     color: #F952F9;
 }
 .bar {
-    border-radius: 6px;
     position: fixed;
     left: 0;
     right: 0;
@@ -187,7 +197,7 @@ a {
     padding-bottom: 2%;
 }
 #plus-host  i {
-    font-size: 7vh;
+    font-size: 6vh;
     padding: 0.5vh 0 1.5vh;
 }
 #hosts { margin: 8% auto 0; }
@@ -199,6 +209,7 @@ a {
     min-width: 100px;
 }
 #hosts li a {
+    margin-top: 5%;
     float: left;
     display: block;
     text-decoration: none; 
@@ -228,13 +239,14 @@ a {
 #log {
     position: absolute;
     left: 10%;
-    top: 0%;
+    top: -1%;
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 1% 0 0;
     z-index: 6;
     width: 80%;
     background-color: #271D30;
+    text-align: left;
 }
 #log-msgs {
     list-style: none;
@@ -242,16 +254,8 @@ a {
     padding: 0;
 }
 .log-msg {
-    font-size: 3vh;
-    width:100%;
+    font-size: 16px;
+    width: 80%;
     color: #00FAFA;
     margin: 2%;
-}
-.log-msg .close {
-  /* Position it in the top right corner outside of the modal */
-    float: right;
-    margin-right: 3vmin;
-    border: none;
-    position: relative;
-    top: -1vmin;
 }

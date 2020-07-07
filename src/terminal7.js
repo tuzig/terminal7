@@ -3,12 +3,14 @@
  * touchable terminal multiplexer running over wertc's data channels.
  */
 import { Terminal } from 'xterm'
-import { FitAddon } from 'xterm-addon-fit';
-import * as Hammer from 'hammerjs';
-const THEME = {foreground: "#00FAFA", background: "#000"},
-      MINIMUM_COLS = 2,
+import { FitAddon } from 'xterm-addon-fit'
+import { formatDate } from './index.js'
+import * as Hammer from 'hammerjs'
+
+const MINIMUM_COLS = 2,
       MINIMUM_ROWS = 1,
       RETRIES = 3,
+      THEME = {foreground: "#00FAFA", background: "#000"},
       TIMEOUT = 3000
 
 class Terminal7 {
@@ -165,17 +167,17 @@ class Host {
     }
             
     /*
-     * updateState(state) is used to change the host's state and the place
-     * of host's state machine
+     * Host.updateState(state) is the place for the host state machine
      */
     updateState(state) {
         this.state = state 
-        if (state == "disconnected") {
+        if ((state == "disconnected") || (state == "unreachable")) {
             let t = document.getElementById("disconnected-template")
             if (t) {
                 let e = t.content.cloneNode(true),
                     r = e.querySelector(".reconnect"),
-                    s = e.querySelector(".shutdown")
+                    s = e.querySelector(".shutdown"),
+                    h1 = e.querySelector("h1")
                 this.e.appendChild(e)
                 r.onclick = ev => {
                     ev.target.parentNode.parentNode.remove()
@@ -186,12 +188,26 @@ class Host {
                     this.close()
                     window.location.href = "#home"
                 }
+                h1.textContent = `Host ${state}`
             }
         }
         console.log("host state change: ", this.state)
     }
     /*
-     * connect opens a webrtc peer connection to the host and then opens
+     * Host.peerConnect connects the webrtc session with the peer
+     */
+    peerConnect(offer) {
+        let p = offer || this.peer,
+            sd = new RTCSessionDescription(p)
+        this.notify("Setting remote description") // TODO: add a var or two
+        try {
+        this.pc.setRemoteDescription(sd)
+        } catch (e) {
+            this.notify(`Failed to set remote describtion: ${e}`)
+        }
+    }
+    /*
+     * Host.connect opens a webrtc peer connection to the host and then opens
      * the control channel and authenticates.
      */
     connect() {
@@ -214,32 +230,31 @@ class Host {
             this.updateState(this.pc.iceConnectionState)
 
         let offer = ""
-        this.pc.onicecandidate = event => {
-            console.log("got ice candidate: ", event)
-            if (event.candidate && !offer) {
-              offer = btoa(JSON.stringify(this.pc.localDescription))
-              console.log("Signaling server...\n")
-              fetch('http://'+this.addr+'/connect', {
-                headers: {"Content-Type": "application/json;charset=utf-8"},
-                method: 'POST',
-                body: JSON.stringify({Offer: offer}) 
-              }).then(response => response.text())
-                .then(data => {
-                  let sd = new RTCSessionDescription(JSON.parse(atob(data)))
-                  console.log("Got Session Description\n")
-                  try {
-                    this.pc.setRemoteDescription(sd)
-                  } catch (e) {
-                    alert(e)
-                  }
-                  this.state = this.updateState("connected")
-                }).catch(error => {
-                    this.notify(error.message)
-                    // redisplay the disconnected modal
-                    this.updateState("disconnected")
-                })
+        if (this.peer != null)
+            this.peerConnect()
+        else
+            this.pc.onicecandidate = event => {
+                this.notify(`got ice ${event.candidate.candidate.slice(0,20)}`)
+                if (event.candidate && !offer) {
+                  offer = btoa(JSON.stringify(this.pc.localDescription))
+                  console.log("Signaling server...\n")
+                  fetch('http://'+this.addr+'/connect', {
+                    headers: {"Content-Type": "application/json;charset=utf-8"},
+                    method: 'POST',
+                    body: JSON.stringify({Offer: offer}) 
+                  }).then(response => response.text())
+                    .then(data => {
+                        this.peer = JSON.parse(atob(data))
+                        this.peerConnect(this.peer)
+                     // this.state = this.updateState("connected")
+                  }).catch(error => {
+                        // notify, but first remove the period at the end
+                        this.notify(error.message.slice(0,-1))
+                        // redisplay the disconnected modal
+                        this.updateState("unreachable")
+                    })
+                }
             }
-        }
         this.pc.onnegotiationneeded = e => {
             console.log("on negotiation needed", e)
             this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
@@ -260,14 +275,11 @@ class Host {
     notify(message) {    
         let ul = document.getElementById("log-msgs"),
             li = document.createElement("li"),
-            close = document.createElement("button")
+            d = new Date(),
+            t = formatDate(d, "hh:mm:ss.fff")
 
-        li.textContent = message
+        li.innerHTML = `<time>${t}</time> ${message}`
         li.classList = "log-msg"
-        close.classList = "close"
-        close.innerHTML = "&times;"
-        close.onclick = (ev) => ev.target.parentNode.remove()
-        li.appendChild(close)
         ul.appendChild(li)
         this.log.push(li)
     }

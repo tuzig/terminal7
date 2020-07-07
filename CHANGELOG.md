@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - App icons
 - Host disconnected view with reconnect and shutdown buttons
 - 2.5D design
+- Message log
 
 ### Fixed
 
@@ -20,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Display a message when connection attempt fails
 - Home page gravitates to the bottom
 - Add host gravitates to the bottom
+- Handling of disconnection events
+- Handling of unreachable hosts
 
 ## 0.2.0 - 2020/06/30
 
