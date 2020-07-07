@@ -5,10 +5,11 @@
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit';
 import * as Hammer from 'hammerjs';
-const THEME = {foreground: "#00FAFA", background: "#000"}
-const MINIMUM_COLS = 2
-const MINIMUM_ROWS = 1
-const RETRIES = 3
+const THEME = {foreground: "#00FAFA", background: "#000"},
+      MINIMUM_COLS = 2,
+      MINIMUM_ROWS = 1,
+      RETRIES = 3,
+      TIMEOUT = 3000
 
 class Terminal7 {
     /*
@@ -187,22 +188,17 @@ class Host {
                 }
             }
         }
-        console.log("ice connection state change: "
-            + this.state)
+        console.log("host state change: ", this.state)
     }
     /*
      * connect opens a webrtc peer connection to the host and then opens
      * the control channel and authenticates.
      */
     connect() {
-        let reconnect = false
         // if we're already connected, just focus
         this.focus()
         if (this.state == "connected") {
             return
-        }
-        if ((this.state == "disconnected") || (this.state == "failed")) {
-            reconnect = true
         }
         if (this.activeW == null) {
             // add the first window
@@ -250,7 +246,13 @@ class Host {
         }
         this.openCDC()
         // suthenticate starts the ball rolling
-        this.login(reconnect)
+        this.login((this.state == "disconnected") || (this.state == "failed"))
+        setTimeout(ev => {
+            if (this.state != "completed") {
+                this.notify("Failed to connect to the server")
+                this.updateState("disconnected")
+            }
+        }, TIMEOUT)
     }
     /*
      * Host.noitify adds a message to the host's log
@@ -1021,7 +1023,7 @@ class Pane extends Cell {
                 if (this.state == "opened") {
                     this.write("Sorry, didn't get a prompt from the server.")
                     this.write("Please refresh.")
-                }},3000)
+                }},TIMEOUT)
         }
         this.d.onmessage = m => {
             // TODO:
