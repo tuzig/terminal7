@@ -939,6 +939,7 @@ class Pane extends Cell {
         this.t.loadAddon(this.fitAddon)
         this.fit()
         this.t.onKey((ev) =>  {
+            ev.domEvent.preventDefault()
             if (afterLeader) {
                 if (ev.domEvent.key == "z") 
                     this.toggleZoom()
