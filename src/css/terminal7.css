@@ -45,7 +45,7 @@ h3 { margin: 0.2em; }
 .modal-buttons { text-align: center; }
 .border { margin: 1vmin; padding: 1vmin;
     border: 0.3vmin solid #D9F505;
-    box-shadow: 1vh 1vw #171320;
+    /* box-shadow: 0.5vmin 0.5vmin #4D3A60; */
     border-radius: 6px;
 }
 a {

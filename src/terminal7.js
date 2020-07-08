@@ -172,19 +172,20 @@ class Host {
      */
     updateState(state) {
         if ((state == "disconnected") || (state == "unreachable")) {
+            this.pendingCDCMsgs = []
             let t = document.getElementById("disconnected-template")
             if (t) {
                 let e = t.content.cloneNode(true),
                     r = e.querySelector(".reconnect"),
                     s = e.querySelector(".shutdown"),
                     h1 = e.querySelector("h1")
-                this.e.appendChild(e)
+                e = this.e.appendChild(e)
                 r.onclick = ev => {
                     ev.target.parentNode.parentNode.remove()
                     this.connect()
                 }
                 s.onclick = ev => {
-                    ev.target.parentNode.parentNode.remove()
+                    e.remove()
                     this.close()
                     window.location.href = "#home"
                 }
@@ -204,20 +205,19 @@ class Host {
         this.log = []
         // clear the disconnect modal
         let es = this.e.querySelector(".disconnect")
-        if (es) es.forEach(e => e.remove())
+        if (es) es.remove()
     }
     /*
      * Host.peerConnect connects the webrtc session with the peer
      */
     peerConnect(offer) {
-        let p = offer || this.peer,
-            sd = new RTCSessionDescription(p)
+        let sd = new RTCSessionDescription(offer)
         this.notify("Setting remote description") // TODO: add a var or two
-        try {
         this.pc.setRemoteDescription(sd)
-        } catch (e) {
-            this.notify(`Failed to set remote describtion: ${e}`)
-        }
+            .catch (e => {
+                this.notify(`Failed to set remote describtion: ${e}`)
+                this.updateState("disconnected")
+            })
     }
     /*
      * Host.connect opens a webrtc peer connection to the host and then opens
@@ -243,11 +243,12 @@ class Host {
             this.updateState(this.pc.iceConnectionState)
 
         let offer = ""
-        if (this.peer != null)
-            this.peerConnect()
+        // if (this.peer != null)
+        if (false)
+            this.peerConnect(this.peer)
         else
             this.pc.onicecandidate = event => {
-                this.notify(`got ice ${event.candidate.candidate.slice(0,20)}`)
+                this.notify("Got ice candidate")
                 if (event.candidate && !offer) {
                   offer = btoa(JSON.stringify(this.pc.localDescription))
                   console.log("Signaling server...\n")
@@ -1038,9 +1039,10 @@ class Pane extends Cell {
         else
             this.d = this.host.pc.createDataChannel(tSize + ' zsh')
 
-        this.d.onclose = () =>{
+        this.d.onclose = e =>{
             this.state = "disconnected"
-            // this.close()
+            this.host.notify(`Data channel closed ${e}`)
+            this.close()
         }
         this.d.onopen = () => {
             this.state = "opened"
