@@ -15,7 +15,7 @@ body {
   justify-content: center;
   align-items: center;
   text-align: center;
-  font-family: courier;
+  font-family: Courier new;
   color: #00FAFA;
   background-color: #271D30;
 }
@@ -30,6 +30,8 @@ h1, h2, h3 {
 h1 { margin: 0.5em; }
 h2 { margin: 0.3em; }
 h3 { margin: 0.2em; }
+
+
 #terminal7 {
     height: 100%; 
 }
@@ -39,9 +41,14 @@ h3 { margin: 0.2em; }
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  font-size: 4vmin;
+  font-size: 3vh;
   font-weight: bold;
+  font-family: Courier new;
 }
+#terminal7 ul {
+    list-style:none;
+}
+    
 .modal-buttons { text-align: center; }
 .border { margin: 1vmin; padding: 1vmin;
     border: 0.3vmin solid #D9F505;
@@ -68,12 +75,12 @@ a {
     width: 30em;
 }
 .modal p {
-    font-size: 3vmin;
+    font-size: 3vh;
     text-align: center
 }
 .modal h2 { margin-top: 0; }
 .modal button {
-  margin-top: 4vmin;
+  margin-top: 3vh;
   padding: 15px 32px;
   border: 0.5vmin solid #D9F505;
 }
@@ -131,7 +138,7 @@ a {
     bottom: 0;
     text-align: center;
     background-color: #271D30;
-    width: 92%;
+    width: 100%;
     margin: 0 auto;
 }
 
@@ -141,8 +148,6 @@ a {
     font-size: 4.5vh;
     padding: 0;
     background-color: #271D30;
-    width: 96%;
-    margin: 0 auto;
 }
 .tabbar-buttons {
     float: right;
@@ -156,7 +161,6 @@ a {
   color: inherit;
 }
 .tabs {
-    list-style: none;
     margin: 0;
     padding: 0;
 }
@@ -186,7 +190,7 @@ a {
     z-index: 5
 }
 #home {
-    width: 80%;
+    width: 100%;
     background-color: #271D30;
     position: absolute;
     left: 50%;
@@ -200,7 +204,16 @@ a {
     font-size: 6vh;
     padding: 0.5vh 0 1.5vh;
 }
-#hosts { margin: 8% auto 0; }
+#hosts-wrapper {
+    float:right;
+    position: relative;
+    left: -50%;
+}
+#hosts {
+    margin: 8% auto 0;
+    position: relative;
+    left: 50%;
+}
 
 #hosts li {
     display: block;
@@ -209,10 +222,12 @@ a {
     min-width: 100px;
 }
 #hosts li a {
-    margin-top: 5%;
+    position: relative;
+    top: 50%;
+    transform: translate(0, -50%);
     float: left;
     display: block;
-    text-decoration: none; 
+    text-decoration: none;
     color: #F952F9;
 }
 #add-host {
@@ -239,17 +254,15 @@ a {
 #log {
     position: absolute;
     left: 10%;
-    top: -1%;
-    list-style: none;
+    top: 0%;
     margin: 0;
-    padding: 1% 0 0;
+    padding: 0;
     z-index: 6;
     width: 80%;
     background-color: #271D30;
     text-align: left;
 }
 #log-msgs {
-    list-style: none;
     margin: 0;
     padding: 0;
 }

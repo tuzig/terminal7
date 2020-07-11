@@ -7,7 +7,8 @@ import { FitAddon } from 'xterm-addon-fit'
 import { formatDate } from './index.js'
 import * as Hammer from 'hammerjs'
 
-const MINIMUM_COLS = 2,
+const ABIT = 10,  // ashort period of time, in milli
+      MINIMUM_COLS = 2,
       MINIMUM_ROWS = 1,
       RETRIES = 3,
       THEME = {foreground: "#00FAFA", background: "#000"},
@@ -59,6 +60,8 @@ class Terminal7 {
              ev.target.parentNode.parentNode.parentNode.style.display="none"
         }
         window.location.href = "#home"
+        window.onresize = 
+            c => this.cells.forEach(c => {if (c.fit != undefined) c.fit()})
     }
     /*
      * Terminal7.addHost is used to add a host with properties p to terminal 7
@@ -351,7 +354,7 @@ class Host {
                 // add the windows and connect to the panes
                 let aP = this.activeW.activeP 
                 if (!aP.d)
-                    setTimeout(e => aP.openDC(), 10)
+                    setTimeout(e => aP.openDC(), ABIT)
             }
         }
         setTimeout(() => {
@@ -391,7 +394,7 @@ class Host {
                 // TODO: why the time out? why 100mili?
                 setTimeout(() => {
                     console.log("sending pending messages:", this.pendingCDCMsgs)
-                    this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m), 10)
+                    this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m), ABIT)
                     this.pendingCDCMsgs = []
                 }, 100)
         }
@@ -431,11 +434,11 @@ class Host {
         this.e.style.display = "none"
     }
     /*
-     * Send the pane's size to the server
+     * Host.sendSize sends a control message with the pane's size to the server
      */
     sendSize(pane) {
-        if (pane.pc != null)
-            pane.sendCTRLMsg({resize_pty: {
+        if (this.pc != null)
+            this.sendCTRLMsg({resize_pty: {
                                 channel_id: pane.channelId,
                                 sx: pane.t.cols,
                                 sy: pane.t.rows
@@ -801,7 +804,7 @@ class Layout extends Cell {
                 } catch (e) {
                     console.log("failed to open DC", e)
                 }
-            }, 10)
+            }, ABIT)
         return pane
     }
     fit() {
@@ -964,24 +967,30 @@ class Pane extends Cell {
 
     // fit a pane
     fit() {
-        try {
-            this.fitAddon.fit()
-            // TODO: we should realy fix the fit addon or fix how way we use it
-            let r = this.e.offsetHeight & this.t.rows
-            console.log("height & rows: ", r)
-            if (r < 20)
-                this.t.resize(this.t.cols, this.t.rows-1)
-        } catch {
-            if (this.retries < RETRIES) {
-                this.retries++
-                setTimeout(this.fit, 20*this.retries)
+        setTimeout(() => {
+            try {
+                this.fitAddon.fit()
+                // TODO: we should realy fix the fit addon or fix how way we use it
+                let r = this.e.offsetHeight & this.t.rows
+                console.log("height & rows: ", r)
+                // TODO: find a better way to ensure the last line is fully visible
+                if (r < 18)
+                    this.t.resize(this.t.cols, this.t.rows-1)
+            } catch {
+                if (this.retries < RETRIES) {
+                    this.retries++
+                    setTimeout(this.fit, 20*this.retries)
+                }
+                else
+                    console.log("fit failed RETRIES times. giving up")
+                return
             }
-            else
-                console.log("fit failed RETRIES times. giving up")
-            return
-        }
-        this.host.sendSize(this)
+            this.host.sendSize(this)
+        }, ABIT)
     }
+    /*
+     * Pane.focus focuses the UI on this pane
+     */
     focus() {
         super.focus()
         if (this.t !== undefined)
@@ -1055,8 +1064,6 @@ class Pane extends Cell {
                 }},TIMEOUT)
         }
         this.d.onmessage = m => {
-            // TODO:
-            console.log("got message:", this.state, m.data)
             if (this.state == "opened") {
                 var enc = new TextDecoder("utf-8"),
                     str = enc.decode(m.data)
