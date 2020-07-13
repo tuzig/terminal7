@@ -31,7 +31,6 @@ h1 { margin: 0.5em; }
 h2 { margin: 0.3em; }
 h3 { margin: 0.2em; }
 
-
 #terminal7 {
     height: 100%; 
 }
@@ -48,7 +47,6 @@ h3 { margin: 0.2em; }
 #terminal7 ul {
     list-style:none;
 }
-    
 .modal-buttons { text-align: center; }
 .border { margin: 1vmin; padding: 1vmin;
     border: 0.3vmin solid #D9F505;
@@ -57,7 +55,7 @@ h3 { margin: 0.2em; }
 }
 a {
   text-decoration: none;
-  color: #cb3837;
+  color: #F952F9;
 }
 
 .focused {
@@ -119,40 +117,36 @@ a {
     left:0;
     height: 78%;
 }
-.bar a {
-    color: #F952F9;
+.fas {
+    line-height: 5.5vh !important;
 }
 .bar {
+    padding: 0;
+    margin: 0;
     position: fixed;
     left: 0;
-    right: 0;
-    height: 8%;
+    height: 6%;
     width: 100%;
-    margin: 0;
     box-sizing: border-box;
+    font-size: 4vh;
+    line-height: 5.5vh;
+    background-color: #271D30;
 }
 #navbar {
     color: #F952F9;
-    padding: 1.3vh 0.6vw;
-    font-size: 4.5vh;
+    padding: 0 0.6vw;
     bottom: 0;
+    color: #F952F9;
     text-align: center;
-    background-color: #271D30;
-    width: 100%;
-    margin: 0 auto;
 }
-
 .tabbar {
-    bottom: 6.5vh;
+    bottom: 6%;
     color: #00fafa;
-    font-size: 4.5vh;
-    padding: 0;
-    background-color: #271D30;
 }
 .tabbar-buttons {
     float: right;
-    padding: 1.3vh 0.6vw;
-    font-size: 4.5vh;
+    padding: 0 0.6vw;
+    font-size: 4vh;
     margin-right: 12px;
 }
 #window-names input {
@@ -165,12 +159,15 @@ a {
     padding: 0;
 }
 .tabs li { display: inline; }
-.tabs li a { float: left; display: block; padding: 4px 0.5em; 
+.tabs li a {
+    float: left; 
+    display: block;
+    padding: 4px 0.5em 0; 
     left: 1px; 
     text-decoration: none; 
     border-right: 2px solid #D9F505;
     font-size: 3vh;
-    line-height: 6vh;
+    line-height: 5vh;
     color: inherit;
 }
 .tabs li a:hover { background: black; }
@@ -201,7 +198,7 @@ a {
     padding-bottom: 2%;
 }
 #plus-host  i {
-    font-size: 6vh;
+    font-size: 5.5vh;
     padding: 0.5vh 0 1.5vh;
 }
 #hosts-wrapper {
