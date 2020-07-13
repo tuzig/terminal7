@@ -360,7 +360,7 @@ class Host {
         setTimeout(() => {
             if (!resolved)
                 // TODO: handle expired timeout
-                console.log("Timeout on auth ack"), 1000
+                this.notify("Timeout on auth ack"), 1000
         })
     }
     /*
@@ -437,7 +437,7 @@ class Host {
      * Host.sendSize sends a control message with the pane's size to the server
      */
     sendSize(pane) {
-        if (this.pc != null)
+        if ((this.pc != null) && pane.channelId)
             this.sendCTRLMsg({resize_pty: {
                                 channel_id: pane.channelId,
                                 sx: pane.t.cols,
@@ -464,7 +464,7 @@ class Window {
         this.e.id = `tab-${this.host.id}.${this.id}`
         e.appendChild(this.e)
         // create the first layout and pane
-        let props = {sx: 1.0, sy: 0.865, // -this.t7/bottomMargin,
+        let props = {sx: 1.0, sy: 0.88, // -this.t7/bottomMargin,
                      xoff: 0, yoff: 0,
                      w: this,
                      host: this.host},
@@ -609,8 +609,9 @@ class Cell {
      * Used to grow/shrink the terminal based on containing element dimensions
      * Should be overide
      */
-    fit() {
-    }
+    fit() { }
+    scale() {}
+
     /*
      * Catches gestures on an elment using hammerjs.
      * If an element is not passed in, `this.e` is used
@@ -620,9 +621,13 @@ class Cell {
             h = new Hammer.Manager(e, {}),
         // h.options.domEvents=true; // enable dom events
             singleTap = new Hammer.Tap({event: "tap"}),
-            doubleTap = new Hammer.Tap({event: "doubletap", taps: 2})
+            doubleTap = new Hammer.Tap({event: "doubletap", taps: 2}),
+            pinch = new Hammer.Pinch({event: "pinch"}),
+            lastEventT = 0;
+
         h.add([singleTap,
             doubleTap,
+            pinch,
             new Hammer.Tap({event: "twofingerstap", pointers: 2}),
             new Hammer.Swipe({threshold: 200, velocity: 0.7})])
 
@@ -645,6 +650,18 @@ class Cell {
                         this.sy
                 let t = this.split((topb)?"topbottom":"rightleft", l)
             }
+        })
+        h.on('pinch', e => {
+            console.log(e.additionalEvent, e.distance, e.angle, e.deltaTime, e.isFirst, e.isFinal)
+            if (e.deltaTime < this.lastEventT)
+                this.lastEventT = 0
+            if (e.deltaTime - this.lastEventT < 200)
+                return
+            this.lastEventT = e.deltaTime
+            if (e.additionalEvent == "pinchout") 
+                this.scale(1)
+            else
+                this.scale(-1)
         })
         this.mc = h
     }
@@ -912,14 +929,18 @@ class Pane extends Cell {
         this.zoomed = false
         this.active = false
         this.channelId = null
+        this.fontSize = props.fontSize || 12
     }
 
+    /*
+     * Pane.write writes data to the terminal
+     */
     write(data) {
         this.t.write(data)
     }
                 
     /*
-     * setEcho sets the terminal's echo to on or off
+     * Pane.setEcho sets the terminal's echo to on or off
      */
     setEcho(echoOn) {
         if (this.echo === undefined) {
@@ -927,12 +948,15 @@ class Pane extends Cell {
         }
         this.echo = echoOn
     }
+    /*
+     * Pane.openTerminal opens an xtermjs terminal on our element
+     */
     openTerminal() {
         var afterLeader = false
 
         this.t = new Terminal({
             convertEol: true,
-            fontSize: 12,
+            fontSize: this.fontSize,
             theme: THEME,
             rows:24,
             cols:80
@@ -941,6 +965,7 @@ class Pane extends Cell {
         this.t.open(this.e)
         this.t.loadAddon(this.fitAddon)
         this.fit()
+        this.t.textarea.tabIndex = -1
         this.t.onKey((ev) =>  {
             ev.domEvent.preventDefault()
             if (afterLeader) {
@@ -950,6 +975,12 @@ class Pane extends Cell {
                     this.w.rename()
                 else if (ev.domEvent.key == "d")
                     this.close()
+                else if (ev.domEvent.key == "+") {
+                    this.scale(1)
+                }
+                else if (ev.domEvent.key == "-") {
+                    this.scale(-1)
+                }
                 afterLeader = false
             }
             // TODO: make the leader key configurable
@@ -965,6 +996,17 @@ class Pane extends Cell {
         return this.t
     }
 
+    /*
+     * Pane.scale is used to change the pane's font size
+     */
+    scale(by) {
+        this.fontSize += by
+        if (this.fontSize < 6) this.fontSize = 6
+        else if (this.fontSize > 30) this.fontSize = 30
+        this.t.setOption('fontSize', this.fontSize)
+        this.fit()
+    }
+
     // fit a pane
     fit() {
         setTimeout(() => {
@@ -974,7 +1016,7 @@ class Pane extends Cell {
                 let r = this.e.offsetHeight & this.t.rows
                 console.log("height & rows: ", r)
                 // TODO: find a better way to ensure the last line is fully visible
-                if (r < 18)
+                if (r < this.fontSize/2)
                     this.t.resize(this.t.cols, this.t.rows-1)
             } catch {
                 if (this.retries < RETRIES) {
@@ -982,7 +1024,7 @@ class Pane extends Cell {
                     setTimeout(this.fit, 20*this.retries)
                 }
                 else
-                    console.log("fit failed RETRIES times. giving up")
+                    console.log(`fit failed ${RETRIES} times. giving up`)
                 return
             }
             this.host.sendSize(this)
@@ -1049,9 +1091,8 @@ class Pane extends Cell {
         else
             this.d = this.host.pc.createDataChannel(tSize + ' zsh')
 
-        this.d.onclose = e =>{
+        this.d.onclose = e => {
             this.state = "disconnected"
-            this.host.notify(`Data channel closed ${e}`)
             this.close()
         }
         this.d.onopen = () => {
@@ -1067,15 +1108,17 @@ class Pane extends Cell {
             if (this.state == "opened") {
                 var enc = new TextDecoder("utf-8"),
                     str = enc.decode(m.data)
-                this.state = "ready"
+                this.state = "connected"
                 this.channelId = parseInt(str)
             }
             else if (this.state == "disconnected") {
                 this.buffer.push(new Uint8Array(m.data))
             }
-            else if (this.state == "ready") {
+            else if (this.state == "connected") {
                 this.write(new Uint8Array(m.data))
             }
+            else
+                this.host.notify(`${this.state} & dropping a message: ${m.data}`)
         }
         return this.d
     }

@@ -8,9 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unrealease]
 
+### Known Bugs
+
+- When zomming using "CTRL-A z" the keyboards stops responding
+-
+### Added
+
+- Scaling pane using pinch gestures or "CTRL-A +" & "CTRL-A -"
+
 ### Fixed
 
 - Fixing the buttons' font
+- Hitting TAB nol longer moves to the next pane
 
 ## 0.3.0 - 2020/07/08
 
