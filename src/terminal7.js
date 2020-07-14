@@ -59,9 +59,18 @@ class Terminal7 {
         if (c) c.onclick = (ev) => {
              ev.target.parentNode.parentNode.parentNode.style.display="none"
         }
-        window.location.href = "#home"
         window.onresize = 
             c => this.cells.forEach(c => {if (c.fit != undefined) c.fit()})
+        let s = document.querySelector(".fa-server")
+        if (s) s.onclick = ev => {
+            let activeH = this.activeH
+            if (activeH) {
+                activeH.e.style.display = "none"
+            }
+            window.location.href = "#home"
+        }
+        
+        window.location.href = "#home"
     }
     /*
      * Terminal7.addHost is used to add a host with properties p to terminal 7
@@ -188,7 +197,7 @@ class Host {
                     this.connect()
                 }
                 s.onclick = ev => {
-                    e.remove()
+                    ev.target.parentNode.parentNode.remove()
                     this.close()
                     window.location.href = "#home"
                 }
