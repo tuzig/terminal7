@@ -967,7 +967,6 @@ class Pane extends Cell {
         this.fit()
         this.t.textarea.tabIndex = -1
         this.t.onKey((ev) =>  {
-            ev.domEvent.preventDefault()
             if (afterLeader) {
                 if (ev.domEvent.key == "z") 
                     this.toggleZoom()
@@ -991,6 +990,11 @@ class Pane extends Cell {
             else
                 if ((this.d != null) && (this.d.readyState == "open"))
                     this.d.send(ev.key)
+        })
+        this.t.textarea.addEventListener('paste', (event) => {
+            let paste = (event.clipboardData || window.clipboardData).getData('text');
+            this.d.send(paste)
+            event.preventDefault();
         })
         this.state = "opened"
         return this.t

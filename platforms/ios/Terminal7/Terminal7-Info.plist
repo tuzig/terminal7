@@ -30,7 +30,7 @@
 		<true/>
 	</dict>
 	<key>NSMainNibFile</key>
-	<string></string>
+	<string/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -40,8 +40,6 @@
 	<string>CDVLaunchScreen</string>
 	<key>UIRequiresFullScreen</key>
 	<false/>
-	<key>UIStatusBarHidden</key>
-	<true/>
 	<key>UIStatusBarHidden~ipad</key>
 	<true/>
 	<key>UISupportedInterfaceOrientations</key>
@@ -57,6 +55,8 @@
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
+	<key>UIStatusBarHidden</key>
+	<true/>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
 </dict>
