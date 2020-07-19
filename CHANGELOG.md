@@ -6,12 +6,11 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unrealease]
+## [Unreleased]
 
-### Known Bugs
 
-- When zomming using "CTRL-A z" the keyboards stops responding
--
+## [0.3.1] - 2020/07/19
+
 ### Added
 
 - Scaling pane using pinch gestures or "CTRL-A +" & "CTRL-A -"
@@ -20,8 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixing the buttons' font
 - Hitting TAB nol longer moves to the next pane
+- Fixing disconnect modal on zoomed pane
 
-## 0.3.0 - 2020/07/08
+## [0.3.0] - 2020/07/08
 
 ### Added 
 
@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Handling of unreachable hosts
 - Tab key no longer focuses on the next element
 
-## 0.2.0 - 2020/06/30
+## [0.2.0] - 2020/06/30
 
 ### Added
 

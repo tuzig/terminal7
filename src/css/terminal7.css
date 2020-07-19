@@ -34,7 +34,7 @@ h3 { margin: 0.2em; }
 #terminal7 {
     height: 100%; 
 }
-#terminal7 button {
+button {
   background-color: #271D30;
   color: #00fafa;
   text-align: center;

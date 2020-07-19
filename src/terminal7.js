@@ -191,7 +191,7 @@ class Host {
                     r = e.querySelector(".reconnect"),
                     s = e.querySelector(".shutdown"),
                     h1 = e.querySelector("h1")
-                e = this.e.appendChild(e)
+                e = document.body.appendChild(e)
                 r.onclick = ev => {
                     ev.target.parentNode.parentNode.remove()
                     this.connect()
@@ -556,7 +556,11 @@ class Window {
     close() {
         // remove the window name
         this.nameE.parentNode.remove()
+        // remove the element, panes and tabbar gone as they are childs
         this.e.remove()
+        // if we're zoomed in, the pane is a chuld of body
+        if (this.activeP.zoomed)
+            document.body.removeChild(this.activeP.zoomedE)
         this.host.windows.splice(this.host.windows.indexOf(this), 1)
         this.host.activeW = null
         // remove myself from the breadcrumbs
@@ -717,7 +721,6 @@ class Cell {
         } else {
             let e = document.createElement('div'),
                 te = this.e.removeChild(this.e.children[0])
-            e.style.zIndex = 6
             e.classList.add("pane", "zoomed", "focused")
             this.catchFingers(e)
             e.appendChild(te)
