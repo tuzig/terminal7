@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Terminals are never to high and the last line is never clipped
+- Tests are now loading index.html for more realistic env
 
 ## [0.3.1] - 2020/07/19
 

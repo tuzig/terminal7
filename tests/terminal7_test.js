@@ -5,23 +5,13 @@ import { assert } from "chai"
 describe("terminal7", function() {
     var t, e
     /*
-     * The parent element is added before the tests begin
-     */
-    before(() => {
-            e = document.createElement('div')
-            document.body.appendChild(e)
-    })
-    after(() => {
-        document.body.innerHTML = ""
-    })
-    /*
      * Every tests gets a fresh copy of terminal7 and a fresh dom element
      */
     beforeEach(() => {
         localStorage.clear()
+        document.body.innerHTML = __html__['www/index.html']
+        e = document.getElementById("terminal7")
         t = new Terminal7()
-        t.hosts = []
-        e.innerHTML = ""
         t.open(e)
     })
 

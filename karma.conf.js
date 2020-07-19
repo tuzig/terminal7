@@ -17,6 +17,7 @@ module.exports = function(config) {
 
         // list of files / patterns to load in the browser
         files: [
+          'www/index.html',
           'tests/*.js'
         ],
 
@@ -51,8 +52,9 @@ module.exports = function(config) {
         singleRun: false,
         preprocessors: {
           // add webpack as preprocessor
+          '**/*.html': ['html2js'],
           'tests/*.js': ['webpack', 'sourcemap'],
-          'src/terminal7.js': ['webpack', 'sourcemap'],
+          'src/terminal7.js': ['webpack', 'sourcemap']
         },
 
         webpack: webpackConfig,
