@@ -964,7 +964,8 @@ class Pane extends Cell {
      * Pane.openTerminal opens an xtermjs terminal on our element
      */
     openTerminal() {
-        var afterLeader = false
+        var afterLeader = false,
+            con = document.createElement("div")
 
         this.t = new Terminal({
             convertEol: true,
@@ -974,7 +975,12 @@ class Pane extends Cell {
             cols:80
         })
         this.fitAddon = new FitAddon()
-        this.t.open(this.e)
+
+        // there's a container div we need to get xtermjs to fit properly
+        this.e.appendChild(con)
+        con.style.height = "100%"
+        con.style.width = "100%"
+        this.t.open(con)
         this.t.loadAddon(this.fitAddon)
         this.fit()
         this.t.textarea.tabIndex = -1
@@ -1028,12 +1034,6 @@ class Pane extends Cell {
         setTimeout(() => {
             try {
                 this.fitAddon.fit()
-                // TODO: we should realy fix the fit addon or fix how way we use it
-                let r = this.e.offsetHeight & this.t.rows
-                console.log("height & rows: ", r)
-                // TODO: find a better way to ensure the last line is fully visible
-                if (r < this.fontSize/2)
-                    this.t.resize(this.t.cols, this.t.rows-1)
             } catch {
                 if (this.retries < RETRIES) {
                     this.retries++
