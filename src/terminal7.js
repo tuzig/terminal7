@@ -1,4 +1,4 @@
-/*
+ /*
  * This file contains the code that makes terminal seven - a tmux inspired
  * touchable terminal multiplexer running over wertc's data channels.
  */
@@ -152,9 +152,10 @@ class Host {
         if (plusHost != null)  {
             // Add the hosts boxes to the home page
             let li = document.createElement('li'),
-                a = document.createElement('a')
+                a = document.createElement('a'),
+                addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
             li.classList.add("border")
-            a.innerHTML = `<h3> ${this.user}</h3><h2>@</h2><h3>${this.addr}</h3>`
+            a.innerHTML = `<h3> ${this.user}</h3><h2>@</h2><h3>${addr}</h3>`
             // Add gestures on the window name for rename and drag to trash
             let hm = new Hammer.Manager(li, {})
             hm.options.domEvents=true; // enable dom events
@@ -184,6 +185,7 @@ class Host {
      */
     updateState(state) {
         if ((state == "disconnected") || (state == "unreachable")) {
+            // clear pending messages to let the user start fresh
             this.pendingCDCMsgs = []
             let t = document.getElementById("disconnected-template")
             if (t) {
@@ -1117,8 +1119,8 @@ class Pane extends Cell {
             setTimeout(() => {
                 if (this.state == "opened") {
                     this.host.notify("Data channel is opened, but no first message")
-                    this.updateState("disconnected")
-                }},TIMEOUT)
+                    this.host.updateState("disconnected")
+                }}, TIMEOUT)
         }
         this.d.onmessage = m => {
             if (this.state == "opened") {
