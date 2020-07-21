@@ -61,7 +61,7 @@ class Terminal7 {
         }
         window.onresize = 
             c => this.cells.forEach(c => {if (c.fit != undefined) c.fit()})
-        let s = document.querySelector(".fa-server")
+        let s = document.querySelector("#home-button")
         if (s) s.onclick = ev => {
             let activeH = this.activeH
             if (activeH) {
