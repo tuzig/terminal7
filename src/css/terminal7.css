@@ -48,7 +48,6 @@ button {
 #terminal7 ul {
     list-style:none;
 }
-.modal-buttons { text-align: center; }
 .border { margin: 1vmin; padding: 1vmin;
     border: 1px solid #D9F505;
     border-radius: 6px;
@@ -75,10 +74,17 @@ a {
     text-align: center
 }
 .modal h2 { margin-top: 0; }
-.modal button {
-  margin-top: 3vh;
-  padding: 15px 32px;
-  border: 1px solid #D9F505;
+.modal:last-child {
+    margin-bottom: 2vh;
+}
+.modal nav { 
+    clear: both;
+    width: 80%; 
+    padding-top: 2vh; 
+    margin: 0 auto;
+}
+.two-buttons i {
+    width: 50%;
 }
 .modal .close {
   /* Position it in the top right corner outside of the modal */
@@ -127,7 +133,6 @@ a {
     box-sizing: border-box;
     background-color: #271D30;
 }
-nav i { cursor: pointer; }
 #navbar {
     bottom: 0;
     text-align: center;
@@ -145,6 +150,7 @@ nav i:last-child {
     border: none;
 }
 nav i {
+    cursor: pointer;
     border-right: 1px solid #373702;
     box-sizing: border-box;
 }

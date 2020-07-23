@@ -37,10 +37,10 @@
         <label>
           <input type="checkbox" checked="checked" name="remember"> Remember host
         </label>
-        <div class="modal-buttons">
-            <button type="submit">Connect</button>
-            <button type="button" class="close" title="Close">&times;</button>
-        </div>
+        <nav class="two-buttons">
+            <i class="f7-icons close">xmark</i>
+            <i id="submit-host" class="f7-icons">phone_arrow_up_right</i>
+        </nav>
           </form>
       </div>
   </div>
@@ -64,7 +64,14 @@
         <div class="disconnect modal border">
             <h1></h1>
             <p>Sorry for the incovenience.<br /> What would you like to do next?</p>
-        </div>
+        <nav class="two-buttons">
+            <button type="submit"><i class="f7-icons">phone_arrow_up_right</i></button>
+            <button type="button" class="close" title="Close">
+                <i class="f7-icons">xmark</i>
+            </button>
+            <button class="shutdown">Close</a>
+            <button class="reconnect">Reconnect</a>
+        </nav>
     </template>
     <template id="tabbar-template">
     <div class="tabbar bar border"> 

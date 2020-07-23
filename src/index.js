@@ -8,30 +8,13 @@ let state = 0
 let sendChannel = null
 var firstTime = true
 
-
+/*
+ * Initilization code, where terminal 7 is created and opened
+ */
 document.addEventListener("DOMContentLoaded", () => {
-    let terminal7 = new Terminal7(),
-        pane = terminal7.activeP
-
+    let terminal7 = new Terminal7()
+    console.log("openening terminal7")
     terminal7.open(document.getElementById('terminal7'))
-    // display the home page, starting with the plus button
-    const plusHost = document.getElementById('plus-host')
-    if (plusHost != null)
-        plusHost.onclick = (ev) => 
-            document.getElementById("add-host").style.display="block"
-    document.getElementById('add-host-form').onsubmit = (ev) => {
-        let remember = ev.target.querySelector('[name="remember"]').value,
-            h = terminal7.addHost({
-                    addr: ev.target.querySelector('[name="host"]').value,
-                    user: ev.target.querySelector('[name="username"]').value,
-                    secret: ev.target.querySelector('[name="password"]').value,
-                    store: remember == "on"
-            })
-        h.connect()
-        // hide the modal
-        ev.target.parentNode.style.display = "none"
-        return false
-    }
 })
 /*
  * copied from : https://stackoverflow.com/a/14638191/66595

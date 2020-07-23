@@ -47,18 +47,9 @@ class Terminal7 {
             document.body.appendChild(e)
         }
         else this.e = e
-        this.state = "open"
-        this.hosts.forEach((host) => {
-            host.open(e)
-            host.e.style.display = "none"
-        })
         // buttons
         let t = document.querySelector(".trash")
         if (t) t.onclick = (ev) => this.activeH.activeW.activeP.close()
-        let c = document.querySelector(".modal .close")
-        if (c) c.onclick = (ev) => {
-             ev.target.parentNode.parentNode.parentNode.style.display="none"
-        }
         window.onresize = 
             c => this.cells.forEach(c => {if (c.fit != undefined) c.fit()})
         let s = document.querySelector("#home-button")
@@ -67,10 +58,40 @@ class Terminal7 {
             if (activeH) {
                 activeH.e.style.display = "none"
             }
+            // hide the modal
+            this.clear()
             window.location.href = "#home"
         }
         
+        let addHost = document.getElementById("add-host")
+        // display the home page, starting with the plus button
+        document.getElementById('plus-host').addEventListener(
+            'click', ev => addHost.style.display="block")
+        document.getElementById('submit-host').addEventListener(
+            'click', (ev) => {
+                let remember =
+                        addHost.querySelector('[name="remember"]').value,
+                host = this.addHost({
+                    addr: addHost.querySelector('[name="host"]').value,
+                    user: addHost.querySelector('[name="username"]').value,
+                    secret: addHost.querySelector('[name="password"]').value,
+                    store: remember == "on"
+                })
+                this.clear()
+                host.connect()
+            }
+        )
+        // hide the modal on xmark click
+        document.querySelectorAll(".modal .close").forEach(c =>
+            c.onclick = (ev) => 
+                ev.target.parentNode.parentNode.parentNode.style.display="none"
+        )
         window.location.href = "#home"
+        this.state = "open"
+        this.hosts.forEach((host) => {
+            host.open(e)
+            host.e.style.display = "none"
+        })
     }
     /*
      * Terminal7.addHost is used to add a host with properties p to terminal 7
@@ -99,6 +120,10 @@ class Terminal7 {
         })
         console.log("Storing hosts:", out)
         localStorage.setItem("hosts", JSON.stringify(out))
+    }
+    clear () {
+        document.querySelectorAll(".modal").forEach(e =>
+                e.style.display = "none")
     }
 }
 
