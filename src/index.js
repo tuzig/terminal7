@@ -9,10 +9,6 @@ let sendChannel = null
 var firstTime = true
 
 
-function connect() {
-            terminal7.connect(host, "guest", "wishingUsSuccess")
-            terminal7.openCDC().then(() => { console.log("CDC"); pane.openDC()})
-}
 document.addEventListener("DOMContentLoaded", () => {
     let terminal7 = new Terminal7(),
         pane = terminal7.activeP

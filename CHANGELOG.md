@@ -11,8 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Improved icon look & colors
-- Thinner broder for a cleaner look
--
+- Thinner border for a cleaner look
+- Evenly distributed icons on the navbar
+
 ## [0.3.2] - 2020/07/20
 
 ### Fixed

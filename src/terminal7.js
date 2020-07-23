@@ -143,9 +143,9 @@ class Host {
         if (t) {
             t = t.content.cloneNode(true)
             let a = t.querySelector(".add-tab")
-            a.onclick = (e) => this.addWindow()
+            a.addEventListener('click', (e) => this.addWindow())
             let b = t.querySelector(".bang")
-            b.onclick = (e) => this.updateState("disconnected")
+            b.addEventListener('click', (e) => this.updateState("disconnected"))
             this.e.appendChild(t)
         }
         const plusHost = document.getElementById("plus-host")

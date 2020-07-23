@@ -13,15 +13,16 @@
   font-weight: normal;
   font-style: normal;
   font-size: 28px;
-  line-height: 46px;
+  line-height: 28px;
   letter-spacing: normal;
   text-transform: none;
   display: inline-block;
   white-space: nowrap;
   word-wrap: normal;
   direction: ltr;
-  -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* TODO: reserach whether we need the next 5 lines */
+  -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-feature-settings: "liga";
   -moz-font-feature-settings: "liga=1";

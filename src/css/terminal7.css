@@ -1,6 +1,7 @@
 /*
  * Main colors:
  * yellow - #D9F505
+ * dark yellow - #373702
  * magenta - #F952F9
  * light blue - #00FAFA
  * background - #271D30
@@ -126,10 +127,35 @@ a {
     box-sizing: border-box;
     background-color: #271D30;
 }
-.bar i { cursor: pointer; }
+nav i { cursor: pointer; }
 #navbar {
     bottom: 0;
     text-align: center;
+}
+#navbar i {
+    width: 13.4%;
+}
+.tabbar i {
+    width: 50px;
+}
+.tabbar i:first-child {
+    border-left: 1px solid #373702;
+}
+nav i:last-child {
+    border: none;
+}
+nav i {
+    border-right: 1px solid #373702;
+    box-sizing: border-box;
+}
+.off {
+    color: #373702;
+}
+/* vertical align the nav bar buttons */
+.bar > nav {
+    position: relative;
+    top: 50%;
+    transform: translate(0, -50%);
 }
 .tabbar {
     bottom: 6%;
