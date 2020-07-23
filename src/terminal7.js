@@ -83,8 +83,10 @@ class Terminal7 {
         )
         // hide the modal on xmark click
         document.querySelectorAll(".modal .close").forEach(c =>
-            c.onclick = (ev) => 
+            c.addEventListener('click',  ev =>  {
                 ev.target.parentNode.parentNode.parentNode.style.display="none"
+                this.clear()
+            })
         )
         window.location.href = "#home"
         this.state = "open"
@@ -214,21 +216,14 @@ class Host {
             this.pendingCDCMsgs = []
             let t = document.getElementById("disconnected-template")
             if (t) {
-                let e = t.content.cloneNode(true),
-                    r = e.querySelector(".reconnect"),
-                    s = e.querySelector(".shutdown"),
-                    h1 = e.querySelector("h1")
-                e = document.body.appendChild(e)
-                r.onclick = ev => {
+                let e = t.content.cloneNode(true)
+                    
+                e.querySelector(".reconnect").addEventListener('click', ev => {
                     ev.target.parentNode.parentNode.remove()
                     this.connect()
-                }
-                s.onclick = ev => {
-                    ev.target.parentNode.parentNode.remove()
-                    this.close()
-                    window.location.href = "#home"
-                }
-                h1.textContent = `Host ${state}`
+                })
+                e.querySelector("h1").textContent = `Host ${state}`
+                document.body.appendChild(e)
             }
         }
         else if (state == "connected")
