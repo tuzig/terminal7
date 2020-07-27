@@ -12,9 +12,12 @@ var firstTime = true
  * Initilization code, where terminal 7 is created and opened
  */
 document.addEventListener("DOMContentLoaded", () => {
-    let terminal7 = new Terminal7()
-    console.log("openening terminal7")
-    terminal7.open(document.getElementById('terminal7'))
+    // do nothing when running a test
+    if (__html__ == undefined) {
+        let terminal7 = new Terminal7()
+        console.log("openening terminal7")
+        terminal7.open(document.getElementById('terminal7'))
+    }
 })
 /*
  * copied from : https://stackoverflow.com/a/14638191/66595

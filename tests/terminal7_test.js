@@ -223,6 +223,31 @@ describe("terminal7", function() {
             expect(t2.hosts[0].user).to.equal("guest")
             expect(t2.hosts[1].user).to.equal("root")
         })
+    })
+    describe("layout", () => {
+        var h, w, p0
+        beforeEach(() => {
+            h = t.addHost({t7:t})
+            h.open(e)
+            w = h.addWindow("1,2,3 testing")
+            w.activeP.sx = 0.8
+            w.activeP.sy = 0.6
+            w.activeP.xoff = 0.1
+            w.activeP.yoff = 0.2
+            p0 = w.activeP
+        })
+        it("can move a border between panes", function () {
+            let p1 = p0.split("rightleft")
+            expect(p0.sy).to.equal(0.3)
+            expect(p1.sy).to.equal(0.3)
+            p0.layout.moveBorder(p0, "bottom", 0.1)
+            expect(p0.sy).to.be.closeTo(0.4, 0.00000001)
+            expect(p1.sy).to.be.closeTo(0.2, 0.00000001)
+            expect(p1.yoff).to.equal(0.6)
+            p0.layout.moveBorder(p0, "bottom", -0.1)
+            expect(p0.sy).to.be.closeTo(0.3, 0.00000001)
+            expect(p1.sy).to.be.closeTo(0.3, 0.00000001)
 
+        })
     })
 })

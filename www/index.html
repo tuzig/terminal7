@@ -39,9 +39,17 @@
         </label>
         <nav class="two-buttons">
             <i class="f7-icons close">xmark</i>
-            <i id="submit-host" class="f7-icons">phone_arrow_up_right</i>
+            <i class="f7-icons submit">phone_arrow_up_right</i>
         </nav>
           </form>
+      </div>
+      <div id="disconnect-modal" class="hidden disconnect modal border">
+          <h1></h1>
+          <p>Sorry for the incovenience.<br /> What would you like to do next?</p>
+          <nav class="two-buttons">
+               <i class="f7-icons close">xmark</i>
+               <i class="f7-icons reconnect">phone_arrow_up_right</i>
+          </nav>
       </div>
   </div>
   </div>
@@ -60,16 +68,6 @@
 
   <!-- The following templates are used by terminal7's code to generate 
       complex elements -->
-    <template id="disconnected-template">
-        <div class="disconnect modal border">
-            <h1></h1>
-            <p>Sorry for the incovenience.<br /> What would you like to do next?</p>
-            <nav class="two-buttons">
-                <i class="f7-icons close">xmark</i>
-                <i class="f7-icons reconnect">phone_arrow_up_right</i>
-            </nav>
-        </div>
-    </template>
     <template id="tabbar-template">
     <div class="tabbar bar border"> 
       <nav class="tabbar-buttons">

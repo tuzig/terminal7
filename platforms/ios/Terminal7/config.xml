@@ -23,6 +23,9 @@
         <param name="ios-package" value="CDVStatusBar" />
         <param name="onload" value="true" />
     </feature>
+    <feature name="NetworkStatus">
+        <param name="ios-package" value="CDVConnection" />
+    </feature>
     <name>Terminal7</name>
     <description>
         A gestures aware terminal emulator and multiplexer

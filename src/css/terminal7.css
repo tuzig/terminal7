@@ -238,6 +238,7 @@ nav i {
     float: left;
     height: 100px;
     min-width: 100px;
+    cursor: pointer;
 }
 #hosts li a {
     position: relative;

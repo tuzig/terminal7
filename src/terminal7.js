@@ -1,4 +1,4 @@
- /*
+/*
  * This file contains the code that makes terminal seven - a tmux inspired
  * touchable terminal multiplexer running over wertc's data channels.
  */
@@ -8,8 +8,8 @@ import { formatDate } from './index.js'
 import * as Hammer from 'hammerjs'
 
 const ABIT = 10,  // ashort period of time, in milli
-      MINIMUM_COLS = 2,
-      MINIMUM_ROWS = 1,
+      MINIMUM_WIDTH = 50,
+      MINIMUM_HEIGHT = 50,
       RETRIES = 3,
       THEME = {foreground: "#00FAFA", background: "#000"},
       TIMEOUT = 3000
@@ -18,7 +18,8 @@ class Terminal7 {
     /*
      * Terminal7 constructor, all properties should be initiated here
      */
-    constructor() {
+    constructor(settings) {
+        settings = settings || {}
         this.hosts = []
         this.cells = []
         this.state = "init"
@@ -33,6 +34,10 @@ class Terminal7 {
                 // h.restore()
                 this.hosts.push(h)
             })
+        this.minSplitSpeed      = settings.minSplitSpeed || 2.2
+        this.scrollLingers4     = settings.scrollLingers4 || 2000
+        this.shortestLongPress  = settings.shortestLongPress || 1000
+        this.borderHotSpotSize  = settings.borderHotSpotSize || 20
     }
 
     /*
@@ -53,47 +58,131 @@ class Terminal7 {
         window.onresize = 
             c => this.cells.forEach(c => {if (c.fit != undefined) c.fit()})
         let s = document.querySelector("#home-button")
-        if (s) s.onclick = ev => {
-            let activeH = this.activeH
-            if (activeH) {
-                activeH.e.style.display = "none"
-            }
-            // hide the modal
-            this.clear()
-            window.location.href = "#home"
-        }
+        s.addEventListener('click', ev => this.goHome())
         
         let addHost = document.getElementById("add-host")
         // display the home page, starting with the plus button
         document.getElementById('plus-host').addEventListener(
             'click', ev => addHost.style.display="block")
-        document.getElementById('submit-host').addEventListener(
-            'click', (ev) => {
-                let remember =
-                        addHost.querySelector('[name="remember"]').value,
-                host = this.addHost({
-                    addr: addHost.querySelector('[name="host"]').value,
-                    user: addHost.querySelector('[name="username"]').value,
-                    secret: addHost.querySelector('[name="password"]').value,
-                    store: remember == "on"
-                })
-                this.clear()
-                host.connect()
-            }
-        )
-        // hide the modal on xmark click
-        document.querySelectorAll(".modal .close").forEach(c =>
-            c.addEventListener('click',  ev =>  {
-                ev.target.parentNode.parentNode.parentNode.style.display="none"
-                this.clear()
+        addHost.querySelector(".submit").addEventListener('click', (ev) => {
+            let remember =
+                    addHost.querySelector('[name="remember"]').value,
+            host = this.addHost({
+                addr: addHost.querySelector('[name="host"]').value,
+                user: addHost.querySelector('[name="username"]').value,
+                secret: addHost.querySelector('[name="password"]').value,
+                store: remember == "on"
             })
-        )
-        window.location.href = "#home"
+            this.clear()
+            host.connect()
+        })
+        // hide the modal on xmark click
+        addHost.querySelector(".close").addEventListener('click',  ev =>  {
+            ev.target.parentNode.parentNode.parentNode.style.display="none"
+            this.clear()
+        })
         this.state = "open"
         this.hosts.forEach((host) => {
             host.open(e)
             host.e.style.display = "none"
         })
+        // Handle network events for the active host
+        document.addEventListener("online", ev => {
+            console.log("online")
+            this.activeH && this.activeH.connect()
+            this.clear()
+        })
+        document.addEventListener("offline", ev => {
+            console.log("offline")
+            this.activeH.updateState("offline")
+        })
+        this.catchFingers()
+        this.goHome()
+    }
+    /*
+     * terminal7.onTouch is called on all nrowser's touch events
+     */
+    onTouch(type, ev) {
+        let e = ev.target,
+            pane = e.p
+        // handle only events on pane
+        if (pane === undefined) {
+            console.log("igonring touch event on non-pane element: ", e )
+            return
+        }
+        let x  = ev.changedTouches[0].pageX,
+            y  = ev.changedTouches[0].pageY,
+            lx = (x / document.body.offsetWidth - pane.xoff) / pane.sx,
+            ly = (y / document.body.offsetHeight - pane.yoff) / pane.sy
+        if (type == "start") {
+            this.touch0 = Date.now() 
+            this.firstT = ev.changedTouches
+            let rect = e.getBoundingClientRect()
+            if (x - rect.x < this.borderHotSpotSize) 
+                this.gesture = "panborderleft"
+            else if (rect.right - x < this.borderHotSpotSize) 
+                this.gesture = "panborderright"
+            else if (y - rect.y < this.borderHotSpotSize)
+                this.gesture = "panbordertop"
+            else if (rect.bottom - y < this.borderHotSpotSize)
+                this.gesture = "panborderbottom"
+            else
+                this.gesture = null
+            console.log(this.gesture)
+            return 
+        } else if (type == "cancel") {
+            this.touch0 = null
+            this.firstT = []
+            this.gesture = null
+            return
+        }
+
+        let dx = this.firstT[0].pageX - x,
+            dy = this.firstT[0].pageY - y,
+            d  = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2)),
+            deltaT = Date.now() - this.touch0,
+            s  = d/deltaT,
+            r = Math.abs(dx / dy),
+            topb  = r < 1.0
+        if ((type == "move")
+            && (this.gesture != null)
+            && (this.gesture.startsWith("panborder"))) {
+            let b = this.gesture.slice(9),
+                by = ((b == "top") || (b == "bottom"))
+                    ?dy / document.body.offsetWidth
+                    :dx / document.body.offsetHeight
+            pane.layout.moveBorder(pane, b, by)
+        }
+
+        // test for swipe
+        if ((type == "end") &&
+            (!pane.scrolling) && 
+            (ev.changedTouches.length == 1) && 
+            (d > 50)) {
+            console.log(`swipe speed: ${s}`)
+            if (s > this.minSplitSpeed) {
+                let p = ev.target.p
+                if (!pane.zoomed)  {
+                    let t = pane.split((topb)?"topbottom":"rightleft",
+                                       (topb)?lx:ly)
+                    // t.focus()
+                }
+            }
+        }
+    }
+    catchFingers() {
+        var start,
+            last,
+            firstT = [],
+            gesture = null
+        this.e.addEventListener("touchstart", ev => this.onTouch("start", ev),
+            false)
+        this.e.addEventListener("touchend", ev => this.onTouch("end", ev),
+            false)
+        this.e.addEventListener("touchcancel", e => this.onTouch("cancel", ev),
+            false)
+        this.e.addEventListener("touchmove", ev => this.onTouch("move", ev),
+            false)
     }
     /*
      * Terminal7.addHost is used to add a host with properties p to terminal 7
@@ -122,6 +211,14 @@ class Terminal7 {
         })
         console.log("Storing hosts:", out)
         localStorage.setItem("hosts", JSON.stringify(out))
+    }
+    goHome() {
+        if (this.activeH) {
+            this.activeH.e.style.display = "none"
+        }
+        // hide the modals
+        this.clear()
+        window.location.href = "#home"
     }
     clear () {
         document.querySelectorAll(".modal").forEach(e =>
@@ -211,20 +308,22 @@ class Host {
      * Host.updateState(state) is the place for the host state machine
      */
     updateState(state) {
-        if ((state == "disconnected") || (state == "unreachable")) {
+        if ((state == "disconnected") || (state == "unreachable") ||
+            (state == "offline")) {
             // clear pending messages to let the user start fresh
             this.pendingCDCMsgs = []
-            let t = document.getElementById("disconnected-template")
-            if (t) {
-                let e = t.content.cloneNode(true)
-                    
-                e.querySelector(".reconnect").addEventListener('click', ev => {
-                    ev.target.parentNode.parentNode.remove()
-                    this.connect()
-                })
-                e.querySelector("h1").textContent = `Host ${state}`
-                document.body.appendChild(e)
-            }
+            let e = document.getElementById("disconnect-modal")
+            e.querySelector("h1").textContent =
+                (state == "offline")?"Network is Down":`Host ${state}`
+            e.querySelector(".reconnect").addEventListener('click', ev => {
+                e.style.display = "none"
+                this.connect()
+            })
+            e.querySelector(".close").addEventListener('click', ev => {
+                e.style.display = "none"
+                this.t7.goHome()
+            })
+            e.style.display = "block"
         }
         else if (state == "connected")
             this.clearLog()
@@ -663,29 +762,12 @@ class Cell {
         h.add([singleTap,
             doubleTap,
             pinch,
-            new Hammer.Tap({event: "twofingerstap", pointers: 2}),
-            new Hammer.Swipe({threshold: 200, velocity: 0.7})])
-
+            new Hammer.Tap({event: "twofingerstap", pointers: 2})])
 
         h.on('tap', e => this.focus())
         h.on('twofingerstap', e => this.toggleZoom())
         h.on('doubletap', e => this.toggleZoom())
 
-        h.on('swipe', e => {
-            if (!this.zoomed)  {
-                var l
-                let topb = (e.direction == Hammer.DIRECTION_UP) ||
-                           (e.direction == Hammer.DIRECTION_DOWN)
-                if (topb)
-                    l = (e.center.x / document.body.offsetWidth - this.xoff) /
-                        this.sx
-
-                else
-                    l = (e.center.y / document.body.offsetHeight - this.yoff) /
-                        this.sy
-                let t = this.split((topb)?"topbottom":"rightleft", l)
-            }
-        })
         h.on('pinch', e => {
             console.log(e.additionalEvent, e.distance, e.angle, e.deltaTime, e.isFirst, e.isFinal)
             if (e.deltaTime < this.lastEventT)
@@ -951,7 +1033,42 @@ class Layout extends Cell {
                 }
             })
     }
+    /*
+     * Layout.moveBorder moves a pane's border
+     */
+    moveBorder(pane, border, by) {
+        let i = this.cells.indexOf(pane)
+        console.log(pane.id,i,border,by)
+        if (this.dir == "topbottom") {
+        } else {
+            if (border == "top") {
+                if (i > 0) {
+                    // moving the top border of a pane that is not the top
+                    // one in the layout
+                    let other = this.cells[i-1]
+                    other.sy += by
+                    other.sy -= by
+                } else {
+                    // mnoving the top border of the layout, resizing all the 
+                    // layout and it's sibiling on the parent layout
+                    i = this.layout.cells.indexOf(this)
+                    // TODO: resize
+                }
+            }
+            else {
+                if (i < this.cells.length - 1) {
+                    // moving the top border of a pane that is not the top
+                    // one in the layout
+                    let other = this.cells[i+1]
+                    other.yoff += by
+                    other.sy -= by
+                    pane.sy += by
+                }
 
+            }
+
+        }
+    }
 }
 class Pane extends Cell {
     constructor(props) {
@@ -964,6 +1081,8 @@ class Pane extends Cell {
         this.active = false
         this.channelId = null
         this.fontSize = props.fontSize || 12
+        this.scrolling = false
+        this.scrollLingers4 = props.scrollLingers4 || 2000
     }
 
     /*
@@ -1003,8 +1122,10 @@ class Pane extends Cell {
         con.style.height = "100%"
         con.style.width = "100%"
         this.t.open(con)
+        // the canvas gets the touch event and the nadler needs to get back here
         this.t.loadAddon(this.fitAddon)
         this.fit()
+        con.querySelector(".xterm-cursor-layer").p = this
         this.t.textarea.tabIndex = -1
         this.t.onKey((ev) =>  {
             if (afterLeader) {
@@ -1030,6 +1151,13 @@ class Pane extends Cell {
             else
                 if ((this.d != null) && (this.d.readyState == "open"))
                     this.d.send(ev.key)
+        })
+        // keep tap of "scrolling mode"
+        var tf
+        this.t.onScroll(ev => {
+            this.scrolling = true
+            tf !== undefined && clearTimeout(tf)
+            tf = setTimeout(e => this.scrolling = false, this.scrollLingers4)
         })
         this.t.textarea.addEventListener('paste', (event) => {
             let paste = (event.clipboardData || window.clipboardData).getData('text');
