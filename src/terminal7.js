@@ -89,8 +89,8 @@ class Terminal7 {
         // Handle network events for the active host
         document.addEventListener("online", ev => {
             console.log("online")
-            this.activeH && this.activeH.connect()
             this.clear()
+            this.activeH && this.activeH.connect()
         })
         document.addEventListener("offline", ev => {
             console.log("offline")
@@ -117,6 +117,7 @@ class Terminal7 {
         if (type == "start") {
             this.touch0 = Date.now() 
             this.firstT = this.lastT = ev.changedTouches
+            window.toBeFit = new Set([])
             return 
         } else if (type == "cancel") {
             this.touch0 = null
@@ -163,9 +164,9 @@ class Terminal7 {
             this.lastT = ev.changedTouches
         }
         if (type == "end") {
-            if (this.gesture && this.gesture.startsWith("panborder")) {
-                pane.layout.fit()
-            } else if ((!pane.scrolling)
+            window.toBeFit.forEach(c => c.fit())
+            window.toBeFit = new Set([])
+            if ((!pane.scrolling)
                 && (ev.changedTouches.length == 1)
                 && (d > 50)) {
                 // it's a swipe!!
@@ -322,11 +323,13 @@ class Host {
      * Host.updateState(state) is the place for the host state machine
      */
     updateState(state) {
-        if ((state == "disconnected") || (state == "unreachable") ||
-            (state == "offline")) {
+        let e = document.getElementById("disconnect-modal")
+        if ((e.style.display == "none") && 
+            ((state == "disconnected") ||
+             (state == "unreachable") ||
+             (state == "offline"))) {
             // clear pending messages to let the user start fresh
             this.pendingCDCMsgs = []
-            let e = document.getElementById("disconnect-modal")
             e.querySelector("h1").textContent =
                 (state == "offline")?"Network is Down":`Host ${state}`
             e.querySelector(".reconnect").addEventListener('click', ev => {
@@ -350,9 +353,8 @@ class Host {
     clearLog() {
         this.log.forEach(m => m.remove())
         this.log = []
-        // clear the disconnect modal
-        let es = this.e.querySelector(".disconnect")
-        if (es) es.remove()
+        // hide the disconnect modal
+        document.getElementById("disconnect-modal").style.display = "none"
     }
     /*
      * Host.peerConnect connects the webrtc session with the peer
@@ -1093,6 +1095,8 @@ class Layout extends Cell {
             }
         }
 
+        window.toBeFit.add(p0)
+        window.toBeFit.add(p1)
         let by = p1[off] - dest
         p0[s] -= by
         p1[s] += by
