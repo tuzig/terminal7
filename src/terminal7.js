@@ -106,7 +106,6 @@ class Terminal7 {
         let e = ev.target,
             pane = e.p
         // handle only events on pane
-        console.log(`got touch event ${type}`)
         if (pane === undefined) {
             console.log("igonring touch event on non-pane element: ", e )
             return
@@ -127,6 +126,8 @@ class Terminal7 {
             return
         }
 
+        if (!this.firstT)
+            return
         let dx = this.firstT[0].pageX - x,
             dy = this.firstT[0].pageY - y,
             d  = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2)),
@@ -136,28 +137,27 @@ class Terminal7 {
             topb  = r < 1.0
         if (type == "move") {
             if (this.gesture == null) {
-                let rect = e.getBoundingClientRect()
+                let rect = pane.e.getBoundingClientRect()
                 console.log(x, y, rect)
                 // identify pan event on a border
-                if (Math.abs(x - rect.x) < this.borderHotSpotSize)
+                if (Math.abs(rect.x - x) < this.borderHotSpotSize)
                     this.gesture = "panborderleft"
                 else if (Math.abs(rect.right - x) < this.borderHotSpotSize) 
                     this.gesture = "panborderright"
                 else if (Math.abs(y - rect.y) < this.borderHotSpotSize)
                     this.gesture = "panbordertop"
-                else if (Math.abs(rect.bottom - y) < this.borderHotSpotSize)
+                else if (Math.abs(y - rect.bottom) < this.borderHotSpotSize)
                     this.gesture = "panborderbottom"
                 else 
                     return
                 console.log(`identified: ${this.gesture}`)
             } 
             if (this.gesture.startsWith("panborder")) {
-                var by
                 let where = this.gesture.slice(9),
                     dest = ((where == "top") || (where == "bottom"))
-                            ? x / document.body.offsetWidth
-                            : y / document.body.offsetHeight
-                console.log(`moving ${where} border of #${pane.id} tp ${dest}`)
+                            ? y / document.body.offsetHeight
+                            : x / document.body.offsetWidth
+                console.log(`moving ${where} border of #${pane.id} to ${dest}`)
                 pane.layout.moveBorder(pane, where, dest)
             }
             this.lastT = ev.changedTouches
@@ -1048,10 +1048,19 @@ class Layout extends Cell {
                 }
             })
     }
+    prevCell(c) {
+        var i = this.cells.indexOf(c) - 1
+        return (i >= 0)?this.cells[i]:null
+    }
+    nextCell(c) {
+        var i = this.cells.indexOf(c) + 1
+        return (i < this.cells.length)?this.cells[i]:null
+    }
     /*
      * Layout.moveBorder moves a pane's border
      */
     moveBorder(pane, border, dest) {
+        var s, off
         let i = this.cells.indexOf(pane),
             l = pane.layout,
             p0 = null,
@@ -1059,36 +1068,35 @@ class Layout extends Cell {
         // first, check if it's on the layout's border
 
         if (this.dir == "topbottom") {
+            s = "sx"
+            off = "xoff"
         } else {
-            if (border == "top") {
-                if (i > 0) {
-                    // moving the top border of a pane that is not the top
-                    // one in the layout
-                    p0 = this.cells[i-1]
-                    p1 = pane
-                } else {
-                    // mnoving the top border of the layout, resizing all the 
-                    // layout and it's sibiling on the parent layout
-                    i = this.layout.cells.indexOf(this)
-                    // TODO: resize
-                }
-            }
-            else {
-                if (i < this.cells.length - 1) {
-                    // moving the top border of a pane that is not the top
-                    // one in the layout
-                    p0 = pane
-                    p1  = this.cells[i+1]
-                }
-            }
-            if (p0 && p1) {
-                let by = p1.yoff - dest
-                p0.sy -= by
-                p1.sy += by
-                p1.yoff = dest
-            } else
-                console.log("what now?")
+            s = "sy"
+            off = "yoff"
         }
+
+        if (border == "top" || border == "left") {
+            p0 = this.prevCell(pane)
+            p1 = pane
+            // if it's the first cell in the layout we need to get the layout's
+            // layout to move the borderg
+            if (p0 == null) {
+                this.layout && this.layout.moveBorder(this, border, dest)
+                return
+            }
+        } else {
+            p0 = pane
+            p1 = this.nextCell(pane)
+            if (p1 == null) {
+                this.layout && this.layout.moveBorder(this, border, dest)
+                return
+            }
+        }
+
+        let by = p1[off] - dest
+        p0[s] -= by
+        p1[s] += by
+        p1[off] = dest
     }
 }
 class Pane extends Cell {
