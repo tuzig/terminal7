@@ -240,11 +240,11 @@ describe("terminal7", function() {
             let p1 = p0.split("rightleft")
             expect(p0.sy).to.equal(0.3)
             expect(p1.sy).to.equal(0.3)
-            p0.layout.moveBorder(p0, "bottom", 0.1)
+            p0.layout.moveBorder(p0, "bottom", 0.6)
             expect(p0.sy).to.be.closeTo(0.4, 0.00000001)
             expect(p1.sy).to.be.closeTo(0.2, 0.00000001)
             expect(p1.yoff).to.equal(0.6)
-            p0.layout.moveBorder(p0, "bottom", -0.1)
+            p0.layout.moveBorder(p0, "bottom", 0.5)
             expect(p0.sy).to.be.closeTo(0.3, 0.00000001)
             expect(p1.sy).to.be.closeTo(0.3, 0.00000001)
 

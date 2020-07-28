@@ -106,6 +106,7 @@ class Terminal7 {
         let e = ev.target,
             pane = e.p
         // handle only events on pane
+        console.log(`got touch event ${type}`)
         if (pane === undefined) {
             console.log("igonring touch event on non-pane element: ", e )
             return
@@ -116,23 +117,12 @@ class Terminal7 {
             ly = (y / document.body.offsetHeight - pane.yoff) / pane.sy
         if (type == "start") {
             this.touch0 = Date.now() 
-            this.firstT = ev.changedTouches
-            let rect = e.getBoundingClientRect()
-            if (x - rect.x < this.borderHotSpotSize) 
-                this.gesture = "panborderleft"
-            else if (rect.right - x < this.borderHotSpotSize) 
-                this.gesture = "panborderright"
-            else if (y - rect.y < this.borderHotSpotSize)
-                this.gesture = "panbordertop"
-            else if (rect.bottom - y < this.borderHotSpotSize)
-                this.gesture = "panborderbottom"
-            else
-                this.gesture = null
-            console.log(this.gesture)
+            this.firstT = this.lastT = ev.changedTouches
             return 
         } else if (type == "cancel") {
             this.touch0 = null
             this.firstT = []
+            this.lastT = []
             this.gesture = null
             return
         }
@@ -144,30 +134,54 @@ class Terminal7 {
             s  = d/deltaT,
             r = Math.abs(dx / dy),
             topb  = r < 1.0
-        if ((type == "move")
-            && (this.gesture != null)
-            && (this.gesture.startsWith("panborder"))) {
-            let b = this.gesture.slice(9),
-                by = ((b == "top") || (b == "bottom"))
-                    ?dy / document.body.offsetWidth
-                    :dx / document.body.offsetHeight
-            pane.layout.moveBorder(pane, b, by)
+        if (type == "move") {
+            if (this.gesture == null) {
+                let rect = e.getBoundingClientRect()
+                console.log(x, y, rect)
+                // identify pan event on a border
+                if (Math.abs(x - rect.x) < this.borderHotSpotSize)
+                    this.gesture = "panborderleft"
+                else if (Math.abs(rect.right - x) < this.borderHotSpotSize) 
+                    this.gesture = "panborderright"
+                else if (Math.abs(y - rect.y) < this.borderHotSpotSize)
+                    this.gesture = "panbordertop"
+                else if (Math.abs(rect.bottom - y) < this.borderHotSpotSize)
+                    this.gesture = "panborderbottom"
+                else 
+                    return
+                console.log(`identified: ${this.gesture}`)
+            } 
+            if (this.gesture.startsWith("panborder")) {
+                var by
+                let where = this.gesture.slice(9),
+                    dest = ((where == "top") || (where == "bottom"))
+                            ? x / document.body.offsetWidth
+                            : y / document.body.offsetHeight
+                console.log(`moving ${where} border of #${pane.id} tp ${dest}`)
+                pane.layout.moveBorder(pane, where, dest)
+            }
+            this.lastT = ev.changedTouches
         }
-
-        // test for swipe
-        if ((type == "end") &&
-            (!pane.scrolling) && 
-            (ev.changedTouches.length == 1) && 
-            (d > 50)) {
-            console.log(`swipe speed: ${s}`)
-            if (s > this.minSplitSpeed) {
-                let p = ev.target.p
-                if (!pane.zoomed)  {
-                    let t = pane.split((topb)?"topbottom":"rightleft",
-                                       (topb)?lx:ly)
-                    // t.focus()
+        if (type == "end") {
+            if (this.gesture && this.gesture.startsWith("panborder")) {
+                pane.layout.fit()
+            } else if ((!pane.scrolling)
+                && (ev.changedTouches.length == 1)
+                && (d > 50)) {
+                // it's a swipe!!
+                console.log(`swipe speed: ${s}`)
+                if (s > this.minSplitSpeed) {
+                    let p = ev.target.p
+                    if (!pane.zoomed)  {
+                        let t = pane.split((topb)?"topbottom":"rightleft",
+                                           (topb)?lx:ly)
+                        // t.focus()
+                    }
                 }
             }
+            this.touch0 = null
+            this.firstT = []
+            this.gesture = null
         }
     }
     catchFingers() {
@@ -720,6 +734,7 @@ class Cell {
     createElement(className) {
         // creates the div element that will hold the term
         this.e = document.createElement("div")
+        this.e.p = this
         this.e.classList = "cell"
         if (typeof className == "string")
             this.e.classList.add(className)
@@ -1036,18 +1051,21 @@ class Layout extends Cell {
     /*
      * Layout.moveBorder moves a pane's border
      */
-    moveBorder(pane, border, by) {
-        let i = this.cells.indexOf(pane)
-        console.log(pane.id,i,border,by)
+    moveBorder(pane, border, dest) {
+        let i = this.cells.indexOf(pane),
+            l = pane.layout,
+            p0 = null,
+            p1 = null
+        // first, check if it's on the layout's border
+
         if (this.dir == "topbottom") {
         } else {
             if (border == "top") {
                 if (i > 0) {
                     // moving the top border of a pane that is not the top
                     // one in the layout
-                    let other = this.cells[i-1]
-                    other.sy += by
-                    other.sy -= by
+                    p0 = this.cells[i-1]
+                    p1 = pane
                 } else {
                     // mnoving the top border of the layout, resizing all the 
                     // layout and it's sibiling on the parent layout
@@ -1059,14 +1077,17 @@ class Layout extends Cell {
                 if (i < this.cells.length - 1) {
                     // moving the top border of a pane that is not the top
                     // one in the layout
-                    let other = this.cells[i+1]
-                    other.yoff += by
-                    other.sy -= by
-                    pane.sy += by
+                    p0 = pane
+                    p1  = this.cells[i+1]
                 }
-
             }
-
+            if (p0 && p1) {
+                let by = p1.yoff - dest
+                p0.sy -= by
+                p1.sy += by
+                p1.yoff = dest
+            } else
+                console.log("what now?")
         }
     }
 }
@@ -1108,6 +1129,7 @@ class Pane extends Cell {
         var afterLeader = false,
             con = document.createElement("div")
 
+        con.p = this
         this.t = new Terminal({
             convertEol: true,
             fontSize: this.fontSize,

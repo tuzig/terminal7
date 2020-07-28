@@ -13,7 +13,7 @@ var firstTime = true
  */
 document.addEventListener("DOMContentLoaded", () => {
     // do nothing when running a test
-    if (__html__ == undefined) {
+    if (window.__html__ == undefined) {
         let terminal7 = new Terminal7()
         console.log("openening terminal7")
         terminal7.open(document.getElementById('terminal7'))
