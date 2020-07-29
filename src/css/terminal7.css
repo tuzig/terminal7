@@ -143,8 +143,8 @@ a {
     bottom: 0;
     text-align: center;
 }
-.tabbar i {
-    width: 50px;
+.tabbar nav i {
+    border: none;
 }
 nav i:last-child {
     border: none;
@@ -156,9 +156,8 @@ nav i {
     display: table-cell;
     text-align: center
 }
-.off {
-    color: #373702;
-}
+.on { color: #F952F9 !important; }
+.off { color: #373702; }
 /* vertical align the nav bar buttons */
 .tabbar {
     bottom: 6%;

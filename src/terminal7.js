@@ -34,7 +34,6 @@ class Terminal7 {
                 this.hosts.push(h)
             })
     }
-
     /*
      * Terminal7.open opens terminal on the given DOM element,
      * loads the hosts from local storage and redirects to home
@@ -52,15 +51,15 @@ class Terminal7 {
         if (t) t.onclick = (ev) => this.activeH.activeW.activeP.close()
         window.onresize = 
             c => this.cells.forEach(c => {if (c.fit != undefined) c.fit()})
-        let s = document.querySelector("#home-button")
-        if (s) s.onclick = ev => {
+        let s = document.getElementById("home-button")
+        s.onclick = ev => {
             let activeH = this.activeH
             if (activeH) {
                 activeH.e.style.display = "none"
             }
             // hide the modal
             this.clear()
-            window.location.href = "#home"
+            this.goHome()
         }
         
         let addHost = document.getElementById("add-host")
@@ -88,12 +87,12 @@ class Terminal7 {
                 this.clear()
             })
         )
-        window.location.href = "#home"
         this.state = "open"
         this.hosts.forEach((host) => {
             host.open(e)
             host.e.style.display = "none"
         })
+        this.goHome()
     }
     /*
      * Terminal7.addHost is used to add a host with properties p to terminal 7
@@ -123,9 +122,14 @@ class Terminal7 {
         console.log("Storing hosts:", out)
         localStorage.setItem("hosts", JSON.stringify(out))
     }
-    clear () {
+    clear() {
         document.querySelectorAll(".modal").forEach(e =>
                 e.style.display = "none")
+    }
+    goHome() {
+        let s = document.getElementById("home-button")
+        s.classList.add("on")
+        window.location.href = "#home"
     }
 }
 
@@ -205,6 +209,8 @@ class Host {
         this.t7.activeH = this
         if (this.activeW)
             this.activeW.focus()
+        let s = document.getElementById("home-button")
+        s.classList.remove("on")
     }
             
     /*
@@ -463,6 +469,7 @@ class Host {
         this.breadcrumbs = []
         this.clearLog()
         this.e.style.display = "none"
+        this.t7.goHome()
     }
     /*
      * Host.sendSize sends a control message with the pane's size to the server
@@ -534,11 +541,11 @@ class Window {
         // turn off the current active
         let a = this.host.activeW
         if (a) {
-            a.nameE.classList.remove("active")
+            a.nameE.classList.remove("on")
             a.e.style.display = "none"
         }
         this.e.style.display = "block"
-        this.nameE.classList.add("active")
+        this.nameE.classList.add("on")
         this.host.activeW = this
         window.location.href=`#tab-${this.host.id}.${this.id+1}`
         this.activeP.focus()
@@ -587,10 +594,8 @@ class Window {
         this.host.activeW = null
         // remove myself from the breadcrumbs
         this.host.breadcrumbs.pop()
-        if (this.host.windows.length == 0) {
+        if (this.host.windows.length == 0)
             this.host.close()
-            window.location.href = "#home"
-        }
         else
             this.host.breadcrumbs.pop().focus()
     }
