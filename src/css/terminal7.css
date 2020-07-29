@@ -79,17 +79,10 @@ a {
 }
 .modal nav { 
     clear: both;
-    width: 80%; 
-    padding-top: 2vh; 
-    margin: 0 auto;
-}
-.two-buttons i {
-    width: 50%;
-}
-.modal .close {
-  /* Position it in the top right corner outside of the modal */
-  color: inherit;
-  float:left;
+    width: 100%; 
+    margin-top: 6vh; 
+    margin: 6vh auto 0;
+    display: table;
 }
 .window {
     position: fixed;
@@ -132,16 +125,18 @@ a {
     box-sizing: border-box;
     background-color: #271D30;
 }
-.bar > nav {
+.bar>nav {
     position: relative;
     top: 50%;
     transform: translate(0, -50%);
-    display: table;
     width: 100%
 }
 #navbar {
     bottom: 0;
     text-align: center;
+}
+nav {
+    display: table;
 }
 .tabbar nav i {
     border: none;
@@ -171,7 +166,6 @@ nav i {
 .tabs {
     margin: 0 auto;
     padding: 0;
-    display: table;
     width: 100%;
     font-size: 3vh;
     background: black;
