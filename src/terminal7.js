@@ -502,7 +502,7 @@ class Window {
             layout = this.addLayout("TBD", props)
             
         // Add the name with link to tab bar
-        let li = document.createElement('li'),
+        let div = document.createElement('div'),
             a = document.createElement('a')
         a.id = this.e.id+'-name'
         a.w = this
@@ -517,11 +517,11 @@ class Window {
              // For some reason this works much better with a timeout
              window.setTimeout(() => this.rename(), 0))
         h.on('switch', (ev) => this.focus())
-        li.appendChild(a)
+        div.appendChild(a)
         this.nameE = a
         let wn = this.host.e.querySelector(".tabs")
         if (wn != null)
-            wn.appendChild(li)
+            wn.appendChild(div)
         this.activeP = layout.addPane(props)
         this.focus()
     }

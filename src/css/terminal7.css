@@ -132,12 +132,16 @@ a {
     box-sizing: border-box;
     background-color: #271D30;
 }
+.bar > nav {
+    position: relative;
+    top: 50%;
+    transform: translate(0, -50%);
+    display: table;
+    width: 100%
+}
 #navbar {
     bottom: 0;
     text-align: center;
-}
-#navbar i {
-    width: 13.4%;
 }
 .tabbar {
     border-top: 4px double #373702;
@@ -145,32 +149,23 @@ a {
 .tabbar i {
     width: 50px;
 }
-.tabbar i:first-child {
-    border-left: 1px solid #373702;
-}
 nav i:last-child {
     border: none;
 }
 nav i {
     cursor: pointer;
     border-right: 1px solid #373702;
-    box-sizing: border-box;
+    /* box-sizing: border-box; */
+    display: table-cell;
+    text-align: center
 }
 .off {
     color: #373702;
 }
 /* vertical align the nav bar buttons */
-.bar > nav {
-    position: relative;
-    top: 50%;
-    transform: translate(0, -50%);
-}
 .tabbar {
     bottom: 6%;
     color: #00fafa;
-}
-.tabbar-buttons {
-    float: right;
 }
 #window-names input {
   font-size: 3vh;
@@ -178,23 +173,25 @@ nav i {
   color: inherit;
 }
 .tabs {
-    margin: 0;
+    margin: 0 auto;
     padding: 0;
-}
-.tabs li { display: inline; }
-.tabs li a {
-    float: left; 
-    display: block;
-    padding: 4px 0.5em 0; 
-    left: 1px; 
-    text-decoration: none; 
-    border: 1px solid #373702;
+    display: table;
+    width: 100%;
     font-size: 3vh;
+}
+.tabs>div {
+    border: 1px solid #373702;
+    display: table-cell;
     line-height: 5vh;
+    text-align: center;
+}
+.tabs>div a {
+    text-decoration: none; 
     color: inherit;
 }
-.tabs li { cursor: pointer; }
-
+.tabbar nav>i {
+    width: 10%;
+}
 .active {
     font-weight: bold;
 }
