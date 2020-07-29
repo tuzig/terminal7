@@ -180,12 +180,13 @@ nav i {
     border-bottom: 1px solid #D9F505;
     border-right: 1px solid #D9F505;
     border-left: 1px solid #D9F505;
+    border-radius: 0 0 12px 12px;
 }
 .tabs>div {
-    border: 1px solid #373702;
     display: table-cell;
-    line-height: 5vh;
+    line-height: 5.5vh;
     text-align: center;
+    border-right: 1px solid #373702;
 }
 .tabs>div a {
     text-decoration: none; 
