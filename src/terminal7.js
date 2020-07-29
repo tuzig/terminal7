@@ -37,7 +37,7 @@ class Terminal7 {
         this.minSplitSpeed      = settings.minSplitSpeed || 2.2
         this.scrollLingers4     = settings.scrollLingers4 || 2000
         this.shortestLongPress  = settings.shortestLongPress || 1000
-        this.borderHotSpotSize  = settings.borderHotSpotSize || 20
+        this.borderHotSpotSize  = settings.borderHotSpotSize || 30
     }
 
     /*
@@ -141,13 +141,13 @@ class Terminal7 {
                 let rect = pane.e.getBoundingClientRect()
                 console.log(x, y, rect)
                 // identify pan event on a border
-                if (Math.abs(rect.x - x) < this.borderHotSpotSize)
+                if (x - rect.x < this.borderHotSpotSize)
                     this.gesture = "panborderleft"
-                else if (Math.abs(rect.right - x) < this.borderHotSpotSize) 
+                else if (rect.right - x < this.borderHotSpotSize) 
                     this.gesture = "panborderright"
-                else if (Math.abs(y - rect.y) < this.borderHotSpotSize)
+                else if (y - rect.y < this.borderHotSpotSize)
                     this.gesture = "panbordertop"
-                else if (Math.abs(y - rect.bottom) < this.borderHotSpotSize)
+                else if (rect.bottom - y < this.borderHotSpotSize)
                     this.gesture = "panborderbottom"
                 else 
                     return
@@ -1067,32 +1067,29 @@ class Layout extends Cell {
             l = pane.layout,
             p0 = null,
             p1 = null
-        // first, check if it's on the layout's border
-
-        if (this.dir == "topbottom") {
-            s = "sx"
-            off = "xoff"
-        } else {
+        // first, check if it's a horizontal or vertical border we're moving
+        if (border == "top" || border == "bottom") {
             s = "sy"
             off = "yoff"
+        } else {
+            s = "sx"
+            off = "xoff"
         }
 
-        if (border == "top" || border == "left") {
-            p0 = this.prevCell(pane)
-            p1 = pane
-            // if it's the first cell in the layout we need to get the layout's
-            // layout to move the borderg
-            if (p0 == null) {
-                this.layout && this.layout.moveBorder(this, border, dest)
-                return
+        if (this.dir.indexOf(border) == -1) {
+            if (border == "top" || border == "left") {
+                p0 = this.prevCell(pane)
+                p1 = pane
+                // if it's the first cell in the layout we need to get the layout's
+                // layout to move the borderg
+            } else {
+                p0 = pane
+                p1 = this.nextCell(pane)
             }
-        } else {
-            p0 = pane
-            p1 = this.nextCell(pane)
-            if (p1 == null) {
-                this.layout && this.layout.moveBorder(this, border, dest)
-                return
-            }
+        }
+        if (p0 == null || p1 == null) {
+            this.layout && this.layout.moveBorder(this, border, dest)
+            return
         }
 
         window.toBeFit.add(p0)
