@@ -143,9 +143,6 @@ a {
     bottom: 0;
     text-align: center;
 }
-.tabbar {
-    border-top: 4px double #373702;
-}
 .tabbar i {
     width: 50px;
 }
@@ -178,6 +175,11 @@ nav i {
     display: table;
     width: 100%;
     font-size: 3vh;
+    background: black;
+    /* border-top: 4px double #373702; */
+    border-bottom: 1px solid #D9F505;
+    border-right: 1px solid #D9F505;
+    border-left: 1px solid #D9F505;
 }
 .tabs>div {
     border: 1px solid #373702;
