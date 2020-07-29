@@ -74,7 +74,7 @@ a {
     text-align: center
 }
 .modal h2 { margin-top: 0; }
-.modal:last-child {
+1modal:last-child {
     margin-bottom: 2vh;
 }
 .modal nav { 
@@ -124,8 +124,7 @@ a {
     line-height: 5.5vh !important;
 }
 .bar {
-    padding: 0 0.6vw;
-    margin: 0;
+    margin: 0 0.6vw;
     position: fixed;
     left: 0;
     height: 6%;
@@ -139,6 +138,9 @@ a {
 }
 #navbar i {
     width: 13.4%;
+}
+.tabbar {
+    border-top: 4px double #373702;
 }
 .tabbar i {
     width: 50px;
@@ -186,16 +188,15 @@ nav i {
     padding: 4px 0.5em 0; 
     left: 1px; 
     text-decoration: none; 
-    border-right: 2px solid #D9F505;
+    border: 1px solid #373702;
     font-size: 3vh;
     line-height: 5vh;
     color: inherit;
 }
-.tabs li a:hover { background: black; }
+.tabs li { cursor: pointer; }
 
 .active {
-    color: #D9F505 !important;
-    background-color: black;
+    font-weight: bold;
 }
 .zoomed {
     z-index: 2;
