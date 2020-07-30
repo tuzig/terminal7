@@ -80,7 +80,8 @@ export class Terminal7 {
         document.addEventListener("online", ev => {
             console.log("online")
             this.clear()
-            this.activeH && this.activeH.connect()
+            if (this.activeH)
+                setTimeout(_ => this.activeH.connect(), 100)
         })
         document.addEventListener("offline", ev => {
             console.log("offline")
@@ -117,7 +118,7 @@ export class Terminal7 {
             return
         }
 
-        if (!this.firstT)
+        if (this.firstT.length == 0)
             return
         let dx = this.firstT[0].pageX - x,
             dy = this.firstT[0].pageY - y,
