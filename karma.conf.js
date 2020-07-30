@@ -53,7 +53,7 @@ module.exports = function(config) {
           // add webpack as preprocessor
           '**/*.html': ['html2js'],
           'tests/*.js': ['webpack', 'sourcemap'],
-          'src/terminal7.js': ['webpack', 'sourcemap']
+          'src/*.js': ['webpack', 'sourcemap']
         },
 
         webpack: webpackConfig,

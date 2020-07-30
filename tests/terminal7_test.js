@@ -1,4 +1,5 @@
-import { Terminal7, Cell } from "../src/terminal7.js"
+import { Terminal7 } from "../src/terminal7.js"
+import { Cell } from "../src/cells.js"
 import { assert } from "chai"
 
 
@@ -33,6 +34,7 @@ describe("terminal7", function() {
         beforeEach(() => {
             h = t.addHost({t7:t})
             h.open(e)
+            debugger
             w = h.addWindow("1,2,3 testing")
             w.activeP.sx = 0.8
             w.activeP.sy = 0.6
