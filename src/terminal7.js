@@ -39,7 +39,6 @@ class Terminal7 {
         this.shortestLongPress  = settings.shortestLongPress || 1000
         this.borderHotSpotSize  = settings.borderHotSpotSize || 30
     }
-
     /*
      * Terminal7.open opens terminal on the given DOM element,
      * loads the hosts from local storage and redirects to home
@@ -141,13 +140,13 @@ class Terminal7 {
                 let rect = pane.e.getBoundingClientRect()
                 console.log(x, y, rect)
                 // identify pan event on a border
-                if (x - rect.x < this.borderHotSpotSize)
+                if (Math.abs(rect.x - x) < this.borderHotSpotSize)
                     this.gesture = "panborderleft"
-                else if (rect.right - x < this.borderHotSpotSize) 
+                else if (Math.abs(rect.right - x) < this.borderHotSpotSize) 
                     this.gesture = "panborderright"
-                else if (y - rect.y < this.borderHotSpotSize)
+                else if (Math.abs(y - rect.y) < this.borderHotSpotSize)
                     this.gesture = "panbordertop"
-                else if (rect.bottom - y < this.borderHotSpotSize)
+                else if (Math.abs(y - rect.bottom) < this.borderHotSpotSize)
                     this.gesture = "panborderbottom"
                 else 
                     return
@@ -227,17 +226,19 @@ class Terminal7 {
         console.log("Storing hosts:", out)
         localStorage.setItem("hosts", JSON.stringify(out))
     }
+    clear() {
+        document.querySelectorAll(".modal").forEach(e =>
+                e.style.display = "none")
+    }
     goHome() {
+        let s = document.getElementById("home-button")
+        s.classList.add("on")
         if (this.activeH) {
             this.activeH.e.style.display = "none"
         }
         // hide the modals
         this.clear()
         window.location.href = "#home"
-    }
-    clear () {
-        document.querySelectorAll(".modal").forEach(e =>
-                e.style.display = "none")
     }
 }
 
@@ -317,6 +318,8 @@ class Host {
         this.t7.activeH = this
         if (this.activeW)
             this.activeW.focus()
+        let s = document.getElementById("home-button")
+        s.classList.remove("on")
     }
             
     /*
@@ -578,6 +581,7 @@ class Host {
         this.breadcrumbs = []
         this.clearLog()
         this.e.style.display = "none"
+        this.t7.goHome()
     }
     /*
      * Host.sendSize sends a control message with the pane's size to the server
@@ -617,7 +621,7 @@ class Window {
             layout = this.addLayout("TBD", props)
             
         // Add the name with link to tab bar
-        let li = document.createElement('li'),
+        let div = document.createElement('div'),
             a = document.createElement('a')
         a.id = this.e.id+'-name'
         a.w = this
@@ -632,11 +636,11 @@ class Window {
              // For some reason this works much better with a timeout
              window.setTimeout(() => this.rename(), 0))
         h.on('switch', (ev) => this.focus())
-        li.appendChild(a)
+        div.appendChild(a)
         this.nameE = a
         let wn = this.host.e.querySelector(".tabs")
         if (wn != null)
-            wn.appendChild(li)
+            wn.appendChild(div)
         this.activeP = layout.addPane(props)
         this.focus()
     }
@@ -649,11 +653,11 @@ class Window {
         // turn off the current active
         let a = this.host.activeW
         if (a) {
-            a.nameE.classList.remove("active")
+            a.nameE.classList.remove("on")
             a.e.style.display = "none"
         }
         this.e.style.display = "block"
-        this.nameE.classList.add("active")
+        this.nameE.classList.add("on")
         this.host.activeW = this
         window.location.href=`#tab-${this.host.id}.${this.id+1}`
         this.activeP.focus()
@@ -702,10 +706,8 @@ class Window {
         this.host.activeW = null
         // remove myself from the breadcrumbs
         this.host.breadcrumbs.pop()
-        if (this.host.windows.length == 0) {
+        if (this.host.windows.length == 0)
             this.host.close()
-            window.location.href = "#home"
-        }
         else
             this.host.breadcrumbs.pop().focus()
     }

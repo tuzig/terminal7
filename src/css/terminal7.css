@@ -74,22 +74,15 @@ a {
     text-align: center
 }
 .modal h2 { margin-top: 0; }
-.modal:last-child {
+1modal:last-child {
     margin-bottom: 2vh;
 }
 .modal nav { 
     clear: both;
-    width: 80%; 
-    padding-top: 2vh; 
-    margin: 0 auto;
-}
-.two-buttons i {
-    width: 50%;
-}
-.modal .close {
-  /* Position it in the top right corner outside of the modal */
-  color: inherit;
-  float:left;
+    width: 100%; 
+    margin-top: 6vh; 
+    margin: 6vh auto 0;
+    display: table;
 }
 .window {
     position: fixed;
@@ -124,8 +117,7 @@ a {
     line-height: 5.5vh !important;
 }
 .bar {
-    padding: 0 0.6vw;
-    margin: 0;
+    margin: 0 0.6vw;
     position: fixed;
     left: 0;
     height: 6%;
@@ -133,18 +125,21 @@ a {
     box-sizing: border-box;
     background-color: #271D30;
 }
+.bar>nav {
+    position: relative;
+    top: 50%;
+    transform: translate(0, -50%);
+    width: 100%
+}
 #navbar {
     bottom: 0;
     text-align: center;
 }
-#navbar i {
-    width: 13.4%;
+nav {
+    display: table;
 }
-.tabbar i {
-    width: 50px;
-}
-.tabbar i:first-child {
-    border-left: 1px solid #373702;
+.tabbar nav i {
+    border: none;
 }
 nav i:last-child {
     border: none;
@@ -152,23 +147,16 @@ nav i:last-child {
 nav i {
     cursor: pointer;
     border-right: 1px solid #373702;
-    box-sizing: border-box;
+    /* box-sizing: border-box; */
+    display: table-cell;
+    text-align: center
 }
-.off {
-    color: #373702;
-}
+.on { color: #F952F9 !important; }
+.off { color: #373702; }
 /* vertical align the nav bar buttons */
-.bar > nav {
-    position: relative;
-    top: 50%;
-    transform: translate(0, -50%);
-}
 .tabbar {
     bottom: 6%;
     color: #00fafa;
-}
-.tabbar-buttons {
-    float: right;
 }
 #window-names input {
   font-size: 3vh;
@@ -176,26 +164,32 @@ nav i {
   color: inherit;
 }
 .tabs {
-    margin: 0;
+    margin: 0 auto;
     padding: 0;
-}
-.tabs li { display: inline; }
-.tabs li a {
-    float: left; 
-    display: block;
-    padding: 4px 0.5em 0; 
-    left: 1px; 
-    text-decoration: none; 
-    border-right: 2px solid #D9F505;
+    width: 100%;
     font-size: 3vh;
-    line-height: 5vh;
+    background: black;
+    /* border-top: 4px double #373702; */
+    border-bottom: 1px solid #D9F505;
+    border-right: 1px solid #D9F505;
+    border-left: 1px solid #D9F505;
+    border-radius: 0 0 12px 12px;
+}
+.tabs>div {
+    display: table-cell;
+    line-height: 5.5vh;
+    text-align: center;
+    border-right: 1px solid #373702;
+}
+.tabs>div a {
+    text-decoration: none; 
     color: inherit;
 }
-.tabs li a:hover { background: black; }
-
+.tabbar nav>i {
+    width: 10%;
+}
 .active {
-    color: #D9F505 !important;
-    background-color: black;
+    font-weight: bold;
 }
 .zoomed {
     z-index: 2;

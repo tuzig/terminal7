@@ -37,7 +37,7 @@
         <label>
           <input type="checkbox" checked="checked" name="remember"> Remember host
         </label>
-        <nav class="two-buttons">
+        <nav>
             <i class="f7-icons close">xmark</i>
             <i class="f7-icons submit">phone_arrow_up_right</i>
         </nav>
@@ -54,9 +54,9 @@
   </div>
   </div>
    
-  <div id="navbar" class="bar border">
+  <div id="navbar" class="bar">
       <nav>
-  <i id="home-button" class="f7-icons">globe</i>
+  <i id="home-button" class="f7-icons on">globe</i>
   <i class="trash f7-icons">bin_xmark</i>
   <i class="f7-icons">doc_on_clipboard</i>
   <i id="tabbar-button" class="f7-icons off">arrow_branch</i>
@@ -69,13 +69,13 @@
   <!-- The following templates are used by terminal7's code to generate 
       complex elements -->
     <template id="tabbar-template">
-    <div class="tabbar bar border"> 
-      <nav class="tabbar-buttons">
+    <div class="tabbar bar"> 
+      <nav>
           <i class="add-tab f7-icons">plus</i>
-          <i class="bang f7-icons">exclamationmark</i>
+          <nav class="tabs">
+          </nav>
+          <i class="bang f7-icons off">exclamationmark</i>
       </nav>
-      <ul class="tabs">
-      </ul>
     </div>
     </template>
 
