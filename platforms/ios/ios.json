@@ -22,7 +22,7 @@
             },
             {
               "xml": "<feature name=\"NetworkStatus\"><param name=\"ios-package\" value=\"CDVConnection\" /></feature>",
-              "count": 1
+              "count": 2
             }
           ]
         }

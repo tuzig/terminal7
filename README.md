@@ -20,7 +20,7 @@ implmentation in go - webrtc - that we use as a base for our server's daemon.
 ## Installing
 
 Just clone this repo and run `npm i`. In your server you'll need to install
-and run our backend project - [webexec](https://github.com/afittestide/webexec)
+and run our backend project - [webexec](https://github.com/tuzig/webexec)
 
 ## Running
 
