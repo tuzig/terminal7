@@ -109,6 +109,14 @@ export class Host {
         }
         else if (state == "connected")
             this.clearLog()
+        /* Maybe we should restart Ice. duno
+        else if (state === "failed") {
+            this.pc.createOffer({ iceRestart: true })
+                .then(this.pc.setLocalDescription)
+                .then(sendOfferToServer)
+            this.pc.restartIce()
+        */
+             
         console.log("host state change: ", this.state)
         this.state = state 
     }
@@ -149,7 +157,6 @@ export class Host {
             this.addWindow('Welcome')
         }
 
-        this.clearLog()
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: 'stun:stun2.l.google.com:19302' }
                 ] })
@@ -157,32 +164,28 @@ export class Host {
             this.updateState(this.pc.iceConnectionState)
 
         let offer = ""
-        // if (this.peer != null)
-        if (false)
-            this.peerConnect(this.peer)
-        else
-            this.pc.onicecandidate = event => {
-                this.notify("Got ice candidate")
-                if (event.candidate && !offer) {
-                  offer = btoa(JSON.stringify(this.pc.localDescription))
-                  console.log("Signaling server...\n")
-                  fetch('http://'+this.addr+'/connect', {
-                    headers: {"Content-Type": "application/json;charset=utf-8"},
-                    method: 'POST',
-                    body: JSON.stringify({Offer: offer}) 
-                  }).then(response => response.text())
-                    .then(data => {
-                        this.peer = JSON.parse(atob(data))
-                        this.peerConnect(this.peer)
-                     // this.state = this.updateState("connected")
-                  }).catch(error => {
-                        // notify, but first remove the period at the end
-                        this.notify(error.message.slice(0,-1))
-                        // redisplay the disconnected modal
-                        this.updateState("unreachable")
-                    })
-                }
-            }
+        this.pc.onicecandidate = event => {
+            this.notify("Got ice candidate")
+            if (event.candidate && !offer) {
+              offer = btoa(JSON.stringify(this.pc.localDescription))
+              console.log("Signaling server...\n")
+              fetch('http://'+this.addr+'/connect', {
+                headers: {"Content-Type": "application/json;charset=utf-8"},
+                method: 'POST',
+                body: JSON.stringify({Offer: offer}) 
+              }).then(response => response.text())
+                .then(data => {
+                    this.peer = JSON.parse(atob(data))
+                    this.peerConnect(this.peer)
+              }).catch(error => {
+                    // notify, but first remove the period at the end
+                    this.notify(error.message.slice(0,-1))
+                    // redisplay the disconnected modal
+                    this.updateState("unreachable")
+                })
+            } else
+                console.log("go ice candidate, what now?", event)
+        }
         this.pc.onnegotiationneeded = e => {
             console.log("on negotiation needed", e)
             this.pc.createOffer().then(d => this.pc.setLocalDescription(d))

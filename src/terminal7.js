@@ -101,10 +101,12 @@ export class Terminal7 {
             console.log("igonring touch event on non-pane element: ", e )
             return
         }
+
         let x  = ev.changedTouches[0].pageX,
             y  = ev.changedTouches[0].pageY,
             lx = (x / document.body.offsetWidth - pane.xoff) / pane.sx,
             ly = (y / document.body.offsetHeight - pane.yoff) / pane.sy
+
         if (type == "start") {
             this.touch0 = Date.now() 
             this.firstT = this.lastT = ev.changedTouches
@@ -120,6 +122,7 @@ export class Terminal7 {
 
         if (this.firstT.length == 0)
             return
+
         let dx = this.firstT[0].pageX - x,
             dy = this.firstT[0].pageY - y,
             d  = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2)),
@@ -127,6 +130,7 @@ export class Terminal7 {
             s  = d/deltaT,
             r = Math.abs(dx / dy),
             topb  = r < 1.0
+
         if (type == "move") {
             if (this.gesture == null) {
                 let rect = pane.e.getBoundingClientRect()
