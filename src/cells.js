@@ -419,15 +419,6 @@ export class Pane extends Cell {
     }
                 
     /*
-     * Pane.setEcho sets the terminal's echo to on or off
-     */
-    setEcho(echoOn) {
-        if (this.echo === undefined) {
-            this.t.onData((data) => this.echo && this.write(data))
-        }
-        this.echo = echoOn
-    }
-    /*
      * Pane.openTerminal opens an xtermjs terminal on our element
      */
     openTerminal() {

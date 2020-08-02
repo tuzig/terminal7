@@ -42,16 +42,31 @@ export class Terminal7 {
             document.body.appendChild(e)
         }
         else this.e = e
-        // buttons
-        let t = document.querySelector(".trash")
-        if (t) t.onclick = (ev) => this.activeH.activeW.activeP.close()
         window.onresize = 
             c => this.cells.forEach(c => {if (c.fit != undefined) c.fit()})
-        let s = document.querySelector("#home-button")
-        s.addEventListener('click', ev => this.goHome())
-        
-        let addHost = document.getElementById("add-host")
+        // buttons
+        document.getElementById("trash-button")
+                .addEventListener("click",
+                    ev => this.activeH.activeW.activeP.close())
+        document.getElementById("home-button")
+                .addEventListener("click", ev => this.goHome())
+        document.getElementById("log-button")
+                .addEventListener("click",
+                    ev => {
+                        let e = document.getElementById("log")
+                        if (e.style.display == "block") {
+                            e.style.display = "none"
+                            document.getElementById("log-button")
+                                .classList.remove("on")
+                        } else {
+                            e.style.display = "block"
+                            document.getElementById("log-button")
+                                .classList.add("on")
+                        }
+                    }
+                )
         // display the home page, starting with the plus button
+        let addHost = document.getElementById("add-host")
         document.getElementById('plus-host').addEventListener(
             'click', ev => addHost.style.display="block")
         addHost.querySelector(".submit").addEventListener('click', (ev) => {

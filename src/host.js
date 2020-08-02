@@ -50,7 +50,7 @@ export class Host {
             b.addEventListener('click', (e) => this.updateState("disconnected"))
             this.e.appendChild(t)
         }
-        const plusHost = document.getElementById("plus-host")
+        let plusHost = document.getElementById("plus-host")
         if (plusHost != null)  {
             // Add the hosts boxes to the home page
             let li = document.createElement('li'),
@@ -117,17 +117,20 @@ export class Host {
             this.pc.restartIce()
         */
              
-        console.log("host state change: ", this.state)
         this.state = state 
+        console.log("host state change: ", this.state)
     }
     /*
      * Host.clearLog cleans the log and the status modals
      */
     clearLog() {
+        /*
         this.log.forEach(m => m.remove())
         this.log = []
+        */
         // hide the disconnect modal
-        document.getElementById("disconnect-modal").style.display = "none"
+        // document.getElementById("disconnect-modal").style.display = "none"
+        document.getElementById("log").style.display = "none"
     }
     /*
      * Host.peerConnect connects the webrtc session with the peer
@@ -164,11 +167,10 @@ export class Host {
             this.updateState(this.pc.iceConnectionState)
 
         let offer = ""
-        this.pc.onicecandidate = event => {
-            this.notify("Got ice candidate")
-            if (event.candidate && !offer) {
+        this.pc.onicecandidate = ev => {
+            if (ev.candidate && !offer) {
               offer = btoa(JSON.stringify(this.pc.localDescription))
-              console.log("Signaling server...\n")
+              this.notify("Sending connection request")
               fetch('http://'+this.addr+'/connect', {
                 headers: {"Content-Type": "application/json;charset=utf-8"},
                 method: 'POST',
@@ -183,8 +185,7 @@ export class Host {
                     // redisplay the disconnected modal
                     this.updateState("unreachable")
                 })
-            } else
-                console.log("go ice candidate, what now?", event)
+            } 
         }
         this.pc.onnegotiationneeded = e => {
             console.log("on negotiation needed", e)
@@ -209,6 +210,7 @@ export class Host {
             d = new Date(),
             t = formatDate(d, "hh:mm:ss.fff")
 
+        document.getElementById("log").style.display = "block"
         li.innerHTML = `<time>${t}</time> ${message}`
         li.classList = "log-msg"
         ul.appendChild(li)
@@ -249,14 +251,14 @@ export class Host {
                             secret: this.secret
         }})
 
-        this.onack[msgId] = (t) => {
-            console.log("In auth ack")
+        this.onack[msgId] = t => {
+            resolved = true
+            this.notify("Authorization accepted")
             if (this.secret != t) {
                 this.secret = t
                 if (this.store)
                     this.t7.storeHosts()
             }
-            resolved = true
             if (reconnect)
                 // reconnect to open panes
                 this.cells.forEach((c) => {
@@ -274,8 +276,8 @@ export class Host {
         setTimeout(() => {
             if (!resolved)
                 // TODO: handle expired timeout
-                this.notify("Timeout on auth ack"), 1000
-        })
+                this.notify("Timeout on auth ack")
+        }, 3000)
     }
     /*
      * Adds a window, complete with a first layout and pane
