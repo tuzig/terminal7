@@ -172,9 +172,9 @@ export class Host {
               offer = btoa(JSON.stringify(this.pc.localDescription))
               this.notify("Sending connection request")
               fetch('http://'+this.addr+'/connect', {
-                headers: {"Content-Type": "application/json;charset=utf-8"},
+                headers: {"Content-Type": "plain/text"},
                 method: 'POST',
-                body: JSON.stringify({Offer: offer}) 
+                body: offer 
               }).then(response => response.text())
                 .then(data => {
                     this.peer = JSON.parse(atob(data))
