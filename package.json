@@ -61,7 +61,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/afittestide/terminal7.git"
+    "url": "git+https://github.com/tuzig/terminal7.git"
   },
   "keywords": [
     "terminal",
@@ -72,9 +72,9 @@
   "author": "Benny Daon",
   "license": "GPLv3",
   "bugs": {
-    "url": "https://github.com/afittestide/terminal7/issues"
+    "url": "https://github.com/tuzig/terminal7/issues"
   },
-  "homepage": "https://github.com/afittestide/terminal7#readme",
+  "homepage": "https://github.com/tuzig/terminal7#readme",
   "mocha": {
     "watch-files": [
       "src/*.js",
