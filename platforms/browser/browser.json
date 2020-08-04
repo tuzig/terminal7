@@ -8,16 +8,16 @@
   },
   "installed_plugins": {
     "cordova-plugin-whitelist": {
-      "PACKAGE_NAME": "dev.afittestide.terminal7"
+      "PACKAGE_NAME": "com.tuzig.terminal7"
     },
     "cordova-plugin-statusbar": {
-      "PACKAGE_NAME": "dev.afittestide.terminal7"
+      "PACKAGE_NAME": "com.tuzig.terminal7"
     },
     "cordova-plugin-webpack": {
-      "PACKAGE_NAME": "dev.afittestide.terminal7"
+      "PACKAGE_NAME": "com.tuzig.terminal7"
     },
     "cordova-plugin-network-information": {
-      "PACKAGE_NAME": "dev.afittestide.terminal7"
+      "PACKAGE_NAME": "com.tuzig.terminal7"
     }
   },
   "dependent_plugins": {},
@@ -43,29 +43,6 @@
       "clobbers": [
         "window.StatusBar"
       ]
-    },
-    {
-      "file": "plugins/cordova-plugin-network-information/www/network.js",
-      "id": "cordova-plugin-network-information.network",
-      "pluginId": "cordova-plugin-network-information",
-      "clobbers": [
-        "navigator.connection",
-        "navigator.network.connection"
-      ]
-    },
-    {
-      "file": "plugins/cordova-plugin-network-information/www/Connection.js",
-      "id": "cordova-plugin-network-information.Connection",
-      "pluginId": "cordova-plugin-network-information",
-      "clobbers": [
-        "Connection"
-      ]
-    },
-    {
-      "file": "plugins/cordova-plugin-network-information/src/browser/network.js",
-      "id": "cordova-plugin-network-information.NetworkInfoProxy",
-      "pluginId": "cordova-plugin-network-information",
-      "runs": true
     },
     {
       "file": "plugins/cordova-plugin-network-information/www/network.js",
