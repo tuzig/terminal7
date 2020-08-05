@@ -174,17 +174,17 @@ export class Host {
               fetch('http://'+this.addr+'/connect', {
                 headers: {"Content-Type": "application/json;charset=utf-8"},
                 method: 'POST',
-                body: JSON.stringify({Offer: offer}) 
+                body: offer
               }).then(response => response.text())
                 .then(data => {
                     this.peer = JSON.parse(atob(data))
                     this.peerConnect(this.peer)
-              }).catch(error => {
+                }).catch(error => {
                     // notify, but first remove the period at the end
                     this.notify(error.message.slice(0,-1))
                     // redisplay the disconnected modal
                     this.updateState("unreachable")
-                })
+                 })
             } 
         }
         this.pc.onnegotiationneeded = e => {
