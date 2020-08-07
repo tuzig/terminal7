@@ -107,8 +107,6 @@ export class Host {
             })
             e.style.display = "block"
         }
-        else if (state == "connected")
-            this.clearLog()
         /* Maybe we should restart Ice. duno
         else if (state === "failed") {
             this.pc.createOffer({ iceRestart: true })
@@ -210,11 +208,11 @@ export class Host {
             d = new Date(),
             t = formatDate(d, "hh:mm:ss.fff")
 
-        document.getElementById("log").style.display = "block"
         li.innerHTML = `<time>${t}</time> ${message}`
         li.classList = "log-msg"
         ul.appendChild(li)
         this.log.push(li)
+        this.t7.logDisplay(true)
     }
     /*
      * sencCTRLMsg gets a control message and sends it if we have a control
@@ -377,13 +375,15 @@ export class Host {
         // On losing focus, replace the input element with the name
         // TODO: chrome fires too many blur events and wher remove
         // the input element too soon
-        i.addEventListener('blur', ev => e.innerHtml = b, { once: true })
+        i.addEventListener('cacnel', ev => e.innerHtml = b, { once: true })
         i.addEventListener('change', ev => {
             let s = ev.target.value
-            console.log("search for", s)
-            this.activeW.activeP.search(new RegExp(s, 'g'))
+            this.activeW.activeP.search(s)
         })
         i.focus()
+    }
+    onPaneConnected(pane) {
+        this.t7.logDisplay(false)
     }
 }
 /*

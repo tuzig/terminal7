@@ -51,19 +51,9 @@ export class Terminal7 {
         document.getElementById("home-button")
                 .addEventListener("click", ev => this.goHome())
         document.getElementById("log-button")
-                .addEventListener("click",
-                    ev => {
-                        let e = document.getElementById("log")
-                        if (e.style.display == "block") {
-                            e.style.display = "none"
-                            document.getElementById("log-button")
-                                .classList.remove("on")
-                        } else {
-                            e.style.display = "block"
-                            document.getElementById("log-button")
-                                .classList.add("on")
-                        }
-                    }
+                .addEventListener("click", ev => 
+                    this.logDisplay(document.getElementById("log")
+                                    .classList.contains("fade-out"))
                 )
         document.getElementById("search-button")
                 .addEventListener("click", ev => 
@@ -253,5 +243,20 @@ export class Terminal7 {
         // hide the modals
         this.clear()
         window.location.href = "#home"
+    }
+    /* 
+     * Terminal7.logDisplay(show) display or hides the notifications
+     */
+    logDisplay(show) {
+        let e = document.getElementById("log")
+        if (show) {
+            e.classList.remove("fade-out")
+            document.getElementById("log-button")
+                .classList.add("on")
+        } else {
+            e.classList.add("fade-out")
+            document.getElementById("log-button")
+                .classList.remove("on")
+        }
     }
 }

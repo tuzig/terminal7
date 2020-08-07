@@ -284,3 +284,8 @@ nav i {
     color: #00FAFA;
     margin: 2%;
 }
+.fade-out {
+  top: 0;
+  transform: translate(0, -100%);
+  transition: transform 3s ease-in;
+}
