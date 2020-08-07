@@ -361,6 +361,30 @@ export class Host {
                                 sy: pane.t.rows
                               }})
     }
+    /*
+     * Host.search displays and handles pane search
+     * First, tab names are replaced with an input field for the search string
+     * as the user keys in the chars the display is scrolled to their first
+     * occurences on the terminal buffer and the user can use line-mode vi
+     * keys to move around, mark text and yank it
+     */
+    search() {
+        let e = this.e.querySelector(".tabs"),
+            b = e.innerHTML,
+            f = document.createElement
+        e.innerHTML= `<input size='30' name='regex'>`
+        let i = e.children[0]
+        // On losing focus, replace the input element with the name
+        // TODO: chrome fires too many blur events and wher remove
+        // the input element too soon
+        i.addEventListener('blur', ev => e.innerHtml = b, { once: true })
+        i.addEventListener('change', ev => {
+            let s = ev.target.value
+            console.log("search for", s)
+            this.activeW.activeP.search(new RegExp(s, 'g'))
+        })
+        i.focus()
+    }
 }
 /*
  * formatDate util function to return a well format date strings
