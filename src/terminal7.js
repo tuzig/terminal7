@@ -65,6 +65,9 @@ export class Terminal7 {
                         }
                     }
                 )
+        document.getElementById("search-button")
+                .addEventListener("click", ev => 
+                    this.activeH && this.activeH.search())
         // display the home page, starting with the plus button
         let addHost = document.getElementById("add-host")
         document.getElementById('plus-host').addEventListener(

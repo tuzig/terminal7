@@ -174,17 +174,17 @@ export class Host {
               fetch('http://'+this.addr+'/connect', {
                 headers: {"Content-Type": "application/json;charset=utf-8"},
                 method: 'POST',
-                body: JSON.stringify({Offer: offer}) 
+                body: offer
               }).then(response => response.text())
                 .then(data => {
                     this.peer = JSON.parse(atob(data))
                     this.peerConnect(this.peer)
-              }).catch(error => {
+                }).catch(error => {
                     // notify, but first remove the period at the end
                     this.notify(error.message.slice(0,-1))
                     // redisplay the disconnected modal
                     this.updateState("unreachable")
-                })
+                 })
             } 
         }
         this.pc.onnegotiationneeded = e => {
@@ -360,6 +360,30 @@ export class Host {
                                 sx: pane.t.cols,
                                 sy: pane.t.rows
                               }})
+    }
+    /*
+     * Host.search displays and handles pane search
+     * First, tab names are replaced with an input field for the search string
+     * as the user keys in the chars the display is scrolled to their first
+     * occurences on the terminal buffer and the user can use line-mode vi
+     * keys to move around, mark text and yank it
+     */
+    search() {
+        let e = this.e.querySelector(".tabs"),
+            b = e.innerHTML,
+            f = document.createElement
+        e.innerHTML= `<input size='30' name='regex'>`
+        let i = e.children[0]
+        // On losing focus, replace the input element with the name
+        // TODO: chrome fires too many blur events and wher remove
+        // the input element too soon
+        i.addEventListener('blur', ev => e.innerHtml = b, { once: true })
+        i.addEventListener('change', ev => {
+            let s = ev.target.value
+            console.log("search for", s)
+            this.activeW.activeP.search(new RegExp(s, 'g'))
+        })
+        i.focus()
     }
 }
 /*

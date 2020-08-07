@@ -610,4 +610,23 @@ export class Pane extends Cell {
         super.toggleZoom()
         this.fit()
     }
+    /*
+     * Pane.search(re) gets a global regular expression and searchs for it 
+     * in the terminal buffer. Search can go up or down based on the second arg
+     */
+    search(re, down) {
+        let b = this.t.buffer
+        for (var i = b.cursorY; i >  0 && i < b.lenght; i += down?1:-1) {
+            let l = b.getLine(i),
+                a = re.exec(l)
+            if (a !== null) {
+                if ((i > b.viewportY + this.t.rows)
+                    || (i < b.viewportY))
+                    this.t.scrollToLine(Math.max(0, i - this.t.rows/2))
+
+                var s = l.indexOf(a[0])
+                this.t.select(s, i - b.viewportY, re.lastIndex-s) 
+            }
+        }
+    }
 }
