@@ -117,18 +117,16 @@ a {
     line-height: 5.5vh !important;
 }
 .bar {
-    margin: 0 0.6vw;
+    margin: 0;
     position: fixed;
     left: 0;
-    height: 6%;
     width: 100%;
     box-sizing: border-box;
     background-color: #271D30;
+    height: 4vmin;
 }
 .bar>nav {
-    position: relative;
-    top: 50%;
-    transform: translate(0, -50%);
+    padding: 0;
     width: 100%
 }
 #navbar {
@@ -155,11 +153,12 @@ nav i {
 .off { color: #373702; }
 /* vertical align the nav bar buttons */
 .tabbar {
-    bottom: 6%;
+    bottom: 5vmin;
     color: #00fafa;
 }
-#window-names input {
-  font-size: 3vh;
+.tabbar input {
+  font-size: 3vmin;
+  line-height: 3.5vmin;
   background-color: black;
   color: inherit;
 }
@@ -167,7 +166,6 @@ nav i {
     margin: 0 auto;
     padding: 0;
     width: 100%;
-    font-size: 3vh;
     background: black;
     /* border-top: 4px double #373702; */
     border-bottom: 1px solid #D9F505;
@@ -175,13 +173,14 @@ nav i {
     border-left: 1px solid #D9F505;
     border-radius: 0 0 12px 12px;
 }
-.tabs>div {
+.tabs>div, .tabs>nav {
     display: table-cell;
-    line-height: 5.5vh;
     text-align: center;
     border-right: 1px solid #373702;
 }
 .tabs>div a {
+    font-size: 3vmin;
+    line-height: 4vmin;
     text-decoration: none; 
     color: inherit;
 }
@@ -288,4 +287,8 @@ nav i {
   top: 0;
   transform: translate(0, -100%);
   transition: transform 3s ease-in;
+}
+.search-container {
+    margin: 0 auto;
+    width: 80%;
 }

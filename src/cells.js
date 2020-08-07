@@ -1,10 +1,17 @@
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
+import { SearchAddon } from 'xterm-addon-search'
 
 const   DEFAULT_XTERM_THEME = {foreground: "#00FAFA", background: "#000"},
         RETRIES             = 3,
         ABIT                = 10,
-        TIMEOUT             = 3000
+        TIMEOUT             = 3000,
+        SEARCH_OPTIONS      = {
+            regex: true,
+            wholeWord: false,
+            caseSensitive: true,
+            incremental: true
+        }
 
 export class Cell {
     constructor(props) {
@@ -409,6 +416,7 @@ export class Pane extends Cell {
         this.scrolling = false
         this.scrollLingers4 = props.scrollLingers4 || 2000
         this.theme = props.theme || DEFAULT_XTERM_THEME
+        this.copyMode = false
     }
 
     /*
@@ -434,6 +442,7 @@ export class Pane extends Cell {
             cols:80
         })
         this.fitAddon = new FitAddon()
+        this.searchAddon = new SearchAddon();
 
         // there's a container div we need to get xtermjs to fit properly
         this.e.appendChild(con)
@@ -442,6 +451,7 @@ export class Pane extends Cell {
         this.t.open(con)
         // the canvas gets the touch event and the nadler needs to get back here
         this.t.loadAddon(this.fitAddon)
+        this.t.loadAddon(this.searchAddon)
         this.fit()
         con.querySelector(".xterm-cursor-layer").p = this
         this.t.textarea.tabIndex = -1
@@ -459,10 +469,15 @@ export class Pane extends Cell {
                 else if (ev.domEvent.key == "-") {
                     this.scale(-1)
                 }
+                else if (ev.domEvent.key == "?") {
+                    this.host.search()
+                }
                 afterLeader = false
             }
+            else if (this.copyMode) {
+                this.handleCopyModeKey(ev)
             // TODO: make the leader key configurable
-            else if ((ev.domEvent.ctrlKey == true) && (ev.domEvent.key == "a")) {
+            } else if ((ev.domEvent.ctrlKey == true) && (ev.domEvent.key == "a")) {
                 afterLeader = true
                 return
             }
@@ -594,6 +609,7 @@ export class Pane extends Cell {
                     str = enc.decode(m.data)
                 this.state = "connected"
                 this.channelId = parseInt(str)
+                this.host.onPaneConnected(this)
             }
             else if (this.state == "disconnected") {
                 this.buffer.push(new Uint8Array(m.data))
@@ -611,22 +627,64 @@ export class Pane extends Cell {
         this.fit()
     }
     /*
-     * Pane.search(re) gets a global regular expression and searchs for it 
-     * in the terminal buffer. Search can go up or down based on the second arg
+     * Pane.search(re) gets a string containing a regular expression and 
+     * searchs for it in the terminal buffer. 
+     * Search can go up or down based on the second arg
      */
     search(re, down) {
-        let b = this.t.buffer
-        for (var i = b.cursorY; i >  0 && i < b.lenght; i += down?1:-1) {
-            let l = b.getLine(i),
-                a = re.exec(l)
-            if (a !== null) {
-                if ((i > b.viewportY + this.t.rows)
-                    || (i < b.viewportY))
-                    this.t.scrollToLine(Math.max(0, i - this.t.rows/2))
-
-                var s = l.indexOf(a[0])
-                this.t.select(s, i - b.viewportY, re.lastIndex-s) 
-            }
+        this.searchRE = re
+        if(this.searchAddon.findPrevious(re, SEARCH_OPTIONS))
+            this.focus()
+        else {
+            this.host.notify(`Couldn't find "${re}"`)
+            this.toggleSearch()
         }
+    }
+    handleCopyModeKey(ev) {
+        if (ev.domEvent.key == "n") {
+            if (!this.searchAddon.findPrevious(this.searchRE, SEARCH_OPTIONS))
+                this.host.notify(`Couldn't find "$(re)"`)
+                this.toggleSearch()
+        }
+        else if (ev.domEvent.key == "q") {
+            this.toggleSearch()
+        }
+    }
+    /*
+     * Pane.enterSearch displays and handles pane search
+     * First, tab names are replaced with an input field for the search string
+     * as the user keys in the chars the display is scrolled to their first
+     * occurences on the terminal buffer and the user can use line-mode vi
+     * keys to move around, mark text and yank it
+     */
+    toggleSearch() {
+        // show the search field
+        if (!this.copyMode) {
+            let e = this.host.e.querySelector(".tabs"),
+                d = document.createElement("div"),
+                f = document.createElement("input")
+            // first hide the tab names
+            this.host.e.querySelectorAll(".tabs>div").forEach(e =>
+                e.style.display="none")
+            f.size = "20"
+            f.name = "search"
+            f.placeholder = "search"
+            d.className = "search-container"
+            d.prepend(f)
+            e.prepend(d)
+            f.addEventListener('change', ev => {
+                let s = ev.target.value
+                this.search(s)
+            })
+            f.focus()
+        } else {
+            let e = this.host.e.querySelector(".tabs"),
+                f = e.children[0]
+            f.remove()
+            this.host.e.querySelectorAll(".tabs div").forEach(e =>
+                e.style.display="table-cell")
+        }
+        this.copyMode = !this.copyMode
+
     }
 }

@@ -359,29 +359,6 @@ export class Host {
                                 sy: pane.t.rows
                               }})
     }
-    /*
-     * Host.search displays and handles pane search
-     * First, tab names are replaced with an input field for the search string
-     * as the user keys in the chars the display is scrolled to their first
-     * occurences on the terminal buffer and the user can use line-mode vi
-     * keys to move around, mark text and yank it
-     */
-    search() {
-        let e = this.e.querySelector(".tabs"),
-            b = e.innerHTML,
-            f = document.createElement
-        e.innerHTML= `<input size='30' name='regex'>`
-        let i = e.children[0]
-        // On losing focus, replace the input element with the name
-        // TODO: chrome fires too many blur events and wher remove
-        // the input element too soon
-        i.addEventListener('cacnel', ev => e.innerHtml = b, { once: true })
-        i.addEventListener('change', ev => {
-            let s = ev.target.value
-            this.activeW.activeP.search(s)
-        })
-        i.focus()
-    }
     onPaneConnected(pane) {
         this.t7.logDisplay(false)
     }
