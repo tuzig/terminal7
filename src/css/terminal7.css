@@ -157,12 +157,12 @@ nav i {
     color: #00fafa;
 }
 .tabbar input {
-  font-size: 3vmin;
-  line-height: 3.5vmin;
+  font-size: 2.5vmin;
+  line-height: 3vmin;
   background-color: black;
   color: inherit;
 }
-.tabs {
+.tabbar .internal {
     margin: 0 auto;
     padding: 0;
     width: 100%;
@@ -173,12 +173,12 @@ nav i {
     border-left: 1px solid #D9F505;
     border-radius: 0 0 12px 12px;
 }
-.tabs>div .tabbar-search a, .tabbar-search input {
+.internal>div {
     display: table-cell;
     text-align: center;
     border-right: 1px solid #373702;
 }
-.tabs>div a {
+.internal>div a {
     font-size: 3vmin;
     line-height: 4vmin;
     text-decoration: none; 
@@ -188,10 +188,16 @@ nav i {
     width: 10%;
 }
 .tabbar-search>i {
+    float: left;
     width: 3%;
 }
-.tab-search>a {
+.tabbar-search>a {
+    float:left;
     width: 10%;
+}
+.tabbar-search>input {
+    float: left;
+    width: 70%;
 }
 .active {
     font-weight: bold;

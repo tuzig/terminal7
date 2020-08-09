@@ -471,7 +471,7 @@ export class Pane extends Cell {
                     this.scale(-1)
                 }
                 else if (ev.domEvent.key == "?") {
-                    this.host.search()
+                    this.toggleSearch()
                 }
                 afterLeader = false
             }
@@ -665,6 +665,7 @@ export class Pane extends Cell {
         if (!this.copyMode) {
             ne.style.display = "none"
             se.style.display = "table"
+            document.getElementById("search-button").classList.add("on")
             let u = se.querySelector("a[href='#find-url']"),
                 f = se.querySelector("a[href='#find-file']"),
                 i = se.querySelector("input[name='regex']")
@@ -675,6 +676,7 @@ export class Pane extends Cell {
         } else {
             ne.style.display = "table"
             se.style.display = "none"
+            document.getElementById("search-button").classList.remove("on")
             this.focus()
         }
         this.copyMode = !this.copyMode

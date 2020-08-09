@@ -361,6 +361,9 @@ export class Host {
                               }})
     }
     onPaneConnected(pane) {
+        // hide notifications
         this.t7.logDisplay(false)
+        // enable search
+        document.getElementById("search-button").classList.remove("off")
     }
 }

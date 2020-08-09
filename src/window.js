@@ -49,7 +49,7 @@ export class Window {
         h.on('switch', (ev) => this.focus())
         div.appendChild(a)
         this.nameE = a
-        let wn = this.host.e.querySelector(".tabs")
+        let wn = this.host.e.querySelector(".tabbar-names")
         if (wn != null)
             wn.appendChild(div)
         this.activeP = layout.addPane(paneProps)
