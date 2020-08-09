@@ -1,7 +1,7 @@
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
-import { fileREges, urlRegex } from './utils.js'
+import { fileRegex, urlRegex } from './utils.js'
 
 const   DEFAULT_XTERM_THEME = {foreground: "#00FAFA", background: "#000"},
         RETRIES             = 3,
