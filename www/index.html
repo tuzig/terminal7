@@ -67,16 +67,27 @@
       </nav>
 </div>
 
-  <!-- The following templates are used by terminal7's code to generate 
-      complex elements -->
+    <!-- every host creates his own tabbar based on the template below -->
     <template id="tabbar-template">
     <div class="tabbar bar"> 
-      <nav>
+      <nav class="tabbar-names">
           <i class="add-tab f7-icons">plus</i>
           <nav class="tabs">
           </nav>
           <i class="bang f7-icons off">exclamationmark</i>
       </nav>
+      <nav class="tabbar-search hidden">
+        <i class="f7-icons on">arrow_up</i>
+        <i class="f7-icons">arrow_down</i>
+        <input type="text" size="30" name="regex" placeholder="regex here">
+        <a href="#find-url">URL</a>
+        <a href="#find-file">File</a>
+       </nav>
+    </div>
+    </template>
+    <!-- the search box of the tabbar -->
+    <template id="tabbar-search-template">
+    <div class="tabbar-search"> 
     </div>
     </template>
 

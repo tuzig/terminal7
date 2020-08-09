@@ -173,7 +173,7 @@ nav i {
     border-left: 1px solid #D9F505;
     border-radius: 0 0 12px 12px;
 }
-.tabs>div, .tabs>nav {
+.tabs>div .tabbar-search a, .tabbar-search input {
     display: table-cell;
     text-align: center;
     border-right: 1px solid #373702;
@@ -184,7 +184,13 @@ nav i {
     text-decoration: none; 
     color: inherit;
 }
-.tabbar nav>i {
+.tabbar-names>i {
+    width: 10%;
+}
+.tabbar-search>i {
+    width: 3%;
+}
+.tab-search>a {
     width: 10%;
 }
 .active {

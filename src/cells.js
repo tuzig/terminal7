@@ -1,6 +1,7 @@
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
+import { fileREges, urlRegex } from './utils.js'
 
 const   DEFAULT_XTERM_THEME = {foreground: "#00FAFA", background: "#000"},
         RETRIES             = 3,
@@ -659,30 +660,22 @@ export class Pane extends Cell {
      */
     toggleSearch() {
         // show the search field
+        const ne = this.host.e.querySelector(".tabbar-names"),
+              se = this.host.e.querySelector(".tabbar-search")
         if (!this.copyMode) {
-            let e = this.host.e.querySelector(".tabs"),
-                d = document.createElement("div"),
-                f = document.createElement("input")
-            // first hide the tab names
-            this.host.e.querySelectorAll(".tabs>div").forEach(e =>
-                e.style.display="none")
-            f.size = "20"
-            f.name = "search"
-            f.placeholder = "search"
-            d.className = "search-container"
-            d.prepend(f)
-            e.prepend(d)
-            f.addEventListener('change', ev => {
-                let s = ev.target.value
-                this.search(s)
-            })
-            f.focus()
+            ne.style.display = "none"
+            se.style.display = "table"
+            let u = se.querySelector("a[href='#find-url']"),
+                f = se.querySelector("a[href='#find-file']"),
+                i = se.querySelector("input[name='regex']")
+            u.addEventListener("click", _ => this.search(urlRegex))
+            f.addEventListener("click", _ => this.search(fileRegex))
+            i.addEventListener("change", ev => this.search(ev.target.value))
+            i.focus()
         } else {
-            let e = this.host.e.querySelector(".tabs"),
-                f = e.children[0]
-            f.remove()
-            this.host.e.querySelectorAll(".tabs div").forEach(e =>
-                e.style.display="table-cell")
+            ne.style.display = "table"
+            se.style.display = "none"
+            this.focus()
         }
         this.copyMode = !this.copyMode
 
