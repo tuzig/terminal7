@@ -85,5 +85,6 @@ export function formatDate(date, format, utc) {
 
     return format
 }
+
 export const fileRegex = "(\\\\?([^\\/]*[\\/])*)([^\\/]+)$",
     urlRegex = "@(https?|ftp)://(-\.)?([^\s/?\.#-]+\.?)+(/[^\s]*)?$@iS"
