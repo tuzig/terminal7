@@ -660,11 +660,11 @@ export class Pane extends Cell {
      */
     toggleSearch() {
         // show the search field
-        const ne = this.host.e.querySelector(".tabbar-names"),
+        const ne = this.host.e.querySelector(".tabbar-names-nav"),
               se = this.host.e.querySelector(".tabbar-search")
         if (!this.copyMode) {
-            ne.style.display = "none"
-            se.style.display = "table"
+            ne.classList.add("hidden")
+            se.classList.remove("hidden")
             document.getElementById("search-button").classList.add("on")
             let u = se.querySelector("a[href='#find-url']"),
                 f = se.querySelector("a[href='#find-file']"),
@@ -674,8 +674,8 @@ export class Pane extends Cell {
             i.addEventListener("change", ev => this.search(ev.target.value))
             i.focus()
         } else {
-            ne.style.display = "table"
-            se.style.display = "none"
+            ne.classList.remove("hidden")
+            se.classList.add("hidden")
             document.getElementById("search-button").classList.remove("on")
             this.focus()
         }

@@ -125,7 +125,7 @@ a {
     background-color: #271D30;
     height: 4vmin;
 }
-.bar>nav {
+#navbar>nav, .tabbar-names-nav {
     padding: 0;
     width: 100%
 }
@@ -136,7 +136,7 @@ a {
 nav {
     display: table;
 }
-.tabbar nav i {
+.tabbar-names-nav i {
     border: none;
 }
 nav i:last-child {
@@ -165,13 +165,14 @@ nav i {
 .tabbar .internal {
     margin: 0 auto;
     padding: 0;
-    width: 100%;
+    width: 80vw;
     background: black;
     /* border-top: 4px double #373702; */
     border-bottom: 1px solid #D9F505;
     border-right: 1px solid #D9F505;
     border-left: 1px solid #D9F505;
     border-radius: 0 0 12px 12px;
+    text-align: center;
 }
 .internal>div {
     display: table-cell;
@@ -187,17 +188,22 @@ nav i {
 .tabbar-names>i {
     width: 10%;
 }
-.tabbar-search>i {
-    float: left;
-    width: 3%;
+.tabbar-search {
+    margin: 0 auto;
 }
-.tabbar-search>a {
-    float:left;
+.tabbar-search>i {
     width: 10%;
 }
+.tabbar-search>a:last-child {
+    border: none;
+}
+.tabbar-search>a {
+    display: table-cell;
+    border-right: 1px solid #373702;
+    width: 6em;
+}
 .tabbar-search>input {
-    float: left;
-    width: 70%;
+    width:20em;
 }
 .active {
     font-weight: bold;
