@@ -493,7 +493,8 @@ export class Pane extends Cell {
         var tf
         this.t.onScroll(ev => {
             this.scrolling = true
-            tf !== undefined && clearTimeout(tf)
+            if (tf !== undefined)
+                clearTimeout(tf)
             tf = setTimeout(e => this.scrolling = false, this.scrollLingers4)
         })
         this.t.textarea.addEventListener('paste', (event) => {
