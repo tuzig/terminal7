@@ -8,13 +8,13 @@
   },
   "installed_plugins": {
     "cordova-plugin-whitelist": {
-      "PACKAGE_NAME": "com.tuzig.terminal7"
+      "PACKAGE_NAME": "io.cordova.hellocordova"
     },
     "cordova-plugin-statusbar": {
       "PACKAGE_NAME": "com.tuzig.terminal7"
     },
     "cordova-plugin-webpack": {
-      "PACKAGE_NAME": "com.tuzig.terminal7"
+      "PACKAGE_NAME": "io.cordova.hellocordova"
     },
     "cordova-plugin-network-information": {
       "PACKAGE_NAME": "com.tuzig.terminal7"
