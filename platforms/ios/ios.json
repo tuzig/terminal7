@@ -26,7 +26,7 @@
             },
             {
               "xml": "<feature name=\"InAppBrowser\"><param name=\"ios-package\" value=\"CDVWKInAppBrowser\" /><param name=\"onload\" value=\"true\" /></feature>",
-              "count": 1
+              "count": 2
             }
           ]
         }

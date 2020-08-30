@@ -138,6 +138,7 @@ nav {
 }
 .tabbar-names-nav i {
     border: none;
+    width: 10%;
 }
 nav i:last-child {
     border: none;
@@ -163,9 +164,9 @@ nav i {
   color: inherit;
 }
 .tabbar .internal {
-    margin: 0 auto;
+    margin: 0;
     padding: 0;
-    width: 80vw;
+    width: 100%;
     background: black;
     /* border-top: 4px double #373702; */
     border-bottom: 1px solid #D9F505;
