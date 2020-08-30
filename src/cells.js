@@ -645,6 +645,9 @@ export class Pane extends Cell {
             else
                 console.log(`Found "${this.searchRE}"`)
         }
+        else if (ev.key == "o") {
+            var ref = cordova.InAppBrowser.open(this.t.getSelection(), "_system", "");
+        }
         else if (ev.key == "q") {
             this.toggleSearch()
             this.t.scrollToBottom()
@@ -661,14 +664,21 @@ export class Pane extends Cell {
         // show the search field
         const ne = this.host.e.querySelector(".tabbar-names-nav"),
               se = this.host.e.querySelector(".tabbar-search")
-        if (!this.copyMode) {
+        this.copyMode = !this.copyMode
+        if (this.copyMode) {
             ne.classList.add("hidden")
             se.classList.remove("hidden")
             document.getElementById("search-button").classList.add("on")
             let u = se.querySelector("a[href='#find-url']"),
                 f = se.querySelector("a[href='#find-file']"),
                 i = se.querySelector("input[name='regex']")
-            u.onclick = _ => this.searchAddon.findPrevious(urlRegex, SEARCH_OPTS)
+            u.onclick = ev => {
+                ev.preventDefault()
+                ev.stopPropagation()
+                this.focus()
+                i.value = this.searchRE = urlRegex
+                this.handleCopyModeKey({keyCode: 13})
+            }
             f.onclick = _ => this.searchAddon.findPrevious(fileRegex, SEARCH_OPTS)
             i.onkeydown = ev => {
                 if (ev.keyCode == 13) {
@@ -686,7 +696,6 @@ export class Pane extends Cell {
             document.getElementById("search-button").classList.remove("on")
             this.focus()
         }
-        this.copyMode = !this.copyMode
 
     }
 }

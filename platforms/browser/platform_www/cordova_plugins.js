@@ -36,6 +36,20 @@ module.exports = [
         "id": "cordova-plugin-network-information.NetworkInfoProxy",
         "pluginId": "cordova-plugin-network-information",
         "runs": true
+    },
+    {
+        "file": "plugins/cordova-plugin-inappbrowser/www/inappbrowser.js",
+        "id": "cordova-plugin-inappbrowser.inappbrowser",
+        "pluginId": "cordova-plugin-inappbrowser",
+        "clobbers": [
+            "cordova.InAppBrowser.open"
+        ]
+    },
+    {
+        "file": "plugins/cordova-plugin-inappbrowser/src/browser/InAppBrowserProxy.js",
+        "id": "cordova-plugin-inappbrowser.InAppBrowserProxy",
+        "pluginId": "cordova-plugin-inappbrowser",
+        "runs": true
     }
 ];
 module.exports.metadata = 
@@ -44,7 +58,8 @@ module.exports.metadata =
     "cordova-plugin-whitelist": "1.3.4",
     "cordova-plugin-statusbar": "2.4.3",
     "cordova-plugin-webpack": "1.0.5",
-    "cordova-plugin-network-information": "2.0.2"
+    "cordova-plugin-network-information": "2.0.2",
+    "cordova-plugin-inappbrowser": "4.0.0"
 }
 // BOTTOM OF METADATA
 });

@@ -35,6 +35,7 @@
   },
   "devDependencies": {
     "chai": "^4.2.0",
+    "cordova-plugin-inappbrowser": "^4.0.0",
     "cordova-plugin-whitelist": "^1.3.4",
     "css-loader": "^3.5.2",
     "file-loader": "^6.0.0",
@@ -90,7 +91,8 @@
       "cordova-plugin-whitelist": {},
       "cordova-plugin-statusbar": {},
       "cordova-plugin-webpack": {},
-      "cordova-plugin-network-information": {}
+      "cordova-plugin-network-information": {},
+      "cordova-plugin-inappbrowser": {}
     },
     "platforms": [
       "ios",
