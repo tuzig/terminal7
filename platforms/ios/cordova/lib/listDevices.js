@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /*
        Licensed to the Apache Software Foundation (ASF) under one
        or more contributor license agreements.  See the NOTICE file
@@ -19,8 +17,26 @@
        under the License.
 */
 
-const { run } = require('./listEmulatorBuildTargets');
+const { superspawn: { spawn } } = require('cordova-common');
 
-run().then(targets => {
-    console.log(JSON.stringify(targets, null, 2));
-});
+const DEVICE_REGEX = /-o (iPhone|iPad|iPod)@.*?"USB Serial Number" = "([^"]*)"/gs;
+
+/**
+ * Gets list of connected iOS devices
+ * @return {Promise} Promise fulfilled with list of available iOS devices
+ */
+function listDevices () {
+    return spawn('ioreg', ['-p', 'IOUSB', '-l'])
+        .then(output => {
+            return [...matchAll(output, DEVICE_REGEX)]
+                .map(m => m.slice(1).reverse().join(' '));
+        });
+}
+
+// TODO: Should be replaced with String#matchAll once available
+function * matchAll (s, r) {
+    let match;
+    while ((match = r.exec(s))) yield match;
+}
+
+exports.run = listDevices;

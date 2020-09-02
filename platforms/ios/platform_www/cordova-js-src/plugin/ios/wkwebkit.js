@@ -19,21 +19,24 @@
  *
 */
 
-module.exports = {
-    id: 'ios',
-    bootstrap: function () {
-        // Attach the console polyfill that is iOS-only to window.console
-        // see the file under plugin/ios/console.js
-        require('cordova/modulemapper').clobbers('cordova/plugin/ios/console', 'window.console');
+var exec = require('cordova/exec');
 
-        // Attach the wkwebkit utility to window.WkWebView
-        // see the file under plugin/ios/wkwebkit.js
-        require('cordova/modulemapper').clobbers('cordova/plugin/ios/wkwebkit', 'window.WkWebView');
-
-        // Attach the splashscreen utility to window.navigator.splashscreen
-        // see the file under plugin/ios/launchscreen.js
-        require('cordova/modulemapper').clobbers('cordova/plugin/ios/launchscreen', 'navigator.splashscreen');
-
-        require('cordova/channel').onNativeReady.fire();
+var WkWebKit = {
+    allowsBackForwardNavigationGestures: function (allow) {
+        exec(null, null, 'CDVWebViewEngine', 'allowsBackForwardNavigationGestures', [allow]);
+    },
+    convertFilePath: function (path) {
+        if (!path || !window.CDV_ASSETS_URL) {
+            return path;
+        }
+        if (path.startsWith('/')) {
+            return window.CDV_ASSETS_URL + '/_app_file_' + path;
+        }
+        if (path.startsWith('file://')) {
+            return window.CDV_ASSETS_URL + path.replace('file://', '/_app_file_');
+        }
+        return path;
     }
 };
+
+module.exports = WkWebKit;

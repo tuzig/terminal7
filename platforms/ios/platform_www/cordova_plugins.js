@@ -1,11 +1,11 @@
 cordova.define('cordova/plugin_list', function(require, exports, module) {
   module.exports = [
     {
-      "id": "cordova-plugin-statusbar.statusbar",
-      "file": "plugins/cordova-plugin-statusbar/www/statusbar.js",
-      "pluginId": "cordova-plugin-statusbar",
+      "id": "cordova-plugin-inappbrowser.inappbrowser",
+      "file": "plugins/cordova-plugin-inappbrowser/www/inappbrowser.js",
+      "pluginId": "cordova-plugin-inappbrowser",
       "clobbers": [
-        "window.StatusBar"
+        "cordova.InAppBrowser.open"
       ]
     },
     {
@@ -26,19 +26,19 @@ cordova.define('cordova/plugin_list', function(require, exports, module) {
       ]
     },
     {
-      "id": "cordova-plugin-inappbrowser.inappbrowser",
-      "file": "plugins/cordova-plugin-inappbrowser/www/inappbrowser.js",
-      "pluginId": "cordova-plugin-inappbrowser",
+      "id": "cordova-plugin-statusbar.statusbar",
+      "file": "plugins/cordova-plugin-statusbar/www/statusbar.js",
+      "pluginId": "cordova-plugin-statusbar",
       "clobbers": [
-        "cordova.InAppBrowser.open"
+        "window.StatusBar"
       ]
     }
   ];
   module.exports.metadata = {
-    "cordova-plugin-whitelist": "1.3.4",
+    "cordova-plugin-inappbrowser": "4.0.0",
+    "cordova-plugin-network-information": "2.0.2",
     "cordova-plugin-statusbar": "2.4.3",
     "cordova-plugin-webpack": "1.0.5",
-    "cordova-plugin-network-information": "2.0.2",
-    "cordova-plugin-inappbrowser": "4.0.0"
+    "cordova-plugin-whitelist": "1.3.4"
   };
 });
