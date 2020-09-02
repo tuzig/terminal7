@@ -640,7 +640,8 @@ export class Pane extends Cell {
         // Enter and "n" find the next match
         if ((ev.keyCode == 13) || (ev.key == "n")) {
             if (!this.searchAddon
-                     .findPrevious(this.searchRE, SEARCH_OPTS))
+                // TODO: fix findPrevious and use it in the next line
+                     .findNext(this.searchRE, SEARCH_OPTS))
                 console.log(`Couldn't find "${this.searchRE}"`)
             else
                 console.log(`Found "${this.searchRE}"`)
@@ -679,7 +680,8 @@ export class Pane extends Cell {
                 i.value = this.searchRE = urlRegex
                 this.handleCopyModeKey({keyCode: 13})
             }
-            f.onclick = _ => this.searchAddon.findPrevious(fileRegex, SEARCH_OPTS)
+            // TODO: fix findPrevious and use it in the next line
+            f.onclick = _ => this.searchAddon.findNext(fileRegex, SEARCH_OPTS)
             i.onkeydown = ev => {
                 if (ev.keyCode == 13) {
                     ev.preventDefault()
