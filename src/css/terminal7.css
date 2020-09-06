@@ -175,6 +175,9 @@ nav i {
     border-radius: 0 0 12px 12px;
     text-align: center;
 }
+.internal>div:last-child {
+    border-right: none;
+}
 .internal>div {
     display: table-cell;
     text-align: center;
