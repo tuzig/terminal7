@@ -194,7 +194,7 @@ export class Host {
         // suthenticate starts the ball rolling
         this.login((this.state == "disconnected") || (this.state == "failed"))
         setTimeout(ev => {
-            if (this.state != "completed") {
+            if ((this.state != "completed") && (this.state != "connected")) {
                 this.notify("Failed to connect to the server")
                 this.updateState("disconnected")
             }

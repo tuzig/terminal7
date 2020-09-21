@@ -590,9 +590,9 @@ export class Pane extends Cell {
 
         if (reconnect)
             this.d = this.host.pc.createDataChannel(
-                `${tSize} >${this.channelId}`)
+                `${tSize},>${this.channelId}`)
         else
-            this.d = this.host.pc.createDataChannel(tSize + ' zsh')
+            this.d = this.host.pc.createDataChannel(tSize + ',zsh')
 
         this.d.onclose = e => {
             this.state = "disconnected"
