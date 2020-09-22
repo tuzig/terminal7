@@ -19,12 +19,17 @@ export class Window {
         this.e.className = "window"
         this.e.id = `tab-${this.host.id}.${this.id}`
         e.appendChild(this.e)
+        // filling the entire top of the screen all the way down to the tabbar
+        let tabbar = this.host.e.querySelector(".tabbar"),
+            r = tabbar.getBoundingClientRect(),
+            sy = r.y / document.body.offsetHeight
+
         // create the first layout and pane
-        let props = {sx: 1.0, sy: 0.88, // -this.t7/bottomMargin,
-                     xoff: 0, yoff: 0,
-                     w: this,
-                     host: this.host},
-            layout = this.addLayout("TBD", props)
+        let paneProps = {sx: 1.0, sy: sy,
+                         xoff: 0, yoff: 0,
+                         w: this,
+                         host: this.host},
+            layout = this.addLayout("TBD", paneProps)
             
         // Add the name with link to tab bar
         let div = document.createElement('div'),
@@ -44,10 +49,10 @@ export class Window {
         h.on('switch', (ev) => this.focus())
         div.appendChild(a)
         this.nameE = a
-        let wn = this.host.e.querySelector(".tabs")
+        let wn = this.host.e.querySelector(".tabbar-names")
         if (wn != null)
             wn.appendChild(div)
-        this.activeP = layout.addPane(props)
+        this.activeP = layout.addPane(paneProps)
         this.focus()
     }
     /*

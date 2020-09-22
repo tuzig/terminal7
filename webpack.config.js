@@ -16,7 +16,11 @@ module.exports = {
               limit: 10000,
               name: 'fonts/[name].[ext]',
             },
-        },
+        }, {
+            test: /\.js$/,
+            enforce: 'pre',
+            use: ['source-map-loader'],
+          },
     ]},
     devServer: { host: "0.0.0.0"},
     devtool: "inline-source-map"

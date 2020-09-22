@@ -1,10 +1,20 @@
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
+import { SearchAddon } from 'xterm-addon-search'
+import { fileRegex, urlRegex } from './utils.js'
 
-const   DEFAULT_XTERM_THEME = {foreground: "#00FAFA", background: "#000"},
+const   DEFAULT_XTERM_THEME = {
+            foreground: "#00FAFA", 
+            background: "#000",
+            selection: "#D9F505"},
         RETRIES             = 3,
         ABIT                = 10,
-        TIMEOUT             = 3000
+        TIMEOUT             = 3000,
+        SEARCH_OPTS = {
+            regex: true,
+            wholeWord: false,
+            incremental: false,
+            caseSensitive: true}
 
 export class Cell {
     constructor(props) {
@@ -409,6 +419,7 @@ export class Pane extends Cell {
         this.scrolling = false
         this.scrollLingers4 = props.scrollLingers4 || 2000
         this.theme = props.theme || DEFAULT_XTERM_THEME
+        this.copyMode = false
     }
 
     /*
@@ -431,9 +442,11 @@ export class Pane extends Cell {
             fontSize: this.fontSize,
             theme: this.theme,
             rows:24,
+            disableStdin: true,
             cols:80
         })
         this.fitAddon = new FitAddon()
+        this.searchAddon = new SearchAddon();
 
         // there's a container div we need to get xtermjs to fit properly
         this.e.appendChild(con)
@@ -442,6 +455,7 @@ export class Pane extends Cell {
         this.t.open(con)
         // the canvas gets the touch event and the nadler needs to get back here
         this.t.loadAddon(this.fitAddon)
+        this.t.loadAddon(this.searchAddon)
         this.fit()
         con.querySelector(".xterm-cursor-layer").p = this
         this.t.textarea.tabIndex = -1
@@ -459,10 +473,15 @@ export class Pane extends Cell {
                 else if (ev.domEvent.key == "-") {
                     this.scale(-1)
                 }
+                else if (ev.domEvent.key == "?") {
+                    this.toggleSearch()
+                }
                 afterLeader = false
             }
+            else if (this.copyMode) {
+                this.handleCopyModeKey(ev.domEvent)
             // TODO: make the leader key configurable
-            else if ((ev.domEvent.ctrlKey == true) && (ev.domEvent.key == "a")) {
+            } else if ((ev.domEvent.ctrlKey == true) && (ev.domEvent.key == "a")) {
                 afterLeader = true
                 return
             }
@@ -474,7 +493,8 @@ export class Pane extends Cell {
         var tf
         this.t.onScroll(ev => {
             this.scrolling = true
-            tf !== undefined && clearTimeout(tf)
+            if (tf !== undefined)
+                clearTimeout(tf)
             tf = setTimeout(e => this.scrolling = false, this.scrollLingers4)
         })
         this.t.textarea.addEventListener('paste', (event) => {
@@ -523,7 +543,6 @@ export class Pane extends Cell {
             this.t.focus()
         else 
             console.log("can't focus, this.t is undefined")
-        window.location.href = `#${this.e.id}`
     }
     /*
      * Splitting the pane, receivees a dir-  either "topbottom" or "rightleft"
@@ -571,9 +590,9 @@ export class Pane extends Cell {
 
         if (reconnect)
             this.d = this.host.pc.createDataChannel(
-                `${tSize} >${this.channelId}`)
+                `${tSize},>${this.channelId}`)
         else
-            this.d = this.host.pc.createDataChannel(tSize + ' zsh')
+            this.d = this.host.pc.createDataChannel(tSize + ',zsh')
 
         this.d.onclose = e => {
             this.state = "disconnected"
@@ -594,6 +613,7 @@ export class Pane extends Cell {
                     str = enc.decode(m.data)
                 this.state = "connected"
                 this.channelId = parseInt(str)
+                this.host.onPaneConnected(this)
             }
             else if (this.state == "disconnected") {
                 this.buffer.push(new Uint8Array(m.data))
@@ -609,5 +629,75 @@ export class Pane extends Cell {
     toggleZoom() {
         super.toggleZoom()
         this.fit()
+    }
+    /*
+     * Pane.handleCopyModeKey(ev) is called on a key press event when the
+     * pane is in copy mode. 
+     * Copy mode uses vim movment commands to let the user for text, mark it 
+     * and copy it.
+     */
+    handleCopyModeKey(ev) {
+        // Enter and "n" find the next match
+        if ((ev.keyCode == 13) || (ev.key == "n")) {
+            if (!this.searchAddon
+                // TODO: fix findPrevious and use it in the next line
+                     .findNext(this.searchRE, SEARCH_OPTS))
+                console.log(`Couldn't find "${this.searchRE}"`)
+            else
+                console.log(`Found "${this.searchRE}"`)
+        }
+        else if (ev.key == "o") {
+            var ref = cordova.InAppBrowser.open(this.t.getSelection(), "_system", "");
+        }
+        else if (ev.key == "q") {
+            this.toggleSearch()
+            this.t.scrollToBottom()
+        }
+    }
+    /*
+     * Pane.enterSearch displays and handles pane search
+     * First, tab names are replaced with an input field for the search string
+     * as the user keys in the chars the display is scrolled to their first
+     * occurences on the terminal buffer and the user can use line-mode vi
+     * keys to move around, mark text and yank it
+     */
+    toggleSearch() {
+        // show the search field
+        const ne = this.host.e.querySelector(".tabbar-names-nav"),
+              se = this.host.e.querySelector(".tabbar-search")
+        this.copyMode = !this.copyMode
+        if (this.copyMode) {
+            ne.classList.add("hidden")
+            se.classList.remove("hidden")
+            document.getElementById("search-button").classList.add("on")
+            let u = se.querySelector("a[href='#find-url']"),
+                f = se.querySelector("a[href='#find-file']"),
+                i = se.querySelector("input[name='regex']")
+            u.onclick = ev => {
+                ev.preventDefault()
+                ev.stopPropagation()
+                this.focus()
+                i.value = this.searchRE = urlRegex
+                this.handleCopyModeKey({keyCode: 13})
+            }
+            // TODO: fix findPrevious and use it in the next line
+            f.onclick = _ => this.searchAddon.findNext(fileRegex, SEARCH_OPTS)
+            i.onkeydown = ev => {
+                if (ev.keyCode == 13) {
+                    ev.preventDefault()
+                    ev.stopPropagation()
+                    this.focus()
+                    this.searchRE = ev.target.value
+                    this.handleCopyModeKey(ev)
+                }
+            }
+            i.focus()
+        } else {
+            ne.classList.remove("hidden")
+            se.classList.add("hidden")
+            document.getElementById("search-button").classList.remove("on")
+            this.focus()
+        }
+
     }
 }

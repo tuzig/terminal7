@@ -61,25 +61,30 @@
   <i id="trash-button" class="f7-icons">bin_xmark</i>
   <i class="f7-icons">doc_on_clipboard</i>
   <i id="tabbar-button" class="f7-icons off">arrow_branch</i>
-  <i class="f7-icons off">doc_text_search</i>
+  <i id="search-button" class="f7-icons off">doc_text_search</i>
   <i class="f7-icons off">radiowaves_left</i>
   <i class="f7-icons">gear</i>
       </nav>
 </div>
 
-  <!-- The following templates are used by terminal7's code to generate 
-      complex elements -->
+    <!-- every host creates his own tabbar based on the template below -->
     <template id="tabbar-template">
     <div class="tabbar bar"> 
-      <nav>
+      <nav class="tabbar-names-nav">
           <i class="add-tab f7-icons">plus</i>
-          <nav class="tabs">
+          <nav class="tabbar-names internal">
           </nav>
           <i class="bang f7-icons off">exclamationmark</i>
       </nav>
+      <nav class="tabbar-search hidden">
+        <i class="search-up f7-icons">arrow_up</i>
+        <i class="search-down f7-icons">arrow_down</i>
+        <input type="text" name="regex" placeholder="regex here">
+        <a href="#find-url">URL</a>
+        <a href="#find-file">File</a>
+       </nav>
     </div>
     </template>
-
   <script>
       function onDeviceReady() {
           StatusBar.hide()
