@@ -245,11 +245,10 @@ export class Host {
      */
     login(reconnect) {
         let resolved = false
-        let msgId = this.sendCTRLMsg({auth: {
-                            username: this.user,
-                            secret: this.secret
-        }})
-
+        let msgId = this.sendCTRLMsg({
+            type: "auth",
+            args: {token: "MyToken"}
+        })
         this.onack[msgId] = t => {
             resolved = true
             this.notify("Authorization accepted")
@@ -318,13 +317,13 @@ export class Host {
                   msg = JSON.parse(d.decode(m.data))
 
             // handle Ack
-            if (msg.ack !== undefined) {
-                const handler = this.onack[msg.ack.ref]
+            if (msg.type == "ack") {
+                const handler = this.onack[msg.args.ref]
                 console.log("got cdc message:", this.state, msg)
                 if (handler != undefined) {
-                    handler(msg.ack.body)
-                    // just to make sure we don't call it twice
-                    delete this.onack[msg.ack.ref]
+                    handler(msg.args.body)
+                    // just to make sure we'll never  call it twice
+                    delete this.onack[msg.args.ref]
                 }
                 else
                     console.log("Got a cdc ack with no handler", msg)
@@ -354,11 +353,12 @@ export class Host {
      */
     sendSize(pane) {
         if ((this.pc != null) && pane.channelId)
-            this.sendCTRLMsg({resize_pty: {
-                                channel_id: pane.channelId,
-                                sx: pane.t.cols,
-                                sy: pane.t.rows
-                              }})
+            this.sendCTRLMsg({
+                type: "resize", 
+                args: {
+                       sx: pane.t.cols,
+                       sy: pane.t.rows}
+            })
     }
     onPaneConnected(pane) {
         // hide notifications
