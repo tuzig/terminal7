@@ -352,12 +352,14 @@ export class Host {
      * Host.sendSize sends a control message with the pane's size to the server
      */
     sendSize(pane) {
-        if ((this.pc != null) && pane.channelId)
+        if ((this.pc != null) && pane.id)
             this.sendCTRLMsg({
                 type: "resize", 
                 args: {
+                       pane_id: pane.id,
                        sx: pane.t.cols,
-                       sy: pane.t.rows}
+                       sy: pane.t.rows
+                }
             })
     }
     onPaneConnected(pane) {

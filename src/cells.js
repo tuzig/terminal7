@@ -414,7 +414,7 @@ export class Pane extends Cell {
         this.d = null
         this.zoomed = false
         this.active = false
-        this.channelId = null
+        this.id = null
         this.fontSize = props.fontSize || 12
         this.scrolling = false
         this.scrollLingers4 = props.scrollLingers4 || 2000
@@ -590,7 +590,7 @@ export class Pane extends Cell {
 
         if (reconnect)
             this.d = this.host.pc.createDataChannel(
-                `${tSize},>${this.channelId}`)
+                `${tSize},>${this.id}`)
         else
             this.d = this.host.pc.createDataChannel(tSize + ',zsh')
 
@@ -612,7 +612,7 @@ export class Pane extends Cell {
                 var enc = new TextDecoder("utf-8"),
                     str = enc.decode(m.data)
                 this.state = "connected"
-                this.channelId = parseInt(str)
+                this.id = parseInt(str)
                 this.host.onPaneConnected(this)
             }
             else if (this.state == "disconnected") {
