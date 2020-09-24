@@ -20,6 +20,7 @@
 #import <UIKit/UIKit.h>
 
 #define kCDVWebViewEngineScriptMessageHandlers @"kCDVWebViewEngineScriptMessageHandlers"
+#define kCDVWebViewEngineUIWebViewDelegate @"kCDVWebViewEngineUIWebViewDelegate"
 #define kCDVWebViewEngineWKNavigationDelegate @"kCDVWebViewEngineWKNavigationDelegate"
 #define kCDVWebViewEngineWKUIDelegate @"kCDVWebViewEngineWKUIDelegate"
 #define kCDVWebViewEngineWebViewPreferences @"kCDVWebViewEngineWebViewPreferences"

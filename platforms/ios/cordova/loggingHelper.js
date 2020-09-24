@@ -17,7 +17,7 @@
     under the License.
 */
 
-const CordovaLogger = require('cordova-common').CordovaLogger;
+var CordovaLogger = require('cordova-common').CordovaLogger;
 
 module.exports = {
     adjustLoggerLevel: function (opts) {

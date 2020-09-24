@@ -32,37 +32,8 @@
     BOOL value = defaultValue;
     id prefObj = [self cordovaSettingForKey:key];
 
-    if (prefObj == nil) {
-        NSLog(@"The preference key \"%@\" is not defined and will default to \"%@\"",
-              key,
-              (defaultValue ? @"TRUE" : @"FALSE"));
-
-        return value;
-    }
-
-    if ([prefObj isKindOfClass:NSString.class]) {
-        prefObj = [prefObj lowercaseString];
-
-        if (
-            // True Case
-            [prefObj isEqualToString:@"true"] ||
-            [prefObj isEqualToString:@"1"] ||
-            // False Case
-            [prefObj isEqualToString:@"false"] ||
-            [prefObj isEqualToString:@"0"]
-            )
-        {
-            value = [prefObj isEqualToString:@"true"] || [prefObj isEqualToString:@"1"];
-        }
-    } else if (
-               [prefObj isKindOfClass:NSNumber.class] &&
-               (
-                [prefObj isEqual: @YES] ||
-                [prefObj isEqual: @NO]
-                )
-               )
-    {
-        value = [prefObj isEqual: @YES];
+    if (prefObj != nil) {
+        value = [(NSNumber*)prefObj boolValue];
     }
 
     return value;

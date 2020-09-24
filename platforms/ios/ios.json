@@ -55,19 +55,19 @@
   },
   "installed_plugins": {
     "cordova-plugin-inappbrowser": {
-      "PACKAGE_NAME": "com.tuzig.terminal7"
+      "PACKAGE_NAME": "$(PRODUCT_BUNDLE_IDENTIFIER)"
     },
     "cordova-plugin-network-information": {
-      "PACKAGE_NAME": "com.tuzig.terminal7"
+      "PACKAGE_NAME": "$(PRODUCT_BUNDLE_IDENTIFIER)"
     },
     "cordova-plugin-statusbar": {
-      "PACKAGE_NAME": "com.tuzig.terminal7"
+      "PACKAGE_NAME": "$(PRODUCT_BUNDLE_IDENTIFIER)"
     },
     "cordova-plugin-webpack": {
-      "PACKAGE_NAME": "com.tuzig.terminal7"
+      "PACKAGE_NAME": "$(PRODUCT_BUNDLE_IDENTIFIER)"
     },
     "cordova-plugin-whitelist": {
-      "PACKAGE_NAME": "com.tuzig.terminal7"
+      "PACKAGE_NAME": "$(PRODUCT_BUNDLE_IDENTIFIER)"
     }
   },
   "dependent_plugins": {},

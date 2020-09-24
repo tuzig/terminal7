@@ -19,15 +19,9 @@
 
 #import <Foundation/Foundation.h>
 
-@protocol CDVScreenOrientationDelegate <NSObject>
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED < 90000  
-- (NSUInteger)supportedInterfaceOrientations;  
-#else  
-- (UIInterfaceOrientationMask)supportedInterfaceOrientations;
-#endif
-
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation;
-- (BOOL)shouldAutorotate;
-
+@interface CDVUserAgentUtil : NSObject
++ (NSString*)originalUserAgent;
++ (void)acquireLock:(void (^)(NSInteger lockToken))block;
++ (void)releaseLock:(NSInteger*)lockToken;
++ (void)setUserAgent:(NSString*)value lockToken:(NSInteger)lockToken;
 @end
