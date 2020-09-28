@@ -238,6 +238,15 @@ describe("terminal7", function() {
             w.activeP.yoff = 0.2
             p0 = w.activeP
         })
+        it("can be restored from text", () => {
+            let p1 = p0.split("rightleft", 0.5)
+            h2 = t.addHost({t7: t})
+            h2.addWindow("restored",
+    `[0.800x0.300,0.100,0.200,${p0.id},0.800x0.300,0.100,0.500,${p1.id}]`)
+            expect(h2.cells[1].id).to.equal(p0.id)
+            expect(h2.cells[2].id).to.equal(p1.id)
+        })
+
         it("can move a border between panes", function () {
             let p1 = p0.split("rightleft")
             expect(p0.sy).to.equal(0.3)
