@@ -265,7 +265,7 @@ export class Layout extends Cell {
         this.cells.forEach((c) => (typeof c.t == "object") && c.fit())
     }
     toText() {
-        // r is the text we return, start with our own dimensions & position
+        // r is the text the function returns
         let r = (this.dir=="rightleft")?"[":"{"
         let that = this
         // get the dimensions of all the cell, recurse if a layout is found
@@ -414,7 +414,6 @@ export class Pane extends Cell {
         this.d = null
         this.zoomed = false
         this.active = false
-        this.id = null
         this.fontSize = props.fontSize || 12
         this.scrolling = false
         this.scrollLingers4 = props.scrollLingers4 || 2000
