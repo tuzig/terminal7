@@ -285,7 +285,7 @@ export class Layout extends Cell {
             if ((c != that) && (typeof c.toText == "function"))
                 r += c.toText()
             else
-                r += `,${c.id}`
+                r += `,${c.paneID || c.id}`
         })
         r += (this.dir=="rightleft")?"]":"}"
         return r
@@ -414,6 +414,7 @@ export class Pane extends Cell {
         this.d = null
         this.zoomed = false
         this.active = false
+        this.paneID = null
         this.fontSize = props.fontSize || 12
         this.scrolling = false
         this.scrollLingers4 = props.scrollLingers4 || 2000
@@ -589,7 +590,7 @@ export class Pane extends Cell {
 
         if (reconnect)
             this.d = this.host.pc.createDataChannel(
-                `${tSize},>${this.id}`)
+                `${tSize},>${this.paneID}`)
         else
             this.d = this.host.pc.createDataChannel(tSize + ',zsh')
 
@@ -611,7 +612,7 @@ export class Pane extends Cell {
                 var enc = new TextDecoder("utf-8"),
                     str = enc.decode(m.data)
                 this.state = "connected"
-                this.id = parseInt(str)
+                this.paneID = parseInt(str)
                 this.host.onPaneConnected(this)
             }
             else if (this.state == "disconnected") {
