@@ -285,7 +285,7 @@ export class Host {
     /*
      * Adds a window, complete with a first layout and pane
      */
-    addWindow(name) {
+    addWindow(name, layout) {
         let id = this.windows.length
         if (!(name instanceof String))
             name = `Tab ${id+1}`
@@ -293,6 +293,38 @@ export class Host {
         this.windows.push(w)
         w.open(this.e)
         this.activeW = w
+        var panes = []
+        var lastLayout = null
+        let dir = null
+        let paneRE = /^0\.(\d+)x0\.(\d+),0\.(\d+),0\.(\d+)(\[\{,)?/
+
+        if (layout instanceof String) {
+            for (int i=0; i < len(layout); ) {
+                let nextDir = null
+                var parts = paneRE.exec(layout.SS
+                if (layout[i] == "[")
+                    nextDir = "rightleft"
+                else
+                    nextDir = "topbottom"
+                if ((nextDir != null) && (lastPane != null)) {
+                    // Add the layout and the pane
+                    let l = w.addLayout(nextDir, lastPane)
+                    l.addPane(lastPane)
+                          xoff: xoff, yoff: yoff,
+                          parent: this})
+
+                }
+                else  {
+                    // /^\[0.800x0.300,0.100,0.200,\d+,0.800x0.300,0.100,0.500,\d+\]/)
+                    // it's a pane! get params
+                }
+
+                if (dir!=null) {
+                    console.log("")
+                }
+            }
+        }
+
         return w
     }
     /*
@@ -357,11 +389,11 @@ export class Host {
      * Host.sendSize sends a control message with the pane's size to the server
      */
     sendSize(pane) {
-        if ((this.pc != null) && pane.id)
+        if ((this.pc != null) && pane.paneID)
             this.sendCTRLMsg({
                 type: "resize", 
                 args: {
-                       pane_id: pane.id,
+                       pane_id: pane.paneID,
                        sx: pane.t.cols,
                        sy: pane.t.rows
                 }
