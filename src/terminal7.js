@@ -88,8 +88,6 @@ export class Terminal7 {
         document.addEventListener("online", ev => {
             console.log("online")
             this.clear()
-            if (this.activeH)
-                setTimeout(_ => this.activeH.connect(), 100)
         })
         document.addEventListener("offline", ev => {
             console.log("offline")

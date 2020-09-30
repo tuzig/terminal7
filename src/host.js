@@ -107,6 +107,7 @@ export class Host {
                 this.t7.goHome()
             })
             e.style.display = "block"
+            
         }
         /* Maybe we should restart Ice. duno
         else if (state === "failed") {
@@ -115,6 +116,8 @@ export class Host {
                 .then(sendOfferToServer)
             this.pc.restartIce()
         */
+        else 
+            e.style.disply = "none"
              
         this.state = state 
         console.log("host state change: ", this.state)
@@ -158,6 +161,8 @@ export class Host {
             this.e.style.display = "block"
             this.addWindow('Welcome')
         }
+        if (this.pc != null)
+            this.pc.close()
 
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: 'stun:stun2.l.google.com:19302' }
