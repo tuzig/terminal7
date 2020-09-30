@@ -12,7 +12,7 @@ module.exports = function(config) {
 
         // frameworks to use
         // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-        frameworks: ['mocha', 'chai'],
+        frameworks: ['mocha', 'chai', 'source-map-support'],
 
 
         // list of files / patterns to load in the browser
@@ -52,8 +52,8 @@ module.exports = function(config) {
         preprocessors: {
           // add webpack as preprocessor
           '**/*.html': ['html2js'],
-          'tests/*.js': ['webpack', 'sourcemap'],
-          'src/*.js': ['webpack', 'sourcemap']
+          'tests/*.js': ['webpack'],
+          'src/*.js': ['webpack']
         },
 
         webpack: webpackConfig,
