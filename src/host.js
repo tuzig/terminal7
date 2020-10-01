@@ -159,7 +159,7 @@ export class Host {
         if (this.activeW == null) {
             // add the first window
             this.e.style.display = "block"
-            this.addWindow()
+            this.addWindow("just a name")
         }
         if (this.pc != null)
             this.pc.close()
@@ -298,21 +298,7 @@ export class Host {
                 w: w,
                 t7: this.t7
             }
-            function restoreLayout(part) {
-                var l = w.addLayout(part.dir, props)
-                part.cells.forEach(cell => {
-                    if ("dir" in cell) {
-                        // recurselvly add a new layout
-                        const newL = restoreLayout(cell, props)
-                        newL.layout = l
-                    }
-                    else {
-                        l.addPane(cell)
-                    }
-                })
-                return l
-            }
-            restoreLayout(layout)
+            w.restoreLayout(layout)
         } else {
             // create the first layout and pane
             // filling the entire top of the screen

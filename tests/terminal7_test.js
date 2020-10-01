@@ -227,7 +227,7 @@ describe("terminal7", function() {
     })
     describe("layout", () => {
         var h, w, p0
-        it("can be restored from object", () => {
+        it("can be restored from a simple layout", () => {
             h = t.addHost({t7: t})
             h.open(e)
             w = h.addWindow("restored", {
@@ -251,6 +251,43 @@ describe("terminal7", function() {
             expect(w.rootLayout.dir).to.equal("topbottom")
             expect(w.rootLayout.cells[0].paneID).to.equal(12)
             expect(w.rootLayout.cells[1].paneID).to.equal(23)
+        })
+        it("can be restored from a -| layout", () => {
+            h = t.addHost({t7: t})
+            h.open(e)
+            w = h.addWindow("restored", {
+                "dir": "topbottom",
+                "cells": [
+                    {
+                        sx: 0.8,
+                        sy: 0.3,
+                        xoff: 0.1,
+                        yoff: 0.2,
+                        pane_id: 12
+                    }, {
+                        dir: "rightleft",
+                        cells: [
+                            {
+                                sx: 0.4,
+                                sy: 0.3,
+                                xoff: 0.1,
+                                yoff: 0.5,
+                                pane_id: -1
+                            }, {
+                                sx: 0.4,
+                                sy: 0.3,
+                                xoff: 0.5,
+                                yoff: 0.5,
+                                pane_id: -1
+                            }
+                        ]
+                    }
+                ]}
+            )
+            expect(w.rootLayout.dir).to.equal("topbottom")
+            expect(w.rootLayout.cells.length).to.equal(2)
+            expect(w.rootLayout.cells[1].dir).to.equal("rightleft")
+            expect(w.rootLayout.cells[1].cells.length).to.equal(2)
         })
 
         it("can move a border between panes", function () {

@@ -67,7 +67,29 @@ export class Window {
         if (this.rootLayout == null)
             this.rootLayout = l
         return l
-
+    }
+    restoreLayout(layout) {
+        var l = this.addLayout(layout.dir, {
+            t7: this.t7,
+            w: this,
+            host: this.host,
+            sx: layout.sx || null,
+            sy: layout.sy || null,
+            xoff: layout.xoff || null,
+            yoff: layout.yoff || null
+        })
+        layout.cells.forEach(cell => {
+            if ("dir" in cell) {
+                // recurselvly add a new layout
+                const newL = this.restoreLayout(cell)
+                newL.layout = l
+                l.cells.push(newL)
+            }
+            else {
+                l.addPane(cell)
+            }
+        })
+        return l
     }
     /*
      * Replace the window name with an input field and updates the window
