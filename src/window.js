@@ -6,7 +6,7 @@ export class Window {
         this.host = props.host
         this.id = props.id
         this.name = props.name || `Tab ${this.id+1}`
-        this.cells = []
+        this.rootLayout = null
         this.e = null
         this.activeP = null
     }
@@ -19,18 +19,7 @@ export class Window {
         this.e.className = "window"
         this.e.id = `tab-${this.host.id}.${this.id}`
         e.appendChild(this.e)
-        // filling the entire top of the screen all the way down to the tabbar
-        let tabbar = this.host.e.querySelector(".tabbar"),
-            r = tabbar.getBoundingClientRect(),
-            sy = r.y / document.body.offsetHeight
 
-        // create the first layout and pane
-        let paneProps = {sx: 1.0, sy: sy,
-                         xoff: 0, yoff: 0,
-                         w: this,
-                         host: this.host},
-            layout = this.addLayout("TBD", paneProps)
-            
         // Add the name with link to tab bar
         let div = document.createElement('div'),
             a = document.createElement('a')
@@ -52,8 +41,6 @@ export class Window {
         let wn = this.host.e.querySelector(".tabbar-names")
         if (wn != null)
             wn.appendChild(div)
-        this.activeP = layout.addPane(paneProps)
-        this.focus()
     }
     /*
      * Change the active window, all other windows and
@@ -77,6 +64,8 @@ export class Window {
         let l = new Layout(dir, basedOn)
         l.id = this.host.cells.length
         this.host.cells.push(l)
+        if (this.rootLayout == null)
+            this.rootLayout = l
         return l
 
     }

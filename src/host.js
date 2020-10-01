@@ -159,7 +159,7 @@ export class Host {
         if (this.activeW == null) {
             // add the first window
             this.e.style.display = "block"
-            this.addWindow('Welcome')
+            this.addWindow()
         }
         if (this.pc != null)
             this.pc.close()
@@ -292,39 +292,44 @@ export class Host {
         let w = new Window({name:name, host: this, id: id})
         this.windows.push(w)
         w.open(this.e)
-        this.activeW = w
-        var panes = []
-        var lastLayout = null
-        let dir = null
-        let paneRE = /^0\.(\d+)x0\.(\d+),0\.(\d+),0\.(\d+)(\[\{,)?/
-
-        if (layout instanceof String) {
-            for (int i=0; i < len(layout); ) {
-                let nextDir = null
-                var parts = paneRE.exec(layout.SS
-                if (layout[i] == "[")
-                    nextDir = "rightleft"
-                else
-                    nextDir = "topbottom"
-                if ((nextDir != null) && (lastPane != null)) {
-                    // Add the layout and the pane
-                    let l = w.addLayout(nextDir, lastPane)
-                    l.addPane(lastPane)
-                          xoff: xoff, yoff: yoff,
-                          parent: this})
-
-                }
-                else  {
-                    // /^\[0.800x0.300,0.100,0.200,\d+,0.800x0.300,0.100,0.500,\d+\]/)
-                    // it's a pane! get params
-                }
-
-                if (dir!=null) {
-                    console.log("")
-                }
+        if (layout instanceof Object) {
+            let props = {
+                host: this,
+                w: w,
+                t7: this.t7
             }
+            function restoreLayout(part) {
+                var l = w.addLayout(part.dir, props)
+                part.cells.forEach(cell => {
+                    if ("dir" in cell) {
+                        // recurselvly add a new layout
+                        const newL = restoreLayout(cell, props)
+                        newL.layout = l
+                    }
+                    else {
+                        l.addPane(cell)
+                    }
+                })
+                return l
+            }
+            restoreLayout(layout)
+        } else {
+            // create the first layout and pane
+            // filling the entire top of the screen
+            let tabbar = this.e.querySelector(".tabbar"),
+                r = tabbar.getBoundingClientRect(),
+                sy = r.y / document.body.offsetHeight
+            let paneProps = {sx: 1.0, sy: sy,
+                             xoff: 0, yoff: 0,
+                             w: w,
+                             host: this},
+                layout = w.addLayout("TBD", paneProps)
+            this.activeP = layout.addPane(paneProps)
+            this.rootLayout = layout
+            this.focus()
         }
-
+        this.activeW = w
+        w.focus()
         return w
     }
     /*

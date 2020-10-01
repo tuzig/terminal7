@@ -41,7 +41,7 @@ export class Terminal7 {
             e.id = "terminal7"
             document.body.appendChild(e)
         }
-        else this.e = e
+        this.e = e
         window.onresize = 
             c => this.cells.forEach(c => {if (c.fit != undefined) c.fit()})
         // buttons

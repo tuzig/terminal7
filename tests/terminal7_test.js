@@ -34,7 +34,6 @@ describe("terminal7", function() {
         beforeEach(() => {
             h = t.addHost({t7:t})
             h.open(e)
-            debugger
             w = h.addWindow("1,2,3 testing")
             w.activeP.sx = 0.8
             w.activeP.sy = 0.6
@@ -228,7 +227,33 @@ describe("terminal7", function() {
     })
     describe("layout", () => {
         var h, w, p0
-        beforeEach(() => {
+        it("can be restored from object", () => {
+            h = t.addHost({t7: t})
+            h.open(e)
+            w = h.addWindow("restored", {
+                "dir": "topbottom",
+                "cells": [
+                    {
+                        sx: 0.8,
+                        sy: 0.3,
+                        xoff: 0.1,
+                        yoff: 0.2,
+                        pane_id: 12
+                    }, {
+                        sx: 0.8,
+                        sy: 0.3,
+                        xoff: 0.1,
+                        yoff: 0.5,
+                        pane_id: 23
+                    }
+                ]}
+            )
+            expect(w.rootLayout.dir).to.equal("topbottom")
+            expect(w.rootLayout.cells[0].paneID).to.equal(12)
+            expect(w.rootLayout.cells[1].paneID).to.equal(23)
+        })
+
+        it("can move a border between panes", function () {
             h = t.addHost({t7:t})
             h.open(e)
             w = h.addWindow("1,2,3 testing")
@@ -237,19 +262,6 @@ describe("terminal7", function() {
             w.activeP.xoff = 0.1
             w.activeP.yoff = 0.2
             p0 = w.activeP
-        })
-        it("can be restored from text", () => {
-            let p1 = p0.split("rightleft", 0.5),
-                h2 = t.addHost({t7: t})
-
-            h2.addWindow("restored",
-    `[0.800x0.300,0.100,0.200,${p0.id},0.800x0.300,0.100,0.500,${p1.id}]`)
-            expect(h2.cells.length).to.equal(4)
-            expect(h2.cells[1].id).to.equal(p0.id)
-            expect(h2.cells[2].id).to.equal(p1.id)
-        })
-
-        it("can move a border between panes", function () {
             let p1 = p0.split("rightleft")
             expect(p0.sy).to.equal(0.3)
             expect(p1.sy).to.equal(0.3)

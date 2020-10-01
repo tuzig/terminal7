@@ -132,7 +132,6 @@ export class Cell {
     close() {
         this.layout.onClose(this)
         // remove this from the window
-        this.w.cells.splice(this.w.cells.indexOf(this), 1)
         this.e.remove()
     }
     toggleZoom() {
@@ -163,11 +162,15 @@ export class Layout extends Cell {
      */
     constructor(dir, basedOn) {
         console.log("in layout constructore")
-        super({sx: basedOn.sx, sy: basedOn.sy,
-               xoff: basedOn.xoff, yoff: basedOn.yoff,
-               w: basedOn.w, t7: basedOn.t7,
-               className: "layout",
-               host: basedOn.host})
+        super({
+            sx: basedOn.sx || 1.0, 
+            sy: basedOn.sy || 1.0,
+            xoff: basedOn.xoff || 0.0,
+            yoff: basedOn.yoff || 0.0,
+            w: basedOn.w || null,
+            t7: basedOn.t7 || null,
+            className: "layout",
+            host: basedOn.host ||null})
         this.dir = dir
         // if we're based on a cell, we make it our first cell
         if (basedOn instanceof Cell) {
@@ -414,7 +417,7 @@ export class Pane extends Cell {
         this.d = null
         this.zoomed = false
         this.active = false
-        this.paneID = null
+        this.paneID = props.pane_id || null
         this.fontSize = props.fontSize || 12
         this.scrolling = false
         this.scrollLingers4 = props.scrollLingers4 || 2000
