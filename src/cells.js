@@ -294,6 +294,34 @@ export class Layout extends Cell {
         return r
     }
 
+    dump() {
+        // r is the text the function returns
+        let d = {
+            dir: this.dir,
+            sx: this.sx,
+            sy: this.sy,
+            xoff: this.xoff,
+            yoff: this.yoff,
+            cells: [],
+        }
+        // get the dimensions of all the cell, recurse if a layout is found
+        this.cells.forEach(c => {
+            var cell
+            if (c instanceof Layout)
+                cell = c.dump()
+            else 
+                cell = {
+                    sx: c.sx,
+                    sy: c.sy,
+                    xoff: c.xoff,
+                    yoff: c.yoff,
+                    pane_id: c.paneID,
+                }
+            d.cells.push(cell)
+        })
+        return d
+    }
+
     get sx() {
         return parseFloat(this.e.style.width.slice(0,-1)) / 100.0
     }

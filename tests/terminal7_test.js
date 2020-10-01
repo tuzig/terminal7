@@ -226,31 +226,38 @@ describe("terminal7", function() {
         })
     })
     describe("layout", () => {
-        var h, w, p0
-        it("can be restored from a simple layout", () => {
-            h = t.addHost({t7: t})
-            h.open(e)
-            w = h.addWindow("restored", {
-                "dir": "topbottom",
-                "cells": [
+        var h, w, p0 
+        it("can be restored from a simple layout and dumped", () => {
+            let state = {
+                dir: "topbottom",
+                sx: 0.8,
+                sy: 0.6,
+                xoff: 0.1,
+                yoff: 0.2,
+                cells: [
                     {
                         sx: 0.8,
                         sy: 0.3,
                         xoff: 0.1,
                         yoff: 0.2,
-                        pane_id: 12
                     }, {
                         sx: 0.8,
                         sy: 0.3,
                         xoff: 0.1,
                         yoff: 0.5,
-                        pane_id: 23
                     }
                 ]}
-            )
+            h = t.addHost({t7: t})
+            h.open(e)
+            w = h.addWindow("restored", state)
             expect(w.rootLayout.dir).to.equal("topbottom")
-            expect(w.rootLayout.cells[0].paneID).to.equal(12)
-            expect(w.rootLayout.cells[1].paneID).to.equal(23)
+            expect(w.rootLayout.cells[0].yoff).to.equal(0.2)
+            expect(w.rootLayout.cells[1].yoff).to.equal(0.5)
+            let d = w.dump()
+            expect(d.dir).to.equal("topbottom")
+            expect(d.cells.length).to.equal(2)
+            expect(d.cells[0].yoff).to.equal(0.2)
+            expect(d.cells[1].yoff).to.equal(0.5)
         })
         it("can be restored from a -| layout", () => {
             h = t.addHost({t7: t})

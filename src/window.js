@@ -68,6 +68,9 @@ export class Window {
             this.rootLayout = l
         return l
     }
+    /*
+     * restoreLayout restores a layout, creating the panes and layouts as needed
+     */
     restoreLayout(layout) {
         var l = this.addLayout(layout.dir, {
             t7: this.t7,
@@ -90,6 +93,9 @@ export class Window {
             }
         })
         return l
+    }
+    dump() {
+        return this.rootLayout.dump()
     }
     /*
      * Replace the window name with an input field and updates the window
