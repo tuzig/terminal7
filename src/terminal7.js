@@ -64,13 +64,15 @@ export class Terminal7 {
             'click', ev => addHost.style.display="block")
         addHost.querySelector(".submit").addEventListener('click', (ev) => {
             let remember =
-                    addHost.querySelector('[name="remember"]').value,
-            host = this.addHost({
-                addr: addHost.querySelector('[name="host"]').value,
-                user: addHost.querySelector('[name="username"]').value,
-                secret: addHost.querySelector('[name="password"]').value,
-                store: remember == "on"
-            })
+                    addHost.querySelector('[name="remember"]').value == "on",
+                host = this.addHost({
+                    addr: addHost.querySelector('[name="host"]').value,
+                    user: addHost.querySelector('[name="username"]').value,
+                    secret: addHost.querySelector('[name="password"]').value,
+                    store: remember
+                })
+            if (remember)
+                    this.storeHosts()
             this.clear()
             host.connect()
         })

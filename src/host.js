@@ -156,11 +156,6 @@ export class Host {
         if (this.state == "connected") {
             return
         }
-        if (this.activeW == null) {
-            // add the first window
-            this.e.style.display = "block"
-            this.addWindow("just a name")
-        }
         if (this.pc != null)
             this.pc.close()
 
@@ -254,14 +249,9 @@ export class Host {
             type: "auth",
             args: {token: "MyToken"}
         })
-        this.onack[msgId] = t => {
+        this.onack[msgId] = state => {
             resolved = true
             this.notify("Authorization accepted")
-            if (this.secret != t) {
-                this.secret = t
-                if (this.store)
-                    this.t7.storeHosts()
-            }
             if (reconnect)
                 // reconnect to open panes
                 this.cells.forEach((c) => {
@@ -270,10 +260,27 @@ export class Host {
                     }
                 })
             else  {
-                // add the windows and connect to the panes
-                let aP = this.activeW.activeP 
-                if (!aP.d)
-                    setTimeout(e => aP.openDC(), ABIT)
+                // restore the state
+                if (state && (state.windows instanceof Array) &&
+                        (typeof state.active_pane == "number")) {
+                    state.windows.forEach(w => 
+                        this.addWindow(w.name, w.layout)
+                    )
+                    // focus on the active pane
+                    for (let i=0; i < this.cells.length; i++) {
+                        let cell = this.cells[i]
+                        if (cell.webexecID == state.active_pane) {
+                            this.activeP = cell
+                            cell.focus()
+                            // TODO: does the window need a focus too?
+                            break
+                        }
+                    }
+                } else {
+                    // add the first window
+                    // this.e.style.display = "block"
+                    this.addWindow()
+                }
             }
         }
         setTimeout(() => {
@@ -287,7 +294,7 @@ export class Host {
      */
     addWindow(name, layout) {
         let id = this.windows.length
-        if (!(name instanceof String))
+        if (typeof(name) != "string")
             name = `Tab ${id+1}`
         let w = new Window({name:name, host: this, id: id})
         this.windows.push(w)
@@ -380,15 +387,43 @@ export class Host {
      * Host.sendSize sends a control message with the pane's size to the server
      */
     sendSize(pane) {
-        if ((this.pc != null) && pane.paneID)
+        if ((this.pc != null) && pane.webexecID)
             this.sendCTRLMsg({
                 type: "resize", 
                 args: {
-                       pane_id: pane.paneID,
+                       webexec_id: pane.webexecID,
                        sx: pane.t.cols,
                        sy: pane.t.rows
                 }
             })
+    }
+    sendState() {
+        setTimeout(_ => { 
+            if (this.pc != null) {
+                var wNames = {}
+                var ws = []
+                this.windows.forEach((w, i) => {
+                    let layout = {}
+                    wNames[w.name] = i
+                    ws.push({
+                        name:w.name,
+                        layout: w.dump()
+                    })
+                })
+                let msg = {
+                    type: "set_payload", 
+                    args: {
+                        Payload: {
+                            active_window: wNames[this.activeP.w.name],
+                            active_pane: this.activeP.webexecID,
+                            windows: ws
+                        }
+                    }
+                }
+                console.log(msg)
+                this.sendCTRLMsg(msg)
+            }
+        }, 500)
     }
     onPaneConnected(pane) {
         // hide notifications

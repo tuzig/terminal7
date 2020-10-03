@@ -130,9 +130,8 @@ export class Cell {
      * Cell.close removes a cell's elment and removes itself from the window
      */
     close() {
-        this.layout.onClose(this)
-        // remove this from the window
         this.e.remove()
+        this.layout.onClose(this)
     }
     toggleZoom() {
         if (this.zoomed) {
@@ -223,6 +222,7 @@ export class Layout extends Cell {
             // remove this from the layout
             this.cells.splice(i, 1)
         }
+        this.host.sendState()
     }
     /*
      * Replace an old cell with a new cell, used when a pane
@@ -260,7 +260,9 @@ export class Layout extends Cell {
                     pane.openDC()
                 } catch (e) {
                     console.log("failed to open DC", e)
+                    return
                 }
+                this.host.sendState()
             }, ABIT)
         return pane
     }
@@ -288,7 +290,7 @@ export class Layout extends Cell {
             if ((c != that) && (typeof c.toText == "function"))
                 r += c.toText()
             else
-                r += `,${c.paneID || c.id}`
+                r += `,${c.id || c.webexecID}`
         })
         r += (this.dir=="rightleft")?"]":"}"
         return r
@@ -315,7 +317,7 @@ export class Layout extends Cell {
                     sy: c.sy,
                     xoff: c.xoff,
                     yoff: c.yoff,
-                    pane_id: c.paneID,
+                    webexec_id: c.webexecID,
                 }
             d.cells.push(cell)
         })
@@ -433,6 +435,7 @@ export class Layout extends Cell {
         p0[s] -= by
         p1[s] += by
         p1[off] = dest
+        this.host.sendState()
     }
 }
 
@@ -445,7 +448,7 @@ export class Pane extends Cell {
         this.d = null
         this.zoomed = false
         this.active = false
-        this.paneID = props.pane_id || null
+        this.webexecID = props.webexec_id || null
         this.fontSize = props.fontSize || 12
         this.scrolling = false
         this.scrollLingers4 = props.scrollLingers4 || 2000
@@ -503,6 +506,9 @@ export class Pane extends Cell {
                 }
                 else if (ev.domEvent.key == "-") {
                     this.scale(-1)
+                }
+                else if (ev.domEvent.key == "%") {
+                    this.split("topbottom")
                 }
                 else if (ev.domEvent.key == "?") {
                     this.toggleSearch()
@@ -615,16 +621,15 @@ export class Pane extends Cell {
                           xoff: xoff, yoff: yoff,
                           parent: this})
     }
-    openDC(reconnect) {
-        var tSize = this.t.rows+'x'+this.t.cols
+    openDC() {
+        var tSize = this.t.rows+'x'+this.t.cols,
+            label = ""
         this.buffer = []
 
-        if (reconnect)
-            this.d = this.host.pc.createDataChannel(
-                `${tSize},>${this.paneID}`)
-        else
-            this.d = this.host.pc.createDataChannel(tSize + ',zsh')
+        label = this.webexecID?`>${this.webexecID}`:`${tSize},zsh`
 
+        console.log("opening dc with label: ${label}")
+        this.d = this.host.pc.createDataChannel(label)
         this.d.onclose = e => {
             this.state = "disconnected"
             this.close()
@@ -643,7 +648,7 @@ export class Pane extends Cell {
                 var enc = new TextDecoder("utf-8"),
                     str = enc.decode(m.data)
                 this.state = "connected"
-                this.paneID = parseInt(str)
+                this.webexecID = parseInt(str)
                 this.host.onPaneConnected(this)
             }
             else if (this.state == "disconnected") {
