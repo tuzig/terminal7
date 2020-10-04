@@ -212,7 +212,7 @@ export class Terminal7 {
         p.t7 = this
 
         // if no port specify, use the default port
-        if (addr.indexOf(":") == -1)
+        if (addr && (addr.indexOf(":") == -1))
             p.addr = `${addr}:7777`
 
         let h = new Host(p)

@@ -734,6 +734,5 @@ export class Pane extends Cell {
             document.getElementById("search-button").classList.remove("on")
             this.focus()
         }
-
     }
 }
