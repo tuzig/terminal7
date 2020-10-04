@@ -66,9 +66,8 @@ export class Terminal7 {
             let remember =
                     addHost.querySelector('[name="remember"]').value == "on",
                 host = this.addHost({
-                    addr: addHost.querySelector('[name="host"]').value,
-                    user: addHost.querySelector('[name="username"]').value,
-                    secret: addHost.querySelector('[name="password"]').value,
+                    addr: addHost.querySelector('[name="hostaddr"]').value,
+                    name: addHost.querySelector('[name="hostname"]').value,
                     store: remember
                 })
             if (remember)

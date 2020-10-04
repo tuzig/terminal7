@@ -58,7 +58,7 @@ export class Host {
                 a = document.createElement('a'),
                 addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
             li.classList.add("border")
-            a.innerHTML = `<h3> ${this.user}</h3><h2>@</h2><h3>${addr}</h3>`
+            a.innerHTML = `<h2>${this.name || this.addr}</h2>`
             // Add gestures on the window name for rename and drag to trash
             let hm = new Hammer.Manager(li, {})
             hm.options.domEvents=true; // enable dom events
