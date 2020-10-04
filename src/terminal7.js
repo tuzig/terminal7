@@ -205,10 +205,16 @@ export class Terminal7 {
      * Terminal7.addHost is used to add a host with properties p to terminal 7
      */
     addHost(p) {
-        let out = []
+        let out = [],
+            addr = p.addr
         // add the id
         p.id = this.hosts.length
         p.t7 = this
+
+        // if no port specify, use the default port
+        if (addr.indexOf(":") == -1)
+            p.addr = `${addr}:7777`
+
         let h = new Host(p)
         console.log(`adding ${h.user}@${h.addr} & saving hosts`)
         this.hosts.push(h)
