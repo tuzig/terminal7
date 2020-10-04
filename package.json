@@ -21,7 +21,6 @@
   "dependencies": {
     "cordova": "^10.0.0",
     "cordova-browser": "^6.0.0",
-    "cordova-ios": "^5.1.1",
     "cordova-plugin-inappbrowser": "^4.0.0",
     "cordova-plugin-network-information": "^2.0.2",
     "cordova-plugin-statusbar": "^2.4.3",
@@ -37,6 +36,7 @@
   },
   "devDependencies": {
     "chai": "^4.2.0",
+    "cordova-ios": "^6.1.1",
     "css-loader": "^3.5.2",
     "file-loader": "^6.1.0",
     "karma": "^5.2.1",
