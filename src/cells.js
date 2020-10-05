@@ -54,10 +54,10 @@ export class Cell {
         this.active = true
         if (this.w.activeP !== null) {
             this.w.activeP.e.classList.remove("focused")
+            this.w.activeP.active = false
         }
         this.w.activeP = this
         this.e.classList.add("focused")
-        
     }
     /*
      * Used to grow/shrink the terminal based on containing element dimensions
@@ -296,6 +296,7 @@ export class Layout extends Cell {
         return r
     }
 
+    // dump dumps the layout to an object
     dump() {
         // r is the text the function returns
         let d = {
@@ -311,7 +312,7 @@ export class Layout extends Cell {
             var cell
             if (c instanceof Layout)
                 cell = c.dump()
-            else 
+            else {
                 cell = {
                     sx: c.sx,
                     sy: c.sy,
@@ -319,6 +320,9 @@ export class Layout extends Cell {
                     yoff: c.yoff,
                     webexec_id: c.webexecID,
                 }
+                if (c.active)
+                    cell.active = true
+            }
             d.cells.push(cell)
         })
         return d

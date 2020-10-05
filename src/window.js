@@ -49,7 +49,7 @@ export class Window {
     focus() {
         this.host.breadcrumbs.push(this)
         // turn off the current active
-        let a = this.host.activeW
+        let a = this.host.activew
         if (a) {
             a.nameE.classList.remove("on")
             a.e.style.display = "none"
@@ -89,7 +89,9 @@ export class Window {
                 l.cells.push(newL)
             }
             else {
-                l.addPane(cell)
+                let p = l.addPane(cell)
+                if (cell.active)
+                    p.focus()
             }
         })
         return l

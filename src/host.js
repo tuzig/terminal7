@@ -20,7 +20,6 @@ export class Host {
         // 
         this.pc = null
         this.windows = []
-        this.activeW = null
         this.state = this.updateState("init")
         this.pendingCDCMsgs = []
         this.lastMsgId = 1
@@ -262,23 +261,13 @@ export class Host {
                 })
             else  {
                 // restore the state
-                if (state && (state.windows instanceof Array) &&
-                        (typeof state.active_pane == "number") &&
-                        (state.windows.length > 0)) {
-                    console.log("state:", state)
-                    state.windows.forEach(w => 
-                        this.addWindow(w.name, w.layout)
-                    )
-                    // focus on the active pane
-                    for (let i=0; i < this.cells.length; i++) {
-                        let cell = this.cells[i]
-                        if (cell.webexecID == state.active_pane) {
-                            this.activeP = cell
-                            cell.focus()
-                            // TODO: does the window need a focus too?
-                            break
-                        }
-                    }
+                if (state && (state.length > 0)) {
+                    console.log("reloading state: ", state)
+                    state.forEach(w =>  {
+                        let win = this.addWindow(w.name, w.layout)
+                        if (w.active)
+                            wn.focus()
+                    })
                 } else {
                     // add the first window
                     // this.e.style.display = "block"
@@ -310,7 +299,7 @@ export class Host {
             }
             w.restoreLayout(layout)
         } else {
-            // create the first layout and pane
+            // empty window: create the first layout and pane
             // filling the entire top of the screen
             let tabbar = this.e.querySelector(".tabbar"),
                 r = tabbar.getBoundingClientRect(),
@@ -320,9 +309,8 @@ export class Host {
                              w: w,
                              host: this},
                 layout = w.addLayout("TBD", paneProps)
-            this.activeP = layout.addPane(paneProps)
-            this.rootLayout = layout
-            this.focus()
+            w.activeP = layout.addPane(paneProps)
+            w.rootLayout = layout
         }
         this.activeW = w
         w.focus()
@@ -380,7 +368,6 @@ export class Host {
         this.state = this.updateState("close")
         this.windows.forEach(w => w.close())
         this.windows = []
-        this.activeW = null
         this.breadcrumbs = []
         this.clearLog()
         this.e.style.display = "none"
@@ -415,13 +402,7 @@ export class Host {
                 })
                 let msg = {
                     type: "set_payload", 
-                    args: {
-                        Payload: {
-                            active_window: wNames[this.activeP.w.name],
-                            active_pane: this.activeP.webexecID,
-                            windows: ws
-                        }
-                    }
+                    args: { Payload: ws }
                 }
                 console.log(msg)
                 this.sendCTRLMsg(msg)
