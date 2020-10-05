@@ -113,12 +113,14 @@ export class Window {
         // the input element too soon
         i.addEventListener('blur', (e) => {
             let p = e.target.parentNode
+            this.host.sendState()
             setTimeout(() => p.innerHTML = p.w.name, 0)
         }, { once: true })
         i.addEventListener('change', (e) => {
             console.log("change", e)
             let p = e.target.parentNode
             p.w.name = e.target.value
+            this.host.sendState()
             setTimeout(() => p.innerHTML = p.w.name, 0)
         })
     }
