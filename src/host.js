@@ -262,7 +262,9 @@ export class Host {
             else  {
                 // restore the state
                 if (state && (state.windows instanceof Array) &&
-                        (typeof state.active_pane == "number")) {
+                        (typeof state.active_pane == "number") &&
+                        (state.windows.length > 0)) {
+                    console.log("state:", state)
                     state.windows.forEach(w => 
                         this.addWindow(w.name, w.layout)
                     )
