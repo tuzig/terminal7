@@ -152,8 +152,8 @@ export class Host {
      */
     connect() {
         // if we're already connected, just focus
-        this.focus()
         if (this.state == "connected") {
+            this.focus()
             return
         }
         if (this.pc != null)
@@ -252,6 +252,7 @@ export class Host {
         this.onack[msgId] = state => {
             resolved = true
             this.notify("Authorization accepted")
+            this.focus()
             if (reconnect)
                 // reconnect to open panes
                 this.cells.forEach((c) => {
