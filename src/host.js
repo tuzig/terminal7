@@ -394,7 +394,7 @@ export class Host {
             this.sendCTRLMsg({
                 type: "resize", 
                 args: {
-                       webexec_id: pane.webexecID,
+                       pane_id: pane.webexecID,
                        sx: pane.t.cols,
                        sy: pane.t.rows
                 }
