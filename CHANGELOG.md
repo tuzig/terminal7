@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.1] - 2020/10/04
 
-Update the change log
+- Update the change log
+- Fix resize
+- Fix failed connection display
 
 ## [0.7.0] - 2020/10/04
 
