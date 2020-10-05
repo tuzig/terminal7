@@ -643,24 +643,28 @@ export class Pane extends Cell {
                     this.host.updateState("disconnected")
                 }}, TIMEOUT)
         }
-        this.d.onmessage = m => {
-            if (this.state == "opened") {
-                var enc = new TextDecoder("utf-8"),
-                    str = enc.decode(m.data)
-                this.state = "connected"
-                this.webexecID = parseInt(str)
-                this.host.onPaneConnected(this)
-            }
-            else if (this.state == "disconnected") {
-                this.buffer.push(new Uint8Array(m.data))
-            }
-            else if (this.state == "connected") {
-                this.write(new Uint8Array(m.data))
-            }
-            else
-                this.host.notify(`${this.state} & dropping a message: ${m.data}`)
-        }
+        this.d.onmessage = m => this.onMessage(m)
+
         return this.d
+    }
+    // called when a message is received from the server
+    onMessage (m) {
+        var enc = new TextDecoder("utf-8"),
+            str = enc.decode(m.data)
+        // console.log(this.webexecID + "> " + str)
+        if (this.state == "opened") {
+            this.state = "connected"
+            this.webexecID = parseInt(str)
+            this.host.onPaneConnected(this)
+        }
+        else if (this.state == "disconnected") {
+            this.buffer.push(new Uint8Array(m.data))
+        }
+        else if (this.state == "connected") {
+            this.write(new Uint8Array(m.data))
+        }
+        else
+            this.host.notify(`${this.state} & dropping a message: ${m.data}`)
     }
     toggleZoom() {
         super.toggleZoom()
