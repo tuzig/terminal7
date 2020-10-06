@@ -1,6 +1,8 @@
 import { Layout } from './cells.js'
 import * as Hammer from 'hammerjs'
 
+const ABIT = 10
+
 export class Window {
     constructor(props) {
         this.host = props.host
@@ -58,7 +60,8 @@ export class Window {
         this.nameE.classList.add("on")
         this.host.activeW = this
         window.location.href=`#tab-${this.host.id}.${this.id+1}`
-        this.activeP.focus()
+        this.host.sendState()
+        setTimeout(_ => this.activeP.focus(), ABIT)
     }
     addLayout(dir, basedOn) {
         let l = new Layout(dir, basedOn)

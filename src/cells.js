@@ -58,6 +58,7 @@ export class Cell {
         }
         this.w.activeP = this
         this.e.classList.add("focused")
+        this.host.sendState()
     }
     /*
      * Used to grow/shrink the terminal based on containing element dimensions
