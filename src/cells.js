@@ -296,7 +296,7 @@ export class Layout extends Cell {
         return r
     }
 
-    // dump dumps the layout to an object
+    // Layout.dump dumps the layout to an object
     dump() {
         // r is the text the function returns
         let d = {
@@ -313,6 +313,7 @@ export class Layout extends Cell {
             if (c instanceof Layout)
                 cell = c.dump()
             else {
+                // it's a pane
                 cell = {
                     sx: c.sx,
                     sy: c.sy,
@@ -320,7 +321,7 @@ export class Layout extends Cell {
                     yoff: c.yoff,
                     webexec_id: c.webexecID,
                 }
-                if (c.active)
+                if (c.webexecID == this.w.activeP.webexecID)
                     cell.active = true
             }
             d.cells.push(cell)

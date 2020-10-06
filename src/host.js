@@ -45,7 +45,10 @@ export class Host {
         if (t) {
             t = t.content.cloneNode(true)
             let a = t.querySelector(".add-tab")
-            a.addEventListener('click', (e) => this.addWindow())
+            a.addEventListener('click', (e) => {
+                let w = this.addWindow()
+                w.focus()
+            })
             let b = t.querySelector(".bang")
             b.addEventListener('click', (e) => this.updateState("disconnected"))
             this.e.appendChild(t)
@@ -190,8 +193,8 @@ export class Host {
             this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
         }
         this.openCDC()
-        // suthenticate starts the ball rolling
-        this.login((this.state == "disconnected") || (this.state == "failed"))
+        // authenticate starts the ball rolling
+        this.login()
         setTimeout(ev => {
             if ((this.state != "completed") && (this.state != "connected")) {
                 this.notify("Failed to connect to the server")
@@ -252,27 +255,14 @@ export class Host {
             resolved = true
             this.notify("Authorization accepted")
             this.focus()
-            if (reconnect)
-                // reconnect to open panes
-                this.cells.forEach((c) => {
-                    if (c.openDC != undefined) {
-                        c.openDC(reconnect)
-                    }
-                })
-            else  {
-                // restore the state
-                if (state && (state.length > 0)) {
-                    console.log("reloading state: ", state)
-                    state.forEach(w =>  {
-                        let win = this.addWindow(w.name, w.layout)
-                        if (w.active)
-                            wn.focus()
-                    })
-                } else {
-                    // add the first window
-                    // this.e.style.display = "block"
-                    this.addWindow()
-                }
+            if (state && (state.windows.length > 0)) {
+                console.log("reloading state: ", state)
+                this.restoreState(state)
+            } else {
+                // add the first window
+                // this.e.style.display = "block"
+                let w = this.addWindow()
+                w.focus()
             }
         }
         setTimeout(() => {
@@ -281,22 +271,24 @@ export class Host {
                 this.notify("Timeout on auth ack")
         }, 3000)
     }
+    restoreState(state) {
+        console.log("restoring state: ", state)
+        state.windows.forEach(w =>  {
+            let win = this.addWindow(w.name, w.layout)
+            if (w.active)
+                win.focus()
+        })
+    }
     /*
      * Adds a window, complete with a first layout and pane
      */
     addWindow(name, layout) {
+        console.log("adding Window: " + name, layout)
         let id = this.windows.length
-        if (typeof(name) != "string")
-            name = `Tab ${id+1}`
         let w = new Window({name:name, host: this, id: id})
         this.windows.push(w)
         w.open(this.e)
         if (layout instanceof Object) {
-            let props = {
-                host: this,
-                w: w,
-                t7: this.t7
-            }
             w.restoreLayout(layout)
         } else {
             // empty window: create the first layout and pane
@@ -312,8 +304,6 @@ export class Host {
             w.activeP = layout.addPane(paneProps)
             w.rootLayout = layout
         }
-        this.activeW = w
-        w.focus()
         return w
     }
     /*
@@ -345,7 +335,7 @@ export class Host {
             // handle Ack
             if (msg.type == "ack") {
                 const handler = this.onack[msg.args.ref]
-                console.log("got cdc message:", this.state, msg)
+                console.log("got cdc message:",  msg)
                 if (handler != undefined) {
                     handler(msg.args.body)
                     // just to make sure we'll never  call it twice
@@ -387,22 +377,29 @@ export class Host {
                 }
             })
     }
+    /*
+     * Host.dump dumps the host to a state object
+     * */
+    dump() {
+        var wins = []
+        this.windows.forEach((w, i) => {
+            let win = {
+                name: w.name,
+                layout: w.dump()
+            }
+            if (w == this.activeW)
+                win.active = true
+            wins.push(win)
+        })
+        return { windows: wins }
+    }
+
     sendState() {
         setTimeout(_ => { 
             if (this.pc != null) {
-                var wNames = {}
-                var ws = []
-                this.windows.forEach((w, i) => {
-                    let layout = {}
-                    wNames[w.name] = i
-                    ws.push({
-                        name:w.name,
-                        layout: w.dump()
-                    })
-                })
                 let msg = {
                     type: "set_payload", 
-                    args: { Payload: ws }
+                    args: { Payload: this.dump() }
                 }
                 console.log(msg)
                 this.sendCTRLMsg(msg)

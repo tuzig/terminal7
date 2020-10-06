@@ -49,7 +49,7 @@ export class Window {
     focus() {
         this.host.breadcrumbs.push(this)
         // turn off the current active
-        let a = this.host.activew
+        let a = this.host.activeW
         if (a) {
             a.nameE.classList.remove("on")
             a.e.style.display = "none"
@@ -97,7 +97,10 @@ export class Window {
         return l
     }
     dump() {
-        return this.rootLayout.dump()
+        let r = this.rootLayout.dump()
+        if (this.active)
+            r.active = true
+        return r
     }
     /*
      * Replace the window name with an input field and updates the window
