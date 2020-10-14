@@ -25,6 +25,7 @@ export class Host {
         this.lastMsgId = 1
         // a mapping of refrence number to function called on received ack
         this.onack = {}
+        this.onnack = {}
         this.breadcrumbs = []
         this.log = []
         this.peer = null
@@ -153,6 +154,7 @@ export class Host {
      * the control channel and authenticates.
      */
     connect() {
+        this.copyToken("just a token")
         // if we're already connected, just focus
         if (this.state == "connected") {
             this.focus()
@@ -411,5 +413,25 @@ export class Host {
         this.t7.logDisplay(false)
         // enable search
         document.getElementById("search-button").classList.remove("off")
+    }
+    copyToken(token) {
+        var success = function (resp) {
+            console.log(resp)
+            debugger
+        }
+
+        var failure = function (error) {
+            console.log(error)
+            debugger
+        }
+
+      debugger
+      window.cordova.plugins.sshConnect.connect('erez', '....',
+          '185.162.127.104', 22, resp => {
+            if (resp) {
+                window.cordova.plugins.sshConnect.executeCommand('ls -l', success, failure);
+                window.cordova.plugins.sshConnect.disconnect(success, failure);
+            }
+           }, failure)
     }
 }

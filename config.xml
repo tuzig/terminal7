@@ -16,9 +16,8 @@
     <allow-intent href="sms:*" />
     <allow-intent href="mailto:*" />
     <allow-intent href="geo:*" />
-
     <platform name="ios">
-        <preference name="DisallowOverscroll" value="true"/>
+        <preference name="DisallowOverscroll" value="true" />
         <preference name="UIWebViewBounce" value="true" />
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />
@@ -29,6 +28,7 @@
             <false />
         </edit-config>
     </platform>
+    <plugin name="cordova-plugin-ssh-connect" spec="^1.1.1" />
     <engine name="ios" spec="^4.5.5" />
     <engine name="browser" spec="^5.0.4" />
 </widget>
