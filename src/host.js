@@ -272,12 +272,17 @@ export class Host {
         }, 3000)
     }
     restoreState(state) {
+        let focused = false
         console.log("restoring state: ", state)
         state.windows.forEach(w =>  {
             let win = this.addWindow(w.name, w.layout)
-            if (w.active)
+            if (w.active) {
+                focused = true
                 win.focus()
+            }
         })
+        if (!focused)
+            this.windows[0].focus()
     }
     /*
      * Adds a window, complete with a first layout and pane
