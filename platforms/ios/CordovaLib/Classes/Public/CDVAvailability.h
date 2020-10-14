@@ -68,16 +68,8 @@
 #define __CORDOVA_4_3_1 40301
 #define __CORDOVA_4_4_0 40400
 #define __CORDOVA_4_5_0 40500
-#define __CORDOVA_4_5_1 40501
-#define __CORDOVA_4_5_2 40502
-#define __CORDOVA_4_5_4 40504
-#define __CORDOVA_5_0_0 50000
-#define __CORDOVA_5_0_1 50001
-#define __CORDOVA_5_1_0 50100
-#define __CORDOVA_5_1_1 50101
-#define __CORDOVA_6_0_0 60000
-#define __CORDOVA_6_1_0 60100
-#define __CORDOVA_6_1_1 60101
+#define __CORDOVA_4_5_3 40503
+#define __CORDOVA_4_5_5 40505
 /* coho:next-version,insert-before */
 #define __CORDOVA_NA 99999      /* not available */
 
@@ -90,7 +82,7 @@
  */
 #ifndef CORDOVA_VERSION_MIN_REQUIRED
     /* coho:next-version-min-required,replace-after */
-    #define CORDOVA_VERSION_MIN_REQUIRED __CORDOVA_6_1_1
+    #define CORDOVA_VERSION_MIN_REQUIRED __CORDOVA_4_5_5
 #endif
 
 /*

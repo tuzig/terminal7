@@ -18,15 +18,10 @@
  */
 
 #import <Foundation/Foundation.h>
-#import <WebKit/WebKit.h>
-#import "CDVViewController.h"
+#import "CDVAvailability.h"
 
+@class CDVViewController;
 
-@interface CDVURLSchemeHandler : NSObject <WKURLSchemeHandler>
-
-@property (nonatomic, strong) CDVViewController* viewController;
-
-- (instancetype)initWithVC:(CDVViewController *)controller;
-
+@interface CDVURLProtocol : NSURLProtocol {}
 
 @end

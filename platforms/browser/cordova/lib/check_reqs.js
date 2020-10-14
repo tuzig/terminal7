@@ -22,6 +22,5 @@ under the License.
 // add methods as we determine what are the requirements
 
 module.exports.run = function () {
-    // caller expects a promise resolved with an array of conditions
-    return Promise.resolve([]);
+    return Promise.resolve();
 };
