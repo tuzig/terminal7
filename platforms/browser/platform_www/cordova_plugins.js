@@ -63,6 +63,7 @@ module.exports = [
 module.exports.metadata = 
 // TOP OF METADATA
 {
+    "cordova-plugin-add-swift-support": "1.7.2",
     "cordova-plugin-inappbrowser": "4.0.0",
     "cordova-plugin-network-information": "2.0.2",
     "cordova-plugin-ssh-connect": "1.1.1",

@@ -429,7 +429,7 @@ export class Host {
       window.cordova.plugins.sshConnect.connect('erez', '....',
           '185.162.127.104', 22, resp => {
             if (resp) {
-                window.cordova.plugins.sshConnect.executeCommand('ls -l', success, failure);
+                window.cordova.plugins.sshConnect.executeCommand('seq 10', success, failure);
                 window.cordova.plugins.sshConnect.disconnect(success, failure);
             }
            }, failure)

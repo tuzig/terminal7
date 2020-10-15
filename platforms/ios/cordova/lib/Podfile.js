@@ -18,27 +18,37 @@
 */
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var util = require('util');
-var events = require('cordova-common').events;
-var Q = require('q');
-var superspawn = require('cordova-common').superspawn;
-var CordovaError = require('cordova-common').CordovaError;
+const fs = require('fs-extra');
+const path = require('path');
+const util = require('util');
+const {
+    CordovaError,
+    events,
+    superspawn: { spawn }
+} = require('cordova-common');
 
 Podfile.FILENAME = 'Podfile';
+Podfile.declarationRegexpMap = {
+    'use_frameworks!': 'use[-_]frameworks!?',
+    'inhibit_all_warnings!': 'inhibit[-_]all[-_]warnings!?'
+};
 
-function Podfile (podFilePath, projectName) {
+function Podfile (podFilePath, projectName, minDeploymentTarget) {
+    this.declarationToken = '##INSERT_DECLARATION##';
+    this.sourceToken = '##INSERT_SOURCE##';
     this.podToken = '##INSERT_POD##';
 
     this.path = podFilePath;
     this.projectName = projectName;
+    this.minDeploymentTarget = minDeploymentTarget || '11.0';
     this.contents = null;
+    this.sources = null;
+    this.declarations = null;
     this.pods = null;
     this.__dirty = false;
 
     // check whether it is named Podfile
-    var filename = this.path.split(path.sep).pop();
+    const filename = this.path.split(path.sep).pop();
     if (filename !== Podfile.FILENAME) {
         throw new CordovaError(util.format('Podfile: The file at %s is not `%s`.', this.path, Podfile.FILENAME));
     }
@@ -55,33 +65,101 @@ function Podfile (podFilePath, projectName) {
     } else {
         events.emit('verbose', 'Podfile found in platforms/ios');
         // parse for pods
-        this.pods = this.__parseForPods(fs.readFileSync(this.path, 'utf8'));
+        const fileText = fs.readFileSync(this.path, 'utf8');
+        this.declarations = this.__parseForDeclarations(fileText);
+        this.sources = this.__parseForSources(fileText);
+        this.pods = this.__parseForPods(fileText);
     }
 }
 
+Podfile.prototype.__parseForDeclarations = function (text) {
+    // split by \n
+    const arr = text.split('\n');
+
+    // getting lines between "platform :ios, '11.0'"" and "target 'HelloCordova'" do
+    const declarationsPreRE = new RegExp('platform :ios,\\s+\'[^\']+\'');
+    const declarationsPostRE = new RegExp('target\\s+\'[^\']+\'\\s+do');
+    const declarationRE = new RegExp('^\\s*[^#]');
+
+    return arr.reduce((acc, line) => {
+        switch (acc.state) {
+        case 0:
+            if (declarationsPreRE.exec(line)) {
+                acc.state = 1; // Start to read
+            }
+            break;
+        case 1:
+            if (declarationsPostRE.exec(line)) {
+                acc.state = 2; // Finish to read
+            } else {
+                acc.lines.push(line);
+            }
+            break;
+        case 2:
+        default:
+            // do nothing;
+        }
+        return acc;
+    }, { state: 0, lines: [] })
+        .lines
+        .filter(line => declarationRE.exec(line))
+        .reduce((obj, line) => {
+            obj[line] = line;
+            return obj;
+        }, {});
+};
+
+Podfile.prototype.__parseForSources = function (text) {
+    // split by \n
+    const arr = text.split('\n');
+
+    const sourceRE = new RegExp('source \'(.*)\'');
+    return arr.filter(line => {
+        const m = sourceRE.exec(line);
+
+        return (m !== null);
+    })
+        .reduce((obj, line) => {
+            const m = sourceRE.exec(line);
+            if (m !== null) {
+                const source = m[1];
+                obj[source] = source;
+            }
+            return obj;
+        }, {});
+};
+
 Podfile.prototype.__parseForPods = function (text) {
     // split by \n
-    var arr = text.split('\n');
+    const arr = text.split('\n');
 
     // aim is to match (space insignificant around the comma, comma optional):
     //     pod 'Foobar', '1.2'
     //     pod 'Foobar', 'abc 123 1.2'
     //     pod 'PonyDebugger', :configurations => ['Debug', 'Beta']
-    var podRE = new RegExp('pod \'([^\']*)\'\\s*,?\\s*(.*)');
+    // var podRE = new RegExp('pod \'([^\']*)\'\\s*,?\\s*(.*)');
+    const podRE = new RegExp('pod \'([^\']*)\'\\s*(?:,\\s*\'([^\']*)\'\\s*)?,?\\s*(.*)');
 
     // only grab lines that don't have the pod spec'
-    return arr.filter(function (line) {
-        var m = podRE.exec(line);
+    return arr.filter(line => {
+        const m = podRE.exec(line);
 
         return (m !== null);
     })
-        .reduce(function (obj, line) {
-            var m = podRE.exec(line);
+        .reduce((obj, line) => {
+            const m = podRE.exec(line);
 
             if (m !== null) {
-                // strip out any single quotes around the value m[2]
-                var podSpec = m[2].replace(/^\'|\'$/g, ''); /* eslint no-useless-escape : 0 */
-                obj[m[1]] = podSpec; // i.e pod 'Foo', '1.2' ==> { 'Foo' : '1.2'}
+                const podspec = {
+                    name: m[1]
+                };
+                if (m[2]) {
+                    podspec.spec = m[2];
+                }
+                if (m[3]) {
+                    podspec.options = m[3];
+                }
+                obj[m[1]] = podspec; // i.e pod 'Foo', '1.2' ==> { 'Foo' : '1.2'}
             }
 
             return obj;
@@ -89,20 +167,22 @@ Podfile.prototype.__parseForPods = function (text) {
 };
 
 Podfile.prototype.escapeSingleQuotes = function (string) {
-    return string.replace('\'', '\\\'');
+    return string.replace(/'/g, '\\\'');
 };
 
 Podfile.prototype.getTemplate = function () {
     // Escaping possible ' in the project name
-    var projectName = this.escapeSingleQuotes(this.projectName);
+    const projectName = this.escapeSingleQuotes(this.projectName);
     return util.format(
         '# DO NOT MODIFY -- auto-generated by Apache Cordova\n' +
-            'platform :ios, \'8.0\'\n' +
+            '%s\n' +
+            'platform :ios, \'%s\'\n' +
+            '%s\n' +
             'target \'%s\' do\n' +
             '\tproject \'%s.xcodeproj\'\n' +
             '%s\n' +
             'end\n',
-        projectName, projectName, this.podToken);
+        this.sourceToken, this.minDeploymentTarget, this.declarationToken, projectName, projectName, this.podToken);
 };
 
 Podfile.prototype.addSpec = function (name, spec) {
@@ -112,6 +192,14 @@ Podfile.prototype.addSpec = function (name, spec) {
 
     if (!name.length) { // blank names are not allowed
         throw new CordovaError('Podfile addSpec: name is not specified.');
+    }
+
+    if (typeof spec === 'string') {
+        if (spec.startsWith(':')) {
+            spec = { name, options: spec };
+        } else {
+            spec = { name, spec };
+        }
     }
 
     this.pods[name] = spec;
@@ -137,7 +225,60 @@ Podfile.prototype.existsSpec = function (name) {
     return (name in this.pods);
 };
 
+Podfile.prototype.addSource = function (src) {
+    this.sources[src] = src;
+    this.__dirty = true;
+
+    events.emit('verbose', util.format('Added source line for `%s`', src));
+};
+
+Podfile.prototype.removeSource = function (src) {
+    if (this.existsSource(src)) {
+        delete this.sources[src];
+        this.__dirty = true;
+    }
+
+    events.emit('verbose', util.format('Removed source line for `%s`', src));
+};
+
+Podfile.prototype.existsSource = function (src) {
+    return (src in this.sources);
+};
+
+Podfile.prototype.addDeclaration = function (declaration) {
+    this.declarations[declaration] = declaration;
+    this.__dirty = true;
+
+    events.emit('verbose', util.format('Added declaration line for `%s`', declaration));
+};
+
+Podfile.prototype.removeDeclaration = function (declaration) {
+    if (this.existsDeclaration(declaration)) {
+        delete this.declarations[declaration];
+        this.__dirty = true;
+    }
+
+    events.emit('verbose', util.format('Removed source line for `%s`', declaration));
+};
+
+Podfile.proofDeclaration = declaration => {
+    const list = Object.keys(Podfile.declarationRegexpMap).filter(key => {
+        const regexp = new RegExp(Podfile.declarationRegexpMap[key]);
+        return regexp.test(declaration);
+    });
+    if (list.length > 0) {
+        return list[0];
+    }
+    return declaration;
+};
+
+Podfile.prototype.existsDeclaration = function (declaration) {
+    return (declaration in this.declarations);
+};
+
 Podfile.prototype.clear = function () {
+    this.sources = {};
+    this.declarations = {};
     this.pods = {};
     this.__dirty = true;
 };
@@ -148,28 +289,65 @@ Podfile.prototype.destroy = function () {
 };
 
 Podfile.prototype.write = function () {
-    var text = this.getTemplate();
-    var self = this;
+    let text = this.getTemplate();
 
-    var podsString =
-    Object.keys(this.pods).map(function (key) {
-        var name = key;
-        var spec = self.pods[key];
+    const podsString =
+    Object.keys(this.pods).map(key => {
+        const name = key;
+        const json = this.pods[key];
 
-        if (spec.length) {
-            if (spec.indexOf(':') === 0) {
-                // don't quote it, it's a specification (starts with ':')
-                return util.format('\tpod \'%s\', %s', name, spec);
+        if (typeof json === 'string') { // compatibility for using framework tag.
+            const spec = json;
+            if (spec.length) {
+                if (spec.indexOf(':') === 0) {
+                    // don't quote it, it's a specification (starts with ':')
+                    return util.format('\tpod \'%s\', %s', name, spec);
+                } else {
+                    // quote it, it's a version
+                    return util.format('\tpod \'%s\', \'%s\'', name, spec);
+                }
             } else {
-                // quote it, it's a version
-                return util.format('\tpod \'%s\', \'%s\'', name, spec);
+                return util.format('\tpod \'%s\'', name);
             }
         } else {
-            return util.format('\tpod \'%s\'', name);
+            const list = [`'${name}'`];
+            if ('spec' in json && json.spec.length) {
+                list.push(`'${json.spec}'`);
+            }
+
+            let options = ['tag', 'branch', 'commit', 'git', 'podspec']
+                .filter(tag => tag in json)
+                .map(tag => `:${tag} => '${json[tag]}'`);
+
+            if ('configurations' in json) {
+                options.push(`:configurations => [${json.configurations.split(',').map(conf => `'${conf.trim()}'`).join(',')}]`);
+            }
+            if ('options' in json) {
+                options = [json.options];
+            }
+            if (options.length > 0) {
+                list.push(options.join(', '));
+            }
+            return util.format('\tpod %s', list.join(', '));
         }
     }).join('\n');
 
-    text = text.replace(this.podToken, podsString);
+    const sourcesString =
+    Object.keys(this.sources).map(key => {
+        const source = this.sources[key];
+        return util.format('source \'%s\'', source);
+    }).join('\n');
+
+    const declarationString =
+    Object.keys(this.declarations).map(key => {
+        const declaration = this.declarations[key];
+        return declaration;
+    }).join('\n');
+
+    text = text.replace(this.podToken, podsString)
+        .replace(this.sourceToken, sourcesString)
+        .replace(this.declarationToken, declarationString);
+
     fs.writeFileSync(this.path, text, 'utf8');
     this.__dirty = false;
 
@@ -184,45 +362,43 @@ Podfile.prototype.before_install = function (toolOptions) {
     toolOptions = toolOptions || {};
 
     // Template tokens in order: project name, project name, debug | release
-    var template =
+    const template =
     '// DO NOT MODIFY -- auto-generated by Apache Cordova\n' +
     '#include "Pods/Target Support Files/Pods-%s/Pods-%s.%s.xcconfig"';
 
-    var debugContents = util.format(template, this.projectName, this.projectName, 'debug');
-    var releaseContents = util.format(template, this.projectName, this.projectName, 'release');
+    const debugContents = util.format(template, this.projectName, this.projectName, 'debug');
+    const releaseContents = util.format(template, this.projectName, this.projectName, 'release');
 
-    var debugConfigPath = path.join(this.path, '..', 'pods-debug.xcconfig');
-    var releaseConfigPath = path.join(this.path, '..', 'pods-release.xcconfig');
+    const debugConfigPath = path.join(this.path, '..', 'pods-debug.xcconfig');
+    const releaseConfigPath = path.join(this.path, '..', 'pods-release.xcconfig');
 
     fs.writeFileSync(debugConfigPath, debugContents, 'utf8');
     fs.writeFileSync(releaseConfigPath, releaseContents, 'utf8');
 
-    return Q.resolve(toolOptions);
+    return Promise.resolve(toolOptions);
 };
 
 Podfile.prototype.install = function (requirementsCheckerFunction) {
-    var opts = {};
+    const opts = {};
     opts.cwd = path.join(this.path, '..'); // parent path of this Podfile
     opts.stdio = 'pipe';
-    var first = true;
-    var self = this;
+    opts.printCommand = true;
+    let first = true;
 
     if (!requirementsCheckerFunction) {
-        requirementsCheckerFunction = Q();
+        requirementsCheckerFunction = Promise.resolve();
     }
 
     return requirementsCheckerFunction()
-        .then(function (toolOptions) {
-            return self.before_install(toolOptions);
-        })
-        .then(function (toolOptions) {
+        .then(toolOptions => this.before_install(toolOptions))
+        .then(toolOptions => {
             if (toolOptions.ignore) {
                 events.emit('verbose', '==== pod install start ====\n');
                 events.emit('verbose', toolOptions.ignoreMessage);
-                return Q.resolve();
+                return Promise.resolve();
             } else {
-                return superspawn.spawn('pod', ['install', '--verbose'], opts)
-                    .progress(function (stdio) {
+                return spawn('pod', ['install', '--verbose'], opts)
+                    .progress(stdio => {
                         if (stdio.stderr) { console.error(stdio.stderr); }
                         if (stdio.stdout) {
                             if (first) {
@@ -234,11 +410,8 @@ Podfile.prototype.install = function (requirementsCheckerFunction) {
                     });
             }
         })
-        .then(function () { // done
+        .then(() => { // done
             events.emit('verbose', '==== pod install end ====\n');
-        })
-        .fail(function (error) {
-            throw error;
         });
 };
 

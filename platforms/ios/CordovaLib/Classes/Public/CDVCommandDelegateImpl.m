@@ -81,8 +81,8 @@
                 CDV_EXEC_LOG(@"Exec: Retrieved new exec messages by chaining.");
             }
 
-            [_commandQueue enqueueCommandBatch:commandsJSON];
-            [_commandQueue executePending];
+            [self->_commandQueue enqueueCommandBatch:commandsJSON];
+            [self->_commandQueue executePending];
         }
     }];
 }
@@ -92,7 +92,7 @@
     // Cycle the run-loop before executing the JS.
     // For _delayResponses -
     //    This ensures that we don't eval JS during the middle of an existing JS
-    //    function (possible since UIWebViewDelegate callbacks can be synchronous).
+    //    function (possible since WKWebViewDelegate callbacks can be synchronous).
     // For !isMainThread -
     //    It's a hard error to eval on the non-UI thread.
     // For !_commandQueue.currentlyExecuting -
@@ -168,14 +168,9 @@
     return [_viewController getCommandInstance:pluginName];
 }
 
-- (void)runInBackground:(void (^)())block
+- (void)runInBackground:(void (^)(void))block
 {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), block);
-}
-
-- (NSString*)userAgent
-{
-    return [_viewController userAgent];
 }
 
 - (NSDictionary*)settings
