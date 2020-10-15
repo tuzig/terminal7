@@ -154,7 +154,6 @@ export class Host {
      * the control channel and authenticates.
      */
     connect() {
-        this.copyToken("just a token")
         // if we're already connected, just focus
         if (this.state == "connected") {
             this.focus()
@@ -248,24 +247,34 @@ export class Host {
      * authenticate send the authentication message over the control channel
      */
     login(reconnect) {
-        let resolved = false
+        let resolved = false,
+            token = localStorage.getItem("token")
+        
+        if (token == null) {
+            // create a token, copy it over ssh and then come back to ligin
+            this.handleAuthNack()
+            return
+        }
         let msgId = this.sendCTRLMsg({
             type: "auth",
-            args: {token: "MyToken"}
+            args: {token: token}
         })
-        this.onack[msgId] = state => {
+        this.onack[msgId] = (isNack, state) => {
             resolved = true
-            this.notify("Authorization accepted")
-            this.focus()
-            if (state && (state.windows.length > 0)) {
-                console.log("reloading state: ", state)
-                this.restoreState(state)
-            } else {
-                // add the first window
-                // this.e.style.display = "block"
-                let w = this.addWindow()
-                w.focus()
-            }
+            if (!isNack) {
+                this.notify("Authorization accepted")
+                this.focus()
+                if (state && (state.windows.length > 0)) {
+                    console.log("reloading state: ", state)
+                    this.restoreState(state)
+                } else {
+                    // add the first window
+                    // this.e.style.display = "block"
+                    let w = this.addWindow()
+                    w.focus()
+                }
+            } else 
+                this.handleAuthNack()
         }
         setTimeout(() => {
             if (!resolved)
@@ -335,11 +344,11 @@ export class Host {
                   msg = JSON.parse(d.decode(m.data))
 
             // handle Ack
-            if (msg.type == "ack") {
+            if ((msg.type == "ack") || (msg.type == "nack")) {
                 const handler = this.onack[msg.args.ref]
                 console.log("got cdc message:",  msg)
                 if (handler != undefined) {
-                    handler(msg.args.body)
+                    handler(msg.type=="nack", msg.args.body)
                     // just to make sure we'll never  call it twice
                     delete this.onack[msg.args.ref]
                 }
@@ -414,24 +423,55 @@ export class Host {
         // enable search
         document.getElementById("search-button").classList.remove("off")
     }
-    copyToken(token) {
-        var success = function (resp) {
-            console.log(resp)
-            debugger
-        }
+    copyToken() {
+        let ct = document.getElementById("copy-token"),
+            token = localStorage.getItem("token"),
+                addr = this.addr.substr(0, this.addr.indexOf(":"))
 
-        var failure = function (error) {
-            console.log(error)
-            debugger
-        }
+        document.getElementById("ct-address").innerHTML = addr
+        document.getElementById("ct-name").innerHTML = this.name
+        ct.style.display="block"
+        ct.querySelector(".submit").addEventListener('click', ev => {
+            let uname = ct.querySelector('[name="uname"]').value,
+                pass = ct.querySelector('[name="pass"]').value
+            window.cordova.plugins.sshConnect.connect(uname, pass, addr, 22,
+                resp => {
+                    ev.target.parentNode.parentNode.parentNode.style.display="none"
+                    this.notify("SSH connected")
+                    if (resp) {
+                        window.cordova.plugins.sshConnect.executeCommand(
+                            `sh -c 'echo "${token}" >> ~/.webexec/authorized_tokens'`, 
+                            ev =>  {
+                                this.notify("ssh exec success", ev)
+                                this.login()
+                            },
+                            ev => this.notify("ssh exec failure", ev))
+                        window.cordova.plugins.sshConnect.disconnect(
+                            ev => this.notify("ssh disconnect success", ev),
+                            ev => this.notify("ssh disconnect failure", ev))
+                    }
+                }, ev => console.log("ssh failed to connect", ev))
+                })
+        ct.querySelector(".close").addEventListener('click',  ev =>  {
+            ev.target.parentNode.parentNode.parentNode.style.display="none"
+        })
+    }
+    handleAuthNack() {
+        let token = localStorage.getItem('token')
+        if (token == null) {
+            let ct = document.getElementById("create-token")
+            ct.style.display="block"
+            ct.querySelector(".submit").addEventListener('click', ev => {
+                let token = ct.querySelector('[name="token"]').value
+                localStorage.setItem('token', token)
+                ev.target.parentNode.parentNode.parentNode.style.display="none"
+                this.copyToken()
+            })
+            ct.querySelector(".close").addEventListener('click',  ev =>  {
+                ev.target.parentNode.parentNode.parentNode.style.display="none"
+            })
+        } else 
+            this.copyToken()
 
-      debugger
-      window.cordova.plugins.sshConnect.connect('erez', '....',
-          '185.162.127.104', 22, resp => {
-            if (resp) {
-                window.cordova.plugins.sshConnect.executeCommand('seq 10', success, failure);
-                window.cordova.plugins.sshConnect.disconnect(success, failure);
-            }
-           }, failure)
     }
 }
