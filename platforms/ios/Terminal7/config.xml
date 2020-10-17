@@ -36,6 +36,9 @@
         <param name="ios-package" value="CDVStatusBar" />
         <param name="onload" value="true" />
     </feature>
+    <feature name="sshConnect">
+        <param name="ios-package" value="sshConnect" />
+    </feature>
     <name>Terminal7</name>
     <description>
         A gestures aware terminal emulator and multiplexer

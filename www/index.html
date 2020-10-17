@@ -28,9 +28,11 @@
             <h2>Add a Host</h2>
 
         <label for="uname"><b>Address</b></label>
-        <input type="text" placeholder="IP or host name" name="hostaddr" required>
+        <input type="text" placeholder="IP or host name" name="hostaddr"
+            required="required">
         <label for="uname"><b>Name</b></label>
-        <input type="text" placeholder="Enter Hostname" name="hostname" required>
+        <input type="text" placeholder="Enter Hostname" name="hostname"
+            required="required">
         <label>
           <input type="checkbox" checked="checked" name="remember"> Remember host
         </label>
@@ -39,6 +41,44 @@
             <i class="f7-icons submit">phone_arrow_up_right</i>
         </nav>
           </form>
+      </div>
+      <div id="create-token" class="hidden modal border" >
+        <form id="create-token-form">
+            <h2>Create a new token</h2>
+            <p>First time only - </br />
+                create a client token</p>
+            <label for="token"><b>Token</b></label>
+            <textarea placeholder="please let your cat walk the keyboard"
+                      name="token" rows="3" required="required"></textarea>
+
+            <nav>
+                <i class="f7-icons close">xmark</i>
+                <i class="f7-icons submit">checkmark</i>
+            </nav>
+        </form>
+      </div>
+      <div id="copy-token" class="hidden modal border" >
+        <form id="copy-token-form">
+            <p>We're sorry, but the host at <code id="ct-address"> </code>
+                (aka <b id="ct-name"></b>) refused our token.
+                Most likely because the token is not in:
+                <b id="ct-conffile"> ~/.webexec/authorized_tokens</b>
+            </p>
+            <p>To proceed, you can either copy the token using another terminal
+                or we can use ssh to take care of that for you:
+            </p>
+            <label for="uname"><b>Username</b></label>
+            <input type="text" placeholder="your sysem username" name="uname" required>
+            <label for="pass"><b>Password</b></label>
+            <input type="password" placeholder="your password" name="pass" required>
+            <label for "token">Token</label>
+            <input type="text" name="token" readonly>
+            <nav>
+                <i class="f7-icons close">xmark</i>
+                <i class="f7-icons copy">doc_on_clipboard</i>
+                <i class="f7-icons submit">phone_arrow_up_right</i>
+            </nav>
+        </form>
       </div>
       <div id="disconnect-modal" class="hidden disconnect modal border">
           <h1></h1>

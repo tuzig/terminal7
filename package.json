@@ -20,11 +20,13 @@
   },
   "dependencies": {
     "cordova": "^10.0.0",
-    "cordova-browser": "^6.0.0",
     "cordova-plugin-inappbrowser": "^4.0.0",
     "cordova-plugin-network-information": "^2.0.2",
+    "cordova-plugin-ssh-connect": "^1.1.1",
     "cordova-plugin-statusbar": "^2.4.3",
     "cordova-plugin-webpack": "^1.0.5",
+    "cordova-plugin-whitelist": "1",
+    "glob": "^7.1.6",
     "hammerjs": "^2.0.8",
     "karma-safari-launcher": "^1.0.0",
     "karma-source-map-support": "^1.4.0",
@@ -36,7 +38,9 @@
   },
   "devDependencies": {
     "chai": "^4.2.0",
+    "cordova-browser": "^6.0.0",
     "cordova-ios": "^6.1.1",
+    "cordova-plugin-add-swift-support": "^1.7.2",
     "css-loader": "^3.5.2",
     "file-loader": "^6.1.0",
     "karma": "^5.2.1",
@@ -91,11 +95,12 @@
       "cordova-plugin-statusbar": {},
       "cordova-plugin-webpack": {},
       "cordova-plugin-network-information": {},
-      "cordova-plugin-inappbrowser": {}
+      "cordova-plugin-inappbrowser": {},
+      "cordova-plugin-ssh-connect": {}
     },
     "platforms": [
-      "browser",
-      "ios"
+      "ios",
+      "browser"
     ]
   }
 }

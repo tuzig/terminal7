@@ -71,9 +71,11 @@ a {
 }
 .modal p {
     font-size: 3vh;
-    text-align: center
 }
-.modal h2 { margin-top: 0; }
+.modal h2 { 
+    margin-top: 0; 
+    margin-bottom: 1em;
+}
 1modal:last-child {
     margin-bottom: 2vh;
 }
@@ -263,11 +265,12 @@ nav i {
     display: block;
     text-decoration: none;
 }
-#add-host {
+.modal form {
     text-align: left;
     align: left;
 }
-#add-host input[type=text], #add-host input[type=password] {
+.modal form input[type=text], .modal form input[type=password],
+.modal form textarea {
   width: 100%;
   padding: 12px 20px;
   margin: 8px 0;
