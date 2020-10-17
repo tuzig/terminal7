@@ -195,7 +195,7 @@ export class Host {
         }
         this.openCDC()
         // authenticate starts the ball rolling
-        this.login()
+        this.authenticate()
         setTimeout(ev => {
             if ((this.state != "completed") && (this.state != "connected")) {
                 this.notify("Failed to connect to the server")
@@ -246,7 +246,7 @@ export class Host {
     /*
      * authenticate send the authentication message over the control channel
      */
-    login(reconnect) {
+    authenticate() {
         let resolved = false,
             token = localStorage.getItem("token")
         
@@ -430,7 +430,13 @@ export class Host {
 
         document.getElementById("ct-address").innerHTML = addr
         document.getElementById("ct-name").innerHTML = this.name
+        ct.querySelector('[name="token"]').value = token
         ct.style.display="block"
+        ct.querySelector(".copy").addEventListener('click', ev => {
+            ct.querySelector('[name="token"]').select()
+            document.execCommand("copy")
+        })
+
         ct.querySelector(".submit").addEventListener('click', ev => {
             let uname = ct.querySelector('[name="uname"]').value,
                 pass = ct.querySelector('[name="pass"]').value
@@ -443,7 +449,7 @@ export class Host {
                             `sh -c 'echo "${token}" >> ~/.webexec/authorized_tokens'`, 
                             ev =>  {
                                 this.notify("ssh exec success", ev)
-                                this.login()
+                                this.authenticate()
                             },
                             ev => this.notify("ssh exec failure", ev))
                         window.cordova.plugins.sshConnect.disconnect(

@@ -59,16 +59,23 @@
       </div>
       <div id="copy-token" class="hidden modal border" >
         <form id="copy-token-form">
-            <p>First time connecting to this server.<br />
-               Terminal7 can use ssh to copy its token.</p>
-            <h3>Host Name:&nbsp;<b id="ct-name"></b></h3>
-            <h3>Address:&nbsp;<b id="ct-address"></b></h3>
+            <p>We're sorry, but the host at <code id="ct-address"> </code>
+                (aka <b id="ct-name"></b>) refused our token.
+                Most likely because the token is not in:
+                <b id="ct-conffile"> ~/.webexec/authorized_tokens</b>
+            </p>
+            <p>To proceed, you can either copy the token using another terminal
+                or we can use ssh to take care of that for you:
+            </p>
             <label for="uname"><b>Username</b></label>
             <input type="text" placeholder="your sysem username" name="uname" required>
             <label for="pass"><b>Password</b></label>
             <input type="password" placeholder="your password" name="pass" required>
+            <label for "token">Token</label>
+            <input type="text" name="token" readonly>
             <nav>
                 <i class="f7-icons close">xmark</i>
+                <i class="f7-icons copy">doc_on_clipboard</i>
                 <i class="f7-icons submit">phone_arrow_up_right</i>
             </nav>
         </form>
