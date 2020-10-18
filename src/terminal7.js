@@ -88,11 +88,15 @@ export class Terminal7 {
         // Handle network events for the active host
         document.addEventListener("online", ev => {
             console.log("online")
+            document.getElementById("connectivity").classList.remove("off")
             this.clear()
         })
         document.addEventListener("offline", ev => {
             console.log("offline")
-            this.activeH.updateState("offline")
+            document.getElementById("connectivity").classList.add("off")
+            if (this.activeH)
+                this.activeH.updateState("offline")
+            
         })
         this.catchFingers()
         this.goHome()
