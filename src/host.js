@@ -74,6 +74,9 @@ export class Host {
             plusHost.parentNode.prepend(li)
         }
     }
+    unfocus() {
+        this.e.style.display = "none"
+    }
     focus() {
         // first hide the current focused host
         let activeH = this.t7.activeH
@@ -247,17 +250,11 @@ export class Host {
      * authenticate send the authentication message over the control channel
      */
     authenticate() {
-        let resolved = false,
-            token = localStorage.getItem("token")
+        let resolved = false
         
-        if (token == null) {
-            // create a token, copy it over ssh and then come back to ligin
-            this.handleAuthNack()
-            return
-        }
         let msgId = this.sendCTRLMsg({
             type: "auth",
-            args: {token: token}
+            args: {token: this.t7.token}
         })
         this.onack[msgId] = (isNack, state) => {
             resolved = true
@@ -274,7 +271,7 @@ export class Host {
                     w.focus()
                 }
             } else 
-                this.handleAuthNack()
+                this.copyToken()
         }
         setTimeout(() => {
             if (!resolved)
@@ -430,28 +427,31 @@ export class Host {
     }
     copyToken() {
         let ct = document.getElementById("copy-token"),
-            token = localStorage.getItem("token"),
-                addr = this.addr.substr(0, this.addr.indexOf(":"))
+            addr = this.addr.substr(0, this.addr.indexOf(":"))
 
         document.getElementById("ct-address").innerHTML = addr
         document.getElementById("ct-name").innerHTML = this.name
-        ct.querySelector('[name="token"]').value = token
+        ct.querySelector('[name="token"]').value = this.t7.token
         ct.style.display="block"
         ct.querySelector(".copy").addEventListener('click', ev => {
             ct.querySelector('[name="token"]').select()
             document.execCommand("copy")
+            ev.target.parentNode.parentNode.parentNode.style.display="none"
+            this.notify("Token copied to the clipboard")
         })
-
         ct.querySelector(".submit").addEventListener('click', ev => {
             let uname = ct.querySelector('[name="uname"]').value,
                 pass = ct.querySelector('[name="pass"]').value
+            ev.target.parentNode.parentNode.parentNode.style.display="none"
+            this.notify("ssh is connecting...")
             window.cordova.plugins.sshConnect.connect(uname, pass, addr, 22,
                 resp => {
-                    ev.target.parentNode.parentNode.parentNode.style.display="none"
-                    this.notify("SSH connected")
+                    this.notify("ssh connected")
                     if (resp) {
-                        window.cordova.plugins.sshConnect.executeCommand(
-                            `sh -c 'echo "${token}" >> ~/.webexec/authorized_tokens'`, 
+                        // TODO: escape more...
+                        let token = this.t7.token.replaceAll("'", "\'"),
+                            cmd = `sh -c 'echo "${token}" >> ~/.webexec/authorized_tokens'`
+                        window.cordova.plugins.sshConnect.executeCommand(cmd, 
                             ev =>  {
                                 this.notify("ssh exec success", ev)
                                 this.authenticate()
@@ -461,28 +461,13 @@ export class Host {
                             ev => this.notify("ssh disconnect success", ev),
                             ev => this.notify("ssh disconnect failure", ev))
                     }
-                }, ev => console.log("ssh failed to connect", ev))
+                }, ev => {
+                    this.notify("Wrong password")
+                    console.log("ssh failed to connect", ev)
                 })
+        })
         ct.querySelector(".close").addEventListener('click',  ev =>  {
             ev.target.parentNode.parentNode.parentNode.style.display="none"
         })
-    }
-    handleAuthNack() {
-        let token = localStorage.getItem('token')
-        if (token == null) {
-            let ct = document.getElementById("create-token")
-            ct.style.display="block"
-            ct.querySelector(".submit").addEventListener('click', ev => {
-                let token = ct.querySelector('[name="token"]').value
-                localStorage.setItem('token', token)
-                ev.target.parentNode.parentNode.parentNode.style.display="none"
-                this.copyToken()
-            })
-            ct.querySelector(".close").addEventListener('click',  ev =>  {
-                ev.target.parentNode.parentNode.parentNode.style.display="none"
-            })
-        } else 
-            this.copyToken()
-
     }
 }

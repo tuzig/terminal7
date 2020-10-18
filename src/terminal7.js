@@ -29,6 +29,7 @@ export class Terminal7 {
         this.scrollLingers4     = settings.scrollLingers4 || 2000
         this.shortestLongPress  = settings.shortestLongPress || 1000
         this.borderHotSpotSize  = settings.borderHotSpotSize || 30
+        this.token = localStorage.getItem("token")
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,
@@ -244,10 +245,17 @@ export class Terminal7 {
                 e.style.display = "none")
     }
     goHome() {
-        let s = document.getElementById("home-button")
+        let s = document.getElementById("home-button"),
+            f = document.getElementById("first-time"),
+            h = document.getElementById("home")
         s.classList.add("on")
-        if (this.activeH) {
-            this.activeH.e.style.display = "none"
+        if (this.token == null) {
+            setTimeout(_ => this.createToken(), 100)
+            return
+        }
+
+        else if (this.activeH) {
+            this.activeH.unfocus()
         }
         // hide the modals
         this.clear()
@@ -267,5 +275,22 @@ export class Terminal7 {
             document.getElementById("log-button")
                 .classList.remove("on")
         }
+    }
+    /*
+     * createToken starts a dialog witht he user to create a token
+     */
+    createToken() {
+        let ct = document.getElementById("first-time")
+        ct.style.display="block"
+        ct.querySelector(".submit").addEventListener('click', ev => {
+            let ct = document.getElementById("first-time")
+            this.token = ct.querySelector('[name="token"]').value
+            localStorage.setItem('token', this.token)
+            ev.target.parentNode.parentNode.parentNode.style.display="none"
+            this.goHome()
+        })
+        ct.querySelector(".close").addEventListener('click',  ev =>  {
+            ev.target.parentNode.parentNode.parentNode.style.display="none"
+        })
     }
 }
