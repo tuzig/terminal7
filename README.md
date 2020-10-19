@@ -32,6 +32,8 @@ cordova run browser
 
 and point your browser at http://localhost:8000.
 
+Terminal7 adds a global `window.terminal7` you can use in the debugger.
+
 
 ### Remote Develpoment
 

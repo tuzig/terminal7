@@ -69,7 +69,7 @@ describe("terminal7", function() {
                   },
                 },
             ]}
-            let h = t.addHost({t7: t})
+            let h = t.addHost()
             h.open(e)
             h.restoreState(state)
             expect(h.windows.length).to.equal(2)
@@ -89,7 +89,7 @@ describe("terminal7", function() {
     })
     describe("window", () => {
         it("is added with a cell", function() {
-            let h = t.addHost({t7: t})
+            let h = t.addHost()
             h.open(e)
             let w = h.addWindow("gothic")
             assert.exists(h.windows[0])
@@ -100,7 +100,7 @@ describe("terminal7", function() {
     describe("cell", () => {
         var h, w, p0
         beforeEach(() => {
-            h = t.addHost({t7:t})
+            h = t.addHost()
             h.open(e)
             w = h.addWindow("1,2,3 testing")
             w.activeP.sx = 0.8
@@ -110,14 +110,13 @@ describe("terminal7", function() {
             p0 = w.activeP
         })
         it("can set and get sizes", () => {
-            let c = new Cell({sx: 0.12, sy: 0.34, t7: t, w: w})
+            let c = new Cell({sx: 0.12, sy: 0.34, w: w})
             assert.equal(c.sx, 0.12)
             assert.equal(c.sy, 0.34)
 
         })
         it("can set and get offsets", () => {
             let c = new Cell({xoff: 0.12, yoff: 0.34,
-                t7: t,
                 w: w})
             assert.equal(c.xoff, 0.12)
             assert.equal(c.yoff, 0.34)
@@ -315,7 +314,7 @@ describe("terminal7", function() {
                         yoff: 0.5,
                     }
                 ]}
-            h = t.addHost({t7: t})
+            h = t.addHost()
             h.open(e)
             w = h.addWindow("restored", state)
             expect(w.rootLayout.dir).to.equal("topbottom")
@@ -328,7 +327,7 @@ describe("terminal7", function() {
             expect(d.cells[1].yoff).to.equal(0.5)
         })
         it("can be restored from a -| layout", () => {
-            h = t.addHost({t7: t})
+            h = t.addHost()
             h.open(e)
             w = h.addWindow("restored", {
                 "dir": "topbottom",
@@ -366,7 +365,7 @@ describe("terminal7", function() {
         })
 
         it("can move a border between panes", function () {
-            h = t.addHost({t7:t})
+            h = t.addHost()
             h.open(e)
             w = h.addWindow("1,2,3 testing")
             w.activeP.sx = 0.8

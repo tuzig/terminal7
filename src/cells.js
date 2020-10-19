@@ -19,7 +19,6 @@ const   DEFAULT_XTERM_THEME = {
 export class Cell {
     constructor(props) {
         console.log("in cell constructore")
-        this.t7 = props.t7 || null
         this.host = props.host || null
         this.w = props.w
         this.id = props.id || undefined
@@ -168,7 +167,6 @@ export class Layout extends Cell {
             xoff: basedOn.xoff || 0.0,
             yoff: basedOn.yoff || 0.0,
             w: basedOn.w || null,
-            t7: basedOn.t7 || null,
             className: "layout",
             host: basedOn.host ||null})
         this.dir = dir
@@ -242,9 +240,9 @@ export class Layout extends Cell {
         p.w = this.w
         p.host = this.host
         p.layout = this
-        p.id = this.host.cells.length
+        p.id = terminal7.cells.length
         let pane = new Pane(p)
-        this.host.cells.push(pane)
+        terminal7.cells.push(pane)
         if (p.parent instanceof Cell)
             this.cells.splice(this.cells.indexOf(p.parent)+1, 0, pane)
         else
@@ -634,7 +632,7 @@ export class Pane extends Cell {
 
         label = this.webexecID?`>${this.webexecID}`:`${tSize},zsh`
 
-        console.log("opening dc with label: ${label}")
+        console.log(`opening dc with label: "${label}`)
         this.d = this.host.pc.createDataChannel(label)
         this.d.onclose = e => {
             this.state = "disconnected"

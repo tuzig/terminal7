@@ -9,9 +9,7 @@ export class Host {
     constructor (props) {
         // given properties
         this.id = props.id
-        this.t7 = props.t7
         // this shortcut allows cells to split without knowing t7
-        this.cells = this.t7.cells
         this.addr = props.addr
         this.user = props.user
         this.secret = props.secret
@@ -29,6 +27,7 @@ export class Host {
         this.breadcrumbs = []
         this.log = []
         this.peer = null
+        this.updateID  = null
     }
 
     /*
@@ -79,12 +78,12 @@ export class Host {
     }
     focus() {
         // first hide the current focused host
-        let activeH = this.t7.activeH
+        let activeH = terminal7.activeH
         if (activeH) {
             activeH.e.style.display = "none"
         }
         this.e.style.display = "block"
-        this.t7.activeH = this
+        terminal7.activeH = this
         if (this.activeW)
             this.activeW.focus()
         let s = document.getElementById("home-button")
@@ -110,7 +109,7 @@ export class Host {
             })
             e.querySelector(".close").addEventListener('click', ev => {
                 e.style.display = "none"
-                this.t7.goHome()
+                terminal7.goHome()
             })
             e.style.display = "block"
             
@@ -219,7 +218,7 @@ export class Host {
         li.classList = "log-msg"
         ul.appendChild(li)
         this.log.push(li)
-        this.t7.logDisplay(true)
+        terminal7.logDisplay(true)
     }
     /*
      * sencCTRLMsg gets a control message and sends it if we have a control
@@ -254,7 +253,7 @@ export class Host {
         
         let msgId = this.sendCTRLMsg({
             type: "auth",
-            args: {token: this.t7.token}
+            args: {token: terminal7.token}
         })
         this.onack[msgId] = (isNack, state) => {
             resolved = true
@@ -374,7 +373,7 @@ export class Host {
         this.breadcrumbs = []
         this.clearLog()
         this.e.style.display = "none"
-        this.t7.goHome()
+        terminal7.goHome()
     }
     /*
      * Host.sendSize sends a control message with the pane's size to the server
@@ -408,20 +407,19 @@ export class Host {
     }
 
     sendState() {
-        setTimeout(_ => { 
-            if (this.pc != null) {
+        if (this.updateID == null)
+            this.updateID = setTimeout(_ => { 
                 let msg = {
                     type: "set_payload", 
                     args: { Payload: this.dump() }
                 }
-                console.log(msg)
+                this.updateID = null
                 this.sendCTRLMsg(msg)
-            }
-        }, 500)
+            }, 100)
     }
     onPaneConnected(pane) {
         // hide notifications
-        this.t7.logDisplay(false)
+        terminal7.logDisplay(false)
         // enable search
         document.getElementById("search-button").classList.remove("off")
     }
@@ -431,7 +429,7 @@ export class Host {
 
         document.getElementById("ct-address").innerHTML = addr
         document.getElementById("ct-name").innerHTML = this.name
-        ct.querySelector('[name="token"]').value = this.t7.token
+        ct.querySelector('[name="token"]').value = terminal7.token
         ct.style.display="block"
         ct.querySelector(".copy").addEventListener('click', ev => {
             ct.querySelector('[name="token"]').select()
@@ -448,7 +446,7 @@ export class Host {
                 resp => {
                     this.notify("ssh connected")
                     if (resp) {
-                        let token = this.t7.token,
+                        let token = terminal7.token,
                             // TODO: get the path of authorized tokens from the
                             // server
                             cmd =

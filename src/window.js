@@ -65,8 +65,8 @@ export class Window {
     }
     addLayout(dir, basedOn) {
         let l = new Layout(dir, basedOn)
-        l.id = this.host.cells.length
-        this.host.cells.push(l)
+        l.id = terminal7.cells.length
+        terminal7.cells.push(l)
         if (this.rootLayout == null)
             this.rootLayout = l
         return l
@@ -76,7 +76,6 @@ export class Window {
      */
     restoreLayout(layout) {
         var l = this.addLayout(layout.dir, {
-            t7: this.t7,
             w: this,
             host: this.host,
             sx: layout.sx || null,

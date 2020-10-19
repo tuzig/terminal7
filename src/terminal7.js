@@ -16,12 +16,12 @@ export class Terminal7 {
         this.cells = []
         this.state = "init"
         this.activeH = null
+        window.terminal7 = this
         // Load hosts from local storage
         let hs = JSON.parse(localStorage.getItem('hosts'))
         if (hs != null)
             hs.forEach((p) => {
                 p.store = true
-                p.t7 = this
                 let h = new Host(p)
                 // h.restore()
                 this.hosts.push(h)
@@ -210,12 +210,12 @@ export class Terminal7 {
     /*
      * Terminal7.addHost is used to add a host with properties p to terminal 7
      */
-    addHost(p) {
+    addHost(props) {
         let out = [],
+            p = props || {},
             addr = p.addr
         // add the id
         p.id = this.hosts.length
-        p.t7 = this
 
         // if no port specify, use the default port
         if (addr && (addr.indexOf(":") == -1))
