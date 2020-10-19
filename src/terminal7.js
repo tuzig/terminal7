@@ -249,7 +249,7 @@ export class Terminal7 {
         let s = document.getElementById("home-button"),
             f = document.getElementById("first-time"),
             h = document.getElementById("home")
-        s.classList.add("on")
+        s.classList.add("off")
         // we need a token
         if (this.token == null) {
             this.token = uuidv4()

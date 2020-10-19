@@ -88,7 +88,7 @@ export class Host {
         if (this.activeW)
             this.activeW.focus()
         let s = document.getElementById("home-button")
-        s.classList.remove("on")
+        s.classList.remove("off")
     }
             
     /*
