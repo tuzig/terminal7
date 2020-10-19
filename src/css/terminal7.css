@@ -152,7 +152,8 @@ nav i {
     display: table-cell;
     text-align: center
 }
-.on { color: #F952F9 !important; }
+.on { color: #D9F505 !important; }
+.failed { color: #F952F9 !important; }
 .off { color: #373702; }
 /* vertical align the nav bar buttons */
 .tabbar {

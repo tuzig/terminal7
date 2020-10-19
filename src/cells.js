@@ -715,7 +715,7 @@ export class Pane extends Cell {
         if (this.copyMode) {
             ne.classList.add("hidden")
             se.classList.remove("hidden")
-            document.getElementById("search-button").classList.add("on")
+            document.getElementById("search-button").classList.add("highlight")
             let u = se.querySelector("a[href='#find-url']"),
                 f = se.querySelector("a[href='#find-file']"),
                 i = se.querySelector("input[name='regex']")

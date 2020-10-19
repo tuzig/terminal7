@@ -95,7 +95,7 @@ export class Terminal7 {
         })
         document.addEventListener("offline", ev => {
             console.log("offline")
-            document.getElementById("connectivity").classList.add("off")
+            document.getElementById("connectivity").classList.add("failed")
             if (this.activeH)
                 this.activeH.updateState("offline")
             
