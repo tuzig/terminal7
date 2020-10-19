@@ -450,7 +450,7 @@ export class Host {
                     if (resp) {
                         // TODO: escape more...
                         let token = this.t7.token.replaceAll("'", "\'"),
-                            cmd = `sh -c 'echo "${token}" >> ~/.webexec/authorized_tokens'`
+                            cmd = `cat <<<"${token}" >> ~/.webexec/authorized_tokens`
                         window.cordova.plugins.sshConnect.executeCommand(cmd, 
                             ev =>  {
                                 this.notify("ssh exec success", ev)
