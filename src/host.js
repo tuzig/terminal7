@@ -157,7 +157,7 @@ export class Host {
      */
     connect() {
         // if we're already connected, just focus
-        if (this.state == "connected") {
+        if ((this.state == "connected") || (this.state == "completed")) {
             this.focus()
             return
         }
