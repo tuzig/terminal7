@@ -92,6 +92,8 @@ export class Terminal7 {
             console.log("online")
             document.getElementById("connectivity").classList.remove("off")
             this.clear()
+            if (this.activeH)
+                this.activeH.connect()
         })
         document.addEventListener("offline", ev => {
             console.log("offline")
@@ -198,14 +200,14 @@ export class Terminal7 {
             last,
             firstT = [],
             gesture = null
-        this.e.addEventListener("touchstart", ev => this.onTouch("start", ev),
-            false)
-        this.e.addEventListener("touchend", ev => this.onTouch("end", ev),
-            false)
-        this.e.addEventListener("touchcancel", e => this.onTouch("cancel", ev),
-            false)
-        this.e.addEventListener("touchmove", ev => this.onTouch("move", ev),
-            false)
+        this.e.addEventListener("touchstart", ev =>
+            this.onTouch("start", ev), false)
+        this.e.addEventListener("touchend", ev =>
+            this.onTouch("end", ev), false)
+        this.e.addEventListener("touchcancel", ev =>
+            this.onTouch("cancel", ev), false)
+        this.e.addEventListener("touchmove", ev =>
+            this.onTouch("move", ev), false)
     }
     /*
      * Terminal7.addHost is used to add a host with properties p to terminal 7
