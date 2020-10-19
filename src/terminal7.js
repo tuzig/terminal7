@@ -3,6 +3,7 @@
  * touchable terminal multiplexer running over wertc's data channels.
  */
 import { Host } from './host.js'
+import { v4 as uuidv4 } from 'uuid';
 import * as Hammer from 'hammerjs'
 
 export class Terminal7 {
@@ -249,9 +250,10 @@ export class Terminal7 {
             f = document.getElementById("first-time"),
             h = document.getElementById("home")
         s.classList.add("on")
+        // we need a token
         if (this.token == null) {
-            setTimeout(_ => this.createToken(), 100)
-            return
+            this.token = uuidv4()
+            localStorage.setItem('token', this.token)
         }
 
         else if (this.activeH) {
@@ -275,22 +277,5 @@ export class Terminal7 {
             document.getElementById("log-button")
                 .classList.remove("on")
         }
-    }
-    /*
-     * createToken starts a dialog witht he user to create a token
-     */
-    createToken() {
-        let ct = document.getElementById("first-time")
-        ct.style.display="block"
-        ct.querySelector(".submit").addEventListener('click', ev => {
-            let ct = document.getElementById("first-time")
-            this.token = ct.querySelector('[name="token"]').value
-            localStorage.setItem('token', this.token)
-            ev.target.parentNode.parentNode.parentNode.style.display="none"
-            this.goHome()
-        })
-        ct.querySelector(".close").addEventListener('click',  ev =>  {
-            ev.target.parentNode.parentNode.parentNode.style.display="none"
-        })
     }
 }

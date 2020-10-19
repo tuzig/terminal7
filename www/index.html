@@ -42,19 +42,6 @@
         </nav>
           </form>
       </div>
-      <div id="first-time" class="modal hidden border" >
-        <form id="create-token-form">
-            <h2>Thanks for installing Terminal7</h2>
-            <p>First we need to create an authorization token</p>
-            <textarea placeholder="please let your cat walk the keyboard"
-                      name="token" rows="3" required="required"></textarea>
-
-            <nav>
-                <i class="f7-icons close">xmark</i>
-                <i class="f7-icons submit">checkmark</i>
-            </nav>
-        </form>
-      </div>
       <div id="copy-token" class="hidden modal border" >
         <form id="copy-token-form">
             <p>We're sorry, but the host at <code id="ct-address"> </code>
@@ -62,6 +49,7 @@
                 Most likely because the token is not in:
                 <b id="ct-conffile"> ~/.webexec/authorized_tokens</b>
             </p>
+            <input type="text" name="token" readonly>
             <p>To proceed, you can either copy the token using another terminal
                 or we can use ssh to take care of that for you:
             </p>
@@ -69,8 +57,6 @@
             <input type="text" placeholder="your sysem username" name="uname" required>
             <label for="pass"><b>Password</b></label>
             <input type="password" placeholder="your password" name="pass" required>
-            <label for "token">Token</label>
-            <input type="text" name="token" readonly>
             <nav>
                 <i class="f7-icons close">xmark</i>
                 <i class="f7-icons copy">doc_on_clipboard</i>
