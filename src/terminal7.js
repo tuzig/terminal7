@@ -65,8 +65,7 @@ export class Terminal7 {
         document.getElementById('plus-host').addEventListener(
             'click', ev => addHost.style.display="block")
         addHost.querySelector(".submit").addEventListener('click', (ev) => {
-            let remember =
-                    addHost.querySelector('[name="remember"]').value == "on",
+            let remember = addHost.querySelector('[name="remember"]').checked,
                 host = this.addHost({
                     addr: addHost.querySelector('[name="hostaddr"]').value,
                     name: addHost.querySelector('[name="hostname"]').value,

@@ -53,8 +53,12 @@ export class Host {
             b.addEventListener('click', (e) => this.updateState("disconnected"))
             this.e.appendChild(t)
         }
-        let plusHost = document.getElementById("plus-host")
+        if (!this.store)  {
+            this.nameE = null
+            return
+        }
         // Add the hosts boxes to the home page
+        let plusHost = document.getElementById("plus-host")
         let li = document.createElement('li'),
             a = document.createElement('a'),
             addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
@@ -261,13 +265,15 @@ export class Host {
         })
         this.onack[msgId] = (isNack, state) => {
             if (isNack) {
-                this.nameE.classList.add("failed")
+                if (this.nameE != null)
+                    this.nameE.classList.add("failed")
                 this.notify("Authorization FAILED")
                 this.close()
                 setTimeout(_ => this.copyToken(), ABIT)
                 return
             }
-            this.nameE.classList.remove("failed")
+            if (this.nameE != null)
+                this.nameE.classList.remove("failed")
             this.notify("Authorization accepted")
             this.focus()
             if (state && (state.windows.length > 0)) {
