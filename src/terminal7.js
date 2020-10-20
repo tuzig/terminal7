@@ -90,7 +90,7 @@ export class Terminal7 {
         // Handle network events for the active host
         document.addEventListener("online", ev => {
             console.log("online")
-            document.getElementById("connectivity").classList.remove("off")
+            document.getElementById("connectivity").classList.remove("failed")
             this.clear()
             if (this.activeH)
                 this.activeH.connect()

@@ -18,16 +18,16 @@ export class Host {
         // 
         this.pc = null
         this.windows = []
-        this.state = this.updateState("init")
+        this.updateState("init")
         this.pendingCDCMsgs = []
         this.lastMsgId = 1
         // a mapping of refrence number to function called on received ack
         this.onack = {}
-        this.onnack = {}
         this.breadcrumbs = []
         this.log = []
         this.peer = null
         this.updateID  = null
+        this.timeoutID = null
     }
 
     /*
@@ -54,24 +54,24 @@ export class Host {
             this.e.appendChild(t)
         }
         let plusHost = document.getElementById("plus-host")
-        if (plusHost != null)  {
-            // Add the hosts boxes to the home page
-            let li = document.createElement('li'),
-                a = document.createElement('a'),
-                addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
-            li.classList.add("border")
-            a.innerHTML = `<h2>${this.name || this.addr}</h2>`
-            // Add gestures on the window name for rename and drag to trash
-            let hm = new Hammer.Manager(li, {})
-            hm.options.domEvents=true; // enable dom events
-            hm.add(new Hammer.Press({event: "edit", pointers: 1}))
-            hm.add(new Hammer.Tap({event: "connect", pointers: 1}))
-            hm.on("edit", (ev) => console.log("TODO: add host editing"))
-            hm.on("connect", (ev) => this.connect())
-            li.appendChild(a)
-            // use prepend to keep the "+" last
-            plusHost.parentNode.prepend(li)
-        }
+        // Add the hosts boxes to the home page
+        let li = document.createElement('li'),
+            a = document.createElement('a'),
+            addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
+        li.classList.add("border")
+        this.nameE = document.createElement('h1')
+        this.nameE.innerHTML = this.name || this.addr
+        a.appendChild(this.nameE)
+        // Add gestures on the window name for rename and drag to trash
+        let hm = new Hammer.Manager(li, {})
+        hm.options.domEvents=true; // enable dom events
+        hm.add(new Hammer.Press({event: "edit", pointers: 1}))
+        hm.add(new Hammer.Tap({event: "connect", pointers: 1}))
+        hm.on("edit", (ev) => console.log("TODO: add host editing"))
+        hm.on("connect", (ev) => this.connect())
+        li.appendChild(a)
+        // use prepend to keep the "+" last
+        plusHost.parentNode.prepend(li)
     }
     unfocus() {
         this.e.style.display = "none"
@@ -95,6 +95,11 @@ export class Host {
      */
     updateState(state) {
         let e = document.getElementById("disconnect-modal")
+        console.log(`host state change: ${this.state}->${state}`)
+        if (this.timeoutID != null) {
+            clearTimeout(this.timeoutID)
+            this.timeoutID = null
+        }
         if ((e.style.display == "none") && 
             ((state == "disconnected") ||
              (state == "unreachable") ||
@@ -104,11 +109,12 @@ export class Host {
             e.querySelector("h1").textContent =
                 (state == "offline")?"Network is Down":`Host ${state}`
             e.querySelector(".reconnect").addEventListener('click', ev => {
-                e.style.display = "none"
+                // e.style.display = "none"
+                this.close()
                 this.connect()
             })
             e.querySelector(".close").addEventListener('click', ev => {
-                e.style.display = "none"
+                this.close()
                 terminal7.goHome()
             })
             e.style.display = "block"
@@ -125,7 +131,6 @@ export class Host {
             e.style.disply = "none"
              
         this.state = state 
-        console.log("host state change: ", this.state)
     }
     /*
      * Host.clearLog cleans the log and the status modals
@@ -198,7 +203,7 @@ export class Host {
         this.openCDC()
         // authenticate starts the ball rolling
         this.authenticate()
-        setTimeout(ev => {
+        this.timeoutID = setTimeout(ev => {
             if ((this.state != "completed") && (this.state != "connected")) {
                 this.notify("Failed to connect to the server")
                 this.updateState("disconnected")
@@ -225,7 +230,6 @@ export class Host {
      * channle open or adds it to the queue if we're early to the part
      */
     sendCTRLMsg(msg) {
-        console.log("sending ctrl message ", msg)
         // helps us ensure every message gets only one Id
         if (msg.message_id === undefined) 
             msg.message_id = this.lastMsgId++
@@ -237,6 +241,7 @@ export class Host {
         else {
             const s = JSON.stringify(msg)
             try {
+                console.log("sending ctrl message ", s)
                 this.cdc.send(s)
             } catch(err) {
                 //TODO: this is silly, count proper retries
@@ -249,34 +254,32 @@ export class Host {
      * authenticate send the authentication message over the control channel
      */
     authenticate() {
-        let resolved = false
         
         let msgId = this.sendCTRLMsg({
             type: "auth",
             args: {token: terminal7.token}
         })
         this.onack[msgId] = (isNack, state) => {
-            resolved = true
-            if (!isNack) {
-                this.notify("Authorization accepted")
-                this.focus()
-                if (state && (state.windows.length > 0)) {
-                    console.log("reloading state: ", state)
-                    this.restoreState(state)
-                } else {
-                    // add the first window
-                    // this.e.style.display = "block"
-                    let w = this.addWindow()
-                    w.focus()
-                }
-            } else 
-                this.copyToken()
+            if (isNack) {
+                this.nameE.classList.add("failed")
+                this.notify("Authorization FAILED")
+                this.close()
+                setTimeout(_ => this.copyToken(), ABIT)
+                return
+            }
+            this.nameE.classList.remove("failed")
+            this.notify("Authorization accepted")
+            this.focus()
+            if (state && (state.windows.length > 0)) {
+                console.log("reloading state: ", state)
+                this.restoreState(state)
+            } else {
+                // add the first window
+                // this.e.style.display = "block"
+                let w = this.addWindow()
+                w.focus()
+            }
         }
-        setTimeout(() => {
-            if (!resolved)
-                // TODO: handle expired timeout
-                this.notify("Timeout on auth ack")
-        }, 3000)
     }
     restoreState(state) {
         let focused = false
@@ -329,7 +332,7 @@ export class Host {
             this.state = "closed"
             console.log('Control Channel is closed')
             this.close(true)
-            // TODO: What now?
+            terminal7.goHome()
         }
         cdc.onopen = () => {
             if (this.pendingCDCMsgs.length > 0)
@@ -373,7 +376,6 @@ export class Host {
         this.breadcrumbs = []
         this.clearLog()
         this.e.style.display = "none"
-        terminal7.goHome()
     }
     /*
      * Host.sendSize sends a control message with the pane's size to the server

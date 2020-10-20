@@ -146,6 +146,11 @@ export class Window {
         if (this.host.windows.length == 0)
             this.host.close()
         else
-            this.host.breadcrumbs.pop().focus()
+            if (this.breadcrumbs.length > 0)
+                this.host.breadcrumbs.pop().focus()
+            else
+            this.host.windows[0].focus()
+
     }
+
 }
