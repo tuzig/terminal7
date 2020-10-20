@@ -515,8 +515,13 @@ export class Pane extends Cell {
                 else if (ev.domEvent.key == "%") {
                     this.split("topbottom")
                 }
+                else if (ev.domEvent.key == '"') {
+                    this.split("rightleft")
+                }
                 else if (ev.domEvent.key == "?") {
                     this.toggleSearch()
+                } else if ((ev.domEvent.ctrlKey == true) && (ev.domEvent.key == "a")) {
+                    this.d.send(ev.key)
                 }
                 afterLeader = false
             }
