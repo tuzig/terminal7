@@ -318,6 +318,7 @@ export class Layout extends Cell {
                     sy: c.sy,
                     xoff: c.xoff,
                     yoff: c.yoff,
+                    fontSize: c.fontSize,
                     webexec_id: c.webexecID,
                 }
                 if (c.webexecID == this.w.activeP.webexecID)
@@ -556,6 +557,7 @@ export class Pane extends Cell {
         else if (this.fontSize > 30) this.fontSize = 30
         this.t.setOption('fontSize', this.fontSize)
         this.fit()
+        this.host.sendState()
     }
 
     // fit a pane
