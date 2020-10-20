@@ -34,10 +34,8 @@ export class Window {
         h.options.domEvents=true; // enable dom events
         h.add(new Hammer.Press({event: "rename", pointers: 1}))
         h.add(new Hammer.Tap({event: "switch", pointers: 1}))
-        h.on("rename", (ev) => 
-             // For some reason this works much better with a timeout
-             window.setTimeout(() => this.rename(), 0))
-        h.on('switch', (ev) => this.focus())
+        h.on("rename", ev => this.rename())
+        h.on("switch", (ev) => this.focus())
         div.appendChild(a)
         this.nameE = a
         let wn = this.host.e.querySelector(".tabbar-names")
@@ -111,7 +109,6 @@ export class Window {
      */
     rename() {
         let e = this.nameE
-        this.focus()
         e.innerHTML= `<input size='10' name='window-name'>`
         let i = e.children[0]
         i.focus()
