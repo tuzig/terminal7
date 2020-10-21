@@ -19,6 +19,7 @@
     "publish": null
   },
   "dependencies": {
+    "@iarna/toml": "^2.2.5",
     "cordova": "^10.0.0",
     "cordova-plugin-inappbrowser": "^4.0.0",
     "cordova-plugin-network-information": "^2.0.2",

@@ -3,13 +3,7 @@ import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { fileRegex, urlRegex } from './utils.js'
 
-const   DEFAULT_XTERM_THEME = {
-            foreground: "#00FAFA", 
-            background: "#000",
-            selection: "#D9F505"},
-        RETRIES             = 3,
-        ABIT                = 10,
-        TIMEOUT             = 3000,
+const  ABIT                = 10,
         REGEX_SEARCH        = false,
         SEARCH_OPTS = {
             regex: REGEX_SEARCH,
@@ -458,7 +452,7 @@ export class Pane extends Cell {
         this.fontSize = props.fontSize || 12
         this.scrolling = false
         this.scrollLingers4 = props.scrollLingers4 || 2000
-        this.theme = props.theme || DEFAULT_XTERM_THEME
+        this.theme = props.theme || terminal7.conf.theme
         this.copyMode = false
     }
 
@@ -572,12 +566,12 @@ export class Pane extends Cell {
             try {
                 this.fitAddon.fit()
             } catch {
-                if (this.retries < RETRIES) {
+                if (this.retries < terminal7.conf.retries) {
                     this.retries++
                     setTimeout(this.fit, 20*this.retries)
                 }
                 else
-                    console.log(`fit failed ${RETRIES} times. giving up`)
+                    console.log(`fit failed ${this.retries} times. giving up`)
                 return
             }
             this.host.sendSize(this)
@@ -638,7 +632,8 @@ export class Pane extends Cell {
             label = ""
         this.buffer = []
 
-        label = this.webexecID?`>${this.webexecID}`:`${tSize},zsh`
+        label = this.webexecID?`>${this.webexecID}`:
+                               `${tSize},${terminal7.conf.exec.shell}`
 
         console.log(`opening dc with label: "${label}`)
         this.d = this.host.pc.createDataChannel(label)
@@ -653,7 +648,7 @@ export class Pane extends Cell {
                 if (this.state == "opened") {
                     this.host.notify("Data channel is opened, but no first message")
                     this.host.updateState("disconnected")
-                }}, TIMEOUT)
+                }}, terminal7.conf.timeout)
         }
         this.d.onmessage = m => this.onMessage(m)
 

@@ -5,6 +5,17 @@
 import { Host } from './host.js'
 import { v4 as uuidv4 } from 'uuid';
 import * as Hammer from 'hammerjs'
+import * as TOML from '@iarna/toml'
+
+const DEFAULT_DOTFILE = `[theme]
+foreground = "#00FAFA"
+background = "#000"
+selection ="#D9F505"
+[exec]
+shell = "zsh"
+timeout = 3000
+retries = 3
+`
 
 export class Terminal7 {
     /*
@@ -26,6 +37,10 @@ export class Terminal7 {
                 // h.restore()
                 this.hosts.push(h)
             })
+        let dotfile = localStorage.getItem('dotfile') || DEFAULT_DOTFILE
+        this.conf = TOML.parse(dotfile)
+        // TODO: after edit store the new dotfile using:
+        // localStorage.setItem("dotfile", TOML.stringify(dotfile))
         this.minSplitSpeed      = settings.minSplitSpeed || 2.2
         this.scrollLingers4     = settings.scrollLingers4 || 2000
         this.shortestLongPress  = settings.shortestLongPress || 1000
