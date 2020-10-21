@@ -10,8 +10,9 @@ const   DEFAULT_XTERM_THEME = {
         RETRIES             = 3,
         ABIT                = 10,
         TIMEOUT             = 3000,
+        REGEX_SEARCH        = false,
         SEARCH_OPTS = {
-            regex: true,
+            regex: REGEX_SEARCH,
             wholeWord: false,
             incremental: false,
             caseSensitive: true}
@@ -692,12 +693,15 @@ export class Pane extends Cell {
         if ((ev.keyCode == 13) || (ev.key == "n")) {
             if (!this.searchAddon
                 // TODO: fix findPrevious and use it in the next line
-                     .findNext(this.searchRE, SEARCH_OPTS))
-                console.log(`Couldn't find "${this.searchRE}"`)
+                     .findPrevious(this.searchTerm, SEARCH_OPTS))
+                console.log(`Couldn't find "${this.searchTerm}"`)
             else
-                console.log(`Found "${this.searchRE}"`)
+                console.log(`Found "${this.searchTerm}"`)
         }
-        else if (ev.key == "o") {
+        else if (ev.key == "p") {
+            this.searchAddon.findNext(this.searchTerm, SEARCH_OPTS)
+        }
+        else if (REGEX_SEARCH && (ev.key == "o")) {
             var ref = cordova.InAppBrowser.open(this.t.getSelection(), "_system", "");
         }
         else if (ev.key == "q") {
@@ -720,25 +724,35 @@ export class Pane extends Cell {
         if (this.copyMode) {
             ne.classList.add("hidden")
             se.classList.remove("hidden")
-            document.getElementById("search-button").classList.add("highlight")
+            document.getElementById("search-button").classList.add("on")
+            // TODO: restore regex search
             let u = se.querySelector("a[href='#find-url']"),
                 f = se.querySelector("a[href='#find-file']"),
-                i = se.querySelector("input[name='regex']")
-            u.onclick = ev => {
-                ev.preventDefault()
-                ev.stopPropagation()
-                this.focus()
-                i.value = this.searchRE = urlRegex
-                this.handleCopyModeKey({keyCode: 13})
-            }
-            // TODO: fix findPrevious and use it in the next line
-            f.onclick = _ => this.searchAddon.findNext(fileRegex, SEARCH_OPTS)
+                i = se.querySelector("input[name='term']")
+            if (REGEX_SEARCH) {
+                i.setAttribute("placeholder", "regex here")
+                u.classList.remove("hidden")
+                f.classList.remove("hidden")
+                u.onclick = ev => {
+                    ev.preventDefault()
+                    ev.stopPropagation()
+                    this.focus()
+                    i.value = this.searchTerm = urlRegex
+                    this.handleCopyModeKey({keyCode: 13})
+                }
+                // TODO: findPrevious does not work well
+                f.onclick = _ => this.searchAddon.findPrevious(fileRegex, SEARCH_OPTS)
+            } else 
+                i.setAttribute("placeholder", "search string here")
+            if (this.searchTerm)
+                i.value = this.searchTerm
+
             i.onkeydown = ev => {
                 if (ev.keyCode == 13) {
                     ev.preventDefault()
                     ev.stopPropagation()
                     this.focus()
-                    this.searchRE = ev.target.value
+                    this.searchTerm = ev.target.value
                     this.handleCopyModeKey(ev)
                 }
             }

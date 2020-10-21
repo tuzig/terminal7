@@ -279,7 +279,7 @@ nav i {
   border: 1px solid #ccc;
   box-sizing: border-box;
 }
-.hidden { display: none; }
+.hidden { display: none !important; }
 .host {
     width: 100%;
     max-width: 100%;
