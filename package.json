@@ -8,7 +8,7 @@
     "terminal7": "download_browser.js"
   },
   "build": {
-    "appId": "com.tuzig.terminal7",
+    "appId": "dev.terminal7",
     "files": [
       "index.html",
       "css/*"
@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
+    "codemirror": "git+https://github.com/tuzig/CodeMirror.git",
     "cordova": "^10.0.0",
     "cordova-plugin-inappbrowser": "^4.0.0",
     "cordova-plugin-network-information": "^2.0.2",
@@ -31,6 +32,7 @@
     "hammerjs": "^2.0.8",
     "karma-safari-launcher": "^1.0.0",
     "karma-source-map-support": "^1.4.0",
+    "npm": "^6.14.8",
     "uuid": "^8.3.1",
     "web": "0.0.2",
     "websocket-extensions": ">=0.1.4",

@@ -78,15 +78,15 @@ export class Host {
         plusHost.parentNode.prepend(li)
     }
     unfocus() {
-        this.e.style.display = "none"
+        this.e.classList.add("hidden")
     }
     focus() {
         // first hide the current focused host
         let activeH = terminal7.activeH
         if (activeH) {
-            activeH.e.style.display = "none"
+            activeH.e.classList.add("hidden")
         }
-        this.e.style.display = "block"
+        this.e.classList.remove("hidden")
         terminal7.activeH = this
         if (this.activeW)
             this.activeW.focus()
@@ -104,7 +104,7 @@ export class Host {
             clearTimeout(this.timeoutID)
             this.timeoutID = null
         }
-        if ((e.style.display == "none") && 
+        if (e.classList.contains("hidden") && 
             ((state == "disconnected") ||
              (state == "unreachable") ||
              (state == "offline"))) {
@@ -113,7 +113,6 @@ export class Host {
             e.querySelector("h1").textContent =
                 (state == "offline")?"Network is Down":`Host ${state}`
             e.querySelector(".reconnect").addEventListener('click', ev => {
-                // e.style.display = "none"
                 this.close()
                 this.connect()
             })
@@ -121,7 +120,7 @@ export class Host {
                 this.close()
                 terminal7.goHome()
             })
-            e.style.display = "block"
+            e.classList.remove("hidden")
             
         }
         /* Maybe we should restart Ice. duno
@@ -132,7 +131,7 @@ export class Host {
             this.pc.restartIce()
         */
         else 
-            e.style.disply = "none"
+            e.classList.add("hidden")
              
         this.state = state 
     }
@@ -145,8 +144,8 @@ export class Host {
         this.log = []
         */
         // hide the disconnect modal
-        // document.getElementById("disconnect-modal").style.display = "none"
-        document.getElementById("log").style.display = "none"
+        // document.getElementById("disconnect-modal").classList.add("hidden")
+        document.getElementById("log").classList.add("hidden")
     }
     /*
      * Host.peerConnect connects the webrtc session with the peer
@@ -381,7 +380,7 @@ export class Host {
         this.windows = []
         this.breadcrumbs = []
         this.clearLog()
-        this.e.style.display = "none"
+        this.e.classList.add("hidden")
     }
     /*
      * Host.sendSize sends a control message with the pane's size to the server
@@ -438,17 +437,17 @@ export class Host {
         document.getElementById("ct-address").innerHTML = addr
         document.getElementById("ct-name").innerHTML = this.name
         ct.querySelector('[name="token"]').value = terminal7.token
-        ct.style.display="block"
+        ct.classList.remove("hidden")
         ct.querySelector(".copy").addEventListener('click', ev => {
             ct.querySelector('[name="token"]').select()
             document.execCommand("copy")
-            ev.target.parentNode.parentNode.parentNode.style.display="none"
+            ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
             this.notify("Token copied to the clipboard")
         })
         ct.querySelector(".submit").addEventListener('click', ev => {
             let uname = ct.querySelector('[name="uname"]').value,
                 pass = ct.querySelector('[name="pass"]').value
-            ev.target.parentNode.parentNode.parentNode.style.display="none"
+            ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
             this.notify("ssh is connecting...")
             window.cordova.plugins.sshConnect.connect(uname, pass, addr, 22,
                 resp => {
@@ -475,7 +474,7 @@ export class Host {
                 })
         })
         ct.querySelector(".close").addEventListener('click',  ev =>  {
-            ev.target.parentNode.parentNode.parentNode.style.display="none"
+            ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
         })
     }
 }

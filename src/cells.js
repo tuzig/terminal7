@@ -547,7 +547,9 @@ export class Pane extends Cell {
         this.state = "opened"
         return this.t
     }
-
+    setTheme(theme) {
+        this.t.setOption("theme", theme)
+    }
     /*
      * Pane.scale is used to change the pane's font size
      */

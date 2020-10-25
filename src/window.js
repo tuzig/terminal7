@@ -52,9 +52,9 @@ export class Window {
         let a = this.host.activeW
         if (a) {
             a.nameE.classList.remove("on")
-            a.e.style.display = "none"
+            a.e.classList.add("hidden")
         }
-        this.e.style.display = "block"
+        this.e.classList.remove("hidden")
         this.nameE.classList.add("on")
         this.host.activeW = this
         window.location.href=`#tab-${this.host.id}.${this.id+1}`

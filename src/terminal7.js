@@ -3,9 +3,13 @@
  * touchable terminal multiplexer running over wertc's data channels.
  */
 import { Host } from './host.js'
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid'
 import * as Hammer from 'hammerjs'
 import * as TOML from '@iarna/toml'
+import CodeMirror from 'codemirror/src/codemirror.js'
+import { vimMode } from 'codemirror/keymap/vim.js'
+import { tomlMode} from 'codemirror/mode/toml/toml.js'
+import { dialogAddOn } from 'codemirror/addon/dialog/dialog.js'
 
 const DEFAULT_DOTFILE = `[theme]
 foreground = "#00FAFA"
@@ -39,13 +43,12 @@ export class Terminal7 {
             })
         let dotfile = localStorage.getItem('dotfile') || DEFAULT_DOTFILE
         this.conf = TOML.parse(dotfile)
-        // TODO: after edit store the new dotfile using:
-        // localStorage.setItem("dotfile", TOML.stringify(dotfile))
         this.minSplitSpeed      = settings.minSplitSpeed || 2.2
         this.scrollLingers4     = settings.scrollLingers4 || 2000
         this.shortestLongPress  = settings.shortestLongPress || 1000
         this.borderHotSpotSize  = settings.borderHotSpotSize || 30
         this.token = localStorage.getItem("token")
+        this.confEditor = null
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,
@@ -75,10 +78,47 @@ export class Terminal7 {
         document.getElementById("search-button")
                 .addEventListener("click", ev => 
                     this.activeH && this.activeH.activeW.activeP.toggleSearch())
+        document.getElementById("dotfile-button")
+                .addEventListener("click", ev => {
+                    var modal   = document.getElementById("settings-modal"),
+                        button  = document.getElementById("dotfile-button"),
+                        area    =  document.getElementById("edit-conf"),
+                        conf    =  localStorage.getItem("dotfile") || DEFAULT_DOTFILE
+
+                    area.value = conf
+
+                    button.classList.add("on")
+                    modal.classList.remove("hidden")
+
+                    if (terminal7.confEditor == null) {
+                        vimMode(CodeMirror)
+                        tomlMode(CodeMirror)
+                        dialogAddOn(CodeMirror)
+                        CodeMirror.commands.save = _ => this.saveConf()
+                        // TODO: the next 2 lines do nothing fixed them and support :q
+                        CodeMirror.commands.wq = _ => this.saveConf()
+                        CodeMirror.commands.q = _ => modal.classList.add("hidden")
+                        terminal7.confEditor  = CodeMirror.fromTextArea(area, {
+                           value: conf,
+                           lineNumbers: true,
+                           mode: "toml",
+                           keyMap: "vim",
+                           matchBrackets: true,
+                           showCursorWhenSelecting: true
+                        })
+                    }
+                    terminal7.confEditor.focus()
+                    modal.querySelector(".close").addEventListener('click',ev => {
+                        button.classList.remove("on")
+                        this.clear()
+                    })
+                    modal.querySelector(".save").addEventListener('click',ev =>
+                        this.saveConf())
+                })
         // display the home page, starting with the plus button
         let addHost = document.getElementById("add-host")
         document.getElementById('plus-host').addEventListener(
-            'click', ev => addHost.style.display="block")
+            'click', ev => addHost.classList.remove("hidden"))
         addHost.querySelector(".submit").addEventListener('click', (ev) => {
             let remember = addHost.querySelector('[name="remember"]').checked,
                 host = this.addHost({
@@ -93,13 +133,12 @@ export class Terminal7 {
         })
         // hide the modal on xmark click
         addHost.querySelector(".close").addEventListener('click',  ev =>  {
-            ev.target.parentNode.parentNode.parentNode.style.display="none"
             this.clear()
         })
         this.state = "open"
         this.hosts.forEach((host) => {
             host.open(e)
-            host.e.style.display = "none"
+            host.e.classList.add("hidden")
         })
         // Handle network events for the active host
         document.addEventListener("online", ev => {
@@ -118,6 +157,23 @@ export class Terminal7 {
         })
         this.catchFingers()
         this.goHome()
+    }
+    /*
+     * saveConf saves the configuration and closes open conf editor
+     */
+    saveConf() {
+        var button  = document.getElementById("dotfile-button"),
+            area    =  document.getElementById("edit-conf")
+        button.classList.remove("on")
+        terminal7.confEditor.save()
+        console.log(area.value)
+        this.conf = TOML.parse(area.value)
+        localStorage.setItem("dotfile", area.value)
+        this.cells.forEach(c => {
+            if (typeof(c.setTheme) == "function")
+                c.setTheme(this.conf.theme)
+        })
+        this.clear()
     }
     /*
      * terminal7.onTouch is called on all nrowser's touch events
@@ -259,7 +315,7 @@ export class Terminal7 {
     }
     clear() {
         document.querySelectorAll(".modal").forEach(e =>
-                e.style.display = "none")
+                e.classList.add("hidden"))
     }
     goHome() {
         let s = document.getElementById("home-button"),
