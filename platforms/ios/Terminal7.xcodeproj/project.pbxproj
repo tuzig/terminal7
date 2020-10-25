@@ -26,6 +26,7 @@
 		A436A9A0F2064289ADAD65A8 /* CoreTelephony.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A24543B0A4BA4A8983A3164C /* CoreTelephony.framework */; };
 		D339AA6855B94CB3BE133302 /* CDVInAppBrowserNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3B7FEE7EDEC14153ACA87868 /* CDVInAppBrowserNavigationController.m */; };
 		E75D679F5E304A9BAAE36666 /* SSHConnect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 880917B2DBA244C791625005 /* SSHConnect.swift */; };
+		0EBBB2769F92451AA821D617 /* CDVClipboard.m in Sources */ = {isa = PBXBuildFile; fileRef = D23063446B6D4489968CB454 /* CDVClipboard.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -95,6 +96,8 @@
 		ED33DF2A687741AEAF9F8254 /* Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Bridging-Header.h"; sourceTree = "<group>"; };
 		EFA71DA5072AA710AEB1D84D /* Pods_Terminal7.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Terminal7.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F840E1F0165FE0F500CFE078 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = config.xml; path = Terminal7/config.xml; sourceTree = "<group>"; };
+		D23063446B6D4489968CB454 /* CDVClipboard.m */ = {isa = PBXFileReference; name = "CDVClipboard.m"; path = "cordova-clipboard/CDVClipboard.m"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; explicitFileType = undefined; includeInIndex = 0; };
+		E24DBEE708A2475B8DCEED14 /* CDVClipboard.h */ = {isa = PBXFileReference; name = "CDVClipboard.h"; path = "cordova-clipboard/CDVClipboard.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -223,6 +226,8 @@
 				880917B2DBA244C791625005 /* SSHConnect.swift */,
 				4DD0A1E1CB624EB381728982 /* SSHConnectError.swift */,
 				3A34019942414D588093C5EB /* SSHConnect-Bridging-Header.h */,
+				D23063446B6D4489968CB454 /* CDVClipboard.m */,
+				E24DBEE708A2475B8DCEED14 /* CDVClipboard.h */,
 			);
 			name = Plugins;
 			path = Terminal7/Plugins;
@@ -411,6 +416,7 @@
 				0B8BE226B9FE485FB4947CA4 /* CDVStatusBar.m in Sources */,
 				E75D679F5E304A9BAAE36666 /* SSHConnect.swift in Sources */,
 				4DED97474CA0436A819D4A76 /* SSHConnectError.swift in Sources */,
+				0EBBB2769F92451AA821D617 /* CDVClipboard.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

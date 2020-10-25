@@ -39,6 +39,9 @@
     <feature name="sshConnect">
         <param name="ios-package" value="sshConnect" />
     </feature>
+    <feature name="Clipboard">
+        <param name="ios-package" value="CDVClipboard" />
+    </feature>
     <name>Terminal7</name>
     <description>
         A gestures aware terminal emulator and multiplexer

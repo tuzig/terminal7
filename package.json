@@ -43,6 +43,7 @@
   "devDependencies": {
     "chai": "^4.2.0",
     "cordova-browser": "^6.0.0",
+    "cordova-clipboard": "^1.3.0",
     "cordova-ios": "^6.1.1",
     "cordova-plugin-add-swift-support": "^1.7.2",
     "css-loader": "^3.5.2",
@@ -100,7 +101,8 @@
       "cordova-plugin-webpack": {},
       "cordova-plugin-network-information": {},
       "cordova-plugin-inappbrowser": {},
-      "cordova-plugin-ssh-connect": {}
+      "cordova-plugin-ssh-connect": {},
+      "cordova-clipboard": {}
     },
     "platforms": [
       "ios",

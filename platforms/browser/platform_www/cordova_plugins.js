@@ -58,6 +58,14 @@ module.exports = [
         "id": "cordova-plugin-statusbar.StatusBarProxy",
         "pluginId": "cordova-plugin-statusbar",
         "runs": true
+    },
+    {
+        "file": "plugins/cordova-clipboard/www/clipboard.js",
+        "id": "cordova-clipboard.Clipboard",
+        "pluginId": "cordova-clipboard",
+        "clobbers": [
+            "cordova.plugins.clipboard"
+        ]
     }
 ];
 module.exports.metadata = 
@@ -69,7 +77,8 @@ module.exports.metadata =
     "cordova-plugin-ssh-connect": "1.1.1",
     "cordova-plugin-statusbar": "2.4.3",
     "cordova-plugin-webpack": "1.0.5",
-    "cordova-plugin-whitelist": "1.3.4"
+    "cordova-plugin-whitelist": "1.3.4",
+    "cordova-clipboard": "1.3.0"
 }
 // BOTTOM OF METADATA
 });

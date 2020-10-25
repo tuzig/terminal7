@@ -40,6 +40,14 @@ cordova.define('cordova/plugin_list', function(require, exports, module) {
       "clobbers": [
         "cordova.plugins.sshConnect"
       ]
+    },
+    {
+      "id": "cordova-clipboard.Clipboard",
+      "file": "plugins/cordova-clipboard/www/clipboard.js",
+      "pluginId": "cordova-clipboard",
+      "clobbers": [
+        "cordova.plugins.clipboard"
+      ]
     }
   ];
   module.exports.metadata = {
@@ -49,6 +57,7 @@ cordova.define('cordova/plugin_list', function(require, exports, module) {
     "cordova-plugin-webpack": "1.0.5",
     "cordova-plugin-whitelist": "1.3.4",
     "cordova-plugin-add-swift-support": "1.7.2",
-    "cordova-plugin-ssh-connect": "1.1.1"
+    "cordova-plugin-ssh-connect": "1.1.1",
+    "cordova-clipboard": "1.3.0"
   };
 });

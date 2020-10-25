@@ -439,7 +439,8 @@ export class Host {
         ct.querySelector('[name="token"]').value = terminal7.token
         ct.classList.remove("hidden")
         ct.querySelector(".copy").addEventListener('click', ev => {
-            ct.querySelector('[name="token"]').select()
+            cordova.plugins.clipboard.copy(
+                ct.querySelector('[name="token"]').value)
             document.execCommand("copy")
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
             this.notify("Token copied to the clipboard")

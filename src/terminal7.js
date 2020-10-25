@@ -106,14 +106,22 @@ export class Terminal7 {
                            matchBrackets: true,
                            showCursorWhenSelecting: true
                         })
+                        modal.querySelector(".close").addEventListener('click',
+                            ev => {
+                                button.classList.remove("on")
+                                this.clear()
+                            }
+                        )
+                        modal.querySelector(".save").addEventListener('click',
+                            ev => this.saveConf())
+                        modal.querySelector(".copy").addEventListener('click',
+                            ev => {
+                            var area =  document.getElementById("edit-conf")
+                            terminal7.confEditor.save()
+                            cordova.plugins.clipboard.copy(area.value);
+                        })
                     }
                     terminal7.confEditor.focus()
-                    modal.querySelector(".close").addEventListener('click',ev => {
-                        button.classList.remove("on")
-                        this.clear()
-                    })
-                    modal.querySelector(".save").addEventListener('click',ev =>
-                        this.saveConf())
                 })
         // display the home page, starting with the plus button
         let addHost = document.getElementById("add-host")
@@ -166,7 +174,6 @@ export class Terminal7 {
             area    =  document.getElementById("edit-conf")
         button.classList.remove("on")
         terminal7.confEditor.save()
-        console.log(area.value)
         this.conf = TOML.parse(area.value)
         localStorage.setItem("dotfile", area.value)
         this.cells.forEach(c => {
