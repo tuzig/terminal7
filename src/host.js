@@ -49,8 +49,10 @@ export class Host {
                 let w = this.addWindow()
                 w.focus()
             })
+            /* TODO: handle the bang
             let b = t.querySelector(".bang")
-            b.addEventListener('click', (e) => this.updateState("disconnected"))
+            b.addEventListener('click', (e) => {new window from active pane})
+            */
             this.e.appendChild(t)
         }
         if (!this.store)  {
@@ -98,15 +100,27 @@ export class Host {
      * Host.updateState(state) is the place for the host state machine
      */
     updateState(state) {
-        let e = document.getElementById("disconnect-modal")
         console.log(`host state change: ${this.state}->${state}`)
+        /*
         if (this.timeoutID != null) {
             clearTimeout(this.timeoutID)
             this.timeoutID = null
         }
+        */
+        // nothing changed than do nothing
+        if ((this.state == state))
+            return
+
+        // update the hostconn indicator - unless it's an init
+        if ((state == "new") || (state == "connecting") || (state == "connected"))
+            document.getElementById("hostconn").classList.remove("failed")
+        else if (state != "init")
+            document.getElementById("hostconn").classList.add("failed")
+
+        let e = document.getElementById("disconnect-modal")
         if (e.classList.contains("hidden") && 
-            ((state == "disconnected") ||
-             (state == "unreachable") ||
+           ((state == "closed") ||
+            (state == "unreachable") ||
              (state == "offline"))) {
             // clear pending messages to let the user start fresh
             this.pendingCDCMsgs = []
@@ -121,7 +135,6 @@ export class Host {
                 terminal7.goHome()
             })
             e.classList.remove("hidden")
-            
         }
         /* Maybe we should restart Ice. duno
         else if (state === "failed") {
@@ -130,9 +143,9 @@ export class Host {
                 .then(sendOfferToServer)
             this.pc.restartIce()
         */
-        else 
+        else  {
             e.classList.add("hidden")
-             
+        }
         this.state = state 
     }
     /*
@@ -175,8 +188,8 @@ export class Host {
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: 'stun:stun2.l.google.com:19302' }
                 ] })
-        this.pc.oniceconnectionstatechange = e =>
-            this.updateState(this.pc.iceConnectionState)
+        this.pc.onconnectionstatechange = e =>
+            this.updateState(this.pc.connectionState)
 
         let offer = ""
         this.pc.onicecandidate = ev => {
@@ -192,9 +205,7 @@ export class Host {
                     this.peer = JSON.parse(atob(data))
                     this.peerConnect(this.peer)
                 }).catch(error => {
-                    // notify, but first remove the period at the end
-                    this.notify(error.message.slice(0,-1))
-                    // redisplay the disconnected modal
+                    this.notify(`HTTP signaling failed: ${error.message}`)
                     this.updateState("unreachable")
                  })
             } 
@@ -206,12 +217,14 @@ export class Host {
         this.openCDC()
         // authenticate starts the ball rolling
         this.authenticate()
+        /* 
         this.timeoutID = setTimeout(ev => {
             if ((this.state != "completed") && (this.state != "connected")) {
                 this.notify("Failed to connect to the server")
                 this.updateState("disconnected")
             }
         }, TIMEOUT)
+        */
     }
     /*
      * Host.noitify adds a message to the host's log
@@ -375,7 +388,7 @@ export class Host {
         if (verify)
             console.log("TODO: verify close")
         this.pc.close()
-        this.state = this.updateState("close")
+        this.state = this.updateState("closed")
         this.windows.forEach(w => w.close())
         this.windows = []
         this.breadcrumbs = []

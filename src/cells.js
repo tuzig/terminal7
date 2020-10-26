@@ -649,8 +649,8 @@ export class Pane extends Cell {
             setTimeout(() => {
                 if (this.state == "opened") {
                     this.host.notify("Data channel is opened, but no first message")
-                    this.host.updateState("disconnected")
-                }}, terminal7.conf.timeout)
+                    this.host.updateState("failed")
+                }}, terminal7.conf.exec.timeout)
         }
         this.d.onmessage = m => this.onMessage(m)
 
@@ -658,17 +658,21 @@ export class Pane extends Cell {
     }
     // called when a message is received from the server
     onMessage (m) {
+        terminal7.flashHostConn()
         var enc = new TextDecoder("utf-8"),
-            str = enc.decode(m.data)
-        // console.log(this.webexecID + "> " + str)
+            msg = enc.decode(m.data)
+        // console.log(this.webexecID + "> " + msg)
         if (this.state == "opened") {
+            console.log(`Got first DC msg: ${msg}`)
             this.state = "connected"
-            this.webexecID = parseInt(str)
+            this.webexecID = parseInt(msg)
             this.host.onPaneConnected(this)
         }
+        /* TODO: do we need a buffer?
         else if (this.state == "disconnected") {
             this.buffer.push(new Uint8Array(m.data))
         }
+        */
         else if (this.state == "connected") {
             this.write(new Uint8Array(m.data))
         }

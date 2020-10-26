@@ -14,7 +14,11 @@ import { dialogAddOn } from 'codemirror/addon/dialog/dialog.js'
 const DEFAULT_DOTFILE = `[theme]
 foreground = "#00FAFA"
 background = "#000"
-selection ="#D9F505"
+selection = "#D9F505"
+
+[indicators]
+flash = 100
+
 [exec]
 shell = "zsh"
 timeout = 3000
@@ -49,6 +53,7 @@ export class Terminal7 {
         this.borderHotSpotSize  = settings.borderHotSpotSize || 30
         this.token = localStorage.getItem("token")
         this.confEditor = null
+        this.flashTimer = null
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,
@@ -153,14 +158,18 @@ export class Terminal7 {
             console.log("online")
             document.getElementById("connectivity").classList.remove("failed")
             this.clear()
+            /*
             if (this.activeH)
                 this.activeH.connect()
+            */
         })
         document.addEventListener("offline", ev => {
             console.log("offline")
             document.getElementById("connectivity").classList.add("failed")
+            /*
             if (this.activeH)
                 this.activeH.updateState("offline")
+            */
             
         })
         this.catchFingers()
@@ -326,9 +335,11 @@ export class Terminal7 {
     }
     goHome() {
         let s = document.getElementById("home-button"),
-            f = document.getElementById("first-time"),
-            h = document.getElementById("home")
+            h = document.getElementById("home"),
+            hc = document.getElementById("hostconn")
         s.classList.add("off")
+        hc.classList.add("off")
+        hc.classList.remove("on", "failed")
         // we need a token
         if (this.token == null) {
             this.token = uuidv4()
@@ -355,6 +366,19 @@ export class Terminal7 {
             e.classList.add("fade-out")
             document.getElementById("log-button")
                 .classList.remove("on")
+        }
+    }
+    /*
+     * flashHostConn is called to flash the host connection indicator.
+     */
+    flashHostConn() {
+        if (this.flashTimer == null) {
+            document.getElementById("hostconn").classList.remove("failed", "off")
+            document.getElementById("hostconn").classList.add("on")
+            this.flashTime = setTimeout(_ => {
+                document.getElementById("hostconn").classList.remove("on")
+                document.getElementById("hostconn").classList.add("off")
+            }, this.conf.indicators.flash || 100)
         }
     }
 }

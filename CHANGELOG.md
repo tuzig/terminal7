@@ -8,8 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Removed "disconnected" modal popin when all is OK
+
 ### Added
 
+- Adding indicators for network & host connectivity
+- Settings through a dotfile and the CodeMirror editor
 - Token generation, storing and copying to server
 
 ## [0.7.1] - 2020/10/04

@@ -4,6 +4,7 @@
  * dark yellow - #373702
  * magenta - #F952F9
  * light blue - #00FAFA
+ * green - #00FA00
  * background - #271D30
  */
 html,
@@ -152,7 +153,7 @@ nav i {
     display: table-cell;
     text-align: center
 }
-.on { color: #D9F505 !important; }
+nav .on { color: #D9F505 !important; }
 .failed { color: #F952F9 !important; }
 .off { color: #373702; }
 /* vertical align the nav bar buttons */
@@ -317,4 +318,25 @@ nav i {
 .search-container {
     margin: 0 auto;
     width: 80%;
+}
+#indicators {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    font-size: 4vmin;
+    width: 5vmin;
+    margin: 6px;
+    z-index: 10;
+    opacity: 0.6;
+}
+#indicators i {
+    cursor: pointer;
+    border: 1px solid #373702;
+    float: right;
+    text-align: center;
+    padding: 0.2em;
+    color: #00FA00; 
+}
+#indicators .off {
+    color: #003F00;
 }
