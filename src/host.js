@@ -121,11 +121,11 @@ export class Host {
         if (e.classList.contains("hidden") && 
            ((state == "closed") ||
             (state == "unreachable") ||
-             (state == "offline"))) {
+             (state == "failed"))) {
             // clear pending messages to let the user start fresh
             this.pendingCDCMsgs = []
             e.querySelector("h1").textContent =
-                (state == "offline")?"Network is Down":`Host ${state}`
+                (state == "unreachable")?"Host unreachable":`Connection ${state}`
             e.querySelector(".reconnect").addEventListener('click', ev => {
                 this.close()
                 this.connect()
