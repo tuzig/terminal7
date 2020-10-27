@@ -357,7 +357,7 @@ export class Terminal7 {
     logDisplay(show) {
         let e = document.getElementById("log")
         if (show) {
-            e.classList.remove("fade-out")
+            e.classList.remove("fade-out", "hidden")
             document.getElementById("log-button")
                 .classList.add("on")
         } else {
@@ -389,8 +389,7 @@ export class Terminal7 {
         // clear pending messages to let the user start fresh
         this.pendingCDCMsgs = []
         e.querySelector("h1").textContent =
-            (host.state == "unreachable")?"Host unreachable":
-                                          `Connection ${host.state}`
+            `Communication Failure at ${host.name}`
         e.querySelector(".reconnect").addEventListener('click', ev => {
             host.close()
             this.clear()

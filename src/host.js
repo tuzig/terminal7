@@ -18,7 +18,7 @@ export class Host {
         // 
         this.pc = null
         this.windows = []
-        this.updateState("init")
+        this.boarding = false
         this.pendingCDCMsgs = []
         this.lastMsgId = 1
         // a mapping of refrence number to function called on received ack
@@ -96,31 +96,27 @@ export class Host {
         s.classList.remove("off")
     }
             
+    stopBoarding() {
+        if (!this.boarding)
+            return
+        this.boarding = false
+        document.getElementById("hostconn").classList.add("failed")
+        terminal7.onDisconnect(this)
+    }
+    startBoarding() {
+        this.boarding = true
+        document.getElementById("hostconn").classList.remove("failed")
+    }
     /*
-     * Host.updateState(state) is the place for the host state machine
+     * Host.updateState(state) is a function that handles webrtc connection
+     * state changes.
      */
     updateState(state) {
         console.log(`host state change: ${this.state}->${state}`)
-        /*
-        if (this.timeoutID != null) {
-            clearTimeout(this.timeoutID)
-            this.timeoutID = null
-        }
-        */
-        // nothing changed than do nothing
-        if ((this.state == state))
-            return
-
-        // update the hostconn indicator - unless it's an init
         if ((state == "new") || (state == "connecting") || (state == "connected"))
-            document.getElementById("hostconn").classList.remove("failed")
-        else if (state != "init")
-            document.getElementById("hostconn").classList.add("failed")
-             //   (state == "disconnecting")?"warn":"failed")
-
-        this.state = state 
-        if ((state == "closed") || (state == "unreachable") || (state == "failed"))
-            terminal7.onDisconnect(this)
+            this.startBoarding()
+        else if (this.boarding)
+            this.stopBoarding()
     }
     /*
      * Host.clearLog cleans the log and the status modals
@@ -142,8 +138,8 @@ export class Host {
         this.notify("Setting remote description") // TODO: add a var or two
         this.pc.setRemoteDescription(sd)
             .catch (e => {
-                this.notify(`Failed to set remote describtion: ${e}`)
-                this.updateState("disconnected")
+                this.notify(`Failed to set remote description: ${e}`)
+                this.stopBoarding()
             })
     }
     /*
@@ -151,15 +147,16 @@ export class Host {
      * the control channel and authenticates.
      */
     connect() {
-        // if we're already connected, just focus
-        if ((this.state == "connected") || (this.state == "completed")) {
+        // if we're already boarding, just focus
+        if (this.boarding) {
             this.focus()
             return
         }
         this.clear()
-        if (this.pc != null)
+        // TODO: do we need the next 3 lines?
+        if (this.pc != null) {
             this.pc.close()
-
+        }
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: 'stun:stun2.l.google.com:19302' }
                 ] })
@@ -181,7 +178,7 @@ export class Host {
                     this.peerConnect(this.peer)
                 }).catch(error => {
                     this.notify(`HTTP signaling failed: ${error.message}`)
-                    this.updateState("unreachable")
+                    this.stopBoarding()
                  })
             } 
         }
@@ -192,14 +189,6 @@ export class Host {
         this.openCDC()
         // authenticate starts the ball rolling
         this.authenticate()
-        /* 
-        this.timeoutID = setTimeout(ev => {
-            if ((this.state != "completed") && (this.state != "connected")) {
-                this.notify("Failed to connect to the server")
-                this.updateState("disconnected")
-            }
-        }, TIMEOUT)
-        */
     }
     /*
      * Host.noitify adds a message to the host's log
@@ -323,10 +312,7 @@ export class Host {
         console.log("<opening cdc")
         cdc.onclose = () => {
             console.log('Control Channel is closed')
-            /*
-            if (this.state == "connected") 
-                this.updateState("closed")
-                */
+            this.stopBoarding()
         }
         cdc.onopen = () => {
             if (this.pendingCDCMsgs.length > 0)
@@ -372,8 +358,7 @@ export class Host {
         this.e.classList.add("hidden")
         if (terminal7.activeH == this)
             terminal7.activeH = null
-        // don't call updateState as we're already closed
-        this.state = "closed"
+        this.boarding = false
     }
     /*
      * Host.sendSize sends a control message with the pane's size to the server
