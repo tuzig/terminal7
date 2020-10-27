@@ -158,10 +158,8 @@ export class Terminal7 {
             console.log("online")
             document.getElementById("connectivity").classList.remove("failed")
             this.clear()
-            /*
             if (this.activeH)
                 this.activeH.connect()
-            */
         })
         document.addEventListener("offline", ev => {
             console.log("offline")
@@ -345,9 +343,9 @@ export class Terminal7 {
             this.token = uuidv4()
             localStorage.setItem('token', this.token)
         }
-
-        else if (this.activeH) {
+        if (this.activeH) {
             this.activeH.unfocus()
+            this.activeH = null
         }
         // hide the modals
         this.clear()

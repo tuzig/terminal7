@@ -182,6 +182,7 @@ export class Host {
             this.focus()
             return
         }
+        this.clear()
         if (this.pc != null)
             this.pc.close()
 
@@ -346,11 +347,10 @@ export class Host {
         var cdc = this.pc.createDataChannel('%')
         this.cdc = cdc
         console.log("<opening cdc")
-        cdc.onclose = () =>{
-            this.state = "closed"
+        cdc.onclose = () => {
             console.log('Control Channel is closed')
-            this.close(true)
-            terminal7.goHome()
+            if (this.state == "connected") 
+                this.updateState("closed")
         }
         cdc.onopen = () => {
             if (this.pendingCDCMsgs.length > 0)
@@ -383,17 +383,19 @@ export class Host {
     /*
      * Host.close closes the peer connection and removes the host from the UI
      */
-    close(verify) {
-        // this.e.innerHTML=""
-        if (verify)
-            console.log("TODO: verify close")
-        this.pc.close()
-        this.state = this.updateState("closed")
-        this.windows.forEach(w => w.close())
+    clear() {
+        this.windows.forEach(w => w.close(false))
         this.windows = []
         this.breadcrumbs = []
         this.clearLog()
+    }
+    close(verify) {
+        this.clear()
+        this.pc.close()
+        this.state = this.updateState("closed")
         this.e.classList.add("hidden")
+        if (terminal7.activeH == this)
+            terminal7.activeH = null
     }
     /*
      * Host.sendSize sends a control message with the pane's size to the server

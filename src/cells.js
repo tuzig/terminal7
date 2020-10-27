@@ -640,8 +640,11 @@ export class Pane extends Cell {
         console.log(`opening dc with label: "${label}`)
         this.d = this.host.pc.createDataChannel(label)
         this.d.onclose = e => {
-            this.state = "disconnected"
-            this.close()
+            console.log("data channel close")
+            if (this.host.state == "connected")  {
+                this.state = "disconnected"
+                this.close()
+            }
         }
         this.d.onopen = () => {
             this.state = "opened"

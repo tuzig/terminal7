@@ -128,7 +128,7 @@ export class Window {
             setTimeout(() => p.innerHTML = p.w.name, 0)
         })
     }
-    close() {
+    close(closeHost) {
         // remove the window name
         this.nameE.parentNode.remove()
         // remove the element, panes and tabbar gone as they are childs
@@ -140,13 +140,15 @@ export class Window {
         this.host.activeW = null
         // remove myself from the breadcrumbs
         this.host.breadcrumbs.pop()
-        if (this.host.windows.length == 0)
-            this.host.close()
+        if (this.host.windows.length == 0) {
+            if (closeHost != false)
+                this.host.close()
+        }
         else
             if (this.breadcrumbs.length > 0)
                 this.host.breadcrumbs.pop().focus()
             else
-            this.host.windows[0].focus()
+                this.host.windows[0].focus()
 
     }
 
