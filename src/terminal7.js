@@ -328,8 +328,8 @@ export class Terminal7 {
         localStorage.setItem("hosts", JSON.stringify(out))
     }
     clear() {
-        document.querySelectorAll(".modal").forEach(e =>
-                e.classList.add("hidden"))
+        this.e.querySelectorAll(".temporal").forEach(e => e.remove())
+        this.e.querySelectorAll(".modal").forEach(e => e.classList.add("hidden"))
     }
     goHome() {
         let s = document.getElementById("home-button"),
@@ -378,5 +378,28 @@ export class Terminal7 {
                 document.getElementById("hostconn").classList.add("off")
             }, this.conf.indicators.flash || 100)
         }
+    }
+    /*
+     * onDisconnect is called when a host disconnects.
+     */
+    onDisconnect(host) {
+        let e = document.getElementById("disconnect-template")
+        e = e.content.cloneNode(true)
+        this.clear()
+        // clear pending messages to let the user start fresh
+        this.pendingCDCMsgs = []
+        e.querySelector("h1").textContent =
+            (host.state == "unreachable")?"Host unreachable":
+                                          `Connection ${host.state}`
+        e.querySelector(".reconnect").addEventListener('click', ev => {
+            host.close()
+            this.clear()
+            host.connect()
+        })
+        e.querySelector(".close").addEventListener('click', ev => {
+            host.close()
+            terminal7.goHome()
+        })
+        this.e.appendChild(e)
     }
 }

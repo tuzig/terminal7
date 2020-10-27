@@ -155,6 +155,7 @@ nav i {
 }
 nav .on { color: #D9F505 !important; }
 .failed { color: #F952F9 !important; }
+.warn { color: #FAFA00 !important; }
 .off { color: #373702; }
 /* vertical align the nav bar buttons */
 .tabbar {

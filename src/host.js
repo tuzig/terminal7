@@ -116,37 +116,11 @@ export class Host {
             document.getElementById("hostconn").classList.remove("failed")
         else if (state != "init")
             document.getElementById("hostconn").classList.add("failed")
+             //   (state == "disconnecting")?"warn":"failed")
 
-        let e = document.getElementById("disconnect-modal")
-        if (e.classList.contains("hidden") && 
-           ((state == "closed") ||
-            (state == "unreachable") ||
-             (state == "failed"))) {
-            // clear pending messages to let the user start fresh
-            this.pendingCDCMsgs = []
-            e.querySelector("h1").textContent =
-                (state == "unreachable")?"Host unreachable":`Connection ${state}`
-            e.querySelector(".reconnect").addEventListener('click', ev => {
-                this.close()
-                this.connect()
-            })
-            e.querySelector(".close").addEventListener('click', ev => {
-                this.close()
-                terminal7.goHome()
-            })
-            e.classList.remove("hidden")
-        }
-        /* Maybe we should restart Ice. duno
-        else if (state === "failed") {
-            this.pc.createOffer({ iceRestart: true })
-                .then(this.pc.setLocalDescription)
-                .then(sendOfferToServer)
-            this.pc.restartIce()
-        */
-        else  {
-            e.classList.add("hidden")
-        }
         this.state = state 
+        if ((state == "closed") || (state == "unreachable") || (state == "failed"))
+            terminal7.onDisconnect(this)
     }
     /*
      * Host.clearLog cleans the log and the status modals
@@ -349,8 +323,10 @@ export class Host {
         console.log("<opening cdc")
         cdc.onclose = () => {
             console.log('Control Channel is closed')
+            /*
             if (this.state == "connected") 
                 this.updateState("closed")
+                */
         }
         cdc.onopen = () => {
             if (this.pendingCDCMsgs.length > 0)
@@ -389,13 +365,15 @@ export class Host {
         this.breadcrumbs = []
         this.clearLog()
     }
+
     close(verify) {
         this.clear()
         this.pc.close()
-        this.state = this.updateState("closed")
         this.e.classList.add("hidden")
         if (terminal7.activeH == this)
             terminal7.activeH = null
+        // don't call updateState as we're already closed
+        this.state = "closed"
     }
     /*
      * Host.sendSize sends a control message with the pane's size to the server
@@ -492,5 +470,17 @@ export class Host {
         ct.querySelector(".close").addEventListener('click',  ev =>  {
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
         })
+    }
+    goBack(closeHost) {
+        this.breadcrumbs.pop()
+        if (this.windows.length == 0) {
+            if (closeHost != false)
+                this.close()
+        }
+        else
+            if (this.breadcrumbs.length > 0)
+                this.breadcrumbs.pop().focus()
+            else
+                this.windows[0].focus()
     }
 }
