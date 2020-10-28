@@ -18,6 +18,7 @@ selection = "#D9F505"
 
 [indicators]
 flash = 100
+log_lines = 7
 
 [exec]
 shell = "zsh"
@@ -158,8 +159,10 @@ export class Terminal7 {
             console.log("online")
             document.getElementById("connectivity").classList.remove("failed")
             this.clear()
-            if (this.activeH)
+            if (this.activeH) {
+                this.activeH.clear()
                 this.activeH.connect()
+            }
         })
         document.addEventListener("offline", ev => {
             console.log("offline")
@@ -328,8 +331,8 @@ export class Terminal7 {
         localStorage.setItem("hosts", JSON.stringify(out))
     }
     clear() {
-        document.querySelectorAll(".modal").forEach(e =>
-                e.classList.add("hidden"))
+        this.e.querySelectorAll(".temporal").forEach(e => e.remove())
+        this.e.querySelectorAll(".modal").forEach(e => e.classList.add("hidden"))
     }
     goHome() {
         let s = document.getElementById("home-button"),
@@ -357,7 +360,7 @@ export class Terminal7 {
     logDisplay(show) {
         let e = document.getElementById("log")
         if (show) {
-            e.classList.remove("fade-out")
+            e.classList.remove("fade-out", "hidden")
             document.getElementById("log-button")
                 .classList.add("on")
         } else {
@@ -378,5 +381,27 @@ export class Terminal7 {
                 document.getElementById("hostconn").classList.add("off")
             }, this.conf.indicators.flash || 100)
         }
+    }
+    /*
+     * onDisconnect is called when a host disconnects.
+     */
+    onDisconnect(host) {
+        let e = document.getElementById("disconnect-template")
+        e = e.content.cloneNode(true)
+        this.clear()
+        // clear pending messages to let the user start fresh
+        this.pendingCDCMsgs = []
+        e.querySelector("h1").textContent =
+            `Communication Failure at ${host.name}`
+        e.querySelector(".reconnect").addEventListener('click', ev => {
+            host.close()
+            this.clear()
+            host.connect()
+        })
+        e.querySelector(".close").addEventListener('click', ev => {
+            host.close()
+            terminal7.goHome()
+        })
+        this.e.appendChild(e)
     }
 }

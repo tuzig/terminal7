@@ -18,13 +18,12 @@ export class Host {
         // 
         this.pc = null
         this.windows = []
-        this.updateState("init")
+        this.boarding = false
         this.pendingCDCMsgs = []
         this.lastMsgId = 1
         // a mapping of refrence number to function called on received ack
         this.onack = {}
         this.breadcrumbs = []
-        this.log = []
         this.peer = null
         this.updateID  = null
         this.timeoutID = null
@@ -95,58 +94,35 @@ export class Host {
         let s = document.getElementById("home-button")
         s.classList.remove("off")
     }
-            
-    /*
-     * Host.updateState(state) is the place for the host state machine
-     */
-    updateState(state) {
-        console.log(`host state change: ${this.state}->${state}`)
-        /*
-        if (this.timeoutID != null) {
-            clearTimeout(this.timeoutID)
-            this.timeoutID = null
-        }
-        */
-        // nothing changed than do nothing
-        if ((this.state == state))
+    stopBoarding() {
+        if (!this.boarding)
             return
-
-        // update the hostconn indicator - unless it's an init
-        if ((state == "new") || (state == "connecting") || (state == "connected"))
-            document.getElementById("hostconn").classList.remove("failed")
-        else if (state != "init")
-            document.getElementById("hostconn").classList.add("failed")
-
-        let e = document.getElementById("disconnect-modal")
-        if (e.classList.contains("hidden") && 
-           ((state == "closed") ||
-            (state == "unreachable") ||
-             (state == "failed"))) {
-            // clear pending messages to let the user start fresh
-            this.pendingCDCMsgs = []
-            e.querySelector("h1").textContent =
-                (state == "unreachable")?"Host unreachable":`Connection ${state}`
-            e.querySelector(".reconnect").addEventListener('click', ev => {
-                this.close()
-                this.connect()
-            })
-            e.querySelector(".close").addEventListener('click', ev => {
-                this.close()
-                terminal7.goHome()
-            })
-            e.classList.remove("hidden")
+        this.boarding = false
+        document.getElementById("hostconn").classList.add("failed")
+        terminal7.onDisconnect(this)
+    }
+    startBoarding() {
+        this.boarding = true
+        document.getElementById("hostconn").classList.remove("failed")
+    }
+    /*
+     * Host.updateConnectionState(state) is a function that handles webrtc connection
+     * state changes.
+     */
+    updateConnectionState(state) {
+        if ((state == "new") || (state == "connecting"))
+            this.notify("WebRTC starting")
+        else if (state == "connected") {
+            this.notify("WebRTC connected")
+            this.startBoarding()
         }
-        /* Maybe we should restart Ice. duno
-        else if (state === "failed") {
-            this.pc.createOffer({ iceRestart: true })
-                .then(this.pc.setLocalDescription)
-                .then(sendOfferToServer)
-            this.pc.restartIce()
-        */
-        else  {
-            e.classList.add("hidden")
+        else if (state == "disconnected")
+            // TODO: add warn class
+            this.notify("WebRTC disconnected and may reconnect or close")
+        else if (this.boarding) {
+            this.stopBoarding()
+            this.notify("WebRTC closed")
         }
-        this.state = state 
     }
     /*
      * Host.clearLog cleans the log and the status modals
@@ -168,8 +144,8 @@ export class Host {
         this.notify("Setting remote description") // TODO: add a var or two
         this.pc.setRemoteDescription(sd)
             .catch (e => {
-                this.notify(`Failed to set remote describtion: ${e}`)
-                this.updateState("disconnected")
+                this.notify(`Failed to set remote description: ${e}`)
+                this.stopBoarding()
             })
     }
     /*
@@ -177,20 +153,22 @@ export class Host {
      * the control channel and authenticates.
      */
     connect() {
-        // if we're already connected, just focus
-        if ((this.state == "connected") || (this.state == "completed")) {
+        // if we're already boarding, just focus
+        if (this.boarding) {
             this.focus()
             return
         }
-        this.clear()
-        if (this.pc != null)
+        this.pendingCDCMsgs = []
+        console.log(`connecting host ${this.name}`)
+        // TODO: do we need the next 3 lines?
+        if (this.pc != null) {
             this.pc.close()
-
+        }
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: 'stun:stun2.l.google.com:19302' }
                 ] })
         this.pc.onconnectionstatechange = e =>
-            this.updateState(this.pc.connectionState)
+            this.updateConnectionState(this.pc.connectionState)
 
         let offer = ""
         this.pc.onicecandidate = ev => {
@@ -206,8 +184,8 @@ export class Host {
                     this.peer = JSON.parse(atob(data))
                     this.peerConnect(this.peer)
                 }).catch(error => {
-                    this.notify(`HTTP signaling failed: ${error.message}`)
-                    this.updateState("unreachable")
+                    this.notify(`HTTP POST failed: ${error.message}`)
+                    terminal7.onDisconnect(this)
                  })
             } 
         }
@@ -218,14 +196,6 @@ export class Host {
         this.openCDC()
         // authenticate starts the ball rolling
         this.authenticate()
-        /* 
-        this.timeoutID = setTimeout(ev => {
-            if ((this.state != "completed") && (this.state != "connected")) {
-                this.notify("Failed to connect to the server")
-                this.updateState("disconnected")
-            }
-        }, TIMEOUT)
-        */
     }
     /*
      * Host.noitify adds a message to the host's log
@@ -236,10 +206,12 @@ export class Host {
             d = new Date(),
             t = formatDate(d, "hh:mm:ss.fff")
 
+        let lines = ul.querySelectorAll('li')
+        if (lines.length > terminal7.conf.indicators.log_lines)
+            lines[0].remove()
         li.innerHTML = `<time>${t}</time> ${message}`
         li.classList = "log-msg"
         ul.appendChild(li)
-        this.log.push(li)
         terminal7.logDisplay(true)
     }
     /*
@@ -348,9 +320,11 @@ export class Host {
         this.cdc = cdc
         console.log("<opening cdc")
         cdc.onclose = () => {
-            console.log('Control Channel is closed')
-            if (this.state == "connected") 
-                this.updateState("closed")
+            if (this.boarding) {
+                this.notify('Control Channel is closed')
+                this.stopBoarding()
+                terminal7.onDisconnect(this)
+            }
         }
         cdc.onopen = () => {
             if (this.pendingCDCMsgs.length > 0)
@@ -387,15 +361,15 @@ export class Host {
         this.windows.forEach(w => w.close(false))
         this.windows = []
         this.breadcrumbs = []
-        this.clearLog()
     }
+
     close(verify) {
         this.clear()
         this.pc.close()
-        this.state = this.updateState("closed")
         this.e.classList.add("hidden")
         if (terminal7.activeH == this)
             terminal7.activeH = null
+        this.boarding = false
     }
     /*
      * Host.sendSize sends a control message with the pane's size to the server
@@ -492,5 +466,17 @@ export class Host {
         ct.querySelector(".close").addEventListener('click',  ev =>  {
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
         })
+    }
+    goBack(closeHost) {
+        this.breadcrumbs.pop()
+        if (this.windows.length == 0) {
+            if (closeHost != false)
+                this.close()
+        }
+        else
+            if (this.breadcrumbs.length > 0)
+                this.breadcrumbs.pop().focus()
+            else
+                this.windows[0].focus()
     }
 }

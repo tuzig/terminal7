@@ -65,18 +65,10 @@
             </nav>
         </form>
       </div>
-      <div id="disconnect-modal" class="hidden disconnect modal border">
-          <h1></h1>
-          <p>Sorry for the incovenience.<br />How would you like to proceed?</p>
-          <nav class="two-buttons">
-               <i class="f7-icons close">xmark</i>
-               <i class="f7-icons reconnect">arrow_2_circlepath</i>
-          </nav>
-      </div>
       <div id="settings-modal" class="hidden modal border">
           <textarea id="edit-conf" lines="20" cols="40">
           </textarea>
-          <nav class="two-buttons">
+          <nav>
                <i class="f7-icons close">xmark</i>
                <i class="f7-icons copy">doc_on_clipboard</i>
                <i class="f7-icons save">floppy_disk</i>
@@ -94,12 +86,23 @@
   <i id="search-button" class="f7-icons off">doc_text_search</i>
   <i id="dotfile-button" class="f7-icons">gear</i>
       </nav>
-</div>
+  </div>
 
 <div id="indicators">
     <i id="connectivity" class="f7-icons">dot_radiowaves_left_right</i>
     <i id="hostconn" class="f7-icons">arrow_up_down</i>
 </div>
+    <template id="disconnect-template">
+      <div class="disconnect modal border temporal">
+          <h1></h1>
+          <p>Please check the log for details.</p>
+          <p>How would you like to proceed?</p>
+          <nav>
+               <i class="f7-icons close">xmark</i>
+               <i class="f7-icons reconnect">arrow_2_circlepath</i>
+          </nav>
+      </div>
+    </template>
     <!-- every host creates his own tabbar based on the template below -->
     <template id="tabbar-template">
     <div class="tabbar bar"> 

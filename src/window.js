@@ -139,17 +139,6 @@ export class Window {
         this.host.windows.splice(this.host.windows.indexOf(this), 1)
         this.host.activeW = null
         // remove myself from the breadcrumbs
-        this.host.breadcrumbs.pop()
-        if (this.host.windows.length == 0) {
-            if (closeHost != false)
-                this.host.close()
-        }
-        else
-            if (this.breadcrumbs.length > 0)
-                this.host.breadcrumbs.pop().focus()
-            else
-                this.host.windows[0].focus()
-
+        this.host.goBack(closeHost)
     }
-
 }

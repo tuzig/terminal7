@@ -641,10 +641,9 @@ export class Pane extends Cell {
         this.d = this.host.pc.createDataChannel(label)
         this.d.onclose = e => {
             console.log("data channel close")
-            if (this.host.state == "connected")  {
-                this.state = "disconnected"
+            this.state = "disconnected"
+            if (this.host.boarding)
                 this.close()
-            }
         }
         this.d.onopen = () => {
             this.state = "opened"
@@ -652,7 +651,7 @@ export class Pane extends Cell {
             setTimeout(() => {
                 if (this.state == "opened") {
                     this.host.notify("Data channel is opened, but no first message")
-                    this.host.updateState("failed")
+                    this.host.stopBoarding()
                 }}, terminal7.conf.exec.timeout)
         }
         this.d.onmessage = m => this.onMessage(m)
