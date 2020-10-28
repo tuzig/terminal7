@@ -477,7 +477,7 @@ export class Host {
                         window.cordova.plugins.sshConnect.executeCommand(cmd, 
                             ev =>  {
                                 this.notify("ssh exec success", ev)
-                                this.authenticate()
+                                this.connect()
                             },
                             ev => this.notify("ssh exec failure", ev))
                         window.cordova.plugins.sshConnect.disconnect(
