@@ -139,6 +139,6 @@ export class Window {
         this.host.windows.splice(this.host.windows.indexOf(this), 1)
         this.host.activeW = null
         // remove myself from the breadcrumbs
-        this.host.goBack()
+        this.host.goBack(closeHost)
     }
 }

@@ -24,7 +24,6 @@ export class Host {
         // a mapping of refrence number to function called on received ack
         this.onack = {}
         this.breadcrumbs = []
-        this.log = []
         this.peer = null
         this.updateID  = null
         this.timeoutID = null
@@ -95,7 +94,6 @@ export class Host {
         let s = document.getElementById("home-button")
         s.classList.remove("off")
     }
-            
     stopBoarding() {
         if (!this.boarding)
             return
@@ -108,15 +106,23 @@ export class Host {
         document.getElementById("hostconn").classList.remove("failed")
     }
     /*
-     * Host.updateState(state) is a function that handles webrtc connection
+     * Host.updateConnectionState(state) is a function that handles webrtc connection
      * state changes.
      */
-    updateState(state) {
-        console.log(`host state change: ${this.state}->${state}`)
-        if ((state == "new") || (state == "connecting") || (state == "connected"))
+    updateConnectionState(state) {
+        if ((state == "new") || (state == "connecting"))
+            this.notify("WebRTC starting")
+        else if (state == "connected") {
+            this.notify("WebRTC connected")
             this.startBoarding()
-        else if (this.boarding)
+        }
+        else if (state == "disconnected")
+            // TODO: add warn class
+            this.notify("WebRTC disconnected and may reconnect or close")
+        else if (this.boarding) {
             this.stopBoarding()
+            this.notify("WebRTC closed")
+        }
     }
     /*
      * Host.clearLog cleans the log and the status modals
@@ -152,7 +158,8 @@ export class Host {
             this.focus()
             return
         }
-        this.clear()
+        this.pendingCDCMsgs = []
+        console.log(`connecting host ${this.name}`)
         // TODO: do we need the next 3 lines?
         if (this.pc != null) {
             this.pc.close()
@@ -161,7 +168,7 @@ export class Host {
                   { urls: 'stun:stun2.l.google.com:19302' }
                 ] })
         this.pc.onconnectionstatechange = e =>
-            this.updateState(this.pc.connectionState)
+            this.updateConnectionState(this.pc.connectionState)
 
         let offer = ""
         this.pc.onicecandidate = ev => {
@@ -177,8 +184,8 @@ export class Host {
                     this.peer = JSON.parse(atob(data))
                     this.peerConnect(this.peer)
                 }).catch(error => {
-                    this.notify(`HTTP signaling failed: ${error.message}`)
-                    this.stopBoarding()
+                    this.notify(`HTTP POST failed: ${error.message}`)
+                    terminal7.onDisconnect(this)
                  })
             } 
         }
@@ -199,10 +206,12 @@ export class Host {
             d = new Date(),
             t = formatDate(d, "hh:mm:ss.fff")
 
+        let lines = ul.querySelectorAll('li')
+        if (lines.length > terminal7.conf.indicators.log_lines)
+            lines[0].remove()
         li.innerHTML = `<time>${t}</time> ${message}`
         li.classList = "log-msg"
         ul.appendChild(li)
-        this.log.push(li)
         terminal7.logDisplay(true)
     }
     /*
@@ -311,8 +320,11 @@ export class Host {
         this.cdc = cdc
         console.log("<opening cdc")
         cdc.onclose = () => {
-            console.log('Control Channel is closed')
-            this.stopBoarding()
+            if (this.boarding) {
+                this.notify('Control Channel is closed')
+                this.stopBoarding()
+                terminal7.onDisconnect(this)
+            }
         }
         cdc.onopen = () => {
             if (this.pendingCDCMsgs.length > 0)
@@ -349,7 +361,6 @@ export class Host {
         this.windows.forEach(w => w.close(false))
         this.windows = []
         this.breadcrumbs = []
-        this.clearLog()
     }
 
     close(verify) {

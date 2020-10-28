@@ -18,6 +18,7 @@ selection = "#D9F505"
 
 [indicators]
 flash = 100
+log_lines = 7
 
 [exec]
 shell = "zsh"
@@ -158,8 +159,10 @@ export class Terminal7 {
             console.log("online")
             document.getElementById("connectivity").classList.remove("failed")
             this.clear()
-            if (this.activeH)
+            if (this.activeH) {
+                this.activeH.clear()
                 this.activeH.connect()
+            }
         })
         document.addEventListener("offline", ev => {
             console.log("offline")
