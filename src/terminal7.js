@@ -77,10 +77,11 @@ export class Terminal7 {
         document.getElementById("home-button")
                 .addEventListener("click", ev => this.goHome())
         document.getElementById("log-button")
-                .addEventListener("click", ev => 
+                .addEventListener("click", ev => {
                     this.logDisplay(document.getElementById("log")
                                     .classList.contains("fade-out"))
-                )
+                    this.focus()
+                })
         document.getElementById("search-button")
                 .addEventListener("click", ev => 
                     this.activeH && this.activeH.activeW.activeP.toggleSearch())
@@ -116,16 +117,21 @@ export class Terminal7 {
                             ev => {
                                 button.classList.remove("on")
                                 this.clear()
+                                this.focus()
                             }
                         )
                         modal.querySelector(".save").addEventListener('click',
-                            ev => this.saveConf())
+                            ev => { 
+                                this.saveConf()
+                                this.focus()
+                            })
                         modal.querySelector(".copy").addEventListener('click',
                             ev => {
-                            var area =  document.getElementById("edit-conf")
-                            terminal7.confEditor.save()
-                            cordova.plugins.clipboard.copy(area.value);
-                        })
+                                var area =  document.getElementById("edit-conf")
+                                terminal7.confEditor.save()
+                                cordova.plugins.clipboard.copy(area.value);
+                                this.focus()
+                            })
                     }
                     terminal7.confEditor.focus()
                 })
@@ -403,5 +409,13 @@ export class Terminal7 {
             terminal7.goHome()
         })
         this.e.appendChild(e)
+    }
+    /*
+     * focus restores the focus to the ative pane, if there is one
+     */
+    focus(host) {
+        if (this.activeH && this.activeH.activeW &&
+            this.activeH.activeW.activeP)
+            this.activeH.activeW.activeP.focus()
     }
 }

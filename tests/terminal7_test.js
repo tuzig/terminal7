@@ -15,7 +15,6 @@ describe("terminal7", function() {
         t = new Terminal7()
         t.open(e)
     })
-
     describe("host", () => {
         it("starts with no hosts", () => {
             expect(t.hosts.length).to.equal(0)

@@ -564,7 +564,6 @@ export class Pane extends Cell {
 
     // fit a pane
     fit() {
-        setTimeout(() => {
             try {
                 this.fitAddon.fit()
             } catch {
@@ -577,7 +576,6 @@ export class Pane extends Cell {
                 return
             }
             this.host.sendSize(this)
-        }, ABIT)
     }
     /*
      * Pane.focus focuses the UI on this pane

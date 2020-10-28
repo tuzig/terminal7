@@ -204,7 +204,7 @@ export class Host {
         let ul = document.getElementById("log-msgs"),
             li = document.createElement("li"),
             d = new Date(),
-            t = formatDate(d, "hh:mm:ss.fff")
+            t = formatDate(d, "HH:mm:ss.fff")
 
         let lines = ul.querySelectorAll('li')
         if (lines.length > terminal7.conf.indicators.log_lines)
