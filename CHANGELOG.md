@@ -6,16 +6,17 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.8.0] - 2020/10/28
 
 ### Fixed
 
 - Removed "disconnected" modal popin when all is OK
+- Reconnect now works!!!
 
 ### Added
 
 - Adding indicators for network & host connectivity
-- Settings through a dotfile and the CodeMirror editor
+- App Settings through a dotfile and the CodeMirror editor
 - Token generation, storing and copying to server
 
 ## [0.7.1] - 2020/10/04
