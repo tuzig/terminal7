@@ -5,7 +5,7 @@ const ABIT = 10
 
 export class Window {
     constructor(props) {
-        this.host = props.host
+        this.gate = props.gate
         this.id = props.id
         this.name = props.name || `Tab ${this.id+1}`
         this.rootLayout = null
@@ -19,7 +19,7 @@ export class Window {
     open(e) {
         this.e = document.createElement('div')
         this.e.className = "window"
-        this.e.id = `tab-${this.host.id}.${this.id}`
+        this.e.id = `tab-${this.gate.id}.${this.id}`
         e.appendChild(this.e)
 
         // Add the name with link to tab bar
@@ -38,7 +38,7 @@ export class Window {
         h.on("switch", (ev) => this.focus())
         div.appendChild(a)
         this.nameE = a
-        let wn = this.host.e.querySelector(".tabbar-names")
+        let wn = this.gate.e.querySelector(".tabbar-names")
         if (wn != null)
             wn.appendChild(div)
     }
@@ -47,18 +47,18 @@ export class Window {
      * mark its name in the tabbar as the chosen one
      */
     focus() {
-        this.host.breadcrumbs.push(this)
+        this.gate.breadcrumbs.push(this)
         // turn off the current active
-        let a = this.host.activeW
+        let a = this.gate.activeW
         if (a) {
             a.nameE.classList.remove("on")
             a.e.classList.add("hidden")
         }
         this.e.classList.remove("hidden")
         this.nameE.classList.add("on")
-        this.host.activeW = this
-        window.location.href=`#tab-${this.host.id}.${this.id+1}`
-        this.host.sendState()
+        this.gate.activeW = this
+        window.location.href=`#tab-${this.gate.id}.${this.id+1}`
+        this.gate.sendState()
         setTimeout(_ => this.activeP.focus(), ABIT)
     }
     addLayout(dir, basedOn) {
@@ -75,7 +75,7 @@ export class Window {
     restoreLayout(layout) {
         var l = this.addLayout(layout.dir, {
             w: this,
-            host: this.host,
+            gate: this.gate,
             sx: layout.sx || null,
             sy: layout.sy || null,
             xoff: layout.xoff || null,
@@ -117,18 +117,18 @@ export class Window {
         // the input element too soon
         i.addEventListener('blur', (e) => {
             let p = e.target.parentNode
-            this.host.sendState()
+            this.gate.sendState()
             setTimeout(() => p.innerHTML = p.w.name, 0)
         }, { once: true })
         i.addEventListener('change', (e) => {
             console.log("change", e)
             let p = e.target.parentNode
             p.w.name = e.target.value
-            this.host.sendState()
+            this.gate.sendState()
             setTimeout(() => p.innerHTML = p.w.name, 0)
         })
     }
-    close(closeHost) {
+    close(closeGate) {
         // remove the window name
         this.nameE.parentNode.remove()
         // remove the element, panes and tabbar gone as they are childs
@@ -136,9 +136,9 @@ export class Window {
         // if we're zoomed in, the pane is a chuld of body
         if (this.activeP.zoomed)
             document.body.removeChild(this.activeP.zoomedE)
-        this.host.windows.splice(this.host.windows.indexOf(this), 1)
-        this.host.activeW = null
+        this.gate.windows.splice(this.gate.windows.indexOf(this), 1)
+        this.gate.activeW = null
         // remove myself from the breadcrumbs
-        this.host.goBack(closeHost)
+        this.gate.goBack(closeGate)
     }
 }

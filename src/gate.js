@@ -5,7 +5,10 @@ import { formatDate } from './utils.js'
 const ABIT    = 10,  // ashort period of time, in milli
       TIMEOUT = 3000
 
-export class Host {
+/*
+ * The gate class abstracts a host connection
+ */
+export class Gate {
     constructor (props) {
         // given properties
         this.id = props.id
@@ -30,14 +33,14 @@ export class Host {
     }
 
     /*
-     * Host.open opens a host element on the given element
+     * Gate.open opens a gate element on the given element
      */
     open(e) {
-        // create the host element - holding the tabs, windows and tab bar
+        // create the gate element - holding the tabs, windows and tab bar
         this.e = document.createElement('div')
-        this.e.className = "host"
+        this.e.className = "gate"
         this.e.style.zIndex = 2
-        this.e.id = `host-${this.id}`
+        this.e.id = `gate-${this.id}`
         e.appendChild(this.e)
         // add the tab bar
         let t = document.getElementById("tabbar-template")
@@ -58,7 +61,7 @@ export class Host {
             this.nameE = null
             return
         }
-        // Add the hosts boxes to the home page
+        // Add the gates' signs to the home page
         let plusHost = document.getElementById("plus-host")
         let li = document.createElement('li'),
             a = document.createElement('a'),
@@ -69,7 +72,7 @@ export class Host {
         a.appendChild(this.nameE)
         // Add gestures on the window name for rename and drag to trash
         let hm = new Hammer.Manager(li, {})
-        hm.options.domEvents=true; // enable dom events
+        hm.options.domEvents = true; // enable dom events
         hm.add(new Hammer.Press({event: "edit", pointers: 1}))
         hm.add(new Hammer.Tap({event: "connect", pointers: 1}))
         hm.on("edit", (ev) => console.log("TODO: add host editing"))
@@ -82,13 +85,13 @@ export class Host {
         this.e.classList.add("hidden")
     }
     focus() {
-        // first hide the current focused host
-        let activeH = terminal7.activeH
-        if (activeH) {
-            activeH.e.classList.add("hidden")
+        // first hide the current focused gate
+        let activeG = terminal7.activeG
+        if (activeG) {
+            activeG.e.classList.add("hidden")
         }
         this.e.classList.remove("hidden")
-        terminal7.activeH = this
+        terminal7.activeG = this
         if (this.activeW)
             this.activeW.focus()
         let s = document.getElementById("home-button")
@@ -98,15 +101,15 @@ export class Host {
         if (!this.boarding)
             return
         this.boarding = false
-        document.getElementById("hostconn").classList.add("failed")
+        document.getElementById("downstream-indicator").classList.add("failed")
         terminal7.onDisconnect(this)
     }
     startBoarding() {
         this.boarding = true
-        document.getElementById("hostconn").classList.remove("failed")
+        document.getElementById("downstream-indicato").classList.remove("failed")
     }
     /*
-     * Host.updateConnectionState(state) is a function that handles webrtc connection
+     * updateConnectionState(state) is called on peer connection
      * state changes.
      */
     updateConnectionState(state) {
@@ -125,7 +128,7 @@ export class Host {
         }
     }
     /*
-     * Host.clearLog cleans the log and the status modals
+     * clearLog cleans the log and the status modals
      */
     clearLog() {
         /*
@@ -137,7 +140,7 @@ export class Host {
         document.getElementById("log").classList.add("hidden")
     }
     /*
-     * Host.peerConnect connects the webrtc session with the peer
+     * peerConnect connects the webrtc session with the peer
      */
     peerConnect(offer) {
         let sd = new RTCSessionDescription(offer)
@@ -149,7 +152,7 @@ export class Host {
             })
     }
     /*
-     * Host.connect opens a webrtc peer connection to the host and then opens
+     * connect opens a webrtc peer connection to the host and then opens
      * the control channel and authenticates.
      */
     connect() {
@@ -159,7 +162,7 @@ export class Host {
             return
         }
         this.pendingCDCMsgs = []
-        console.log(`connecting host ${this.name}`)
+        console.log(`connecting to ${this.name}...`)
         // TODO: do we need the next 3 lines?
         if (this.pc != null) {
             this.pc.close()
@@ -198,7 +201,7 @@ export class Host {
         this.authenticate()
     }
     /*
-     * Host.noitify adds a message to the host's log
+     * noitify adds a message to the host's log
      */
     notify(message) {    
         let ul = document.getElementById("log-msgs"),
@@ -291,7 +294,7 @@ export class Host {
     addWindow(name, layout) {
         console.log("adding Window: " + name, layout)
         let id = this.windows.length
-        let w = new Window({name:name, host: this, id: id})
+        let w = new Window({name:name, gate: this, id: id})
         this.windows.push(w)
         w.open(this.e)
         if (layout instanceof Object) {
@@ -305,7 +308,7 @@ export class Host {
             let paneProps = {sx: 1.0, sy: sy,
                              xoff: 0, yoff: 0,
                              w: w,
-                             host: this},
+                             gate: this},
                 layout = w.addLayout("TBD", paneProps)
             w.activeP = layout.addPane(paneProps)
             w.rootLayout = layout
@@ -313,7 +316,7 @@ export class Host {
         return w
     }
     /*
-     * Host.openCDC opens the control channel and handle incoming messages
+     * openCDC opens the control channel and handle incoming messages
      */
     openCDC() {
         var cdc = this.pc.createDataChannel('%')
@@ -355,7 +358,7 @@ export class Host {
         return cdc
     }
     /*
-     * Host.close closes the peer connection and removes the host from the UI
+     * clear clears the gates memory
      */
     clear() {
         this.windows.forEach(w => w.close(false))
@@ -363,13 +366,16 @@ export class Host {
         this.breadcrumbs = []
     }
 
+    /*
+     * close closes the peer connection and removes the host from the UI
+     */
     close(verify) {
+        this.boarding = false
         this.clear()
         this.pc.close()
         this.e.classList.add("hidden")
-        if (terminal7.activeH == this)
-            terminal7.activeH = null
-        this.boarding = false
+        if (terminal7.activeG == this)
+            terminal7.activeG = null
     }
     /*
      * Host.sendSize sends a control message with the pane's size to the server
@@ -386,7 +392,7 @@ export class Host {
             })
     }
     /*
-     * Host.dump dumps the host to a state object
+     * dump dumps the host to a state object
      * */
     dump() {
         var wins = []
@@ -467,10 +473,10 @@ export class Host {
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
         })
     }
-    goBack(closeHost) {
+    goBack(closeGate) {
         this.breadcrumbs.pop()
         if (this.windows.length == 0) {
-            if (closeHost != false)
+            if (closeGate != false)
                 this.close()
         }
         else

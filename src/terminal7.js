@@ -2,7 +2,7 @@
  * This file contains the code that makes terminal seven - a tmux inspired
  * touchable terminal multiplexer running over wertc's data channels.
  */
-import { Host } from './host.js'
+import { Gate } from './gate.js'
 import { v4 as uuidv4 } from 'uuid'
 import * as Hammer from 'hammerjs'
 import * as TOML from '@iarna/toml'
@@ -32,19 +32,19 @@ export class Terminal7 {
      */
     constructor(settings) {
         settings = settings || {}
-        this.hosts = []
+        this.gates = []
         this.cells = []
         this.state = "init"
-        this.activeH = null
+        this.activeG = null
         window.terminal7 = this
-        // Load hosts from local storage
-        let hs = JSON.parse(localStorage.getItem('hosts'))
+        // Load gates from local storage
+        let hs = JSON.parse(localStorage.getItem('gates'))
         if (hs != null)
             hs.forEach((p) => {
                 p.store = true
-                let h = new Host(p)
+                let h = new Gate(p)
                 // h.restore()
-                this.hosts.push(h)
+                this.gates.push(h)
             })
         let dotfile = localStorage.getItem('dotfile') || DEFAULT_DOTFILE
         this.conf = TOML.parse(dotfile)
@@ -58,7 +58,7 @@ export class Terminal7 {
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,
-     * loads the hosts from local storage and redirects to home
+     * loads the gates from local storage and redirects to home
      */
     open(e) {
         if (!e) {
@@ -73,7 +73,7 @@ export class Terminal7 {
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",
-                    ev => this.activeH.activeW.activeP.close())
+                    ev => this.activeG.activeW.activeP.close())
         document.getElementById("home-button")
                 .addEventListener("click", ev => this.goHome())
         document.getElementById("log-button")
@@ -84,7 +84,7 @@ export class Terminal7 {
                 })
         document.getElementById("search-button")
                 .addEventListener("click", ev => 
-                    this.activeH && this.activeH.activeW.activeP.toggleSearch())
+                    this.activeG && this.activeG.activeW.activeP.toggleSearch())
         document.getElementById("dotfile-button")
                 .addEventListener("click", ev => {
                     var modal   = document.getElementById("settings-modal"),
@@ -141,41 +141,41 @@ export class Terminal7 {
             'click', ev => addHost.classList.remove("hidden"))
         addHost.querySelector(".submit").addEventListener('click', (ev) => {
             let remember = addHost.querySelector('[name="remember"]').checked,
-                host = this.addHost({
+                gate = this.addGate({
                     addr: addHost.querySelector('[name="hostaddr"]').value,
                     name: addHost.querySelector('[name="hostname"]').value,
                     store: remember
                 })
             if (remember)
-                    this.storeHosts()
+                    this.storeGates()
             this.clear()
-            host.connect()
+            gate.connect()
         })
         // hide the modal on xmark click
         addHost.querySelector(".close").addEventListener('click',  ev =>  {
             this.clear()
         })
         this.state = "open"
-        this.hosts.forEach((host) => {
-            host.open(e)
-            host.e.classList.add("hidden")
+        this.gates.forEach(gate => {
+            gate.open(e)
+            gate.e.classList.add("hidden")
         })
-        // Handle network events for the active host
+        // Handle network events for the active gate
         document.addEventListener("online", ev => {
             console.log("online")
             document.getElementById("connectivity").classList.remove("failed")
             this.clear()
-            if (this.activeH) {
-                this.activeH.clear()
-                this.activeH.connect()
+            if (this.activeG) {
+                this.activeG.clear()
+                this.activeG.connect()
             }
         })
         document.addEventListener("offline", ev => {
             console.log("offline")
             document.getElementById("connectivity").classList.add("failed")
             /*
-            if (this.activeH)
-                this.activeH.updateState("offline")
+            if (this.activeG)
+                this.activeG.updateState("offline")
             */
             
         })
@@ -303,29 +303,29 @@ export class Terminal7 {
             this.onTouch("move", ev), false)
     }
     /*
-     * Terminal7.addHost is used to add a host with properties p to terminal 7
+     * Terminal7.addGate is used to add a Host connection
      */
-    addHost(props) {
+    addGate(props) {
         let out = [],
             p = props || {},
             addr = p.addr
         // add the id
-        p.id = this.hosts.length
+        p.id = this.gates.length
 
         // if no port specify, use the default port
         if (addr && (addr.indexOf(":") == -1))
             p.addr = `${addr}:7777`
 
-        let h = new Host(p)
-        console.log(`adding ${h.user}@${h.addr} & saving hosts`)
-        this.hosts.push(h)
-        this.storeHosts()
+        let h = new Gate(p)
+        console.log(`adding ${h.user}@${h.addr} & saving gates`)
+        this.gates.push(h)
+        this.storeGates()
         h.open(this.e)
         return h
     }
-    storeHosts() { 
+    storeGates() { 
         let out = []
-        this.hosts.forEach((h) => {
+        this.gates.forEach((h) => {
             if (h.store) {
                 let ws = []
                 h.windows.forEach((w) => ws.push(w.id))
@@ -333,8 +333,8 @@ export class Terminal7 {
                     name:h.name, windows: ws})
             }
         })
-        console.log("Storing hosts:", out)
-        localStorage.setItem("hosts", JSON.stringify(out))
+        console.log("Storing gates:", out)
+        localStorage.setItem("gates", JSON.stringify(out))
     }
     clear() {
         this.e.querySelectorAll(".temporal").forEach(e => e.remove())
@@ -343,7 +343,7 @@ export class Terminal7 {
     goHome() {
         let s = document.getElementById("home-button"),
             h = document.getElementById("home"),
-            hc = document.getElementById("hostconn")
+            hc = document.getElementById("downstream-indicator")
         s.classList.add("off")
         hc.classList.add("off")
         hc.classList.remove("on", "failed")
@@ -352,9 +352,9 @@ export class Terminal7 {
             this.token = uuidv4()
             localStorage.setItem('token', this.token)
         }
-        if (this.activeH) {
-            this.activeH.unfocus()
-            this.activeH = null
+        if (this.activeG) {
+            this.activeG.unfocus()
+            this.activeG = null
         }
         // hide the modals
         this.clear()
@@ -376,36 +376,41 @@ export class Terminal7 {
         }
     }
     /*
-     * flashHostConn is called to flash the host connection indicator.
+     * OnMessage is called by the pane when they recieve traffic.
+     * for now it flashes the downstream indicator
      */
-    flashHostConn() {
+    onMessage(m) {
         if (this.flashTimer == null) {
-            document.getElementById("hostconn").classList.remove("failed", "off")
-            document.getElementById("hostconn").classList.add("on")
-            this.flashTime = setTimeout(_ => {
-                document.getElementById("hostconn").classList.remove("on")
-                document.getElementById("hostconn").classList.add("off")
-            }, this.conf.indicators.flash || 100)
+            let  e = document.getElementById("downstream-indicator"),
+                 flashTime = this.conf.indicator && this.conf.indicators.flash
+                             || 100
+            e.classList.remove("failed", "off")
+            e.classList.add("on")
+            this.flashTimer = setTimeout(_ => {
+                this.flashTimer == null
+                e.classList.remove("on")
+                e.classList.add("off")
+            }, flashTime) 
         }
     }
     /*
-     * onDisconnect is called when a host disconnects.
+     * onDisconnect is called when a gate disconnects.
      */
-    onDisconnect(host) {
+    onDisconnect(gate) {
         let e = document.getElementById("disconnect-template")
         e = e.content.cloneNode(true)
         this.clear()
         // clear pending messages to let the user start fresh
         this.pendingCDCMsgs = []
         e.querySelector("h1").textContent =
-            `Communication Failure at ${host.name}`
+            `Communication Failure at ${gate.name}`
         e.querySelector(".reconnect").addEventListener('click', ev => {
-            host.close()
+            gate.close()
             this.clear()
-            host.connect()
+            gate.connect()
         })
         e.querySelector(".close").addEventListener('click', ev => {
-            host.close()
+            gate.close()
             terminal7.goHome()
         })
         this.e.appendChild(e)
@@ -413,9 +418,11 @@ export class Terminal7 {
     /*
      * focus restores the focus to the ative pane, if there is one
      */
-    focus(host) {
-        if (this.activeH && this.activeH.activeW &&
-            this.activeH.activeW.activeP)
-            this.activeH.activeW.activeP.focus()
+    focus(gate) {
+        if (gate)
+            this.activeG = gate
+        if (this.activeG && this.activeG.activeW &&
+            this.activeG.activeW.activeP)
+            this.activeG.activeW.activeP.focus()
     }
 }

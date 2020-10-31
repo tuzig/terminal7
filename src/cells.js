@@ -14,7 +14,7 @@ const  ABIT                = 10,
 export class Cell {
     constructor(props) {
         console.log("in cell constructore")
-        this.host = props.host || null
+        this.gate = props.gate || null
         this.w = props.w
         this.id = props.id || undefined
         this.layout = props.layout || null
@@ -52,7 +52,7 @@ export class Cell {
         }
         this.w.activeP = this
         this.e.classList.add("focused")
-        this.host.sendState()
+        this.gate.sendState()
     }
     /*
      * Used to grow/shrink the terminal based on containing element dimensions
@@ -163,7 +163,7 @@ export class Layout extends Cell {
             yoff: basedOn.yoff || 0.0,
             w: basedOn.w || null,
             className: "layout",
-            host: basedOn.host ||null})
+            gate: basedOn.gate ||null})
         this.dir = dir
         // if we're based on a cell, we make it our first cell
         if (basedOn instanceof Cell) {
@@ -216,7 +216,7 @@ export class Layout extends Cell {
             // remove this from the layout
             this.cells.splice(i, 1)
         }
-        this.host.sendState()
+        this.gate.sendState()
     }
     /*
      * Replace an old cell with a new cell, used when a pane
@@ -226,14 +226,14 @@ export class Layout extends Cell {
         this.cells.splice(this.cells.indexOf(o), 1, n)
     }
     /*
-     * Adds a new pane. If the host is connected the pane will open a
+     * Adds a new pane. If the gate is connected the pane will open a
      * new data channel.
      */
     addPane(props) {
         // CONGRATS! a new pane is born. props must include at keast sx & sy
         let p = props || {}
         p.w = this.w
-        p.host = this.host
+        p.gate = this.gate
         p.layout = this
         p.id = terminal7.cells.length
         let pane = new Pane(p)
@@ -248,7 +248,7 @@ export class Layout extends Cell {
         pane.openTerminal()
         pane.focus()
         // if we're connected, open the data channel
-        if (this.host.pc != null)
+        if (this.gate.pc != null)
             setTimeout(() => {
                 try {
                     pane.openDC()
@@ -256,7 +256,7 @@ export class Layout extends Cell {
                     console.log("failed to open DC", e)
                     return
                 }
-                this.host.sendState()
+                this.gate.sendState()
             }, ABIT)
         return pane
     }
@@ -435,7 +435,7 @@ export class Layout extends Cell {
         p0[s] -= by
         p1[s] += by
         p1[off] = dest
-        this.host.sendState()
+        this.gate.sendState()
     }
 }
 
@@ -559,23 +559,23 @@ export class Pane extends Cell {
         else if (this.fontSize > 30) this.fontSize = 30
         this.t.setOption('fontSize', this.fontSize)
         this.fit()
-        this.host.sendState()
+        this.gate.sendState()
     }
 
     // fit a pane
     fit() {
-            try {
-                this.fitAddon.fit()
-            } catch {
-                if (this.retries < terminal7.conf.retries) {
-                    this.retries++
-                    setTimeout(this.fit, 20*this.retries)
-                }
-                else
-                    console.log(`fit failed ${this.retries} times. giving up`)
-                return
+        try {
+            this.fitAddon.fit()
+        } catch {
+            if (this.retries < terminal7.conf.retries) {
+                this.retries++
+                setTimeout(this.fit, 20*this.retries)
             }
-            this.host.sendSize(this)
+            else
+                console.log(`fit failed ${this.retries} times. giving up`)
+            return
+        }
+        this.gate.sendSize(this)
     }
     /*
      * Pane.focus focuses the UI on this pane
@@ -636,11 +636,11 @@ export class Pane extends Cell {
                                `${tSize},${terminal7.conf.exec.shell}`
 
         console.log(`opening dc with label: "${label}`)
-        this.d = this.host.pc.createDataChannel(label)
+        this.d = this.gate.pc.createDataChannel(label)
         this.d.onclose = e => {
             console.log("data channel close")
             this.state = "disconnected"
-            if (this.host.boarding)
+            if (this.gate.boarding)
                 this.close()
         }
         this.d.onopen = () => {
@@ -648,8 +648,8 @@ export class Pane extends Cell {
             // TODO: set our size by sending "refresh-client -C <width>x<height>"
             setTimeout(() => {
                 if (this.state == "opened") {
-                    this.host.notify("Data channel is opened, but no first message")
-                    this.host.stopBoarding()
+                    this.gate.notify("Data channel is opened, but no first message")
+                    this.gate.stopBoarding()
                 }}, terminal7.conf.exec.timeout)
         }
         this.d.onmessage = m => this.onMessage(m)
@@ -658,7 +658,7 @@ export class Pane extends Cell {
     }
     // called when a message is received from the server
     onMessage (m) {
-        terminal7.flashHostConn()
+        terminal7.onMessage(m)
         var enc = new TextDecoder("utf-8"),
             msg = enc.decode(m.data)
         // console.log(this.webexecID + "> " + msg)
@@ -666,7 +666,7 @@ export class Pane extends Cell {
             console.log(`Got first DC msg: ${msg}`)
             this.state = "connected"
             this.webexecID = parseInt(msg)
-            this.host.onPaneConnected(this)
+            this.gate.onPaneConnected(this)
         }
         /* TODO: do we need a buffer?
         else if (this.state == "disconnected") {
@@ -677,7 +677,7 @@ export class Pane extends Cell {
             this.write(new Uint8Array(m.data))
         }
         else
-            this.host.notify(`${this.state} & dropping a message: ${m.data}`)
+            this.gate.notify(`${this.state} & dropping a message: ${m.data}`)
     }
     toggleZoom() {
         super.toggleZoom()
@@ -719,8 +719,8 @@ export class Pane extends Cell {
      */
     toggleSearch() {
         // show the search field
-        const ne = this.host.e.querySelector(".tabbar-names-nav"),
-              se = this.host.e.querySelector(".tabbar-search")
+        const ne = this.gate.e.querySelector(".tabbar-names-nav"),
+              se = this.gate.e.querySelector(".tabbar-search")
         this.copyMode = !this.copyMode
         if (this.copyMode) {
             ne.classList.add("hidden")

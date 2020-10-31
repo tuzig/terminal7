@@ -15,9 +15,9 @@ describe("terminal7", function() {
         t = new Terminal7()
         t.open(e)
     })
-    describe("host", () => {
-        it("starts with no hosts", () => {
-            expect(t.hosts.length).to.equal(0)
+    describe("gate", () => {
+        it("starts with no gates", () => {
+            expect(t.gates.length).to.equal(0)
         })
         it("s state can be dumped", () => {
             let state = { windows: [
@@ -68,7 +68,7 @@ describe("terminal7", function() {
                   },
                 },
             ]}
-            let h = t.addHost()
+            let h = t.addGate()
             h.open(e)
             h.restoreState(state)
             expect(h.windows.length).to.equal(2)
@@ -88,7 +88,7 @@ describe("terminal7", function() {
     })
     describe("window", () => {
         it("is added with a cell", function() {
-            let h = t.addHost()
+            let h = t.addGate()
             h.open(e)
             let w = h.addWindow("gothic")
             assert.exists(h.windows[0])
@@ -99,7 +99,7 @@ describe("terminal7", function() {
     describe("cell", () => {
         var h, w, p0
         beforeEach(() => {
-            h = t.addHost()
+            h = t.addGate()
             h.open(e)
             w = h.addWindow("1,2,3 testing")
             w.activeP.sx = 0.8
@@ -275,20 +275,20 @@ describe("terminal7", function() {
     describe("pane", () => {
         it("can be loaded", function() {
             console.log("WTF")
-            t.addHost({
-                addr: 'localhost',
+            t.addGate({
+                addr: 'localgate',
                 user: 'guest',
                 store: true
             })
-            t.addHost({
+            t.addGate({
                 addr: 'badwolf',
                 user: 'root',
                 store: true
             })
             let t2 = new Terminal7()
-            expect(t2.hosts.length).to.equal(2)
-            expect(t2.hosts[0].user).to.equal("guest")
-            expect(t2.hosts[1].user).to.equal("root")
+            expect(t2.gates.length).to.equal(2)
+            expect(t2.gates[0].user).to.equal("guest")
+            expect(t2.gates[1].user).to.equal("root")
         })
     })
     describe("layout", () => {
@@ -313,7 +313,7 @@ describe("terminal7", function() {
                         yoff: 0.5,
                     }
                 ]}
-            h = t.addHost()
+            h = t.addGate()
             h.open(e)
             w = h.addWindow("restored", state)
             expect(w.rootLayout.dir).to.equal("topbottom")
@@ -326,7 +326,7 @@ describe("terminal7", function() {
             expect(d.cells[1].yoff).to.equal(0.5)
         })
         it("can be restored from a -| layout", () => {
-            h = t.addHost()
+            h = t.addGate()
             h.open(e)
             w = h.addWindow("restored", {
                 "dir": "topbottom",
@@ -364,7 +364,7 @@ describe("terminal7", function() {
         })
 
         it("can move a border between panes", function () {
-            h = t.addHost()
+            h = t.addGate()
             h.open(e)
             w = h.addWindow("1,2,3 testing")
             w.activeP.sx = 0.8
