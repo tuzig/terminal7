@@ -86,55 +86,7 @@ export class Terminal7 {
                 .addEventListener("click", ev => 
                     this.activeG && this.activeG.activeW.activeP.toggleSearch())
         document.getElementById("dotfile-button")
-                .addEventListener("click", ev => {
-                    var modal   = document.getElementById("settings-modal"),
-                        button  = document.getElementById("dotfile-button"),
-                        area    =  document.getElementById("edit-conf"),
-                        conf    =  localStorage.getItem("dotfile") || DEFAULT_DOTFILE
-
-                    area.value = conf
-
-                    button.classList.add("on")
-                    modal.classList.remove("hidden")
-
-                    if (terminal7.confEditor == null) {
-                        vimMode(CodeMirror)
-                        tomlMode(CodeMirror)
-                        dialogAddOn(CodeMirror)
-                        CodeMirror.commands.save = _ => this.saveConf()
-                        // TODO: the next 2 lines do nothing fixed them and support :q
-                        CodeMirror.commands.wq = _ => this.saveConf()
-                        CodeMirror.commands.q = _ => modal.classList.add("hidden")
-                        terminal7.confEditor  = CodeMirror.fromTextArea(area, {
-                           value: conf,
-                           lineNumbers: true,
-                           mode: "toml",
-                           keyMap: "vim",
-                           matchBrackets: true,
-                           showCursorWhenSelecting: true
-                        })
-                        modal.querySelector(".close").addEventListener('click',
-                            ev => {
-                                button.classList.remove("on")
-                                this.clear()
-                                this.focus()
-                            }
-                        )
-                        modal.querySelector(".save").addEventListener('click',
-                            ev => { 
-                                this.saveConf()
-                                this.focus()
-                            })
-                        modal.querySelector(".copy").addEventListener('click',
-                            ev => {
-                                var area =  document.getElementById("edit-conf")
-                                terminal7.confEditor.save()
-                                cordova.plugins.clipboard.copy(area.value);
-                                this.focus()
-                            })
-                    }
-                    terminal7.confEditor.focus()
-                })
+                .addEventListener("click", ev => this.editDotfile(ev))
         // display the home page, starting with the plus button
         let addHost = document.getElementById("add-host")
         document.getElementById('plus-host').addEventListener(
@@ -181,6 +133,56 @@ export class Terminal7 {
         })
         this.catchFingers()
         this.goHome()
+    }
+    editDotfile(ev) {
+        var modal   = document.getElementById("settings-modal"),
+            button  = document.getElementById("dotfile-button"),
+            area    =  document.getElementById("edit-conf"),
+            conf    =  localStorage.getItem("dotfile") || DEFAULT_DOTFILE
+
+        area.value = conf
+
+        button.classList.add("on")
+        modal.classList.remove("hidden")
+
+        if (terminal7.confEditor == null) {
+            // initialize the editor
+            vimMode(CodeMirror)
+            tomlMode(CodeMirror)
+            dialogAddOn(CodeMirror)
+            CodeMirror.commands.save = _ => this.saveConf()
+            // TODO: the next 2 lines do nothing fixed them and support :q
+            CodeMirror.commands.wq = _ => this.saveConf()
+            CodeMirror.commands.q = _ => modal.classList.add("hidden")
+            terminal7.confEditor  = CodeMirror.fromTextArea(area, {
+               value: conf,
+               lineNumbers: true,
+               mode: "toml",
+               keyMap: "vim",
+               matchBrackets: true,
+               showCursorWhenSelecting: true
+            })
+            modal.querySelector(".close").addEventListener('click',
+                ev => {
+                    button.classList.remove("on")
+                    this.clear()
+                    this.focus()
+                }
+            )
+            modal.querySelector(".save").addEventListener('click',
+                ev => { 
+                    this.saveConf()
+                    this.focus()
+                })
+            modal.querySelector(".copy").addEventListener('click',
+                ev => {
+                    var area =  document.getElementById("edit-conf")
+                    terminal7.confEditor.save()
+                    cordova.plugins.clipboard.copy(area.value);
+                    this.focus()
+                })
+        }
+        terminal7.confEditor.focus()
     }
     /*
      * saveConf saves the configuration and closes open conf editor
