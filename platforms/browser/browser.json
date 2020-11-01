@@ -8,28 +8,28 @@
   },
   "installed_plugins": {
     "cordova-plugin-add-swift-support": {
-      "PACKAGE_NAME": "com.tuzig.terminal7"
+      "PACKAGE_NAME": "dev.terminal7"
     },
     "cordova-plugin-inappbrowser": {
-      "PACKAGE_NAME": "com.tuzig.terminal7"
+      "PACKAGE_NAME": "dev.terminal7"
     },
     "cordova-plugin-network-information": {
-      "PACKAGE_NAME": "com.tuzig.terminal7"
+      "PACKAGE_NAME": "dev.terminal7"
     },
     "cordova-plugin-ssh-connect": {
-      "PACKAGE_NAME": "com.tuzig.terminal7"
+      "PACKAGE_NAME": "dev.terminal7"
     },
     "cordova-plugin-statusbar": {
-      "PACKAGE_NAME": "com.tuzig.terminal7"
+      "PACKAGE_NAME": "dev.terminal7"
     },
     "cordova-plugin-webpack": {
-      "PACKAGE_NAME": "com.tuzig.terminal7"
+      "PACKAGE_NAME": "dev.terminal7"
     },
     "cordova-plugin-whitelist": {
-      "PACKAGE_NAME": "com.tuzig.terminal7"
+      "PACKAGE_NAME": "dev.terminal7"
     },
     "cordova-clipboard": {
-      "PACKAGE_NAME": "com.tuzig.terminal7"
+      "PACKAGE_NAME": "dev.terminal7"
     }
   },
   "dependent_plugins": {},
