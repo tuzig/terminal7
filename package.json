@@ -68,7 +68,7 @@
   },
   "scripts": {
     "dev": "webpack-dev-server",
-    "test": "karma start --single-run karma.conf.js",
+    "test": "karma start --single-run",
     "build": "npx webpack --output dist/terminal7.js",
     "ios": "cordova run ios"
   },
