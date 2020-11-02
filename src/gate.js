@@ -2,8 +2,7 @@ import * as Hammer from 'hammerjs'
 import { Window } from './window.js'
 import { formatDate } from './utils.js'
 
-const ABIT    = 10,  // ashort period of time, in milli
-      TIMEOUT = 3000
+const ABIT    = 10  // ashort period of time, in milli
 
 /*
  * The gate class abstracts a host connection
