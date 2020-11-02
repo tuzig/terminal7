@@ -379,6 +379,9 @@ export class Terminal7 {
         }
         // hide the modals
         this.clear()
+        // trash and search are off
+        document.getElementById("search-button").classList.add("off")
+        document.getElementById("trash-button").classList.add("off")
         window.location.href = "#home"
     }
     /* 

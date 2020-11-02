@@ -112,8 +112,8 @@ export class Gate {
         terminal7.activeG = this
         if (this.activeW)
             this.activeW.focus()
-        let s = document.getElementById("home-button")
-        s.classList.remove("off")
+        document.getElementById("home-button").classList.remove("off")
+        document.getElementById("trash-button").classList.remove("off")
     }
     stopBoarding() {
         if (!this.boarding)
