@@ -1,6 +1,5 @@
 import * as Hammer from 'hammerjs'
 import { Window } from './window.js'
-import { formatDate } from './utils.js'
 
 const ABIT    = 10  // ashort period of time, in milli
 
@@ -111,7 +110,7 @@ export class Gate {
         terminal7.activeG = this
         if (this.activeW)
             this.activeW.focus()
-        document.getElementById("home-button").classList.remove("off")
+        document.getElementById("home-button").classList.remove("on")
         document.getElementById("trash-button").classList.remove("off")
     }
     stopBoarding() {
@@ -204,8 +203,8 @@ export class Gate {
                     this.peer = JSON.parse(atob(data))
                     this.peerConnect(this.peer)
                 }).catch(error => {
-                    this.notify(`HTTP POST failed: ${error.message}`)
-                    terminal7.onDisconnect(this)
+                    this.notify(`HTTP POST to ${this.addr} failed: ${error.message}`)
+                    terminal7.onNoSignal(this)
                  })
             } 
         }
@@ -217,22 +216,8 @@ export class Gate {
         // authenticate starts the ball rolling
         this.authenticate()
     }
-    /*
-     * noitify adds a message to the host's log
-     */
     notify(message) {    
-        let ul = document.getElementById("log-msgs"),
-            li = document.createElement("li"),
-            d = new Date(),
-            t = formatDate(d, "HH:mm:ss.fff")
-
-        let lines = ul.querySelectorAll('li')
-        if (lines.length > terminal7.conf.indicators.log_lines)
-            lines[0].remove()
-        li.innerHTML = `<time>${t}</time> ${message}`
-        li.classList = "log-msg"
-        ul.appendChild(li)
-        terminal7.logDisplay(true)
+        terminal7.notify(message)
     }
     /*
      * sencCTRLMsg gets a control message and sends it if we have a control

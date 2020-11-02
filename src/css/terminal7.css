@@ -155,7 +155,7 @@ nav i {
     display: table-cell;
     text-align: center
 }
-nav .on { color: #D9F505 !important; }
+nav .on { color: #00FA00 !important; }
 .failed { color: #F952F9 !important; }
 .warn { color: #FAFA00 !important; }
 .off { color: #373702; }

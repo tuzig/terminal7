@@ -92,7 +92,7 @@
    
   <div id="navbar" class="bar">
       <nav>
-  <i id="home-button" class="f7-icons off">globe</i>
+  <i id="home-button" class="f7-icons on">globe</i>
   <i id="log-button" class="f7-icons">bubble_middle_top</i>
   <i id="trash-button" class="f7-icons off">rectangle_fill_badge_xmark</i>
   <i id="search-button" class="f7-icons off">doc_text_search</i>
@@ -115,6 +115,23 @@
                <i class="f7-icons reconnect">arrow_2_circlepath</i>
           </nav>
       </div>
+    </template>
+    <template id="nosignal-template">
+        <div class="modal border temporal"><form>
+          <h1>The host failed to reply</h1>
+          <p>Please check the log for details.</p>
+          <p>To proceed, you can either start webxec manually
+             or we can use ssh and run <pre>webexec start</pre> for you:
+          </p>
+          <label for="uname"><b>Username</b></label>
+          <input type="text" placeholder="your sysem username" name="uname" required>
+          <label for="pass"><b>Password</b></label>
+          <input type="password" placeholder="your password" name="pass" required>
+          <nav>
+               <i class="f7-icons close">xmark</i>
+               <i class="f7-icons start">rays</i>
+          </nav>
+      </form></div>
     </template>
     <!-- every host creates his own tabbar based on the template below -->
     <template id="tabbar-template">
