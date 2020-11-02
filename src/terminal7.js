@@ -38,6 +38,7 @@ export class Terminal7 {
         settings = settings || {}
         this.gates = []
         this.cells = []
+        this.timeouts = []
         this.state = "init"
         this.activeG = null
         window.terminal7 = this
@@ -411,7 +412,7 @@ export class Terminal7 {
                              || 88
             e.classList.remove("failed", "off")
             e.classList.add("on")
-            this.flashTimer = setTimeout(_ => {
+            this.flashTimer = terminal7.run(_ => {
                 this.flashTimer = null
                 e.classList.remove("on")
                 e.classList.add("off")
@@ -512,5 +513,18 @@ export class Terminal7 {
         li.classList = "log-msg"
         ul.appendChild(li)
         terminal7.logDisplay(true)
+    }
+    run(cb, delay) {
+        var i = this.timeouts.length
+        this.timeouts.push(
+            window.setTimeout(ev => {
+                this.timeouts.splice(i, 1)
+                cb(ev)
+            }, delay)
+        )
+    }
+    close() {
+        this.timeouts.forEach(t => window.clearTimeout(t))
+        this.timeouts = []
     }
 }

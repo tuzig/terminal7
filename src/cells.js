@@ -249,7 +249,7 @@ export class Layout extends Cell {
         pane.focus()
         // if we're connected, open the data channel
         if (this.gate.pc != null)
-            setTimeout(() => {
+            terminal7.run(_ => {
                 try {
                     pane.openDC()
                 } catch (e) {
@@ -537,7 +537,7 @@ export class Pane extends Cell {
             this.scrolling = true
             if (tf !== undefined)
                 clearTimeout(tf)
-            tf = setTimeout(e => this.scrolling = false, this.scrollLingers4)
+            tf = terminal7.run(e => this.scrolling = false, this.scrollLingers4)
         })
         this.t.textarea.addEventListener('paste', (event) => {
             let paste = (event.clipboardData || window.clipboardData).getData('text');
@@ -569,7 +569,7 @@ export class Pane extends Cell {
         } catch {
             if (this.retries < terminal7.conf.retries) {
                 this.retries++
-                setTimeout(this.fit, 20*this.retries)
+                terminal7.run(this.fit, 20*this.retries)
             }
             else
                 console.log(`fit failed ${this.retries} times. giving up`)
@@ -646,7 +646,7 @@ export class Pane extends Cell {
         this.d.onopen = () => {
             this.state = "opened"
             // TODO: set our size by sending "refresh-client -C <width>x<height>"
-            setTimeout(() => {
+            terminal7.run(() => {
                 if (this.state == "opened") {
                     this.gate.notify("Data channel is opened, but no first message")
                     this.gate.stopBoarding()

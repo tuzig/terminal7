@@ -59,7 +59,7 @@ export class Window {
         this.gate.activeW = this
         window.location.href=`#tab-${this.gate.id}.${this.id+1}`
         this.gate.sendState()
-        setTimeout(_ => this.activeP.focus(), ABIT)
+        terminal7.run(_ => this.activeP.focus(), ABIT)
     }
     addLayout(dir, basedOn) {
         let l = new Layout(dir, basedOn)
@@ -118,14 +118,14 @@ export class Window {
         i.addEventListener('blur', (e) => {
             let p = e.target.parentNode
             this.gate.sendState()
-            setTimeout(() => p.innerHTML = p.w.name, 0)
+            terminal7.run(() => p.innerHTML = p.w.name, 0)
         }, { once: true })
         i.addEventListener('change', (e) => {
             console.log("change", e)
             let p = e.target.parentNode
             p.w.name = e.target.value
             this.gate.sendState()
-            setTimeout(() => p.innerHTML = p.w.name, 0)
+            terminal7.run(() => p.innerHTML = p.w.name, 0)
         })
     }
     close(closeGate) {

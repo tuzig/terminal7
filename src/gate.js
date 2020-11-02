@@ -259,7 +259,7 @@ export class Gate {
                     this.nameE.classList.add("failed")
                 this.notify("Authorization FAILED")
                 this.close()
-                setTimeout(_ => this.copyToken(), ABIT)
+                terminal7.run(_ => this.copyToken(), ABIT)
                 return
             }
             if (this.nameE != null)
@@ -334,7 +334,7 @@ export class Gate {
         cdc.onopen = () => {
             if (this.pendingCDCMsgs.length > 0)
                 // TODO: why the time out? why 100mili?
-                setTimeout(() => {
+                terminal7.run(() => {
                     console.log("sending pending messages:", this.pendingCDCMsgs)
                     this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m), ABIT)
                     this.pendingCDCMsgs = []
@@ -412,7 +412,7 @@ export class Gate {
 
     sendState() {
         if (this.updateID == null)
-            this.updateID = setTimeout(_ => { 
+            this.updateID = terminal7.run(_ => { 
                 let msg = {
                     type: "set_payload", 
                     args: { Payload: this.dump() }
