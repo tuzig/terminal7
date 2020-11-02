@@ -10,6 +10,7 @@ import CodeMirror from 'codemirror/src/codemirror.js'
 import { vimMode } from 'codemirror/keymap/vim.js'
 import { tomlMode} from 'codemirror/mode/toml/toml.js'
 import { dialogAddOn } from 'codemirror/addon/dialog/dialog.js'
+import { formatDate } from './utils.js'
 
 const DEFAULT_DOTFILE = `[theme]
 foreground = "#00FAFA"
@@ -365,7 +366,7 @@ export class Terminal7 {
         let s = document.getElementById("home-button"),
             h = document.getElementById("home"),
             hc = document.getElementById("downstream-indicator")
-        s.classList.add("off")
+        s.classList.add("on")
         hc.classList.add("off")
         hc.classList.remove("on", "failed")
         // we need a token
@@ -448,5 +449,68 @@ export class Terminal7 {
         if (this.activeG && this.activeG.activeW &&
             this.activeG.activeW.activeP)
             this.activeG.activeW.activeP.focus()
+    }
+    onNoSignal(gate) {
+        let e = document.getElementById("nosignal-template")
+        e = e.content.cloneNode(true)
+        this.clear()
+        // clear pending messages to let the user start fresh
+        this.pendingCDCMsgs = []
+        e.querySelector("h1").textContent =
+            `Communication Failure at ${gate.name}`
+        e.querySelector(".start").addEventListener('click', ev => {
+            let e = this.e.lastElementChild,
+                uname = e.querySelector('[name="uname"]').value,
+                pass = e.querySelector('[name="pass"]').value,
+                addr = gate.addr.substr(0, gate.addr.indexOf(":"))
+            ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
+            this.notify("ssh is connecting...")
+            window.cordova.plugins.sshConnect.connect(uname, pass, addr, 22,
+                resp => {
+                    this.notify("ssh connected")
+                    if (resp) {
+                        let token = terminal7.token
+                        // TODO: make it work with non-standrad webexec locations
+                        window.cordova.plugins.sshConnect.executeCommand(
+                            "go/bin/webexec start", 
+                            ev =>  {
+                                console.log("ssh success", ev)
+                                this.notify("webexec started. reconnecting...")
+                                gate.close()
+                                this.clear()
+                                gate.connect()
+                            },
+                            msg => this.notify(`ssh failed: ${msg}`))
+                        window.cordova.plugins.sshConnect.disconnect()
+                    }
+                }, ev => {
+                    this.notify("Wrong password")
+                    console.log("ssh failed to connect", ev)
+                })
+
+
+        })
+        e.querySelector(".close").addEventListener('click', ev => {
+            gate.close()
+            terminal7.goHome()
+        })
+        this.e.appendChild(e)
+    }
+    /*
+     * noitify adds a message to the teminal7 notice board
+     */
+    notify(message) {    
+        let ul = document.getElementById("log-msgs"),
+            li = document.createElement("li"),
+            d = new Date(),
+            t = formatDate(d, "HH:mm:ss.fff")
+
+        let lines = ul.querySelectorAll('li')
+        if (lines.length > terminal7.conf.indicators.log_lines)
+            lines[0].remove()
+        li.innerHTML = `<time>${t}</time> ${message}`
+        li.classList = "log-msg"
+        ul.appendChild(li)
+        terminal7.logDisplay(true)
     }
 }
