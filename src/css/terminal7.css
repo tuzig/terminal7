@@ -35,6 +35,9 @@ h3 { margin: 0.2em; }
 
 #terminal7 {
     height: 100%; 
+    user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
 }
 button {
   background-color: #271D30;
@@ -85,7 +88,6 @@ a {
     width: 100%; 
     margin-top: 6vh; 
     margin: 1.5em auto 0;
-    display: table;
 }
 .window {
     position: fixed;
