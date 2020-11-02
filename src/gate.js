@@ -66,20 +66,38 @@ export class Gate {
         let li = document.createElement('li'),
             a = document.createElement('a'),
             addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
+        a.addEventListener("click", ev => this.connect())
         li.classList.add("border")
         this.nameE = document.createElement('h1')
         this.nameE.innerHTML = this.name || this.addr
         a.appendChild(this.nameE)
-        // Add gestures on the window name for rename and drag to trash
-        let hm = new Hammer.Manager(li, {})
-        hm.options.domEvents = true; // enable dom events
-        hm.add(new Hammer.Press({event: "edit", pointers: 1}))
-        hm.add(new Hammer.Tap({event: "connect", pointers: 1}))
-        hm.on("edit", (ev) => console.log("TODO: add host editing"))
-        hm.on("connect", (ev) => this.connect())
         li.appendChild(a)
-        // use prepend to keep the "+" last
         plusHost.parentNode.prepend(li)
+        // TODO: find a cleaner way to transfer the gate to the touch listener
+        li.gate = this
+        a.gate = this
+        this.nameE.gate = this
+    }
+    delete() {
+        terminal7.gates.splice(this.id, 1)
+        terminal7.storeGates()
+        // remove the host from the home screen
+        this.nameE.parentNode.parentNode.remove()
+    }
+    editSubmit(ev) {
+        let editHost = document.getElementById("edit-host")
+        this.addr = editHost.querySelector('[name="hostaddr"]').value 
+        this.name = editHost.querySelector('[name="hostname"]').value
+        this.nameE.innerHTML = this.name || this.addr
+        terminal7.storeGates()
+        terminal7.clear()
+    }
+    edit() {
+        let editHost = document.getElementById("edit-host")
+        editHost.gate = this
+        editHost.querySelector('[name="hostaddr"]').value = this.addr
+        editHost.querySelector('[name="hostname"]').value = this.name
+        editHost.classList.remove("hidden")
     }
     unfocus() {
         this.e.classList.add("hidden")
@@ -106,7 +124,7 @@ export class Gate {
     }
     startBoarding() {
         this.boarding = true
-        document.getElementById("downstream-indicato").classList.remove("failed")
+        document.getElementById("downstream-indicator").classList.remove("failed")
     }
     /*
      * updateConnectionState(state) is called on peer connection

@@ -24,6 +24,9 @@ log_lines = 7
 shell = "zsh"
 timeout = 3000
 retries = 3
+
+[touch]
+quickest_press = 500
 `
 
 export class Terminal7 {
@@ -132,6 +135,16 @@ export class Terminal7 {
             
         })
         this.catchFingers()
+        // setting up edit host events
+        let editHost = document.getElementById("edit-host")
+        editHost.querySelector(".submit").addEventListener('click', ev =>
+            editHost.gate.editSubmit(ev))
+        editHost.querySelector(".close").addEventListener('click',  ev =>
+            terminal7.clear())
+        editHost.querySelector(".trash").addEventListener('click',  ev => {
+            editHost.gate.delete()
+            terminal7.clear()
+        })
         this.goHome()
     }
     editDotfile(ev) {
@@ -201,22 +214,11 @@ export class Terminal7 {
         this.clear()
     }
     /*
-     * terminal7.onTouch is called on all nrowser's touch events
+     * terminal7.onTouch is called on all browser's touch events
      */
     onTouch(type, ev) {
         let e = ev.target,
             pane = e.p
-        // handle only events on pane
-        if (pane === undefined) {
-            console.log("igonring touch event on non-pane element: ", e )
-            return
-        }
-
-        let x  = ev.changedTouches[0].pageX,
-            y  = ev.changedTouches[0].pageY,
-            lx = (x / document.body.offsetWidth - pane.xoff) / pane.sx,
-            ly = (y / document.body.offsetHeight - pane.yoff) / pane.sy
-
         if (type == "start") {
             this.touch0 = Date.now() 
             this.firstT = this.lastT = ev.changedTouches
@@ -230,6 +232,9 @@ export class Terminal7 {
             return
         }
 
+        let x  = ev.changedTouches[0].pageX,
+            y  = ev.changedTouches[0].pageY
+
         if (this.firstT.length == 0)
             return
 
@@ -241,6 +246,20 @@ export class Terminal7 {
             r = Math.abs(dx / dy),
             topb  = r < 1.0
 
+
+        if (e.gate instanceof Gate) {
+            let longPress = terminal7.conf.touch.quickest_press || 1000
+            if (deltaT > longPress) {
+                e.gate.edit()
+            }
+            return
+        }
+        if (pane === undefined)  {
+            console.log(`igonring touch event ${type} on non-pane element: `, e )
+            return
+        }
+        let lx = (x / document.body.offsetWidth - pane.xoff) / pane.sx,
+            ly = (y / document.body.offsetHeight - pane.yoff) / pane.sy
         if (type == "move") {
             if (this.gesture == null) {
                 let rect = pane.e.getBoundingClientRect()
@@ -379,17 +398,17 @@ export class Terminal7 {
     }
     /*
      * OnMessage is called by the pane when they recieve traffic.
-     * for now it flashes the downstream indicator
+     * if the indicator is not alreay flushing it will flush it
      */
     onMessage(m) {
         if (this.flashTimer == null) {
             let  e = document.getElementById("downstream-indicator"),
-                 flashTime = this.conf.indicator && this.conf.indicators.flash
-                             || 100
+                 flashTime = this.conf.indicators && this.conf.indicators.flash
+                             || 88
             e.classList.remove("failed", "off")
             e.classList.add("on")
             this.flashTimer = setTimeout(_ => {
-                this.flashTimer == null
+                this.flashTimer = null
                 e.classList.remove("on")
                 e.classList.add("off")
             }, flashTime) 

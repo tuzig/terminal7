@@ -26,20 +26,18 @@
       <div id="add-host" class="hidden modal border" >
           <form id="add-host-form">
             <h2>Add a Host</h2>
-
-        <label for="uname"><b>Address</b></label>
-        <input type="text" placeholder="IP or host name" name="hostaddr"
-            required="required">
-        <label for="uname"><b>Name</b></label>
-        <input type="text" placeholder="Enter Hostname" name="hostname"
-            required="required">
-        <label>
-          <input type="checkbox" checked="checked" name="remember"> Remember host
-        </label>
-        <nav>
-            <i class="f7-icons close">xmark</i>
-            <i class="f7-icons submit">phone_arrow_up_right</i>
-        </nav>
+            <label for="uname"><b>Address</b></label>
+            <input type="text" placeholder="IP or host name" name="hostaddr"
+                required="required">
+            <label for="uname"><b>Name</b></label>
+            <input type="text" placeholder="Enter Hostname" name="hostname"
+                required="required">
+            <input type="checkbox" checked="checked" name="remember">
+            <label for="remember">Remember host</label>
+            <nav>
+                <i class="f7-icons close">xmark</i>
+                <i class="f7-icons submit">phone_arrow_up_right</i>
+            </nav>
           </form>
       </div>
       <div id="copy-token" class="hidden modal border" >
@@ -74,16 +72,31 @@
                <i class="f7-icons save">floppy_disk</i>
           </nav>
       </div>
+      <div id="edit-host" class="hidden modal border" >
+          <form id="edit-host-form">
+            <h2>Edit Host</h2>
+            <label for="uname"><b>Address</b></label>
+            <input type="text" placeholder="IP or host name" name="hostaddr"
+                required="required">
+            <label for="uname"><b>Name</b></label>
+            <input type="text" placeholder="Enter Hostname" name="hostname"
+                required="required">
+            <nav>
+                <i class="f7-icons close">xmark</i>
+                <i class="f7-icons trash">bin_xmark</i>
+                <i class="f7-icons submit">floppy_disk</i>
+            </nav>
+          </form>
+      </div>
   </div>
    
   <div id="navbar" class="bar">
       <nav>
   <i id="home-button" class="f7-icons off">globe</i>
-  <i id="log-button" class="f7-icons">music_albums</i>
-  <i id="trash-button" class="f7-icons">bin_xmark</i>
-  <i class="f7-icons">doc_on_clipboard</i>
-  <i id="tabbar-button" class="f7-icons off">arrow_branch</i>
+  <i id="log-button" class="f7-icons">bubble_middle_top</i>
+  <i id="trash-button" class="f7-icons off">rectangle_fill_badge_xmark</i>
   <i id="search-button" class="f7-icons off">doc_text_search</i>
+  <i id="help-button" class="f7-icons">question</i>
   <i id="dotfile-button" class="f7-icons">gear</i>
       </nav>
   </div>
