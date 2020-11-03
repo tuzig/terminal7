@@ -147,6 +147,16 @@ export class Terminal7 {
             editHost.gate.delete()
             terminal7.clear()
         })
+        editHost.querySelector(".reset").addEventListener('click',  ev => {
+            this.clear()
+            editHost.gate.showResetHost(ev)
+        })
+        // setting up reset host event
+        let resetHost = document.getElementById("reset-host")
+        resetHost.querySelector(".submit").addEventListener('click', ev =>
+            editHost.gate.resetHost())
+        resetHost.querySelector(".close").addEventListener('click',  ev =>
+            terminal7.clear())
         this.goHome()
     }
     editDotfile(ev) {
@@ -451,45 +461,50 @@ export class Terminal7 {
             this.activeG.activeW.activeP)
             this.activeG.activeW.activeP.focus()
     }
+    ssh(e, gate, cmd, cb) {
+        let uname = e.querySelector('[name="uname"]').value,
+            pass = e.querySelector('[name="pass"]').value,
+            addr = gate.addr.substr(0, gate.addr.indexOf(":"))
+        this.notify("ssh is connecting...")
+        window.cordova.plugins.sshConnect.connect(uname, pass, addr, 22,
+            resp => {
+                this.notify("ssh connected")
+                if (resp) {
+                    let token = terminal7.token
+                    // TODO: make it work with non-standrad webexec locations
+                    window.cordova.plugins.sshConnect.executeCommand(
+                        cmd, 
+                        msg =>  {
+                            this.notify(`ssh success: ${msg}`)
+                            cb(msg)
+                        },
+                        msg => this.notify(`ssh failed: ${msg}`))
+                    window.cordova.plugins.sshConnect.disconnect()
+                }
+            }, ev => {
+                this.notify("Wrong password")
+                console.log("ssh failed to connect", ev)
+            })
+    }
     onNoSignal(gate) {
         let e = document.getElementById("nosignal-template")
         e = e.content.cloneNode(true)
         this.clear()
         // clear pending messages to let the user start fresh
         this.pendingCDCMsgs = []
-        e.querySelector("h1").textContent =
-            `Communication Failure at ${gate.name}`
+        e.querySelectorAll(".name").forEach(e => e.textContent = gate.name)
+        e.querySelectorAll(".address").forEach(e => e.textContent = gate.addr)
+        e.querySelector(".edit-link").addEventListener('click', _ => {
+            this.clear()
+            gate.edit()
+        })
         e.querySelector(".start").addEventListener('click', ev => {
-            let e = this.e.lastElementChild,
-                uname = e.querySelector('[name="uname"]').value,
-                pass = e.querySelector('[name="pass"]').value,
-                addr = gate.addr.substr(0, gate.addr.indexOf(":"))
-            ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
-            this.notify("ssh is connecting...")
-            window.cordova.plugins.sshConnect.connect(uname, pass, addr, 22,
-                resp => {
-                    this.notify("ssh connected")
-                    if (resp) {
-                        let token = terminal7.token
-                        // TODO: make it work with non-standrad webexec locations
-                        window.cordova.plugins.sshConnect.executeCommand(
-                            "go/bin/webexec start", 
-                            ev =>  {
-                                console.log("ssh success", ev)
-                                this.notify("webexec started. reconnecting...")
-                                gate.close()
-                                this.clear()
-                                gate.connect()
-                            },
-                            msg => this.notify(`ssh failed: ${msg}`))
-                        window.cordova.plugins.sshConnect.disconnect()
-                    }
-                }, ev => {
-                    this.notify("Wrong password")
-                    console.log("ssh failed to connect", ev)
-                })
-
-
+            this.ssh(this.e.lastElementChild, gate, 
+                "go/bin/webexec start", ev => {
+                gate.close()
+                this.clear()
+                gate.connect()
+            })
         })
         e.querySelector(".close").addEventListener('click', ev => {
             gate.close()

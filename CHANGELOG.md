@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Edit host including delete
+- Edit host modal dialog that even lets you delete and reset
 - Gracefully handle a stopped server
 
 ## [0.8.0] - 2020/10/28

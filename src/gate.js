@@ -90,6 +90,9 @@ export class Gate {
         terminal7.storeGates()
         terminal7.clear()
     }
+    /*
+     * edit start the edit-host user-assitance
+     */
     edit() {
         let editHost = document.getElementById("edit-host")
         editHost.gate = this
@@ -203,7 +206,7 @@ export class Gate {
                     this.peer = JSON.parse(atob(data))
                     this.peerConnect(this.peer)
                 }).catch(error => {
-                    this.notify(`HTTP POST to ${this.addr} failed: ${error.message}`)
+                    this.notify(`HTTP POST to ${this.addr} failed`)
                     terminal7.onNoSignal(this)
                  })
             } 
@@ -217,7 +220,7 @@ export class Gate {
         this.authenticate()
     }
     notify(message) {    
-        terminal7.notify(message)
+        terminal7.notify(`${this.name}: ${message}`)
     }
     /*
      * sencCTRLMsg gets a control message and sends it if we have a control
@@ -442,35 +445,11 @@ export class Gate {
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
             this.notify("Token copied to the clipboard")
         })
-        ct.querySelector(".submit").addEventListener('click', ev => {
-            let uname = ct.querySelector('[name="uname"]').value,
-                pass = ct.querySelector('[name="pass"]').value
-            ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
-            this.notify("ssh is connecting...")
-            window.cordova.plugins.sshConnect.connect(uname, pass, addr, 22,
-                resp => {
-                    this.notify("ssh connected")
-                    if (resp) {
-                        let token = terminal7.token,
-                            // TODO: get the path of authorized tokens from the
-                            // server
-                            cmd =
-                            `cat <<<"${token}" >> ~/.webexec/authorized_tokens`
-                        window.cordova.plugins.sshConnect.executeCommand(cmd, 
-                            ev =>  {
-                                this.notify("ssh exec success", ev)
-                                this.connect()
-                            },
-                            ev => this.notify("ssh exec failure", ev))
-                        window.cordova.plugins.sshConnect.disconnect(
-                            ev => this.notify("ssh disconnect success", ev),
-                            ev => this.notify("ssh disconnect failure", ev))
-                    }
-                }, ev => {
-                    this.notify("Wrong password")
-                    console.log("ssh failed to connect", ev)
-                })
-        })
+        ct.querySelector(".submit").addEventListener('click', ev =>
+            terminal7.ssh(ct,  this,
+                `cat <<<"${terminal7.token}" >> ~/.webexec/authorized_tokens`,
+                _ => this.connect()))
+
         ct.querySelector(".close").addEventListener('click',  ev =>  {
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
         })
@@ -486,5 +465,17 @@ export class Gate {
                 this.breadcrumbs.pop().focus()
             else
                 this.windows[0].focus()
+    }
+    showResetHost() {
+        let e = document.getElementById("reset-host"),
+            addr = this.addr.substr(0, this.addr.indexOf(":"))
+
+        document.getElementById("rh-address").innerHTML = addr
+        document.getElementById("rh-name").innerHTML = this.name
+        e.classList.remove("hidden")
+    }
+    resetHost() {
+        let e = document.getElementById("reset-host")
+        terminal7.ssh(e, this, "go/bin/webexec restart", _ => terminal7.clear())
     }
 }

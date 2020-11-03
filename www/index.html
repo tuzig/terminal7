@@ -63,6 +63,21 @@
             </nav>
         </form>
       </div>
+      <div id="reset-host" class="hidden modal border" >
+        <form>
+            <p>Reseting our agent on host <code id="rh-address"> </code>
+                (aka <b id="rh-name"></b>) requires your crendetials.
+            </p>
+            <label for="uname"><b>Username</b></label>
+            <input type="text" placeholder="your sysem username" name="uname" required>
+            <label for="pass"><b>Password</b></label>
+            <input type="password" placeholder="your password" name="pass" required>
+            <nav>
+                <i class="f7-icons close">xmark</i>
+                <i class="f7-icons submit">arrow_2_circlepath</i>
+            </nav>
+        </form>
+      </div>
       <div id="settings-modal" class="hidden modal border">
           <textarea id="edit-conf" lines="20" cols="40">
           </textarea>
@@ -84,6 +99,7 @@
             <nav>
                 <i class="f7-icons close">xmark</i>
                 <i class="f7-icons trash">bin_xmark</i>
+                <i class="f7-icons reset">arrow_2_circlepath</i>
                 <i class="f7-icons submit">floppy_disk</i>
             </nav>
           </form>
@@ -92,7 +108,7 @@
    
   <div id="navbar" class="bar">
       <nav>
-  <i id="home-button" class="f7-icons on">globe</i>
+  <i id="home-button" class="f7-icons on">house</i>
   <i id="log-button" class="f7-icons">bubble_middle_top</i>
   <i id="trash-button" class="f7-icons off">rectangle_fill_badge_xmark</i>
   <i id="search-button" class="f7-icons off">doc_text_search</i>
@@ -118,10 +134,14 @@
     </template>
     <template id="nosignal-template">
         <div class="modal border temporal"><form>
-          <h1>The host failed to reply</h1>
-          <p>Please check the log for details.</p>
-          <p>To proceed, you can either start webxec manually
-             or we can use ssh and run <pre>webexec start</pre> for you:
+          <h1><span class="name"></span>: Connection Error</h1>
+          <p>If <span class="address"></span> is the wrong address click
+              <a href="#" class="edit-link">here</a></p>
+          <p>Is webexec installed ? Is it running?</p>
+          <p>If it is not installed please read the 
+            <a href="https://github.com/tuzig/webexec#webexec">
+                installation guide</a>.</p>
+          <p>If it is installed we can use SSH and start it for you:
           </p>
           <label for="uname"><b>Username</b></label>
           <input type="text" placeholder="your sysem username" name="uname" required>
