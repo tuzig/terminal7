@@ -475,6 +475,7 @@ export class Gate {
         e.classList.remove("hidden")
     }
     resetHost() {
+        this.close()
         let e = document.getElementById("reset-host")
         terminal7.ssh(e, this, "go/bin/webexec restart", _ => terminal7.clear())
     }
