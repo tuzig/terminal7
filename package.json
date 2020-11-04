@@ -1,7 +1,7 @@
 {
   "name": "terminal7",
-  "version": "0.7.1",
-  "description": "The terminal incarnated as a fingered tmux client",
+  "version": "0.9.0",
+  "description": "A touchable terminal emulator & multiplexer tablet app",
   "main": "src/index.js",
   "private": true,
   "bin": {
