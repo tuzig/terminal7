@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="dev.terminal7" version="0.7.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="dev.terminal7" version="0.9.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <feature name="CDVWebViewEngine">
         <param name="ios-package" value="CDVWebViewEngine" />
     </feature>
@@ -46,7 +46,7 @@
     <description>
         A gestures aware terminal emulator and multiplexer
     </description>
-    <author email="dev@tuzig.com" href="http://tuzig.com/terminal7">
+    <author email="dev@tuzig.com" href="https://terminal7.dev">
         Tuzig LTD
     </author>
     <content src="index.html" />
