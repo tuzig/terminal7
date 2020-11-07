@@ -19,6 +19,8 @@
     "publish": null
   },
   "dependencies": {
+    "@capacitor/cli": "^2.4.2",
+    "@capacitor/core": "^2.4.2",
     "@iarna/toml": "^2.2.5",
     "codemirror": "git+https://github.com/tuzig/CodeMirror.git",
     "cordova": "^10.0.0",
