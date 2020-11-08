@@ -1,5 +1,7 @@
 # Terminal Seven
 
+![Test](https://github.com/tuzig/terminal7/workflows/Terminal7-Tests/badge.svg)
+
 Welcome!
 
 Terminal 7 is a terminal multiplexer with full gesture support. 
