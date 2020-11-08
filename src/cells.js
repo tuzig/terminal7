@@ -195,7 +195,7 @@ export class Layout extends Cell {
                 p = (i > 0)?this.cells[i-1]:this.cells[1]
             // if no peer it means we're removing the last pane in the window
             if (p === undefined) {
-                this.w.close()
+                this.w.close(true)
                 return
             }
             if (this.dir == "rightleft") {

@@ -377,7 +377,7 @@ export class Gate {
     close(verify) {
         this.boarding = false
         this.clear()
-        this.pc.close()
+        this.sendState(() => this.pc.close())
         this.e.classList.add("hidden")
         if (terminal7.activeG == this)
             terminal7.activeG = null
@@ -413,7 +413,7 @@ export class Gate {
         return { windows: wins }
     }
 
-    sendState() {
+    sendState(cb) {
         if (this.updateID == null)
             this.updateID = terminal7.run(_ => { 
                 let msg = {
@@ -422,6 +422,9 @@ export class Gate {
                 }
                 this.updateID = null
                 this.sendCTRLMsg(msg)
+                if (cb) {
+                    cb()
+                }
             }, 100)
     }
     onPaneConnected(pane) {
