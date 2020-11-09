@@ -441,9 +441,8 @@ export class Terminal7 {
         e.querySelector("h1").textContent =
             `Communication Failure at ${gate.name}`
         e.querySelector(".reconnect").addEventListener('click', ev => {
-            gate.close()
             this.clear()
-            gate.connect()
+            gate.resetPC()
         })
         e.querySelector(".close").addEventListener('click', ev => {
             gate.close()

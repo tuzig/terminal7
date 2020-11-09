@@ -372,6 +372,17 @@ export class Gate {
     }
 
     /*
+     * resetPC restarts the peer connection
+     */
+    resetPC() {
+        this.boarding = false
+        this.clear()
+        this.sendState(() => {
+            this.pc.close()
+            this.connect()
+        })
+    }
+    /*
      * close closes the peer connection and removes the host from the UI
      */
     close(verify) {
