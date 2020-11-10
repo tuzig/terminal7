@@ -163,25 +163,21 @@ export class Terminal7 {
             if (ev.key == "Meta") {
                 this.metaPressStart = Date.now()
                 this.run(_ => {
-                    if (this.metaPressStart != 0)
-                        this.showKeys()
+                    if (Date.now() - this.metaPressStart > 987)
+                        document.getElementById('keys-help').classList.remove('hidden')
                 }, 1000)
-            }
+            } else
+                this.metaPressStart = Number.MAX_VALUE
         })
         document.addEventListener("keyup", ev => {
-            if (ev.key == "Meta") {
-                let d = Date.now() -this.metaPressStart
-                if (d > 1000)
-                    this.showKeys()
-                this.metaPressStart = 0
-            }
+            // hide the keys help when releasing the command key
+            if ((ev.key == "Meta") && 
+                (this.metaPressStart < Number.MAX_VALUE))
+                document.getElementById('keys-help').classList.add('hidden')
+            this.metaPressStart = Number.MAX_VALUE
         })
-        document.getElementById('keys-help').querySelector('.close')
-            .addEventListener('click', _ => terminal7.clear())
-    }
-    showKeys() {
-        let e = document.getElementById('keys-help')
-        e.classList.remove('hidden')
+        // Last one: focus
+        this.focus()
     }
     editDotfile(ev) {
         var modal   = document.getElementById("settings-modal"),
@@ -483,6 +479,8 @@ export class Terminal7 {
         if (this.activeG && this.activeG.activeW &&
             this.activeG.activeW.activeP)
             this.activeG.activeW.activeP.focus()
+        else
+            this.e.focus()
     }
     ssh(e, gate, cmd, cb) {
         let uname = e.querySelector('[name="uname"]').value,

@@ -77,21 +77,22 @@ a {
     width: 40em;
     max-width: 90%;
 }
-.modal p {
-    font-size: 2.6vh;
+.modal p, .modal td {
+    font-size: 2.6vmin;
 }
 .modal h2 { 
     margin-top: 0; 
     margin-bottom: 1em;
 }
-1modal:last-child {
-    margin-bottom: 2vh;
-}
 .modal nav { 
     clear: both;
     width: 100%; 
-    margin-top: 6vh; 
+    border-top: 1px #373702 solid;
     margin: 1.5em auto 0;
+    padding-top: 2vmin;
+}
+#keys-help {
+    width: auto;
 }
 .window {
     position: fixed;
