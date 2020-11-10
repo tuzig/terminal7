@@ -493,41 +493,42 @@ export class Pane extends Cell {
         this.fit()
         con.querySelector(".xterm-cursor-layer").p = this
         this.t.textarea.tabIndex = -1
-        this.t.onKey((ev) =>  {
-            if (afterLeader) {
-                if (ev.domEvent.key == "z") 
-                    this.toggleZoom()
-                else if (ev.domEvent.key == ",") 
-                    this.w.rename()
-                else if (ev.domEvent.key == "d")
-                    this.close()
-                else if (ev.domEvent.key == "+") {
-                    this.scale(1)
-                }
-                else if (ev.domEvent.key == "-") {
-                    this.scale(-1)
-                }
-                else if (ev.domEvent.key == "%") {
-                    this.split("topbottom")
-                }
-                else if (ev.domEvent.key == '"') {
-                    this.split("rightleft")
-                }
-                else if (ev.domEvent.key == "?") {
-                    this.toggleSearch()
-                } else if ((ev.domEvent.ctrlKey == true) && (ev.domEvent.key == "a")) {
-                    this.d.send(ev.key)
-                }
-                afterLeader = false
+        this.t.attachCustomKeyEventHandler(ev => {
+            var f = null
+            if (ev.metaKey && (ev.key != "Shift") && (ev.key != "Meta")) {
+                console.log(ev)
+                if (ev.key == "z") 
+                    f = () => this.toggleZoom()
+                else if (ev.key == ",") 
+                    f = () => this.w.rename()
+                else if (ev.key == "d")
+                    f = () => this.close()
+                else if (ev.key == "0") 
+                    f = () => this.scale(12 - this.fontSize)
+                else if (ev.shiftKey && (ev.key == "=") )
+                    f = () => this.scale(1)
+                else if (ev.key == "-") 
+                    f = () => this.scale(-1)
+                else if (ev.shiftKey && (ev.key == "5"))
+                    f = () => this.split("topbottom")
+                else if (ev.shiftKey && (ev.key == "'"))
+                    f = () => this.split("rightleft")
+                else if (ev.key == "/")
+                    f = () => this.toggleSearch()
             }
-            else if (this.copyMode) {
+            if (f != null) {
+                f()
+                ev.preventDefault()
+                ev.stopPropagation()
+                return false
+            }
+            return true
+        })
+        this.t.onKey((ev) =>  {
+            if (this.copyMode) {
                 this.handleCopyModeKey(ev.domEvent)
             // TODO: make the leader key configurable
-            } else if ((ev.domEvent.ctrlKey == true) && (ev.domEvent.key == "a")) {
-                afterLeader = true
-                return
-            }
-            else
+            } else
                 if ((this.d != null) && (this.d.readyState == "open"))
                     this.d.send(ev.key)
         })
