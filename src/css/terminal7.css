@@ -75,6 +75,7 @@ a {
     left: 50%;
     transform: translate(-50%, 0);
     width: 40em;
+    max-width: 90%;
 }
 .modal p {
     font-size: 2.6vh;
@@ -346,3 +347,11 @@ nav .on { color: #00FA00 !important; }
 #indicators .off {
     color: #003F00;
 }
+.modal table {
+    margin: 0 auto;
+}
+td {
+    text-align: left;
+    padding:0.5em;
+}
+

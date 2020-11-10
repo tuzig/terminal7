@@ -158,6 +158,30 @@ export class Terminal7 {
         resetHost.querySelector(".close").addEventListener('click',  ev =>
             terminal7.clear())
         this.goHome()
+        // settip up keys help
+        document.addEventListener("keydown", ev => {
+            if (ev.key == "Meta") {
+                this.metaPressStart = Date.now()
+                this.run(_ => {
+                    if (this.metaPressStart != 0)
+                        this.showKeys()
+                }, 1000)
+            }
+        })
+        document.addEventListener("keyup", ev => {
+            if (ev.key == "Meta") {
+                let d = Date.now() -this.metaPressStart
+                if (d > 1000)
+                    this.showKeys()
+                this.metaPressStart = 0
+            }
+        })
+        document.getElementById('keys-help').querySelector('.close')
+            .addEventListener('click', _ => terminal7.clear())
+    }
+    showKeys() {
+        let e = document.getElementById('keys-help')
+        e.classList.remove('hidden')
     }
     editDotfile(ev) {
         var modal   = document.getElementById("settings-modal"),
