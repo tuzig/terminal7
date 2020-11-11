@@ -41,14 +41,15 @@ export class Gate {
         this.e.id = `gate-${this.id}`
         e.appendChild(this.e)
         // add the tab bar
-        let t = document.getElementById("tabbar-template")
+        let t = document.getElementById("gate-template")
         if (t) {
             t = t.content.cloneNode(true)
-            let a = t.querySelector(".add-tab")
-            a.addEventListener('click', (e) => {
+            t.querySelector(".add-tab").addEventListener('click', (e) => {
                 let w = this.addWindow()
                 w.focus()
             })
+            t.querySelector(".close").addEventListener('click', (e) => 
+                this.activeW.activeP.exitCopyMode())
             /* TODO: handle the bang
             let b = t.querySelector(".bang")
             b.addEventListener('click', (e) => {new window from active pane})

@@ -115,6 +115,10 @@
                     <td>⌘&nbsp;/</td>
                 </tr>
                 <tr>
+                    <td>Enter Copy Mode</td>
+                    <td>⌘&nbsp;[</td>
+                </tr>
+                <tr>
                     <td>Bigger Font</td>
                     <td>⌘&nbsp;+</td>
                 </tr>
@@ -159,7 +163,8 @@
 
 <div id="indicators">
     <i id="connectivity" class="f7-icons">dot_radiowaves_left_right</i>
-    <i id="downstream-indicator" class="f7-icons">arrow_down</i>
+    <i id="downstream-indicator" class="f7-icons off">arrow_down</i>
+    <p id="copy-mode" class="hidden"></p>
 </div>
     <template id="disconnect-template">
       <div class="disconnect modal border temporal">
@@ -193,8 +198,21 @@
           </nav>
       </form></div>
     </template>
-    <!-- every host creates his own tabbar based on the template below -->
-    <template id="tabbar-template">
+    <!-- every gate creates his own tabbar based on the template below -->
+    <template id="gate-template">
+    <div class="hidden search-box border">
+      <nav class="tabbar-search">
+        <i class="close f7-icons">xmark</i>
+        <input type="text" name="term">
+        <!-- TODO: make url & file search work 
+        <a href="#find-url" class="hidden">URL</a>
+        <a href="#find-file" class="hidden">File</a>
+        -->
+        <i class="search-up f7-icons">arrowtriangle_up</i>
+        <i class="search-down f7-icons">arrowtriangle_down</i>
+      </nav>
+    </div>
+
     <div class="tabbar bar"> 
       <nav class="tabbar-names-nav">
           <i class="add-tab f7-icons">plus</i>
@@ -202,13 +220,6 @@
           </nav>
           <i class="bang f7-icons off">exclamationmark</i>
       </nav>
-      <nav class="tabbar-search hidden">
-        <i class="search-up f7-icons">arrow_up</i>
-        <i class="search-down f7-icons">arrow_down</i>
-        <input type="text" name="term">
-        <a href="#find-url" class="hidden">URL</a>
-        <a href="#find-file" class="hidden">File</a>
-       </nav>
     </div>
     </template>
   <script>

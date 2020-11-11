@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
+    "ansi-escapes": "^4.3.1",
     "codemirror": "git+https://github.com/tuzig/CodeMirror.git",
     "cordova": "^10.0.0",
     "cordova-plugin-inappbrowser": "^4.0.0",

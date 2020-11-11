@@ -2,6 +2,7 @@ import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { fileRegex, urlRegex } from './utils.js'
+import * as aE from 'ansi-escapes'
 
 const  ABIT                = 10,
         REGEX_SEARCH        = false,
@@ -454,6 +455,7 @@ export class Pane extends Cell {
         this.scrollLingers4 = props.scrollLingers4 || 2000
         this.theme = props.theme || terminal7.conf.theme
         this.copyMode = false
+        this.cmRep = 0
     }
 
     /*
@@ -497,6 +499,7 @@ export class Pane extends Cell {
             var f = null
             if (ev.metaKey && (ev.key != "Shift") && (ev.key != "Meta")) {
                 console.log(ev)
+                //TODO: refactor to a switch and move to a new handleMetaKey
                 if (ev.key == "z") 
                     f = () => this.toggleZoom()
                 else if (ev.key == ",") 
@@ -513,8 +516,8 @@ export class Pane extends Cell {
                     f = () => this.split("topbottom")
                 else if (ev.shiftKey && (ev.key == "'"))
                     f = () => this.split("rightleft")
-                else if (ev.key == "/")
-                    f = () => this.toggleSearch()
+                else if (ev.key == "[")
+                    f = () => this.enterCopyMode()
             }
             if (f != null) {
                 f()
@@ -527,7 +530,6 @@ export class Pane extends Cell {
         this.t.onKey((ev) =>  {
             if (this.copyMode) {
                 this.handleCopyModeKey(ev.domEvent)
-            // TODO: make the leader key configurable
             } else
                 if ((this.d != null) && (this.d.readyState == "open"))
                     this.d.send(ev.key)
@@ -547,6 +549,13 @@ export class Pane extends Cell {
         })
         this.state = "opened"
         return this.t
+    }
+    updateBufferPosition() {
+        if (this.copyMode) {
+            const b = this.t.buffer.active
+            document.getElementById("copy-mode").innerHTML =
+                `[${b.baseY + b.cursorY + 1}/${b.length}]`
+        }
     }
     setTheme(theme) {
         this.t.setOption("theme", theme)
@@ -691,79 +700,187 @@ export class Pane extends Cell {
      * and copy it.
      */
     handleCopyModeKey(ev) {
-        // Enter and "n" find the next match
-        if ((ev.keyCode == 13) || (ev.key == "n")) {
+        let b = this.t.buffer.active,
+            updateSelection = false
+        // special handling for numbers
+        if (ev.keyCode >=48 && ev.keyCode <= 57) {
+            this.cmRep = this.cmRep * 10 + ev.keyCode - 48
+            return
+        }
+        let r = (this.cmRep==0)?1:this.cmRep
+        switch (ev.key) {
+        case "Enter":
+            if (this.cmSY) {
+                cordova.plugins.clipboard.copy(this.t.getSelection())
+                this.cmSY = false
+                this.t.select(0,0,0)
+            }
+        case "n":
             if (!this.searchAddon
                 // TODO: fix findPrevious and use it in the next line
                      .findPrevious(this.searchTerm, SEARCH_OPTS))
-                console.log(`Couldn't find "${this.searchTerm}"`)
+                // TODO: it's too intrusive. use bell?
+                this.gate.notify(`Couldn't find "${this.searchTerm}"`)
+            break
+        case "f":
+            if (ev.ctrlKey)
+                this.t.scrollToLine(b.baseY+this.t.rows-2)
+            else if (ev.metaKey)
+                this.showSearch()
             else
-                console.log(`Found "${this.searchTerm}"`)
-        }
-        else if (ev.key == "p") {
+                this.notify("TODO: go back a a word")
+            break
+        case "b":
+            if (ev.ctrlKey)
+                this.t.scrollToLine(b.baseY-this.t.rows+2)
+            else
+                this.notify("TODO: go back a a word")
+            break
+        case "p":
             this.searchAddon.findNext(this.searchTerm, SEARCH_OPTS)
+            break
+        case "o":
+            if (REGEX_SEARCH)
+                cordova.InAppBrowser.open(this.t.getSelection(), "_system", "")
+            break
+        case "Escape":
+        case "q":
+            this.exitCopyMode()
+            break
+        case "ArrowUp":
+        case "k":
+            if (r > b.cursorY) {
+                // we need to scroll
+                this.t.scrollToLine(b.viewportY-r+b.cursorY)
+                /*
+                for (var i=0; i < r - b.cursorY; i++)
+                    this.t.write(aE.scrollDown)
+                */
+                this.t.write(aE.cursorTo(b.cursorX, 0))
+            }
+            else
+                this.t.write(aE.cursorUp(r))
+            this.updateBufferPosition()
+            break
+                /*
+                console.log(`vy = ${b.viewportY} by = ${b.baseY}`)
+            // this.t.write(aE.cursorGetPosition)
+            if ((b.cursorY == 0) && (b.baseY > 0)) {
+                this.t.scrollToLine(b.viewportY-1)
+                this.t.refresh(0, this.t.rows-1)
+                setTimeout( _ => this.t.write(aE.cursorTo(b.cursorX, 0)), 500)
+            }
+            else
+            */
+        case "ArrowDown":
+        case "j":
+            this.t.write(aE.cursorDown(r))
+            break
+        case "ArrowRight":
+        case "l":
+            this.t.write(aE.cursorForward(r))
+        if (this.cmSY)
+                this.cmSL++
+            updateSelection = true
+            break
+        case "ArrowLeft":
+        case "h":
+            this.t.write(aE.cursorBackward(r))
+            break
+        case "?":
+        case "/":
+            this.showSearch()
+            break
+        default:
+            console.log(`received key ${ev.key} code ${ev.keyCode}`)
+            if (ev.keyCode == 32) {
+                this.cmSY = b.viewportY + b.cursorY
+                this.cmSX = b.cursorX
+                this.cmSL = 1
+                updateSelection = true
+            }
+            else
+                this.gate.notify("TODO: Add copy mode help")
         }
-        else if (REGEX_SEARCH && (ev.key == "o")) {
-            var ref = cordova.InAppBrowser.open(this.t.getSelection(), "_system", "");
-        }
-        else if (ev.key == "q") {
-            this.toggleSearch()
-            this.t.scrollToBottom()
-        }
+        if (updateSelection)
+            this.t.select(this.cmSX, this.cmSY, this.cmSL)
+        this.updateBufferPosition()
+        this.cmRep = 0
     }
     /*
-     * Pane.enterSearch displays and handles pane search
+     * toggleCopyMode displays and handles pane search
      * First, tab names are replaced with an input field for the search string
      * as the user keys in the chars the display is scrolled to their first
      * occurences on the terminal buffer and the user can use line-mode vi
      * keys to move around, mark text and yank it
      */
     toggleSearch() {
-        // show the search field
-        const ne = this.gate.e.querySelector(".tabbar-names-nav"),
-              se = this.gate.e.querySelector(".tabbar-search")
         this.copyMode = !this.copyMode
         if (this.copyMode) {
-            ne.classList.add("hidden")
-            se.classList.remove("hidden")
-            document.getElementById("search-button").classList.add("on")
-            // TODO: restore regex search
-            let u = se.querySelector("a[href='#find-url']"),
-                f = se.querySelector("a[href='#find-file']"),
-                i = se.querySelector("input[name='term']")
-            if (REGEX_SEARCH) {
-                i.setAttribute("placeholder", "regex here")
-                u.classList.remove("hidden")
-                f.classList.remove("hidden")
-                u.onclick = ev => {
-                    ev.preventDefault()
-                    ev.stopPropagation()
-                    this.focus()
-                    i.value = this.searchTerm = urlRegex
-                    this.handleCopyModeKey({keyCode: 13})
-                }
-                // TODO: findPrevious does not work well
-                f.onclick = _ => this.searchAddon.findPrevious(fileRegex, SEARCH_OPTS)
-            } else 
-                i.setAttribute("placeholder", "search string here")
-            if (this.searchTerm)
-                i.value = this.searchTerm
-
-            i.onkeydown = ev => {
-                if (ev.keyCode == 13) {
-                    ev.preventDefault()
-                    ev.stopPropagation()
-                    this.focus()
-                    this.searchTerm = ev.target.value
-                    this.handleCopyModeKey(ev)
-                }
-            }
-            i.focus()
-        } else {
-            ne.classList.remove("hidden")
-            se.classList.add("hidden")
-            document.getElementById("search-button").classList.remove("on")
-            this.focus()
+            this.showSearch()
+            document.getElementById("copy-mode").classList.remove("hidden")
         }
+        else
+            this.gate.e.querySelector(".search-box").classList.add("hidden")
+    }
+    showSearch() {
+        // show the search field
+        const se = this.gate.e.querySelector(".search-box")
+        se.classList.remove("hidden")
+        this.updateBufferPosition()
+        document.getElementById("search-button").classList.add("on")
+        // TODO: restore regex search
+        let u = se.querySelector("a[href='#find-url']"),
+            f = se.querySelector("a[href='#find-file']"),
+            i = se.querySelector("input[name='term']")
+        if (REGEX_SEARCH) {
+            i.setAttribute("placeholder", "regex here")
+            u.classList.remove("hidden")
+            f.classList.remove("hidden")
+            u.onclick = ev => {
+                ev.preventDefault()
+                ev.stopPropagation()
+                this.focus()
+                i.value = this.searchTerm = urlRegex
+                this.handleCopyModeKey({keyCode: 13})
+            }
+            // TODO: findPrevious does not work well
+            f.onclick = _ => this.searchAddon.findPrevious(fileRegex, SEARCH_OPTS)
+        } else 
+            i.setAttribute("placeholder", "search string here")
+        if (this.searchTerm)
+            i.value = this.searchTerm
+
+        i.onkeydown = ev => {
+            if (ev.keyCode == 13) {
+                ev.preventDefault()
+                ev.stopPropagation()
+                this.focus()
+                this.searchTerm = ev.target.value
+                this.handleCopyModeKey(ev)
+            }
+        }
+        i.focus()
+    }
+    enterCopyMode() {
+        this.cmSY = false
+        this.cmX = this.t.buffer.active.cursorX
+        this.cmY = this.t.buffer.active.cursorY
+        this.t.write(aE.cursorSavePosition)
+        this.copyMode = true
+        this.updateBufferPosition()
+        document.getElementById("copy-mode")
+                .classList.remove("hidden")
+    }
+    exitCopyMode() {
+        const se = this.gate.e.querySelector(".search-box"),
+              cm = document.getElementById("copy-mode")
+        se.classList.add("hidden")
+        cm.classList.add("hidden")
+        document.getElementById("search-button").classList.remove("on")
+        this.copyMode = false
+        this.t.scrollToBottom()
+        this.t.write(aE.cursorTo(this.cmX, this.cmY))
+        this.focus()
     }
 }
