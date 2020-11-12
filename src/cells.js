@@ -456,6 +456,7 @@ export class Pane extends Cell {
         this.theme = props.theme || terminal7.conf.theme
         this.copyMode = false
         this.cmRep = 0
+        this.cmSY = false
     }
 
     /*
@@ -693,6 +694,23 @@ export class Pane extends Cell {
         super.toggleZoom()
         this.fit()
     }
+    updateCopyMode() {
+        let b = this.t.buffer.active
+        if (this.cmSY) {
+            console.log(`select: cursor: ${b.cursorX}, ${b.cursorY}
+                                 start: ${this.cmSX}, ${this.cmSY}`)
+            if ((this.cmSY < b.cursorY) ||
+                ((this.cmSY == b.cursorY) && this.cmSX < b.cursorX))
+                this.t.select(this.cmSX, this.cmSY, 
+                               b.cursorX  - this.cmSX
+                              + this.t.cols * (b.cursorY - this.cmSY))
+            else
+                this.t.select(b.cursorX, b.cursorY, 
+                              this.cmSX - b.cursorX
+                              + this.t.cols * (this.cmSY - b.cursorY))
+        }
+        this.updateBufferPosition()
+    }
     /*
      * Pane.handleCopyModeKey(ev) is called on a key press event when the
      * pane is in copy mode. 
@@ -701,7 +719,8 @@ export class Pane extends Cell {
      */
     handleCopyModeKey(ev) {
         let b = this.t.buffer.active,
-            updateSelection = false
+            updateSelection = false,
+            postWrite = () => { this.updateCopyMode() }
         // special handling for numbers
         if (ev.keyCode >=48 && ev.keyCode <= 57) {
             this.cmRep = this.cmRep * 10 + ev.keyCode - 48
@@ -710,15 +729,15 @@ export class Pane extends Cell {
         let r = (this.cmRep==0)?1:this.cmRep
         switch (ev.key) {
         case "Enter":
-            if (this.cmSY) {
+            if (this.t.hasSelection()) {
                 cordova.plugins.clipboard.copy(this.t.getSelection())
                 this.cmSY = false
-                this.t.select(0,0,0)
+                this.t.clearSelection()
+                break
             }
         case "n":
-            if (!this.searchAddon
-                // TODO: fix findPrevious and use it in the next line
-                     .findPrevious(this.searchTerm, SEARCH_OPTS))
+            if (this.searchTerm != undefined
+                && !this.searchAddon.findPrevious(this.searchTerm, SEARCH_OPTS))
                 // TODO: it's too intrusive. use bell?
                 this.gate.notify(`Couldn't find "${this.searchTerm}"`)
             break
@@ -756,10 +775,10 @@ export class Pane extends Cell {
                 for (var i=0; i < r - b.cursorY; i++)
                     this.t.write(aE.scrollDown)
                 */
-                this.t.write(aE.cursorTo(b.cursorX, 0))
+                this.t.write(aE.cursorTo(b.cursorX, 0), postWrite)
             }
             else
-                this.t.write(aE.cursorUp(r))
+                this.t.write(aE.cursorUp(r), postWrite)
             this.updateBufferPosition()
             break
                 /*
@@ -774,18 +793,15 @@ export class Pane extends Cell {
             */
         case "ArrowDown":
         case "j":
-            this.t.write(aE.cursorDown(r))
+            this.t.write(aE.cursorDown(r), postWrite)
             break
         case "ArrowRight":
         case "l":
-            this.t.write(aE.cursorForward(r))
-        if (this.cmSY)
-                this.cmSL++
-            updateSelection = true
+            this.t.write(aE.cursorForward(r), postWrite)
             break
         case "ArrowLeft":
         case "h":
-            this.t.write(aE.cursorBackward(r))
+            this.t.write(aE.cursorBackward(r), postWrite)
             break
         case "?":
         case "/":
@@ -794,17 +810,13 @@ export class Pane extends Cell {
         default:
             console.log(`received key ${ev.key} code ${ev.keyCode}`)
             if (ev.keyCode == 32) {
-                this.cmSY = b.viewportY + b.cursorY
+                this.cmSY = b.cursorY
                 this.cmSX = b.cursorX
-                this.cmSL = 1
-                updateSelection = true
+                this.updateCopyMode()
             }
             else
                 this.gate.notify("TODO: Add copy mode help")
         }
-        if (updateSelection)
-            this.t.select(this.cmSX, this.cmSY, this.cmSL)
-        this.updateBufferPosition()
         this.cmRep = 0
     }
     /*
@@ -866,7 +878,6 @@ export class Pane extends Cell {
         this.cmSY = false
         this.cmX = this.t.buffer.active.cursorX
         this.cmY = this.t.buffer.active.cursorY
-        this.t.write(aE.cursorSavePosition)
         this.copyMode = true
         this.updateBufferPosition()
         document.getElementById("copy-mode")
@@ -879,6 +890,7 @@ export class Pane extends Cell {
         cm.classList.add("hidden")
         document.getElementById("search-button").classList.remove("on")
         this.copyMode = false
+        this.t.clearSelection()
         this.t.scrollToBottom()
         this.t.write(aE.cursorTo(this.cmX, this.cmY))
         this.focus()
