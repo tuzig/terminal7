@@ -44,12 +44,21 @@ export class Gate {
         let t = document.getElementById("gate-template")
         if (t) {
             t = t.content.cloneNode(true)
-            t.querySelector(".add-tab").addEventListener('click', (e) => {
+            t.querySelector(".add-tab").addEventListener('click', _ => {
                 let w = this.addWindow()
                 w.focus()
             })
-            t.querySelector(".close").addEventListener('click', (e) => 
-                this.activeW.activeP.exitCopyMode())
+            t.querySelector(".search-close").addEventListener('click', _ =>  {
+                this.activeW.activeP.exitCopyMode()
+                this.activeW.activeP.focus()
+            })
+            t.querySelector(".search-up").addEventListener('click', _ =>
+                this.activeW.activeP.findNext(
+                    this.e.querySelector("input[name='search-term']").value))
+
+            t.querySelector(".search-down").addEventListener('click', _ => 
+                this.activeW.activeP.findPrevious(
+                    this.e.querySelector("input[name='search-term']").value))
             /* TODO: handle the bang
             let b = t.querySelector(".bang")
             b.addEventListener('click', (e) => {new window from active pane})

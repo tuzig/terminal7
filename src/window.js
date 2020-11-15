@@ -118,14 +118,20 @@ export class Window {
         i.addEventListener('blur', (e) => {
             let p = e.target.parentNode
             this.gate.sendState()
-            terminal7.run(() => p.innerHTML = p.w.name, 0)
+            terminal7.run(() => {
+                p.innerHTML = p.w.name
+                this.activeP.focus()
+            }, 0)
         }, { once: true })
         i.addEventListener('change', (e) => {
             console.log("change", e)
             let p = e.target.parentNode
             p.w.name = e.target.value
             this.gate.sendState()
-            terminal7.run(() => p.innerHTML = p.w.name, 0)
+            terminal7.run(() => {
+                p.innerHTML = p.w.name
+                this.activeP.focus()
+            }, 0)
         })
     }
     close(closeGate) {

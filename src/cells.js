@@ -497,36 +497,8 @@ export class Pane extends Cell {
         con.querySelector(".xterm-cursor-layer").p = this
         this.t.textarea.tabIndex = -1
         this.t.attachCustomKeyEventHandler(ev => {
-            var f = null
-            if (ev.metaKey && (ev.key != "Shift") && (ev.key != "Meta")) {
-                console.log(ev)
-                //TODO: refactor to a switch and move to a new handleMetaKey
-                if (ev.key == "z") 
-                    f = () => this.toggleZoom()
-                else if (ev.key == ",") 
-                    f = () => this.w.rename()
-                else if (ev.key == "d")
-                    f = () => this.close()
-                else if (ev.key == "0") 
-                    f = () => this.scale(12 - this.fontSize)
-                else if (ev.shiftKey && (ev.key == "=") )
-                    f = () => this.scale(1)
-                else if (ev.key == "-") 
-                    f = () => this.scale(-1)
-                else if (ev.shiftKey && (ev.key == "5"))
-                    f = () => this.split("topbottom")
-                else if (ev.shiftKey && (ev.key == "'"))
-                    f = () => this.split("rightleft")
-                else if (ev.key == "[")
-                    f = () => this.enterCopyMode()
-            }
-            if (f != null) {
-                f()
-                ev.preventDefault()
-                ev.stopPropagation()
-                return false
-            }
-            return true
+            if (ev.metaKey && (ev.key != "Shift") && (ev.key != "Meta"))
+                this.handleMetaKey(ev)
         })
         this.t.onKey((ev) =>  {
             if (this.copyMode) {
@@ -552,11 +524,14 @@ export class Pane extends Cell {
         return this.t
     }
     updateBufferPosition() {
-        if (this.copyMode) {
-            const b = this.t.buffer.active
-            document.getElementById("copy-mode").innerHTML =
-                `[${b.baseY + b.cursorY + 1}/${b.length}]`
-        }
+        var v
+        const b = this.t.buffer.active,
+              pos = this.t.getSelectionPosition()
+        if (pos !== undefined)
+            v = `[${pos.startRow}/${b.length}]`
+        else
+            v = `[${b.baseY + b.cursorY + 1}/${b.length}]`
+        document.getElementById("copy-mode").innerHTML = v
     }
     setTheme(theme) {
         this.t.setOption("theme", theme)
@@ -736,16 +711,13 @@ export class Pane extends Cell {
                 break
             }
         case "n":
-            if (this.searchTerm != undefined
-                && !this.searchAddon.findPrevious(this.searchTerm, SEARCH_OPTS))
-                // TODO: it's too intrusive. use bell?
-                this.gate.notify(`Couldn't find "${this.searchTerm}"`)
+            this.findNext()
             break
         case "f":
             if (ev.ctrlKey)
                 this.t.scrollToLine(b.baseY+this.t.rows-2)
             else if (ev.metaKey)
-                this.showSearch()
+                this.toggleSearch()
             else
                 this.notify("TODO: go back a a word")
             break
@@ -756,7 +728,7 @@ export class Pane extends Cell {
                 this.notify("TODO: go back a a word")
             break
         case "p":
-            this.searchAddon.findNext(this.searchTerm, SEARCH_OPTS)
+            this.findPrevious()
             break
         case "o":
             if (REGEX_SEARCH)
@@ -819,7 +791,7 @@ export class Pane extends Cell {
         this.cmRep = 0
     }
     /*
-     * toggleCopyMode displays and handles pane search
+     * toggleSearch displays and handles pane search
      * First, tab names are replaced with an input field for the search string
      * as the user keys in the chars the display is scrolled to their first
      * occurences on the terminal buffer and the user can use line-mode vi
@@ -828,11 +800,13 @@ export class Pane extends Cell {
     toggleSearch() {
         this.copyMode = !this.copyMode
         if (this.copyMode) {
+            this.enterCopyMode() 
             this.showSearch()
-            document.getElementById("copy-mode").classList.remove("hidden")
+            // document.getElementById("copy-mode").classList.remove("hidden")
         }
         else
-            this.gate.e.querySelector(".search-box").classList.add("hidden")
+            this.exitCopyMode() 
+            // this.gate.e.querySelector(".search-box").classList.add("hidden")
     }
     showSearch() {
         // show the search field
@@ -843,7 +817,7 @@ export class Pane extends Cell {
         // TODO: restore regex search
         let u = se.querySelector("a[href='#find-url']"),
             f = se.querySelector("a[href='#find-file']"),
-            i = se.querySelector("input[name='term']")
+            i = se.querySelector("input[name='search-term']")
         if (REGEX_SEARCH) {
             i.setAttribute("placeholder", "regex here")
             u.classList.remove("hidden")
@@ -893,5 +867,66 @@ export class Pane extends Cell {
         this.t.scrollToBottom()
         this.t.write(aE.cursorTo(this.cmX, this.cmY))
         this.focus()
+    }
+    handleMetaKey(ev) {
+        var f = null
+        console.log(`Handling meta key ${ev.key}`)
+        switch (ev.key) {
+        case "z":
+            f = () => this.toggleZoom()
+            break
+        case ",":
+            f = () => this.w.rename()
+            break
+        case "d":
+            f = () => this.close()
+            break
+        case "0":
+            f = () => this.scale(12 - this.fontSize)
+            break
+        case "=":
+                f = () => this.scale(1)
+            break
+        case "-":
+            f = () => this.scale(-1)
+            break
+        case "5":
+            f = () => this.split("topbottom")
+            break
+        case "'":
+            f = () => this.split("rightleft")
+            break
+        case "[":
+            f = () => (terminal7.conf.features.copy_mode)
+                      ?this.enterCopyMode()
+                      :null
+            break
+        case "f":
+            f = () => this.toggleSearch()
+        }
+        if (f != null) {
+            f()
+            ev.preventDefault()
+            ev.stopPropagation()
+            return false
+        }
+        return true
+    }
+    findPrevious(searchTerm) {
+        if (searchTerm != undefined)
+            this.searchTerm = searchTerm
+        if (this.searchTerm != undefined
+            && !this.searchAddon.findNext(this.searchTerm, SEARCH_OPTS))
+            this.gate.notify(`Couldn't find "${this.searchTerm}"`)
+        this.updateCopyMode()
+    }
+    findNext(searchTerm) {
+        if (searchTerm != undefined)
+            this.searchTerm = searchTerm
+        if (this.searchTerm != undefined
+            && !this.searchAddon.findPrevious(this.searchTerm, SEARCH_OPTS))
+            // TODO: it's too intrusive. use bell?
+            this.gate.notify(`Couldn't find "${this.searchTerm}"`)
+        this.updateCopyMode()
     }
 }

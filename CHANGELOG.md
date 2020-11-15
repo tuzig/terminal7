@@ -14,7 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Copy mode had limited but complete functionality
 - Like always, reconnect is a bit better now working fine on single window layouts
+
 
 ## [0.9.1] - 2020/11/08
 

@@ -27,7 +27,7 @@ timeout = 3000
 retries = 3
 
 [touch]
-quickest_press = 500
+quickest_press = 1000
 `
 
 export class Terminal7 {
@@ -60,6 +60,9 @@ export class Terminal7 {
         this.token = localStorage.getItem("token")
         this.confEditor = null
         this.flashTimer = null
+        this.conf.features = this.conf.features || {}
+        this.conf.touch = this.conf.touch || {}
+        this.conf.touch.quickest_press = this.conf.touch.quickest_press || 1000
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,
@@ -163,9 +166,13 @@ export class Terminal7 {
             if (ev.key == "Meta") {
                 this.metaPressStart = Date.now()
                 this.run(_ => {
+                    let e = document.getElementById('keys-help')
+                    if (!this.conf.features["copy_mode"])
+                        e.querySelectorAll('.copy_mode').forEach(i =>
+                            i.style.display = "none")
                     if (Date.now() - this.metaPressStart > 987)
-                        document.getElementById('keys-help').classList.remove('hidden')
-                }, 1000)
+                        e.classList.remove('hidden')
+                }, terminal7.conf.touch.quickest_press)
             } else
                 this.metaPressStart = Number.MAX_VALUE
         })
@@ -280,7 +287,7 @@ export class Terminal7 {
 
 
         if (e.gate instanceof Gate) {
-            let longPress = terminal7.conf.touch.quickest_press || 1000
+            let longPress = terminal7.conf.touch.quickest_press
             if (deltaT > longPress) {
                 e.gate.edit()
             }

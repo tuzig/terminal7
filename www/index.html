@@ -114,7 +114,7 @@
                     <td>Search Pane Buffer</td>
                     <td>⌘&nbsp;/</td>
                 </tr>
-                <tr>
+                <tr class="copy_mode">
                     <td>Enter Copy Mode</td>
                     <td>⌘&nbsp;[</td>
                 </tr>
@@ -202,8 +202,8 @@
     <template id="gate-template">
     <div class="hidden search-box border">
       <nav class="tabbar-search">
-        <i class="close f7-icons">xmark</i>
-        <input type="text" name="term">
+        <i class="search-close f7-icons">xmark</i>
+        <input type="text" name="search-term">
         <!-- TODO: make url & file search work 
         <a href="#find-url" class="hidden">URL</a>
         <a href="#find-file" class="hidden">File</a>
