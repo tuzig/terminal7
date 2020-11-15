@@ -808,11 +808,10 @@ export class Pane extends Cell {
             this.showSearch()
             break
         default:
-            console.log(`received key ${ev.key} code ${ev.keyCode}`)
             if (ev.keyCode == 32) {
                 this.cmSY = b.cursorY
                 this.cmSX = b.cursorX
-                this.updateCopyMode()
+                console.log(`set cmSX & Y to ${this.cmSX}, ${this.cmSY}`)
             }
             else
                 this.gate.notify("TODO: Add copy mode help")
