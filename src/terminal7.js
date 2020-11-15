@@ -106,10 +106,12 @@ export class Terminal7 {
                     name: addHost.querySelector('[name="hostname"]').value,
                     store: remember
                 })
-            if (remember)
-                    this.storeGates()
-            this.clear()
-            gate.connect()
+            if (typeof gate == "string")
+                this.notify(gate)
+            else {
+                this.clear()
+                gate.connect()
+            }
         })
         // hide the modal on xmark click
         addHost.querySelector(".close").addEventListener('click',  ev =>  {
@@ -368,7 +370,8 @@ export class Terminal7 {
     addGate(props) {
         let out = [],
             p = props || {},
-            addr = p.addr
+            addr = p.addr,
+            nameFound = false
         // add the id
         p.id = this.gates.length
 
@@ -376,12 +379,22 @@ export class Terminal7 {
         if (addr && (addr.indexOf(":") == -1))
             p.addr = `${addr}:7777`
 
-        let h = new Gate(p)
-        console.log(`adding ${h.user}@${h.addr} & saving gates`)
-        this.gates.push(h)
+        this.gates.forEach(i => {
+            if (props.name == i.name)
+                nameFound = true
+        })
+        if (nameFound) {
+            return "Gate name is not unique"
+        }
+
+        let g = new Gate(p)
+        console.log(`adding ${g.user}@${g.addr} & saving gates`)
+        this.gates.push(g)
+        if (p.store)
+            this.storeGates()
         this.storeGates()
-        h.open(this.e)
-        return h
+        g.open(this.e)
+        return g
     }
     storeGates() { 
         let out = []

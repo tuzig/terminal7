@@ -86,6 +86,11 @@ describe("terminal7", function() {
             expect(d.windows[0].layout.cells[0].yoff).to.equal(0.2)
             expect(d.windows[0].layout.cells[1].yoff).to.equal(0.5)
         })
+        it("has a unique name", () => {
+            let g = t.addGate({name:"foo"})
+            let g2 = t.addGate({name:"foo"})
+            expect(g2).to.equal("Gate name is not unique")
+        })
     })
     describe("window", () => {
         it("is added with a cell", function() {
