@@ -75,22 +75,24 @@ a {
     left: 50%;
     transform: translate(-50%, 0);
     width: 40em;
+    max-width: 90%;
 }
-.modal p {
-    font-size: 2.6vh;
+.modal p, .modal td {
+    font-size: 2.6vmin;
 }
 .modal h2 { 
     margin-top: 0; 
     margin-bottom: 1em;
 }
-1modal:last-child {
-    margin-bottom: 2vh;
-}
 .modal nav { 
     clear: both;
     width: 100%; 
-    margin-top: 6vh; 
+    border-top: 1px #373702 solid;
     margin: 1.5em auto 0;
+    padding-top: 2vmin;
+}
+#keys-help {
+    width: auto;
 }
 .window {
     position: fixed;
@@ -202,22 +204,33 @@ nav .on { color: #00FA00 !important; }
 .tabbar-names>i {
     width: 10%;
 }
-.tabbar-search {
+.search-box {
+    position: fixed;
+    display: inline-block;
+    box-sizing: border-box;
+    background-color: #271D30;
+    z-index: 9;
     margin: 0 auto;
+    padding: 0;
+    bottom: 2.5vmin;
+    left: 50%;
+    transform: translate(-50%, 0);
+}
+.tabbar-search {
+    padding: 0.2em 1em;
 }
 .tabbar-search>i {
-    width: 10%;
-}
-.tabbar-search>a:last-child {
-    border: none;
-}
-.tabbar-search>a {
-    display: table-cell;
-    border-right: 1px solid #373702;
-    width: 6em;
+    padding: 0 0.5em;
 }
 .tabbar-search>input {
-    width:20em;
+    padding: 0 0.5em;
+    width: 30em;
+    max-width: 90%;
+    position: relative;
+    top: -0.3vmin;
+    margin-left: 1em;
+    border-right: 1px solid #373702;
+    font-size: 2vmin;
 }
 .active {
     font-weight: bold;
@@ -286,7 +299,7 @@ nav .on { color: #00FA00 !important; }
   border: 1px solid #ccc;
   box-sizing: border-box;
 }
-.hidden { display: none !important; }
+.hidden { visibility: hidden; }
 .host {
     width: 100%;
     max-width: 100%;
@@ -330,12 +343,11 @@ nav .on { color: #00FA00 !important; }
     top: 0px;
     right: 0px;
     font-size: 4vmin;
-    width: 5vmin;
     margin: 6px;
     z-index: 10;
     opacity: 0.6;
 }
-#indicators i {
+#indicators i, #indicators p {
     cursor: pointer;
     border: 1px solid #373702;
     float: right;
@@ -343,6 +355,19 @@ nav .on { color: #00FA00 !important; }
     padding: 0.2em;
     color: #00FA00; 
 }
+#indicators p {
+    margin: 0;
+    font-size: 3vmin;
+    line-height: 4vmin;
+}
 #indicators .off {
     color: #003F00;
 }
+.modal table {
+    margin: 0 auto;
+}
+td {
+    text-align: left;
+    padding:0.5em;
+}
+

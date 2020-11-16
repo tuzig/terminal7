@@ -6,6 +6,36 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## Unreleased
+
+### Fixed
+
+- Adding host with an existing name is forbidden
+- Wrong message on  bad host address
+
+## [0.9.2] - 2020/11/15
+
+### Added
+
+- ⌘ is taking over as the leader. long press it to get the list of keys
+
+### Fixed
+
+- Copy mode had limited but complete functionality
+- Like always, reconnect is a bit better should be working fine on single window
+
+
+## [0.9.1] - 2020/11/08
+
+### Added 
+
+- Multitasking support
+
+### Fixed
+
+- Reconnecting after all panes closed is working
+
 ## [0.9.0] - 2020/11/04
 
 ### Added

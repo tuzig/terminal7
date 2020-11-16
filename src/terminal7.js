@@ -27,7 +27,7 @@ timeout = 3000
 retries = 3
 
 [touch]
-quickest_press = 500
+quickest_press = 1000
 `
 
 export class Terminal7 {
@@ -60,6 +60,9 @@ export class Terminal7 {
         this.token = localStorage.getItem("token")
         this.confEditor = null
         this.flashTimer = null
+        this.conf.features = this.conf.features || {}
+        this.conf.touch = this.conf.touch || {}
+        this.conf.touch.quickest_press = this.conf.touch.quickest_press || 1000
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,
@@ -103,10 +106,12 @@ export class Terminal7 {
                     name: addHost.querySelector('[name="hostname"]').value,
                     store: remember
                 })
-            if (remember)
-                    this.storeGates()
-            this.clear()
-            gate.connect()
+            if (typeof gate == "string")
+                this.notify(gate)
+            else {
+                this.clear()
+                gate.connect()
+            }
         })
         // hide the modal on xmark click
         addHost.querySelector(".close").addEventListener('click',  ev =>  {
@@ -158,6 +163,30 @@ export class Terminal7 {
         resetHost.querySelector(".close").addEventListener('click',  ev =>
             terminal7.clear())
         this.goHome()
+        // settip up keys help
+        document.addEventListener("keydown", ev => {
+            if (ev.key == "Meta") {
+                this.metaPressStart = Date.now()
+                this.run(_ => {
+                    let e = document.getElementById('keys-help')
+                    if (!this.conf.features["copy_mode"])
+                        e.querySelectorAll('.copy_mode').forEach(i =>
+                            i.style.display = "none")
+                    if (Date.now() - this.metaPressStart > 987)
+                        e.classList.remove('hidden')
+                }, terminal7.conf.touch.quickest_press)
+            } else
+                this.metaPressStart = Number.MAX_VALUE
+        })
+        document.addEventListener("keyup", ev => {
+            // hide the keys help when releasing the command key
+            if ((ev.key == "Meta") && 
+                (this.metaPressStart < Number.MAX_VALUE))
+                document.getElementById('keys-help').classList.add('hidden')
+            this.metaPressStart = Number.MAX_VALUE
+        })
+        // Last one: focus
+        this.focus()
     }
     editDotfile(ev) {
         var modal   = document.getElementById("settings-modal"),
@@ -260,7 +289,7 @@ export class Terminal7 {
 
 
         if (e.gate instanceof Gate) {
-            let longPress = terminal7.conf.touch.quickest_press || 1000
+            let longPress = terminal7.conf.touch.quickest_press
             if (deltaT > longPress) {
                 e.gate.edit()
             }
@@ -336,25 +365,39 @@ export class Terminal7 {
             this.onTouch("move", ev), false)
     }
     /*
-     * Terminal7.addGate is used to add a Host connection
+     * Terminal7.addGate is used to add a gate to a host.
+     * the function ensures the gate has a unique name adds the gate to
+     * the `gates` property, stores and returns it.
      */
     addGate(props) {
         let out = [],
             p = props || {},
-            addr = p.addr
+            addr = p.addr,
+            nameFound = false
         // add the id
         p.id = this.gates.length
+        p.verified = false
 
         // if no port specify, use the default port
         if (addr && (addr.indexOf(":") == -1))
             p.addr = `${addr}:7777`
 
-        let h = new Gate(p)
-        console.log(`adding ${h.user}@${h.addr} & saving gates`)
-        this.gates.push(h)
+        this.gates.forEach(i => {
+            if (props.name == i.name)
+                nameFound = true
+        })
+        if (nameFound) {
+            return "Gate name is not unique"
+        }
+
+        let g = new Gate(p)
+        console.log(`adding ${g.user}@${g.addr} & saving gates`)
+        this.gates.push(g)
+        if (p.store)
+            this.storeGates()
         this.storeGates()
-        h.open(this.e)
-        return h
+        g.open(this.e)
+        return g
     }
     storeGates() { 
         let out = []
@@ -367,19 +410,19 @@ export class Terminal7 {
             }
         })
         console.log("Storing gates:", out)
-        localStorage.setItem("gates", JSON.stringify(out))
+        localStorage.setItem('gates', JSON.stringify(out))
     }
     clear() {
-        this.e.querySelectorAll(".temporal").forEach(e => e.remove())
-        this.e.querySelectorAll(".modal").forEach(e => e.classList.add("hidden"))
+        this.e.querySelectorAll('.temporal').forEach(e => e.remove())
+        this.e.querySelectorAll('.modal').forEach(e => e.classList.add("hidden"))
     }
     goHome() {
-        let s = document.getElementById("home-button"),
-            h = document.getElementById("home"),
-            hc = document.getElementById("downstream-indicator")
-        s.classList.add("on")
-        hc.classList.add("off")
-        hc.classList.remove("on", "failed")
+        let s = document.getElementById('home-button'),
+            h = document.getElementById('home'),
+            hc = document.getElementById('downstream-indicator')
+        s.classList.add('on')
+        hc.classList.add('off')
+        hc.classList.remove('on', 'failed')
         // we need a token
         if (this.token == null) {
             this.token = uuidv4()
@@ -441,9 +484,8 @@ export class Terminal7 {
         e.querySelector("h1").textContent =
             `Communication Failure at ${gate.name}`
         e.querySelector(".reconnect").addEventListener('click', ev => {
-            gate.close()
             this.clear()
-            gate.connect()
+            gate.resetPC()
         })
         e.querySelector(".close").addEventListener('click', ev => {
             gate.close()
@@ -460,6 +502,8 @@ export class Terminal7 {
         if (this.activeG && this.activeG.activeW &&
             this.activeG.activeW.activeP)
             this.activeG.activeW.activeP.focus()
+        else
+            this.e.focus()
     }
     ssh(e, gate, cmd, cb) {
         let uname = e.querySelector('[name="uname"]').value,
@@ -482,7 +526,13 @@ export class Terminal7 {
                     window.cordova.plugins.sshConnect.disconnect()
                 }
             }, ev => {
-                this.notify("Wrong password")
+                if (ev == "Connection failed. Could not connect")
+                    if (gate.verified)
+                        this.notify(ev)
+                    else
+                        this.notify(`Failed the connect. Maybe ${gate.addr} is wrong`)
+                else
+                    this.notify("Wrong password")
                 console.log("ssh failed to connect", ev)
             })
     }

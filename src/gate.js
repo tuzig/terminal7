@@ -41,14 +41,24 @@ export class Gate {
         this.e.id = `gate-${this.id}`
         e.appendChild(this.e)
         // add the tab bar
-        let t = document.getElementById("tabbar-template")
+        let t = document.getElementById("gate-template")
         if (t) {
             t = t.content.cloneNode(true)
-            let a = t.querySelector(".add-tab")
-            a.addEventListener('click', (e) => {
+            t.querySelector(".add-tab").addEventListener('click', _ => {
                 let w = this.addWindow()
                 w.focus()
             })
+            t.querySelector(".search-close").addEventListener('click', _ =>  {
+                this.activeW.activeP.exitCopyMode()
+                this.activeW.activeP.focus()
+            })
+            t.querySelector(".search-up").addEventListener('click', _ =>
+                this.activeW.activeP.findNext(
+                    this.e.querySelector("input[name='search-term']").value))
+
+            t.querySelector(".search-down").addEventListener('click', _ => 
+                this.activeW.activeP.findPrevious(
+                    this.e.querySelector("input[name='search-term']").value))
             /* TODO: handle the bang
             let b = t.querySelector(".bang")
             b.addEventListener('click', (e) => {new window from active pane})
@@ -203,6 +213,10 @@ export class Gate {
                 body: offer
               }).then(response => response.text())
                 .then(data => {
+                    if (!this.verified) {
+                        this.verified = true
+                        terminal7.storeGates()
+                    }
                     this.peer = JSON.parse(atob(data))
                     this.peerConnect(this.peer)
                 }).catch(error => {
@@ -372,12 +386,23 @@ export class Gate {
     }
 
     /*
+     * resetPC restarts the peer connection
+     */
+    resetPC() {
+        this.boarding = false
+        this.clear()
+        this.sendState(() => {
+            this.pc.close()
+            this.connect()
+        })
+    }
+    /*
      * close closes the peer connection and removes the host from the UI
      */
     close(verify) {
         this.boarding = false
         this.clear()
-        this.pc.close()
+        this.sendState(() => this.pc.close())
         this.e.classList.add("hidden")
         if (terminal7.activeG == this)
             terminal7.activeG = null
@@ -413,7 +438,7 @@ export class Gate {
         return { windows: wins }
     }
 
-    sendState() {
+    sendState(cb) {
         if (this.updateID == null)
             this.updateID = terminal7.run(_ => { 
                 let msg = {
@@ -422,6 +447,9 @@ export class Gate {
                 }
                 this.updateID = null
                 this.sendCTRLMsg(msg)
+                if (cb) {
+                    cb()
+                }
             }, 100)
     }
     onPaneConnected(pane) {

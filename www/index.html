@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, user-scalable=no" />
-  <title>Terminal Seven</title>
+  <title>Terminal 7</title>
 </head>
 <body>
   <div id="terminal7">
@@ -12,7 +12,7 @@
           </ul>
       </div>
       <div id="home">
-          <h1>Welcome to Terminal Seven!</h1>
+          <h1>Welcome to Terminal 7</h1>
           <h2>Please choose your destination:</h2>
           <div id="hosts-wrapper"><ul id="hosts">
               <li id="plus-host" class="border">
@@ -104,6 +104,50 @@
             </nav>
           </form>
       </div>
+        <div id="keys-help" class="hidden modal border" >
+            <table>
+                <tr>
+                    <td>Toggle Fullscreen</td>
+                    <td>⌘&nbsp;z</td>
+                </tr>
+                <tr>
+                    <td>Search Pane Buffer</td>
+                    <td>⌘&nbsp;/</td>
+                </tr>
+                <tr class="copy_mode">
+                    <td>Enter Copy Mode</td>
+                    <td>⌘&nbsp;[</td>
+                </tr>
+                <tr>
+                    <td>Bigger Font</td>
+                    <td>⌘&nbsp;+</td>
+                </tr>
+                <tr>
+                    <td>Smaller Font</td>
+                    <td>⌘&nbsp;-</td>
+                </tr>
+                <tr>
+                    <td>Reset Font</td>
+                    <td>⌘&nbsp;0</td>
+                </tr>
+                <tr>
+                    <td>Split Top to Bottom</td>
+                    <td>⌘&nbsp;%</td>
+                </tr>
+                <tr>
+                    <td>Split Right to Left</td>
+                    <td>⌘&nbsp;"</td>
+                </tr>
+                <tr>
+                    <td>Rename Tab</td>
+                    <td>⌘&nbsp;,</td>
+                </tr>
+                <tr>
+                    <td>Close Pane</td>
+                    <td>⌘&nbsp;d</td>
+                </tr>
+            </table>
+        </div>
   </div>
    
   <div id="navbar" class="bar">
@@ -119,7 +163,8 @@
 
 <div id="indicators">
     <i id="connectivity" class="f7-icons">dot_radiowaves_left_right</i>
-    <i id="downstream-indicator" class="f7-icons">arrow_down</i>
+    <i id="downstream-indicator" class="f7-icons off">arrow_down</i>
+    <p id="copy-mode" class="hidden"></p>
 </div>
     <template id="disconnect-template">
       <div class="disconnect modal border temporal">
@@ -153,8 +198,21 @@
           </nav>
       </form></div>
     </template>
-    <!-- every host creates his own tabbar based on the template below -->
-    <template id="tabbar-template">
+    <!-- every gate creates his own tabbar based on the template below -->
+    <template id="gate-template">
+    <div class="hidden search-box border">
+      <nav class="tabbar-search">
+        <i class="search-close f7-icons">xmark</i>
+        <input type="text" name="search-term">
+        <!-- TODO: make url & file search work 
+        <a href="#find-url" class="hidden">URL</a>
+        <a href="#find-file" class="hidden">File</a>
+        -->
+        <i class="search-up f7-icons">arrowtriangle_up</i>
+        <i class="search-down f7-icons">arrowtriangle_down</i>
+      </nav>
+    </div>
+
     <div class="tabbar bar"> 
       <nav class="tabbar-names-nav">
           <i class="add-tab f7-icons">plus</i>
@@ -162,13 +220,6 @@
           </nav>
           <i class="bang f7-icons off">exclamationmark</i>
       </nav>
-      <nav class="tabbar-search hidden">
-        <i class="search-up f7-icons">arrow_up</i>
-        <i class="search-down f7-icons">arrow_down</i>
-        <input type="text" name="term">
-        <a href="#find-url" class="hidden">URL</a>
-        <a href="#find-file" class="hidden">File</a>
-       </nav>
     </div>
     </template>
   <script>
