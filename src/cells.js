@@ -498,7 +498,9 @@ export class Pane extends Cell {
         this.t.textarea.tabIndex = -1
         this.t.attachCustomKeyEventHandler(ev => {
             if (ev.metaKey && (ev.key != "Shift") && (ev.key != "Meta"))
-                this.handleMetaKey(ev)
+                return this.handleMetaKey(ev)
+            else
+                return true
         })
         this.t.onKey((ev) =>  {
             if (this.copyMode) {
