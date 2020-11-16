@@ -407,19 +407,19 @@ export class Terminal7 {
             }
         })
         console.log("Storing gates:", out)
-        localStorage.setItem("gates", JSON.stringify(out))
+        localStorage.setItem('gates', JSON.stringify(out))
     }
     clear() {
-        this.e.querySelectorAll(".temporal").forEach(e => e.remove())
-        this.e.querySelectorAll(".modal").forEach(e => e.classList.add("hidden"))
+        this.e.querySelectorAll('.temporal').forEach(e => e.remove())
+        this.e.querySelectorAll('.modal').forEach(e => e.classList.add("hidden"))
     }
     goHome() {
-        let s = document.getElementById("home-button"),
-            h = document.getElementById("home"),
-            hc = document.getElementById("downstream-indicator")
-        s.classList.add("on")
-        hc.classList.add("off")
-        hc.classList.remove("on", "failed")
+        let s = document.getElementById('home-button'),
+            h = document.getElementById('home'),
+            hc = document.getElementById('downstream-indicator')
+        s.classList.add('on')
+        hc.classList.add('off')
+        hc.classList.remove('on', 'failed')
         // we need a token
         if (this.token == null) {
             this.token = uuidv4()
