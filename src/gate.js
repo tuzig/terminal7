@@ -213,6 +213,10 @@ export class Gate {
                 body: offer
               }).then(response => response.text())
                 .then(data => {
+                    if (!this.verified) {
+                        this.verified = true
+                        terminal7.storeGates()
+                    }
                     this.peer = JSON.parse(atob(data))
                     this.peerConnect(this.peer)
                 }).catch(error => {

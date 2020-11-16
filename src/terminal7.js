@@ -365,7 +365,9 @@ export class Terminal7 {
             this.onTouch("move", ev), false)
     }
     /*
-     * Terminal7.addGate is used to add a Host connection
+     * Terminal7.addGate is used to add a gate to a host.
+     * the function ensures the gate has a unique name adds the gate to
+     * the `gates` property, stores and returns it.
      */
     addGate(props) {
         let out = [],
@@ -374,6 +376,7 @@ export class Terminal7 {
             nameFound = false
         // add the id
         p.id = this.gates.length
+        p.verified = false
 
         // if no port specify, use the default port
         if (addr && (addr.indexOf(":") == -1))
@@ -523,7 +526,13 @@ export class Terminal7 {
                     window.cordova.plugins.sshConnect.disconnect()
                 }
             }, ev => {
-                this.notify("Wrong password")
+                if (ev == "Connection failed. Could not connect")
+                    if (gate.verified)
+                        this.notify(ev)
+                    else
+                        this.notify(`Failed the connect. Maybe ${gate.addr} is wrong`)
+                else
+                    this.notify("Wrong password")
                 console.log("ssh failed to connect", ev)
             })
     }
