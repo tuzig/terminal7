@@ -479,7 +479,6 @@ export class Pane extends Cell {
             fontSize: this.fontSize,
             theme: this.theme,
             rows:24,
-            disableStdin: true,
             cols:80
         })
         this.fitAddon = new FitAddon()
@@ -502,12 +501,15 @@ export class Pane extends Cell {
             else
                 return true
         })
+        this.t.onData(d =>  {
+            if (!this.copyMode && (this.d != null)
+                && (this.d.readyState == "open"))
+                this.d.send(d)
+        })
         this.t.onKey((ev) =>  {
             if (this.copyMode) {
                 this.handleCopyModeKey(ev.domEvent)
-            } else
-                if ((this.d != null) && (this.d.readyState == "open"))
-                    this.d.send(ev.key)
+            }
         })
         // keep tap of "scrolling mode"
         var tf
