@@ -496,6 +496,11 @@ export class Pane extends Cell {
         con.querySelector(".xterm-cursor-layer").p = this
         this.t.textarea.tabIndex = -1
         this.t.attachCustomKeyEventHandler(ev => {
+            // ctrl c is a special case 
+            if (ev.ctrlKey && (ev.key == "c")) {
+                this.d.send(String.fromCharCode(3))
+                return false
+            }
             if (ev.metaKey && (ev.key != "Shift") && (ev.key != "Meta"))
                 return this.handleMetaKey(ev)
             else
