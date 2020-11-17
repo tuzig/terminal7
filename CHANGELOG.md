@@ -7,14 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Unreleased
+## [0.9.3] - 2020/11/17
 
 ### Fixed
 
 - Adding host with an existing name is forbidden
 - Wrong message on bad host address
+- Unchecking "remember host" is no longer ignored
 - ctrl-c is working again
-- Resetting add host dialog to remove last host data
 
 ## [0.9.2] - 2020/11/15
 
