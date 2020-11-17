@@ -161,8 +161,10 @@ export class Terminal7 {
         })
         // setting up reset host event
         let resetHost = document.getElementById("reset-host")
-        resetHost.querySelector(".submit").addEventListener('click', ev =>
-            editHost.gate.resetHost())
+        resetHost.querySelector(".submit").addEventListener('click', ev => {
+            terminal7.clear()
+            editHost.gate.resetHost()
+        })
         resetHost.querySelector(".close").addEventListener('click',  ev =>
             terminal7.clear())
         this.goHome()
@@ -523,7 +525,8 @@ export class Terminal7 {
                         cmd, 
                         msg =>  {
                             this.notify(`ssh success: ${msg}`)
-                            cb(msg)
+                            if (typeof cb === "function")
+                                cb(msg)
                         },
                         msg => this.notify(`ssh failed: ${msg}`))
                     window.cordova.plugins.sshConnect.disconnect()
