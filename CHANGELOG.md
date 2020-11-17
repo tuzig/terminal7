@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adding host with an existing name is forbidden
 - Wrong message on bad host address
 - ctrl-c is working again
+- Resetting add host dialog to remove last host data
 
 ## [0.9.2] - 2020/11/15
 

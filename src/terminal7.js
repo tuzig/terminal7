@@ -98,7 +98,10 @@ export class Terminal7 {
         // display the home page, starting with the plus button
         let addHost = document.getElementById("add-host")
         document.getElementById('plus-host').addEventListener(
-            'click', ev => addHost.classList.remove("hidden"))
+            'click', ev => {
+                addHost.querySelector("form").reset()
+                addHost.classList.remove("hidden")
+            })
         addHost.querySelector(".submit").addEventListener('click', (ev) => {
             let remember = addHost.querySelector('[name="remember"]').checked,
                 gate = this.addGate({
