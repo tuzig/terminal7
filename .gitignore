@@ -16,3 +16,7 @@ platforms/ios/cordova/console.log
 platforms/browser/www
 Terminal7.xcarchive/
 platforms/browser/config.xml
+# vscode
+.vscode/
+typings/
+/jsconfig.json

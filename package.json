@@ -28,7 +28,7 @@
     "cordova": "^10.0.0",
     "cordova-plugin-inappbrowser": "^4.0.0",
     "cordova-plugin-network-information": "^2.0.2",
-    "cordova-plugin-ssh-connect": "^1.1.1",
+    "cordova-plugin-ssh-connect": "git+https://github.com/tuzig/cordova-plugin-ssh-connect.git",
     "cordova-plugin-statusbar": "^2.4.3",
     "cordova-plugin-webpack": "^1.0.5",
     "cordova-plugin-whitelist": "1",
