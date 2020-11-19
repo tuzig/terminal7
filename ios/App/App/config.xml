@@ -6,9 +6,5 @@
     <param name="ios-package" value="sshConnect"/>
   </feature>
 
-  <feature name="Clipboard">
-    <param name="ios-package" value="CDVClipboard"/>
-  </feature>
-
   
 </widget>
