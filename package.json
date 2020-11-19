@@ -73,7 +73,7 @@
   "scripts": {
     "dev": "webpack-dev-server",
     "test": "karma start --single-run",
-    "build": "npx webpack --output dist/terminal7.js",
+    "build": "npx webpack --output www/terminal7.bundle.js && npx cap copy",
     "ios": "cordova run ios"
   },
   "repository": {
