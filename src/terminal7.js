@@ -11,6 +11,9 @@ import { vimMode } from 'codemirror/keymap/vim.js'
 import { tomlMode} from 'codemirror/mode/toml/toml.js'
 import { dialogAddOn } from 'codemirror/addon/dialog/dialog.js'
 import { formatDate } from './utils.js'
+import { Plugins } from '@capacitor/core'
+
+const { Network } = Plugins
 
 const DEFAULT_DOTFILE = `[theme]
 foreground = "#00FAFA"
@@ -125,24 +128,19 @@ export class Terminal7 {
             gate.open(e)
             gate.e.classList.add("hidden")
         })
-        // Handle network events for the active gate
-        document.addEventListener("online", ev => {
-            console.log("online")
-            document.getElementById("connectivity").classList.remove("failed")
-            this.clear()
-            if (this.activeG) {
-                this.activeG.clear()
-                this.activeG.connect()
+        // Handle network events for the indicator
+        Network.addListener('networkStatusChange', status => {
+            let cl = document.getElementById("connectivity").classList
+            if (status.connected) {
+                cl.remove("failed")
+                this.clear()
+                if (this.activeG) {
+                    this.activeG.clear()
+                    this.activeG.connect()
+                }
             }
-        })
-        document.addEventListener("offline", ev => {
-            console.log("offline")
-            document.getElementById("connectivity").classList.add("failed")
-            /*
-            if (this.activeG)
-                this.activeG.updateState("offline")
-            */
-            
+            else
+                cl.add("failed")
         })
         this.catchFingers()
         // setting up edit host events

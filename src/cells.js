@@ -2,7 +2,10 @@ import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { fileRegex, urlRegex } from './utils.js'
+import { Plugins } from '@capacitor/core'
 import * as aE from 'ansi-escapes'
+
+const { Browser } = Plugins
 
 const  ABIT                = 10,
         REGEX_SEARCH        = false,
@@ -738,8 +741,10 @@ export class Pane extends Cell {
             this.findPrevious()
             break
         case "o":
-            if (REGEX_SEARCH)
-                cordova.InAppBrowser.open(this.t.getSelection(), "_system", "")
+            if (REGEX_SEARCH) {
+                var u = this.t.getSelection()
+                Browser.open({url: u})
+            }
             break
         case "Escape":
         case "q":
