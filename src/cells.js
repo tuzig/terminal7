@@ -654,10 +654,9 @@ export class Pane extends Cell {
     // called when a message is received from the server
     onMessage (m) {
         terminal7.onMessage(m)
-        var enc = new TextDecoder("utf-8"),
-            msg = enc.decode(m.data)
-        // console.log(this.webexecID + "> " + msg)
+        var enc = new TextDecoder("utf-8")
         if (this.state == "opened") {
+            var msg = enc.decode(m.data)
             console.log(`Got first DC msg: ${msg}`)
             this.state = "connected"
             this.webexecID = parseInt(msg)
