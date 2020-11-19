@@ -467,17 +467,19 @@ export class Gate {
         ct.querySelector('[name="token"]').value = terminal7.token
         ct.classList.remove("hidden")
         ct.querySelector(".copy").addEventListener('click', ev => {
+            ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
             cordova.plugins.clipboard.copy(
                 ct.querySelector('[name="token"]').value)
             document.execCommand("copy")
-            ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
             this.notify("Token copied to the clipboard")
         })
-        ct.querySelector(".submit").addEventListener('click', ev =>
+        ct.querySelector(".submit").addEventListener('click', ev => {
+            ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
             terminal7.ssh(ct,  this,
                 `cat <<<"${terminal7.token}" >> ~/.webexec/authorized_tokens`,
-                _ => this.connect()))
-
+                _ => this.connect())
+        })
+ 
         ct.querySelector(".close").addEventListener('click',  ev =>  {
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
         })
@@ -505,6 +507,6 @@ export class Gate {
     resetHost() {
         this.close()
         let e = document.getElementById("reset-host")
-        terminal7.ssh(e, this, "go/bin/webexec restart", _ => terminal7.clear())
+        terminal7.ssh(e, this, "go/bin/webexec restart") 
     }
 }

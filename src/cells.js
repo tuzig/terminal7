@@ -479,7 +479,6 @@ export class Pane extends Cell {
             fontSize: this.fontSize,
             theme: this.theme,
             rows:24,
-            disableStdin: true,
             cols:80
         })
         this.fitAddon = new FitAddon()
@@ -497,15 +496,25 @@ export class Pane extends Cell {
         con.querySelector(".xterm-cursor-layer").p = this
         this.t.textarea.tabIndex = -1
         this.t.attachCustomKeyEventHandler(ev => {
+            // ctrl c is a special case 
+            if (ev.ctrlKey && (ev.key == "c")) {
+                this.d.send(String.fromCharCode(3))
+                return false
+            }
             if (ev.metaKey && (ev.key != "Shift") && (ev.key != "Meta"))
-                this.handleMetaKey(ev)
+                return this.handleMetaKey(ev)
+            else
+                return true
+        })
+        this.t.onData(d =>  {
+            if (!this.copyMode && (this.d != null)
+                && (this.d.readyState == "open"))
+                this.d.send(d)
         })
         this.t.onKey((ev) =>  {
             if (this.copyMode) {
                 this.handleCopyModeKey(ev.domEvent)
-            } else
-                if ((this.d != null) && (this.d.readyState == "open"))
-                    this.d.send(ev.key)
+            }
         })
         // keep tap of "scrolling mode"
         var tf
