@@ -1,6 +1,0 @@
-framework module Pods_Terminal7 {
-  umbrella header "Pods-Terminal7-umbrella.h"
-
-  export *
-  module * { export * }
-}

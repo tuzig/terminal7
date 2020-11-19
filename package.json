@@ -61,10 +61,9 @@
     "webpack-dev-server": "^3.11.0"
   },
   "scripts": {
-    "dev": "webpack-dev-server",
+    "dev": "npx cap serve",
     "test": "karma start --single-run",
-    "build": "npx webpack --output www/terminal7.bundle.js && npx cap copy",
-    "ios": "cordova run ios"
+    "build": "npx webpack --output www/terminal7.bundle.js && npx cap copy"
   },
   "repository": {
     "type": "git",

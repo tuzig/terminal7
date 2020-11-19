@@ -29,35 +29,24 @@ and run our backend project - [webexec](https://github.com/tuzig/webexec)
 To start terminal 7 in the browser use:
 
 ```console
-cordova run browser
+npm run dev
 ```
 
-and point your browser at http://localhost:8000.
+and point your browser at http://localhost:3333
 
 Terminal7 adds a global `window.terminal7` you can use in the debugger.
 
+## Development
 
-### Remote Develpoment
+We welcome bug reports as well as ideas for new features.
+If you are ready to code yourslef, follow these steps:
 
-If you're developing using a remote terminal things are a bit more
-complicated as cordova support only localhost. You'll have to use a web server
-to proxy the localport. 
-For nginx you need to create a file in `/etc/nginx/sites-enabled` and add there:
+1. Fork it
+2. Clone it
+3. `npm i`
+4. Create your feature branch (git branch my-new-feature)
+5. Commit your changes (git commit -am 'Add some feature')
+6. Push to the branch (git push origin my-new-feature)
+7. Create new Pull Request
 
-```
-server {
-        listen 8000;
-
-        location / {
-                # cordova run will use 8001 because nginx has 8000
-                proxy_pass http://localhost:8001;
-        }
-
-}
-```
-
-## Testing
-
-```console
-npm test
-```
+Please run `npm test` before pushing.
