@@ -470,8 +470,7 @@ export class Pane extends Cell {
      * Pane.openTerminal opens an xtermjs terminal on our element
      */
     openTerminal() {
-        var afterLeader = false,
-            con = document.createElement("div")
+        var con = document.createElement("div")
 
         con.p = this
         this.t = new Terminal({
@@ -628,7 +627,7 @@ export class Pane extends Cell {
         this.buffer = []
 
         label = this.webexecID?`>${this.webexecID}`:
-                               `${tSize},${terminal7.conf.exec.shell}`
+           `${tSize},${terminal7.conf.exec.shell},-is,--login`
 
         console.log(`opening dc with label: "${label}`)
         this.d = this.gate.pc.createDataChannel(label)

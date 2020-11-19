@@ -287,8 +287,8 @@ export class Gate {
                 console.log("reloading state: ", state)
                 this.restoreState(state)
             } else {
+                this.clear()
                 // add the first window
-                // this.e.style.display = "block"
                 let w = this.addWindow()
                 w.focus()
             }
@@ -400,10 +400,10 @@ export class Gate {
      * close closes the peer connection and removes the host from the UI
      */
     close(verify) {
+        this.e.classList.add("hidden")
         this.boarding = false
         this.clear()
         this.sendState(() => this.pc.close())
-        this.e.classList.add("hidden")
         if (terminal7.activeG == this)
             terminal7.activeG = null
     }
@@ -455,7 +455,7 @@ export class Gate {
     onPaneConnected(pane) {
         // hide notifications
         terminal7.logDisplay(false)
-        // enable search
+        //enable search
         document.getElementById("search-button").classList.remove("off")
     }
     copyToken() {
@@ -507,6 +507,7 @@ export class Gate {
     resetHost() {
         this.close()
         let e = document.getElementById("reset-host")
-        terminal7.ssh(e, this, "go/bin/webexec restart") 
+        terminal7.ssh(e, this, `webexec restart --address ${this.addr}`,
+            _ => e.classList.add("hidden")) 
     }
 }
