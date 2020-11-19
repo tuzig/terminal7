@@ -1,6 +1,8 @@
 import * as Hammer from 'hammerjs'
 import { Window } from './window.js'
 
+import { Plugins } from '@capacitor/core'
+const { Browser, Clipboard } = Plugins
 const ABIT    = 10  // ashort period of time, in milli
 
 /*
@@ -468,9 +470,8 @@ export class Gate {
         ct.classList.remove("hidden")
         ct.querySelector(".copy").addEventListener('click', ev => {
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
-            cordova.plugins.clipboard.copy(
-                ct.querySelector('[name="token"]').value)
-            document.execCommand("copy")
+            cordova.plugins.Clipboard.write(
+                {string: ct.querySelector('[name="token"]').value})
             this.notify("Token copied to the clipboard")
         })
         ct.querySelector(".submit").addEventListener('click', ev => {

@@ -5,7 +5,7 @@ import { fileRegex, urlRegex } from './utils.js'
 import { Plugins } from '@capacitor/core'
 import * as aE from 'ansi-escapes'
 
-const { Browser } = Plugins
+const { Browser, Clipboard } = Plugins
 
 const  ABIT                = 10,
         REGEX_SEARCH        = false,
@@ -715,7 +715,7 @@ export class Pane extends Cell {
         switch (ev.key) {
         case "Enter":
             if (this.t.hasSelection()) {
-                cordova.plugins.clipboard.copy(this.t.getSelection())
+                Clipboard.write(this.t.getSelection())
                 this.cmSY = false
                 this.t.clearSelection()
                 break
@@ -884,6 +884,10 @@ export class Pane extends Cell {
         var f = null
         console.log(`Handling meta key ${ev.key}`)
         switch (ev.key) {
+        case "c":
+            if (this.t.hasSelection()) 
+                Clipboard.write({string: this.t.getSelection()})
+            break
         case "z":
             f = () => this.toggleZoom()
             break
