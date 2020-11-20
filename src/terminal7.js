@@ -32,6 +32,9 @@ retries = 3
 [touch]
 quickest_press = 1000
 `
+const HelpDB = [["Keep Holding", "#help-button", "tt-above"],
+                ["Search Pane History", "#search-button", "tt-above"],
+               ]
 
 export class Terminal7 {
     /*
@@ -98,6 +101,8 @@ export class Terminal7 {
                     this.activeG && this.activeG.activeW.activeP.toggleSearch())
         document.getElementById("dotfile-button")
                 .addEventListener("click", ev => this.editDotfile(ev))
+        document.getElementById('help-button').addEventListener("click", ev =>
+            this.showHelp())
         // display the home page, starting with the plus button
         let addHost = document.getElementById("add-host")
         document.getElementById('plus-host').addEventListener(
@@ -593,5 +598,16 @@ export class Terminal7 {
     close() {
         this.timeouts.forEach(t => window.clearTimeout(t))
         this.timeouts = []
+    }
+    showHelp() {
+        HelpDB.forEach(i => {
+            var e = document.createElement("div")
+            e.innerHTML = i[0]
+            e.classList.add("help")
+            e.classList.add(i[2])
+            document.querySelectorAll(i[1]).forEach(j => 
+                j.appendChild(e)
+            )
+        })
     }
 }
