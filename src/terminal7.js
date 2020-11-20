@@ -79,8 +79,10 @@ export class Terminal7 {
             document.body.appendChild(e)
         }
         this.e = e
-        window.onresize = 
-            c => this.cells.forEach(c => {if (c.fit != undefined) c.fit()})
+        window.onresize = ev => 
+            setTimeout(_ => this.cells.forEach(c => {
+                c.fit()
+            }), 50)
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",

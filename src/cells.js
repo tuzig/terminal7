@@ -264,9 +264,6 @@ export class Layout extends Cell {
             }, ABIT)
         return pane
     }
-    fit() {
-        this.cells.forEach((c) => (typeof c.t == "object") && c.fit())
-    }
     toText() {
         // r is the text the function returns
         let r = (this.dir=="rightleft")?"[":"{"
