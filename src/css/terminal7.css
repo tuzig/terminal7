@@ -29,7 +29,7 @@ time {
 h1, h2, h3 {
   text-align: center;
 }
-h1 { margin: 0.5em; }
+h1 { margin: 0; }
 h2 { margin: 0.3em; }
 h3 { margin: 0.2em; }
 
@@ -253,8 +253,11 @@ nav .on { color: #00FA00 !important; }
     bottom: 9.5%;
     transform: translate(-50%, 0);
 }
-#home h1 {
+#version {
     padding-bottom: 2%;
+}
+#version a {
+    text-decoration: underline;
 }
 #plus-host  i {
     font-size: 5.5vh;
