@@ -39,15 +39,11 @@ h3 { margin: 0.2em; }
     -ms-user-select: none;
     -webkit-user-select: none;
 }
+// WIP: clear button for now
 button {
-  background-color: #271D30;
-  color: #00fafa;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 3vh;
-  font-weight: bold;
-  font-family: Courier new;
+  border: none;
+  outline: none;
+  background: transparent ;
 }
 #terminal7 ul {
     list-style:none;
