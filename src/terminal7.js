@@ -32,6 +32,7 @@ retries = 3
 [touch]
 quickest_press = 1000
 `
+// each item in HelpDB is an array of 3 strings: tip, selector and classes 
 const HelpDB = [["Keep Holding", "#help-button", "tt-above"],
                 ["Search Pane History", "#search-button", "tt-above"],
                ]
@@ -600,6 +601,7 @@ export class Terminal7 {
         this.timeouts = []
     }
     showHelp() {
+        //TODO: hide the help when the user releases the button
         HelpDB.forEach(i => {
             var e = document.createElement("div")
             e.innerHTML = i[0]
