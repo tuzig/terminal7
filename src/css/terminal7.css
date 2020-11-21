@@ -29,7 +29,10 @@ time {
 h1, h2, h3 {
   text-align: center;
 }
-h1 { margin: 0; }
+h1 {
+    font-size: 43pt;
+    margin: 0;
+}
 h2 { margin: 0.3em; }
 h3 { margin: 0.2em; }
 
@@ -246,6 +249,7 @@ nav .on { color: #00FA00 !important; }
     z-index: 5
 }
 #home {
+    font-family: -apple-system;
     width: 100%;
     background-color: #271D30;
     position: absolute;
@@ -253,6 +257,7 @@ nav .on { color: #00FA00 !important; }
     top: 50%;
     transform: translate(-50%, -50%);
 }
+#home p { font-size: 24pt; }
 #version {
     padding-bottom: 2%;
 }
@@ -268,8 +273,10 @@ nav .on { color: #00FA00 !important; }
     position: relative;
     left: -50%;
 }
+#hosts .border {
+    border-color: #F952F9;
+}
 #hosts {
-    margin: 8% auto 0;
     position: relative;
     left: 50%;
 }
@@ -281,7 +288,7 @@ nav .on { color: #00FA00 !important; }
     min-width: 100px;
     cursor: pointer;
     margin: 1em; 
-    padding: 1em;
+    padding: 0.2em 4em;
 }
 #hosts li a {
     position: relative;
