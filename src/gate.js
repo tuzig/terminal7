@@ -38,7 +38,7 @@ export class Gate {
     open(e) {
         // create the gate element - holding the tabs, windows and tab bar
         this.e = document.createElement('div')
-        this.e.className = "gate"
+        this.e.className = "gate hidden"
         this.e.style.zIndex = 2
         this.e.id = `gate-${this.id}`
         e.appendChild(this.e)
