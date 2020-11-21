@@ -29,6 +29,9 @@ time {
 h1, h2, h3 {
   text-align: center;
 }
+.modal h1 {
+    font-size:28pt;
+}
 h1 {
     font-size: 43pt;
     margin: 0;

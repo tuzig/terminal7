@@ -485,7 +485,7 @@ export class Terminal7 {
         // clear pending messages to let the user start fresh
         this.pendingCDCMsgs = []
         e.querySelector("h1").textContent =
-            `Communication Failure at ${gate.name}`
+            `${gate.name} communication failed`
         e.querySelector(".reconnect").addEventListener('click', ev => {
             this.clear()
             gate.resetPC()
