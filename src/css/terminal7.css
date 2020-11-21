@@ -52,7 +52,7 @@ button {
 #terminal7 ul {
     list-style:none;
 }
-.border { margin: 1vmin; padding: 1vmin;
+.border {
     border: 1px solid #D9F505;
     border-radius: 6px;
 }
@@ -71,14 +71,14 @@ a {
     background-color: #271D30;
     padding: 2%;
     position: fixed;
-    bottom: 6%;
+    bottom: 40pt;
     left: 50%;
     transform: translate(-50%, 0);
     width: 40em;
     max-width: 90%;
 }
 .modal p, .modal td {
-    font-size: 2.6vmin;
+    font-size: 16pt;
 }
 .modal h2 { 
     margin-top: 0; 
@@ -89,7 +89,7 @@ a {
     width: 100%; 
     border-top: 1px #373702 solid;
     margin: 1.5em auto 0;
-    padding-top: 2vmin;
+    padding-top: 2%;
 }
 #keys-help {
     width: auto;
@@ -133,14 +133,13 @@ a {
     width: 100%;
     box-sizing: border-box;
     background-color: #271D30;
-    height: 4vmin;
 }
 #navbar>nav, .tabbar-names-nav {
     padding: 0;
     width: 100%
 }
 #navbar {
-    bottom: 0;
+    bottom: 18pt;
     text-align: center;
 }
 nav {
@@ -149,6 +148,8 @@ nav {
 .tabbar-names-nav i {
     border: none;
     width: 10%;
+    position: relative;
+    top: 4pt;
 }
 nav i:last-child {
     border: none;
@@ -166,12 +167,12 @@ nav .on { color: #00FA00 !important; }
 .off { color: #373702; }
 /* vertical align the nav bar buttons */
 .tabbar {
-    bottom: 5vmin;
+    bottom: 54pt;
     color: #00fafa;
 }
 .tabbar input {
-  font-size: 2.5vmin;
-  line-height: 3vmin;
+  font-size: 18pt;
+  line-height: 24pt;
   background-color: black;
   color: inherit;
 }
@@ -196,8 +197,8 @@ nav .on { color: #00FA00 !important; }
     border-right: 1px solid #373702;
 }
 .internal>div a {
-    font-size: 3vmin;
-    line-height: 4vmin;
+    font-size: 24pt;
+    line-height: 30pt;
     text-decoration: none; 
     color: inherit;
 }
@@ -212,7 +213,7 @@ nav .on { color: #00FA00 !important; }
     z-index: 9;
     margin: 0 auto;
     padding: 0;
-    bottom: 2.5vmin;
+    bottom: 66pt;
     left: 50%;
     transform: translate(-50%, 0);
 }
@@ -227,10 +228,9 @@ nav .on { color: #00FA00 !important; }
     width: 30em;
     max-width: 90%;
     position: relative;
-    top: -0.3vmin;
     margin-left: 1em;
     border-right: 1px solid #373702;
-    font-size: 2vmin;
+    font-size: 18pt;
 }
 .active {
     font-weight: bold;
@@ -250,8 +250,8 @@ nav .on { color: #00FA00 !important; }
     background-color: #271D30;
     position: absolute;
     left: 50%;
-    bottom: 9.5%;
-    transform: translate(-50%, 0);
+    top: 50%;
+    transform: translate(-50%, -50%);
 }
 #version {
     padding-bottom: 2%;
@@ -280,6 +280,8 @@ nav .on { color: #00FA00 !important; }
     height: 100px;
     min-width: 100px;
     cursor: pointer;
+    margin: 1em; 
+    padding: 1em;
 }
 #hosts li a {
     position: relative;
@@ -345,7 +347,8 @@ nav .on { color: #00FA00 !important; }
     position: absolute;
     top: 0px;
     right: 0px;
-    font-size: 4vmin;
+    line-height: 20pt;
+    font-size: 20pt;
     margin: 6px;
     z-index: 10;
     opacity: 0.6;
@@ -360,8 +363,6 @@ nav .on { color: #00FA00 !important; }
 }
 #indicators p {
     margin: 0;
-    font-size: 3vmin;
-    line-height: 4vmin;
 }
 #indicators .off {
     color: #003F00;
@@ -373,4 +374,3 @@ td {
     text-align: left;
     padding:0.5em;
 }
-
