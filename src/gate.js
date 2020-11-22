@@ -471,7 +471,7 @@ export class Gate {
         ct.classList.remove("hidden")
         ct.querySelector(".copy").addEventListener('click', ev => {
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
-            cordova.plugins.Clipboard.write(
+            Clipboard.write(
                 {string: ct.querySelector('[name="token"]').value})
             this.notify("Token copied to the clipboard")
         })
