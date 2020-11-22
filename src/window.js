@@ -11,6 +11,7 @@ export class Window {
         this.rootLayout = null
         this.e = null
         this.activeP = null
+        this.l = null // the first layout
     }
     /*
      * Window.open opens creates the window's element and the first layout and
@@ -65,6 +66,8 @@ export class Window {
         let l = new Layout(dir, basedOn)
         l.id = terminal7.cells.length
         terminal7.cells.push(l)
+        if (this.l == null)
+            this.l = l
         if (this.rootLayout == null)
             this.rootLayout = l
         return l
@@ -146,5 +149,9 @@ export class Window {
         this.gate.activeW = null
         // remove myself from the breadcrumbs
         this.gate.goBack(closeGate)
+    }
+    fit() {
+        if (this.l)
+            this.l.fit()
     }
 }

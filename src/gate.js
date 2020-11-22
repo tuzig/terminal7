@@ -512,4 +512,8 @@ export class Gate {
         terminal7.ssh(e, this, `webexec restart --address ${this.addr}`,
             _ => e.classList.add("hidden")) 
     }
+    fit() {
+        if (this.boarding)
+            g.windows.forEach(w => w.fit())
+    }
 }

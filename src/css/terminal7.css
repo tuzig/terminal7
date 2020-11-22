@@ -384,3 +384,9 @@ td {
     text-align: left;
     padding:0.5em;
 }
+.divider {
+    position: fixed;
+    z-index: 10;
+    stroke: #D9F505;
+    fill: none;
+}

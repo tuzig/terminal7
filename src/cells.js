@@ -64,6 +64,7 @@ export class Cell {
      */
     fit() { }
     scale() {}
+    refreshDividers() {}
 
     /*
      * Catches gestures on an elment using hammerjs.
@@ -130,7 +131,8 @@ export class Cell {
      */
     close() {
         this.e.remove()
-        this.layout.onClose(this)
+        if (this.layout)
+            this.layout.onClose(this)
     }
     toggleZoom() {
         if (this.zoomed) {
@@ -181,6 +183,12 @@ export class Layout extends Cell {
         else
             this.cells = []
     }
+    fit() {
+        this.cells.forEach(c => c.fit())
+    }
+    focus() {
+        this.cells[0].focus()
+    }
     /*
      * On a cell going away, resize the other elements
      */
@@ -212,11 +220,7 @@ export class Layout extends Cell {
                     p.xoff = c.xoff
             }
             p.fit()
-            if (p instanceof Layout)
-                // just pick the first cell
-                p.cells[0].focus()
-            else
-                p.focus()
+            p.focus()
             // remove this from the layout
             this.cells.splice(i, 1)
         }
@@ -264,6 +268,12 @@ export class Layout extends Cell {
             }, ABIT)
         return pane
     }
+    refreshDividers() {
+        this.cells.forEach(c => {
+            c.refreshDividers()
+        })
+    }
+
     toText() {
         // r is the text the function returns
         let r = (this.dir=="rightleft")?"[":"{"
@@ -436,6 +446,8 @@ export class Layout extends Cell {
         p0[s] -= by
         p1[s] += by
         p1[off] = dest
+        p0.refreshDividers()
+        p1.refreshDividers()
         this.gate.sendState()
     }
 }
@@ -457,6 +469,7 @@ export class Pane extends Cell {
         this.copyMode = false
         this.cmRep = 0
         this.cmSY = false
+        this.dividers = []
     }
 
     /*
@@ -565,6 +578,7 @@ export class Pane extends Cell {
             return
         }
         this.gate.sendSize(this)
+        this.refreshDividers()
     }
     /*
      * Pane.focus focuses the UI on this pane
@@ -936,5 +950,35 @@ export class Pane extends Cell {
             // TODO: it's too intrusive. use bell?
             this.gate.notify(`Couldn't find "${this.searchTerm}"`)
         this.updateCopyMode()
+    }
+    refreshDividers() {
+        var W = document.body.offsetWidth,
+            H = document.body.offsetHeight,
+            t = document.getElementById("divider-template")
+        this.dividers.forEach(e => e.remove())
+        this.dividers = []
+        if (this.xoff > 0.001 & this.sy * H > 50) {
+            // add left divider
+            var d = t.content.cloneNode(true)
+            this.w.e.prepend(d)
+            d = this.w.e.children[0]
+            this.dividers.push(d)
+            d.style.left = `${this.xoff * W - 4}px`
+            d.style.top = `${(this.yoff + this.sy/2)* H - 22}px`
+        }
+        if (this.yoff > 0.001 & this.sx * W > 50) {
+            // add top divider
+            var d = t.content.cloneNode(true)
+            this.w.e.prepend(d)
+            d = this.w.e.children[0]
+            this.dividers.push(d)
+            d.style.transform = "rotate(90deg)"
+            d.style.top = `${this.yoff * H - 25}px`
+            d.style.left = `${(this.xoff + this.sx/2)* W - 22}px`
+        }
+    }
+    close() {
+        this.dividers.forEach(d => d.remove())
+        super.close()
     }
 }
