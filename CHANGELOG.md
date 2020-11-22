@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- dividers that show border can move
 - version information and link to the change log
 
 ### Fixed
