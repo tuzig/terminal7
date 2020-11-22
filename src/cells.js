@@ -523,11 +523,6 @@ export class Pane extends Cell {
                 clearTimeout(tf)
             tf = terminal7.run(e => this.scrolling = false, this.scrollLingers4)
         })
-        this.t.textarea.addEventListener('paste', (event) => {
-            let paste = (event.clipboardData || window.clipboardData).getData('text');
-            this.d.send(paste)
-            event.preventDefault();
-        })
         this.state = "opened"
         return this.t
     }
