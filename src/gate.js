@@ -1,6 +1,8 @@
 import * as Hammer from 'hammerjs'
 import { Window } from './window.js'
 
+import { Plugins } from '@capacitor/core'
+const { Browser, Clipboard } = Plugins
 const ABIT    = 10  // ashort period of time, in milli
 
 /*
@@ -36,7 +38,7 @@ export class Gate {
     open(e) {
         // create the gate element - holding the tabs, windows and tab bar
         this.e = document.createElement('div')
-        this.e.className = "gate"
+        this.e.className = "gate hidden"
         this.e.style.zIndex = 2
         this.e.id = `gate-${this.id}`
         e.appendChild(this.e)
@@ -287,8 +289,8 @@ export class Gate {
                 console.log("reloading state: ", state)
                 this.restoreState(state)
             } else {
+                this.clear()
                 // add the first window
-                // this.e.style.display = "block"
                 let w = this.addWindow()
                 w.focus()
             }
@@ -323,7 +325,8 @@ export class Gate {
             // filling the entire top of the screen
             let tabbar = this.e.querySelector(".tabbar"),
                 r = tabbar.getBoundingClientRect(),
-                sy = r.y / document.body.offsetHeight
+                sy = (r.y + 4) / document.body.offsetHeight
+            console.log("starting fresh", r, sy)
             let paneProps = {sx: 1.0, sy: sy,
                              xoff: 0, yoff: 0,
                              w: w,
@@ -400,10 +403,10 @@ export class Gate {
      * close closes the peer connection and removes the host from the UI
      */
     close(verify) {
+        this.e.classList.add("hidden")
         this.boarding = false
         this.clear()
         this.sendState(() => this.pc.close())
-        this.e.classList.add("hidden")
         if (terminal7.activeG == this)
             terminal7.activeG = null
     }
@@ -455,7 +458,7 @@ export class Gate {
     onPaneConnected(pane) {
         // hide notifications
         terminal7.logDisplay(false)
-        // enable search
+        //enable search
         document.getElementById("search-button").classList.remove("off")
     }
     copyToken() {
@@ -468,9 +471,8 @@ export class Gate {
         ct.classList.remove("hidden")
         ct.querySelector(".copy").addEventListener('click', ev => {
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
-            cordova.plugins.clipboard.copy(
-                ct.querySelector('[name="token"]').value)
-            document.execCommand("copy")
+            Clipboard.write(
+                {string: ct.querySelector('[name="token"]').value})
             this.notify("Token copied to the clipboard")
         })
         ct.querySelector(".submit").addEventListener('click', ev => {
@@ -507,6 +509,7 @@ export class Gate {
     resetHost() {
         this.close()
         let e = document.getElementById("reset-host")
-        terminal7.ssh(e, this, "go/bin/webexec restart") 
+        terminal7.ssh(e, this, `webexec restart --address ${this.addr}`,
+            _ => e.classList.add("hidden")) 
     }
 }

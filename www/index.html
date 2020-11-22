@@ -12,7 +12,12 @@
           </ul>
       </div>
       <div id="home">
-          <h1>Welcome to Terminal 7</h1>
+          <h1>Welcome to Terminal 7 </h1>
+          <div id="version" target="_blank">
+              <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md">
+                  version 0.10.0-alpha.1
+              </a>
+          </div>
           <h2>Please choose your destination:</h2>
           <div id="hosts-wrapper"><ul id="hosts">
               <li id="plus-host" class="border">
@@ -24,7 +29,7 @@
           </ul></div>
       </div>
       <div id="add-host" class="hidden modal border" >
-          <form id="add-host-form">
+          <form>
             <h2>Add a Host</h2>
             <label for="uname"><b>Address</b></label>
             <input type="text" placeholder="IP or host name" name="hostaddr"
@@ -222,12 +227,6 @@
       </nav>
     </div>
     </template>
-  <script>
-      function onDeviceReady() {
-          StatusBar.hide()
-      }
-  </script>
   <script src="terminal7.bundle.js"></script>
-  <script src="cordova.js"></script>
 </body>
 </html>

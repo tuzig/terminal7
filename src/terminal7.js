@@ -11,6 +11,9 @@ import { vimMode } from 'codemirror/keymap/vim.js'
 import { tomlMode} from 'codemirror/mode/toml/toml.js'
 import { dialogAddOn } from 'codemirror/addon/dialog/dialog.js'
 import { formatDate } from './utils.js'
+import { Plugins } from '@capacitor/core'
+
+const { Network } = Plugins
 
 const DEFAULT_DOTFILE = `[theme]
 foreground = "#00FAFA"
@@ -76,8 +79,10 @@ export class Terminal7 {
             document.body.appendChild(e)
         }
         this.e = e
-        window.onresize = 
-            c => this.cells.forEach(c => {if (c.fit != undefined) c.fit()})
+        window.onresize = ev => 
+            setTimeout(_ => this.cells.forEach(c => {
+                c.fit()
+            }), 50)
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",
@@ -125,24 +130,19 @@ export class Terminal7 {
             gate.open(e)
             gate.e.classList.add("hidden")
         })
-        // Handle network events for the active gate
-        document.addEventListener("online", ev => {
-            console.log("online")
-            document.getElementById("connectivity").classList.remove("failed")
-            this.clear()
-            if (this.activeG) {
-                this.activeG.clear()
-                this.activeG.connect()
+        // Handle network events for the indicator
+        Network.addListener('networkStatusChange', status => {
+            let cl = document.getElementById("connectivity").classList
+            if (status.connected) {
+                cl.remove("failed")
+                this.clear()
+                if (this.activeG) {
+                    this.activeG.clear()
+                    this.activeG.connect()
+                }
             }
-        })
-        document.addEventListener("offline", ev => {
-            console.log("offline")
-            document.getElementById("connectivity").classList.add("failed")
-            /*
-            if (this.activeG)
-                this.activeG.updateState("offline")
-            */
-            
+            else
+                cl.add("failed")
         })
         this.catchFingers()
         // setting up edit host events
@@ -161,12 +161,10 @@ export class Terminal7 {
         })
         // setting up reset host event
         let resetHost = document.getElementById("reset-host")
-        resetHost.querySelector(".submit").addEventListener('click', ev => {
-            terminal7.clear()
-            editHost.gate.resetHost()
-        })
+        resetHost.querySelector(".submit").addEventListener('click', ev =>
+            editHost.gate.resetHost())
         resetHost.querySelector(".close").addEventListener('click',  ev =>
-            terminal7.clear())
+            ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
         this.goHome()
         // settip up keys help
         document.addEventListener("keydown", ev => {
@@ -487,7 +485,7 @@ export class Terminal7 {
         // clear pending messages to let the user start fresh
         this.pendingCDCMsgs = []
         e.querySelector("h1").textContent =
-            `Communication Failure at ${gate.name}`
+            `${gate.name} communication failed`
         e.querySelector(".reconnect").addEventListener('click', ev => {
             this.clear()
             gate.resetPC()
@@ -524,7 +522,7 @@ export class Terminal7 {
                     window.cordova.plugins.sshConnect.executeCommand(
                         cmd, 
                         msg =>  {
-                            this.notify(`ssh success: ${msg}`)
+                            this.notify("ssh executed command success")
                             if (typeof cb === "function")
                                 cb(msg)
                         },
@@ -556,7 +554,7 @@ export class Terminal7 {
         })
         e.querySelector(".start").addEventListener('click', ev => {
             this.ssh(this.e.lastElementChild, gate, 
-                "go/bin/webexec start", ev => {
+                "webexec start", ev => {
                 gate.close()
                 this.clear()
                 gate.connect()

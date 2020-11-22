@@ -17,8 +17,9 @@ module.exports = {
               name: 'fonts/[name].[ext]',
             },
         }, {
-            test: /\.js$/,
             enforce: 'pre',
+            test: /\.js$/,
+            include: [ path.resolve(__dirname, 'src') ],
             use: ['source-map-loader'],
           },
     ]},

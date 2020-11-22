@@ -2,7 +2,10 @@ import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { fileRegex, urlRegex } from './utils.js'
+import { Plugins } from '@capacitor/core'
 import * as aE from 'ansi-escapes'
+
+const { Browser, Clipboard } = Plugins
 
 const  ABIT                = 10,
         REGEX_SEARCH        = false,
@@ -261,9 +264,6 @@ export class Layout extends Cell {
             }, ABIT)
         return pane
     }
-    fit() {
-        this.cells.forEach((c) => (typeof c.t == "object") && c.fit())
-    }
     toText() {
         // r is the text the function returns
         let r = (this.dir=="rightleft")?"[":"{"
@@ -470,8 +470,7 @@ export class Pane extends Cell {
      * Pane.openTerminal opens an xtermjs terminal on our element
      */
     openTerminal() {
-        var afterLeader = false,
-            con = document.createElement("div")
+        var con = document.createElement("div")
 
         con.p = this
         this.t = new Terminal({
@@ -628,7 +627,7 @@ export class Pane extends Cell {
         this.buffer = []
 
         label = this.webexecID?`>${this.webexecID}`:
-                               `${tSize},${terminal7.conf.exec.shell}`
+           `${tSize},${terminal7.conf.exec.shell},-is,--login`
 
         console.log(`opening dc with label: "${label}`)
         this.d = this.gate.pc.createDataChannel(label)
@@ -654,10 +653,9 @@ export class Pane extends Cell {
     // called when a message is received from the server
     onMessage (m) {
         terminal7.onMessage(m)
-        var enc = new TextDecoder("utf-8"),
-            msg = enc.decode(m.data)
-        // console.log(this.webexecID + "> " + msg)
+        var enc = new TextDecoder("utf-8")
         if (this.state == "opened") {
+            var msg = enc.decode(m.data)
             console.log(`Got first DC msg: ${msg}`)
             this.state = "connected"
             this.webexecID = parseInt(msg)
@@ -714,7 +712,7 @@ export class Pane extends Cell {
         switch (ev.key) {
         case "Enter":
             if (this.t.hasSelection()) {
-                cordova.plugins.clipboard.copy(this.t.getSelection())
+                Clipboard.write(this.t.getSelection())
                 this.cmSY = false
                 this.t.clearSelection()
                 break
@@ -740,8 +738,10 @@ export class Pane extends Cell {
             this.findPrevious()
             break
         case "o":
-            if (REGEX_SEARCH)
-                cordova.InAppBrowser.open(this.t.getSelection(), "_system", "")
+            if (REGEX_SEARCH) {
+                var u = this.t.getSelection()
+                Browser.open({url: u})
+            }
             break
         case "Escape":
         case "q":
@@ -881,6 +881,10 @@ export class Pane extends Cell {
         var f = null
         console.log(`Handling meta key ${ev.key}`)
         switch (ev.key) {
+        case "c":
+            if (this.t.hasSelection()) 
+                Clipboard.write({string: this.t.getSelection()})
+            break
         case "z":
             f = () => this.toggleZoom()
             break
