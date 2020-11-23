@@ -504,6 +504,7 @@ export class Pane extends Cell {
         // the canvas gets the touch event and the nadler needs to get back here
         this.t.loadAddon(this.fitAddon)
         this.t.loadAddon(this.searchAddon)
+        this.createDividers()
         this.fit()
         con.querySelector(".xterm-cursor-layer").p = this
         this.t.textarea.tabIndex = -1
@@ -951,34 +952,43 @@ export class Pane extends Cell {
             this.gate.notify(`Couldn't find "${this.searchTerm}"`)
         this.updateCopyMode()
     }
+    createDividers() {
+        // create the dividers
+        var t = document.getElementById("divider-template")
+        if (t) {
+            var d = [t.content.cloneNode(true),
+                     t.content.cloneNode(true)]
+            d.forEach((e, i) => {
+                this.w.e.prepend(e)
+                e = this.w.e.children[0]
+                this.dividers.push(e)
+                if (i == 1)
+                    e.style.transform = "rotate(90deg)"
+            })
+        }
+    }
     refreshDividers() {
         var W = document.body.offsetWidth,
             H = document.body.offsetHeight,
-            t = document.getElementById("divider-template")
-        this.dividers.forEach(e => e.remove())
-        this.dividers = []
+            d = this.dividers[0]
         if (this.xoff > 0.001 & this.sy * H > 50) {
-            // add left divider
-            var d = t.content.cloneNode(true)
-            this.w.e.prepend(d)
-            d = this.w.e.children[0]
-            this.dividers.push(d)
+            // add elft divider
             d.style.left = `${this.xoff * W - 4}px`
             d.style.top = `${(this.yoff + this.sy/2)* H - 22}px`
-        }
+            d.classList.remove("hidden")
+        } else
+            d.classList.add("hidden")
+        d = this.dividers[1]
         if (this.yoff > 0.001 & this.sx * W > 50) {
             // add top divider
-            var d = t.content.cloneNode(true)
-            this.w.e.prepend(d)
-            d = this.w.e.children[0]
-            this.dividers.push(d)
-            d.style.transform = "rotate(90deg)"
             d.style.top = `${this.yoff * H - 25}px`
             d.style.left = `${(this.xoff + this.sx/2)* W - 22}px`
-        }
+            d.classList.remove("hidden")
+        } else
+            d.classList.add("hidden")
     }
     close() {
-        this.dividers.forEach(d => d.remove())
+        this.dividers.forEach(d => d.classList.add("hidden"))
         super.close()
     }
 }
