@@ -514,6 +514,6 @@ export class Gate {
     }
     fit() {
         if (this.boarding)
-            g.windows.forEach(w => w.fit())
+            this.windows.forEach(w => w.fit())
     }
 }
