@@ -7,16 +7,24 @@ Thumbs.db
 /build
 *.bundle.js
 plugins/
+
 # iOS Platform
 platforms/ios/build/
 platforms/ios/www/
 platforms/ios/cordova/console.log
 *.xcuserdatad
+
 # broswer
 platforms/browser/www
 Terminal7.xcarchive/
 platforms/browser/config.xml
+
 # vscode
 .vscode/
 typings/
 /jsconfig.json
+
+# resources
+resources/ios
+resources/android
+www/fonts/
