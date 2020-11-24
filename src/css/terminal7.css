@@ -29,9 +29,6 @@ time {
 h1, h2, h3 {
   text-align: center;
 }
-.modal h1 {
-    font-size:28pt;
-}
 h1 {
     font-size: 43pt;
     margin: 0;
@@ -109,7 +106,7 @@ a {
 }
 .pane {
     position: fixed;
-    padding: 4pt;
+    padding: 0;
     overflow: hidden;
     -webkit-mask-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAA5JREFUeNpiYGBgAAgwAAAEAAGbA+oJAAAAAElFTkSuQmCC); /* this fixes the overflow:hidden in Chrome/Opera */
     box-sizing: border-box;
@@ -173,7 +170,7 @@ nav .on { color: #00FA00 !important; }
 .off { color: #373702; }
 /* vertical align the nav bar buttons */
 .tabbar {
-    bottom: 54pt;
+    bottom: 52pt;
     color: #00fafa;
 }
 .tabbar input {
@@ -383,10 +380,4 @@ nav .on { color: #00FA00 !important; }
 td {
     text-align: left;
     padding:0.5em;
-}
-.divider {
-    position: fixed;
-    z-index: 10;
-    stroke: #D9F505;
-    fill: none;
 }
