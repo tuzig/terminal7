@@ -480,7 +480,7 @@ export class Gate {
                 {string: ct.querySelector('[name="token"]').value})
             this.notify("Token copied to the clipboard")
         })
-        ct.querySelector(".submit").addEventListener('click', ev => {
+        ct.querySelector("form").addEventListener('submit', ev => {
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
             terminal7.ssh(ct,  this,
                 `cat <<<"${terminal7.token}" >> ~/.webexec/authorized_tokens`,

@@ -107,7 +107,7 @@ export class Terminal7 {
                 addHost.querySelector("form").reset()
                 addHost.classList.remove("hidden")
             })
-        addHost.querySelector(".submit").addEventListener('click', (ev) => {
+        addHost.querySelector("form").addEventListener('submit', (ev) => {
             let remember = addHost.querySelector('[name="remember"]').checked,
                 gate = this.addGate({
                     addr: addHost.querySelector('[name="hostaddr"]').value,
@@ -147,7 +147,7 @@ export class Terminal7 {
         this.catchFingers()
         // setting up edit host events
         let editHost = document.getElementById("edit-host")
-        editHost.querySelector(".submit").addEventListener('click', ev =>
+        editHost.querySelector("form").addEventListener('submit', ev =>
             editHost.gate.editSubmit(ev))
         editHost.querySelector(".close").addEventListener('click',  ev =>
             terminal7.clear())
@@ -161,7 +161,7 @@ export class Terminal7 {
         })
         // setting up reset host event
         let resetHost = document.getElementById("reset-host")
-        resetHost.querySelector(".submit").addEventListener('click', ev =>
+        resetHost.querySelector("form").addEventListener('submit', ev =>
             editHost.gate.resetHost())
         resetHost.querySelector(".close").addEventListener('click',  ev =>
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
@@ -487,7 +487,7 @@ export class Terminal7 {
         this.pendingCDCMsgs = []
         e.querySelector("h1").textContent =
             `${gate.name} communication failed`
-        e.querySelector(".reconnect").addEventListener('click', ev => {
+        e.querySelector("form").addEventListener('ubmit', ev => {
             this.clear()
             gate.resetPC()
         })
@@ -553,7 +553,7 @@ export class Terminal7 {
             this.clear()
             gate.edit()
         })
-        e.querySelector(".start").addEventListener('click', ev => {
+        e.querySelector("form").addEventListener('submit', ev => {
             this.ssh(this.e.lastElementChild, gate, 
                 "webexec start", ev => {
                 gate.close()

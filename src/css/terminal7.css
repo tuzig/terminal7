@@ -47,14 +47,18 @@ h3 { margin: 0.2em; }
     -webkit-user-select: none;
 }
 button {
-  background-color: #271D30;
-  color: #00fafa;
+    border: 0;
+    padding:0;
+    background-color: #271D30;
+    color: #00fafa;
+    /*
   text-align: center;
   text-decoration: none;
   display: inline-block;
   font-size: 3vh;
   font-weight: bold;
   font-family: Courier new;
+  */
 }
 #terminal7 ul {
     list-style:none;
@@ -158,16 +162,20 @@ nav {
     position: relative;
     top: 4pt;
 }
-nav i:last-child {
+nav button:last-child {
     border: none;
 }
-nav i {
+nav button {
     cursor: pointer;
     border-right: 1px solid #373702;
     /* box-sizing: border-box; */
     display: table-cell;
     text-align: center
 }
+.two-buttons button { width: 50% }
+.three-buttons button { width: 33.33% }
+.four-buttons button { width: 25% }
+.six-buttons button { width: 16.66% }
 nav .on { color: #00FA00 !important; }
 .failed { color: #F952F9 !important; }
 .warn { color: #FAFA00 !important; }

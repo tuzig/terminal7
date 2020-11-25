@@ -39,9 +39,13 @@
                 required="required">
             <input type="checkbox" checked="checked" name="remember">
             <label for="remember">Remember host</label>
-            <nav>
-                <i class="f7-icons close">xmark</i>
-                <i class="f7-icons submit">phone_arrow_up_right</i>
+            <nav class="two-buttons">
+                <button type="button" class="close">
+                    <i class="f7-icons close">xmark</i>
+                </button>
+                <button type="submit">
+                    <i class="f7-icons submit">phone_arrow_up_right</i>
+                </button>
             </nav>
           </form>
       </div>
@@ -61,10 +65,10 @@
             <input type="text" placeholder="your sysem username" name="uname" required>
             <label for="pass"><b>Password</b></label>
             <input type="password" placeholder="your password" name="pass" required>
-            <nav>
-                <i class="f7-icons close">xmark</i>
-                <i class="f7-icons copy">doc_on_clipboard</i>
-                <i class="f7-icons submit">phone_arrow_up_right</i>
+            <nav class="three-buttons">
+                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+                <button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i></button>
+                <button type="submit"><i class="f7-icons">phone_arrow_up_right</i></button>
             </nav>
         </form>
       </div>
@@ -77,19 +81,19 @@
             <input type="text" placeholder="your sysem username" name="uname" required>
             <label for="pass"><b>Password</b></label>
             <input type="password" placeholder="your password" name="pass" required>
-            <nav>
-                <i class="f7-icons close">xmark</i>
-                <i class="f7-icons submit">arrow_2_circlepath</i>
+            <nav class="two-buttons">
+                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+                <button type="submit"><i class="f7-icons">arrow_2_circlepath</i></button>
             </nav>
         </form>
       </div>
       <div id="settings-modal" class="hidden modal border">
           <textarea id="edit-conf" lines="20" cols="40">
           </textarea>
-          <nav>
-               <i class="f7-icons close">xmark</i>
-               <i class="f7-icons copy">doc_on_clipboard</i>
-               <i class="f7-icons save">floppy_disk</i>
+          <nav class="three-buttons">
+              <button type="button" class="close"><i class="f7-icons">xmark</i>
+              <button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i>
+              <button type="button" class="save"><i class="f7-icons">floppy_disk</i>
           </nav>
       </div>
       <div id="edit-host" class="hidden modal border" >
@@ -101,11 +105,11 @@
             <label for="uname"><b>Name</b></label>
             <input type="text" placeholder="Enter Hostname" name="hostname"
                 required="required">
-            <nav>
-                <i class="f7-icons close">xmark</i>
-                <i class="f7-icons trash">bin_xmark</i>
-                <i class="f7-icons reset">arrow_2_circlepath</i>
-                <i class="f7-icons submit">floppy_disk</i>
+            <nav class="four-buttons">
+                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+                <button type="button" class="trash"><i class="f7-icons">bin_xmark</i></button>
+                <button type="button" class="reset"><i class="f7-icons">arrow_2_circlepath</i></button>
+                <button type="submit"><i class="f7-icons">floppy_disk</i></button>
             </nav>
           </form>
       </div>
@@ -156,13 +160,13 @@
   </div>
    
   <div id="navbar" class="bar">
-      <nav>
-  <i id="home-button" class="f7-icons on">house</i>
-  <i id="log-button" class="f7-icons">bubble_middle_top</i>
-  <i id="trash-button" class="f7-icons off">rectangle_fill_badge_xmark</i>
-  <i id="search-button" class="f7-icons off">doc_text_search</i>
-  <i id="help-button" class="f7-icons off">question</i>
-  <i id="dotfile-button" class="f7-icons">gear</i>
+      <nav class="six-buttons">
+          <button type="button" id="home-button"><i class="f7-icons on">house</i></button>
+          <button type="button" id="log-button"><i class="f7-icons">bubble_middle_top</i></button>
+          <button type="button" id="trash-button"><i class="f7-icons off">rectangle_fill_badge_xmark</i></button>
+          <button type="button" id="search-button"><i class="f7-icons off">doc_text_search</i></button>
+          <button type="button" id="help-button"><i class="f7-icons off">question</i></button>
+          <button type="button" id="dotfile-button"><i class="f7-icons">gear</i></button>
       </nav>
   </div>
 
@@ -172,15 +176,15 @@
     <p id="copy-mode" class="hidden"></p>
 </div>
     <template id="disconnect-template">
-      <div class="disconnect modal border temporal">
+       <div class="disconnect modal border temporal"><form>
           <h1></h1>
           <p>Please check the log for details.</p>
           <p>How would you like to proceed?</p>
-          <nav>
-               <i class="f7-icons close">xmark</i>
-               <i class="f7-icons reconnect">arrow_2_circlepath</i>
+          <nav class="two-buttons">
+              <button type="button" class="close"><i class="f7-icons close">xmark</i></button>
+              <button type="submit"><i class="f7-icons reconnect">arrow_2_circlepath</i></button>
           </nav>
-      </div>
+       </form></div>
     </template>
     <template id="nosignal-template">
         <div class="modal border temporal"><form>
@@ -197,9 +201,9 @@
           <input type="text" placeholder="your sysem username" name="uname" required>
           <label for="pass"><b>Password</b></label>
           <input type="password" placeholder="your password" name="pass" required>
-          <nav>
-               <i class="f7-icons close">xmark</i>
-               <i class="f7-icons start">rays</i>
+          <nav class="two-buttons">
+              <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+              <button type="submit"><i class="f7-icons">rays</i></button>
           </nav>
       </form></div>
     </template>
