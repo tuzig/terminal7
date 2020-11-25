@@ -383,3 +383,7 @@ td {
     text-align: left;
     padding:0.5em;
 }
+.divider {
+    position: fixed;
+    z-index: 3;
+}    
