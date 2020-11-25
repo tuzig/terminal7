@@ -558,7 +558,7 @@ export class Terminal7 {
                 "webexec start", ev => {
                 gate.close()
                 this.clear()
-                gate.connect()
+                terminal7.run(_ => gate.connect(), 2000)
             })
         })
         e.querySelector(".close").addEventListener('click', ev => {
