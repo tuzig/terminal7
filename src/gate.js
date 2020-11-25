@@ -328,7 +328,7 @@ export class Gate {
             // filling the entire top of the screen
             let tabbar = this.e.querySelector(".tabbar"),
                 r = tabbar.getBoundingClientRect(),
-                sy = r.y/document.body.offsetHeight
+                sy = (r.y + 2)/document.body.offsetHeight
             console.log("starting fresh", r, sy)
             let paneProps = {sx: 1.0, sy: sy,
                              xoff: 0, yoff: 0,

@@ -183,6 +183,7 @@ nav .on { color: #00FA00 !important; }
 .off { color: #373702; }
 /* vertical align the nav bar buttons */
 .tabbar {
+    height: 41pt;
     bottom: 44pt;
     color: #00fafa;
 }
@@ -233,25 +234,27 @@ nav .on { color: #00FA00 !important; }
     background-color: #271D30;
     z-index: 9;
     margin: 0 auto;
-    padding: 0;
-    bottom: 66pt;
+    padding: 4px;
+    bottom: 40pt;
     left: 50%;
     transform: translate(-50%, 0);
 }
 .tabbar-search {
     padding: 0.2em 1em;
 }
-.tabbar-search>i {
+.tabbar-search>button {
+    float:left;
     padding: 0 0.5em;
 }
 .tabbar-search>input {
+    float:left;
     padding: 0 0.5em;
-    width: 30em;
-    max-width: 90%;
+    width: 60%;
     position: relative;
     margin-left: 1em;
     border-right: 1px solid #373702;
     font-size: 18pt;
+    line-height: 22pt;
 }
 .active {
     font-weight: bold;
@@ -371,8 +374,8 @@ nav .on { color: #00FA00 !important; }
     position: absolute;
     top: 0px;
     right: 0px;
-    line-height: 20pt;
-    font-size: 20pt;
+    line-height: 18pt;
+    font-size: 18pt;
     margin: 6px;
     z-index: 10;
     opacity: 0.6;

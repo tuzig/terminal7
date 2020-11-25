@@ -211,14 +211,14 @@
     <template id="gate-template">
     <div class="hidden search-box border">
       <nav class="tabbar-search">
-        <i class="search-close f7-icons">xmark</i>
+        <button class="search-close"><i class="f7-icons">xmark</i></button>
         <input type="text" name="search-term">
         <!-- TODO: make url & file search work 
         <a href="#find-url" class="hidden">URL</a>
         <a href="#find-file" class="hidden">File</a>
         -->
-        <i class="search-up f7-icons">arrowtriangle_up</i>
-        <i class="search-down f7-icons">arrowtriangle_down</i>
+        <button class="search-up"><i class="f7-icons">arrowtriangle_up</i></button>
+        <button class="search-down"><i class="f7-icons">arrowtriangle_down</i></button>
       </nav>
     </div>
 
@@ -233,7 +233,6 @@
           <nav class="tabbar-names internal">
           </nav>
           <button class="bang off"><i class="f7-icons">exclamationmark</i></button>
-          <div style="clear: both;"></div>
       </nav>
     </div>
     </template>
