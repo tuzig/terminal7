@@ -108,6 +108,7 @@ export class Terminal7 {
                 addHost.classList.remove("hidden")
             })
         addHost.querySelector("form").addEventListener('submit', (ev) => {
+            ev.preventDefault()
             let remember = addHost.querySelector('[name="remember"]').checked,
                 gate = this.addGate({
                     addr: addHost.querySelector('[name="hostaddr"]').value,
@@ -147,8 +148,10 @@ export class Terminal7 {
         this.catchFingers()
         // setting up edit host events
         let editHost = document.getElementById("edit-host")
-        editHost.querySelector("form").addEventListener('submit', ev =>
-            editHost.gate.editSubmit(ev))
+        editHost.querySelector("form").addEventListener('submit', ev => {
+            ev.preventDefault()
+            editHost.gate.editSubmit(ev)
+        })
         editHost.querySelector(".close").addEventListener('click',  ev =>
             terminal7.clear())
         editHost.querySelector(".trash").addEventListener('click',  ev => {
@@ -161,8 +164,10 @@ export class Terminal7 {
         })
         // setting up reset host event
         let resetHost = document.getElementById("reset-host")
-        resetHost.querySelector("form").addEventListener('submit', ev =>
-            editHost.gate.resetHost())
+        resetHost.querySelector("form").addEventListener('submit', ev => {
+            ev.preventDefault()
+            editHost.gate.resetHost()
+        })
         resetHost.querySelector(".close").addEventListener('click',  ev =>
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
         this.goHome()
@@ -554,6 +559,7 @@ export class Terminal7 {
             gate.edit()
         })
         e.querySelector("form").addEventListener('submit', ev => {
+            ev.preventDefault()
             this.ssh(this.e.lastElementChild, gate, 
                 "webexec start", ev => {
                 gate.close()

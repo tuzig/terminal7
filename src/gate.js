@@ -411,7 +411,8 @@ export class Gate {
         this.e.classList.add("hidden")
         this.boarding = false
         this.clear()
-        this.sendState(() => this.pc.close())
+        if (this.pc != null)
+            this.sendState(() => this.pc.close())
         if (terminal7.activeG == this)
             terminal7.activeG = null
     }
@@ -481,6 +482,7 @@ export class Gate {
             this.notify("Token copied to the clipboard")
         })
         ct.querySelector("form").addEventListener('submit', ev => {
+            ev.preventDefault()
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
             terminal7.ssh(ct,  this,
                 `cat <<<"${terminal7.token}" >> ~/.webexec/authorized_tokens`,
