@@ -63,7 +63,7 @@
   "scripts": {
     "dev": "npm run build && npx cap serve",
     "test": "karma start --single-run",
-    "build": "npx webpack --output www/terminal7.bundle.js && npx cap sync"
+    "build": "npx webpack --output www/terminal7.bundle.js && npx cap copy"
   },
   "repository": {
     "type": "git",

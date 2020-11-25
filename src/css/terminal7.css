@@ -146,6 +146,7 @@ a {
     background-color: #271D30;
 }
 #navbar>nav, .tabbar-names-nav {
+    position: relative;
     padding: 0;
     width: 100%
 }
@@ -156,7 +157,7 @@ a {
 nav {
     display: table;
 }
-.tabbar-names-nav i {
+.tabbar-names-nav button {
     border: none;
     width: 10%;
     position: relative;
@@ -182,19 +183,23 @@ nav .on { color: #00FA00 !important; }
 .off { color: #373702; }
 /* vertical align the nav bar buttons */
 .tabbar {
-    bottom: 52pt;
+    bottom: 44pt;
     color: #00fafa;
 }
 .tabbar input {
-  font-size: 18pt;
-  line-height: 24pt;
+  font-size: 16pt;
+  line-height: 16pt;
   background-color: black;
   color: inherit;
 }
+.tabbar button {
+    float: left;
+}
 .tabbar .internal {
+    float:left;
     margin: 0;
     padding: 0;
-    width: 100%;
+    width: 80%;
     background: black;
     /* border-top: 4px double #373702; */
     border-bottom: 1px solid #D9F505;
@@ -202,6 +207,7 @@ nav .on { color: #00FA00 !important; }
     border-left: 1px solid #D9F505;
     border-radius: 0 0 12px 12px;
     text-align: center;
+    box-sizing: border-box;
 }
 .internal>div:last-child {
     border-right: none;
