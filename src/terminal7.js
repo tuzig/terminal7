@@ -189,6 +189,7 @@ export class Terminal7 {
             this.metaPressStart = Number.MAX_VALUE
         })
         // Last one: focus
+        window.setInterval(_ => this.periodic(), 2000)
         this.focus()
     }
     editDotfile(ev) {
@@ -595,5 +596,9 @@ export class Terminal7 {
     close() {
         this.timeouts.forEach(t => window.clearTimeout(t))
         this.timeouts = []
+    }
+    periodic() {
+        var now = new Date()
+        this.gates.forEach(g => g.periodic(now))
     }
 }

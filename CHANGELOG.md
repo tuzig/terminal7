@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - dividers that show border can move
 - version information and link to the change log
+- resending control messages on timeout 
 
 ### Fixed
 

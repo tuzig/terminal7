@@ -35,6 +35,7 @@ h1, h2, h3 {
 }
 .modal h1 {
     font-size: 22pt;
+    margin: 0;
 }
 h2 { margin: 0.3em; }
 h3 { margin: 0.2em; }
@@ -81,7 +82,7 @@ a {
     left: 50%;
     transform: translate(-50%, 0);
     width: 40em;
-    max-width: 90%;
+    max-width: 80%;
 }
 .modal p, .modal td {
     font-size: 16pt;
@@ -242,7 +243,7 @@ nav .on { color: #00FA00 !important; }
     font-weight: bold;
 }
 .zoomed {
-    z-index: 2;
+    z-index: 4;
     bottom: 22px;
     left: 0;
     width: 100%;

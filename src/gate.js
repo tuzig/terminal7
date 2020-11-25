@@ -23,13 +23,14 @@ export class Gate {
         this.windows = []
         this.boarding = false
         this.pendingCDCMsgs = []
-        this.lastMsgId = 1
+        this.lastMsgId = 0
         // a mapping of refrence number to function called on received ack
         this.onack = {}
         this.breadcrumbs = []
         this.peer = null
         this.updateID  = null
         this.timeoutID = null
+        this.msgs = {}
     }
 
     /*
@@ -192,12 +193,13 @@ export class Gate {
             this.focus()
             return
         }
-        this.pendingCDCMsgs = []
         console.log(`connecting to ${this.name}...`)
-        // TODO: do we need the next 3 lines?
+        // cleanup
+        this.pendingCDCMsgs = []
         if (this.pc != null) {
             this.pc.close()
         }
+        this.clear()
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: 'stun:stun2.l.google.com:19302' }
                 ] })
@@ -240,7 +242,7 @@ export class Gate {
     }
     /*
      * sencCTRLMsg gets a control message and sends it if we have a control
-     * channle open or adds it to the queue if we're early to the part
+     * channel open or adds it to the queue if we're early to the party
      */
     sendCTRLMsg(msg) {
         // helps us ensure every message gets only one Id
@@ -253,8 +255,9 @@ export class Gate {
             this.pendingCDCMsgs.push(msg)
         else {
             const s = JSON.stringify(msg)
+            console.log("sending ctrl message ", s)
+            this.msgs[msg.message_id] = {msg: s, time: msg.time, retries: 0}
             try {
-                console.log("sending ctrl message ", s)
                 this.cdc.send(s)
             } catch(err) {
                 //TODO: this is silly, count proper retries
@@ -348,7 +351,6 @@ export class Gate {
             if (this.boarding) {
                 this.notify('Control Channel is closed')
                 this.stopBoarding()
-                terminal7.onDisconnect(this)
             }
         }
         cdc.onopen = () => {
@@ -366,7 +368,9 @@ export class Gate {
 
             // handle Ack
             if ((msg.type == "ack") || (msg.type == "nack")) {
-                const handler = this.onack[msg.args.ref]
+                let i = msg.args.ref
+                delete this.msgs[i]
+                const handler = this.onack[i]
                 console.log("got cdc message:",  msg)
                 if (handler != undefined) {
                     handler(msg.type=="nack", msg.args.body)
@@ -384,6 +388,7 @@ export class Gate {
      */
     clear() {
         this.windows.forEach(w => w.close(false))
+        this.e.querySelectorAll(".window").forEach(e => e.remove())
         this.windows = []
         this.breadcrumbs = []
     }
@@ -515,5 +520,21 @@ export class Gate {
     fit() {
         if (this.boarding)
             this.windows.forEach(w => w.fit())
+    }
+    periodic(now) {
+        if (!this.boarding)
+            return
+        for (const [id, m] of Object.entries(this.msgs)) {
+            if (now - m.time > terminal7.conf.exec.timeout)
+                if (m.retries++ > terminal7.conf.exec.retries) {
+                    this.notify(
+                         `Tried ${m.retries} times and failed sending control message`)
+                    this.stopBoarding()
+                }
+                else {
+                    this.cdc.send(m.msg)
+                    m.time = Date.now()
+                }
+        }
     }
 }
