@@ -291,7 +291,9 @@ describe("terminal7", function() {
                 user: 'root',
                 store: true
             })
-            let t2 = new Terminal7()
+            let t2 = new Terminal7(),
+                e = document.createElement("div")
+            t2.open(e)
             expect(t2.gates.length).to.equal(2)
             expect(t2.gates[0].user).to.equal("guest")
             expect(t2.gates[1].user).to.equal("root")

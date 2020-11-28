@@ -45,15 +45,6 @@ export class Terminal7 {
         this.state = "init"
         this.activeG = null
         window.terminal7 = this
-        // Load gates from local storage
-        let hs = JSON.parse(localStorage.getItem('gates'))
-        if (hs != null)
-            hs.forEach((p) => {
-                p.store = true
-                let h = new Gate(p)
-                // h.restore()
-                this.gates.push(h)
-            })
         let dotfile = localStorage.getItem('dotfile') || DEFAULT_DOTFILE
         this.conf = TOML.parse(dotfile)
         this.minSplitSpeed      = settings.minSplitSpeed || 2.2
@@ -193,8 +184,15 @@ export class Terminal7 {
                 document.getElementById('keys-help').classList.add('hidden')
             this.metaPressStart = Number.MAX_VALUE
         })
-        // Last one: focus
+        // Load gates from local storage
+        let hs = JSON.parse(localStorage.getItem('gates'))
+        if (hs != null)
+            hs.forEach((p) => {
+                p.store = true
+                this.addGate(p)
+            })
         window.setInterval(_ => this.periodic(), 2000)
+        // Last one: focus
         this.focus()
     }
     editDotfile(ev) {

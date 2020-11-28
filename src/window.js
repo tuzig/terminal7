@@ -39,9 +39,7 @@ export class Window {
         h.on("switch", (ev) => this.focus())
         div.appendChild(a)
         this.nameE = a
-        let wn = this.gate.e.querySelector(".tabbar-names")
-        if (wn != null)
-            wn.appendChild(div)
+        this.gate.e.querySelector(".tabbar-names").appendChild(div)
     }
     /*
      * Change the active window, all other windows and
