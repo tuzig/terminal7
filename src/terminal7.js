@@ -29,8 +29,9 @@ shell = "zsh"
 timeout = 3000
 retries = 3
 
-[touch]
+[ui]
 quickest_press = 1000
+max_tabs = 3
 `
 
 export class Terminal7 {
@@ -55,8 +56,9 @@ export class Terminal7 {
         this.confEditor = null
         this.flashTimer = null
         this.conf.features = this.conf.features || {}
-        this.conf.touch = this.conf.touch || {}
-        this.conf.touch.quickest_press = this.conf.touch.quickest_press || 1000
+        this.conf.ui = this.conf.ui || {}
+        this.conf.ui.quickest_press = this.conf.ui.quickest_press || 1000
+        this.conf.ui.max_tabs = this.conf.ui.max_tabs || 3
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,
@@ -173,7 +175,7 @@ export class Terminal7 {
                             i.style.display = "none")
                     if (Date.now() - this.metaPressStart > 987)
                         e.classList.remove('hidden')
-                }, terminal7.conf.touch.quickest_press)
+                }, terminal7.conf.ui.quickest_press)
             } else
                 this.metaPressStart = Number.MAX_VALUE
         })
@@ -296,7 +298,7 @@ export class Terminal7 {
 
 
         if (e.gate instanceof Gate) {
-            let longPress = terminal7.conf.touch.quickest_press
+            let longPress = terminal7.conf.ui.quickest_press
             if (deltaT > longPress) {
                 e.gate.edit()
             }

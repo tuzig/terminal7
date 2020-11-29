@@ -48,8 +48,12 @@ export class Gate {
         if (t) {
             t = t.content.cloneNode(true)
             t.querySelector(".add-tab").addEventListener('click', _ => {
-                let w = this.addWindow()
-                w.focus()
+                if (this.windows.length < 3) {
+                    let w = this.addWindow()
+                    if (this.windows.length == 3)
+                        this.e.querySelector(".add-tab").classList.add("off")
+                    w.focus()
+                }
             })
             t.querySelector(".search-close").addEventListener('click', _ =>  {
                 this.activeW.activeP.exitCopyMode()
@@ -311,6 +315,8 @@ export class Gate {
         })
         if (!focused)
             this.windows[0].focus()
+        if (this.windows.length >= terminal7.conf.ui.max_tabs)
+            this.e.querySelector(".add-tab").classList.add("off")
     }
     /*
      * Adds a window, complete with a first layout and pane

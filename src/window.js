@@ -145,6 +145,8 @@ export class Window {
             document.body.removeChild(this.activeP.zoomedE)
         this.gate.windows.splice(this.gate.windows.indexOf(this), 1)
         this.gate.activeW = null
+        // if we removed a window it means the user can add a window
+        this.gate.e.querySelector(".add-tab").classList.remove("off")
         // remove myself from the breadcrumbs
         this.gate.goBack(closeGate)
     }
