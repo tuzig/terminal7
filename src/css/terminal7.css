@@ -285,8 +285,8 @@ nav .on { color: #00FA00 !important; }
     text-decoration: underline;
 }
 #plus-host  i {
-    font-size: 5.5vh;
-    padding: 0.5vh 0 1.5vh;
+    font-size: 60px;
+    line-height: 70px;
 }
 #hosts-wrapper {
     float:right;
@@ -305,7 +305,6 @@ nav .on { color: #00FA00 !important; }
     display: block;
     float: left;
     height: 100px;
-    min-width: 100px;
     cursor: pointer;
     margin: 1em; 
     padding: 0.2em 4em;
