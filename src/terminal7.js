@@ -585,7 +585,7 @@ export class Terminal7 {
         let lines = ul.querySelectorAll('li')
         if (lines.length > terminal7.conf.indicators.log_lines)
             lines[0].remove()
-        li.innerHTML = `<time>${t}</time> ${message}`
+        li.innerHTML = `<time>${t}</time><p>${message}</p>`
         li.classList = "log-msg"
         ul.appendChild(li)
         terminal7.logDisplay(true)

@@ -22,10 +22,6 @@ body {
   background-color: #271D30;
 }
 
-time {
-    color: #F952F9;
-    font-family: Courier;
-}
 h1, h2, h3 {
   text-align: center;
 }
@@ -356,9 +352,23 @@ nav .on { color: #00FA00 !important; }
 }
 .log-msg {
     font-size: 16px;
+    line-height: 28px;
     width: 80%;
     color: #00FAFA;
-    margin: 2%;
+    margin: 0.5em;
+    overflow: hidden;
+}
+.log-msg time {
+    float: left;
+    color: #F952F9;
+}
+.log-msg p {
+    /*
+    position: relative;
+    top: 0;
+    left: 10em;
+    */
+    margin: 0 0 0 8em;
 }
 .fade-out {
   top: 0;
