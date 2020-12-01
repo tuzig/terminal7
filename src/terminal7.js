@@ -331,6 +331,8 @@ export class Terminal7 {
                     dest = ((where == "top") || (where == "bottom"))
                             ? y / document.body.offsetHeight
                             : x / document.body.offsetWidth
+                if (dest > 1.0)
+                    dest = 1.0
                 console.log(`moving ${where} border of #${pane.id} to ${dest}`)
                 pane.layout.moveBorder(pane, where, dest)
             }
