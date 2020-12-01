@@ -491,7 +491,7 @@ export class Terminal7 {
         this.pendingCDCMsgs = []
         e.querySelector("h1").textContent =
             `${gate.name} communication failed`
-        e.querySelector("form").addEventListener('ubmit', ev => {
+        e.querySelector("form").addEventListener('submit', ev => {
             this.clear()
             gate.resetPC()
         })
