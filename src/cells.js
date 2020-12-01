@@ -106,6 +106,8 @@ export class Cell {
         return parseFloat(this.e.style.width.slice(0,-1)) / 100.0
     }
     set sx(val) {
+        if (val > 1.0)
+            val = 1.0
         this.e.style.width = String(val*100) + "%"
     }
     get sy() {
