@@ -341,26 +341,49 @@ export class Layout extends Cell {
         return parseFloat(this.e.style.width.slice(0,-1)) / 100.0
     }
     /*
-     * update the sx of all cells
+     * update the sx of the layout - resize the cells or spread them based on
+     * the layout's direction.
      */
     set sx(val) {
-        let r = val/this.sx
+        let oldS = this.sx,
+            r = val/oldS
         this.e.style.width = String(val * 100) + "%"
-        if (this.cells !== undefined)
-            // this doesn't happen on init and that's fine
-            this.cells.forEach((c) => c.sx *= r)
+        if (r == NaN || this.cells == undefined || this.cells.length == 0)
+            return
+        let off = this.cells[0].xoff
+        this.cells.forEach((c) => {
+            if (this.dir == "topbottom") {
+                let oldS = c.sx,
+                    s = oldS * r
+                c.xoff = off
+                c.sx = s
+                off += s
+            } else c.sx *= r
+        })
     }
     get sy() {
         return parseFloat(this.e.style.height.slice(0,-1)) / 100.0
     }
     /*
-     * Update the y size for all cells
+     * update the sy of the layout - resize the cells or spread them based on
+     * the layout's direction.
      */
     set sy(val) {
-        let r = val/this.sy
+        let oldS = this.sy,
+            r = val/oldS
         this.e.style.height = String(val * 100) + "%"
-        if (this.cells !== undefined)
-            this.cells.forEach((c) => c.sy *= r)
+        if (r == NaN || this.cells == undefined || this.cells.length == 0)
+            return
+        let off = this.cells[0].yoff
+        this.cells.forEach((c) => {
+            if (this.dir == "rightleft") {
+                let oldS = c.sy,
+                    s = oldS * r
+                c.yoff = off
+                c.sy = s
+                off += s
+            } else c.sy *= r
+        })
     }
     get xoff() {
         return parseFloat(this.e.style.left.slice(0,-1)) / 100.0
@@ -414,7 +437,6 @@ export class Layout extends Cell {
     moveBorder(pane, border, dest) {
         var s, off
         let i = this.cells.indexOf(pane),
-            l = pane.layout,
             p0 = null,
             p1 = null
         // first, check if it's a horizontal or vertical border we're moving
@@ -425,7 +447,6 @@ export class Layout extends Cell {
             s = "sx"
             off = "xoff"
         }
-
         if (this.dir.indexOf(border) == -1) {
             if (border == "top" || border == "left") {
                 p0 = this.prevCell(pane)
@@ -954,6 +975,11 @@ export class Pane extends Cell {
             this.gate.notify(`Couldn't find "${this.searchTerm}"`)
         this.updateCopyMode()
     }
+    /*
+     * createDividers creates a top and left educationsl dividers.
+     * The dividers are here because they're elegant and they let the user know
+     * he can move the borders
+     * */
     createDividers() {
         // create the dividers
         var t = document.getElementById("divider-template")
@@ -969,6 +995,10 @@ export class Pane extends Cell {
             })
         }
     }
+    /*
+     * refreshDividerrs rrepositions the dividers after the pane has been
+     * moved or resized
+     */
     refreshDividers() {
         var W = document.body.offsetWidth,
             H = document.body.offsetHeight,

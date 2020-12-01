@@ -384,14 +384,82 @@ describe("terminal7", function() {
             expect(p0.sy).to.equal(0.3)
             expect(p1.sy).to.equal(0.3)
             window.toBeFit = new Set([])
-            p0.layout.moveBorder(p0, "bottom", 0.6)
+            p0.layout.moveBorder(p1, "top", 0.6)
             expect(p0.sy).to.be.closeTo(0.4, 0.00000001)
             expect(p1.sy).to.be.closeTo(0.2, 0.00000001)
             expect(p1.yoff).to.equal(0.6)
-            p0.layout.moveBorder(p0, "bottom", 0.5)
+            p0.layout.moveBorder(p1, "top", 0.5)
             expect(p0.sy).to.be.closeTo(0.3, 0.00000001)
             expect(p1.sy).to.be.closeTo(0.3, 0.00000001)
 
+        })
+        it("can move a border in complex layout panes", function () {
+            /* here's the layout we build and then move the border between
+             * 1 to 2
+            +----------+---+
+            |          |   |
+            |     1    |   |
+            |          |   |
+            +----+-----+ 2 |
+            |    |     |   |
+            | 3  | 4   |   |
+            |    |     |   |
+            +----+-----+---+
+            */
+            h = t.addGate()
+            h.open(e)
+            w = h.addWindow("1,2,3 testing")
+            w.activeP.sx = 0.8
+            w.activeP.sy = 0.6
+            w.activeP.xoff = 0.1
+            w.activeP.yoff = 0.2
+            let p1 = w.activeP,
+                p2 = p1.split("topbottom"),
+                p3 = p1.split("rightleft"),
+                p4 = p3.split("topbottom")
+            expect(p4.xoff+p4.sx).to.equal(p2.xoff)
+            expect(p3.sx).to.equal(0.2)
+            window.toBeFit = new Set([])
+            p2.layout.moveBorder(p2, "left", 0.6)
+            expect(p1.sx).to.equal(0.5)
+            expect(p3.sx).to.equal(0.25)
+            expect(p4.sx).to.equal(0.25)
+            expect(p4.xoff+p4.sx).to.be.closeTo(p2.xoff, 0.000001)
+        })
+        it("can move a border in another complex layout panes", function () {
+            /* here's the layout we build and then move the border between
+             * 1 to 2
+            +---------+----------+
+            |         |    3     |
+            |    1    +----------+
+            |         |    4     |
+            |         |          |
+            +---------+-----------+
+            |                    |
+            |          2         |
+            |                    |
+            |                    |
+            +--------------------+
+            */
+            h = t.addGate()
+            h.open(e)
+            w = h.addWindow("1,2,3 testing")
+            w.activeP.sx = 0.8
+            w.activeP.sy = 0.6
+            w.activeP.xoff = 0.1
+            w.activeP.yoff = 0.2
+            let p1 = w.activeP,
+                p2 = p1.split("rightleft"),
+                p3 = p1.split("topbottom"),
+                p4 = p3.split("rightleft")
+            expect(p4.yoff+p4.sy).to.equal(p2.yoff)
+            expect(p3.sy).to.equal(0.15)
+            window.toBeFit = new Set([])
+            p2.layout.moveBorder(p2, "top", 0.6)
+            expect(p1.sy).to.equal(0.4)
+            expect(p3.sy).to.equal(0.2)
+            expect(p4.sy).to.equal(0.2)
+            expect(p4.yoff+p4.sy).to.be.closeTo(p2.yoff, 0.000001)
         })
     })
 })

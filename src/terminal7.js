@@ -305,7 +305,6 @@ export class Terminal7 {
             return
         }
         if (pane === undefined)  {
-            console.log(`igonring touch event ${type} on non-pane element: `, e )
             return
         }
         let lx = (x / document.body.offsetWidth - pane.xoff) / pane.sx,
