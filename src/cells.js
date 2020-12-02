@@ -539,8 +539,11 @@ export class Pane extends Cell {
                 this.d.send(String.fromCharCode(3))
                 return false
             }
-            if (ev.metaKey && (ev.key != "Shift") && (ev.key != "Meta"))
+            if (ev.metaKey && (ev.key != "Shift") && (ev.key != "Meta")) {
+                // ensure help won't pop
+                terminal7.metaPressStart = Number.MAX_VALUE
                 return this.handleMetaKey(ev)
+            }
             else
                 return true
         })

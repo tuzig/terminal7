@@ -164,7 +164,6 @@ export class Terminal7 {
         resetHost.querySelector(".close").addEventListener('click',  ev =>
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
         this.goHome()
-        // settip up keys help
         document.addEventListener("keydown", ev => {
             if (ev.key == "Meta") {
                 this.metaPressStart = Date.now()
@@ -180,10 +179,8 @@ export class Terminal7 {
                 this.metaPressStart = Number.MAX_VALUE
         })
         document.addEventListener("keyup", ev => {
-            // hide the keys help when releasing the command key
-            if ((ev.key == "Meta") && 
-                (this.metaPressStart < Number.MAX_VALUE))
-                document.getElementById('keys-help').classList.add('hidden')
+            // hide the keys help when releasing any key
+            document.getElementById('keys-help').classList.add('hidden')
             this.metaPressStart = Number.MAX_VALUE
         })
         // Load gates from local storage
