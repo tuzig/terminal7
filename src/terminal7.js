@@ -265,17 +265,22 @@ export class Terminal7 {
      */
     onTouch(type, ev) {
         let e = ev.target,
-            pane = e.p
+            pane = e.p,
+            nameB = e.gate && e.gate.nameE.parentNode.parentNode
         if (type == "start") {
             this.touch0 = Date.now() 
             this.firstT = this.lastT = ev.changedTouches
             window.toBeFit = new Set([])
+            if (e.gate instanceof Gate)
+                nameB.classList.add("pressed")
             return 
         } else if (type == "cancel") {
             this.touch0 = null
             this.firstT = []
             this.lastT = []
             this.gesture = null
+            if (e.gate instanceof Gate)
+                nameB.classList.remove("pressed")
             return
         }
 
@@ -297,8 +302,11 @@ export class Terminal7 {
         if (e.gate instanceof Gate) {
             let longPress = terminal7.conf.ui.quickest_press
             if (deltaT > longPress) {
+                nameB.classList.remove("pressed")
                 e.gate.edit()
             }
+            if (type == 'end')
+                nameB.classList.remove("pressed")
             return
         }
         if (pane === undefined)  {

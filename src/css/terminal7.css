@@ -418,3 +418,4 @@ td {
     position: fixed;
     z-index: 3;
 }    
+.pressed { box-shadow: 4px 4px 5px 0 #F952F9; }
