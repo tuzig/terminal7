@@ -122,16 +122,16 @@ export class Gate {
     }
     focus() {
         // first hide the current focused gate
+        document.getElementById("home-button").classList.remove("on")
+        document.getElementById("trash-button").classList.remove("off")
+        document.getElementById("search-button").classList.remove("off")
         let activeG = terminal7.activeG
         if (activeG) {
             activeG.e.classList.add("hidden")
         }
         this.e.classList.remove("hidden")
         terminal7.activeG = this
-        if (this.activeW)
-            this.activeW.focus()
-        document.getElementById("home-button").classList.remove("on")
-        document.getElementById("trash-button").classList.remove("off")
+        this.activeW.focus()
     }
     stopBoarding() {
         if (!this.boarding)
@@ -291,16 +291,14 @@ export class Gate {
             if (this.nameE != null)
                 this.nameE.classList.remove("failed")
             this.notify("Authorization accepted")
-            this.focus()
             if (state && (state.windows.length > 0)) {
-                console.log("reloading state: ", state)
+                this.notify("Restoring state")
+                console.log("Restoring state: ", state)
                 this.restoreState(state)
-            } else {
-                this.clear()
+            } else
                 // add the first window
-                let w = this.addWindow()
-                w.focus()
-            }
+                this.activeW = this.addWindow()
+            this.focus()
         }
     }
     restoreState(state) {
@@ -394,6 +392,7 @@ export class Gate {
      */
     clear() {
         this.windows.forEach(w => w.close(false))
+        this.e.querySelector(".tabbar-names").innerHTML = ""
         this.e.querySelectorAll(".window").forEach(e => e.remove())
         this.windows = []
         this.breadcrumbs = []
