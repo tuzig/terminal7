@@ -3,6 +3,7 @@
  * touchable terminal multiplexer running over wertc's data channels.
  */
 import { Gate } from './gate.js'
+import { Window } from './window.js'
 import { v4 as uuidv4 } from 'uuid'
 import * as Hammer from 'hammerjs'
 import * as TOML from '@iarna/toml'
@@ -273,6 +274,8 @@ export class Terminal7 {
             window.toBeFit = new Set([])
             if (e.gate instanceof Gate)
                 nameB.classList.add("pressed")
+            if (e.w instanceof Window)
+                e.classList.add("pressed")
             return 
         } else if (type == "cancel") {
             this.touch0 = null
@@ -309,6 +312,21 @@ export class Terminal7 {
                 nameB.classList.remove("pressed")
             return
         }
+        if (e.w instanceof Window) {
+            let longPress = terminal7.conf.ui.quickest_press
+            if (deltaT > longPress) {
+                e.classList.remove("pressed")
+                e.w.rename()
+                return
+            }
+            if (type == 'end') {
+                e.classList.remove("pressed")
+                e.w.focus()
+            }
+            return
+        }
+
+
         if (pane === undefined)  {
             return
         }

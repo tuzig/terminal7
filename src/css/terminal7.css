@@ -181,7 +181,7 @@ nav .on { color: #00FA00 !important; }
 .tabbar {
     height: 41pt;
     bottom: 44pt;
-    color: #00fafa;
+    color: #373702;
 }
 .tabbar input {
   font-size: 16pt;
@@ -418,4 +418,5 @@ td {
     position: fixed;
     z-index: 3;
 }    
-.pressed { box-shadow: 4px 4px 5px 0 #F952F9; }
+hosts .pressed { box-shadow: 4px 4px 5px 0 #F952F9; }
+.tabbar-names .pressed { font-weight: bold; }
