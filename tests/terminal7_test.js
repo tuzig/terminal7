@@ -1,5 +1,5 @@
 import { Terminal7 } from "../src/terminal7.js"
-import { Cell } from "../src/cells.js"
+import { Cell, Pane } from "../src/cells.js"
 import { assert } from "chai"
 
 
@@ -93,12 +93,34 @@ describe("terminal7", function() {
         })
     })
     describe("window", () => {
-        it("is added with a cell", function() {
-            let h = t.addGate()
+        var h, w, p0
+        beforeEach(() => {
+            h = t.addGate()
             h.open(e)
-            let w = h.addWindow("gothic")
+            w = h.addWindow("gothic")
+            w.activeP.sx = 0.8
+            w.activeP.sy = 0.6
+            w.activeP.xoff = 0.1
+            w.activeP.yoff = 0.2
+            p0 = w.activeP
+        })
+        it("is added with a cell", function() {
             assert.exists(h.windows[0])
             assert.exists(h.windows[0].name, "gothic")
+        })
+        it("can move it's focus a pane to the left and back", () => {
+            var p1 = p0.split("topbottom")
+            w.moveFocus("left")
+            expect(w.activeP).to.equal(p0)
+            w.moveFocus("right")
+            expect(w.activeP).to.equal(p1)
+        })
+        it("can move it's focus a pane up and back", () => {
+            var p1 = p0.split("rightleft")
+            w.moveFocus("up")
+            expect(w.activeP).to.equal(p0)
+            w.moveFocus("down")
+            expect(w.activeP).to.equal(p1)
         })
     })
 

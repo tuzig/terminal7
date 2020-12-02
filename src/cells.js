@@ -951,6 +951,19 @@ export class Pane extends Cell {
             break
         case "f":
             f = () => this.toggleSearch()
+            break;
+        case "ArrowLeft":
+            f = () => this.w.moveFocus("left")
+            break;
+        case "ArrowRight":
+            f = () => this.w.moveFocus("right")
+            break;
+        case "ArrowUp":
+            f = () => this.w.moveFocus("up")
+            break;
+        case "ArrowDown":
+            f = () => this.w.moveFocus("down")
+            break;
         }
         if (f != null) {
             f()

@@ -1,4 +1,4 @@
-import { Layout } from './cells.js'
+import { Layout, Pane } from './cells.js'
 import * as Hammer from 'hammerjs'
 
 const ABIT = 10
@@ -11,7 +11,6 @@ export class Window {
         this.rootLayout = null
         this.e = null
         this.activeP = null
-        this.l = null // the first layout
     }
     /*
      * Window.open opens creates the window's element and the first layout and
@@ -64,8 +63,6 @@ export class Window {
         let l = new Layout(dir, basedOn)
         l.id = terminal7.cells.length
         terminal7.cells.push(l)
-        if (this.l == null)
-            this.l = l
         if (this.rootLayout == null)
             this.rootLayout = l
         return l
@@ -151,7 +148,46 @@ export class Window {
         this.gate.goBack(closeGate)
     }
     fit() {
-        if (this.l)
-            this.l.fit()
+        if (this.rootLayout)
+            this.rootLayout.fit()
+    }
+    moveFocus(where) {
+        var s, off, b,
+            un = { top: "bottom", bottom: "top",
+                   right: "left", left: "right"
+            },
+            a = this.activeP,
+            b = a.t.buffer.active,
+            x = a.xoff + b.cursorX * a.sx / a.t.cols,
+            y = a.yoff + b.cursorY * a.sy / a.t.rows,
+            match = null,
+            nextPane = null
+        switch(where) {
+            case "left":
+                match = p => ((Math.abs(p.xoff + p.sx - a.xoff) < 0.00001)
+                    && (p.yoff <= y) && (p.yoff+p.sy >= y))
+                break
+            case "right":
+                match = p => ((Math.abs(a.xoff + a.sx - p.xoff) < 0.00001)
+                    && (p.yoff <= y) && (p.yoff+p.sy >= y))
+                break
+            case "up":
+                match = p => ((Math.abs(p.yoff + p.sy - a.yoff) < 0.00001)
+                    && (p.xoff <= x) && (p.xoff+p.sx >= x))
+                break
+            case "down":
+                match = p => ((Math.abs(a.yoff + a.sy - p.yoff) < 0.00001)
+                    && (p.xoff <= x) && (p.xoff+p.sx >= x))
+                break
+        }
+        terminal7.cells.forEach(c => {
+            if ((nextPane == null) && (c instanceof Pane)
+                && c.w && (c.w == this))
+                if (match(c))
+                    nextPane = c
+        })
+        if (nextPane)
+            nextPane.focus()
+            
     }
 }
