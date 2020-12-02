@@ -317,6 +317,11 @@ nav .on { color: #00FA00 !important; }
     text-align: left;
     align: left;
 }
+label {
+    font-size: 18px;
+    line-height: 24px;
+    font-weight: 600;
+}
 .modal form input[type=text], .modal form input[type=password],
 .modal form textarea {
   width: 100%;

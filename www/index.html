@@ -28,10 +28,10 @@
       <div id="add-host" class="hidden modal border" >
           <form>
             <h2>Add a Host</h2>
-            <label for="uname"><b>Address</b></label>
+            <label for="uname">Address</label>
             <input type="text" placeholder="IP or host name" name="hostaddr"
                 required="required">
-            <label for="uname"><b>Name</b></label>
+            <label for="uname">Name</label>
             <input type="text" placeholder="Enter Hostname" name="hostname"
                 required="required">
             <input type="checkbox" checked="checked" name="remember">
@@ -49,18 +49,18 @@
       <div id="copy-token" class="hidden modal border" >
         <form id="copy-token-form">
             <p>We're sorry, but the host at <code id="ct-address"> </code>
-                (aka <b id="ct-name"></b>) refused our token.
+                (aka <b id="ct-name">) refused our token.
                 Most likely because the token is not in:
-                <b id="ct-conffile"> ~/.webexec/authorized_tokens</b>
+                <b id="ct-conffile"> ~/.webexec/authorized_tokens
             </p>
             <input type="text" name="token" readonly
                 style="width: 25em; margin: 8px auto;">
             <p>To proceed, you can either copy the token using another terminal
                 or we can use ssh to take care of that for you:
             </p>
-            <label for="uname"><b>Username</b></label>
+            <label for="uname">Username</label>
             <input type="text" placeholder="your sysem username" name="uname" required>
-            <label for="pass"><b>Password</b></label>
+            <label for="pass">Password</label>
             <input type="password" placeholder="your password" name="pass" required>
             <nav class="three-buttons">
                 <button type="button" class="close"><i class="f7-icons">xmark</i></button>
@@ -72,11 +72,11 @@
       <div id="reset-host" class="hidden modal border" >
         <form>
             <p>Reseting our agent on host <code id="rh-address"> </code>
-                (aka <b id="rh-name"></b>) requires your crendetials.
+                (aka <b id="rh-name">) requires your crendetials.
             </p>
-            <label for="uname"><b>Username</b></label>
+            <label for="uname">Username</label>
             <input type="text" placeholder="your sysem username" name="uname" required>
-            <label for="pass"><b>Password</b></label>
+            <label for="pass">Password</label>
             <input type="password" placeholder="your password" name="pass" required>
             <nav class="two-buttons">
                 <button type="button" class="close"><i class="f7-icons">xmark</i></button>
@@ -96,10 +96,10 @@
       <div id="edit-host" class="hidden modal border" >
           <form id="edit-host-form">
             <h2>Edit Host</h2>
-            <label for="uname"><b>Address</b></label>
+            <label for="uname">Address</label>
             <input type="text" placeholder="IP or host name" name="hostaddr"
                 required="required">
-            <label for="uname"><b>Name</b></label>
+            <label for="uname">Name</label>
             <input type="text" placeholder="Enter Hostname" name="hostname"
                 required="required">
             <nav class="four-buttons">
@@ -198,9 +198,9 @@
                 installation guide</a>.</p>
           <p>If it is installed we can use SSH and start it for you:
           </p>
-          <label for="uname"><b>Username</b></label>
+          <label for="uname">Username</label>
           <input type="text" placeholder="your sysem username" name="uname" required>
-          <label for="pass"><b>Password</b></label>
+          <label for="pass">Password</label>
           <input type="password" placeholder="your password" name="pass" required>
           <nav class="two-buttons">
               <button type="button" class="close"><i class="f7-icons">xmark</i></button>
