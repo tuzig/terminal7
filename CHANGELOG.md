@@ -13,12 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dividers that show border can move
 - version information and link to the change log
 - resending control messages on timeout 
+- tactile fedback for lng press
+- pane navigation keys
 
 ### Fixed
 
 - Mutitasking resizing now works as expected
 - replacing cordova with capacitor
 - `npm run build` works 
+- "remember host" label look
+- notifications look
+- complex layout resizing
 
 ## [0.9.3] - 2020/11/17
 
