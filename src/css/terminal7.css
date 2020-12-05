@@ -60,7 +60,8 @@ button {
     list-style:none;
 }
 .border {
-    border: 1px solid #D9F505;
+    border-width: 1px;
+    border-style: solid;
     border-radius: 6px;
 }
 p a {
@@ -83,6 +84,7 @@ a {
     transform: translate(-50%, 0);
     width: 40em;
     max-width: 80%;
+    border-color: #F952F9;
 }
 .modal p, .modal td {
     font-size: 16pt;
@@ -117,6 +119,7 @@ a {
     background-color: black;
     border: 1px solid #373702;
     border-radius: 6px;
+    border-color: #D9F505;
 }
 .layout {
     position: fixed;
@@ -349,6 +352,7 @@ label {
     z-index: 6;
     width: 80%;
     background-color: #271D30;
+    border-color: #F952F9;
     text-align: left;
 }
 #log-msgs {
