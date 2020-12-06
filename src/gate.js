@@ -136,6 +136,11 @@ export class Gate {
     stopBoarding() {
         if (!this.boarding)
             return
+        // clear all pending messages
+        for (var id in this.msgs) {
+            clearTimeout(this.msgs[id])
+            delete this.msgs[id]
+        }
         this.boarding = false
         document.getElementById("downstream-indicator").classList.add("failed")
         terminal7.onDisconnect(this)
@@ -249,6 +254,9 @@ export class Gate {
      * channel open or adds it to the queue if we're early to the party
      */
     sendCTRLMsg(msg) {
+        const timeout = parseInt(terminal7.conf.exec.timeout),
+              retries = parseInt(terminal7.conf.exec.retries),
+              now = Date.now()
         // helps us ensure every message gets only one Id
         if (msg.message_id === undefined) 
             msg.message_id = this.lastMsgId++
@@ -258,14 +266,28 @@ export class Gate {
         if (!this.cdc || this.cdc.readyState != "open")
             this.pendingCDCMsgs.push(msg)
         else {
-            const s = JSON.stringify(msg)
+            // message stays frozen when retrting
+            const s = msg.payload || JSON.stringify(msg)
             console.log("sending ctrl message ", s)
-            this.msgs[msg.message_id] = {msg: s, time: msg.time, retries: 0}
-            try {
-                this.cdc.send(s)
-            } catch(err) {
-                //TODO: this is silly, count proper retries
-                console.log("Got error trying to send ctrl message", err)
+            if (msg.tries == undefined) {
+                msg.tries = 0
+                msg.payload = s
+            } else if (msg.tries == 1)
+                this.notify(
+                     `#${msg.message_id} no ACK in ${timeout}ms, trying ${retries-1} more times`)
+            if (msg.tries++ < retries) {
+                console.log(`sending ctrl msg ${msg.message_id} for ${msg.tries} time`)
+                try {
+                    this.cdc.send(s)
+                } catch(err) {
+                    this.notify(`Sending ctrl message failed: ${err}`)
+                }
+                this.msgs[msg.message_id] = terminal7.run(
+                      () => this.sendCTRLMsg(msg), timeout)
+            } else {
+                this.notify(
+                     `#${msg.message_id} tried ${retries} times and failed sending control message`)
+                this.stopBoarding()
             }
         }
         return msg.message_id
@@ -373,6 +395,7 @@ export class Gate {
             // handle Ack
             if ((msg.type == "ack") || (msg.type == "nack")) {
                 let i = msg.args.ref
+                clearTimeout(this.msgs[i])
                 delete this.msgs[i]
                 const handler = this.onack[i]
                 console.log("got cdc message:",  msg)
@@ -396,6 +419,7 @@ export class Gate {
         this.e.querySelectorAll(".window").forEach(e => e.remove())
         this.windows = []
         this.breadcrumbs = []
+        this.msgs = {}
     }
 
     /*
@@ -527,21 +551,5 @@ export class Gate {
     fit() {
         if (this.boarding)
             this.windows.forEach(w => w.fit())
-    }
-    periodic(now) {
-        if (!this.boarding)
-            return
-        for (const [id, m] of Object.entries(this.msgs)) {
-            if (now - m.time > terminal7.conf.exec.timeout)
-                if (m.retries++ > terminal7.conf.exec.retries) {
-                    this.notify(
-                         `Tried ${m.retries} times and failed sending control message`)
-                    this.stopBoarding()
-                }
-                else {
-                    this.cdc.send(m.msg)
-                    m.time = Date.now()
-                }
-        }
     }
 }

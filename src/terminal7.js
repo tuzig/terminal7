@@ -515,7 +515,7 @@ export class Terminal7 {
         // clear pending messages to let the user start fresh
         this.pendingCDCMsgs = []
         e.querySelector("h1").textContent =
-            `${gate.name} communication failed`
+            `${gate.name} communication failure`
         e.querySelector("form").addEventListener('submit', ev => {
             this.clear()
             gate.resetPC()
@@ -615,13 +615,13 @@ export class Terminal7 {
         terminal7.logDisplay(true)
     }
     run(cb, delay) {
-        var i = this.timeouts.length
-        this.timeouts.push(
-            window.setTimeout(ev => {
+        var i = this.timeouts.length,
+            r = window.setTimeout(ev => {
                 this.timeouts.splice(i, 1)
                 cb(ev)
             }, delay)
-        )
+        this.timeouts.push(r)
+        return r
     }
     close() {
         this.timeouts.forEach(t => window.clearTimeout(t))
