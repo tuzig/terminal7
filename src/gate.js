@@ -296,10 +296,10 @@ export class Gate {
      * authenticate send the authentication message over the control channel
      */
     authenticate() {
-        
         let msgId = this.sendCTRLMsg({
             type: "auth",
-            args: {token: terminal7.token}
+            args: {token: terminal7.token,
+                   marker: this.marker || -1}
         })
         this.onack[msgId] = (isNack, state) => {
             if (isNack) {
@@ -475,7 +475,6 @@ export class Gate {
         })
         return { windows: wins }
     }
-
     sendState(cb) {
         if (this.updateID == null)
             this.updateID = terminal7.run(_ => { 
@@ -551,5 +550,18 @@ export class Gate {
     fit() {
         if (this.boarding)
             this.windows.forEach(w => w.fit())
+    }
+    shutdown(cb) {
+        let msg = {
+            type: "mark",
+            args: null
+        }
+        id = this.sendCTRLMsg(msg)
+        onAck[id] = (payload) => {
+            this.marker = ParseInt(payload)
+            this.close()
+            if (cb)
+                cb()
+        }
     }
 }

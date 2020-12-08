@@ -631,4 +631,15 @@ export class Terminal7 {
         var now = new Date()
         this.gates.forEach(g => g.periodic(now))
     }
+    /*
+     * shuntdown gets a marker from the server so we can use it to recover
+     * panes' output
+     */
+    shutdown() {
+        this.gates.forEach(g => {
+            if (g.boarding)
+                g.shutdown()
+        })
+    }
+
 }
