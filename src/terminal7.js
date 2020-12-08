@@ -521,7 +521,6 @@ export class Terminal7 {
             gate.resetPC()
         })
         e.querySelector(".close").addEventListener('click', ev => {
-            gate.close()
             terminal7.goHome()
         })
         this.e.appendChild(e)
