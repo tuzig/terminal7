@@ -138,7 +138,7 @@ export class Gate {
             return
         // clear all pending messages
         for (var id in this.msgs) {
-            clearTimeout(this.msgs[id])
+            window.clearTimeout(this.msgs[id])
             delete this.msgs[id]
         }
         this.boarding = false
@@ -286,8 +286,7 @@ export class Gate {
                       () => this.sendCTRLMsg(msg), timeout)
             } else {
                 this.notify(
-                     `#${msg.message_id} tried ${retries} times and failed sending control message`)
-                this.stopBoarding()
+                     `#${msg.message_id} tried ${retries} times and given up`)
             }
         }
         return msg.message_id
@@ -325,7 +324,8 @@ export class Gate {
     }
     restoreState(state) {
         let focused = false
-        console.log("restoring state: ", state)
+        this.notify("Restoring state")
+        console.log("Restoring state: ", state)
         state.windows.forEach(w =>  {
             let win = this.addWindow(w.name, w.layout)
             if (w.active) {
@@ -395,7 +395,7 @@ export class Gate {
             // handle Ack
             if ((msg.type == "ack") || (msg.type == "nack")) {
                 let i = msg.args.ref
-                clearTimeout(this.msgs[i])
+                window.clearTimeout(this.msgs[i])
                 delete this.msgs[i]
                 const handler = this.onack[i]
                 console.log("got cdc message:",  msg)
@@ -428,10 +428,7 @@ export class Gate {
     resetPC() {
         this.boarding = false
         this.clear()
-        this.sendState(() => {
-            this.pc.close()
-            this.connect()
-        })
+        this.connect()
     }
     /*
      * close closes the peer connection and removes the host from the UI
@@ -551,17 +548,18 @@ export class Gate {
         if (this.boarding)
             this.windows.forEach(w => w.fit())
     }
-    shutdown(cb) {
+    disengage(cb) {
         let msg = {
-            type: "mark",
-            args: null
-        }
-        id = this.sendCTRLMsg(msg)
-        onAck[id] = (payload) => {
-            this.marker = ParseInt(payload)
-            this.close()
-            if (cb)
-                cb()
+                type: "mark",
+                args: null
+            },
+            id = this.sendCTRLMsg(msg)
+
+        this.onack[id] = (nack, payload) => {
+            this.marker = parseInt(payload)
+            console.log("got a marker", this.marker)
+            // this.close()
+            if (cb) cb()
         }
     }
 }

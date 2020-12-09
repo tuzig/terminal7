@@ -14,7 +14,7 @@ import { dialogAddOn } from 'codemirror/addon/dialog/dialog.js'
 import { formatDate } from './utils.js'
 import { Plugins } from '@capacitor/core'
 
-const { Network } = Plugins
+const { Network, App, BackgroundTask } = Plugins
 
 const DEFAULT_DOTFILE = `[theme]
 foreground = "#00FAFA"
@@ -87,7 +87,6 @@ export class Terminal7 {
                 .addEventListener("click", ev => {
                     this.logDisplay(document.getElementById("log")
                                     .classList.contains("fade-out"))
-                    this.focus()
                 })
         document.getElementById("search-button")
                 .addEventListener("click", ev => 
@@ -191,7 +190,22 @@ export class Terminal7 {
                 p.store = true
                 this.addGate(p)
             })
-        window.setInterval(_ => this.periodic(), 2000)
+        // window.setInterval(_ => this.periodic(), 2000)
+        App.addListener('appStateChange', state => {
+            console.log(state)
+            if (!state.isActive) {
+                let taskId = BackgroundTask.beforeExit(async () => {
+                    this.notify("Benched. Disengaging from all peers.")
+                    this.disengage(() => 
+                        BackgroundTask.finish({taskId}))
+                })
+            }
+            else {
+                if (this.activeG)
+                    this.activeG.connect()
+            }
+        })
+            
         // Last one: focus
         this.focus()
     }
@@ -635,11 +649,21 @@ export class Terminal7 {
      * shuntdown gets a marker from the server so we can use it to recover
      * panes' output
      */
-    shutdown() {
-        this.gates.forEach(g => {
-            if (g.boarding)
-                g.shutdown()
-        })
-    }
+    disengage(cb) {
+        var count = 0
 
+        this.gates.forEach(g => {
+            if (g.boarding) {
+                count++
+                g.disengage(() => count--)
+            }
+        })
+        let callCB = () => terminal7.run(() => {
+            if (count == 0)
+                cb()
+             else 
+                 callCB()
+        }, 10)
+        callCB()
+    }
 }
