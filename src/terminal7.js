@@ -192,7 +192,6 @@ export class Terminal7 {
             })
         // window.setInterval(_ => this.periodic(), 2000)
         App.addListener('appStateChange', state => {
-            console.log(state)
             if (!state.isActive) {
                 let taskId = BackgroundTask.beforeExit(async () => {
                     this.notify("Benched. Disengaging from all peers.")
@@ -201,8 +200,11 @@ export class Terminal7 {
                 })
             }
             else {
-                if (this.activeG)
+                this.notify("Active ☀️")
+                if (this.activeG) {
+                    this.activeG.boarding = false
                     this.activeG.connect()
+                }
             }
         })
             
@@ -523,29 +525,31 @@ export class Terminal7 {
      * onDisconnect is called when a gate disconnects.
      */
     onDisconnect(gate) {
-        let e = document.getElementById("disconnect-template")
-        e = e.content.cloneNode(true)
-        this.clear()
-        // clear pending messages to let the user start fresh
-        this.pendingCDCMsgs = []
-        e.querySelector("h1").textContent =
-            `${gate.name} communication failure`
-        e.querySelector("form").addEventListener('submit', ev => {
+        this.run(() => {
+            // if things are back to normal, like in a reconnect, do nothing
+            if (this.activeG.boarding)
+                return
+            let e = document.getElementById("disconnect-template")
+            e = e.content.cloneNode(true)
             this.clear()
-            gate.resetPC()
-        })
-        e.querySelector(".close").addEventListener('click', ev => {
-            gate.close()
-            terminal7.goHome()
-        })
-        this.e.appendChild(e)
+            // clear pending messages to let the user start fresh
+            this.pendingCDCMsgs = []
+            e.querySelector("h1").textContent =
+                `${gate.name} communication failure`
+            e.querySelector("form").addEventListener('submit', ev => {
+                this.clear()
+                gate.resetPC()
+            })
+            e.querySelector(".close").addEventListener('click', ev => {
+                terminal7.goHome()
+            })
+            this.e.appendChild(e)
+        }, 500)
     }
     /*
      * focus restores the focus to the ative pane, if there is one
      */
-    focus(gate) {
-        if (gate)
-            this.activeG = gate
+    focus() {
         if (this.activeG && this.activeG.activeW &&
             this.activeG.activeW.activeP)
             this.activeG.activeW.activeP.focus()
@@ -643,26 +647,31 @@ export class Terminal7 {
     }
     periodic() {
         var now = new Date()
-        this.gates.forEach(g => g.periodic(now))
+        this.gates.forEach(g => {
+            if (g.periodic instanceof Function) 
+                g.periodic(now)
+        })
     }
     /*
-     * shuntdown gets a marker from the server so we can use it to recover
-     * panes' output
+     * disengage gets each active gate to disengae
      */
     disengage(cb) {
         var count = 0
-
         this.gates.forEach(g => {
             if (g.boarding) {
                 count++
-                g.disengage(() => count--)
+                g.disengage(() => {
+                    count--
+                    g.pc.close()
+                    g.pc == null
+                })
             }
         })
         let callCB = () => terminal7.run(() => {
             if (count == 0)
                 cb()
              else 
-                 callCB()
+                callCB()
         }, 10)
         callCB()
     }

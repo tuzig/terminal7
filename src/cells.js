@@ -672,12 +672,11 @@ export class Pane extends Cell {
         this.d.onclose = e => {
             console.log("data channel close")
             this.state = "disconnected"
-            if (this.gate.boarding)
+            if (this.gate.marker == -1)
                 this.close()
         }
         this.d.onopen = () => {
             this.state = "opened"
-            // TODO: set our size by sending "refresh-client -C <width>x<height>"
             terminal7.run(() => {
                 if (this.state == "opened") {
                     this.gate.notify("Data channel is opened, but no first message")
@@ -694,16 +693,10 @@ export class Pane extends Cell {
         var enc = new TextDecoder("utf-8")
         if (this.state == "opened") {
             var msg = enc.decode(m.data)
-            console.log(`Got first DC msg: ${msg}`)
             this.state = "connected"
             this.webexecID = parseInt(msg)
             this.gate.onPaneConnected(this)
         }
-        /* TODO: do we need a buffer?
-        else if (this.state == "disconnected") {
-            this.buffer.push(new Uint8Array(m.data))
-        }
-        */
         else if (this.state == "connected") {
             this.write(new Uint8Array(m.data))
         }

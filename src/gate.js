@@ -1,5 +1,6 @@
 import * as Hammer from 'hammerjs'
 import { Window } from './window.js'
+import { Pane } from './cells.js'
 
 import { Plugins } from '@capacitor/core'
 const { Browser, Clipboard } = Plugins
@@ -31,6 +32,7 @@ export class Gate {
         this.updateID  = null
         this.timeoutID = null
         this.msgs = {}
+        this.marker = -1
     }
 
     /*
@@ -49,7 +51,7 @@ export class Gate {
             t = t.content.cloneNode(true)
             t.querySelector(".add-tab").addEventListener('click', _ => {
                 if (this.windows.length < 3) {
-                    let w = this.addWindow()
+                    let w = this.addWindow("", true)
                     if (this.windows.length == 3)
                         this.e.querySelector(".add-tab").classList.add("off")
                     w.focus()
@@ -133,6 +135,7 @@ export class Gate {
         terminal7.activeG = this
         this.activeW.focus()
     }
+    // stops all communication if 
     stopBoarding() {
         if (!this.boarding)
             return
@@ -143,11 +146,6 @@ export class Gate {
         }
         this.boarding = false
         document.getElementById("downstream-indicator").classList.add("failed")
-        terminal7.onDisconnect(this)
-    }
-    startBoarding() {
-        this.boarding = true
-        document.getElementById("downstream-indicator").classList.remove("failed")
     }
     /*
      * updateConnectionState(state) is called on peer connection
@@ -158,14 +156,20 @@ export class Gate {
             this.notify("WebRTC starting")
         else if (state == "connected") {
             this.notify("WebRTC connected")
-            this.startBoarding()
+            this.boarding = true
+            document.getElementById("downstream-indicator").classList.remove("failed")
         }
         else if (state == "disconnected")
             // TODO: add warn class
             this.notify("WebRTC disconnected and may reconnect or close")
         else if (this.boarding) {
-            this.stopBoarding()
-            this.notify("WebRTC closed")
+            if (this.marker == -1) {
+                this.notify("WebRTC closed")
+                this.stopBoarding()
+                terminal7.onDisconnect(this)
+            } else {
+                this.stopBoarding()
+            }
         }
     }
     /*
@@ -190,6 +194,7 @@ export class Gate {
             .catch (e => {
                 this.notify(`Failed to set remote description: ${e}`)
                 this.stopBoarding()
+                terminal7.onDisconnect(this)
             })
     }
     /*
@@ -208,7 +213,6 @@ export class Gate {
         if (this.pc != null) {
             this.pc.close()
         }
-        this.clear()
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: 'stun:stun2.l.google.com:19302' }
                 ] })
@@ -298,7 +302,7 @@ export class Gate {
         let msgId = this.sendCTRLMsg({
             type: "auth",
             args: {token: terminal7.token,
-                   marker: this.marker || -1}
+                   marker: this.marker}
         })
         this.onack[msgId] = (isNack, state) => {
             if (isNack) {
@@ -312,57 +316,67 @@ export class Gate {
             if (this.nameE != null)
                 this.nameE.classList.remove("failed")
             this.notify("Authorization accepted")
-            if (state && (state.windows.length > 0)) {
-                this.notify("Restoring state")
-                console.log("Restoring state: ", state)
-                this.restoreState(state)
-            } else
-                // add the first window
-                this.activeW = this.addWindow()
-            this.focus()
+            this.restoreState(state)
+            this.marker = -1
         }
     }
     restoreState(state) {
         let focused = false
         this.notify("Restoring state")
         console.log("Restoring state: ", state)
-        state.windows.forEach(w =>  {
-            let win = this.addWindow(w.name, w.layout)
-            if (w.active) {
-                focused = true
-                win.focus()
-            }
-        })
+        let none = true
+        if (this.marker != -1) {
+            // if there's a marker it's a reconnect, re-open all gate's dcs
+            terminal7.cells.forEach(c => {
+                if (c instanceof Pane && c.gate == this) {
+                    none = false
+                    c.openDC()
+                }
+            })
+            focused = true
+        } else if (state && state.windows.length > 0) {
+            none = false
+            state.windows.forEach(w =>  {
+                let win = this.addWindow(w.name)
+                win.restoreLayout(w.layout)
+                if (w.active) {
+                    focused = true
+                    win.focus()
+                }
+            })
+        }
+        if (none) {
+            // add the first window
+            this.activeW = this.addWindow("", true)
+            this.focus()
+        }
+        this.focus()
         if (!focused)
             this.windows[0].focus()
-        if (this.windows.length >= terminal7.conf.ui.max_tabs)
-            this.e.querySelector(".add-tab").classList.add("off")
     }
     /*
-     * Adds a window, complete with a first layout and pane
+     * Adds a window, opens it and returns it
      */
-    addWindow(name, layout) {
-        console.log("adding Window: " + name, layout)
+    addWindow(name, createPane) {
+        console.log(`adding Window: ${name}`)
         let id = this.windows.length
         let w = new Window({name:name, gate: this, id: id})
         this.windows.push(w)
+        if (this.windows.length >= terminal7.conf.ui.max_tabs)
+            this.e.querySelector(".add-tab").classList.add("off")
         w.open(this.e)
-        if (layout instanceof Object) {
-            w.restoreLayout(layout)
-        } else {
-            // empty window: create the first layout and pane
-            // filling the entire top of the screen
+        if (createPane) {
+        // empty window: create the first layout and pane
+        // filling the entire top of the screen
             let tabbar = this.e.querySelector(".tabbar"),
                 r = tabbar.getBoundingClientRect(),
                 sy = (r.y + 2)/document.body.offsetHeight
-            console.log("starting fresh", r, sy)
             let paneProps = {sx: 1.0, sy: sy,
                              xoff: 0, yoff: 0,
                              w: w,
                              gate: this},
                 layout = w.addLayout("TBD", paneProps)
             w.activeP = layout.addPane(paneProps)
-            w.rootLayout = layout
         }
         return w
     }
@@ -376,7 +390,6 @@ export class Gate {
         cdc.onclose = () => {
             if (this.boarding) {
                 this.notify('Control Channel is closed')
-                this.stopBoarding()
             }
         }
         cdc.onopen = () => {
@@ -491,6 +504,7 @@ export class Gate {
         terminal7.logDisplay(false)
         //enable search
         document.getElementById("search-button").classList.remove("off")
+        document.getElementById("trash-button").classList.remove("off")
     }
     copyToken() {
         let ct = document.getElementById("copy-token"),
@@ -548,6 +562,15 @@ export class Gate {
         if (this.boarding)
             this.windows.forEach(w => w.fit())
     }
+    engage() {
+        if (this.boarding) 
+            terminal7.cells.forEach(p => {
+                if (p.openDC instanceof Function)
+                    p.openDC()
+            })
+        else
+            this.connect()
+    }
     disengage(cb) {
         let msg = {
                 type: "mark",
@@ -555,6 +578,7 @@ export class Gate {
             },
             id = this.sendCTRLMsg(msg)
 
+        this.boarding = false
         this.onack[id] = (nack, payload) => {
             this.marker = parseInt(payload)
             console.log("got a marker", this.marker)

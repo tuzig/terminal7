@@ -97,7 +97,7 @@ describe("terminal7", function() {
         beforeEach(() => {
             h = t.addGate()
             h.open(e)
-            w = h.addWindow("gothic")
+            w = h.addWindow("gothic", true)
             w.activeP.sx = 0.8
             w.activeP.sy = 0.6
             w.activeP.xoff = 0.1
@@ -129,7 +129,7 @@ describe("terminal7", function() {
         beforeEach(() => {
             h = t.addGate()
             h.open(e)
-            w = h.addWindow("1,2,3 testing")
+            w = h.addWindow("1,2,3 testing", true)
             w.activeP.sx = 0.8
             w.activeP.sy = 0.6
             w.activeP.xoff = 0.1
@@ -345,7 +345,8 @@ describe("terminal7", function() {
                 ]}
             h = t.addGate()
             h.open(e)
-            w = h.addWindow("restored", state)
+            w = h.addWindow("restored")
+            w.restoreLayout(state)
             expect(w.rootLayout.dir).to.equal("topbottom")
             expect(w.rootLayout.cells[0].yoff).to.equal(0.2)
             expect(w.rootLayout.cells[1].yoff).to.equal(0.5)
@@ -358,7 +359,8 @@ describe("terminal7", function() {
         it("can be restored from a -| layout", () => {
             h = t.addGate()
             h.open(e)
-            w = h.addWindow("restored", {
+            w = h.addWindow("restored")
+            w.restoreLayout({
                 "dir": "topbottom",
                 "cells": [
                     {
@@ -396,7 +398,7 @@ describe("terminal7", function() {
         it("can move a border between panes", function () {
             h = t.addGate()
             h.open(e)
-            w = h.addWindow("1,2,3 testing")
+            w = h.addWindow("1,2,3 testing", true)
             w.activeP.sx = 0.8
             w.activeP.sy = 0.6
             w.activeP.xoff = 0.1
@@ -430,7 +432,7 @@ describe("terminal7", function() {
             */
             h = t.addGate()
             h.open(e)
-            w = h.addWindow("1,2,3 testing")
+            w = h.addWindow("1,2,3 testing", true)
             w.activeP.sx = 0.8
             w.activeP.sy = 0.6
             w.activeP.xoff = 0.1
@@ -463,9 +465,9 @@ describe("terminal7", function() {
             |                    |
             +--------------------+
             */
-            h = t.addGate()
-            h.open(e)
-            w = h.addWindow("1,2,3 testing")
+            const g = t.addGate()
+            g.open(e)
+            w = g.addWindow("1,2,3 testing", true)
             w.activeP.sx = 0.8
             w.activeP.sy = 0.6
             w.activeP.xoff = 0.1
