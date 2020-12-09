@@ -260,8 +260,7 @@ nav .on { color: #00FA00 !important; }
 .zoomed {
     z-index: 4;
     bottom: 22px;
-    left: 0;
-    width: 100%;
+    width: 98%;
 }
 #home:target {
     z-index: 5
