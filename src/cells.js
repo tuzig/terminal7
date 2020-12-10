@@ -143,16 +143,18 @@ export class Cell {
             this.e.appendChild(te)
             document.body.removeChild(this.zoomedE)
             this.zoomedE = null
+            this.w.e.classList.remove("hidden")
         } else {
             let H = document.body.offsetHeight,
                 e = document.createElement('div'),
                 te = this.e.removeChild(this.e.children[0])
             e.classList.add("pane", "zoomed", "focused")
-            e.style.height = `${H - 22}px`
+            e.style.height = `${H - 44}px`
             this.catchFingers(e)
             e.appendChild(te)
             document.body.appendChild(e)
             this.zoomedE = e
+            this.w.e.classList.add("hidden")
         }
         this.focus()
         this.zoomed = !this.zoomed
