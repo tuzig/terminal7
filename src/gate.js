@@ -50,10 +50,8 @@ export class Gate {
         if (t) {
             t = t.content.cloneNode(true)
             t.querySelector(".add-tab").addEventListener('click', _ => {
-                if (this.windows.length < 3) {
+                if (this.windows.length < terminal7.conf.ui.max_tabs) {
                     let w = this.addWindow("", true)
-                    if (this.windows.length == 3)
-                        this.e.querySelector(".add-tab").classList.add("off")
                     w.focus()
                 }
             })
