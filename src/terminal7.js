@@ -194,17 +194,17 @@ export class Terminal7 {
         App.addListener('appStateChange', state => {
             if (!state.isActive) {
                 let taskId = BackgroundTask.beforeExit(async () => {
-                    this.notify("Benched. Disengaging from all peers.")
-                    this.disengage(() => 
-                        BackgroundTask.finish({taskId}))
+                    console.log("Benched. Disengaging from all gates")
+                    this.disengage(() => {
+                        console.log("finished disengaging")
+                        BackgroundTask.finish({taskId})
+                    })
                 })
             }
             else {
-                this.notify("Active ☀️")
-                if (this.activeG) {
-                    this.activeG.boarding = false
+                console.log("Active ☀️")
+                if (this.activeG) 
                     this.activeG.connect()
-                }
             }
         })
             
@@ -525,10 +525,6 @@ export class Terminal7 {
      * onDisconnect is called when a gate disconnects.
      */
     onDisconnect(gate) {
-        this.run(() => {
-            // if things are back to normal, like in a reconnect, do nothing
-            if (this.activeG.boarding)
-                return
             let e = document.getElementById("disconnect-template")
             e = e.content.cloneNode(true)
             this.clear()
@@ -544,7 +540,6 @@ export class Terminal7 {
                 terminal7.goHome()
             })
             this.e.appendChild(e)
-        }, 500)
     }
     /*
      * focus restores the focus to the ative pane, if there is one
@@ -662,8 +657,10 @@ export class Terminal7 {
                 count++
                 g.disengage(() => {
                     count--
-                    g.pc.close()
-                    g.pc == null
+                    if (g.pc != null) {
+                        g.pc.close()
+                        g.pc == null
+                    }
                 })
             }
         })

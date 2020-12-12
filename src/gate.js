@@ -157,17 +157,19 @@ export class Gate {
             this.boarding = true
             document.getElementById("downstream-indicator").classList.remove("failed")
         }
-        else if (state == "disconnected")
+        else if (state == "disconnected") {
             // TODO: add warn class
             this.notify("WebRTC disconnected and may reconnect or close")
+            this.lastDisconnect = Date.now()
+        }
         else if (this.boarding) {
-            if (this.marker == -1) {
+            let now = Date.now()
+            if (now - this.lastDisconnect > 100) {
                 this.notify("WebRTC closed")
                 this.stopBoarding()
                 terminal7.onDisconnect(this)
-            } else {
-                this.stopBoarding()
-            }
+            } else
+                console.log("Ignoring a peer close event after disconnect")
         }
     }
     /*
@@ -208,9 +210,6 @@ export class Gate {
         console.log(`connecting to ${this.name}...`)
         // cleanup
         this.pendingCDCMsgs = []
-        if (this.pc != null) {
-            this.pc.close()
-        }
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: 'stun:stun2.l.google.com:19302' }
                 ] })
@@ -560,16 +559,12 @@ export class Gate {
         if (this.boarding)
             this.windows.forEach(w => w.fit())
     }
-    engage() {
-        if (this.boarding) 
-            terminal7.cells.forEach(p => {
-                if (p.openDC instanceof Function)
-                    p.openDC()
-            })
-        else
-            this.connect()
-    }
     disengage(cb) {
+        console.log(`disengaging. boarding ${this.boarding}`)
+        if (!this.boarding) {
+            if (cb) cb()
+            return
+        }
         let msg = {
                 type: "mark",
                 args: null
@@ -580,7 +575,11 @@ export class Gate {
         this.onack[id] = (nack, payload) => {
             this.marker = parseInt(payload)
             console.log("got a marker", this.marker)
-            // this.close()
+            // close the peer connection
+            if (this.pc != null) {
+                this.pc.close()
+                this.pc = null
+            }
             if (cb) cb()
         }
     }
