@@ -304,7 +304,7 @@ nav .on { color: #00FA00 !important; }
     height: 100px;
     cursor: pointer;
     margin: 1em; 
-    padding: 0.2em 4em;
+    padding: 0.2em 1.2em;
 }
 #hosts li a {
     position: relative;
