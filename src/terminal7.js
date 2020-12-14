@@ -87,6 +87,7 @@ export class Terminal7 {
                 .addEventListener("click", ev => {
                     this.logDisplay(document.getElementById("log")
                                     .classList.contains("fade-out"))
+                    this.focus()
                 })
         document.getElementById("search-button")
                 .addEventListener("click", ev => 
