@@ -150,6 +150,7 @@ export class Gate {
      * state changes.
      */
     updateConnectionState(state) {
+        console.log(`updating ${this.name} state to ${state}`)
         if ((state == "new") || (state == "connecting"))
             this.notify("WebRTC starting")
         else if (state == "connected") {
@@ -169,7 +170,7 @@ export class Gate {
                 this.stopBoarding()
                 terminal7.onDisconnect(this)
             } else
-                console.log("Ignoring a peer close event after disconnect")
+                console.log("Ignoring a peer terminal7.cells.forEach(c => event after disconnect")
         }
     }
     /*
@@ -202,6 +203,9 @@ export class Gate {
      * the control channel and authenticates.
      */
     connect() {
+        // do nothing when the network is down
+        if (!terminal7.netStatus.connected)
+            return
         // if we're already boarding, just focus
         if (this.boarding) {
             this.focus()
@@ -317,39 +321,50 @@ export class Gate {
             this.marker = -1
         }
     }
+    /*
+     * returns a list of panes
+     */
+    panes() {
+        var r = []
+        terminal7.cells.forEach(c => {
+            if (c instanceof Pane && (c.gate == this))
+                r.push(c)
+        })
+        return r
+    }
     restoreState(state) {
-        let focused = false
-        this.notify("Restoring state")
-        console.log("Restoring state: ", state)
         let none = true
-        if (this.marker != -1) {
+            
+        if ((this.marker != -1) && (this.windows.length > 0)) {
             // if there's a marker it's a reconnect, re-open all gate's dcs
-            terminal7.cells.forEach(c => {
-                if (c instanceof Pane && c.gate == this) {
-                    none = false
-                    c.openDC()
-                }
+            console.log("Restoring with marker, open dcs")
+            this.panes().forEach(c => {
+                none = false
+                c.openDC()
             })
-            focused = true
-        } else if (state && state.windows.length > 0) {
+        } else if (state && (state.windows.length > 0)) {
             none = false
+            this.notify("Restoring state")
+            console.log("Restoring state: ", state)
+            this.clear()
             state.windows.forEach(w =>  {
                 let win = this.addWindow(w.name)
                 win.restoreLayout(w.layout)
                 if (w.active) {
-                    focused = true
-                    win.focus()
+                    this.activeW = win
                 }
             })
-        }
-        if (none) {
-            // add the first window
+        } else if ((state == null) || (state.windows.length == 0)) {
+            // create the first window and pane
+            console.log("Restoring from nothing - creating the first pane")
             this.activeW = this.addWindow("", true)
-            this.focus()
         }
+        else
+            console.log(`not restoring. ${state}, ${wl}`)
+
+        if (!this.activeW)
+            this.activeW = this.windows[0]
         this.focus()
-        if (!focused)
-            this.windows[0].focus()
     }
     /*
      * Adds a window, opens it and returns it
@@ -386,7 +401,9 @@ export class Gate {
         console.log("<opening cdc")
         cdc.onclose = () => {
             if (this.boarding) {
-                this.notify('Control Channel is closed')
+                this.notify('Control Channel is closed. Reconnecting.')
+                this.pc.close()
+                this.connect()
             }
         }
         cdc.onopen = () => {
@@ -430,6 +447,7 @@ export class Gate {
         this.windows = []
         this.breadcrumbs = []
         this.msgs = {}
+        this.marker = -1
     }
 
     /*
@@ -451,6 +469,7 @@ export class Gate {
             this.sendState(() => this.pc.close())
         if (terminal7.activeG == this)
             terminal7.activeG = null
+        this.panes().forEach(p => p.close())
     }
     /*
      * Host.sendSize sends a control message with the pane's size to the server
@@ -559,6 +578,11 @@ export class Gate {
         if (this.boarding)
             this.windows.forEach(w => w.fit())
     }
+    /*
+     * disebngage performerly an orderly shutdown of the gate's connection.
+     * It first sends a mark request and on it's ack store the restore marker
+     * and closes the peer connection.
+     */
     disengage(cb) {
         console.log(`disengaging. boarding ${this.boarding}`)
         if (!this.boarding) {
@@ -571,6 +595,8 @@ export class Gate {
             },
             id = this.sendCTRLMsg(msg)
 
+        // signaling restore is in progress
+        this.marker = 0
         this.boarding = false
         this.onack[id] = (nack, payload) => {
             this.marker = parseInt(payload)

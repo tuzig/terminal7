@@ -422,3 +422,11 @@ td {
 }    
 hosts .pressed { box-shadow: 4px 4px 5px 0 #F952F9; }
 .tabbar-names .pressed { font-weight: bold; }
+#offline {
+    bottom: unset;
+    top: 50%;
+    transform: translate(-50%, -50%)
+}
+#offline p {
+    margin-top: 2em;
+}

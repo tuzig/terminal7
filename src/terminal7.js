@@ -44,11 +44,9 @@ export class Terminal7 {
         this.gates = []
         this.cells = []
         this.timeouts = []
-        this.state = "init"
         this.activeG = null
         window.terminal7 = this
         let dotfile = localStorage.getItem('dotfile') || DEFAULT_DOTFILE
-        this.conf = TOML.parse(dotfile)
         this.minSplitSpeed      = settings.minSplitSpeed || 2.2
         this.scrollLingers4     = settings.scrollLingers4 || 2000
         this.shortestLongPress  = settings.shortestLongPress || 1000
@@ -56,6 +54,8 @@ export class Terminal7 {
         this.token = localStorage.getItem("token")
         this.confEditor = null
         this.flashTimer = null
+        this.netStatus = null
+        this.conf = TOML.parse(dotfile)
         this.conf.features = this.conf.features || {}
         this.conf.ui = this.conf.ui || {}
         this.conf.ui.quickest_press = this.conf.ui.quickest_press || 1000
@@ -119,24 +119,16 @@ export class Terminal7 {
         addHost.querySelector(".close").addEventListener('click',  ev =>  {
             this.clear()
         })
-        this.state = "open"
         this.gates.forEach(gate => {
             gate.open(e)
             gate.e.classList.add("hidden")
         })
         // Handle network events for the indicator
-        Network.addListener('networkStatusChange', status => {
-            let cl = document.getElementById("connectivity").classList
-            if (status.connected) {
-                cl.remove("failed")
-                this.clear()
-                if (this.activeG) {
-                    this.activeG.clear()
-                    this.activeG.connect()
-                }
-            }
-            else
-                cl.add("failed")
+        Network.getStatus().then(s => this.updateNetworkStatus(s))
+        Network.addListener('networkStatusChange', s => {
+            if (!s.connected)
+                this.gates.forEach(g => g.clear())
+            this.updateNetworkStatus(s)
         })
         this.catchFingers()
         // setting up edit host events
@@ -193,6 +185,7 @@ export class Terminal7 {
         // window.setInterval(_ => this.periodic(), 2000)
         App.addListener('appStateChange', state => {
             if (!state.isActive) {
+                // We're getting suspended. disengage.
                 let taskId = BackgroundTask.beforeExit(async () => {
                     console.log("Benched. Disengaging from all gates")
                     this.disengage(() => {
@@ -202,9 +195,10 @@ export class Terminal7 {
                 })
             }
             else {
+                // We're back! ensure we have the latest network status and 
+                // reconnect to the active gate
                 console.log("Active ☀️")
-                if (this.activeG) 
-                    this.activeG.connect()
+                Network.getStatus().then(s => this.updateNetworkStatus(s))
             }
         })
             
@@ -463,7 +457,10 @@ export class Terminal7 {
     }
     clear() {
         this.e.querySelectorAll('.temporal').forEach(e => e.remove())
-        this.e.querySelectorAll('.modal').forEach(e => e.classList.add("hidden"))
+        this.e.querySelectorAll('.modal').forEach(e => {
+            if (!e.classList.contains("non-clearable"))
+                e.classList.add("hidden")
+        })
     }
     goHome() {
         let s = document.getElementById('home-button'),
@@ -671,5 +668,23 @@ export class Terminal7 {
                 callCB()
         }, 10)
         callCB()
+    }
+    updateNetworkStatus (status) {
+        let cl = document.getElementById("connectivity").classList,
+            offl = document.getElementById("offline").classList
+        this.netStatus = status
+        console.log(`updateNetwrokStatus: ${status.connected}`)
+        if (status.connected) {
+            cl.remove("failed")
+            offl.add("hidden")
+            this.clear()
+            if (this.activeG)
+                this.activeG.connect()
+        }
+        else {
+            offl.remove("hidden")
+            cl.add("failed")
+            // remove all restore markers
+        }
     }
 }

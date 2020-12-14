@@ -1033,6 +1033,8 @@ export class Pane extends Cell {
             d.classList.add("hidden")
     }
     close() {
+        if (this.d)
+            this.d.onclose = undefined
         this.dividers.forEach(d => d.classList.add("hidden"))
         super.close()
     }

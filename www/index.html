@@ -49,9 +49,9 @@
       <div id="copy-token" class="hidden modal border" >
         <form id="copy-token-form">
             <p>We're sorry, but the host at <code id="ct-address"> </code>
-                (aka <b id="ct-name">) refused our token.
+            (aka <b id="ct-name"></b>) refused our token.
                 Most likely because the token is not in:
-                <b id="ct-conffile"> ~/.webexec/authorized_tokens
+                <b id="ct-confile"> ~/.webexec/authorized_tokens</b>
             </p>
             <input type="text" name="token" readonly
                 style="width: 25em; margin: 8px auto;">
@@ -72,7 +72,7 @@
       <div id="reset-host" class="hidden modal border" >
         <form>
             <p>Reseting our agent on host <code id="rh-address"> </code>
-                (aka <b id="rh-name">) requires your crendetials.
+            (aka <b id="rh-name"></b>) requires your crendetials.
             </p>
             <label for="uname">Username</label>
             <input type="text" placeholder="your sysem username" name="uname" required>
@@ -110,52 +110,23 @@
             </nav>
           </form>
       </div>
-        <div id="keys-help" class="hidden modal border" >
-            <table>
-                <tr>
-                    <td>Toggle Fullscreen</td>
-                    <td>⌘&nbsp;z</td>
-                </tr>
-                <tr>
-                    <td>Move Focus</td>
-                    <td>⌘&nbsp;&larr;&uarr;&darr;&rarr;</td>
-                </tr>
-                <tr>
-                    <td>Search Pane Buffer</td>
-                    <td>⌘&nbsp;/</td>
-                </tr>
-                <tr class="copy_mode">
-                    <td>Enter Copy Mode</td>
-                    <td>⌘&nbsp;[</td>
-                </tr>
-                <tr>
-                    <td>Bigger Font</td>
-                    <td>⌘&nbsp;+</td>
-                </tr>
-                <tr>
-                    <td>Smaller Font</td>
-                    <td>⌘&nbsp;-</td>
-                </tr>
-                <tr>
-                    <td>Reset Font</td>
-                    <td>⌘&nbsp;0</td>
-                </tr>
-                <tr>
-                    <td>Split Top to Bottom</td>
-                    <td>⌘&nbsp;%</td>
-                </tr>
-                <tr>
-                    <td>Split Right to Left</td>
-                    <td>⌘&nbsp;"</td>
-                </tr>
-                <tr>
-                    <td>Rename Tab</td>
-                    <td>⌘&nbsp;,</td>
-                </tr>
-                <tr>
-                    <td>Close Pane</td>
-                    <td>⌘&nbsp;d</td>
-                </tr>
+      <div id="offline" class="hidden modal border non-clearable" >
+          <h1>Network is down</h1>
+          <p>Terminal 7 will activate on reconnect</p>
+      </div>
+      <div id="keys-help" class="hidden modal border" >
+          <table>
+        <tr> <td>Toggle Fullscreen</td> <td>⌘&nbsp;z</td> </tr>
+        <tr> <td>Move Focus</td> <td>⌘&nbsp;&larr;&uarr;&darr;&rarr;</td> </tr>
+        <tr> <td>Search Pane Buffer</td> <td>⌘&nbsp;/</td> </tr>
+        <tr class="copy_mode"> <td>Enter Copy Mode</td> <td>⌘&nbsp;[</td> </tr>
+        <tr> <td>Bigger Font</td> <td>⌘&nbsp;+</td> </tr>
+        <tr> <td>Smaller Font</td> <td>⌘&nbsp;-</td> </tr>
+        <tr> <td>Reset Font</td> <td>⌘&nbsp;0</td> </tr>
+        <tr> <td>Split Top to Bottom</td> <td>⌘&nbsp;%</td> </tr>
+        <tr> <td>Split Right to Left</td> <td>⌘&nbsp;"</td> </tr>
+        <tr> <td>Rename Tab</td> <td>⌘&nbsp;,</td> </tr>
+        <tr> <td>Close Pane</td> <td>⌘&nbsp;d</td> </tr>
             </table>
         </div>
   </div>
