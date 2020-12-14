@@ -402,7 +402,8 @@ export class Gate {
         cdc.onclose = () => {
             if (this.boarding) {
                 this.notify('Control Channel is closed. Reconnecting.')
-                this.pc.close()
+                if (this.pc)
+                    this.pc.close()
                 this.connect()
             }
         }
