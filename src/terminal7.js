@@ -532,7 +532,9 @@ export class Terminal7 {
                 `${gate.name} communication failure`
             e.querySelector("form").addEventListener('submit', ev => {
                 this.clear()
-                gate.resetPC()
+                gate.boarding = false
+                gate.clear()
+                gate.connect()
             })
             e.querySelector(".close").addEventListener('click', ev => {
                 terminal7.goHome()
@@ -655,10 +657,7 @@ export class Terminal7 {
                 count++
                 g.disengage(() => {
                     count--
-                    if (g.pc != null) {
-                        g.pc.close()
-                        g.pc == null
-                    }
+                    g.closePC()
                 })
             }
         })

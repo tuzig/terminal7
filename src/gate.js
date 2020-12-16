@@ -442,7 +442,6 @@ export class Gate {
      * clear clears the gates memory
      */
     clear() {
-        this.windows.forEach(w => w.close(false))
         this.e.querySelector(".tabbar-names").innerHTML = ""
         this.e.querySelectorAll(".window").forEach(e => e.remove())
         this.windows = []
@@ -450,14 +449,13 @@ export class Gate {
         this.msgs = {}
         this.marker = -1
     }
-
-    /*
-     * resetPC restarts the peer connection
-     */
-    resetPC() {
-        this.boarding = false
-        this.clear()
-        this.connect()
+    closePC() {
+        if (this.pc != null) {
+            this.pc.onconnectionstatechange = undefined
+            this.pc.onmessage = undefined
+            this.pc.close()
+            this.pc = null
+        }
     }
     /*
      * close closes the peer connection and removes the host from the UI
@@ -602,11 +600,7 @@ export class Gate {
         this.onack[id] = (nack, payload) => {
             this.marker = parseInt(payload)
             console.log("got a marker", this.marker)
-            // close the peer connection
-            if (this.pc != null) {
-                this.pc.close()
-                this.pc = null
-            }
+            this.closePC()
             if (cb) cb()
         }
     }

@@ -672,7 +672,7 @@ export class Pane extends Cell {
         console.log(`opening dc with label: "${label}`)
         this.d = this.gate.pc.createDataChannel(label)
         this.d.onclose = e => {
-            console.log("data channel close")
+            console.log(`on data channel, marker - ${this.gate.marker}`)
             this.state = "disconnected"
             if (this.gate.marker == -1)
                 this.close()
