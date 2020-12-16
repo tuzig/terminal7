@@ -1,6 +1,6 @@
 {
   "name": "terminal7",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "A touchable terminal emulator & multiplexer tablet app",
   "main": "src/index.js",
   "private": true,
@@ -19,10 +19,10 @@
     "publish": null
   },
   "dependencies": {
-    "@capacitor/cli": "^2.4.2",
-    "@capacitor/core": "^2.4.2",
-    "@capacitor/ios": "^2.4.2",
-    "@iarna/toml": "^2.2.5",
+    "@capacitor/cli": "<3",
+    "@capacitor/core": "<3",
+    "@capacitor/ios": "<3",
+    "@iarna/toml": "<3",
     "ansi-escapes": "^4.3.1",
     "codemirror": "git+https://github.com/tuzig/CodeMirror.git",
     "cordova-plugin-ssh-connect": "git+https://github.com/tuzig/cordova-plugin-ssh-connect.git",
@@ -30,11 +30,11 @@
     "hammerjs": "^2.0.8",
     "karma-safari-launcher": "^1.0.0",
     "karma-source-map-support": "^1.4.0",
-    "npm": "^6.14.8",
+    "npm": "<7",
     "uuid": "^8.3.1",
     "web": "0.0.2",
     "websocket-extensions": ">=0.1.4",
-    "xterm": "^4.5.0",
+    "xterm": "<5",
     "xterm-addon-fit": "^0.3.0",
     "xterm-addon-search": "^0.7.0"
   },
