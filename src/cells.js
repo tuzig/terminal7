@@ -156,8 +156,8 @@ export class Cell {
             this.zoomedE = e
             this.w.e.classList.add("hidden")
         }
-        this.focus()
         this.zoomed = !this.zoomed
+        terminal7.run(_ => this.focus(), ABIT)
     }
 }
 
