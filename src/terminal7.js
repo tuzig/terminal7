@@ -94,6 +94,19 @@ export class Terminal7 {
                     this.activeG && this.activeG.activeW.activeP.toggleSearch())
         document.getElementById("dotfile-button")
                 .addEventListener("click", ev => this.editDotfile(ev))
+        document.getElementById("help-button")
+                .addEventListener("click", ev => {
+                    var ecl = document.getElementById("help").classList,
+                        bcl = document.getElementById("help-button").classList
+                    ecl.toggle("hidden")
+                    bcl.toggle("on")
+                    if (this.activeG)
+                        if (ecl.contains("hidden"))
+                            this.activeG.e.classList.remove("hidden")
+                        else
+                            this.activeG.e.classList.add("hidden")
+                    // TODO: When at home remove the "on" from the home butto
+                })
         // display the home page, starting with the plus button
         let addHost = document.getElementById("add-host")
         document.getElementById('plus-host').addEventListener(

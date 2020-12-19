@@ -430,3 +430,9 @@ hosts .pressed { box-shadow: 4px 4px 5px 0 #F952F9; }
 #offline p {
     margin-top: 2em;
 }
+#help {
+    position: fixed;
+    left: 0;
+    bottom: 56px;
+    z-index: 5;
+}
