@@ -7,6 +7,7 @@ import { Window } from './window.js'
 import { v4 as uuidv4 } from 'uuid'
 import * as Hammer from 'hammerjs'
 import * as TOML from '@iarna/toml'
+import * as imageMapResizer from './imageMapResizer.js'
 import CodeMirror from 'codemirror/src/codemirror.js'
 import { vimMode } from 'codemirror/keymap/vim.js'
 import { tomlMode} from 'codemirror/mode/toml/toml.js'
@@ -74,9 +75,10 @@ export class Terminal7 {
         }
         this.e = e
         window.onresize = ev => 
-            terminal7.run(_ =>
+            terminal7.run(_ => {
+                imageMapResizer()
                 this.gates.forEach(g => g.fit())
-            , 50)
+            }, 50)
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",
@@ -100,11 +102,16 @@ export class Terminal7 {
                         bcl = document.getElementById("help-button").classList
                     ecl.toggle("hidden")
                     bcl.toggle("on")
+                    var hidden = ecl.contains("hidden")
+                    if (!hidden)
+                        imageMapResizer()
                     if (this.activeG)
-                        if (ecl.contains("hidden"))
+                        if (hidden) {
                             this.activeG.e.classList.remove("hidden")
-                        else
+                            this.focus()
+                        } else
                             this.activeG.e.classList.add("hidden")
+                    
                     // TODO: When at home remove the "on" from the home butto
                 })
         // display the home page, starting with the plus button

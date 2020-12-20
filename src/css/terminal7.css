@@ -22,6 +22,8 @@ body {
   background-color: #271D30;
 }
 
+*:focus { outline: none; }
+
 h1, h2, h3 {
   text-align: center;
 }
