@@ -274,10 +274,13 @@ export class Layout extends Cell {
             }, ABIT)
         return pane
     }
+    /*
+     * waits a bit for the DOM to refresh and moves the dividers
+     */
     refreshDividers() {
-        this.cells.forEach(c => {
+        terminal7.run(_ => this.cells.forEach(c => {
             c.refreshDividers()
-        })
+        }), ABIT)
     }
 
     toText() {
