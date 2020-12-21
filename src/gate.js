@@ -117,9 +117,6 @@ export class Gate {
         editHost.querySelector('[name="hostname"]').value = this.name
         editHost.classList.remove("hidden")
     }
-    unfocus() {
-        this.e.classList.add("hidden")
-    }
     focus() {
         // first hide the current focused gate
         document.getElementById("home-button").classList.remove("on")
@@ -208,12 +205,16 @@ export class Gate {
             return
         // if we're already boarding, just focus
         if (this.boarding) {
+            if (this.windows.length == 0)
+                this.activeW = this.addWindow("", true)
             this.focus()
             return
         }
         console.log(`connecting to ${this.name}...`)
         // cleanup
         this.pendingCDCMsgs = []
+        this.closePC()
+        // exciting timess.... a connection is born!
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: 'stun:stun2.l.google.com:19302' }
                 ] })
@@ -310,7 +311,7 @@ export class Gate {
                 if (this.nameE != null)
                     this.nameE.classList.add("failed")
                 this.notify("Authorization FAILED")
-                this.close()
+                this.closePC()
                 terminal7.run(_ => this.copyToken(), ABIT)
                 return
             }
@@ -333,19 +334,16 @@ export class Gate {
         return r
     }
     restoreState(state) {
-        let none = true
-            
         if ((this.marker != -1) && (this.windows.length > 0)) {
             // if there's a marker it's a reconnect, re-open all gate's dcs
+            // TODO: validate the current layout is like the state
             console.log("Restoring with marker, open dcs")
             this.panes().forEach(c => {
-                none = false
                 c.openDC()
             })
         } else if (state && (state.windows.length > 0)) {
-            none = false
-            this.notify("Restoring state")
-            console.log("Restoring state: ", state)
+            this.notify("Restoring layout")
+            console.log("Restoring layout: ", state)
             this.clear()
             state.windows.forEach(w =>  {
                 let win = this.addWindow(w.name)
@@ -356,7 +354,7 @@ export class Gate {
             })
         } else if ((state == null) || (state.windows.length == 0)) {
             // create the first window and pane
-            console.log("Restoring from nothing - creating the first pane")
+            console.log("Fresh state, creating the first pane")
             this.activeW = this.addWindow("", true)
         }
         else
@@ -403,7 +401,7 @@ export class Gate {
             if (this.boarding) {
                 this.notify('Control Channel is closed. Reconnecting.')
                 if (this.pc)
-                    this.pc.close()
+                    this.closePC()
                 this.connect()
             }
         }
@@ -439,9 +437,10 @@ export class Gate {
         return cdc
     }
     /*
-     * clear clears the gates memory
+     * clear clears the gates memory and display
      */
     clear() {
+        console.trace("Clearing gate")
         this.e.querySelector(".tabbar-names").innerHTML = ""
         this.e.querySelectorAll(".window").forEach(e => e.remove())
         this.windows = []
@@ -449,26 +448,17 @@ export class Gate {
         this.msgs = {}
         this.marker = -1
     }
+    /*
+     * closePC slinetly closes the peer connections
+     */
     closePC() {
         if (this.pc != null) {
             this.pc.onconnectionstatechange = undefined
             this.pc.onmessage = undefined
+            console.log("closing connection")
             this.pc.close()
             this.pc = null
         }
-    }
-    /*
-     * close closes the peer connection and removes the host from the UI
-     */
-    close(verify) {
-        this.e.classList.add("hidden")
-        this.boarding = false
-        this.clear()
-        if (this.pc != null)
-            this.sendState(() => this.pc.close())
-        if (terminal7.activeG == this)
-            terminal7.activeG = null
-        this.panes().forEach(p => p.close())
     }
     /*
      * Host.sendSize sends a control message with the pane's size to the server
@@ -547,12 +537,10 @@ export class Gate {
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
         })
     }
-    goBack(closeGate) {
+    goBack() {
         this.breadcrumbs.pop()
-        if (this.windows.length == 0) {
-            if (closeGate != false)
-                this.close()
-        }
+        if (this.windows.length == 0)
+            terminal7.goHome()
         else
             if (this.breadcrumbs.length > 0)
                 this.breadcrumbs.pop().focus()
@@ -567,15 +555,15 @@ export class Gate {
         document.getElementById("rh-name").innerHTML = this.name
         e.classList.remove("hidden")
     }
-    resetHost() {
-        this.close()
+    restartServer() {
+        this.clear()
+        this.closePC()
         let e = document.getElementById("reset-host")
         terminal7.ssh(e, this, `webexec restart --address ${this.addr}`,
             _ => e.classList.add("hidden")) 
     }
     fit() {
-        if (this.boarding)
-            this.windows.forEach(w => w.fit())
+        this.windows.forEach(w => w.fit())
     }
     /*
      * disebngage performerly an orderly shutdown of the gate's connection.
@@ -600,8 +588,10 @@ export class Gate {
         this.onack[id] = (nack, payload) => {
             this.marker = parseInt(payload)
             console.log("got a marker", this.marker)
-            this.closePC()
             if (cb) cb()
         }
+    }
+    closeActivePane() {
+        this.activeW.activeP.close()
     }
 }

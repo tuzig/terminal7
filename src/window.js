@@ -134,7 +134,7 @@ export class Window {
             }, 0)
         })
     }
-    close(closeGate) {
+    close() {
         // remove the window name
         this.nameE.parentNode.remove()
         // remove the element, panes and tabbar gone as they are childs
@@ -147,7 +147,7 @@ export class Window {
         // if we removed a window it means the user can add a window
         this.gate.e.querySelector(".add-tab").classList.remove("off")
         // remove myself from the breadcrumbs
-        this.gate.goBack(closeGate)
+        this.gate.goBack()
     }
     fit() {
         if (this.rootLayout)

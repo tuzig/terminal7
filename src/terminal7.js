@@ -172,7 +172,7 @@ export class Terminal7 {
         let resetHost = document.getElementById("reset-host")
         resetHost.querySelector("form").addEventListener('submit', ev => {
             ev.preventDefault()
-            editHost.gate.resetHost()
+            editHost.gate.restartServer()
         })
         resetHost.querySelector(".close").addEventListener('click',  ev =>
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
@@ -496,7 +496,7 @@ export class Terminal7 {
             localStorage.setItem('token', this.token)
         }
         if (this.activeG) {
-            this.activeG.unfocus()
+            this.activeG.e.classList.add("hidden")
             this.activeG = null
         }
         // hide the modals
@@ -619,13 +619,14 @@ export class Terminal7 {
             ev.preventDefault()
             this.ssh(this.e.lastElementChild, gate, 
                 "webexec start", ev => {
-                gate.close()
+                gate.clear()
                 this.clear()
                 terminal7.run(_ => gate.connect(), 2000)
             })
         })
         e.querySelector(".close").addEventListener('click', ev => {
-            gate.close()
+            gate.closePC()
+            gate.clear()
             terminal7.goHome()
         })
         this.e.appendChild(e)
@@ -675,10 +676,7 @@ export class Terminal7 {
         this.gates.forEach(g => {
             if (g.boarding) {
                 count++
-                g.disengage(() => {
-                    count--
-                    g.closePC()
-                })
+                g.disengage(_ => count--)
             }
         })
         let callCB = () => terminal7.run(() => {
