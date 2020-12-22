@@ -211,6 +211,7 @@ export class Terminal7 {
                     console.log("Benched. Disengaging from all gates")
                     this.disengage(() => {
                         console.log("finished disengaging")
+                        this.close()
                         BackgroundTask.finish({taskId})
                     })
                 })
