@@ -953,9 +953,14 @@ export class Pane extends Cell {
         case "f":
             f = () => this.toggleSearch()
             break
+        // next two keys are on the gate level
         case "t":
             f = () => this.gate.newTab()
             break
+        case "r":
+            f = () => this.gate.disengage(_ => this.gate.connect())
+            break
+        // this key is at terminal level
         case "l":
             f = () => terminal7.logDisplay()
             break
