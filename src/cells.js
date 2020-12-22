@@ -954,7 +954,10 @@ export class Pane extends Cell {
             f = () => this.toggleSearch()
             break
         case "t":
-            this.gate.newTab()
+            f = () => this.gate.newTab()
+            break
+        case "l":
+            f = () => terminal7.logDisplay()
             break
         case "ArrowLeft":
             f = () => this.w.moveFocus("left")

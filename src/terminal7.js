@@ -86,11 +86,7 @@ export class Terminal7 {
         document.getElementById("home-button")
                 .addEventListener("click", ev => this.goHome())
         document.getElementById("log-button")
-                .addEventListener("click", ev => {
-                    this.logDisplay(document.getElementById("log")
-                                    .classList.contains("fade-out"))
-                    this.focus()
-                })
+                .addEventListener("click", ev => this.logDisplay())
         document.getElementById("search-button")
                 .addEventListener("click", ev => 
                     this.activeG && this.activeG.activeW.activeP.toggleSearch())
@@ -508,10 +504,14 @@ export class Terminal7 {
         window.location.href = "#home"
     }
     /* 
-     * Terminal7.logDisplay(show) display or hides the notifications
+     * Terminal7.logDisplay display or hides the notifications.
+     * if the parameters in udefined the function toggles the displays
      */
     logDisplay(show) {
         let e = document.getElementById("log")
+        if (show === undefined)
+            // if show is undefined toggle current state
+            show = e.classList.contains("fade-out")
         if (show) {
             e.classList.remove("fade-out", "hidden")
             document.getElementById("log-button")
@@ -521,6 +521,7 @@ export class Terminal7 {
             document.getElementById("log-button")
                 .classList.remove("on")
         }
+        this.focus()
     }
     /*
      * OnMessage is called by the pane when they recieve traffic.
