@@ -49,12 +49,8 @@ export class Gate {
         let t = document.getElementById("gate-template")
         if (t) {
             t = t.content.cloneNode(true)
-            t.querySelector(".add-tab").addEventListener('click', _ => {
-                if (this.windows.length < terminal7.conf.ui.max_tabs) {
-                    let w = this.addWindow("", true)
-                    w.focus()
-                }
-            })
+            t.querySelector(".add-tab").addEventListener(
+                'click', _ => this.newTab())
             t.querySelector(".search-close").addEventListener('click', _ =>  {
                 this.activeW.activeP.exitCopyMode()
                 this.activeW.activeP.focus()
@@ -593,5 +589,11 @@ export class Gate {
     }
     closeActivePane() {
         this.activeW.activeP.close()
+    }
+    newTab() {
+        if (this.windows.length < terminal7.conf.ui.max_tabs) {
+            let w = this.addWindow("", true)
+            w.focus()
+        }
     }
 }

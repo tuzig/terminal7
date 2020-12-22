@@ -77,7 +77,7 @@ export class Cell {
             singleTap = new Hammer.Tap({event: "tap"}),
             doubleTap = new Hammer.Tap({event: "doubletap", taps: 2}),
             pinch = new Hammer.Pinch({event: "pinch"}),
-            lastEventT = 0;
+            lastEventT = 0
 
         h.add([singleTap,
             doubleTap,
@@ -524,7 +524,7 @@ export class Pane extends Cell {
             cols:80
         })
         this.fitAddon = new FitAddon()
-        this.searchAddon = new SearchAddon();
+        this.searchAddon = new SearchAddon()
 
         // there's a container div we need to get xtermjs to fit properly
         this.e.appendChild(con)
@@ -952,19 +952,22 @@ export class Pane extends Cell {
             break
         case "f":
             f = () => this.toggleSearch()
-            break;
+            break
+        case "t":
+            this.gate.newTab()
+            break
         case "ArrowLeft":
             f = () => this.w.moveFocus("left")
-            break;
+            break
         case "ArrowRight":
             f = () => this.w.moveFocus("right")
-            break;
+            break
         case "ArrowUp":
             f = () => this.w.moveFocus("up")
-            break;
+            break
         case "ArrowDown":
             f = () => this.w.moveFocus("down")
-            break;
+            break
         }
         if (f != null) {
             f()
