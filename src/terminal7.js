@@ -98,19 +98,14 @@ export class Terminal7 {
         document.getElementById("help-button")
                 .addEventListener("click", ev => {
                     var ecl = document.getElementById("help").classList,
-                        bcl = document.getElementById("help-button").classList
+                        bcl = document.getElementById("help-button").classList,
+                        hidden = ecl.contains("hidden")
                     ecl.toggle("hidden")
                     bcl.toggle("on")
-                    var hidden = ecl.contains("hidden")
                     if (!hidden)
                         imageMapResizer()
-                    if (this.activeG)
-                        if (hidden) {
-                            this.activeG.e.classList.remove("hidden")
-                            this.focus()
-                        } else
-                            this.activeG.e.classList.add("hidden")
-                    
+                    else if (this.activeG)
+                        this.focus()
                     // TODO: When at home remove the "on" from the home butto
                 })
         // display the home page, starting with the plus button

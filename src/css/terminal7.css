@@ -22,7 +22,7 @@ body {
   background-color: #271D30;
 }
 
-*:focus { outline: none; }
+/* *:focus { outline: none; } */
 
 h1, h2, h3 {
   text-align: center;
@@ -437,4 +437,5 @@ td {
     left: 0;
     bottom: 56px;
     z-index: 5;
+    border-top: 2px dashed #F952F9;
 }
