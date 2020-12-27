@@ -1,3 +1,10 @@
+/*! Terminal 7 window
+ *  This file contains the code that makes a terminal 7 window 
+ *  (also know as tab).
+ *
+ *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
+ *  License: GPLv3
+ */
 import { Layout, Pane } from './cells.js'
 import * as Hammer from 'hammerjs'
 

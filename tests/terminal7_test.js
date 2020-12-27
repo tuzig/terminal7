@@ -1,3 +1,10 @@
+/*! Terminal 7 Tests
+ *  This file contains the code that tests terminal 7 - a webrtc based
+ *  touchable terminal multiplexer.
+ *
+ *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
+ *  License: GPLv3
+ */
 import { Terminal7 } from "../src/terminal7.js"
 import { Cell, Pane } from "../src/cells.js"
 import { assert } from "chai"

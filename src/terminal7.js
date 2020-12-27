@@ -1,6 +1,9 @@
-/*
- * This file contains the code that makes terminal seven - a tmux inspired
- * touchable terminal multiplexer running over wertc's data channels.
+/*! Terminal 7
+ *  This file contains the code that makes terminal 7 - a webrtc based
+ *  touchable terminal multiplexer.
+ *
+ *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
+ *  License: GPLv3
  */
 import { Gate } from './gate.js'
 import { Window } from './window.js'

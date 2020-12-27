@@ -1,3 +1,9 @@
+/*! Terminal 7 cells - Cell, Layout & Pane
+ *  This file contains the code that makes terminal 7 cells
+ *
+ *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
+ *  License: GPLv3
+ */
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'

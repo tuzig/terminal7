@@ -1,3 +1,10 @@
+/*! Terminal 7 Gate
+ *  This file contains the code that makes a terminal 7 gate. The gate class
+ *  represents a server and it may be boarding - aka connected - or not.
+ *
+ *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
+ *  License: GPLv3
+ */
 import * as Hammer from 'hammerjs'
 import { Window } from './window.js'
 import { Pane } from './cells.js'
