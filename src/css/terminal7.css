@@ -422,7 +422,7 @@ td {
     position: fixed;
     z-index: 3;
 }    
-hosts .pressed { box-shadow: 4px 4px 5px 0 #F952F9; }
+#hosts .pressed { box-shadow: 4px 4px 5px 0 #F952F9; }
 .tabbar-names .pressed { font-weight: bold; }
 #offline {
     bottom: unset;
