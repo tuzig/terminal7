@@ -205,7 +205,7 @@ export class Terminal7 {
                     console.log("Benched. Disengaging from all gates")
                     this.disengage(() => {
                         console.log("finished disengaging")
-                        this.close()
+                        this.clearTimeouts()
                         BackgroundTask.finish({taskId})
                     })
                 })
@@ -214,6 +214,7 @@ export class Terminal7 {
                 // We're back! ensure we have the latest network status and 
                 // reconnect to the active gate
                 console.log("Active ☀️")
+                this.clearTimeouts()
                 Network.getStatus().then(s => this.updateNetworkStatus(s))
             }
         })
@@ -657,7 +658,7 @@ export class Terminal7 {
         this.timeouts.push(r)
         return r
     }
-    close() {
+    clearTimeouts() {
         this.timeouts.forEach(t => window.clearTimeout(t))
         this.timeouts = []
     }

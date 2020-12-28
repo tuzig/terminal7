@@ -804,16 +804,6 @@ export class Pane extends Cell {
                 this.t.write(aE.cursorUp(r), postWrite)
             this.updateBufferPosition()
             break
-                /*
-                console.log(`vy = ${b.viewportY} by = ${b.baseY}`)
-            // this.t.write(aE.cursorGetPosition)
-            if ((b.cursorY == 0) && (b.baseY > 0)) {
-                this.t.scrollToLine(b.viewportY-1)
-                this.t.refresh(0, this.t.rows-1)
-                setTimeout( _ => this.t.write(aE.cursorTo(b.cursorX, 0)), 500)
-            }
-            else
-            */
         case "ArrowDown":
         case "j":
             this.t.write(aE.cursorDown(r), postWrite)

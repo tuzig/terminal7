@@ -22,7 +22,7 @@ describe("terminal7", function() {
         t = new Terminal7()
         t.open(e)
     })
-    after(() => terminal7.close())
+    after(() => terminal7.clearTimeouts())
     describe("gate", () => {
         it("starts with no gates", () => {
             expect(t.gates.length).to.equal(0)
