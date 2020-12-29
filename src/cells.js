@@ -145,21 +145,26 @@ export class Cell {
     toggleZoom() {
         if (this.zoomed) {
             // Zoom out
-            let te = this.zoomedE.children[0]
+            let te = this.zoomedE.children[0].children[0]
             this.e.appendChild(te)
             document.body.removeChild(this.zoomedE)
             this.zoomedE = null
             this.w.e.classList.remove("hidden")
         } else {
             let H = document.body.offsetHeight,
+                c = document.createElement('div'),
                 e = document.createElement('div'),
                 te = this.e.removeChild(this.e.children[0])
+            c.classList.add("zoomed")
             e.classList.add("pane", "zoomed", "focused")
             e.style.height = `${H - 44}px`
+            e.style.top = "22px"
+            e.style.width = "98%"
             this.catchFingers(e)
             e.appendChild(te)
-            document.body.appendChild(e)
-            this.zoomedE = e
+            c.appendChild(e)
+            document.body.appendChild(c)
+            this.zoomedE = c
             this.w.e.classList.add("hidden")
         }
         this.zoomed = !this.zoomed

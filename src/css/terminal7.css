@@ -261,8 +261,9 @@ nav .on { color: #00FA00 !important; }
 }
 .zoomed {
     z-index: 4;
+    top: 0;
     bottom: 22px;
-    width: 98%;
+    width: 100%;
 }
 #home:target {
     z-index: 5

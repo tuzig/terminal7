@@ -61,7 +61,12 @@ export class Window {
             a.nameE.classList.remove("on")
             a.e.classList.add("hidden")
         }
-        this.e.classList.remove("hidden")
+        if (this.activeP && this.activeP.zoomed) {
+            this.e.classList.add("hidden")
+            this.activeP.zoomedE.classList.remove("hidden")
+        }
+        else
+            this.e.classList.remove("hidden")
         this.nameE.classList.add("on")
         this.gate.activeW = this
         window.location.href=`#tab-${this.gate.id}.${this.id+1}`
