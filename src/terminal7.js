@@ -97,14 +97,15 @@ export class Terminal7 {
                 .addEventListener("click", ev => this.editDotfile(ev))
         document.getElementById("help-button")
                 .addEventListener("click", ev => {
-                    var ecl = document.getElementById("help").classList,
+                    var helpId = (this.activeG)? "help-gate":"help-home",
+                        ecl = document.getElementById(helpId).classList,
                         bcl = document.getElementById("help-button").classList,
                         hidden = ecl.contains("hidden")
                     ecl.toggle("hidden")
                     bcl.toggle("on")
-                    if (!hidden)
+                    if (hidden)
                         imageMapResizer()
-                    else if (this.activeG)
+                    else
                         this.focus()
                     // TODO: When at home remove the "on" from the home butto
                 })

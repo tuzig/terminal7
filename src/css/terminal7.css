@@ -17,12 +17,12 @@ body {
   justify-content: center;
   align-items: center;
   text-align: center;
-  font-family: Courier new;
+  font-family: -apple-system;
   color: #00FAFA;
   background-color: #271D30;
 }
 
-/* *:focus { outline: none; } */
+*:focus { outline: none; } 
 
 h1, h2, h3 {
   text-align: center;
@@ -268,7 +268,6 @@ nav .on { color: #00FA00 !important; }
     z-index: 5
 }
 #home {
-    font-family: -apple-system;
     width: 100%;
     background-color: #271D30;
     position: absolute;
@@ -432,10 +431,13 @@ td {
 #offline p {
     margin-top: 2em;
 }
-#help {
+#help-home, #help-gate {
     position: fixed;
     left: 0;
     bottom: 56px;
     z-index: 5;
+    background-color: #271D30;
+}
+#help-gate {
     border-top: 2px dashed #F952F9;
 }

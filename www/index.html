@@ -114,11 +114,12 @@
           <h1>Network is down</h1>
           <p>Terminal 7 will activate on reconnect</p>
       </div>
-      <div id="help" class="hidden" >
-          <map name="help-links">
+      <div id="help-home" class="hidden" >
+        <map name="help-home-links">
+            <area shape="rect" coords="900,660,1439,800"  alt="webexec"
+                  href="https://github.com/tuzig/webexec" target="_top"/>
             <area shape="rect" coords="2000,0,2439,300"  alt="githublink"
                   href="https://github.com/tuzig/terminal7" target="_top"/>
-
             <area shape="rect" coords="2000,500,2439,640"  alt="server side"
                   href="https://github.com/tuzig/webexec" target="_top"/>
             <area shape="rect" coords="2000,640,2439,770"  alt="change log"
@@ -132,9 +133,12 @@
                   target="_top"/>
             <area shape="rect" coords="2000,1020,2439,1145"  alt="support"
                   href="mailto:support@tuzig.com"/>
-          </map>
-          <img usemap="#help-links" src="img/help.png" alt="help screen"
-               width="100%"/>
+        </map>
+        <img usemap="#help-home-links" src="img/help-home.png" alt="help screen"
+             width="100%"/>
+      </div>
+      <div id="help-gate" class="hidden" >
+          <img src="img/help-gate.png" alt="help screen" width="100%"/>
       </div>
       <div id="keys-help" class="hidden modal border" >
           <table>
