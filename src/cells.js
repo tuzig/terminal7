@@ -697,7 +697,7 @@ export class Pane extends Cell {
                 if (this.state == "opened") {
                     this.gate.notify("Data channel is opened, but no first message")
                     this.gate.stopBoarding()
-                }}, terminal7.conf.exec.timeout)
+                }}, terminal7.conf.net.timeout)
         }
         this.d.onmessage = m => this.onMessage(m)
 

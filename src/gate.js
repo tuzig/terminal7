@@ -223,7 +223,7 @@ export class Gate {
         this.closePC()
         // exciting timess.... a connection is born!
         this.pc = new RTCPeerConnection({ iceServers: [
-                  { urls: 'stun:stun2.l.google.com:19302' }
+                  { urls: terminal7.conf.net.iceServer }
                 ] })
         this.pc.onconnectionstatechange = e =>
             this.updateConnectionState(this.pc.connectionState)
@@ -267,8 +267,8 @@ export class Gate {
      * channel open or adds it to the queue if we're early to the party
      */
     sendCTRLMsg(msg) {
-        const timeout = parseInt(terminal7.conf.exec.timeout),
-              retries = parseInt(terminal7.conf.exec.retries),
+        const timeout = parseInt(terminal7.conf.net.timeout),
+              retries = parseInt(terminal7.conf.net.retries),
               now = Date.now()
         // helps us ensure every message gets only one Id
         if (msg.message_id === undefined) 

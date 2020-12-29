@@ -31,12 +31,17 @@ log_lines = 7
 
 [exec]
 shell = "zsh"
+
+[net]
 timeout = 3000
 retries = 3
+ice_server = "stun:stun2.l.google.com:19302"
 
 [ui]
 quickest_press = 1000
 max_tabs = 3
+cut_min_distance = 80
+cut_min_speed = 2.5
 `
 
 export class Terminal7 {
@@ -51,7 +56,6 @@ export class Terminal7 {
         this.activeG = null
         window.terminal7 = this
         let dotfile = localStorage.getItem('dotfile') || DEFAULT_DOTFILE
-        this.minSplitSpeed      = settings.minSplitSpeed || 2.2
         this.scrollLingers4     = settings.scrollLingers4 || 2000
         this.shortestLongPress  = settings.shortestLongPress || 1000
         this.borderHotSpotSize  = settings.borderHotSpotSize || 30
@@ -59,11 +63,7 @@ export class Terminal7 {
         this.confEditor = null
         this.flashTimer = null
         this.netStatus = null
-        this.conf = TOML.parse(dotfile)
-        this.conf.features = this.conf.features || {}
-        this.conf.ui = this.conf.ui || {}
-        this.conf.ui.quickest_press = this.conf.ui.quickest_press || 1000
-        this.conf.ui.max_tabs = this.conf.ui.max_tabs || 3
+        this.loadConf(TOML.parse(dotfile))
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,
@@ -297,7 +297,7 @@ export class Terminal7 {
             area    =  document.getElementById("edit-conf")
         button.classList.remove("on")
         terminal7.confEditor.save()
-        this.conf = TOML.parse(area.value)
+        this.loadConf(TOML.parse(area.value))
         localStorage.setItem("dotfile", area.value)
         this.cells.forEach(c => {
             if (typeof(c.setTheme) == "function")
@@ -410,10 +410,9 @@ export class Terminal7 {
             window.toBeFit = new Set([])
             if ((!pane.scrolling)
                 && (ev.changedTouches.length == 1)
-                && (d > 50)) {
-                // it's a swipe!!
-                console.log(`swipe speed: ${s}`)
-                if (s > this.minSplitSpeed) {
+                && (d > this.conf.ui.cutMinDistance)
+                && (s > this.conf.ui.cutMinSpeed)) {
+                    // it's a swipe!!
                     let p = ev.target.p
                     if (!pane.zoomed)  {
                         let t = pane.split((topb)?"topbottom":"rightleft",
@@ -421,7 +420,6 @@ export class Terminal7 {
                         // t.focus()
                     }
                 }
-            }
             this.touch0 = null
             this.firstT = []
             this.gesture = null
@@ -722,5 +720,19 @@ export class Terminal7 {
             cl.add("failed")
             // remove all restore markers
         }
+    }
+    loadConf(conf) {
+        this.conf = conf
+        this.conf.features = this.conf.features || {}
+        this.conf.ui = this.conf.ui || {}
+        this.conf.net = this.conf.net || {}
+        this.conf.ui.quickest_press = this.conf.ui.quickest_press || 1000
+        this.conf.ui.max_tabs = this.conf.ui.max_tabs || 3
+        this.conf.ui.cutMinSpeed = this.conf.ui.cut_min_speed || 2.2
+        this.conf.ui.cutMinDistance = this.conf.ui.cut_min_distance || 50
+        this.conf.net.iceServer = this.conf.net.ice_server ||
+            "stun:stun2.l.google.com:19302"
+        this.conf.net.timeout = this.conf.net.timeout || 3000
+        this.conf.net.retries = this.conf.net.retries || 3
     }
 }
