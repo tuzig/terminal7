@@ -534,10 +534,12 @@ export class Gate {
         })
         ct.querySelector("form").addEventListener('submit', ev => {
             ev.preventDefault()
-            ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
             terminal7.ssh(ct,  this,
                 `cat <<<"${terminal7.token}" >> ~/.webexec/authorized_tokens`,
-                _ => this.connect())
+                _ => {
+                    ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
+                    this.connect()
+                })
         })
  
         ct.querySelector(".close").addEventListener('click',  ev =>  {
