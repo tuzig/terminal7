@@ -6,6 +6,20 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- reconnect button
+- more meta key - T, L, R
+
+### Fixed
+
+- help links are now pointing where they should (security.md still MIA)
+- home screen gate button are tactile
+- meaningless timeout messages after reconnect
+- when rotating the iPad the tabs resize to fill the space
+
 ## [0.11.1] - 2020/12/21
 
 ### Fixed
