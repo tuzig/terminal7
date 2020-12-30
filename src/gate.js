@@ -155,9 +155,7 @@ export class Gate {
      */
     updateConnectionState(state) {
         console.log(`updating ${this.name} state to ${state}`)
-        if ((state == "new") || (state == "connecting"))
-            this.notify("WebRTC starting")
-        else if (state == "connected") {
+        if (state == "connected") {
             this.notify("WebRTC connected")
             this.boarding = true
             document.getElementById("downstream-indicator").classList.remove("failed")
@@ -167,7 +165,8 @@ export class Gate {
             this.notify("WebRTC disconnected and may reconnect or close")
             this.lastDisconnect = Date.now()
         }
-        else if (this.boarding) {
+        else if ((state != "new") && (state != "connecting") && this.boarding) {
+            // handle connection failures
             let now = Date.now()
             if (now - this.lastDisconnect > 100) {
                 this.notify("WebRTC closed")
@@ -194,7 +193,6 @@ export class Gate {
      */
     peerConnect(offer) {
         let sd = new RTCSessionDescription(offer)
-        this.notify("Setting remote description") // TODO: add a var or two
         this.pc.setRemoteDescription(sd)
             .catch (e => {
                 this.notify(`Failed to set remote description: ${e}`)
