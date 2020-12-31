@@ -62,7 +62,6 @@ export class Cell {
         }
         this.w.activeP = this
         this.e.classList.add("focused")
-        this.gate.sendState()
     }
     /*
      * Used to grow/shrink the terminal based on containing element dimensions
@@ -90,9 +89,18 @@ export class Cell {
             pinch,
             new Hammer.Tap({event: "twofingerstap", pointers: 2})])
 
-        h.on('tap', e => this.focus())
-        h.on('twofingerstap', e => this.toggleZoom())
-        h.on('doubletap', e => this.toggleZoom())
+        h.on('tap', e => {
+            this.focus()
+            this.gate.sendState()
+        })
+        h.on('twofingerstap', e => {
+            this.toggleZoom()
+            this.gate.sendState()
+        })
+        h.on('doubletap', e => {
+            this.toggleZoom()
+            this.gate.sendState()
+        })
 
         h.on('pinch', e => {
             console.log(e.additionalEvent, e.distance, e.angle, e.deltaTime, e.isFirst, e.isFinal)

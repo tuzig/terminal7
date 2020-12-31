@@ -70,8 +70,8 @@ export class Window {
         this.nameE.classList.add("on")
         this.gate.activeW = this
         window.location.href=`#tab-${this.gate.id}.${this.id+1}`
-        this.gate.sendState()
-        terminal7.run(_ => this.activeP.focus(), ABIT)
+        if (this.activeP)
+            this.activeP.focus()
     }
     addLayout(dir, basedOn) {
         let l = new Layout(dir, basedOn)
@@ -133,7 +133,7 @@ export class Window {
             terminal7.run(() => {
                 p.innerHTML = p.w.name
                 this.activeP.focus()
-            }, 0)
+            }, ABIT)
         }, { once: true })
         i.addEventListener('change', (e) => {
             console.log("change", e)
@@ -200,8 +200,9 @@ export class Window {
                 if (match(c))
                     nextPane = c
         })
-        if (nextPane)
+        if (nextPane) {
             nextPane.focus()
-            
+            this.gate.sendState()
+        }
     }
 }
