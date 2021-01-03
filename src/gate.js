@@ -219,7 +219,7 @@ export class Gate {
         // cleanup
         this.pendingCDCMsgs = []
         this.closePC()
-        // exciting timess.... a connection is born!
+        // exciting times.... a connection is born!
         this.pc = new RTCPeerConnection({ iceServers: [
                   { urls: terminal7.conf.net.iceServer }
                 ] })
@@ -316,7 +316,6 @@ export class Gate {
                 if (this.nameE != null)
                     this.nameE.classList.add("failed")
                 this.notify("Authorization FAILED")
-                this.closePC()
                 terminal7.run(_ => this.copyToken(), ABIT)
                 return
             }
@@ -525,7 +524,7 @@ export class Gate {
         ct.querySelector('[name="token"]').value = terminal7.token
         ct.classList.remove("hidden")
         ct.querySelector(".copy").addEventListener('click', ev => {
-            ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
+            ct.classList.add("hidden")
             Clipboard.write(
                 {string: ct.querySelector('[name="token"]').value})
             this.notify("Token copied to the clipboard")
@@ -535,13 +534,13 @@ export class Gate {
             terminal7.ssh(ct,  this,
                 `cat <<<"${terminal7.token}" >> ~/.webexec/authorized_tokens`,
                 _ => {
-                    ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
-                    this.connect()
+                    ct.classList.add("hidden")
+                    this.authenticate()
                 })
         })
  
         ct.querySelector(".close").addEventListener('click',  ev =>  {
-            ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
+            ct.classList.add("hidden")
         })
     }
     goBack() {
