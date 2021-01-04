@@ -7,6 +7,18 @@
  * green - #00FA00
  * background - #271D30
  */
+@font-face {
+    font-family: "FiraSans";
+    font-style: normal;
+    font-weight: 400;
+    src: url("../fonts/FiraSansCondensed-Regular.ttf") format("truetype");
+}
+@font-face {
+    font-family: "FiraCode";
+    font-style: normal;
+    font-weight: 400;
+    src: url("../fonts/FiraCode-VariableFont_wght.ttf") format("truetype");
+}
 html,
 body {
   width: 100%;
@@ -17,7 +29,7 @@ body {
   justify-content: center;
   align-items: center;
   text-align: center;
-  font-family: -apple-system;
+  font-family: 'FiraSans';
   color: #00FAFA;
   background-color: #271D30;
 }

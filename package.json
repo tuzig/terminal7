@@ -37,7 +37,8 @@
     "websocket-extensions": ">=0.1.4",
     "xterm": "<5",
     "xterm-addon-fit": "^0.3.0",
-    "xterm-addon-search": "^0.7.0"
+    "xterm-addon-search": "^0.7.0",
+    "xterm-webfont": "^2.0.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",

@@ -10,6 +10,7 @@ import { SearchAddon } from 'xterm-addon-search'
 import { fileRegex, urlRegex } from './utils.js'
 import { Plugins } from '@capacitor/core'
 import * as aE from 'ansi-escapes'
+import * as XtermWebfont from 'xterm-webfont'
 
 const { Browser, Clipboard } = Plugins
 
@@ -537,6 +538,7 @@ export class Pane extends Cell {
         con.p = this
         this.t = new Terminal({
             convertEol: true,
+            fontFamily: "FiraCode",
             fontSize: this.fontSize,
             theme: this.theme,
             rows:24,
@@ -549,47 +551,49 @@ export class Pane extends Cell {
         this.e.appendChild(con)
         con.style.height = "100%"
         con.style.width = "100%"
-        this.t.open(con)
+        this.t.loadAddon(new XtermWebfont())
         // the canvas gets the touch event and the nadler needs to get back here
         this.t.loadAddon(this.fitAddon)
         this.t.loadAddon(this.searchAddon)
         this.createDividers()
-        this.fit()
-        con.querySelector(".xterm-cursor-layer").p = this
-        this.t.textarea.tabIndex = -1
-        this.t.attachCustomKeyEventHandler(ev => {
-            // ctrl c is a special case 
-            if (ev.ctrlKey && (ev.key == "c")) {
-                this.d.send(String.fromCharCode(3))
-                return false
-            }
-            if (ev.metaKey && (ev.key != "Shift") && (ev.key != "Meta")) {
-                // ensure help won't pop
-                terminal7.metaPressStart = Number.MAX_VALUE
-                return this.handleMetaKey(ev)
-            }
-            else
-                return true
+        this.t.loadWebfontAndOpen(con).then(_ => {
+            this.fit()
+            this.t.textarea.tabIndex = -1
+            con.querySelector(".xterm-cursor-layer").p = this
+            this.t.attachCustomKeyEventHandler(ev => {
+                // ctrl c is a special case 
+                if (ev.ctrlKey && (ev.key == "c")) {
+                    this.d.send(String.fromCharCode(3))
+                    return false
+                }
+                if (ev.metaKey && (ev.key != "Shift") && (ev.key != "Meta")) {
+                    // ensure help won't pop
+                    terminal7.metaPressStart = Number.MAX_VALUE
+                    return this.handleMetaKey(ev)
+                }
+                else
+                    return true
+            })
+            this.t.onData(d =>  {
+                if (!this.copyMode && (this.d != null)
+                    && (this.d.readyState == "open"))
+                    this.d.send(d)
+            })
+            this.t.onKey((ev) =>  {
+                if (this.copyMode) {
+                    this.handleCopyModeKey(ev.domEvent)
+                }
+            })
+            // keep tap of "scrolling mode"
+            var tf
+            this.t.onScroll(ev => {
+                this.scrolling = true
+                if (tf !== undefined)
+                    clearTimeout(tf)
+                tf = terminal7.run(e => this.scrolling = false, this.scrollLingers4)
+            })
+            this.state = "opened"
         })
-        this.t.onData(d =>  {
-            if (!this.copyMode && (this.d != null)
-                && (this.d.readyState == "open"))
-                this.d.send(d)
-        })
-        this.t.onKey((ev) =>  {
-            if (this.copyMode) {
-                this.handleCopyModeKey(ev.domEvent)
-            }
-        })
-        // keep tap of "scrolling mode"
-        var tf
-        this.t.onScroll(ev => {
-            this.scrolling = true
-            if (tf !== undefined)
-                clearTimeout(tf)
-            tf = terminal7.run(e => this.scrolling = false, this.scrollLingers4)
-        })
-        this.state = "opened"
         return this.t
     }
     updateBufferPosition() {
