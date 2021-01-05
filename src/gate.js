@@ -58,9 +58,10 @@ export class Gate {
             t = t.content.cloneNode(true)
             t.querySelector(".add-tab").addEventListener(
                 'click', _ => this.newTab())
-            t.querySelector(".reconnect").addEventListener(
+            t.querySelector(".reset").addEventListener(
                 'click', _ => {
-                    this.disengage(_ => this.connect())
+                    this.clear()
+                    this.connect()
                 })
             t.querySelector(".search-close").addEventListener('click', _ =>  {
                 this.activeW.activeP.exitCopyMode()
