@@ -165,6 +165,7 @@ export class Gate {
             // TODO: add warn class
             this.notify("WebRTC disconnected and may reconnect or close")
             this.lastDisconnect = Date.now()
+            document.getElementById("downstream-indicator").classList.add("failed")
         }
         else if ((state != "new") && (state != "connecting") && this.boarding) {
             // handle connection failures
