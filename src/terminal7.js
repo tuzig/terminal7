@@ -93,11 +93,10 @@ export class Terminal7 {
                                 sy = (r.y + 2)/H
                             }
                             w.rootLayout.sy = sy
+                            w.fit()
                         }))
                 }
-                this.gates.forEach(g => g.fit())
-                imageMapResizer()
-            }, 50)
+            })
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",
@@ -315,7 +314,6 @@ export class Terminal7 {
         if (type == "start") {
             this.touch0 = Date.now() 
             this.firstT = this.lastT = ev.changedTouches
-            window.toBeFit = new Set([])
             if (e.gate instanceof Gate)
                 nameB.classList.add("pressed")
             if (e.w instanceof Window)
@@ -406,8 +404,6 @@ export class Terminal7 {
             this.lastT = ev.changedTouches
         }
         if (type == "end") {
-            window.toBeFit.forEach(c => c.fit())
-            window.toBeFit = new Set([])
             if ((!pane.scrolling)
                 && (ev.changedTouches.length == 1)
                 && (d > this.conf.ui.cutMinDistance)

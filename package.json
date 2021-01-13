@@ -19,7 +19,6 @@
     "publish": null
   },
   "dependencies": {
-    "@capacitor/android": "^2.4.2",
     "@capacitor/cli": "<3",
     "@capacitor/core": "<3",
     "@capacitor/ios": "<3",

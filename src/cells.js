@@ -96,11 +96,9 @@ export class Cell {
         })
         h.on('twofingerstap', e => {
             this.toggleZoom()
-            this.gate.sendState()
         })
         h.on('doubletap', e => {
             this.toggleZoom()
-            this.gate.sendState()
         })
 
         h.on('pinch', e => {
@@ -245,12 +243,10 @@ export class Layout extends Cell {
                 if (c.xoff < p.xoff)
                     p.xoff = c.xoff
             }
-            p.fit()
             p.focus()
             // remove this from the layout
             this.cells.splice(i, 1)
         }
-        this.gate.sendState()
     }
     /*
      * Replace an old cell with a new cell, used when a pane
@@ -281,17 +277,6 @@ export class Layout extends Cell {
         // for 10 msecs to let the new layout refresh
         pane.openTerminal()
         pane.focus()
-        // if we're connected, open the data channel
-        if (this.gate.pc != null)
-            terminal7.run(_ => {
-                try {
-                    pane.openDC()
-                } catch (e) {
-                    console.log("failed to open DC", e)
-                    return
-                }
-                this.gate.sendState()
-            }, ABIT)
         return pane
     }
     /*
@@ -342,25 +327,7 @@ export class Layout extends Cell {
             cells: [],
         }
         // get the dimensions of all the cell, recurse if a layout is found
-        this.cells.forEach(c => {
-            var cell
-            if (c instanceof Layout)
-                cell = c.dump()
-            else {
-                // it's a pane
-                cell = {
-                    sx: c.sx,
-                    sy: c.sy,
-                    xoff: c.xoff,
-                    yoff: c.yoff,
-                    fontSize: c.fontSize,
-                    webexec_id: c.webexecID,
-                }
-                if (c.webexecID == this.w.activeP.webexecID)
-                    cell.active = true
-            }
-            d.cells.push(cell)
-        })
+        this.cells.forEach(c => d.cells.push(c.dump()))
         return d
     }
 
@@ -490,15 +457,12 @@ export class Layout extends Cell {
             return
         }
 
-        window.toBeFit.add(p0)
-        window.toBeFit.add(p1)
         let by = p1[off] - dest
         p0[s] -= by
         p1[s] += by
         p1[off] = dest
         p0.refreshDividers()
         p1.refreshDividers()
-        this.gate.sendState()
     }
 }
 
@@ -557,7 +521,8 @@ export class Pane extends Cell {
         this.t.loadAddon(this.searchAddon)
         this.createDividers()
         this.t.loadWebfontAndOpen(con).then(_ => {
-            this.fit()
+            this.fit(pane => { if (pane != null) pane.openDC() })
+
             this.t.textarea.tabIndex = -1
             con.querySelector(".xterm-cursor-layer").p = this
             this.t.attachCustomKeyEventHandler(ev => {
@@ -592,6 +557,8 @@ export class Pane extends Cell {
                     clearTimeout(tf)
                 tf = terminal7.run(e => this.scrolling = false, this.scrollLingers4)
             })
+            const resizeObserver = new ResizeObserver(_ => this.fit())
+            resizeObserver.observe(this.e);
             this.state = "opened"
         })
         return this.t
@@ -618,11 +585,13 @@ export class Pane extends Cell {
         else if (this.fontSize > 30) this.fontSize = 30
         this.t.setOption('fontSize', this.fontSize)
         this.fit()
-        this.gate.sendState()
     }
 
     // fit a pane
-    fit() {
+    fit(cb) {
+        var oldr = this.t.rows,
+            oldc = this.t.cols
+            
         try {
             this.fitAddon.fit()
         } catch {
@@ -630,12 +599,18 @@ export class Pane extends Cell {
                 this.retries++
                 terminal7.run(this.fit, 20*this.retries)
             }
-            else
+            else {
                 console.log(`fit failed ${this.retries} times. giving up`)
+                if (cb instanceof Function) cb(null)
+            }
             return
         }
-        this.gate.sendSize(this)
         this.refreshDividers()
+        if (this.t.rows != oldr || this.t.cols != oldc) {
+            this.gate.sendState()
+            this.gate.sendSize(this)
+            if (cb instanceof Function) cb(this)
+        }
     }
     /*
      * Pane.focus focuses the UI on this pane
@@ -1064,5 +1039,18 @@ export class Pane extends Cell {
             this.d.onclose = undefined
         this.dividers.forEach(d => d.classList.add("hidden"))
         super.close()
+    }
+    dump() {
+        var cell = {
+            sx: this.sx,
+            sy: this.sy,
+            xoff: this.xoff,
+            yoff: this.yoff,
+            fontSize: this.fontSize,
+            webexec_id: this.webexecID,
+        }
+        if (this.w.activeP && this.webexecID == this.w.activeP.webexecID)
+            cell.active = true
+        return cell
     }
 }

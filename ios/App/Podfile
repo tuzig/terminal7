@@ -1,9 +1,6 @@
 platform :ios, '11.0'
 use_frameworks!
 
-# ignore all warnings from all pods
-inhibit_all_warnings!
-
 # workaround to avoid Xcode caching of Pods that requires
 # Product -> Clean Build Folder after new Cordova plugins installed
 # Requires CocoaPods 1.6 or newer
@@ -17,7 +14,7 @@ def capacitor_pods
   # Do not delete
 end
 
-target 'Terminal7' do
+target 'App' do
   capacitor_pods
   # Add your Pods here
 end
