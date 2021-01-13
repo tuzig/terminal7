@@ -234,6 +234,9 @@ export class Terminal7 {
                 Network.getStatus().then(s => this.updateNetworkStatus(s))
             }
         })
+        document.getElementById("log").addEventListener("click",
+            _ => this.logDisplay(false))
+
             
         // Last one: focus
         this.focus()
