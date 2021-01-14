@@ -130,7 +130,6 @@ export class Gate {
         if (activeG) {
             activeG.e.classList.add("hidden")
         }
-        this.e.classList.remove("hidden")
         terminal7.activeG = this
         this.e.classList.remove("hidden")
         this.e.querySelectorAll(".window").forEach(w => w.classList.add("hidden"))
@@ -309,6 +308,7 @@ export class Gate {
         let msgId = this.sendCTRLMsg({
             type: "auth",
             args: {token: terminal7.token,
+                   api_version: 2,
                    marker: this.marker}
         })
         this.onack[msgId] = (isNack, state) => {

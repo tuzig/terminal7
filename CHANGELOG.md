@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The reset button cleans the gate before connecting
 - Improoved notification wording
+- Focusing on the right window and pane after restore
 
 ## [0.12.2] - 2020/1/3
 
