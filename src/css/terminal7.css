@@ -70,10 +70,32 @@ button {
   font-family: Courier new;
   */
 }
+.text-button {
+    display: inline-block;
+    padding: 0.35em 1.2em;
+    margin: 0 0.3em 0.3em 0;
+    border-color: #D9F505;
+    color: #00FA00;
+    border-radius: 0.15em;
+    font-weight: 300;
+    background-color: black;
+    transition: all 0.2s;
+    font-size: 30px;
+} 
+@media all and (max-width:30em){
+    .text-button {
+        display:block;
+        margin:0.4em auto;
+    }
+}
 #terminal7 ul {
     list-style:none;
 }
-.border {
+dd:not(:last-child) {
+    margin-bottom: 1.5em;
+}
+dd { margin-inline-start: 0; }
+.border, .text-button {
     border-width: 1px;
     border-style: solid;
     border-radius: 6px;

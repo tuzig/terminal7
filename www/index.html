@@ -15,7 +15,7 @@
           <h1>Welcome to Terminal 7 </h1>
           <div id="version" target="_blank">
               <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md">
-                  version 0.12.2
+                  version 0.12.3
               </a>
           </div>
           <h2>Please choose your destination:</h2>
@@ -254,6 +254,19 @@
           <button class="reset"><i class="f7-icons">arrow_2_circlepath</i></button>
       </nav>
     </div>
+    </template>
+    <template id="reset-gate-template">
+      <div class="reset-gate hidden modal border" >
+          <p>What kind of reset whould you like?</p>
+          <dl>
+             <dt><button class="text-button sizes">Sizes</button></dt>
+              <dd>Fitting terminals and refreshing all panes' sizes</dd>
+              <dt><button class="text-button channels">Data Channels</button></dt>
+              <dd>Replacing all data channels with fresh ones</dd> 
+              <dt><button class="text-button all">All</button></dt>
+              <dd>Drop the peer connection, reset the layout and re-connect</dd>
+          </dl>
+      </div>
     </template>
   <script src="terminal7.bundle.js"></script>
 </body>

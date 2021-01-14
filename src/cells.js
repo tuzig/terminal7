@@ -587,10 +587,12 @@ export class Pane extends Cell {
         this.fit()
     }
 
-    // fit a pane
+    // fit a pane to the display area. If it was resized, the server is updated.
+    // returns true is size was changed
     fit(cb) {
         var oldr = this.t.rows,
-            oldc = this.t.cols
+            oldc = this.t.cols,
+            ret = false
             
         try {
             this.fitAddon.fit()
@@ -609,8 +611,10 @@ export class Pane extends Cell {
         if (this.t.rows != oldr || this.t.cols != oldc) {
             this.gate.sendState()
             this.gate.sendSize(this)
-            if (cb instanceof Function) cb(this)
+            ret = true
         }
+        if (cb instanceof Function) cb(this)
+        return ret
     }
     /*
      * Pane.focus focuses the UI on this pane

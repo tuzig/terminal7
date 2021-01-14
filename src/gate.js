@@ -56,13 +56,9 @@ export class Gate {
         let t = document.getElementById("gate-template")
         if (t) {
             t = t.content.cloneNode(true)
+             this.openReset(t)
             t.querySelector(".add-tab").addEventListener(
                 'click', _ => this.newTab())
-            t.querySelector(".reset").addEventListener(
-                'click', _ => {
-                    this.clear()
-                    this.connect()
-                })
             t.querySelector(".search-close").addEventListener('click', _ =>  {
                 this.activeW.activeP.exitCopyMode()
                 this.activeW.activeP.focus()
@@ -607,5 +603,35 @@ export class Gate {
             let w = this.addWindow("", true)
             w.focus()
         }
+    }
+    openReset(t) {
+        //TODO: clone this from a template
+        let e = document.getElementById("reset-gate-template")
+        e = e.content.cloneNode(true)
+        t.querySelector(".reset").addEventListener('click', _ => {
+            this.e.querySelector(".reset-gate").classList.toggle("hidden")
+            this.panes().forEach(p => {
+                if (!p.fit())
+                    this.sendSize(p)
+            })
+        })
+        e.querySelector(".sizes").addEventListener('click', _ => {
+            this.e.querySelector(".reset-gate").classList.toggle("hidden")
+            this.notify("TBD")
+        })
+        e.querySelector(".channels").addEventListener('click', _ => {
+            this.e.querySelector(".reset-gate").classList.toggle("hidden")
+            this.marker = 0
+            this.panes().forEach(p => {
+                p.d.close()
+                p.openDC()
+            })
+        })
+        e.querySelector(".all").addEventListener('click', _ => {
+            this.e.querySelector(".reset-gate").classList.toggle("hidden")
+            this.clear()
+            this.connect()
+        })
+        this.e.appendChild(e)
     }
 }
