@@ -610,16 +610,17 @@ export class Gate {
         e = e.content.cloneNode(true)
         t.querySelector(".reset").addEventListener('click', _ => {
             this.e.querySelector(".reset-gate").classList.toggle("hidden")
+        })
+        e.querySelector(".sizes").addEventListener('click', _ => {
+            this.notify("Resetting sizes")
+            this.e.querySelector(".reset-gate").classList.toggle("hidden")
             this.panes().forEach(p => {
                 if (!p.fit())
                     this.sendSize(p)
             })
         })
-        e.querySelector(".sizes").addEventListener('click', _ => {
-            this.e.querySelector(".reset-gate").classList.toggle("hidden")
-            this.notify("TBD")
-        })
         e.querySelector(".channels").addEventListener('click', _ => {
+            this.notify("Resetting data channels")
             this.e.querySelector(".reset-gate").classList.toggle("hidden")
             this.marker = 0
             this.panes().forEach(p => {
