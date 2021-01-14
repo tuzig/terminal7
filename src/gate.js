@@ -323,7 +323,6 @@ export class Gate {
                 this.nameE.classList.remove("failed")
             this.notify("Authorization accepted")
             this.restoreState(state)
-            this.marker = -1
         }
     }
     /*
