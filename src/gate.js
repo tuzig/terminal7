@@ -283,7 +283,7 @@ export class Gate {
                 msg.payload = s
             } else if (msg.tries == 1)
                 this.notify(
-                     `#${msg.message_id} no ACK in ${timeout}ms, trying ${retries-1} more times`)
+                     `msg #${msg.message_id} no ACK in ${timeout}ms, trying ${retries-1} more times`)
             if (msg.tries++ < retries) {
                 console.log(`sending ctrl msg ${msg.message_id} for ${msg.tries} time`)
                 try {
