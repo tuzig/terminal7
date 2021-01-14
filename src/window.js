@@ -103,7 +103,7 @@ export class Window {
             else {
                 let p = l.addPane(cell)
                 if (cell.active)
-                    p.focus()
+                    this.activeP = p
             }
         })
         return l

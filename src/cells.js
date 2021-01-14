@@ -276,7 +276,6 @@ export class Layout extends Cell {
         // opening the terminal and the datachannel are heavy so we wait
         // for 10 msecs to let the new layout refresh
         pane.openTerminal()
-        pane.focus()
         return pane
     }
     /*
@@ -662,9 +661,12 @@ export class Pane extends Cell {
         this.fit()
 
         // add the new pane
-        return l.addPane({sx: sx, sy: sy, 
-                          xoff: xoff, yoff: yoff,
-                          parent: this})
+        let p = l.addPane({sx: sx, sy: sy, 
+                       xoff: xoff, yoff: yoff,
+                       parent: this})
+        p.focus()
+        return p
+
     }
     openDC() {
         var tSize = this.t.rows+'x'+this.t.cols,

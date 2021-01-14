@@ -132,6 +132,8 @@ export class Gate {
         }
         this.e.classList.remove("hidden")
         terminal7.activeG = this
+        this.e.classList.remove("hidden")
+        this.e.querySelectorAll(".window").forEach(w => w.classList.add("hidden"))
         this.activeW.focus()
     }
     // stops all communication if 
