@@ -5,7 +5,9 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Layout, Pane } from './cells.js'
+import { Layout } from './layout.js'
+import { Cell } from './cell.js'
+import { Pane } from './pane.js'
 import * as Hammer from 'hammerjs'
 
 const ABIT = 10

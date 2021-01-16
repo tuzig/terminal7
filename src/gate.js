@@ -7,7 +7,7 @@
  */
 import * as Hammer from 'hammerjs'
 import { Window } from './window.js'
-import { Pane } from './cells.js'
+import { Pane } from './pane.js'
 
 import { Plugins } from '@capacitor/core'
 const { Browser, Clipboard } = Plugins
