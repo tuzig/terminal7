@@ -317,12 +317,13 @@ export class Gate {
                     this.nameE.classList.add("failed")
                 this.notify("Authorization FAILED")
                 terminal7.run(_ => this.copyToken(), ABIT)
-                return
+            } else {
+                if (this.nameE != null)
+                    this.nameE.classList.remove("failed")
+                this.notify("Authorization accepted")
+                this.restoreState(state)
+                terminal7.run(_ => this.marker = -1, 100)
             }
-            if (this.nameE != null)
-                this.nameE.classList.remove("failed")
-            this.notify("Authorization accepted")
-            this.restoreState(state)
         }
     }
     /*

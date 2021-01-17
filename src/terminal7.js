@@ -717,7 +717,6 @@ export class Terminal7 {
         else {
             offl.remove("hidden")
             cl.add("failed")
-            // remove all restore markers
         }
     }
     loadConf(conf) {

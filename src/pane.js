@@ -233,7 +233,7 @@ export class Pane extends Cell {
         this.d.onclose = e => {
             console.log(`on data channel, marker - ${this.gate.marker}`)
             this.state = "disconnected"
-            // if (this.gate.marker == -1)
+            if (this.gate.marker == -1)
                 this.close()
         }
         this.d.onopen = () => {
