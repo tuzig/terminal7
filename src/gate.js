@@ -378,14 +378,9 @@ export class Gate {
         this.windows.push(w)
         if (this.windows.length >= terminal7.conf.ui.max_tabs)
             this.e.querySelector(".add-tab").classList.add("off")
-        w.open(this.e)
+        w.open(this.e.querySelector(".windows-container"))
         if (createPane) {
-        // empty window: create the first layout and pane
-        // filling the entire top of the screen
-            let tabbar = this.e.querySelector(".tabbar"),
-                r = tabbar.getBoundingClientRect(),
-                sy = (r.y + 2)/document.body.offsetHeight
-            let paneProps = {sx: 1.0, sy: sy,
+            let paneProps = {sx: 1.0, sy: 1.0,
                              xoff: 0, yoff: 0,
                              w: w,
                              gate: this},

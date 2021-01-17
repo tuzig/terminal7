@@ -133,6 +133,12 @@ export class Cell {
         if (this.layout)
             this.layout.onClose(this)
     }
+    styleZoomed(e) {
+        let H = document.body.offsetHeight
+        e.style.height = `${H - 44}px`
+        e.style.top = "0px"
+        e.style.width = "100%"
+    }
     toggleZoom() {
         if (this.zoomed) {
             // Zoom out
@@ -142,21 +148,20 @@ export class Cell {
             this.zoomedE = null
             this.w.e.classList.remove("hidden")
         } else {
-            let H = document.body.offsetHeight,
-                c = document.createElement('div'),
+            let c = document.createElement('div'),
                 e = document.createElement('div'),
                 te = this.e.removeChild(this.e.children[0])
             c.classList.add("zoomed")
-            e.classList.add("pane", "zoomed", "focused")
-            e.style.height = `${H - 44}px`
-            e.style.top = "22px"
-            e.style.width = "98%"
-            this.catchFingers(e)
+            e.classList.add("pane", "focused")
             e.appendChild(te)
             c.appendChild(e)
+            this.styleZoomed(e)
+            this.catchFingers(e)
             document.body.appendChild(c)
             this.zoomedE = c
             this.w.e.classList.add("hidden")
+            const resizeObserver = new ResizeObserver(_ => this.styleZoomed(e))
+            resizeObserver.observe(e);
         }
         this.zoomed = !this.zoomed
         terminal7.run(_ => this.focus(), ABIT)

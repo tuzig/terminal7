@@ -77,26 +77,7 @@ export class Terminal7 {
             document.body.appendChild(e)
         }
         this.e = e
-        window.onresize = () => 
-            terminal7.run(_ => {
-                let H = document.body.offsetHeight
-                if (H != this.bodyH) {
-                    // height change. need to change height
-                    this.bodyH = H
-                    // resize each rootLayout on each window on each gate
-                    var sy = 0
-                    this.gates.forEach(g =>
-                        g.windows.forEach(w => {
-                            if (sy == 0) {
-                                let tabbar = g.e.querySelector(".tabbar"),
-                                r = tabbar.getBoundingClientRect()
-                                sy = (r.y + 2)/H
-                            }
-                            w.rootLayout.sy = sy
-                            w.fit()
-                        }))
-                }
-            })
+
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",

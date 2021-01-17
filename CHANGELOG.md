@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed 
 
 - pane not closing on shell exit
+- panes not resizing properly when changing to portrait and back
 
 ## [0.13.0] - 2020/1/14
 

@@ -573,8 +573,8 @@ export class Pane extends Cell {
      * moved or resized
      */
     refreshDividers() {
-        var W = document.body.offsetWidth,
-            H = document.body.offsetHeight,
+        var W = this.w.e.offsetWidth,
+            H = this.w.e.offsetHeight,
             d = this.dividers[0]
         if (this.xoff > 0.001 & this.sy * H > 50) {
             // add elft divider

@@ -140,14 +140,14 @@ a {
     width: auto;
 }
 .window {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%%; /* TODO: make responsive */
+    height: 100%;
 }
 .pane {
-    position: fixed;
+    position: absolute;
     padding: 4px;
     overflow: hidden;
     -webkit-mask-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAA5JREFUeNpiYGBgAAgwAAAEAAGbA+oJAAAAAElFTkSuQmCC); /* this fixes the overflow:hidden in Chrome/Opera */
@@ -157,7 +157,7 @@ a {
     border-radius: 6px;
 }
 .layout {
-    position: fixed;
+    position: absolute;
     margin: 0;
     padding: 0;
     display: none;
@@ -220,6 +220,13 @@ nav .on { color: #00FA00 !important; }
     height: 41pt;
     bottom: 44pt;
     color: #373702;
+}
+.windows-container {
+    bottom: 85pt;
+    top: 16pt;
+    left: 0;
+    width: 100%;
+    position: fixed;
 }
 .tabbar input {
   font-size: 16pt;
@@ -294,10 +301,18 @@ nav .on { color: #00FA00 !important; }
     font-weight: bold;
 }
 .zoomed {
+    margin: 0;
+    padding: 0;
+    position: fixed;
     z-index: 4;
-    top: 0;
+    left: 12px;
+    right: 12px;
+    top: 22px;
     bottom: 22px;
-    width: 100%;
+    height: -webkit-fill-available;
+}
+.zoomed .pane {
+    height: -webkit-fill-available;
 }
 #home:target {
     z-index: 5
@@ -423,7 +438,7 @@ label {
 }
 #indicators {
     position: absolute;
-    top: 0px;
+    top: 22px;
     right: 0px;
     line-height: 18pt;
     font-size: 18pt;
@@ -453,7 +468,7 @@ td {
     padding:0.5em;
 }
 .divider {
-    position: fixed;
+    position: absolute;
     z-index: 3;
 }    
 #hosts .pressed { box-shadow: 4px 4px 5px 0 #F952F9; }
