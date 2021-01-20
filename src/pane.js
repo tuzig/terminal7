@@ -1,3 +1,9 @@
+/*! Terminal 7 Pane - a class that colds a pane - a terminal emulation 
+ * connected over a data channel to a remote interactive process
+ *
+ *  Copyright: (c) 2021 Benny A. Daon - benny@tuzig.com
+ *  License: GPLv3
+ */
 import { Plugins } from '@capacitor/core'
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
@@ -24,7 +30,6 @@ export class Pane extends Cell {
         this.catchFingers()
         this.state = "init"
         this.d = null
-        this.zoomed = false
         this.active = false
         this.webexecID = props.webexec_id || null
         this.fontSize = props.fontSize || 12

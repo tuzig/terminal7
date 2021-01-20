@@ -1,14 +1,12 @@
-/*! Terminal 7 cells - Cell, Layout & Pane
- *  This file contains the code that makes terminal 7 cells
+/*! Terminal 7 Cell - a class used as super for both Pane & Layout
  *
- *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
+ *  Copyright: (c) 2021 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
 const  ABIT                = 10
 
 export class Cell {
     constructor(props) {
-        console.log("in cell constructore")
         this.gate = props.gate || null
         this.w = props.w
         this.id = props.id || undefined

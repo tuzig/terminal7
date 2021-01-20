@@ -1,3 +1,10 @@
+/*! Terminal 7 Layout - a class that colds a layout container.
+ * layout has a direction and an array of cells. layouts can be compund - 
+ * a layout can contain layouts.
+ *
+ *  Copyright: (c) 2021 Benny A. Daon - benny@tuzig.com
+ *  License: GPLv3
+ */
 import { Cell } from './cell.js'
 import { Pane } from './pane.js'
 
