@@ -8,18 +8,18 @@ import { assert } from "chai"
 import { deleteDB } from 'idb'
 
 describe("certificates", () => {
-    var t, ns = []
+    var t, ns
     /*
      * Every tests gets a fresh copy of terminal7 and a fresh dom element
      */
     beforeEach(async () => {
         await deleteDB('t7')
+        ns = []
         t = new Terminal7()
         t.notify = msg => ns.push(msg)
     })
     after(() => terminal7.clearTimeouts())
     it("can be create, stored and read", async () => {
-        debugger
         let certs = await t.getCertificates()
         expect(certs.length).to.equal(0)
         certs = await t.generateCertificate()

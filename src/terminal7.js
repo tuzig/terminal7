@@ -720,10 +720,8 @@ export class Terminal7 {
     // gets the certificate from indexDB. If they are not there, create them
     getCertificates(cb) {
         return new Promise(resolve => {
-            console.log("in getCertificates")
             if (this.certificates)
                 resolve(this.certificates)
-            console.log("2")
             openDB("t7", 1, { 
                     upgrade(db) {
                         db.createObjectStore('certificates', {keyPath: 'id',
@@ -732,16 +730,15 @@ export class Terminal7 {
             }).then(db => {
                 let tx = db.transaction("certificates"),
                     store = tx.objectStore("certificates")
-                console.log("3")
                  store.getAll().then(certificates => {
                     this.certificates = certificates
-                    console.log("got certificates!", this.certificates)
+                     db.close()
                     resolve(this.certificates)
                  }).catch(e => {
-                    console.log(`got an reading certs db ${e}`)
                     resolve(null)
                 })
             }).catch(e => {
+                db.close()
                 console.log(`got an error opening db ${e}`)
                 resolve(null)
             })
@@ -775,13 +772,16 @@ export class Terminal7 {
                     store = tx.objectStore("certificates"),
                     c = this.certificates[0]
                 c.id = 1
-                store.add(c).then(_ =>
-                    resolve(this.certificates[0])).catch(e => {
+                store.add(c).then(_ => {
+                    db.close()
+                    resolve(this.certificates[0]).catch(e => {
                         console.log(`got an error storing cert ${e}`)
                         resolve(null)
                     })
+                })
             }).catch(e => {
                 console.log (`got error from open db ${e}`)
+                db.close()
                 resolve(null)
             })
         })
