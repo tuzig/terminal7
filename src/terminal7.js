@@ -7,7 +7,6 @@
  */
 import { Gate } from './gate.js'
 import { Window } from './window.js'
-import { v4 as uuidv4 } from 'uuid'
 import * as Hammer from 'hammerjs'
 import * as TOML from '@iarna/toml'
 import * as imageMapResizer from './imageMapResizer.js'
@@ -17,6 +16,7 @@ import { tomlMode} from 'codemirror/mode/toml/toml.js'
 import { dialogAddOn } from 'codemirror/addon/dialog/dialog.js'
 import { formatDate } from './utils.js'
 import { Plugins } from '@capacitor/core'
+import { openDB } from 'idb'
 
 const { Network, App, BackgroundTask } = Plugins
 
@@ -59,7 +59,7 @@ export class Terminal7 {
         this.scrollLingers4     = settings.scrollLingers4 || 2000
         this.shortestLongPress  = settings.shortestLongPress || 1000
         this.borderHotSpotSize  = settings.borderHotSpotSize || 30
-        this.token = localStorage.getItem("token")
+        this.certificates = null
         this.confEditor = null
         this.flashTimer = null
         this.netStatus = null
@@ -69,7 +69,7 @@ export class Terminal7 {
      * Terminal7.open opens terminal on the given DOM element,
      * loads the gates from local storage and redirects to home
      */
-    open(e) {
+    async open(e) {
         if (!e) {
             // create the container element
             e = document.createElement('div')
@@ -218,7 +218,11 @@ export class Terminal7 {
         document.getElementById("log").addEventListener("click",
             _ => this.logDisplay(false))
 
-            
+        let certs = await this.getCertificates()
+        if (certs == []) {
+            await this.generateCertificate()
+            await this.storeCertificate()
+        }
         // Last one: focus
         this.focus()
     }
@@ -481,11 +485,6 @@ export class Terminal7 {
         s.classList.add('on')
         hc.classList.add('off')
         hc.classList.remove('on', 'failed')
-        // we need a token
-        if (this.token == null) {
-            this.token = uuidv4()
-            localStorage.setItem('token', this.token)
-        }
         if (this.activeG) {
             this.activeG.e.classList.add("hidden")
             this.activeG = null
@@ -576,7 +575,6 @@ export class Terminal7 {
             resp => {
                 this.notify("ssh connected")
                 if (resp) {
-                    let token = terminal7.token
                     // TODO: make it work with non-standrad webexec locations
                     window.cordova.plugins.sshConnect.executeCommand(
                         cmd, 
@@ -713,5 +711,79 @@ export class Terminal7 {
             "stun:stun2.l.google.com:19302"
         this.conf.net.timeout = this.conf.net.timeout || 3000
         this.conf.net.retries = this.conf.net.retries || 3
+    }
+    // gets the will formatted fingerprint from the current certificate
+    getFingerprint() {
+        var f = this.certificates[0].getFingerprints()[0]
+        return `${f.algorithm} ${f.value.toUpperCase()}`
+    }
+    // gets the certificate from indexDB. If they are not there, create them
+    getCertificates(cb) {
+        return new Promise(resolve => {
+            console.log("in getCertificates")
+            if (this.certificates)
+                resolve(this.certificates)
+            console.log("2")
+            openDB("t7", 1, { 
+                    upgrade(db) {
+                        db.createObjectStore('certificates', {keyPath: 'id',
+                            autoIncrement: true})
+                    },
+            }).then(db => {
+                let tx = db.transaction("certificates"),
+                    store = tx.objectStore("certificates")
+                console.log("3")
+                 store.getAll().then(certificates => {
+                    this.certificates = certificates
+                    console.log("got certificates!", this.certificates)
+                    resolve(this.certificates)
+                 }).catch(e => {
+                    console.log(`got an reading certs db ${e}`)
+                    resolve(null)
+                })
+            }).catch(e => {
+                console.log(`got an error opening db ${e}`)
+                resolve(null)
+            })
+        })
+    }
+    generateCertificate() {
+        return new Promise(resolve=> {
+            RTCPeerConnection.generateCertificate({
+              name: "ECDSA",
+              namedCurve: "P-256",
+              expires: 31536000000
+            }).then(cert => {
+                console.log("Generated cert", cert)
+                this.certificates = [cert]
+                resolve(this.certificates)
+            }).catch(e => {
+                console.log(`failed generating cert ${e}`)
+                resolve(null)
+            })
+        })
+    }
+    storeCertificate() {
+        return new Promise(resolve=> {
+            openDB("t7", 1, { 
+                    upgrade(db) {
+                        db.createObjectStore('certificates', {keyPath: 'id',
+                            autoIncrement: true})
+                    },
+            }).then(db => {
+                let tx = db.transaction("certificates", "readwrite"),
+                    store = tx.objectStore("certificates"),
+                    c = this.certificates[0]
+                c.id = 1
+                store.add(c).then(_ =>
+                    resolve(this.certificates[0])).catch(e => {
+                        console.log(`got an error storing cert ${e}`)
+                        resolve(null)
+                    })
+            }).catch(e => {
+                console.log (`got error from open db ${e}`)
+                resolve(null)
+            })
+        })
     }
 }

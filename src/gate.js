@@ -219,9 +219,9 @@ export class Gate {
         this.pendingCDCMsgs = []
         this.closePC()
         // exciting times.... a connection is born!
-        this.pc = new RTCPeerConnection({ iceServers: [
-                  { urls: terminal7.conf.net.iceServer }
-                ] })
+        this.pc = new RTCPeerConnection({
+            iceServers: [ { urls: terminal7.conf.net.iceServer }],
+            certificates: terminal7.certificates})
         this.pc.onconnectionstatechange = e =>
             this.updateConnectionState(this.pc.connectionState)
 
@@ -231,11 +231,20 @@ export class Gate {
               offer = btoa(JSON.stringify(this.pc.localDescription))
               this.notify("Sending connection request")
               fetch('http://'+this.addr+'/connect', {
-                headers: {"Content-Type": "plain/text"},
+                headers: {"Content-Type": "application/json"},
                 method: 'POST',
-                body: offer
-              }).then(response => response.text())
-                .then(data => {
+                  body: JSON.stringify({api_version: 0,
+                      offer: offer,
+                      fingerprint: terminal7.getFingerprint()
+                  })
+              }).then(response => {
+                    if (response.status == 401)
+                        throw new Error('unautherized');
+                    if (!response.ok)
+                        throw new Error(
+                          `HTTP POST failed with status ${response.status}`)
+                    return response.text()
+              }).then(data => {
                     if (!this.verified) {
                         this.verified = true
                         terminal7.storeGates()
@@ -243,8 +252,12 @@ export class Gate {
                     this.peer = JSON.parse(atob(data))
                     this.peerConnect(this.peer)
                 }).catch(error => {
-                    this.notify(`HTTP POST to ${this.addr} failed`)
-                    terminal7.onNoSignal(this)
+                    if (error.message == 'unautherized') 
+                        this.copyToken()
+                    else {
+                        this.notify(`HTTP POST to ${this.addr} failed: ${error}`)
+                        terminal7.onNoSignal(this)
+                    }
                  })
             } 
         }
@@ -253,8 +266,7 @@ export class Gate {
             this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
         }
         this.openCDC()
-        // authenticate starts the ball rolling
-        this.authenticate()
+        this.setMarker(() => this.getLayout())
     }
     notify(message) {    
         terminal7.notify(`${this.name}: ${message}`)
@@ -301,26 +313,33 @@ export class Gate {
         }
         return msg.message_id
     }
+    setMarker(cb) {
+        if (this.marker == -1) {
+            cb()
+            return
+        }
+        let msgId = this.sendCTRLMsg({type: "restore",
+                                      args: { marker: this.marker }})
+        this.onack[msgId] = (isNack, _) => {
+            if (isNack)
+                this.notify("Failed to restore from marker")
+            cb()
+            terminal7.run(_ => this.marker = -1, 100)
+        }
+    }
     /*
      * authenticate send the authentication message over the control channel
      */
-    authenticate() {
+    getLayout() {
         let msgId = this.sendCTRLMsg({
-            type: "auth",
-            args: {token: terminal7.token,
-                   api_version: 2,
-                   marker: this.marker}
+            type: "get_payload",
+            args: {}
         })
         this.onack[msgId] = (isNack, state) => {
             if (isNack) {
-                if (this.nameE != null)
-                    this.nameE.classList.add("failed")
-                this.notify("Authorization FAILED")
-                terminal7.run(_ => this.copyToken(), ABIT)
+                this.notify("FAILED to get payload")
+                this.restoreState({})
             } else {
-                if (this.nameE != null)
-                    this.nameE.classList.remove("failed")
-                this.notify("Authorization accepted")
                 this.restoreState(state)
                 terminal7.run(_ => this.marker = -1, 100)
             }
@@ -424,6 +443,14 @@ export class Gate {
                 delete this.msgs[i]
                 const handler = this.onack[i]
                 console.log("got cdc message:",  msg)
+                if (msg.type == "nack") {
+                    document.getElementById("downstream-indicator").classList.add("failed")
+                    this.nameE.classList.add("failed")
+                }
+                else {
+                    document.getElementById("downstream-indicator").classList.remove("failed")
+                    this.nameE.classList.remove("failed")
+                }
                 if (handler != undefined) {
                     handler(msg.type=="nack", msg.args.body)
                     // just to make sure we'll never  call it twice
@@ -512,11 +539,13 @@ export class Gate {
     }
     copyToken() {
         let ct = document.getElementById("copy-token"),
-            addr = this.addr.substr(0, this.addr.indexOf(":"))
+            addr = this.addr.substr(0, this.addr.indexOf(":")),
+            cert =  terminal7.certificates[0].getFingerprints()[0]
 
+        cert = `${cert.algorithm} ${cert.value.toUpperCase()}`
         document.getElementById("ct-address").innerHTML = addr
         document.getElementById("ct-name").innerHTML = this.name
-        ct.querySelector('[name="token"]').value = terminal7.token
+        ct.querySelector('[name="token"]').value = cert
         ct.classList.remove("hidden")
         ct.querySelector(".copy").addEventListener('click', ev => {
             ct.classList.add("hidden")
@@ -527,10 +556,10 @@ export class Gate {
         ct.querySelector("form").addEventListener('submit', ev => {
             ev.preventDefault()
             terminal7.ssh(ct,  this,
-                `cat <<<"${terminal7.token}" >> ~/.webexec/authorized_tokens`,
+                `cat <<<"${cert}" >> ~/.webexec/authorized_tokens`,
                 _ => {
                     ct.classList.add("hidden")
-                    this.authenticate()
+                    this.connect()
                 })
         })
  
