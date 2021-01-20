@@ -219,7 +219,7 @@ export class Terminal7 {
             _ => this.logDisplay(false))
 
         let certs = await this.getCertificates()
-        if (certs == []) {
+        if (certs.length == 0) {
             await this.generateCertificate()
             await this.storeCertificate()
         }
