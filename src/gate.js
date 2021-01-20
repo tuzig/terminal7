@@ -253,7 +253,7 @@ export class Gate {
                     this.peerConnect(this.peer)
                 }).catch(error => {
                     if (error.message == 'unautherized') 
-                        this.copyToken()
+                        this.copyFingerprint()
                     else {
                         this.notify(`HTTP POST to ${this.addr} failed: ${error}`)
                         terminal7.onNoSignal(this)
@@ -537,21 +537,21 @@ export class Gate {
         document.getElementById("search-button").classList.remove("off")
         document.getElementById("trash-button").classList.remove("off")
     }
-    copyToken() {
-        let ct = document.getElementById("copy-token"),
+    copyFingerprint() {
+        let ct = document.getElementById("copy-fingerprint"),
             addr = this.addr.substr(0, this.addr.indexOf(":")),
             cert =  terminal7.certificates[0].getFingerprints()[0]
 
         cert = `${cert.algorithm} ${cert.value.toUpperCase()}`
         document.getElementById("ct-address").innerHTML = addr
         document.getElementById("ct-name").innerHTML = this.name
-        ct.querySelector('[name="token"]').value = cert
+        ct.querySelector('[name="fingerprint"]').value = cert
         ct.classList.remove("hidden")
         ct.querySelector(".copy").addEventListener('click', ev => {
             ct.classList.add("hidden")
             Clipboard.write(
-                {string: ct.querySelector('[name="token"]').value})
-            this.notify("Token copied to the clipboard")
+                {string: ct.querySelector('[name="fingerprint"]').value})
+            this.notify("Fingerprint copied to the clipboard")
         })
         ct.querySelector("form").addEventListener('submit', ev => {
             ev.preventDefault()
