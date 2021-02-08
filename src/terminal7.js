@@ -623,6 +623,10 @@ export class Terminal7 {
             gate.clear()
             terminal7.goHome()
         })
+        e.querySelector(".reconnect").addEventListener('click', ev => {
+            this.clear()
+            gate.connect()
+        })
         this.e.appendChild(e)
     }
     /*
