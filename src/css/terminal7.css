@@ -87,6 +87,9 @@ button {
         display:block;
         margin:0.4em auto;
     }
+    .nogates {
+        width: 90%;
+    }
 }
 #terminal7 ul {
     list-style:none;
@@ -320,12 +323,9 @@ nav .on { color: #00FA00 !important; }
 #home {
     width: 100%;
     background-color: #271D30;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    margin: 0 auto;
 }
-#home p { font-size: 24pt; }
+#home p { font-size: 20pt; }
 #version {
     padding-bottom: 2%;
 }
@@ -491,3 +491,10 @@ td {
 #help-gate {
     border-top: 2px dashed #F952F9;
 }
+.nogates {
+    margin: 0 auto;
+    text-align: left;
+    max-width: 40em;
+    padding: 0 4px;
+}
+

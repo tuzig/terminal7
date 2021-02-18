@@ -309,8 +309,8 @@ describe("terminal7", function() {
 
     })
     describe("pane", () => {
-        it("can be loaded", function() {
-            console.log("WTF")
+        it("can be stored & loaded", function() {
+            debugger
             t.addGate({
                 addr: 'localgate',
                 user: 'guest',
@@ -321,6 +321,7 @@ describe("terminal7", function() {
                 user: 'root',
                 store: true
             })
+            t.storeGates()
             let t2 = new Terminal7(),
                 e = document.createElement("div")
             t2.open(e)

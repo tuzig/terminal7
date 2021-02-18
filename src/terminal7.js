@@ -120,6 +120,8 @@ export class Terminal7 {
                     name: addHost.querySelector('[name="hostname"]').value,
                     store: remember
                 })
+            if (remember)
+                this.storeGates()
             if (typeof gate == "string")
                 this.notify(gate)
             else {
@@ -189,11 +191,14 @@ export class Terminal7 {
         })
         // Load gates from local storage
         let hs = JSON.parse(localStorage.getItem('gates'))
-        if (hs != null)
+        if (hs.length)
             hs.forEach((p) => {
                 p.store = true
                 this.addGate(p)
             })
+        else 
+            e.querySelector(".nogates").classList.remove("hidden")
+
         // window.setInterval(_ => this.periodic(), 2000)
         App.addListener('appStateChange', state => {
             if (!state.isActive) {
@@ -452,9 +457,6 @@ export class Terminal7 {
         let g = new Gate(p)
         console.log(`adding ${g.user}@${g.addr} & saving gates`)
         this.gates.push(g)
-        if (p.store)
-            this.storeGates()
-        this.storeGates()
         g.open(this.e)
         return g
     }
@@ -465,11 +467,15 @@ export class Terminal7 {
                 let ws = []
                 h.windows.forEach((w) => ws.push(w.id))
                 out.push({id: h.id, addr: h.addr, user: h.user, secret: h.secret,
-                    name:h.name, windows: ws})
+                    name:h.name, windows: ws, store: true})
             }
         })
         console.log("Storing gates:", out)
         localStorage.setItem('gates', JSON.stringify(out))
+        if (this.gates.length)
+            this.e.querySelector(".nogates").classList.add("hidden")
+        else
+            this.e.querySelector(".nogates").classList.remove("hidden")
     }
     clear() {
         this.e.querySelectorAll('.temporal').forEach(e => e.remove())

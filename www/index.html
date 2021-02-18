@@ -12,13 +12,31 @@
           </ul>
       </div>
       <div id="home">
+         
           <h1>Welcome to Terminal 7 </h1>
           <div id="version" target="_blank">
               <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md">
                   version 0.14.0
               </a>
           </div>
-          <h2>Please choose your destination:</h2>
+          <div class="nogates hidden">
+              <p>
+              To use terminal7 you'll need a networked server.
+              It can be your desktop, or if you want to roam,
+              it can be in the cloud or a RaspberryPi.
+              </p><p>
+              To set the first gate we'll need a server and its IP address.
+              Once you add your server we will try to set a gate for it.
+              On a fresh server, this will fail and we will help you install
+              our backed <code>webexec</code>.
+              If the server accepts ssh connections and has
+              user/pass authentication enabled we can do it for you.
+              </p><p>
+              You'll be prompted to approve every command and will always
+              have the option to set things manually using a different terminal.
+              </p>
+          </div>
+          <h2>&nbsp;</h2>
           <div id="hosts-wrapper"><ul id="hosts">
               <li id="plus-host" class="border">
                   <a> <i class="f7-icons">plus</i></a>
