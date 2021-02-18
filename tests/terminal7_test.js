@@ -6,7 +6,8 @@
  *  License: GPLv3
  */
 import { Terminal7 } from "../src/terminal7.js"
-import { Cell, Pane } from "../src/cells.js"
+import { Layout } from '../src/layout.js'
+import { Cell } from '../src/cell.js'
 import { assert } from "chai"
 
 

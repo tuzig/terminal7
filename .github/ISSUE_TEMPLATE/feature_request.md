@@ -11,4 +11,4 @@ assignees: ''
 A clear and concise description of a user flow and how the feature will help.  
 
 **Additional context**
-Add any other context or screenshots about the feature request here.
+Add any other context or screen diagrams shots about the feature request here.

@@ -6,12 +6,57 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.14.0] - 2020/1/21
+
+### Changed 
+
+- generating a webrtc certificate on first run and using it's fingerprint to
+  authenticate
+
+
+## [0.13.1] - 2020/1/17
+
+### Fixed 
+
+- pane not closing on shell exit
+- panes not resizing properly when changing to portrait and back
+
+## [0.13.0] - 2020/1/14
+
+### Added
+
+- Reset menu
+- Adding api version to auth message
+
+### Changed
+
+- Using the Fira font family
+
+### Fixed 
+
+- The reset button cleans the gate before connecting
+- Improoved notification wording
+- Focusing on the right window and pane after restore
+
+## [0.12.2] - 2020/1/3
+
+### Fixed 
+
+- fixing first time connection, just after copying the token
+
+## [0.12.1] - 2020/12/31
+
+### Fixed 
+
+- sending state only when changes are made and preventing retry loops
+
+## [0.12.0] - 2020/12/30
 
 ### Added
 
 - reconnect button
 - more meta key - T, L, R
+- special help screen for home
 
 ### Fixed
 

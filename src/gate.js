@@ -7,7 +7,7 @@
  */
 import * as Hammer from 'hammerjs'
 import { Window } from './window.js'
-import { Pane } from './cells.js'
+import { Pane } from './pane.js'
 
 import { Plugins } from '@capacitor/core'
 const { Browser, Clipboard } = Plugins
@@ -56,12 +56,9 @@ export class Gate {
         let t = document.getElementById("gate-template")
         if (t) {
             t = t.content.cloneNode(true)
+             this.openReset(t)
             t.querySelector(".add-tab").addEventListener(
                 'click', _ => this.newTab())
-            t.querySelector(".reconnect").addEventListener(
-                'click', _ => {
-                    this.disengage(_ => this.connect())
-                })
             t.querySelector(".search-close").addEventListener('click', _ =>  {
                 this.activeW.activeP.exitCopyMode()
                 this.activeW.activeP.focus()
@@ -133,8 +130,9 @@ export class Gate {
         if (activeG) {
             activeG.e.classList.add("hidden")
         }
-        this.e.classList.remove("hidden")
         terminal7.activeG = this
+        this.e.classList.remove("hidden")
+        this.e.querySelectorAll(".window").forEach(w => w.classList.add("hidden"))
         this.activeW.focus()
     }
     // stops all communication if 
@@ -155,9 +153,7 @@ export class Gate {
      */
     updateConnectionState(state) {
         console.log(`updating ${this.name} state to ${state}`)
-        if ((state == "new") || (state == "connecting"))
-            this.notify("WebRTC starting")
-        else if (state == "connected") {
+        if (state == "connected") {
             this.notify("WebRTC connected")
             this.boarding = true
             document.getElementById("downstream-indicator").classList.remove("failed")
@@ -166,8 +162,10 @@ export class Gate {
             // TODO: add warn class
             this.notify("WebRTC disconnected and may reconnect or close")
             this.lastDisconnect = Date.now()
+            document.getElementById("downstream-indicator").classList.add("failed")
         }
-        else if (this.boarding) {
+        else if ((state != "new") && (state != "connecting") && this.boarding) {
+            // handle connection failures
             let now = Date.now()
             if (now - this.lastDisconnect > 100) {
                 this.notify("WebRTC closed")
@@ -194,7 +192,6 @@ export class Gate {
      */
     peerConnect(offer) {
         let sd = new RTCSessionDescription(offer)
-        this.notify("Setting remote description") // TODO: add a var or two
         this.pc.setRemoteDescription(sd)
             .catch (e => {
                 this.notify(`Failed to set remote description: ${e}`)
@@ -221,10 +218,10 @@ export class Gate {
         // cleanup
         this.pendingCDCMsgs = []
         this.closePC()
-        // exciting timess.... a connection is born!
-        this.pc = new RTCPeerConnection({ iceServers: [
-                  { urls: terminal7.conf.net.iceServer }
-                ] })
+        // exciting times.... a connection is born!
+        this.pc = new RTCPeerConnection({
+            iceServers: [ { urls: terminal7.conf.net.iceServer }],
+            certificates: terminal7.certificates})
         this.pc.onconnectionstatechange = e =>
             this.updateConnectionState(this.pc.connectionState)
 
@@ -234,11 +231,20 @@ export class Gate {
               offer = btoa(JSON.stringify(this.pc.localDescription))
               this.notify("Sending connection request")
               fetch('http://'+this.addr+'/connect', {
-                headers: {"Content-Type": "plain/text"},
+                headers: {"Content-Type": "application/json"},
                 method: 'POST',
-                body: offer
-              }).then(response => response.text())
-                .then(data => {
+                  body: JSON.stringify({api_version: 0,
+                      offer: offer,
+                      fingerprint: terminal7.getFingerprint()
+                  })
+              }).then(response => {
+                    if (response.status == 401)
+                        throw new Error('unautherized');
+                    if (!response.ok)
+                        throw new Error(
+                          `HTTP POST failed with status ${response.status}`)
+                    return response.text()
+              }).then(data => {
                     if (!this.verified) {
                         this.verified = true
                         terminal7.storeGates()
@@ -246,8 +252,12 @@ export class Gate {
                     this.peer = JSON.parse(atob(data))
                     this.peerConnect(this.peer)
                 }).catch(error => {
-                    this.notify(`HTTP POST to ${this.addr} failed`)
-                    terminal7.onNoSignal(this)
+                    if (error.message == 'unautherized') 
+                        this.copyFingerprint()
+                    else {
+                        this.notify(`HTTP POST to ${this.addr} failed: ${error}`)
+                        terminal7.onNoSignal(this)
+                    }
                  })
             } 
         }
@@ -256,8 +266,7 @@ export class Gate {
             this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
         }
         this.openCDC()
-        // authenticate starts the ball rolling
-        this.authenticate()
+        this.setMarker(() => this.getLayout())
     }
     notify(message) {    
         terminal7.notify(`${this.name}: ${message}`)
@@ -287,7 +296,7 @@ export class Gate {
                 msg.payload = s
             } else if (msg.tries == 1)
                 this.notify(
-                     `#${msg.message_id} no ACK in ${timeout}ms, trying ${retries-1} more times`)
+                     `msg #${msg.message_id} no ACK in ${timeout}ms, trying ${retries-1} more times`)
             if (msg.tries++ < retries) {
                 console.log(`sending ctrl msg ${msg.message_id} for ${msg.tries} time`)
                 try {
@@ -304,29 +313,36 @@ export class Gate {
         }
         return msg.message_id
     }
+    setMarker(cb) {
+        if (this.marker == -1) {
+            cb()
+            return
+        }
+        let msgId = this.sendCTRLMsg({type: "restore",
+                                      args: { marker: this.marker }})
+        this.onack[msgId] = (isNack, _) => {
+            if (isNack)
+                this.notify("Failed to restore from marker")
+            cb()
+            terminal7.run(_ => this.marker = -1, 100)
+        }
+    }
     /*
      * authenticate send the authentication message over the control channel
      */
-    authenticate() {
+    getLayout() {
         let msgId = this.sendCTRLMsg({
-            type: "auth",
-            args: {token: terminal7.token,
-                   marker: this.marker}
+            type: "get_payload",
+            args: {}
         })
         this.onack[msgId] = (isNack, state) => {
             if (isNack) {
-                if (this.nameE != null)
-                    this.nameE.classList.add("failed")
-                this.notify("Authorization FAILED")
-                this.closePC()
-                terminal7.run(_ => this.copyToken(), ABIT)
-                return
+                this.notify("FAILED to get payload")
+                this.restoreState({})
+            } else {
+                this.restoreState(state)
+                terminal7.run(_ => this.marker = -1, 100)
             }
-            if (this.nameE != null)
-                this.nameE.classList.remove("failed")
-            this.notify("Authorization accepted")
-            this.restoreState(state)
-            this.marker = -1
         }
     }
     /*
@@ -381,14 +397,9 @@ export class Gate {
         this.windows.push(w)
         if (this.windows.length >= terminal7.conf.ui.max_tabs)
             this.e.querySelector(".add-tab").classList.add("off")
-        w.open(this.e)
+        w.open(this.e.querySelector(".windows-container"))
         if (createPane) {
-        // empty window: create the first layout and pane
-        // filling the entire top of the screen
-            let tabbar = this.e.querySelector(".tabbar"),
-                r = tabbar.getBoundingClientRect(),
-                sy = (r.y + 2)/document.body.offsetHeight
-            let paneProps = {sx: 1.0, sy: sy,
+            let paneProps = {sx: 1.0, sy: 1.0,
                              xoff: 0, yoff: 0,
                              w: w,
                              gate: this},
@@ -432,6 +443,14 @@ export class Gate {
                 delete this.msgs[i]
                 const handler = this.onack[i]
                 console.log("got cdc message:",  msg)
+                if (msg.type == "nack") {
+                    document.getElementById("downstream-indicator").classList.add("failed")
+                    this.nameE.classList.add("failed")
+                }
+                else {
+                    document.getElementById("downstream-indicator").classList.remove("failed")
+                    this.nameE.classList.remove("failed")
+                }
                 if (handler != undefined) {
                     handler(msg.type=="nack", msg.args.body)
                     // just to make sure we'll never  call it twice
@@ -518,32 +537,34 @@ export class Gate {
         document.getElementById("search-button").classList.remove("off")
         document.getElementById("trash-button").classList.remove("off")
     }
-    copyToken() {
-        let ct = document.getElementById("copy-token"),
-            addr = this.addr.substr(0, this.addr.indexOf(":"))
+    copyFingerprint() {
+        let ct = document.getElementById("copy-fingerprint"),
+            addr = this.addr.substr(0, this.addr.indexOf(":")),
+            cert =  terminal7.certificates[0].getFingerprints()[0]
 
+        cert = `${cert.algorithm} ${cert.value.toUpperCase()}`
         document.getElementById("ct-address").innerHTML = addr
         document.getElementById("ct-name").innerHTML = this.name
-        ct.querySelector('[name="token"]').value = terminal7.token
+        ct.querySelector('[name="fingerprint"]').value = cert
         ct.classList.remove("hidden")
         ct.querySelector(".copy").addEventListener('click', ev => {
-            ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
+            ct.classList.add("hidden")
             Clipboard.write(
-                {string: ct.querySelector('[name="token"]').value})
-            this.notify("Token copied to the clipboard")
+                {string: ct.querySelector('[name="fingerprint"]').value})
+            this.notify("Fingerprint copied to the clipboard")
         })
         ct.querySelector("form").addEventListener('submit', ev => {
             ev.preventDefault()
             terminal7.ssh(ct,  this,
-                `cat <<<"${terminal7.token}" >> ~/.webexec/authorized_tokens`,
+                `cat <<<"${cert}" >> ~/.webexec/authorized_tokens`,
                 _ => {
-                    ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
+                    ct.classList.add("hidden")
                     this.connect()
                 })
         })
  
         ct.querySelector(".close").addEventListener('click',  ev =>  {
-            ev.target.parentNode.parentNode.parentNode.classList.add("hidden")
+            ct.classList.add("hidden")
         })
     }
     goBack() {
@@ -608,5 +629,36 @@ export class Gate {
             let w = this.addWindow("", true)
             w.focus()
         }
+    }
+    openReset(t) {
+        //TODO: clone this from a template
+        let e = document.getElementById("reset-gate-template")
+        e = e.content.cloneNode(true)
+        t.querySelector(".reset").addEventListener('click', _ => {
+            this.e.querySelector(".reset-gate").classList.toggle("hidden")
+        })
+        e.querySelector(".sizes").addEventListener('click', _ => {
+            this.notify("Resetting sizes")
+            this.e.querySelector(".reset-gate").classList.toggle("hidden")
+            this.panes().forEach(p => {
+                if (!p.fit())
+                    this.sendSize(p)
+            })
+        })
+        e.querySelector(".channels").addEventListener('click', _ => {
+            this.notify("Resetting data channels")
+            this.e.querySelector(".reset-gate").classList.toggle("hidden")
+            this.marker = 0
+            this.panes().forEach(p => {
+                p.d.close()
+                p.openDC()
+            })
+        })
+        e.querySelector(".all").addEventListener('click', _ => {
+            this.e.querySelector(".reset-gate").classList.toggle("hidden")
+            this.clear()
+            this.connect()
+        })
+        this.e.appendChild(e)
     }
 }

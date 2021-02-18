@@ -7,7 +7,6 @@
  */
 import { Gate } from './gate.js'
 import { Window } from './window.js'
-import { v4 as uuidv4 } from 'uuid'
 import * as Hammer from 'hammerjs'
 import * as TOML from '@iarna/toml'
 import * as imageMapResizer from './imageMapResizer.js'
@@ -17,6 +16,7 @@ import { tomlMode} from 'codemirror/mode/toml/toml.js'
 import { dialogAddOn } from 'codemirror/addon/dialog/dialog.js'
 import { formatDate } from './utils.js'
 import { Plugins } from '@capacitor/core'
+import { openDB } from 'idb'
 
 const { Network, App, BackgroundTask } = Plugins
 
@@ -59,7 +59,7 @@ export class Terminal7 {
         this.scrollLingers4     = settings.scrollLingers4 || 2000
         this.shortestLongPress  = settings.shortestLongPress || 1000
         this.borderHotSpotSize  = settings.borderHotSpotSize || 30
-        this.token = localStorage.getItem("token")
+        this.certificates = null
         this.confEditor = null
         this.flashTimer = null
         this.netStatus = null
@@ -69,7 +69,7 @@ export class Terminal7 {
      * Terminal7.open opens terminal on the given DOM element,
      * loads the gates from local storage and redirects to home
      */
-    open(e) {
+    async open(e) {
         if (!e) {
             // create the container element
             e = document.createElement('div')
@@ -77,27 +77,7 @@ export class Terminal7 {
             document.body.appendChild(e)
         }
         this.e = e
-        window.onresize = () => 
-            terminal7.run(_ => {
-                let H = document.body.offsetHeight
-                if (H != this.bodyH) {
-                    // height change. need to change height
-                    this.bodyH = H
-                    // resize each rootLayout on each window on each gate
-                    var sy = 0
-                    this.gates.forEach(g =>
-                        g.windows.forEach(w => {
-                            if (sy == 0) {
-                                let tabbar = g.e.querySelector(".tabbar"),
-                                r = tabbar.getBoundingClientRect()
-                                sy = (r.y + 2)/H
-                            }
-                            w.rootLayout.sy = sy
-                        }))
-                }
-                this.gates.forEach(g => g.fit())
-                imageMapResizer()
-            }, 50)
+
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",
@@ -235,7 +215,14 @@ export class Terminal7 {
                 Network.getStatus().then(s => this.updateNetworkStatus(s))
             }
         })
-            
+        document.getElementById("log").addEventListener("click",
+            _ => this.logDisplay(false))
+
+        let certs = await this.getCertificates()
+        if (certs.length == 0) {
+            await this.generateCertificate()
+            await this.storeCertificate()
+        }
         // Last one: focus
         this.focus()
     }
@@ -315,7 +302,6 @@ export class Terminal7 {
         if (type == "start") {
             this.touch0 = Date.now() 
             this.firstT = this.lastT = ev.changedTouches
-            window.toBeFit = new Set([])
             if (e.gate instanceof Gate)
                 nameB.classList.add("pressed")
             if (e.w instanceof Window)
@@ -406,8 +392,6 @@ export class Terminal7 {
             this.lastT = ev.changedTouches
         }
         if (type == "end") {
-            window.toBeFit.forEach(c => c.fit())
-            window.toBeFit = new Set([])
             if ((!pane.scrolling)
                 && (ev.changedTouches.length == 1)
                 && (d > this.conf.ui.cutMinDistance)
@@ -501,11 +485,6 @@ export class Terminal7 {
         s.classList.add('on')
         hc.classList.add('off')
         hc.classList.remove('on', 'failed')
-        // we need a token
-        if (this.token == null) {
-            this.token = uuidv4()
-            localStorage.setItem('token', this.token)
-        }
         if (this.activeG) {
             this.activeG.e.classList.add("hidden")
             this.activeG = null
@@ -596,7 +575,6 @@ export class Terminal7 {
             resp => {
                 this.notify("ssh connected")
                 if (resp) {
-                    let token = terminal7.token
                     // TODO: make it work with non-standrad webexec locations
                     window.cordova.plugins.sshConnect.executeCommand(
                         cmd, 
@@ -644,6 +622,10 @@ export class Terminal7 {
             gate.closePC()
             gate.clear()
             terminal7.goHome()
+        })
+        e.querySelector(".reconnect").addEventListener('click', ev => {
+            this.clear()
+            gate.connect()
         })
         this.e.appendChild(e)
     }
@@ -718,7 +700,6 @@ export class Terminal7 {
         else {
             offl.remove("hidden")
             cl.add("failed")
-            // remove all restore markers
         }
     }
     loadConf(conf) {
@@ -734,5 +715,79 @@ export class Terminal7 {
             "stun:stun2.l.google.com:19302"
         this.conf.net.timeout = this.conf.net.timeout || 3000
         this.conf.net.retries = this.conf.net.retries || 3
+    }
+    // gets the will formatted fingerprint from the current certificate
+    getFingerprint() {
+        var f = this.certificates[0].getFingerprints()[0]
+        return `${f.algorithm} ${f.value.toUpperCase()}`
+    }
+    // gets the certificate from indexDB. If they are not there, create them
+    getCertificates(cb) {
+        return new Promise(resolve => {
+            if (this.certificates)
+                resolve(this.certificates)
+            openDB("t7", 1, { 
+                    upgrade(db) {
+                        db.createObjectStore('certificates', {keyPath: 'id',
+                            autoIncrement: true})
+                    },
+            }).then(db => {
+                let tx = db.transaction("certificates"),
+                    store = tx.objectStore("certificates")
+                 store.getAll().then(certificates => {
+                    this.certificates = certificates
+                     db.close()
+                    resolve(this.certificates)
+                 }).catch(e => {
+                    resolve(null)
+                })
+            }).catch(e => {
+                db.close()
+                console.log(`got an error opening db ${e}`)
+                resolve(null)
+            })
+        })
+    }
+    generateCertificate() {
+        return new Promise(resolve=> {
+            RTCPeerConnection.generateCertificate({
+              name: "ECDSA",
+              namedCurve: "P-256",
+              expires: 31536000000
+            }).then(cert => {
+                console.log("Generated cert", cert)
+                this.certificates = [cert]
+                resolve(this.certificates)
+            }).catch(e => {
+                console.log(`failed generating cert ${e}`)
+                resolve(null)
+            })
+        })
+    }
+    storeCertificate() {
+        return new Promise(resolve=> {
+            openDB("t7", 1, { 
+                    upgrade(db) {
+                        db.createObjectStore('certificates', {keyPath: 'id',
+                            autoIncrement: true})
+                    },
+            }).then(db => {
+                let tx = db.transaction("certificates", "readwrite"),
+                    store = tx.objectStore("certificates"),
+                    c = this.certificates[0]
+                c.id = 1
+                store.add(c).then(_ => {
+                    db.close()
+                    resolve(this.certificates[0]).catch(e => {
+                        console.log(`got an error storing cert ${e}`)
+                        resolve(null)
+                    })
+                })
+            }).catch(e => {
+                console.log (`got error from open db ${e}`)
+                db.close()
+                resolve(null)
+            })
+        })
     }
 }

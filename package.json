@@ -1,6 +1,6 @@
 {
   "name": "terminal7",
-  "version": "0.11.1",
+  "version": "0.14.0",
   "description": "A touchable terminal emulator & multiplexer tablet app",
   "main": "src/index.js",
   "private": true,
@@ -28,6 +28,7 @@
     "cordova-plugin-ssh-connect": "git+https://github.com/tuzig/cordova-plugin-ssh-connect.git",
     "glob": "^7.1.6",
     "hammerjs": "^2.0.8",
+    "idb": "^6.0.0",
     "karma-safari-launcher": "^1.0.0",
     "karma-source-map-support": "^1.4.0",
     "npm": "<7",
@@ -36,7 +37,8 @@
     "websocket-extensions": ">=0.1.4",
     "xterm": "<5",
     "xterm-addon-fit": "^0.3.0",
-    "xterm-addon-search": "^0.7.0"
+    "xterm-addon-search": "^0.7.0",
+    "xterm-webfont": "^2.0.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",

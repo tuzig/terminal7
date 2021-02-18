@@ -7,6 +7,18 @@
  * green - #00FA00
  * background - #271D30
  */
+@font-face {
+    font-family: "FiraSans";
+    font-style: normal;
+    font-weight: 400;
+    src: url("../fonts/FiraSansCondensed-Regular.ttf") format("truetype");
+}
+@font-face {
+    font-family: "FiraCode";
+    font-style: normal;
+    font-weight: 400;
+    src: url("../fonts/FiraCode-VariableFont_wght.ttf") format("truetype");
+}
 html,
 body {
   width: 100%;
@@ -17,7 +29,7 @@ body {
   justify-content: center;
   align-items: center;
   text-align: center;
-  font-family: -apple-system;
+  font-family: 'FiraSans';
   color: #00FAFA;
   background-color: #271D30;
 }
@@ -58,10 +70,32 @@ button {
   font-family: Courier new;
   */
 }
+.text-button {
+    display: inline-block;
+    padding: 0.35em 1.2em;
+    margin: 0 0.3em 0.3em 0;
+    border-color: #D9F505;
+    color: #00FA00;
+    border-radius: 0.15em;
+    font-weight: 300;
+    background-color: black;
+    transition: all 0.2s;
+    font-size: 30px;
+} 
+@media all and (max-width:30em){
+    .text-button {
+        display:block;
+        margin:0.4em auto;
+    }
+}
 #terminal7 ul {
     list-style:none;
 }
-.border {
+dd:not(:last-child) {
+    margin-bottom: 1.5em;
+}
+dd { margin-inline-start: 0; }
+.border, .text-button {
     border-width: 1px;
     border-style: solid;
     border-radius: 6px;
@@ -106,14 +140,14 @@ a {
     width: auto;
 }
 .window {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%%; /* TODO: make responsive */
+    height: 100%;
 }
 .pane {
-    position: fixed;
+    position: absolute;
     padding: 4px;
     overflow: hidden;
     -webkit-mask-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAA5JREFUeNpiYGBgAAgwAAAEAAGbA+oJAAAAAElFTkSuQmCC); /* this fixes the overflow:hidden in Chrome/Opera */
@@ -123,7 +157,7 @@ a {
     border-radius: 6px;
 }
 .layout {
-    position: fixed;
+    position: absolute;
     margin: 0;
     padding: 0;
     display: none;
@@ -187,6 +221,13 @@ nav .on { color: #00FA00 !important; }
     bottom: 44pt;
     color: #373702;
 }
+.windows-container {
+    bottom: 85pt;
+    top: 16pt;
+    left: 0;
+    width: 100%;
+    position: fixed;
+}
 .tabbar input {
   font-size: 16pt;
   line-height: 16pt;
@@ -219,7 +260,7 @@ nav .on { color: #00FA00 !important; }
     border-right: 1px solid #373702;
 }
 .internal>div a {
-    font-size: 24pt;
+    font-size: 18pt;
     line-height: 30pt;
     text-decoration: none; 
     color: inherit;
@@ -260,10 +301,18 @@ nav .on { color: #00FA00 !important; }
     font-weight: bold;
 }
 .zoomed {
+    margin: 0;
+    padding: 0;
+    position: fixed;
     z-index: 4;
-    top: 0;
+    left: 12px;
+    right: 12px;
+    top: 22px;
     bottom: 22px;
-    width: 100%;
+    height: -webkit-fill-available;
+}
+.zoomed .pane {
+    height: -webkit-fill-available;
 }
 #home:target {
     z-index: 5
@@ -389,7 +438,7 @@ label {
 }
 #indicators {
     position: absolute;
-    top: 0px;
+    top: 22px;
     right: 0px;
     line-height: 18pt;
     font-size: 18pt;
@@ -419,7 +468,7 @@ td {
     padding:0.5em;
 }
 .divider {
-    position: fixed;
+    position: absolute;
     z-index: 3;
 }    
 #hosts .pressed { box-shadow: 4px 4px 5px 0 #F952F9; }
