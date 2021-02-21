@@ -87,9 +87,6 @@ button {
         display:block;
         margin:0.4em auto;
     }
-    .nogates {
-        width: 90%;
-    }
 }
 #terminal7 ul {
     list-style:none;
@@ -323,9 +320,12 @@ nav .on { color: #00FA00 !important; }
 #home {
     width: 100%;
     background-color: #271D30;
-    margin: 0 auto;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
 }
-#home p { font-size: 20pt; }
+#home p { font-size: 24pt; }
 #version {
     padding-bottom: 2%;
 }
@@ -394,15 +394,24 @@ label {
 }
 #log {
     position: absolute;
-    left: 10%;
-    top: -4px;
+    bottom: 110px;
     margin: 0;
     padding: 0;
     z-index: 6;
-    width: 80%;
     background-color: #271D30;
     border-color: #F952F9;
     text-align: left;
+    width: 96%;
+    max-width: 30em;
+    /* right: -100%; */
+    opacity: 0;
+    transition: all .75s ease;
+    transform: translate(100%, 0);
+    right : 4px;
+}
+#log.show {
+    opacity: 0.8;
+    transform: translate(0, 0);
 }
 #log-msgs {
     margin: 0;
@@ -415,22 +424,19 @@ label {
     margin: 0.5em;
     overflow: hidden;
 }
+.log-msg h1 {
+    font-size: 16px;
+    line-height: 28px;
+    overflow: hidden;
+    font-weight: bold;
+}
 .log-msg time {
     float: left;
     color: #F952F9;
+    font-family: "FiraCode";
 }
 .log-msg p {
-    /*
-    position: relative;
-    top: 0;
-    left: 10em;
-    */
     margin: 0 0 0 8em;
-}
-.fade-out {
-  top: 0;
-  transform: translate(0, -100%);
-  transition: transform 1s ease-in;
 }
 .search-container {
     margin: 0 auto;
@@ -491,10 +497,3 @@ td {
 #help-gate {
     border-top: 2px dashed #F952F9;
 }
-.nogates {
-    margin: 0 auto;
-    text-align: left;
-    max-width: 40em;
-    padding: 0 4px;
-}
-

@@ -43,6 +43,16 @@ max_tabs = 3
 cut_min_distance = 80
 cut_min_speed = 2.5
 `
+const WELCOME_MESSAGE = `<h1>Greetings & Salutations!</h1>
+<p>
+To join our beta you will need a server with a public IP/DNS.
+Our backend supports Mac and Linux running on a desktop, a Pi or a hosted
+server. 
+</p><p>
+Once you add your server's address we will try to connect and
+fail as the backend agent is not there. Then we will guide you through its
+installation.
+</p>`
 
 export class Terminal7 {
     /*
@@ -109,6 +119,7 @@ export class Terminal7 {
         let addHost = document.getElementById("add-host")
         document.getElementById('plus-host').addEventListener(
             'click', ev => {
+                this.logDisplay(false)
                 addHost.querySelector("form").reset()
                 addHost.classList.remove("hidden")
             })
@@ -190,14 +201,14 @@ export class Terminal7 {
             this.metaPressStart = Number.MAX_VALUE
         })
         // Load gates from local storage
-        let hs = JSON.parse(localStorage.getItem('gates'))
-        if (hs.length)
-            hs.forEach((p) => {
+        let ls = localStorage.getItem('gates');
+        if (!ls)
+            this.notify(WELCOME_MESSAGE)
+        else 
+            JSON.parse(ls).forEach((p) => {
                 p.store = true
                 this.addGate(p)
             })
-        else 
-            e.querySelector(".nogates").classList.remove("hidden")
 
         // window.setInterval(_ => this.periodic(), 2000)
         App.addListener('appStateChange', state => {
@@ -472,10 +483,6 @@ export class Terminal7 {
         })
         console.log("Storing gates:", out)
         localStorage.setItem('gates', JSON.stringify(out))
-        if (this.gates.length)
-            this.e.querySelector(".nogates").classList.add("hidden")
-        else
-            this.e.querySelector(".nogates").classList.remove("hidden")
     }
     clear() {
         this.e.querySelectorAll('.temporal').forEach(e => e.remove())
@@ -510,13 +517,13 @@ export class Terminal7 {
         let e = document.getElementById("log")
         if (show === undefined)
             // if show is undefined toggle current state
-            show = e.classList.contains("fade-out")
+            show = !e.classList.contains("show")
         if (show) {
-            e.classList.remove("fade-out", "hidden")
+            e.classList.add("show")
             document.getElementById("log-button")
                 .classList.add("on")
         } else {
-            e.classList.add("fade-out")
+            e.classList.remove("show")
             document.getElementById("log-button")
                 .classList.remove("on")
         }
