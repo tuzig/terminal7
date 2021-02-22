@@ -103,7 +103,9 @@ export class Terminal7 {
                 .addEventListener("click", ev => this.editDotfile(ev))
         document.getElementById("help-button")
                 .addEventListener("click", ev => {
-                    var helpId = (this.activeG)? "help-gate":"help-home",
+                    // TODO: add help for home
+                    // var helpId = (this.activeG)? "help-gate":"help-home",
+                    var helpId = "help-gate",
                         ecl = document.getElementById(helpId).classList,
                         bcl = document.getElementById("help-button").classList,
                         hidden = ecl.contains("hidden")
