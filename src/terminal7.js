@@ -202,14 +202,15 @@ export class Terminal7 {
         })
         // Load gates from local storage
         let ls = localStorage.getItem('gates');
-        if (!ls)
-            this.notify(WELCOME_MESSAGE)
-        else 
+        if (ls)
             JSON.parse(ls).forEach((p) => {
                 p.store = true
                 this.addGate(p)
             })
-
+        if (!localStorage.getItem('welcomed')) {
+            this.notify(WELCOME_MESSAGE)
+            localStorage.setItem('welcomed', 'indeed')
+        }
         // window.setInterval(_ => this.periodic(), 2000)
         App.addListener('appStateChange', state => {
             if (!state.isActive) {
