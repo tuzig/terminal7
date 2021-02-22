@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Community link is working properly
+- community link is working properly
+- gate doesn't close when there are open windows
 
 ## [0.14.0] - 2020/1/21
 

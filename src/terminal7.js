@@ -370,6 +370,7 @@ export class Terminal7 {
             }
             if (type == 'end') {
                 e.classList.remove("pressed")
+                e.w.gate.breadcrumbs.push(e.w)
                 e.w.focus()
             }
             return

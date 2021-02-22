@@ -56,7 +56,6 @@ export class Window {
      * mark its name in the tabbar as the chosen one
      */
     focus() {
-        this.gate.breadcrumbs.push(this)
         // turn off the current active
         let a = this.gate.activeW
         if (a) {
@@ -153,14 +152,12 @@ export class Window {
         this.nameE.parentNode.remove()
         // remove the element, panes and tabbar gone as they are childs
         this.e.remove()
-        // if we're zoomed in, the pane is a chuld of body
+        // if we're zoomed in, the pane is a child of body
         if (this.activeP.zoomed)
             document.body.removeChild(this.activeP.zoomedE)
         this.gate.windows.splice(this.gate.windows.indexOf(this), 1)
-        // this.gate.activeW = null
         // if we removed a window it means the user can add a window
         this.gate.e.querySelector(".add-tab").classList.remove("off")
-        // remove myself from the breadcrumbs
         this.gate.goBack()
     }
     fit() {

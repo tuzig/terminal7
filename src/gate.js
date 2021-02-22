@@ -568,9 +568,12 @@ export class Gate {
         })
     }
     goBack() {
-        this.breadcrumbs.pop()
-        if (this.windows.length == 0)
+        var w = this.breadcrumbs.pop()
+        this.breadcrumbs = this.breadcrumbs.filter(x => x != w)
+        if (this.windows.length == 0) {
+            this.clear()
             terminal7.goHome()
+        }
         else
             if (this.breadcrumbs.length > 0)
                 this.breadcrumbs.pop().focus()
@@ -627,6 +630,7 @@ export class Gate {
     newTab() {
         if (this.windows.length < terminal7.conf.ui.max_tabs) {
             let w = this.addWindow("", true)
+            this.breadcrumbs.push(w)
             w.focus()
         }
     }
