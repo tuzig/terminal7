@@ -231,7 +231,7 @@ export class Pane extends Cell {
         this.buffer = []
 
         label = this.webexecID?`>${this.webexecID}`:
-           `${tSize},${terminal7.conf.exec.shell},-is,--login`
+           `${tSize},${terminal7.conf.exec.shell}`
 
         console.log(`opening dc with label: "${label}`)
         this.d = this.gate.pc.createDataChannel(label)
