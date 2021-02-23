@@ -397,7 +397,7 @@ export class Terminal7 {
             this.lastT = ev.changedTouches
         }
         if (type == "end") {
-            if ((!pane.scrolling)
+            if (!this.cells.some(c => c.scrolling)
                 && (ev.changedTouches.length == 1)
                 && (d > this.conf.ui.cutMinDistance)
                 && (s > this.conf.ui.cutMinSpeed)) {
