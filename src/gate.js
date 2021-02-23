@@ -157,6 +157,12 @@ export class Gate {
             this.notify("WebRTC connected")
             this.boarding = true
             document.getElementById("downstream-indicator").classList.remove("failed")
+            // show help for first timer
+            if (!localStorage.getItem("first_gate")) {
+                terminal7.run(terminal7.toggleHelp, 1000)
+                localStorage.setItem("first_gate", "1") 
+            }
+            
         }
         else if (state == "disconnected") {
             // TODO: add warn class

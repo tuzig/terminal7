@@ -490,11 +490,19 @@ td {
     margin-top: 2em;
 }
 #help-home, #help-gate {
+    visibility: hidden;
+    opacity: 0;
     position: fixed;
     left: 0;
     bottom: 56px;
     z-index: 5;
     background-color: #271D30;
+    transition: all .75s ease;
+}
+#help-home.show, #help-gate.show {
+    opacity: 0.8;
+    visibility: visible;
+    transition: all .75s ease;
 }
 #help-gate {
     border-top: 2px dashed #F952F9;

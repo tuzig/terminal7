@@ -102,22 +102,7 @@ export class Terminal7 {
         document.getElementById("dotfile-button")
                 .addEventListener("click", ev => this.editDotfile(ev))
         document.getElementById("help-button")
-                .addEventListener("click", ev => {
-                    // TODO: add help for home
-                    // var helpId = (this.activeG)? "help-gate":"help-home",
-                    var helpId = "help-gate",
-                        ecl = document.getElementById(helpId).classList,
-                        bcl = document.getElementById("help-button").classList,
-                        hidden = ecl.contains("hidden")
-                    ecl.toggle("hidden")
-                    bcl.toggle("on")
-                    if (hidden)
-                        imageMapResizer()
-                    else
-                        this.focus()
-                    // TODO: When at home remove the "on" from the home butto
-                })
-        // display the home page, starting with the plus button
+                .addEventListener("click", ev => this.toggleHelp())
         let addHost = document.getElementById("add-host")
         document.getElementById('plus-host').addEventListener(
             'click', ev => {
@@ -806,5 +791,22 @@ export class Terminal7 {
                 resolve(null)
             })
         })
+    }
+    toggleHelp() {
+        // TODO: add help for home
+        // var helpId = (this.activeG)? "help-gate":"help-home",
+        var helpId = "help-gate",
+            ecl = document.getElementById(helpId).classList,
+            bcl = document.getElementById("help-button").classList
+            
+        ecl.toggle("show")
+        bcl.toggle("on")
+        if (ecl.contains("show")) {
+            ecl.remove("hidden")
+            imageMapResizer()
+        }
+        else
+            this.focus()
+        // TODO: When at home remove the "on" from the home butto
     }
 }
