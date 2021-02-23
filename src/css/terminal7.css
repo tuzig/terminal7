@@ -22,6 +22,7 @@
 html,
 body {
   width: 100%;
+  max-width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
@@ -32,6 +33,7 @@ body {
   font-family: 'FiraSans';
   color: #00FAFA;
   background-color: #271D30;
+  overflow: hidden;
 }
 
 *:focus { outline: none; } 
