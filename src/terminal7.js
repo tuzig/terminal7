@@ -801,10 +801,8 @@ export class Terminal7 {
             
         ecl.toggle("show")
         bcl.toggle("on")
-        if (ecl.contains("show")) {
-            ecl.remove("hidden")
+        if (ecl.contains("show"))
             imageMapResizer()
-        }
         else
             this.focus()
         // TODO: When at home remove the "on" from the home butto
