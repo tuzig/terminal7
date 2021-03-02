@@ -280,24 +280,32 @@ nav .on { color: #00FA00 !important; }
     padding: 4px;
     bottom: 40pt;
     left: 50%;
+    width: 60em;
+    max-width: 96%;
     transform: translate(-50%, 0);
+    border-color: #F952F9;
 }
-.tabbar-search {
+nav.tabbar-search {
     padding: 0.2em 1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    align-content: center;
 }
 .tabbar-search>button {
-    float:left;
     padding: 0 0.5em;
+    flex: 1 1 0;
+}
+.tabbar-search button.search-close {
+    border-right: 0;
 }
 .tabbar-search>input {
-    float:left;
     padding: 0 0.5em;
-    width: 60%;
-    position: relative;
-    margin-left: 1em;
     border-right: 1px solid #373702;
     font-size: 18pt;
-    line-height: 22pt;
+    flex: 10 1 auto;
+    width: 5em;
+    line-height: 24pt;
 }
 .active {
     font-weight: bold;

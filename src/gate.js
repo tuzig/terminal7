@@ -60,6 +60,7 @@ export class Gate {
             t.querySelector(".add-tab").addEventListener(
                 'click', _ => this.newTab())
             t.querySelector(".search-close").addEventListener('click', _ =>  {
+                terminal7.logDisplay(false)
                 this.activeW.activeP.exitCopyMode()
                 this.activeW.activeP.focus()
             })
