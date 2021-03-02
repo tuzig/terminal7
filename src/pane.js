@@ -57,7 +57,7 @@ export class Pane extends Cell {
 
         con.p = this
         this.t = new Terminal({
-            convertEol: true,
+            convertEol: false,
             fontFamily: "FiraCode",
             fontSize: this.fontSize,
             theme: this.theme,
