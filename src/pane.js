@@ -33,8 +33,6 @@ export class Pane extends Cell {
         this.active = false
         this.webexecID = props.webexec_id || null
         this.fontSize = props.fontSize || 12
-        this.scrolling = false
-        this.scrollLingers4 = props.scrollLingers4 || 2000
         this.theme = props.theme || terminal7.conf.theme
         this.copyMode = false
         this.cmRep = 0
@@ -104,14 +102,6 @@ export class Pane extends Cell {
                 if (this.copyMode) {
                     this.handleCopyModeKey(ev.domEvent)
                 }
-            })
-            // keep tap of "scrolling mode"
-            var tf
-            this.t.onScroll(ev => {
-                this.scrolling = true
-                if (tf !== undefined)
-                    clearTimeout(tf)
-                tf = terminal7.run(e => this.scrolling = false, this.scrollLingers4)
             })
             const resizeObserver = new ResizeObserver(_ => this.fit())
             resizeObserver.observe(this.e);

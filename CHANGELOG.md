@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - search bar size & color
+- dotfiles editor colors
+- cut and border pan work with only single finger
+- two finger scroll doesn't change the font size
 
 ## [0.14.1] - 2020/2/23
 

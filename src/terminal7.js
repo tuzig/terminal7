@@ -42,6 +42,8 @@ quickest_press = 1000
 max_tabs = 3
 cut_min_distance = 80
 cut_min_speed = 2.5
+# no pinch when scrolling -> y velocity higher than XTZ px/ms
+pinch_max_y_velocity = 0.1
 `
 const WELCOME_MESSAGE = `<h1>Greetings & Salutations!</h1>
 <p>
@@ -311,7 +313,8 @@ export class Terminal7 {
             if (e.w instanceof Window)
                 e.classList.add("pressed")
             return 
-        } else if (type == "cancel") {
+        } 
+        if ((type == "cancel") || (ev.changedTouches.length != 1)) {
             this.touch0 = null
             this.firstT = []
             this.lastT = []
@@ -321,13 +324,12 @@ export class Terminal7 {
             return
         }
 
-        let x  = ev.changedTouches[0].pageX,
-            y  = ev.changedTouches[0].pageY
-
         if (this.firstT.length == 0)
             return
 
-        let dx = this.firstT[0].pageX - x,
+        let x  = ev.changedTouches[0].pageX,
+            y  = ev.changedTouches[0].pageY,
+            dx = this.firstT[0].pageX - x,
             dy = this.firstT[0].pageY - y,
             d  = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2)),
             deltaT = Date.now() - this.touch0,
@@ -360,7 +362,6 @@ export class Terminal7 {
             }
             return
         }
-
 
         if (pane === undefined)  {
             return
@@ -397,11 +398,10 @@ export class Terminal7 {
             this.lastT = ev.changedTouches
         }
         if (type == "end") {
-            if (!this.cells.some(c => c.scrolling)
-                && (ev.changedTouches.length == 1)
+            if ((ev.changedTouches.length == 1)
                 && (d > this.conf.ui.cutMinDistance)
                 && (s > this.conf.ui.cutMinSpeed)) {
-                    // it's a swipe!!
+                    // it's a cut!!
                     let p = ev.target.p
                     if (!pane.zoomed)  {
                         let t = pane.split((topb)?"topbottom":"rightleft",
@@ -713,6 +713,7 @@ export class Terminal7 {
         this.conf.ui.max_tabs = this.conf.ui.max_tabs || 3
         this.conf.ui.cutMinSpeed = this.conf.ui.cut_min_speed || 2.2
         this.conf.ui.cutMinDistance = this.conf.ui.cut_min_distance || 50
+        this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1
         this.conf.net.iceServer = this.conf.net.ice_server ||
             "stun:stun2.l.google.com:19302"
         this.conf.net.timeout = this.conf.net.timeout || 3000
