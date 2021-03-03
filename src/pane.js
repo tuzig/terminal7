@@ -250,8 +250,13 @@ export class Pane extends Cell {
         if (this.state == "opened") {
             var msg = enc.decode(m.data)
             this.state = "connected"
-            this.webexecID = parseInt(msg)
-            this.gate.onPaneConnected(this)
+            this.webexecID = parseInt(msg.split(",")[0])
+            if (isNaN(this.webexecID)) {
+                this.gate.notify(msg, true)
+                terminal7.logDisplay(true)
+                this.close()
+            } else
+                this.gate.onPaneConnected(this)
         }
         else if (this.state == "connected") {
             this.write(new Uint8Array(m.data))
