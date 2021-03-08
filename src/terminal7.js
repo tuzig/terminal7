@@ -18,7 +18,7 @@ import { formatDate } from './utils.js'
 import { Plugins } from '@capacitor/core'
 import { openDB } from 'idb'
 
-const { Network, App, BackgroundTask } = Plugins
+const { App, BackgroundTask, Clipboard, Network  } = Plugins
 
 const DEFAULT_DOTFILE = `[theme]
 foreground = "#00FAFA"
@@ -101,8 +101,6 @@ export class Terminal7 {
         document.getElementById("search-button")
                 .addEventListener("click", ev => 
                     this.activeG && this.activeG.activeW.activeP.toggleSearch())
-        document.getElementById("dotfile-button")
-                .addEventListener("click", ev => this.editDotfile(ev))
         document.getElementById("help-button")
                 .addEventListener("click", ev => this.toggleHelp())
         let addHost = document.getElementById("add-host")
@@ -224,6 +222,25 @@ export class Terminal7 {
         document.getElementById("log").addEventListener("click",
             _ => this.logDisplay(false))
 
+        // settings button and modal
+        var modal   = document.getElementById("settings-modal")
+        document.getElementById("dotfile-button")
+                .addEventListener("click", ev => this.toggleSettings(ev))
+        modal.querySelector(".close").addEventListener('click',
+            ev => {
+                document.getElementById("dotfile-button").classList.remove("on")
+                this.clear()
+            }
+        )
+        modal.querySelector(".save").addEventListener('click',
+            ev => this.wqConf())
+        modal.querySelector(".copy").addEventListener('click',
+            ev => {
+                var area = document.getElementById("edit-conf")
+                this.confEditor.save()
+                Clipboard.write({string: area.value});
+                this.clear()
+            })
         let certs = await this.getCertificates()
         if (certs.length == 0) {
             await this.generateCertificate()
@@ -232,7 +249,7 @@ export class Terminal7 {
         // Last one: focus
         this.focus()
     }
-    editDotfile(ev) {
+    toggleSettings(ev) {
         var modal   = document.getElementById("settings-modal"),
             button  = document.getElementById("dotfile-button"),
             area    =  document.getElementById("edit-conf"),
@@ -240,63 +257,45 @@ export class Terminal7 {
 
         area.value = conf
 
-        button.classList.add("on")
-        modal.classList.remove("hidden")
+        button.classList.toggle("on")
+        modal.classList.toggle("hidden")
+        if (button.classList.contains("on")) {
+           if (this.confEditor == null) {
+                vimMode(CodeMirror)
+                tomlMode(CodeMirror)
+                dialogAddOn(CodeMirror)
+                CodeMirror.commands.save = () => this.wqConf()
 
-        if (terminal7.confEditor == null) {
-            // initialize the editor
-            vimMode(CodeMirror)
-            tomlMode(CodeMirror)
-            dialogAddOn(CodeMirror)
-            CodeMirror.commands.save = _ => this.saveConf()
-            // TODO: the next 2 lines do nothing fixed them and support :q
-            CodeMirror.commands.wq = _ => this.saveConf()
-            CodeMirror.commands.q = _ => modal.classList.add("hidden")
-            terminal7.confEditor  = CodeMirror.fromTextArea(area, {
-               value: conf,
-               lineNumbers: true,
-               mode: "toml",
-               keyMap: "vim",
-               matchBrackets: true,
-               showCursorWhenSelecting: true
-            })
-            modal.querySelector(".close").addEventListener('click',
-                ev => {
-                    button.classList.remove("on")
-                    this.clear()
-                    this.focus()
-                }
-            )
-            modal.querySelector(".save").addEventListener('click',
-                ev => { 
-                    this.saveConf()
-                    this.focus()
+                this.confEditor  = CodeMirror.fromTextArea(area, {
+                   value: conf,
+                   lineNumbers: true,
+                   mode: "toml",
+                   keyMap: "vim",
+                   matchBrackets: true,
+                   showCursorWhenSelecting: true
                 })
-            modal.querySelector(".copy").addEventListener('click',
-                ev => {
-                    var area =  document.getElementById("edit-conf")
-                    terminal7.confEditor.save()
-                    cordova.plugins.clipboard.copy(area.value);
-                    this.focus()
-                })
+            }
+            this.confEditor.focus()
         }
-        terminal7.confEditor.focus()
+
     }
     /*
-     * saveConf saves the configuration and closes open conf editor
+     * wqConf saves the configuration and closes the conf editor
      */
-    saveConf() {
-        var button  = document.getElementById("dotfile-button"),
-            area    =  document.getElementById("edit-conf")
-        button.classList.remove("on")
-        terminal7.confEditor.save()
+    wqConf() {
+        var area    =  document.getElementById("edit-conf")
+        document.getElementById("dotfile-button").classList.remove("on")
+        this.confEditor.save()
         this.loadConf(TOML.parse(area.value))
         localStorage.setItem("dotfile", area.value)
         this.cells.forEach(c => {
             if (typeof(c.setTheme) == "function")
                 c.setTheme(this.conf.theme)
         })
-        this.clear()
+        document.getElementById("settings-modal").classList.add("hidden")
+        this.confEditor.toTextArea()
+        this.confEditor = null
+
     }
     /*
      * terminal7.onTouch is called on all browser's touch events
@@ -479,6 +478,7 @@ export class Terminal7 {
             if (!e.classList.contains("non-clearable"))
                 e.classList.add("hidden")
         })
+        this.focus()
     }
     goHome() {
         let s = document.getElementById('home-button'),
