@@ -136,7 +136,7 @@ export class Gate {
         this.e.querySelectorAll(".window").forEach(w => w.classList.add("hidden"))
         this.activeW.focus()
     }
-    // stops all communication if 
+    // stops all communication 
     stopBoarding() {
         if (!this.boarding)
             return
@@ -221,6 +221,7 @@ export class Gate {
             this.focus()
             return
         }
+        this.boarding = true
         console.log(`connecting to ${this.name}...`)
         // cleanup
         this.pendingCDCMsgs = []
@@ -283,6 +284,8 @@ export class Gate {
      * channel open or adds it to the queue if we're early to the party
      */
     sendCTRLMsg(msg) {
+        if (!this.boarding)
+            return
         const timeout = parseInt(terminal7.conf.net.timeout),
               retries = parseInt(terminal7.conf.net.retries),
               now = Date.now()
@@ -422,14 +425,6 @@ export class Gate {
         var cdc = this.pc.createDataChannel('%')
         this.cdc = cdc
         console.log("<opening cdc")
-        cdc.onclose = () => {
-            if (this.boarding) {
-                this.notify('Control Channel is closed. Reconnecting.')
-                if (this.pc)
-                    this.closePC()
-                this.connect()
-            }
-        }
         cdc.onopen = () => {
             if (this.pendingCDCMsgs.length > 0)
                 // TODO: why the time out? why 100mili?
@@ -667,7 +662,7 @@ export class Gate {
         })
         e.querySelector(".all").addEventListener('click', _ => {
             this.e.querySelector(".reset-gate").classList.toggle("hidden")
-            this.clear()
+            this.stopBoarding()
             this.connect()
         })
         this.e.appendChild(e)

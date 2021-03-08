@@ -137,11 +137,8 @@ export class Terminal7 {
         })
         // Handle network events for the indicator
         Network.getStatus().then(s => this.updateNetworkStatus(s))
-        Network.addListener('networkStatusChange', s => {
-            if (!s.connected)
-                this.gates.forEach(g => g.clear())
-            this.updateNetworkStatus(s)
-        })
+        Network.addListener('networkStatusChange', s => 
+            this.updateNetworkStatus(s))
         this.catchFingers()
         // setting up edit host events
         let editHost = document.getElementById("edit-host")
@@ -702,6 +699,7 @@ export class Terminal7 {
         else {
             offl.remove("hidden")
             cl.add("failed")
+            this.gates.forEach(g => g.stopBoarding())
         }
     }
     loadConf(conf) {
