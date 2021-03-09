@@ -537,23 +537,25 @@ export class Terminal7 {
      * onDisconnect is called when a gate disconnects.
      */
     onDisconnect(gate) {
-            let e = document.getElementById("disconnect-template")
-            e = e.content.cloneNode(true)
+        if (gate != this.activeG)
+            return
+        let e = document.getElementById("disconnect-template")
+        e = e.content.cloneNode(true)
+        this.clear()
+        // clear pending messages to let the user start fresh
+        this.pendingCDCMsgs = []
+        e.querySelector("h1").textContent =
+            `${gate.name} communication failure`
+        e.querySelector("form").addEventListener('submit', ev => {
             this.clear()
-            // clear pending messages to let the user start fresh
-            this.pendingCDCMsgs = []
-            e.querySelector("h1").textContent =
-                `${gate.name} communication failure`
-            e.querySelector("form").addEventListener('submit', ev => {
-                this.clear()
-                gate.boarding = false
-                gate.clear()
-                gate.connect()
-            })
-            e.querySelector(".close").addEventListener('click', ev => {
-                terminal7.goHome()
-            })
-            this.e.appendChild(e)
+            gate.boarding = false
+            gate.clear()
+            gate.connect()
+        })
+        e.querySelector(".close").addEventListener('click', ev => {
+            terminal7.goHome()
+        })
+        this.e.appendChild(e)
     }
     /*
      * focus restores the focus to the ative pane, if there is one
