@@ -60,6 +60,7 @@ export class Gate {
             t.querySelector(".add-tab").addEventListener(
                 'click', _ => this.newTab())
             t.querySelector(".search-close").addEventListener('click', _ =>  {
+                terminal7.logDisplay(false)
                 this.activeW.activeP.exitCopyMode()
                 this.activeW.activeP.focus()
             })
@@ -135,7 +136,7 @@ export class Gate {
         this.e.querySelectorAll(".window").forEach(w => w.classList.add("hidden"))
         this.activeW.focus()
     }
-    // stops all communication if 
+    // stops all communication 
     stopBoarding() {
         if (!this.boarding)
             return
@@ -157,6 +158,12 @@ export class Gate {
             this.notify("WebRTC connected")
             this.boarding = true
             document.getElementById("downstream-indicator").classList.remove("failed")
+            // show help for first timer
+            if (!localStorage.getItem("first_gate")) {
+                terminal7.run(terminal7.toggleHelp, 1000)
+                localStorage.setItem("first_gate", "1") 
+            }
+            
         }
         else if (state == "disconnected") {
             // TODO: add warn class
@@ -214,6 +221,7 @@ export class Gate {
             this.focus()
             return
         }
+        this.boarding = true
         console.log(`connecting to ${this.name}...`)
         // cleanup
         this.pendingCDCMsgs = []
@@ -276,6 +284,8 @@ export class Gate {
      * channel open or adds it to the queue if we're early to the party
      */
     sendCTRLMsg(msg) {
+        if (!this.boarding)
+            return
         const timeout = parseInt(terminal7.conf.net.timeout),
               retries = parseInt(terminal7.conf.net.retries),
               now = Date.now()
@@ -415,14 +425,6 @@ export class Gate {
         var cdc = this.pc.createDataChannel('%')
         this.cdc = cdc
         console.log("<opening cdc")
-        cdc.onclose = () => {
-            if (this.boarding) {
-                this.notify('Control Channel is closed. Reconnecting.')
-                if (this.pc)
-                    this.closePC()
-                this.connect()
-            }
-        }
         cdc.onopen = () => {
             if (this.pendingCDCMsgs.length > 0)
                 // TODO: why the time out? why 100mili?
@@ -568,9 +570,12 @@ export class Gate {
         })
     }
     goBack() {
-        this.breadcrumbs.pop()
-        if (this.windows.length == 0)
+        var w = this.breadcrumbs.pop()
+        this.breadcrumbs = this.breadcrumbs.filter(x => x != w)
+        if (this.windows.length == 0) {
+            this.clear()
             terminal7.goHome()
+        }
         else
             if (this.breadcrumbs.length > 0)
                 this.breadcrumbs.pop().focus()
@@ -627,6 +632,7 @@ export class Gate {
     newTab() {
         if (this.windows.length < terminal7.conf.ui.max_tabs) {
             let w = this.addWindow("", true)
+            this.breadcrumbs.push(w)
             w.focus()
         }
     }
@@ -656,7 +662,7 @@ export class Gate {
         })
         e.querySelector(".all").addEventListener('click', _ => {
             this.e.querySelector(".reset-gate").classList.toggle("hidden")
-            this.clear()
+            this.stopBoarding()
             this.connect()
         })
         this.e.appendChild(e)

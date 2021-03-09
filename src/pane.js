@@ -33,8 +33,6 @@ export class Pane extends Cell {
         this.active = false
         this.webexecID = props.webexec_id || null
         this.fontSize = props.fontSize || 12
-        this.scrolling = false
-        this.scrollLingers4 = props.scrollLingers4 || 2000
         this.theme = props.theme || terminal7.conf.theme
         this.copyMode = false
         this.cmRep = 0
@@ -57,7 +55,7 @@ export class Pane extends Cell {
 
         con.p = this
         this.t = new Terminal({
-            convertEol: true,
+            convertEol: false,
             fontFamily: "FiraCode",
             fontSize: this.fontSize,
             theme: this.theme,
@@ -104,14 +102,6 @@ export class Pane extends Cell {
                 if (this.copyMode) {
                     this.handleCopyModeKey(ev.domEvent)
                 }
-            })
-            // keep tap of "scrolling mode"
-            var tf
-            this.t.onScroll(ev => {
-                this.scrolling = true
-                if (tf !== undefined)
-                    clearTimeout(tf)
-                tf = terminal7.run(e => this.scrolling = false, this.scrollLingers4)
             })
             const resizeObserver = new ResizeObserver(_ => this.fit())
             resizeObserver.observe(this.e);
@@ -231,7 +221,7 @@ export class Pane extends Cell {
         this.buffer = []
 
         label = this.webexecID?`>${this.webexecID}`:
-           `${tSize},${terminal7.conf.exec.shell},-is,--login`
+           `${tSize},${terminal7.conf.exec.shell}`
 
         console.log(`opening dc with label: "${label}`)
         this.d = this.gate.pc.createDataChannel(label)
@@ -260,8 +250,13 @@ export class Pane extends Cell {
         if (this.state == "opened") {
             var msg = enc.decode(m.data)
             this.state = "connected"
-            this.webexecID = parseInt(msg)
-            this.gate.onPaneConnected(this)
+            this.webexecID = parseInt(msg.split(",")[0])
+            if (isNaN(this.webexecID)) {
+                this.gate.notify(msg, true)
+                terminal7.logDisplay(true)
+                this.close()
+            } else
+                this.gate.onPaneConnected(this)
         }
         else if (this.state == "connected") {
             this.write(new Uint8Array(m.data))

@@ -18,7 +18,7 @@ import { formatDate } from './utils.js'
 import { Plugins } from '@capacitor/core'
 import { openDB } from 'idb'
 
-const { Network, App, BackgroundTask } = Plugins
+const { App, BackgroundTask, Clipboard, Network  } = Plugins
 
 const DEFAULT_DOTFILE = `[theme]
 foreground = "#00FAFA"
@@ -42,7 +42,19 @@ quickest_press = 1000
 max_tabs = 3
 cut_min_distance = 80
 cut_min_speed = 2.5
+# no pinch when scrolling -> y velocity higher than XTZ px/ms
+pinch_max_y_velocity = 0.1
 `
+const WELCOME_MESSAGE = `<h1>Greetings & Salutations!</h1>
+<p>
+To join our beta you will need a server with a public IP/DNS.
+Our backend supports Mac and Linux running on a desktop, a Pi or a hosted
+server. 
+</p><p>
+Once you add your server's address we will try to connect and
+fail as the backend agent is not there. Then we will guide you through its
+installation.
+</p>`
 
 export class Terminal7 {
     /*
@@ -89,26 +101,12 @@ export class Terminal7 {
         document.getElementById("search-button")
                 .addEventListener("click", ev => 
                     this.activeG && this.activeG.activeW.activeP.toggleSearch())
-        document.getElementById("dotfile-button")
-                .addEventListener("click", ev => this.editDotfile(ev))
         document.getElementById("help-button")
-                .addEventListener("click", ev => {
-                    var helpId = (this.activeG)? "help-gate":"help-home",
-                        ecl = document.getElementById(helpId).classList,
-                        bcl = document.getElementById("help-button").classList,
-                        hidden = ecl.contains("hidden")
-                    ecl.toggle("hidden")
-                    bcl.toggle("on")
-                    if (hidden)
-                        imageMapResizer()
-                    else
-                        this.focus()
-                    // TODO: When at home remove the "on" from the home butto
-                })
-        // display the home page, starting with the plus button
+                .addEventListener("click", ev => this.toggleHelp())
         let addHost = document.getElementById("add-host")
         document.getElementById('plus-host').addEventListener(
             'click', ev => {
+                this.logDisplay(false)
                 addHost.querySelector("form").reset()
                 addHost.classList.remove("hidden")
             })
@@ -120,6 +118,8 @@ export class Terminal7 {
                     name: addHost.querySelector('[name="hostname"]').value,
                     store: remember
                 })
+            if (remember)
+                this.storeGates()
             if (typeof gate == "string")
                 this.notify(gate)
             else {
@@ -137,11 +137,8 @@ export class Terminal7 {
         })
         // Handle network events for the indicator
         Network.getStatus().then(s => this.updateNetworkStatus(s))
-        Network.addListener('networkStatusChange', s => {
-            if (!s.connected)
-                this.gates.forEach(g => g.clear())
-            this.updateNetworkStatus(s)
-        })
+        Network.addListener('networkStatusChange', s => 
+            this.updateNetworkStatus(s))
         this.catchFingers()
         // setting up edit host events
         let editHost = document.getElementById("edit-host")
@@ -188,12 +185,16 @@ export class Terminal7 {
             this.metaPressStart = Number.MAX_VALUE
         })
         // Load gates from local storage
-        let hs = JSON.parse(localStorage.getItem('gates'))
-        if (hs != null)
-            hs.forEach((p) => {
+        let ls = localStorage.getItem('gates');
+        if (ls)
+            JSON.parse(ls).forEach((p) => {
                 p.store = true
                 this.addGate(p)
             })
+        if (!localStorage.getItem('welcomed')) {
+            this.notify(WELCOME_MESSAGE)
+            localStorage.setItem('welcomed', 'indeed')
+        }
         // window.setInterval(_ => this.periodic(), 2000)
         App.addListener('appStateChange', state => {
             if (!state.isActive) {
@@ -218,6 +219,25 @@ export class Terminal7 {
         document.getElementById("log").addEventListener("click",
             _ => this.logDisplay(false))
 
+        // settings button and modal
+        var modal   = document.getElementById("settings-modal")
+        document.getElementById("dotfile-button")
+                .addEventListener("click", ev => this.toggleSettings(ev))
+        modal.querySelector(".close").addEventListener('click',
+            ev => {
+                document.getElementById("dotfile-button").classList.remove("on")
+                this.clear()
+            }
+        )
+        modal.querySelector(".save").addEventListener('click',
+            ev => this.wqConf())
+        modal.querySelector(".copy").addEventListener('click',
+            ev => {
+                var area = document.getElementById("edit-conf")
+                this.confEditor.save()
+                Clipboard.write({string: area.value});
+                this.clear()
+            })
         let certs = await this.getCertificates()
         if (certs.length == 0) {
             await this.generateCertificate()
@@ -226,7 +246,7 @@ export class Terminal7 {
         // Last one: focus
         this.focus()
     }
-    editDotfile(ev) {
+    toggleSettings(ev) {
         var modal   = document.getElementById("settings-modal"),
             button  = document.getElementById("dotfile-button"),
             area    =  document.getElementById("edit-conf"),
@@ -234,63 +254,45 @@ export class Terminal7 {
 
         area.value = conf
 
-        button.classList.add("on")
-        modal.classList.remove("hidden")
+        button.classList.toggle("on")
+        modal.classList.toggle("hidden")
+        if (button.classList.contains("on")) {
+           if (this.confEditor == null) {
+                vimMode(CodeMirror)
+                tomlMode(CodeMirror)
+                dialogAddOn(CodeMirror)
+                CodeMirror.commands.save = () => this.wqConf()
 
-        if (terminal7.confEditor == null) {
-            // initialize the editor
-            vimMode(CodeMirror)
-            tomlMode(CodeMirror)
-            dialogAddOn(CodeMirror)
-            CodeMirror.commands.save = _ => this.saveConf()
-            // TODO: the next 2 lines do nothing fixed them and support :q
-            CodeMirror.commands.wq = _ => this.saveConf()
-            CodeMirror.commands.q = _ => modal.classList.add("hidden")
-            terminal7.confEditor  = CodeMirror.fromTextArea(area, {
-               value: conf,
-               lineNumbers: true,
-               mode: "toml",
-               keyMap: "vim",
-               matchBrackets: true,
-               showCursorWhenSelecting: true
-            })
-            modal.querySelector(".close").addEventListener('click',
-                ev => {
-                    button.classList.remove("on")
-                    this.clear()
-                    this.focus()
-                }
-            )
-            modal.querySelector(".save").addEventListener('click',
-                ev => { 
-                    this.saveConf()
-                    this.focus()
+                this.confEditor  = CodeMirror.fromTextArea(area, {
+                   value: conf,
+                   lineNumbers: true,
+                   mode: "toml",
+                   keyMap: "vim",
+                   matchBrackets: true,
+                   showCursorWhenSelecting: true
                 })
-            modal.querySelector(".copy").addEventListener('click',
-                ev => {
-                    var area =  document.getElementById("edit-conf")
-                    terminal7.confEditor.save()
-                    cordova.plugins.clipboard.copy(area.value);
-                    this.focus()
-                })
+            }
+            this.confEditor.focus()
         }
-        terminal7.confEditor.focus()
+
     }
     /*
-     * saveConf saves the configuration and closes open conf editor
+     * wqConf saves the configuration and closes the conf editor
      */
-    saveConf() {
-        var button  = document.getElementById("dotfile-button"),
-            area    =  document.getElementById("edit-conf")
-        button.classList.remove("on")
-        terminal7.confEditor.save()
+    wqConf() {
+        var area    =  document.getElementById("edit-conf")
+        document.getElementById("dotfile-button").classList.remove("on")
+        this.confEditor.save()
         this.loadConf(TOML.parse(area.value))
         localStorage.setItem("dotfile", area.value)
         this.cells.forEach(c => {
             if (typeof(c.setTheme) == "function")
                 c.setTheme(this.conf.theme)
         })
-        this.clear()
+        document.getElementById("settings-modal").classList.add("hidden")
+        this.confEditor.toTextArea()
+        this.confEditor = null
+
     }
     /*
      * terminal7.onTouch is called on all browser's touch events
@@ -307,7 +309,8 @@ export class Terminal7 {
             if (e.w instanceof Window)
                 e.classList.add("pressed")
             return 
-        } else if (type == "cancel") {
+        } 
+        if ((type == "cancel") || (ev.changedTouches.length != 1)) {
             this.touch0 = null
             this.firstT = []
             this.lastT = []
@@ -317,13 +320,12 @@ export class Terminal7 {
             return
         }
 
-        let x  = ev.changedTouches[0].pageX,
-            y  = ev.changedTouches[0].pageY
-
         if (this.firstT.length == 0)
             return
 
-        let dx = this.firstT[0].pageX - x,
+        let x  = ev.changedTouches[0].pageX,
+            y  = ev.changedTouches[0].pageY,
+            dx = this.firstT[0].pageX - x,
             dy = this.firstT[0].pageY - y,
             d  = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2)),
             deltaT = Date.now() - this.touch0,
@@ -351,11 +353,11 @@ export class Terminal7 {
             }
             if (type == 'end') {
                 e.classList.remove("pressed")
+                e.w.gate.breadcrumbs.push(e.w)
                 e.w.focus()
             }
             return
         }
-
 
         if (pane === undefined)  {
             return
@@ -392,11 +394,10 @@ export class Terminal7 {
             this.lastT = ev.changedTouches
         }
         if (type == "end") {
-            if ((!pane.scrolling)
-                && (ev.changedTouches.length == 1)
+            if ((ev.changedTouches.length == 1)
                 && (d > this.conf.ui.cutMinDistance)
                 && (s > this.conf.ui.cutMinSpeed)) {
-                    // it's a swipe!!
+                    // it's a cut!!
                     let p = ev.target.p
                     if (!pane.zoomed)  {
                         let t = pane.split((topb)?"topbottom":"rightleft",
@@ -452,9 +453,6 @@ export class Terminal7 {
         let g = new Gate(p)
         console.log(`adding ${g.user}@${g.addr} & saving gates`)
         this.gates.push(g)
-        if (p.store)
-            this.storeGates()
-        this.storeGates()
         g.open(this.e)
         return g
     }
@@ -465,7 +463,7 @@ export class Terminal7 {
                 let ws = []
                 h.windows.forEach((w) => ws.push(w.id))
                 out.push({id: h.id, addr: h.addr, user: h.user, secret: h.secret,
-                    name:h.name, windows: ws})
+                    name:h.name, windows: ws, store: true})
             }
         })
         console.log("Storing gates:", out)
@@ -477,6 +475,7 @@ export class Terminal7 {
             if (!e.classList.contains("non-clearable"))
                 e.classList.add("hidden")
         })
+        this.focus()
     }
     goHome() {
         let s = document.getElementById('home-button'),
@@ -504,13 +503,13 @@ export class Terminal7 {
         let e = document.getElementById("log")
         if (show === undefined)
             // if show is undefined toggle current state
-            show = e.classList.contains("fade-out")
+            show = !e.classList.contains("show")
         if (show) {
-            e.classList.remove("fade-out", "hidden")
+            e.classList.add("show")
             document.getElementById("log-button")
                 .classList.add("on")
         } else {
-            e.classList.add("fade-out")
+            e.classList.remove("show")
             document.getElementById("log-button")
                 .classList.remove("on")
         }
@@ -700,6 +699,7 @@ export class Terminal7 {
         else {
             offl.remove("hidden")
             cl.add("failed")
+            this.gates.forEach(g => g.stopBoarding())
         }
     }
     loadConf(conf) {
@@ -711,6 +711,7 @@ export class Terminal7 {
         this.conf.ui.max_tabs = this.conf.ui.max_tabs || 3
         this.conf.ui.cutMinSpeed = this.conf.ui.cut_min_speed || 2.2
         this.conf.ui.cutMinDistance = this.conf.ui.cut_min_distance || 50
+        this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1
         this.conf.net.iceServer = this.conf.net.ice_server ||
             "stun:stun2.l.google.com:19302"
         this.conf.net.timeout = this.conf.net.timeout || 3000
@@ -789,5 +790,20 @@ export class Terminal7 {
                 resolve(null)
             })
         })
+    }
+    toggleHelp() {
+        // TODO: add help for home
+        // var helpId = (this.activeG)? "help-gate":"help-home",
+        var helpId = "help-gate",
+            ecl = document.getElementById(helpId).classList,
+            bcl = document.getElementById("help-button").classList
+            
+        ecl.toggle("show")
+        bcl.toggle("on")
+        if (ecl.contains("show"))
+            imageMapResizer()
+        else
+            this.focus()
+        // TODO: When at home remove the "on" from the home butto
     }
 }

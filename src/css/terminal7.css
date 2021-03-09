@@ -22,6 +22,7 @@
 html,
 body {
   width: 100%;
+  max-width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
@@ -32,6 +33,7 @@ body {
   font-family: 'FiraSans';
   color: #00FAFA;
   background-color: #271D30;
+  overflow: hidden;
 }
 
 *:focus { outline: none; } 
@@ -278,24 +280,32 @@ nav .on { color: #00FA00 !important; }
     padding: 4px;
     bottom: 40pt;
     left: 50%;
+    width: 60em;
+    max-width: 96%;
     transform: translate(-50%, 0);
+    border-color: #F952F9;
 }
-.tabbar-search {
+nav.tabbar-search {
     padding: 0.2em 1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    align-content: center;
 }
 .tabbar-search>button {
-    float:left;
     padding: 0 0.5em;
+    flex: 1 1 0;
+}
+.tabbar-search button.search-close {
+    border-right: 0;
 }
 .tabbar-search>input {
-    float:left;
     padding: 0 0.5em;
-    width: 60%;
-    position: relative;
-    margin-left: 1em;
     border-right: 1px solid #373702;
     font-size: 18pt;
-    line-height: 22pt;
+    flex: 10 1 auto;
+    width: 5em;
+    line-height: 24pt;
 }
 .active {
     font-weight: bold;
@@ -394,15 +404,24 @@ label {
 }
 #log {
     position: absolute;
-    left: 10%;
-    top: -4px;
+    bottom: 110px;
     margin: 0;
     padding: 0;
     z-index: 6;
-    width: 80%;
     background-color: #271D30;
     border-color: #F952F9;
     text-align: left;
+    width: 96%;
+    max-width: 30em;
+    /* right: -100%; */
+    opacity: 0;
+    transition: all .75s ease;
+    transform: translate(100%, 0);
+    right : 4px;
+}
+#log.show {
+    opacity: 0.8;
+    transform: translate(0, 0);
 }
 #log-msgs {
     margin: 0;
@@ -415,22 +434,19 @@ label {
     margin: 0.5em;
     overflow: hidden;
 }
+.log-msg h1 {
+    font-size: 16px;
+    line-height: 28px;
+    overflow: hidden;
+    font-weight: bold;
+}
 .log-msg time {
     float: left;
     color: #F952F9;
+    font-family: "FiraCode";
 }
 .log-msg p {
-    /*
-    position: relative;
-    top: 0;
-    left: 10em;
-    */
     margin: 0 0 0 8em;
-}
-.fade-out {
-  top: 0;
-  transform: translate(0, -100%);
-  transition: transform 1s ease-in;
 }
 .search-container {
     margin: 0 auto;
@@ -482,11 +498,19 @@ td {
     margin-top: 2em;
 }
 #help-home, #help-gate {
+    visibility: hidden;
+    opacity: 0;
     position: fixed;
     left: 0;
     bottom: 56px;
     z-index: 5;
     background-color: #271D30;
+    transition: all .75s ease;
+}
+#help-home.show, #help-gate.show {
+    opacity: 0.8;
+    visibility: visible;
+    transition: all .75s ease;
 }
 #help-gate {
     border-top: 2px dashed #F952F9;

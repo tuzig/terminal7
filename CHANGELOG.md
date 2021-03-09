@@ -6,6 +6,33 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed
+
+- setting editor
+- search bar size & color
+- dotfiles editor colors
+- cut and border pan work with only single finger
+- two finger scroll doesn't change the font size
+
+## [0.14.1] - 2020/2/23
+
+### Added
+
+- first usage welcome message
+- help is shown after first succesfull connection
+
+### Changed 
+
+- log messages moved to the side
+- same help shown in home and inside a gate
+
+### Fixed
+
+- community link is working properly
+- gate doesn't close when there are open windows
+
 ## [0.14.0] - 2020/1/21
 
 ### Changed 
