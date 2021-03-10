@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- multiple reconnection bugs should be very stable now
 - setting editor
 - search bar size & color
 - dotfiles editor colors

@@ -220,13 +220,20 @@ export class Pane extends Cell {
             label = ""
         this.buffer = []
 
+        // stop listening to old channel events
+        if (this.d) {
+            this.d.onclose = undefined
+            this.d.onopen = undefined
+            this.d.onmessage = undefined
+        }
+
         label = this.webexecID?`>${this.webexecID}`:
            `${tSize},${terminal7.conf.exec.shell}`
 
         console.log(`opening dc with label: "${label}`)
         this.d = this.gate.pc.createDataChannel(label)
         this.d.onclose = e => {
-            console.log(`on data channel, marker - ${this.gate.marker}`)
+            console.log(`on dc "${this.webexecID}" close, marker - ${this.gate.marker}`)
             this.state = "disconnected"
             if (this.gate.marker == -1)
                 this.close()

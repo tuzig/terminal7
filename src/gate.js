@@ -225,7 +225,7 @@ export class Gate {
         console.log(`connecting to ${this.name}...`)
         // cleanup
         this.pendingCDCMsgs = []
-        this.closePC()
+        this.disengagePC()
         // exciting times.... a connection is born!
         this.pc = new RTCPeerConnection({
             iceServers: [ { urls: terminal7.conf.net.iceServer }],
@@ -274,7 +274,10 @@ export class Gate {
             this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
         }
         this.openCDC()
-        this.setMarker(() => this.getLayout())
+        if (this.marker == -1)
+            this.getLayout()
+        else
+            this.setMarker()
     }
     notify(message) {    
         terminal7.notify(`${this.name}: ${message}`)
@@ -323,22 +326,21 @@ export class Gate {
         }
         return msg.message_id
     }
-    setMarker(cb) {
-        if (this.marker == -1) {
-            cb()
-            return
-        }
+    setMarker() {
         let msgId = this.sendCTRLMsg({type: "restore",
                                       args: { marker: this.marker }})
-        this.onack[msgId] = (isNack, _) => {
-            if (isNack)
+        this.onack[msgId] = (isNack, state) => {
+            if (isNack) {
                 this.notify("Failed to restore from marker")
-            cb()
-            terminal7.run(_ => this.marker = -1, 100)
+                this.getLayout()
+            }
+            else
+                this.restoreState(state)
+            terminal7.run(_ => this.marker = -1, 1)
         }
     }
     /*
-     * authenticate send the authentication message over the control channel
+     * getLayout sends the get_payload and restores the state once it gets it
      */
     getLayout() {
         let msgId = this.sendCTRLMsg({
@@ -371,9 +373,7 @@ export class Gate {
             // if there's a marker it's a reconnect, re-open all gate's dcs
             // TODO: validate the current layout is like the state
             console.log("Restoring with marker, open dcs")
-            this.panes().forEach(c => {
-                c.openDC()
-            })
+            this.panes().forEach(p => p.openDC())
         } else if (state && (state.windows.length > 0)) {
             this.notify("Restoring layout")
             console.log("Restoring layout: ", state)
@@ -477,14 +477,14 @@ export class Gate {
         this.marker = -1
     }
     /*
-     * closePC slinetly closes the peer connections
+     * disengagePC silently removes all event handler from the peer connections
      */
-    closePC() {
+    disengagePC() {
         if (this.pc != null) {
             this.pc.onconnectionstatechange = undefined
             this.pc.onmessage = undefined
-            console.log("closing connection")
-            this.pc.close()
+            this.pc.onnegotiationneeded = undefined
+            console.log("Gate disengaged")
             this.pc = null
         }
     }
@@ -592,7 +592,7 @@ export class Gate {
     }
     restartServer() {
         this.clear()
-        this.closePC()
+        this.disengagePC()
         let e = document.getElementById("reset-host")
         terminal7.ssh(e, this, `webexec restart --address ${this.addr}`,
             _ => e.classList.add("hidden")) 
@@ -601,7 +601,7 @@ export class Gate {
         this.windows.forEach(w => w.fit())
     }
     /*
-     * disebngage performerly an orderly shutdown of the gate's connection.
+     * disengage orderly disengages from the gate's connection.
      * It first sends a mark request and on it's ack store the restore marker
      * and closes the peer connection.
      */

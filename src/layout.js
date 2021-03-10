@@ -48,6 +48,8 @@ export class Layout extends Cell {
      * On a cell going away, resize the other elements
      */
     onClose(c) {
+        // TODO: remove terminal7.cells
+        terminal7.cells.splice(terminal7.cells.indexOf(c), 1)
         // if this is the only pane in the layout, close the layout
         if (this.cells.length == 1) {
             if (this.layout != null)

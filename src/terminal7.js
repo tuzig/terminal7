@@ -620,7 +620,7 @@ export class Terminal7 {
             })
         })
         e.querySelector(".close").addEventListener('click', ev => {
-            gate.closePC()
+            gate.disengage()
             gate.clear()
             terminal7.goHome()
         })
