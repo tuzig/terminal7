@@ -27,10 +27,9 @@ selection = "#D9F505"
 
 [indicators]
 flash = 100
-log_lines = 7
 
 [exec]
-shell = "zsh"
+shell = "bash"
 
 [net]
 timeout = 3000
@@ -640,8 +639,6 @@ export class Terminal7 {
             t = formatDate(d, "HH:mm:ss.fff")
 
         let lines = ul.querySelectorAll('li')
-        if (lines.length > terminal7.conf.indicators.log_lines)
-            lines[0].remove()
         li.innerHTML = `<time>${t}</time><p>${message}</p>`
         li.classList = "log-msg"
         ul.appendChild(li)
