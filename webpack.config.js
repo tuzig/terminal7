@@ -19,7 +19,8 @@ module.exports = {
         }, {
             enforce: 'pre',
             test: /\.js$/,
-            include: [ path.resolve(__dirname, 'src') ],
+            include: [ path.resolve(__dirname, 'src'),
+                path.resolve(__dirname, 'node_modules', 'xterm', 'lib')],
             use: ['source-map-loader'],
           },
     ]},
