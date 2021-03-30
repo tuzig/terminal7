@@ -8,6 +8,7 @@ import { Plugins } from '@capacitor/core'
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
+import { CopymodeAddon } from './copy-mode/copymode-addon.ts'
 import { Cell } from './cell.js'
 import { fileRegex, urlRegex } from './utils.js'
 
@@ -34,7 +35,7 @@ export class Pane extends Cell {
         this.webexecID = props.webexec_id || null
         this.fontSize = props.fontSize || 12
         this.theme = props.theme || terminal7.conf.theme
-        this.copyMode = false
+        this.searchVisible = false
         this.cmRep = 0
         this.cmSY = false
         this.dividers = []
@@ -64,6 +65,7 @@ export class Pane extends Cell {
         })
         this.fitAddon = new FitAddon()
         this.searchAddon = new SearchAddon()
+        this.copymodeAddon = new CopymodeAddon()
 
         // there's a container div we need to get xtermjs to fit properly
         this.e.appendChild(con)
@@ -73,6 +75,7 @@ export class Pane extends Cell {
         // the canvas gets the touch event and the nadler needs to get back here
         this.t.loadAddon(this.fitAddon)
         this.t.loadAddon(this.searchAddon)
+        this.t.loadAddon(this.copymodeAddon)
         this.createDividers()
         this.t.loadWebfontAndOpen(con).then(_ => {
             this.fit(pane => { if (pane != null) pane.openDC() })
@@ -94,14 +97,9 @@ export class Pane extends Cell {
                     return true
             })
             this.t.onData(d =>  {
-                if (!this.copyMode && (this.d != null)
+                if (!this.copymodeAddon.isActive && (this.d != null)
                     && (this.d.readyState == "open"))
                     this.d.send(d)
-            })
-            this.t.onKey((ev) =>  {
-                if (this.copyMode) {
-                    this.handleCopyModeKey(ev.domEvent)
-                }
             })
             const resizeObserver = new ResizeObserver(_ => this.fit())
             resizeObserver.observe(this.e);
@@ -396,15 +394,12 @@ export class Pane extends Cell {
      * keys to move around, mark text and yank it
      */
     toggleSearch() {
-        this.copyMode = !this.copyMode
-        if (this.copyMode) {
-            this.enterCopyMode() 
+        this.searchVisible = !this.searchVisible
+        if (this.searchVisible) {
             this.showSearch()
-            // document.getElementById("copy-mode").classList.remove("hidden")
         }
         else
-            this.exitCopyMode() 
-            // this.gate.e.querySelector(".search-box").classList.add("hidden")
+            this.hideSearch() 
     }
     showSearch() {
         // show the search field
@@ -445,27 +440,36 @@ export class Pane extends Cell {
         }
         i.focus()
     }
-    enterCopyMode() {
-        this.cmSY = false
-        this.cmX = this.t.buffer.active.cursorX
-        this.cmY = this.t.buffer.active.cursorY
-        this.copyMode = true
-        this.updateBufferPosition()
-        document.getElementById("copy-mode")
-                .classList.remove("hidden")
-    }
-    exitCopyMode() {
-        const se = this.gate.e.querySelector(".search-box"),
-              cm = document.getElementById("copy-mode")
+    hideSearch() {
+        const se = this.gate.e.querySelector(".search-box")
         se.classList.add("hidden")
-        cm.classList.add("hidden")
         document.getElementById("search-button").classList.remove("on")
-        this.copyMode = false
         this.t.clearSelection()
         this.t.scrollToBottom()
         this.t.write(aE.cursorTo(this.cmX, this.cmY))
-        this.focus()
+        this.focus()        
     }
+    // enterCopyMode() {
+    //     this.cmSY = false
+    //     this.cmX = this.t.buffer.active.cursorX
+    //     this.cmY = this.t.buffer.active.cursorY
+    //     this.copyMode = true
+    //     this.updateBufferPosition()
+    //     document.getElementById("copy-mode")
+    //             .classList.remove("hidden")
+    // }
+    // exitCopyMode() {
+    //     const se = this.gate.e.querySelector(".search-box"),
+    //           cm = document.getElementById("copy-mode")
+    //     se.classList.add("hidden")
+    //     cm.classList.add("hidden")
+    //     document.getElementById("search-button").classList.remove("on")
+    //     this.copyMode = false
+    //     this.t.clearSelection()
+    //     this.t.scrollToBottom()
+    //     this.t.write(aE.cursorTo(this.cmX, this.cmY))
+    //     this.focus()
+    // }
     handleMetaKey(ev) {
         var f = null
         console.log(`Handling meta key ${ev.key}`)
@@ -499,8 +503,9 @@ export class Pane extends Cell {
             f = () => this.split("rightleft")
             break
         case "[":
+            console.log('COPYMODE START?', terminal7.conf.features);
             f = () => (terminal7.conf.features.copy_mode)
-                      ?this.enterCopyMode()
+                      ?this.copymodeAddon.start()
                       :null
             break
         case "f":
@@ -544,7 +549,6 @@ export class Pane extends Cell {
         if (this.searchTerm != undefined
             && !this.searchAddon.findNext(this.searchTerm, SEARCH_OPTS))
             this.gate.notify(`Couldn't find "${this.searchTerm}"`)
-        this.updateCopyMode()
     }
     findNext(searchTerm) {
         if (searchTerm != undefined)
@@ -553,7 +557,6 @@ export class Pane extends Cell {
             && !this.searchAddon.findPrevious(this.searchTerm, SEARCH_OPTS))
             // TODO: it's too intrusive. use bell?
             this.gate.notify(`Couldn't find "${this.searchTerm}"`)
-        this.updateCopyMode()
     }
     /*
      * createDividers creates a top and left educationsl dividers.

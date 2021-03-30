@@ -43,6 +43,9 @@ cut_min_distance = 80
 cut_min_speed = 2.5
 # no pinch when scrolling -> y velocity higher than XTZ px/ms
 pinch_max_y_velocity = 0.1
+
+[features]
+copy_mode = true
 `
 const WELCOME_MESSAGE = `<h1>Greetings & Salutations!</h1>
 <p>
@@ -197,15 +200,17 @@ export class Terminal7 {
         // window.setInterval(_ => this.periodic(), 2000)
         App.addListener('appStateChange', state => {
             if (!state.isActive) {
-                // We're getting suspended. disengage.
-                let taskId = BackgroundTask.beforeExit(async () => {
-                    console.log("Benched. Disengaging from all gates")
-                    this.disengage(() => {
-                        console.log("finished disengaging")
-                        this.clearTimeouts()
-                        BackgroundTask.finish({taskId})
+                if (window.BackgroundTask) {
+                    // We're getting suspended. disengage.
+                    let taskId = BackgroundTask.beforeExit(async () => {
+                        console.log("Benched. Disengaging from all gates")
+                        this.disengage(() => {
+                            console.log("finished disengaging")
+                            this.clearTimeouts()
+                            BackgroundTask.finish({taskId})
+                        })
                     })
-                })
+                }
             }
             else {
                 // We're back! ensure we have the latest network status and 
@@ -237,8 +242,10 @@ export class Terminal7 {
                 Clipboard.write({string: area.value});
                 this.clear()
             })
+        console.log('waiting for certs...',)
         let certs = await this.getCertificates()
-        if (certs.length == 0) {
+        console.log('got certs', certs)
+        if (!certs || certs.length == 0) {
             await this.generateCertificate()
             await this.storeCertificate()
         }
@@ -718,38 +725,46 @@ export class Terminal7 {
     }
     // gets the will formatted fingerprint from the current certificate
     getFingerprint() {
+        console.log(this.certificates[0]);
         var f = this.certificates[0].getFingerprints()[0]
         return `${f.algorithm} ${f.value.toUpperCase()}`
     }
     // gets the certificate from indexDB. If they are not there, create them
-    getCertificates(cb) {
-        return new Promise(resolve => {
-            if (this.certificates)
-                resolve(this.certificates)
-            openDB("t7", 1, { 
-                    upgrade(db) {
-                        db.createObjectStore('certificates', {keyPath: 'id',
-                            autoIncrement: true})
-                    },
-            }).then(db => {
-                let tx = db.transaction("certificates"),
-                    store = tx.objectStore("certificates")
-                 store.getAll().then(certificates => {
-                    this.certificates = certificates
-                     db.close()
-                    resolve(this.certificates)
-                 }).catch(e => {
-                    resolve(null)
-                })
-            }).catch(e => {
-                db.close()
-                console.log(`got an error opening db ${e}`)
-                resolve(null)
+    async getCertificates() {
+        console.log('Opening DB 0')
+        if (this.certificates)
+            return this.certificates
+        console.log('Opening DB')
+        let db = null
+        try {
+            let db = await openDB("t7", 1, { 
+                upgrade(db) {
+                    console.log('Upgrade')
+                    db.createObjectStore('certificates', {keyPath: 'id',
+                        autoIncrement: true})
+                },
+                blocked() {
+                    console.log('Blocked')
+                },
             })
-        })
+            console.log('Got DB', db)
+            let tx = db.transaction("certificates"),
+            store = tx.objectStore("certificates")
+            let certificates = await store.getAll()
+            this.certificates = certificates
+            db.close()
+            return this.certificates
+        } catch {
+            console.log(`got an error opening db ${e}`)
+            if (db) {
+                db.close()
+            }
+        }
+        return null
     }
     generateCertificate() {
         return new Promise(resolve=> {
+            console.log('generating certs')
             RTCPeerConnection.generateCertificate({
               name: "ECDSA",
               namedCurve: "P-256",

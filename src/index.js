@@ -11,7 +11,9 @@ const { StatusBar } = Plugins
  */
 document.addEventListener("DOMContentLoaded", () => {
     // do nothing when running a test
-    StatusBar.hide()
+    if (window.StatusBar) {
+        StatusBar.hide()
+    }
     if (window.__html__ == undefined) {
         window.terminal7 = new Terminal7()
         console.log("openening terminal7")

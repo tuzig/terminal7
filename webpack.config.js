@@ -20,8 +20,13 @@ module.exports = {
             enforce: 'pre',
             test: /\.js$/,
             include: [ path.resolve(__dirname, 'src'),
-                path.resolve(__dirname, 'node_modules', 'xterm', 'lib')],
+                path.resolve(__dirname, 'node_modules', 'xterm', 'lib')
+            ],
             use: ['source-map-loader'],
+          }, {
+            test: /\.tsx?$/,
+            use: 'ts-loader',
+            exclude: /node_modules/,
           },
     ]},
     devServer: { host: "0.0.0.0"},
