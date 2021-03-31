@@ -61,7 +61,7 @@ export class Gate {
                 'click', _ => this.newTab())
             t.querySelector(".search-close").addEventListener('click', _ =>  {
                 terminal7.logDisplay(false)
-                this.activeW.activeP.exitCopyMode()
+                this.activeW.activeP.exitSearch()
                 this.activeW.activeP.focus()
             })
             t.querySelector(".search-up").addEventListener('click', _ =>

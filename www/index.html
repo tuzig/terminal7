@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, user-scalable=no" />
   <title>Terminal 7</title>
+  <script src="terminal7.bundle.js"></script>
 </head>
 <body>
   <div id="terminal7">
@@ -59,7 +60,7 @@
                 terminal or we can use ssh to take care of that for you:
             </p>
             <label for="uname">Username</label>
-            <input type="text" placeholder="your sysem username" name="uname" required>
+            <input type="text" placeholder="your system username" name="uname" required>
             <label for="pass">Password</label>
             <input type="password" placeholder="your password" name="pass" required>
             <nav class="three-buttons">
@@ -75,7 +76,7 @@
             (aka <b id="rh-name"></b>) requires your crendetials.
             </p>
             <label for="uname">Username</label>
-            <input type="text" placeholder="your sysem username" name="uname" required>
+            <input type="text" placeholder="your system username" name="uname" required>
             <label for="pass">Password</label>
             <input type="password" placeholder="your password" name="pass" required>
             <nav class="two-buttons">
@@ -175,7 +176,7 @@
 <div id="indicators">
     <i id="connectivity" class="f7-icons">dot_radiowaves_left_right</i>
     <i id="downstream-indicator" class="f7-icons off">arrow_down</i>
-    <p id="copy-mode" class="hidden"></p>
+    <i id="copy-mode-indicator" class="f7-icons hidden">doc_on_doc</i>
 </div>
     <template id="disconnect-template">
        <div class="disconnect modal border temporal"><form>
@@ -200,7 +201,7 @@
           <p>If it is installed we can use SSH and start it for you:
           </p>
           <label for="uname">Username</label>
-          <input type="text" placeholder="your sysem username" name="uname" required>
+          <input type="text" placeholder="your system username" name="uname" required>
           <label for="pass">Password</label>
           <input type="password" placeholder="your password" name="pass" required>
           <nav class="three-buttons">
@@ -254,6 +255,5 @@
           </dl>
       </div>
     </template>
-  <script src="terminal7.bundle.js"></script>
 </body>
 </html>

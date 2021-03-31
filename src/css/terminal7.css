@@ -285,13 +285,6 @@ nav .on { color: #00FA00 !important; }
     transform: translate(-50%, 0);
     border-color: #F952F9;
 }
-.copy-mode-key-receiver {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 1px;
-    height: 1px;
-}
 nav.tabbar-search {
     padding: 0.2em 1em;
     display: flex;

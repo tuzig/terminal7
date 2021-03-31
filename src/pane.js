@@ -66,6 +66,8 @@ export class Pane extends Cell {
         this.fitAddon = new FitAddon()
         this.searchAddon = new SearchAddon()
         this.copymodeAddon = new CopymodeAddon()
+        this.copymodeAddon.searchAddon = this.searchAddon;
+        this.copymodeAddon.onstop = () => { console.log('STOPPED'); }
 
         // there's a container div we need to get xtermjs to fit properly
         this.e.appendChild(con)
@@ -107,16 +109,15 @@ export class Pane extends Cell {
         })
         return this.t
     }
-    updateBufferPosition() {
-        var v
-        const b = this.t.buffer.active,
-              pos = this.t.getSelectionPosition()
-        if (pos !== undefined)
-            v = `[${pos.startRow}/${b.length}]`
-        else
-            v = `[${b.baseY + b.cursorY + 1}/${b.length}]`
-        document.getElementById("copy-mode").innerHTML = v
-    }
+    // updateBufferPosition() {
+    //     var v
+    //     const b = this.t.buffer.active,
+    //           pos = this.t.getSelectionPosition()
+    //     if (pos !== undefined)
+    //         v = `[${pos.startRow}/${b.length}]`
+    //     else
+    //         v = `[${b.baseY + b.cursorY + 1}/${b.length}]`
+    // }
     setTheme(theme) {
         this.t.setOption("theme", theme)
     }
@@ -273,119 +274,102 @@ export class Pane extends Cell {
         super.toggleZoom()
         this.fit()
     }
-    updateCopyMode() {
-        let b = this.t.buffer.active
-        if (this.cmSY) {
-            console.log(`select: cursor: ${b.cursorX}, ${b.cursorY}
-                                 start: ${this.cmSX}, ${this.cmSY}`)
-            if ((this.cmSY < b.cursorY) ||
-                ((this.cmSY == b.cursorY) && this.cmSX < b.cursorX))
-                this.t.select(this.cmSX, this.cmSY, 
-                               b.cursorX  - this.cmSX
-                              + this.t.cols * (b.cursorY - this.cmSY))
-            else
-                this.t.select(b.cursorX, b.cursorY, 
-                              this.cmSX - b.cursorX
-                              + this.t.cols * (this.cmSY - b.cursorY))
-        }
-        this.updateBufferPosition()
-    }
     /*
      * Pane.handleCopyModeKey(ev) is called on a key press event when the
      * pane is in copy mode. 
      * Copy mode uses vim movment commands to let the user for text, mark it 
      * and copy it.
      */
-    handleCopyModeKey(ev) {
-        let b = this.t.buffer.active,
-            updateSelection = false,
-            postWrite = () => { this.updateCopyMode() }
-        // special handling for numbers
-        if (ev.keyCode >=48 && ev.keyCode <= 57) {
-            this.cmRep = this.cmRep * 10 + ev.keyCode - 48
-            return
-        }
-        let r = (this.cmRep==0)?1:this.cmRep
-        switch (ev.key) {
-        case "Enter":
-            if (this.t.hasSelection()) {
-                Clipboard.write(this.t.getSelection())
-                this.cmSY = false
-                this.t.clearSelection()
-                break
-            }
-        case "n":
-            this.findNext()
-            break
-        case "f":
-            if (ev.ctrlKey)
-                this.t.scrollToLine(b.baseY+this.t.rows-2)
-            else if (ev.metaKey)
-                this.toggleSearch()
-            else
-                this.notify("TODO: go back a a word")
-            break
-        case "b":
-            if (ev.ctrlKey)
-                this.t.scrollToLine(b.baseY-this.t.rows+2)
-            else
-                this.notify("TODO: go back a a word")
-            break
-        case "p":
-            this.findPrevious()
-            break
-        case "o":
-            if (REGEX_SEARCH) {
-                var u = this.t.getSelection()
-                Browser.open({url: u})
-            }
-            break
-        case "Escape":
-        case "q":
-            this.exitCopyMode()
-            break
-        case "ArrowUp":
-        case "k":
-            if (r > b.cursorY) {
-                // we need to scroll
-                this.t.scrollToLine(b.viewportY-r+b.cursorY)
-                /*
-                for (var i=0; i < r - b.cursorY; i++)
-                    this.t.write(aE.scrollDown)
-                */
-                this.t.write(aE.cursorTo(b.cursorX, 0), postWrite)
-            }
-            else
-                this.t.write(aE.cursorUp(r), postWrite)
-            this.updateBufferPosition()
-            break
-        case "ArrowDown":
-        case "j":
-            this.t.write(aE.cursorDown(r), postWrite)
-            break
-        case "ArrowRight":
-        case "l":
-            this.t.write(aE.cursorForward(r), postWrite)
-            break
-        case "ArrowLeft":
-        case "h":
-            this.t.write(aE.cursorBackward(r), postWrite)
-            break
-        case "?":
-        case "/":
-            this.showSearch()
-            break
-        default:
-            if (ev.keyCode == 32) {
-                this.cmSY = b.cursorY
-                this.cmSX = b.cursorX
-                console.log(`set cmSX & Y to ${this.cmSX}, ${this.cmSY}`)
-            }
-            else
-                this.gate.notify("TODO: Add copy mode help")
-        }
-        this.cmRep = 0
-    }
+    // handleCopyModeKey(ev) {
+    //     let b = this.t.buffer.active,
+    //         updateSelection = false,
+    //         postWrite = () => { this.updateCopyMode() }
+    //     // special handling for numbers
+    //     if (ev.keyCode >=48 && ev.keyCode <= 57) {
+    //         this.cmRep = this.cmRep * 10 + ev.keyCode - 48
+    //         return
+    //     }
+    //     let r = (this.cmRep==0)?1:this.cmRep
+    //     switch (ev.key) {
+    //     case "Enter":
+    //         if (this.t.hasSelection()) {
+    //             Clipboard.write(this.t.getSelection())
+    //             this.cmSY = false
+    //             this.t.clearSelection()
+    //             break
+    //         }
+    //     case "n":
+    //         this.findNext()
+    //         break
+    //     case "f":
+    //         if (ev.ctrlKey)
+    //             this.t.scrollToLine(b.baseY+this.t.rows-2)
+    //         else if (ev.metaKey)
+    //             this.toggleSearch()
+    //         else
+    //             this.notify("TODO: go back a a word")
+    //         break
+    //     case "b":
+    //         if (ev.ctrlKey)
+    //             this.t.scrollToLine(b.baseY-this.t.rows+2)
+    //         else
+    //             this.notify("TODO: go back a a word")
+    //         break
+    //     case "p":
+    //         this.findPrevious()
+    //         break
+    //     case "o":
+    //         if (REGEX_SEARCH) {
+    //             var u = this.t.getSelection()
+    //             Browser.open({url: u})
+    //         }
+    //         break
+    //     case "Escape":
+    //     case "q":
+    //         this.exitCopyMode()
+    //         break
+    //     case "ArrowUp":
+    //     case "k":
+    //         if (r > b.cursorY) {
+    //             // we need to scroll
+    //             this.t.scrollToLine(b.viewportY-r+b.cursorY)
+    //             /*
+    //             for (var i=0; i < r - b.cursorY; i++)
+    //                 this.t.write(aE.scrollDown)
+    //             */
+    //             this.t.write(aE.cursorTo(b.cursorX, 0), postWrite)
+    //         }
+    //         else
+    //             this.t.write(aE.cursorUp(r), postWrite)
+    //         this.updateBufferPosition()
+    //         break
+    //     case "ArrowDown":
+    //     case "j":
+    //         this.t.write(aE.cursorDown(r), postWrite)
+    //         break
+    //     case "ArrowRight":
+    //     case "l":
+    //         this.t.write(aE.cursorForward(r), postWrite)
+    //         break
+    //     case "ArrowLeft":
+    //     case "h":
+    //         this.t.write(aE.cursorBackward(r), postWrite)
+    //         break
+    //     case "?":
+    //     case "/":
+    //         this.showSearch()
+    //         break
+    //     default:
+    //         if (ev.keyCode == 32) {
+    //             this.cmSY = b.cursorY
+    //             this.cmSX = b.cursorX
+    //             console.log(`set cmSX & Y to ${this.cmSX}, ${this.cmSY}`)
+    //         }
+    //         else
+    //             this.gate.notify("TODO: Add copy mode help")
+    //     }
+    //     this.cmRep = 0
+    // }
     /*
      * toggleSearch displays and handles pane search
      * First, tab names are replaced with an input field for the search string
@@ -396,16 +380,17 @@ export class Pane extends Cell {
     toggleSearch() {
         this.searchVisible = !this.searchVisible
         if (this.searchVisible) {
+            this.copymodeAddon.stop();
             this.showSearch()
         }
         else
-            this.hideSearch() 
+            this.exitSearch() 
     }
     showSearch() {
         // show the search field
         const se = this.gate.e.querySelector(".search-box")
         se.classList.remove("hidden")
-        this.updateBufferPosition()
+        // this.updateBufferPosition()
         document.getElementById("search-button").classList.add("on")
         // TODO: restore regex search
         let u = se.querySelector("a[href='#find-url']"),
@@ -420,7 +405,7 @@ export class Pane extends Cell {
                 ev.stopPropagation()
                 this.focus()
                 i.value = this.searchTerm = urlRegex
-                this.handleCopyModeKey({keyCode: 13})
+                // this.handleCopyModeKey({keyCode: 13})
             }
             // TODO: findPrevious does not work well
             f.onclick = _ => this.searchAddon.findPrevious(fileRegex, SEARCH_OPTS)
@@ -435,7 +420,9 @@ export class Pane extends Cell {
                 ev.stopPropagation()
                 this.focus()
                 this.searchTerm = ev.target.value
-                this.handleCopyModeKey(ev)
+                this.findPrevious();
+                this.hideSearch();
+                this.copymodeAddon.start();
             }
         }
         i.focus()
@@ -444,32 +431,15 @@ export class Pane extends Cell {
         const se = this.gate.e.querySelector(".search-box")
         se.classList.add("hidden")
         document.getElementById("search-button").classList.remove("on")
+    }
+    exitSearch() {
+        this.hideSearch();
+        this.copymodeAddon.stop();
         this.t.clearSelection()
         this.t.scrollToBottom()
-        this.t.write(aE.cursorTo(this.cmX, this.cmY))
-        this.focus()        
+        // this.t.write(aE.cursorTo(this.cmX, this.cmY))
+        this.focus()
     }
-    // enterCopyMode() {
-    //     this.cmSY = false
-    //     this.cmX = this.t.buffer.active.cursorX
-    //     this.cmY = this.t.buffer.active.cursorY
-    //     this.copyMode = true
-    //     this.updateBufferPosition()
-    //     document.getElementById("copy-mode")
-    //             .classList.remove("hidden")
-    // }
-    // exitCopyMode() {
-    //     const se = this.gate.e.querySelector(".search-box"),
-    //           cm = document.getElementById("copy-mode")
-    //     se.classList.add("hidden")
-    //     cm.classList.add("hidden")
-    //     document.getElementById("search-button").classList.remove("on")
-    //     this.copyMode = false
-    //     this.t.clearSelection()
-    //     this.t.scrollToBottom()
-    //     this.t.write(aE.cursorTo(this.cmX, this.cmY))
-    //     this.focus()
-    // }
     handleMetaKey(ev) {
         var f = null
         console.log(`Handling meta key ${ev.key}`)

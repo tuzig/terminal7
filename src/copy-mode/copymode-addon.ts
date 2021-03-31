@@ -1,7 +1,8 @@
+import { Plugins } from '@capacitor/core'
 import { Terminal, ITerminalAddon, ISelectionPosition } from 'xterm';
+import { SearchAddon } from 'xterm-addon-search';
 
-
-
+const { Clipboard } = Plugins
 
 export class CopymodeAddon implements ITerminalAddon {
     
@@ -9,11 +10,14 @@ export class CopymodeAddon implements ITerminalAddon {
     endSelection = false;
     t: Terminal = null;
     selection: ISelectionPosition = null;
+    keyListener: any;
+    searchAddon: SearchAddon = null;
+    onstop: () => void = null;
 
     activate(terminal: Terminal): void {
         this.t = terminal;
         this.t.onSelectionChange(() => this.selectionChanged())
-        this.t.onKey((p: {key: string, domEvent: KeyboardEvent}) => this.keyPress(p.key, p.domEvent))
+        this.keyListener = (ev: KeyboardEvent) => this.keyPress(ev);
     }
 
     dispose() {
@@ -21,7 +25,6 @@ export class CopymodeAddon implements ITerminalAddon {
 
     selectionChanged() {
         const selection = this.t.getSelectionPosition();
-        console.log('CM SELECTION', selection);
         this.selection = selection;
         if (selection) {
             this.start();
@@ -30,57 +33,114 @@ export class CopymodeAddon implements ITerminalAddon {
         }
     }
 
-    keyPress(key: string, domEvent: KeyboardEvent) {
+    keyPress(ev: KeyboardEvent) {
+        const key = ev.key;
+        const buffer = this.t.buffer.active;
         if (!this.isActive) {
             return;
         }
-        if (key === '[') {
-            this.endSelection = !this.endSelection;
-        } else {
-            if (!this.endSelection) {
-                if (key === 'h') {
-                    this.selection.startColumn -= 1;
-                } else if (key === 'j') {
-                    this.selection.startRow += 1;        
-                } else if (key === 'k') {
-                    this.selection.startRow -= 1;
-                } else if (key === 'l') {
-                    this.selection.startColumn += 1;        
+        switch(key) {
+            case '[':
+            case ' ':
+                this.endSelection = !this.endSelection;
+                break;
+            case 'Enter':
+                this.complete();
+                break;
+            case 'Escape':
+            case 'q':
+                this.stop();
+                break;
+            case 'n':
+                if (this.searchAddon) {
+                    this.searchAddon.findNext(this.t.getSelection());
                 }
-            } else {
-                if (key === 'h') {
-                    this.selection.endColumn -= 1;
-                } else if (key === 'j') {
-                    this.selection.endRow += 1;        
-                } else if (key === 'k') {
-                    this.selection.endRow -= 1;
-                } else if (key === 'l') {
-                    this.selection.endColumn += 1;        
+                break;
+            case 'p':
+                if (this.searchAddon) {
+                    this.searchAddon.findPrevious(this.t.getSelection());
                 }
-            }
-            this.updateSelection();
+                break;
+            case 'ArrowLeft':
+            case 'h':
+                if (!this.endSelection) {
+                    if (this.selection.startColumn > 0) {
+                        this.selection.startColumn -= 1;
+                    }
+                } else {
+                    if (this.selection.endColumn > 0) {
+                        this.selection.endColumn -= 1;
+                    }    
+                }
+                this.updateSelection();
+                break;
+            case 'ArrowRight':
+            case 'l':
+                if (!this.endSelection) {
+                    if (this.selection.startColumn < this.t.cols) {
+                        this.selection.startColumn += 1;
+                    }
+                } else {         
+                    if (this.selection.startColumn < this.t.cols) {
+                        this.selection.endColumn += 1;
+                    }              
+                }
+                this.updateSelection();
+                break;
+            case 'ArrowDown':
+            case 'j':
+                if (!this.endSelection) {
+                    if (this.selection.startRow < buffer.cursorY) {
+                        this.selection.startRow += 1;
+                    }
+                } else {         
+                    if (this.selection.endRow < buffer.cursorY) {
+                        this.selection.endRow += 1;
+                    }                   
+                }
+                this.updateSelection();
+                break;
+            case 'ArrowUp':
+            case 'k':
+                if (!this.endSelection) {
+                    if (this.selection.startRow > 0) {
+                        this.selection.startRow -= 1;
+                    }    
+                } else { 
+                    if (this.selection.endRow > 0) {
+                        this.selection.endRow -= 1;
+                    }                           
+                }
+                this.updateSelection();
+                break;
         }
     }
 
     updateSelection() {
         if (!this.endSelection) {
-            if (this.selection.startColumn > this.selection.endColumn) {
-                this.selection.endColumn = this.selection.startColumn;
-            }
             if (this.selection.startRow > this.selection.endRow) {
                 this.selection.endRow = this.selection.startRow;                
             }
-        } else {
-            if (this.selection.startColumn > this.selection.endColumn) {
-                this.selection.startColumn = this.selection.endColumn;
+            if (this.selection.endRow === this.selection.startRow) {
+                if (this.selection.startColumn > this.selection.endColumn) {
+                    this.selection.endColumn = this.selection.startColumn;
+                }    
             }
+        } else {
             if (this.selection.startRow > this.selection.endRow) {
                 this.selection.startRow = this.selection.endRow;                
             }
+            if (this.selection.startRow === this.selection.endRow) {
+                if (this.selection.startColumn > this.selection.endColumn) {
+                    this.selection.startColumn = this.selection.endColumn;
+                }    
+            }
         }
-        console.log('SELECTING', this.selection);
         const rowLength = this.t.cols;
-        const selectionLength = rowLength*(this.selection.endRow - this.selection.startRow) + this.selection.endColumn - this.selection.startColumn + 1;
+        let selectionLength = rowLength*(this.selection.endRow - this.selection.startRow) + this.selection.endColumn - this.selection.startColumn;
+        if (selectionLength === 0) {
+            selectionLength = 1;
+        }
         this.t.select(this.selection.startColumn, this.selection.startRow, selectionLength);
         this.selectionChanged();
     }
@@ -98,16 +158,40 @@ export class CopymodeAddon implements ITerminalAddon {
                 }
                 this.updateSelection();
                 return;
+            } else {
+                this.selection = this.t.getSelectionPosition();
             }
             this.isActive = true;
+            this.endSelection = false;
+            document.addEventListener('keydown', this.keyListener)
+            document.querySelector('#copy-mode-indicator').classList.remove('hidden');
             this.t.blur();
         }
     }
 
     stop() {
+        console.log('COPYMODE STOP');
         if (this.isActive) {
             this.isActive = false;
+            document.removeEventListener('keydown', this.keyListener)
+            document.querySelector('#copy-mode-indicator').classList.add('hidden');
+            if (this.onstop) {
+                this.onstop();
+            }
         }
     }
 
+    complete () {
+        console.log('COPYMODE COMPLETE');
+        if (this.t.hasSelection()) {
+            Clipboard.write({string: this.t.getSelection()})
+                .then(() => {
+                    this.t.clearSelection();
+                    this.t.focus();
+                    this.stop();
+                })
+        } else {
+            this.stop();
+        }
+    }
 }
