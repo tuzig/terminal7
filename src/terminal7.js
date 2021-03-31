@@ -74,6 +74,7 @@ export class Terminal7 {
         this.confEditor = null
         this.flashTimer = null
         this.netStatus = null
+        this.ws = null
         this.loadConf(TOML.parse(dotfile))
     }
     /*
@@ -243,6 +244,7 @@ export class Terminal7 {
             await this.storeCertificate()
         }
         // Last one: focus
+        this.pbConnect()
         this.focus()
     }
     toggleSettings(ev) {
@@ -804,5 +806,18 @@ export class Terminal7 {
         else
             this.focus()
         // TODO: When at home remove the "on" from the home butto
+    }
+    pbConnect() {
+        var fp = this.getFingerprint(),
+            url = encodeURI(`ws://127.0.0.1:17777/ws?fp=${fp}&name=yosi&kind=client&email=benny@tuzig.com`),
+            ws = new WebSocket(url)
+        ws.onerror = ev => console.log("websocket error", ev)
+        ws.onclose = ev => console.log("websocket onclose", ev)
+        ws.onopen = ev => ws.send(JSON.stringify({command: "get_list"}))
+        ws.onmessage = ev => this.onPBMessage(ev.data)
+        this.ws = ws
+    }
+    onPBMessage(msg){
+        console.log("got pb message", msg)
     }
 }
