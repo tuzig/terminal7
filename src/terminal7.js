@@ -19,6 +19,7 @@ import { Plugins } from '@capacitor/core'
 import { openDB } from 'idb'
 
 const { App, BackgroundTask, Clipboard, Network  } = Plugins
+var PBPending = []
 
 const DEFAULT_DOTFILE = `[theme]
 foreground = "#00FAFA"
@@ -818,8 +819,20 @@ export class Terminal7 {
         // TODO: When at home remove the "on" from the home butto
     }
     pbSend(m) {
-        console.log("sending to pb:", m)
-        if (this.ws == null || this.ws.readyState != WebSocket.OPEN) {
+        // null message are used to trigger connection, ignore them
+        if (m != null) {
+            if (this.ws != null && this.ws.readyState == WebSocket.OPEN) {
+                console.log("sending to pb:", m)
+                this.ws.send(JSON.stringify(m))
+                return
+            }
+            else {
+                console.log("queing to pb:", m)
+                PBPending.push(m)
+            }
+        }
+        
+        if (this.ws == null) {
             var fp = this.getFingerprint(),
                 host = this.conf.net.peerbook,
                 url = encodeURI(`ws://${host}/ws?fp=${fp}&name=yosi&kind=terminal7&email=benny@tuzig.com`),
@@ -832,8 +845,10 @@ export class Terminal7 {
             }
             this.ws = ws
             ws.onopen = ev => {
-                this.notify("\uD83D\uDCD6 Opened")
-                terminal7.run(_ => this.ws.send(JSON.stringify(m)), 100)
+                this.run(_ => {
+                    PBPending.forEach(m => this.ws.send(JSON.stringify(m)))
+                    PBPending = []
+                }, 10)
             }
             ws.onmessage = ev => this.onPBMessage(ev.data)
             ws.onerror = ev => {
@@ -841,14 +856,15 @@ export class Terminal7 {
                 this.notify("\uD83D\uDCD6 WebSocket Error")
             }
             ws.onclose = ev => {
-                this.notify("\uD83D\uDCD6 Closed")
                 ws.onclose = undefined
                 ws.onerror = undefined
                 ws.onmessage = undefined
                 this.ws = null
+                if (PBPending.length > 0) {
+                    this.pbSend(null)
+                }
             }
-        }  else
-            terminal7.ws.send(JSON.stringify(m))
+        }
 
     }
     onPBMessage(msg) {
