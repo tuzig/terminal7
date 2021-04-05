@@ -35,11 +35,11 @@ export class Gate {
         // a mapping of refrence number to function called on received ack
         this.onack = {}
         this.breadcrumbs = []
-        this.peer = null
         this.updateID  = null
         this.timeoutID = null
         this.msgs = {}
         this.marker = -1
+        this.fp = props.fp
     }
 
     /*
@@ -76,10 +76,6 @@ export class Gate {
             b.addEventListener('click', (e) => {new window from active pane})
             */
             this.e.appendChild(t)
-        }
-        if (!this.store)  {
-            this.nameE = null
-            return
         }
         // Add the gates' signs to the home page
         let plusHost = document.getElementById("plus-host")
@@ -197,8 +193,8 @@ export class Gate {
     /*
      * peerConnect connects the webrtc session with the peer
      */
-    peerConnect(offer) {
-        let sd = new RTCSessionDescription(offer)
+    peerConnect(answer) {
+        let sd = new RTCSessionDescription(answer)
         this.pc.setRemoteDescription(sd)
             .catch (e => {
                 this.notify(`Failed to set remote description: ${e}`)
@@ -235,30 +231,34 @@ export class Gate {
 
         let offer = ""
         this.pc.onicecandidate = ev => {
-            if (ev.candidate && !offer) {
-              offer = btoa(JSON.stringify(this.pc.localDescription))
-              this.notify("Sending connection request")
-              fetch('http://'+this.addr+'/connect', {
-                headers: {"Content-Type": "application/json"},
-                method: 'POST',
-                  body: JSON.stringify({api_version: 0,
-                      offer: offer,
-                      fingerprint: terminal7.getFingerprint()
-                  })
-              }).then(response => {
+            if (typeof(this.fp) == "string") {
+                if (ev.candidate)
+                    terminal7.pbSend({target: this.fp, candidate: ev.candidate})
+            } else if (!ev.candidate) {
+                offer = btoa(JSON.stringify(this.pc.localDescription))
+                this.notify("Sending connection request")
+                fetch('http://'+this.addr+'/connect', {
+                    headers: {"Content-Type": "application/json"},
+                    method: 'POST',
+                    body: JSON.stringify({api_version: 0,
+                        offer: offer,
+                        fingerprint: terminal7.getFingerprint()
+                    })
+                }).then(response => {
                     if (response.status == 401)
                         throw new Error('unautherized');
                     if (!response.ok)
                         throw new Error(
                           `HTTP POST failed with status ${response.status}`)
                     return response.text()
-              }).then(data => {
+                }).then(data => {
                     if (!this.verified) {
                         this.verified = true
-                        terminal7.storeGates()
+                        // TODO: store when making real changes
+                        // terminal7.storeGates()
                     }
-                    this.peer = JSON.parse(atob(data))
-                    this.peerConnect(this.peer)
+                    var answer = JSON.parse(atob(data))
+                    this.peerConnect(answer)
                 }).catch(error => {
                     if (error.message == 'unautherized') 
                         this.copyFingerprint()
@@ -271,9 +271,17 @@ export class Gate {
         }
         this.pc.onnegotiationneeded = e => {
             console.log("on negotiation needed", e)
-            this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
+            this.pc.createOffer().then(d => {
+                this.pc.setLocalDescription(d)
+                if (typeof(this.fp) == "string") {
+                    offer = btoa(JSON.stringify(d))
+                    console.log("got offer", offer)
+                    terminal7.pbSend({target: this.fp, offer: offer})
+                }
+            })
         }
         this.openCDC()
+
         if (this.marker == -1)
             this.getLayout()
         else

@@ -35,6 +35,7 @@ shell = "bash"
 timeout = 3000
 retries = 3
 ice_server = "stun:stun2.l.google.com:19302"
+peerbook = "pb.terminall7.dev"
 
 [ui]
 quickest_press = 1000
@@ -243,8 +244,8 @@ export class Terminal7 {
             await this.generateCertificate()
             await this.storeCertificate()
         }
+        this.pbSend({command: "get_list"})
         // Last one: focus
-        this.pbConnect()
         this.focus()
     }
     toggleSettings(ev) {
@@ -452,7 +453,6 @@ export class Terminal7 {
         }
 
         let g = new Gate(p)
-        console.log(`adding ${g.user}@${g.addr} & saving gates`)
         this.gates.push(g)
         g.open(this.e)
         return g
@@ -683,6 +683,14 @@ export class Terminal7 {
              else 
                 callCB()
         }, 10)
+        if (this.ws != null) {
+            this.ws.onopen = undefined
+            this.ws.onmessage = undefined
+            this.ws.onerror = undefined
+            this.ws.onclose = undefined
+            this.ws.close()
+            this.ws = null
+        }
         callCB()
     }
     updateNetworkStatus (status) {
@@ -715,6 +723,8 @@ export class Terminal7 {
         this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1
         this.conf.net.iceServer = this.conf.net.ice_server ||
             "stun:stun2.l.google.com:19302"
+        this.conf.net.peerbook = this.conf.net.peerbook ||
+            "pb.terminal7.dev"
         this.conf.net.timeout = this.conf.net.timeout || 3000
         this.conf.net.retries = this.conf.net.retries || 3
     }
@@ -807,17 +817,70 @@ export class Terminal7 {
             this.focus()
         // TODO: When at home remove the "on" from the home butto
     }
-    pbConnect() {
-        var fp = this.getFingerprint(),
-            url = encodeURI(`ws://127.0.0.1:17777/ws?fp=${fp}&name=yosi&kind=client&email=benny@tuzig.com`),
-            ws = new WebSocket(url)
-        ws.onerror = ev => console.log("websocket error", ev)
-        ws.onclose = ev => console.log("websocket onclose", ev)
-        ws.onopen = ev => ws.send(JSON.stringify({command: "get_list"}))
-        ws.onmessage = ev => this.onPBMessage(ev.data)
-        this.ws = ws
+    pbSend(m) {
+        console.log("sending to pb:", m)
+        if (this.ws == null || this.ws.readyState != WebSocket.OPEN) {
+            var fp = this.getFingerprint(),
+                host = this.conf.net.peerbook,
+                url = encodeURI(`ws://${host}/ws?fp=${fp}&name=yosi&kind=terminal7&email=benny@tuzig.com`),
+                ws = new WebSocket(url)
+            console.log("starting a new connection, old :", this.ws)
+            if (this.ws != null) {
+                this.ws.onclose = undefined
+                this.ws.onerror = undefined
+                this.ws.onmessage = undefined
+            }
+            this.ws = ws
+            ws.onopen = ev => {
+                this.notify("\uD83D\uDCD6 Opened")
+                terminal7.run(_ => this.ws.send(JSON.stringify(m)), 100)
+            }
+            ws.onmessage = ev => this.onPBMessage(ev.data)
+            ws.onerror = ev => {
+                // TODO: Add some info avour the error
+                this.notify("\uD83D\uDCD6 WebSocket Error")
+            }
+            ws.onclose = ev => {
+                this.notify("\uD83D\uDCD6 Closed")
+                ws.onclose = undefined
+                ws.onerror = undefined
+                ws.onmessage = undefined
+                this.ws = null
+            }
+        }  else
+            terminal7.ws.send(JSON.stringify(m))
+
     }
-    onPBMessage(msg){
+    onPBMessage(msg) {
         console.log("got pb message", msg)
+        var m
+        m = JSON.parse(msg)
+        if (m["code"] !== undefined) {
+            this.notify(`\uD83D\uDCD6 replied witn an error: ${m["text"]}`)
+            return
+        }
+        if (m["peers"] !== undefined) {
+            this.notify("\uD83D\uDCD6 Got server list")
+            m["peers"].forEach(p => {
+                if (p.kind == "webexec") 
+                    this.addGate(p)
+            })
+            return
+        }
+        var g = this.gates.find(g => g.fp == m.source_fp)
+        if (typeof g != "object") {
+            console.log(`received bad gate: ${m.source_fp}`)
+            return
+        }
+        if (m.candidate !== undefined) {
+            g.pc.addIceCandidate(m.candidate).catch(e =>
+                g.notify(`ICE candidate error: ${e}`))
+            return
+        }
+        if (m.answer !== undefined ) {
+            var answer = JSON.parse(atob(m.answer))
+            g.peerConnect(answer)
+            return
+        }
     }
 }
