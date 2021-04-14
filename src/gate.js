@@ -40,6 +40,7 @@ export class Gate {
         this.msgs = {}
         this.marker = -1
         this.fp = props.fp
+        this.online = props.online
     }
 
     /*
@@ -82,11 +83,18 @@ export class Gate {
         let li = document.createElement('li'),
             a = document.createElement('a'),
             addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
-        a.addEventListener("click", ev => this.connect())
+        a.addEventListener("click", ev => {
+            if (this.online == false)
+                terminal7.notify("\uD83D\uDCD6 The peer is offline")
+            else
+                this.connect()
+        })
         li.classList.add("border")
         this.nameE = document.createElement('h1')
         this.nameE.innerHTML = this.name || this.addr
         a.appendChild(this.nameE)
+        if (this.online == false)
+            li.classList.add("offline")
         li.appendChild(a)
         plusHost.parentNode.prepend(li)
         // TODO: find a cleaner way to transfer the gate to the touch listener
@@ -526,7 +534,7 @@ export class Gate {
         })
         return { windows: wins }
     }
-    sendState(cb) {
+    sendState() {
         if (this.updateID == null)
             this.updateID = terminal7.run(_ => { 
                 let msg = {
@@ -535,9 +543,6 @@ export class Gate {
                 }
                 this.updateID = null
                 this.sendCTRLMsg(msg)
-                if (cb) {
-                    cb()
-                }
             }, 100)
     }
     onPaneConnected(pane) {

@@ -487,6 +487,9 @@ td {
     position: absolute;
     z-index: 3;
 }    
+.offline {
+    opacity: 60%;
+}
 #hosts .pressed { box-shadow: 4px 4px 5px 0 #F952F9; }
 .tabbar-names .pressed { font-weight: bold; }
 #offline {
