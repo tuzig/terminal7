@@ -131,6 +131,7 @@ export class Cell {
         this.e.remove()
         if (this.layout)
             this.layout.onClose(this)
+        this.gate.sendState()
     }
     styleZoomed(e) {
         let H = document.body.offsetHeight
