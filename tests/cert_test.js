@@ -1,4 +1,4 @@
-/*! Terminal 7 Ceritificate tests
+/* Terminal 7 Ceritificate tests
  *
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
@@ -28,7 +28,6 @@ describe("certificates", () => {
         certs = await t.getCertificates()
         expect(certs.length).to.equal(1)
         let fingerprint = t.getFingerprint()
-        expect(fingerprint.length).to.equal(103)
-        expect(fingerprint.startsWith("sha-256")).to.be.true
+        expect(fingerprint.length).to.equal(64)
     })
 })

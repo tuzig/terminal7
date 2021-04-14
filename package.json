@@ -19,6 +19,7 @@
     "publish": null
   },
   "dependencies": {
+    "@capacitor-community/http": "^0.3.0",
     "@capacitor/cli": "<3",
     "@capacitor/core": "<3",
     "@capacitor/ios": "<3",
@@ -33,7 +34,7 @@
     "uuid": "^8.3.1",
     "web": "0.0.2",
     "websocket-extensions": ">=0.1.4",
-    "xterm": "<5",
+    "xterm": "4.10.0",
     "xterm-addon-fit": "^0.3.0",
     "xterm-addon-search": "^0.7.0",
     "xterm-webfont": "^2.0.0"

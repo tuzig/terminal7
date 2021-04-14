@@ -550,12 +550,10 @@ export class Gate {
     copyFingerprint() {
         let ct = document.getElementById("copy-fingerprint"),
             addr = this.addr.substr(0, this.addr.indexOf(":")),
-            cert =  terminal7.certificates[0].getFingerprints()[0]
-
-        cert = `${cert.algorithm} ${cert.value.toUpperCase()}`
+            fp =  terminal7.getFingerprint()
         document.getElementById("ct-address").innerHTML = addr
         document.getElementById("ct-name").innerHTML = this.name
-        ct.querySelector('[name="fingerprint"]').value = cert
+        ct.querySelector('[name="fingerprint"]').value = fp
         ct.classList.remove("hidden")
         ct.querySelector(".copy").addEventListener('click', ev => {
             ct.classList.add("hidden")
@@ -566,7 +564,7 @@ export class Gate {
         ct.querySelector("form").addEventListener('submit', ev => {
             ev.preventDefault()
             terminal7.ssh(ct,  this,
-                `cat <<<"${cert}" >> ~/.webexec/authorized_tokens`,
+                `cat <<<"${fp}" >> ~/.webexec/authorized_tokens`,
                 _ => {
                     ct.classList.add("hidden")
                     this.connect()

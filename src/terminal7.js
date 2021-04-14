@@ -15,10 +15,12 @@ import { vimMode } from 'codemirror/keymap/vim.js'
 import { tomlMode} from 'codemirror/mode/toml/toml.js'
 import { dialogAddOn } from 'codemirror/addon/dialog/dialog.js'
 import { formatDate } from './utils.js'
+import '@capacitor-community/http'
+
 import { Plugins } from '@capacitor/core'
 import { openDB } from 'idb'
 
-const { App, BackgroundTask, Clipboard, Network  } = Plugins
+const { App, BackgroundTask, Clipboard, Network, Http  } = Plugins
 var PBPending = []
 
 const DEFAULT_DOTFILE = `[theme]
@@ -245,7 +247,25 @@ export class Terminal7 {
             await this.generateCertificate()
             await this.storeCertificate()
         }
-        this.pbSend({command: "get_list"})
+        Http.request({url: 'https://pb.terminal7.dev/verify', 
+            headers: {"Content-Type": "application/json"},
+            method: 'POST',
+            data: {kind: "terminal7",
+                name: "yosi",
+                email: "benny@tuzig.com",
+                fp: terminal7.getFingerprint()
+            }
+        }).then(response => {
+            if (response.status != 200) {
+                this.notify(`HTTP POST to peerbook failed: ${error}`)
+                return
+            }
+            var v = JSON.parse(response.data)
+            if (v.verified)
+                this.pbSend({command: "get_list"})
+            else
+                this.notify("\uD83D\uDCD6 Unverified - a verification email was emailed")
+        })
         // Last one: focus
         this.focus()
     }
@@ -731,8 +751,8 @@ export class Terminal7 {
     }
     // gets the will formatted fingerprint from the current certificate
     getFingerprint() {
-        var f = this.certificates[0].getFingerprints()[0]
-        return `${f.algorithm} ${f.value.toUpperCase()}`
+        var cert = this.certificates[0].getFingerprints()[0]
+        return cert.value.toUpperCase().replaceAll(":", "")
     }
     // gets the certificate from indexDB. If they are not there, create them
     getCertificates(cb) {
@@ -835,7 +855,7 @@ export class Terminal7 {
         if (this.ws == null) {
             var fp = this.getFingerprint(),
                 host = this.conf.net.peerbook,
-                url = encodeURI(`ws://${host}/ws?fp=${fp}&name=yosi&kind=terminal7&email=benny@tuzig.com`),
+                url = encodeURI(`wss://${host}/ws?fp=${fp}&name=yosi&kind=terminal7&email=benny@tuzig.com`),
                 ws = new WebSocket(url)
             console.log("starting a new connection, old :", this.ws)
             if (this.ws != null) {
@@ -861,6 +881,7 @@ export class Terminal7 {
                 ws.onmessage = undefined
                 this.ws = null
                 if (PBPending.length > 0) {
+                    console.log("keeping the ws open")
                     this.pbSend(null)
                 }
             }
