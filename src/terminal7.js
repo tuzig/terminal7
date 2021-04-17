@@ -97,7 +97,10 @@ export class Terminal7 {
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",
-                    ev => this.activeG.activeW.activeP.close())
+                    ev => {
+                        if (this.activeG)
+                            this.activeG.activeW.activeP.close()
+                })
         document.getElementById("home-button")
                 .addEventListener("click", ev => this.goHome())
         document.getElementById("log-button")
