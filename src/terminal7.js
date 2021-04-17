@@ -20,7 +20,7 @@ import '@capacitor-community/http'
 import { Plugins } from '@capacitor/core'
 import { openDB } from 'idb'
 
-const { App, BackgroundTask, Clipboard, Network, Http  } = Plugins
+const { App, BackgroundTask, Clipboard, Device, Http, Network  } = Plugins
 var PBPending = []
 
 const DEFAULT_DOTFILE = `[theme]
@@ -247,13 +247,15 @@ export class Terminal7 {
             await this.generateCertificate()
             await this.storeCertificate()
         }
+        terminal7.devInfo = await Device.getInfo()
         Http.request({url: 'https://pb.terminal7.dev/verify', 
             headers: {"Content-Type": "application/json"},
             method: 'POST',
             data: {kind: "terminal7",
-                name: "yosi",
+                name: terminal7.devInfo.name,
                 email: "benny@tuzig.com",
                 fp: terminal7.getFingerprint()
+                // TODO: upgrade peerBook to accept `device: terminal7.devInfo` 
             }
         }).then(response => {
             if (response.status != 200) {
@@ -855,7 +857,8 @@ export class Terminal7 {
         if (this.ws == null) {
             var fp = this.getFingerprint(),
                 host = this.conf.net.peerbook,
-                url = encodeURI(`wss://${host}/ws?fp=${fp}&name=yosi&kind=terminal7&email=benny@tuzig.com`),
+                name = terminal7.devInfo.name,
+                url = encodeURI(`wss://${host}/ws?fp=${fp}&name=${name}&kind=terminal7&email=benny@tuzig.com`),
                 ws = new WebSocket(url)
             console.log("starting a new connection, old :", this.ws)
             if (this.ws != null) {
