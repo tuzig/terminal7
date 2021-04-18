@@ -10,11 +10,10 @@ const { StatusBar } = Plugins
  * Initilization code, where terminal 7 is created and opened
  */
 document.addEventListener("DOMContentLoaded", () => {
-    // do nothing when running a test
     StatusBar.hide()
+    // do nothing when running a test
     if (window.__html__ == undefined) {
         window.terminal7 = new Terminal7()
-        console.log("openening terminal7")
-        terminal7.open(document.getElementById('terminal7'))
+        terminal7.open()
     }
 })

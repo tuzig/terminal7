@@ -38,7 +38,7 @@ shell = "bash"
 timeout = 3000
 retries = 3
 ice_server = "stun:stun2.l.google.com:19302"
-peerbook = "pb.terminall7.dev"
+peerbook = "pb.terminal7.dev"
 
 [ui]
 quickest_press = 1000
@@ -48,16 +48,6 @@ cut_min_speed = 2.5
 # no pinch when scrolling -> y velocity higher than XTZ px/ms
 pinch_max_y_velocity = 0.1
 `
-const WELCOME_MESSAGE = `<h1>Greetings & Salutations!</h1>
-<p>
-To join our beta you will need a server with a public IP/DNS.
-Our backend supports Mac and Linux running on a desktop, a Pi or a hosted
-server. 
-</p><p>
-Once you add your server's address we will try to connect and
-fail as the backend agent is not there. Then we will guide you through its
-installation.
-</p>`
 
 export class Terminal7 {
     /*
@@ -79,28 +69,24 @@ export class Terminal7 {
         this.flashTimer = null
         this.netStatus = null
         this.ws = null
+        this.pbSendTask = null
         this.loadConf(TOML.parse(dotfile))
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,
      * loads the gates from local storage and redirects to home
      */
-    async open(e) {
-        if (!e) {
-            // create the container element
-            e = document.createElement('div')
-            e.id = "terminal7"
-            document.body.appendChild(e)
-        }
+    async open() {
+        let e = document.getElementById('terminal7')
+        console.log("in open", e)
         this.e = e
 
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",
-                    ev => {
+                    ev =>  {
                         if (this.activeG)
-                            this.activeG.activeW.activeP.close()
-                })
+                            this.activeG.activeW.activeP.close()})
         document.getElementById("home-button")
                 .addEventListener("click", ev => this.goHome())
         document.getElementById("log-button")
@@ -198,10 +184,6 @@ export class Terminal7 {
                 p.store = true
                 this.addGate(p)
             })
-        if (!localStorage.getItem('welcomed')) {
-            this.notify(WELCOME_MESSAGE)
-            localStorage.setItem('welcomed', 'indeed')
-        }
         // window.setInterval(_ => this.periodic(), 2000)
         App.addListener('appStateChange', state => {
             if (!state.isActive) {
@@ -245,20 +227,53 @@ export class Terminal7 {
                 Clipboard.write({string: area.value});
                 this.clear()
             })
+        // peerbook button and modal
+        modal   = document.getElementById("peerbook-modal")
+        modal.querySelector(".close").addEventListener('click',
+            ev => this.clear() )
+        modal.querySelector(".save").addEventListener('click',
+            ev => this.setPeerbook())
+        // certificates
         let certs = await this.getCertificates()
         if (certs.length == 0) {
             await this.generateCertificate()
             await this.storeCertificate()
         }
-        terminal7.devInfo = await Device.getInfo()
+        this.pbVerify()
+        var invited = localStorage.getItem('invitedToPeerbook')
+        if (!invited) {
+            modal = document.getElementById("peerbook-modal")
+            modal.querySelector('[name="peername"]').value =
+                this.conf.peerbook.peer_name
+            modal.classList.remove("hidden")
+            localStorage.setItem('invitedToPeerbook', 'indeed')
+        }
+        // Last one: focus
+        this.focus()
+    }
+    setPeerbook() {
+        var e   = document.getElementById("peerbook-modal"),
+            dotfile = localStorage.getItem('dotfile') || DEFAULT_DOTFILE,
+            email = e.querySelector('[name="email"]').value,
+            peername = e.querySelector('[name="peername"]').value
+        dotfile += `
+[peerbook]
+email = "${email}"
+peer_name = "${peername}"\n`
+
+        localStorage.setItem("dotfile", dotfile)
+        this.loadConf(TOML.parse(dotfile))
+        e.classList.add("hidden")
+        this.notify("Your email was added to the dotfile")
+    }
+    pbVerify() {
         Http.request({url: 'https://pb.terminal7.dev/verify', 
             headers: {"Content-Type": "application/json"},
             method: 'POST',
             data: {kind: "terminal7",
-                name: terminal7.devInfo.name,
-                email: "benny@tuzig.com",
+                name: this.conf.peerbook.peer_name,
+                email: this.conf.peerbook.email,
                 fp: terminal7.getFingerprint()
-                // TODO: upgrade peerBook to accept `device: terminal7.devInfo` 
             }
         }).then(response => {
             if (response.status != 200) {
@@ -269,10 +284,9 @@ export class Terminal7 {
             if (v.verified)
                 this.pbSend({command: "get_list"})
             else
-                this.notify("\uD83D\uDCD6 Unverified - a verification email was emailed")
+                this.notify(
+                    "\uD83D\uDCD6 Unverified - a verification email was sent")
         })
-        // Last one: focus
-        this.focus()
     }
     toggleSettings(ev) {
         var modal   = document.getElementById("settings-modal"),
@@ -753,6 +767,10 @@ export class Terminal7 {
             "pb.terminal7.dev"
         this.conf.net.timeout = this.conf.net.timeout || 3000
         this.conf.net.retries = this.conf.net.retries || 3
+        if (!this.conf.peerbook) this.conf.peerbook = {}
+        if (!this.conf.peerbook.peer_name)
+            Device.getInfo().then(i =>
+                this.conf.peerbook.peer_name = `${i.name}'s ${i.model}`)
     }
     // gets the will formatted fingerprint from the current certificate
     getFingerprint() {
@@ -860,8 +878,9 @@ export class Terminal7 {
         if (this.ws == null) {
             var fp = this.getFingerprint(),
                 host = this.conf.net.peerbook,
-                name = terminal7.devInfo.name,
-                url = encodeURI(`wss://${host}/ws?fp=${fp}&name=${name}&kind=terminal7&email=benny@tuzig.com`),
+                name = this.conf.peerbook.peer_name,
+                email = this.conf.peerbook.email,
+                url = encodeURI(`wss://${host}/ws?fp=${fp}&name=${name}&kind=terminal7&email=${email}`),
                 ws = new WebSocket(url)
             console.log("starting a new connection, old :", this.ws)
             if (this.ws != null) {
@@ -871,10 +890,12 @@ export class Terminal7 {
             }
             this.ws = ws
             ws.onopen = ev => {
-                this.run(_ => {
-                    PBPending.forEach(m => this.ws.send(JSON.stringify(m)))
-                    PBPending = []
-                }, 10)
+                if (this.pbSendTask == null)
+                    this.pbSendTask = this.run(_ => {
+                        PBPending.forEach(m => this.ws.send(JSON.stringify(m)))
+                        this.pbSendTask == null
+                        PBPending = []
+                    }, 10)
             }
             ws.onmessage = ev => this.onPBMessage(ev.data)
             ws.onerror = ev => {
@@ -890,6 +911,7 @@ export class Terminal7 {
                     console.log("keeping the ws open")
                     this.pbSend(null)
                 }
+
             }
         }
 

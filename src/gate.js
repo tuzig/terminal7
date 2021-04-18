@@ -201,8 +201,8 @@ export class Gate {
     /*
      * peerConnect connects the webrtc session with the peer
      */
-    peerConnect(answer) {
-        let sd = new RTCSessionDescription(answer)
+    peerConnect(offer) {
+        let sd = new RTCSessionDescription(offer)
         this.pc.setRemoteDescription(sd)
             .catch (e => {
                 this.notify(`Failed to set remote description: ${e}`)

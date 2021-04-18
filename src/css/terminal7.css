@@ -518,3 +518,15 @@ td {
 #help-gate {
     border-top: 2px dashed #F952F9;
 }
+.compact-fields {
+    max-width: 20em;
+    margin-right: auto;
+    margin-left: auto;
+}
+.peerbook-modal>p {
+    text-align: left;
+}
+input[name="fingerprint"] {
+    width: 25em; 
+    margin: 8px auto;
+}
