@@ -870,7 +870,7 @@ peer_name = "${peername}"\n`
                 return
             }
             else {
-                console.log("queing to pb:", m)
+                console.log("queing to pb:", m, this.ws)
                 PBPending.push(m)
             }
         }
@@ -890,9 +890,12 @@ peer_name = "${peername}"\n`
             }
             this.ws = ws
             ws.onopen = ev => {
+                console.log("on open ws", ev)
                 if (this.pbSendTask == null)
                     this.pbSendTask = this.run(_ => {
-                        PBPending.forEach(m => this.ws.send(JSON.stringify(m)))
+                        PBPending.forEach(m => {
+                            console.log("sending ", m)
+                            this.ws.send(JSON.stringify(m))})
                         this.pbSendTask == null
                         PBPending = []
                     }, 10)
