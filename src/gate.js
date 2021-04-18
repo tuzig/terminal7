@@ -216,7 +216,7 @@ export class Gate {
      */
     connect() {
         // do nothing when the network is down
-        if (!terminal7.netStatus.connected)
+        if (!terminal7.netStatus || !terminal7.netStatus.connected)
             return
         // if we're already boarding, just focus
         if (this.boarding) {
