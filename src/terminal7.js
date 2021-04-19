@@ -896,7 +896,7 @@ peer_name = "${peername}"\n`
                         PBPending.forEach(m => {
                             console.log("sending ", m)
                             this.ws.send(JSON.stringify(m))})
-                        this.pbSendTask == null
+                        this.pbSendTask = null
                         PBPending = []
                     }, 10)
             }
