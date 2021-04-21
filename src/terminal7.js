@@ -267,7 +267,8 @@ peer_name = "${peername}"\n`
         this.notify("Your email was added to the dotfile")
     }
     pbVerify() {
-        Http.request({url: 'https://pb.terminal7.dev/verify', 
+        var host = this.conf.net.peerbook
+        Http.request({url: `https://${host}/verify`, 
             headers: {"Content-Type": "application/json"},
             method: 'POST',
             data: {kind: "terminal7",
