@@ -282,7 +282,7 @@ peer_name = "${peername}"\n`
             }
             var v = JSON.parse(response.data)
             if (v.verified)
-                this.pbSend({command: "get_list"})
+                this.wsConnect()
             else
                 this.notify(
                     "\uD83D\uDCD6 Unverified - a verification email was sent")
@@ -485,8 +485,14 @@ peer_name = "${peername}"\n`
             p.addr = `${addr}:7777`
 
         this.gates.forEach(i => {
-            if (props.name == i.name)
+            if (props.name == i.name) {
+                i.online = props.online
+                if (i.online == true)
+                    i.nameE.parentNode.parentNode.classList.remove("offline")
+                else
+                    i.nameE.parentNode.parentNode.classList.add("offline")
                 nameFound = true
+            }
         })
         if (nameFound) {
             return "Gate name is not unique"
@@ -863,18 +869,16 @@ peer_name = "${peername}"\n`
     }
     pbSend(m) {
         // null message are used to trigger connection, ignore them
-        if (m != null) {
-            if (this.ws != null && this.ws.readyState == WebSocket.OPEN) {
+        if (m != null &&
+            this.ws != null && this.ws.readyState == WebSocket.OPEN) {
                 console.log("sending to pb:", m)
                 this.ws.send(JSON.stringify(m))
                 return
-            }
-            else {
-                console.log("queing to pb:", m, this.ws)
-                PBPending.push(m)
-            }
         }
-        
+        PBPending.push(m)
+        this.wsConnect()
+    }
+    wsConnect() {
         if (this.ws == null) {
             var fp = this.getFingerprint(),
                 host = this.conf.net.peerbook,
@@ -883,23 +887,7 @@ peer_name = "${peername}"\n`
                 url = encodeURI(`wss://${host}/ws?fp=${fp}&name=${name}&kind=terminal7&email=${email}`),
                 ws = new WebSocket(url)
             console.log("starting a new connection, old :", this.ws)
-            if (this.ws != null) {
-                this.ws.onclose = undefined
-                this.ws.onerror = undefined
-                this.ws.onmessage = undefined
-            }
             this.ws = ws
-            ws.onopen = ev => {
-                console.log("on open ws", ev)
-                if (this.pbSendTask == null)
-                    this.pbSendTask = this.run(_ => {
-                        PBPending.forEach(m => {
-                            console.log("sending ", m)
-                            this.ws.send(JSON.stringify(m))})
-                        this.pbSendTask = null
-                        PBPending = []
-                    }, 10)
-            }
             ws.onmessage = ev => this.onPBMessage(ev.data)
             ws.onerror = ev => {
                 // TODO: Add some info avour the error
@@ -916,8 +904,18 @@ peer_name = "${peername}"\n`
                 }
 
             }
+            ws.onopen = ev => {
+                console.log("on open ws", ev)
+                if (this.pbSendTask == null)
+                    this.pbSendTask = this.run(_ => {
+                        PBPending.forEach(m => {
+                            console.log("sending ", m)
+                            this.ws.send(JSON.stringify(m))})
+                        this.pbSendTask = null
+                        PBPending = []
+                    }, 10)
+            }
         }
-
     }
     onPBMessage(msg) {
         console.log("got pb message", msg)
