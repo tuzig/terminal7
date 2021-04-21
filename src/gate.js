@@ -354,9 +354,14 @@ export class Gate {
                 this.notify("Failed to restore from marker")
                 this.getLayout()
             }
-            else
+            else {
                 this.restoreState(state)
-            terminal7.run(_ => this.marker = -1, 1)
+                terminal7.run(_ => {
+                    this.marker = -1
+                    console.log("resotre done, fitting peers")
+                    this.panes().forEach(p => p.fit())
+                }, 100)
+            }
         }
     }
     /*
@@ -370,6 +375,7 @@ export class Gate {
         this.onack[msgId] = (isNack, state) => {
             if (isNack) {
                 this.notify("FAILED to get payload")
+                this.marker = -1
                 this.restoreState({})
             } else {
                 this.restoreState(state)
@@ -378,7 +384,7 @@ export class Gate {
         }
     }
     /*
-     * returns a list of panes
+     * returns an array of panes
      */
     panes() {
         var r = []

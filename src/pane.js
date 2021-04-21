@@ -139,7 +139,12 @@ export class Pane extends Cell {
         var oldr = this.t.rows,
             oldc = this.t.cols,
             ret = false
-            
+
+        // there's no point in fitting when in the middle of a restore
+        //  it happens in the eend anyway
+        if (this.gate.marker != -1) {
+            return
+        }
         try {
             this.fitAddon.fit()
         } catch {
