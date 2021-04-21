@@ -120,6 +120,10 @@ export class Gate {
      * edit start the edit-host user-assitance
      */
     edit() {
+        if (typeof(this.fp) == "string") {
+            this.notify("Got peer from \uD83D\uDCD6, connect only")
+            return
+        }
         let editHost = document.getElementById("edit-host")
         editHost.gate = this
         editHost.querySelector('[name="hostaddr"]').value = this.addr
