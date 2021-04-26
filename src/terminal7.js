@@ -932,7 +932,7 @@ peer_name = "${peername}"\n`
         var m
         m = JSON.parse(msg)
         if (m["code"] !== undefined) {
-            this.notify(`\uD83D\uDCD6 replied witn an error: ${m["text"]}`)
+            this.notify(`\uD83D\uDCD6 ${m["text"]}`)
             return
         }
         if (m["peers"] !== undefined) {
