@@ -548,8 +548,6 @@ peer_name = "${peername}"\n`
             this.activeG.e.classList.add("hidden")
             this.activeG = null
         }
-        // hide the modals
-        this.clear()
         // trash and search are off
         document.getElementById("search-button").classList.add("off")
         document.getElementById("trash-button").classList.add("off")
@@ -760,7 +758,6 @@ peer_name = "${peername}"\n`
         if (status.connected) {
             cl.remove("failed")
             offl.add("hidden")
-            this.clear()
             if (this.activeG)
                 this.activeG.connect()
         }
