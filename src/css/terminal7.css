@@ -523,7 +523,7 @@ td {
     margin-right: auto;
     margin-left: auto;
 }
-.peerbook-modal>p {
+#peerbook-modal p {
     text-align: left;
 }
 input[name="fingerprint"] {

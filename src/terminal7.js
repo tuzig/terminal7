@@ -241,7 +241,7 @@ export class Terminal7 {
         }
         this.pbVerify()
         var invited = localStorage.getItem('invitedToPeerbook')
-        if (!invited) {
+        if (invited == null) {
             modal = document.getElementById("peerbook-modal")
             modal.querySelector('[name="peername"]').value =
                 this.conf.peerbook.peer_name
