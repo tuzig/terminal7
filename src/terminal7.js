@@ -293,11 +293,7 @@ peer_name = "${peername}"\n`
                 return
             }
             var v = JSON.parse(response.data)
-            if (v.verified)
-                this.wsConnect()
-            else
-                this.notify(
-                    "\uD83D\uDCD6 Unverified - a verification email was sent")
+            this.wsConnect()
         })
     }
     toggleSettings(ev) {
@@ -760,6 +756,7 @@ peer_name = "${peername}"\n`
             offl.add("hidden")
             if (this.activeG)
                 this.activeG.connect()
+            this.wsConnect()
         }
         else {
             offl.remove("hidden")
