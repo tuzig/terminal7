@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed 
 
 - Welcome dialog should show now
- 
+- Not crashing when dotfile has errors 
+
 ## [0.15.0] - 2020/4/20
 
 ### Added 

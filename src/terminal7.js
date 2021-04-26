@@ -70,7 +70,16 @@ export class Terminal7 {
         this.netStatus = null
         this.ws = null
         this.pbSendTask = null
-        this.loadConf(TOML.parse(dotfile))
+        let d = {}
+        try {
+            d = TOML.parse(dotfile)
+        } catch(err) {
+            terminal7.run(_ =>
+                this.notify(
+                    `Using default conf as parsing the dotfile failed:<br>${err}`, 
+                10))
+        }
+        this.loadConf(d)
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,
