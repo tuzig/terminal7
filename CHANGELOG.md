@@ -6,13 +6,13 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.15.1] - 2020/4/26
 
 ### Fixed 
 
-- Welcome dialog should show now
-- Not crashing when dotfile has errors 
-- refreshing peerbook connection on settings change
+- welcome dialog should show now
+- crashing when dotfile had errors
+- settings change not reconnecting to peerbook
 
 ## [0.15.0] - 2020/4/20
 
