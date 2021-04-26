@@ -249,13 +249,13 @@ export class Terminal7 {
             await this.storeCertificate()
         }
         this.pbVerify()
-        var invited = localStorage.getItem('invitedToPeerbook')
+        var invited = localStorage.getItem('invitedToPeerbook2')
         if (invited == null) {
             modal = document.getElementById("peerbook-modal")
             modal.querySelector('[name="peername"]').value =
                 this.conf.peerbook.peer_name
             modal.classList.remove("hidden")
-            localStorage.setItem('invitedToPeerbook', 'indeed')
+            localStorage.setItem('invitedToPeerbook2', 'indeed')
         }
         // Last one: focus
         this.focus()
