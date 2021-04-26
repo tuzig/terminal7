@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Welcome dialog should show now
 - Not crashing when dotfile has errors 
+- refreshing peerbook connection on settings change
 
 ## [0.15.0] - 2020/4/20
 

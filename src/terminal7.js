@@ -277,6 +277,8 @@ peer_name = "${peername}"\n`
     }
     pbVerify() {
         var host = this.conf.net.peerbook
+        if (typeof host != "string")
+            return
         Http.request({url: `https://${host}/verify`, 
             headers: {"Content-Type": "application/json"},
             method: 'POST',
@@ -344,6 +346,7 @@ peer_name = "${peername}"\n`
         document.getElementById("settings-modal").classList.add("hidden")
         this.confEditor.toTextArea()
         this.confEditor = null
+        this.pbVerify()
 
     }
     /*
