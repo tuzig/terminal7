@@ -85,7 +85,7 @@ export class Gate {
             addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
         a.addEventListener("click", ev => {
             if (this.online == false)
-                terminal7.notify("\uD83D\uDCD6 The peer is offline")
+                terminal7.notify(`\uD83D\uDCD6 ${this.name} is offline`)
             else
                 this.connect()
         })
