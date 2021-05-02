@@ -276,15 +276,16 @@ peer_name = "${peername}"\n`
         this.notify("Your email was added to the dotfile")
     }
     pbVerify() {
+        var email = this.conf.peerbook.email
         var host = this.conf.net.peerbook
-        if (typeof host != "string")
+        if (typeof host != "string" || typeof email != "string")
             return
         Http.request({url: `https://${host}/verify`, 
             headers: {"Content-Type": "application/json"},
             method: 'POST',
             data: {kind: "terminal7",
                 name: this.conf.peerbook.peer_name,
-                email: this.conf.peerbook.email,
+                email: email,
                 fp: terminal7.getFingerprint()
             }
         }).then(response => {
@@ -791,7 +792,7 @@ peer_name = "${peername}"\n`
         return cert.value.toUpperCase().replaceAll(":", "")
     }
     // gets the certificate from indexDB. If they are not there, create them
-    getCertificates(cb) {
+    getCertificates() {
         return new Promise(resolve => {
             if (this.certificates)
                 resolve(this.certificates)
