@@ -166,6 +166,24 @@ export class Terminal7 {
         })
         resetHost.querySelector(".close").addEventListener('click',  ev =>
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
+        // setting up reset cert events
+        let resetCert = document.getElementById("reset-cert")
+        resetCert.querySelector(".reset").addEventListener('click',  ev => {
+            openDB("t7", 1).then(db => {
+                let tx = db.transaction("certificates", "readwrite"),
+                    store = tx.objectStore("certificates")
+                store.clear().then(_ => 
+                    this.generateCertificate().then(
+                        _ => this.storeCertificate().then(
+                            _ => this.getCertificates().then(
+                                _ => this.pbVerify()))))
+                .catch(e => console.log(e))
+            })
+            ev.target.parentNode.parentNode.classList.add("hidden")
+
+        })
+        resetCert.querySelector(".close").addEventListener('click',  ev =>
+            ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
         this.goHome()
         document.addEventListener("keydown", ev => {
             if (ev.key == "Meta") {
@@ -289,8 +307,14 @@ peer_name = "${peername}"\n`
                 fp: terminal7.getFingerprint()
             }
         }).then(response => {
-            if (response.status != 200) {
-                this.notify(`HTTP POST to peerbook failed: ${error}`)
+            if (response.status < 200 || response.status >= 300) {
+                if (response.status == 409) {
+                    var e = document.getElementById("reset-cert"),
+                        pbe = document.getElementById("reset-cert-error")
+                    pbe.innerHTML = response.data 
+                    e.classList.remove("hidden")
+                } else
+                    notify(`${response.data}`)
                 return
             }
             var v = JSON.parse(response.data)
@@ -889,14 +913,14 @@ peer_name = "${peername}"\n`
         this.wsConnect()
     }
     wsConnect() {
-        if (this.ws == null) {
+        if (this.ws == null && this.certificates != null) {
+            var email = this.conf.peerbook.email
+            if (typeof email != "string") return
             var fp = this.getFingerprint(),
                 host = this.conf.net.peerbook,
                 name = this.conf.peerbook.peer_name,
-                email = this.conf.peerbook.email,
                 url = encodeURI(`wss://${host}/ws?fp=${fp}&name=${name}&kind=terminal7&email=${email}`),
                 ws = new WebSocket(url)
-            console.log("starting a new connection, old :", this.ws)
             this.ws = ws
             ws.onmessage = ev => this.onPBMessage(ev.data)
             ws.onerror = ev => {

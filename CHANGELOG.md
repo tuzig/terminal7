@@ -6,6 +6,18 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- invitation to chat in welcome modal
+- letting the user reset the certificate when associated with another user
+
+### Fixed
+
+- hiding model when clicking 'X'
+- ssri, an indirect dependecy, was bumped to improved security
+
 ## [0.15.3] - 2020/4/26
 
 ### Fixed

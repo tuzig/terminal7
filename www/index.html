@@ -120,10 +120,10 @@
           to key addresses or copy tokens.
           <form action="#">
               <div class="compact-fields">
-              <label for="email">email</label>
+              <label for="email">Owner's email</label>
               <input type="text" placeholder="email address" name="email"
                 required>
-              <label for="peername">device name</label>
+              <label for="peername">Peer's name</label>
               <input type="text" name="peername" required>
               </div>
           <nav class="two-buttons">
@@ -193,6 +193,18 @@
         <tr> <td>Close Pane</td> <td>⌘&nbsp;D</td> </tr>
         <tr> <td>Reset Connection</td> <td>⌘&nbsp;R</td> </tr>
               </tbody></table>
+      </div>
+      <div id="reset-cert" class="hidden modal border" >
+        <p>peerbook returned an error:</p>
+        <code id="reset-cert-error"> </code>
+        <p>
+            You can either edit the settings and change the email or press the
+            reset button to generate a new certificate.
+            </p>
+            <nav class="two-buttons">
+                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+                <button type="button" class="reset"><i class="f7-icons">arrow_2_circlepath</i></button>
+            </nav>
       </div>
   </div>
   <div id="navbar" class="bar">
