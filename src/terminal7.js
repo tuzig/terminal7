@@ -109,6 +109,8 @@ export class Terminal7 {
         document.getElementById("search-button")
                 .addEventListener("click", ev => 
                     this.activeG && this.activeG.activeW.activeP.toggleSearch())
+        document.getElementById("help-gate")
+                .addEventListener("click", ev => this.toggleHelp())
         document.getElementById("help-button")
                 .addEventListener("click", ev => this.toggleHelp())
         let addHost = document.getElementById("add-host")
