@@ -10,7 +10,7 @@ import { Window } from './window.js'
 import { Pane } from './pane.js'
 
 import { Plugins } from '@capacitor/core'
-const { Browser, Clipboard } = Plugins
+const { Browser, Clipboard, Storage } = Plugins
 const ABIT    = 10  // ashort period of time, in milli
 
 /*
@@ -167,11 +167,12 @@ export class Gate {
             this.boarding = true
             document.getElementById("downstream-indicator").classList.remove("failed")
             // show help for first timer
-            if (!localStorage.getItem("first_gate")) {
-                terminal7.run(terminal7.toggleHelp, 1000)
-                localStorage.setItem("first_gate", "1") 
-            }
-            
+            Storage.get({key: "first_gate"}).then(v => {
+                if (v.value != "1") {
+                    terminal7.run(terminal7.toggleHelp, 1000)
+                    Storage.set({key: "first_gate", value: "1"}) 
+                }
+            })
         }
         else if (state == "disconnected") {
             // TODO: add warn class

@@ -9,6 +9,9 @@ import { Terminal7 } from "../src/terminal7.js"
 import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
 import { assert } from "chai"
+import { Plugins } from '@capacitor/core'
+
+const { Storage } = Plugins
 
 
 describe("terminal7", function() {
@@ -16,8 +19,8 @@ describe("terminal7", function() {
     /*
      * Every tests gets a fresh copy of terminal7 and a fresh dom element
      */
-    beforeEach(() => {
-        localStorage.clear()
+    beforeEach(async () => {
+        await Storage.clear()
         document.body.innerHTML = __html__['www/index.html']
         e = document.getElementById("terminal7")
         t = new Terminal7()
@@ -308,9 +311,8 @@ describe("terminal7", function() {
         })
 
     })
-    describe("pane", () => {
-        it("can be stored & loaded", function() {
-            debugger
+    describe("gate", () => {
+        it("can be stored & loaded", async function() {
             t.addGate({
                 addr: 'localgate',
                 user: 'guest',

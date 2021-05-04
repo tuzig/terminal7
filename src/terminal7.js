@@ -20,7 +20,7 @@ import '@capacitor-community/http'
 import { Plugins } from '@capacitor/core'
 import { openDB } from 'idb'
 
-const { App, BackgroundTask, Clipboard, Device, Http, Network  } = Plugins
+const { App, BackgroundTask, Clipboard, Device, Http, Network, Storage  } = Plugins
 var PBPending = []
 
 const DEFAULT_DOTFILE = `[theme]
@@ -60,7 +60,6 @@ export class Terminal7 {
         this.timeouts = []
         this.activeG = null
         window.terminal7 = this
-        let dotfile = localStorage.getItem('dotfile') || DEFAULT_DOTFILE
         this.scrollLingers4     = settings.scrollLingers4 || 2000
         this.shortestLongPress  = settings.shortestLongPress || 1000
         this.borderHotSpotSize  = settings.borderHotSpotSize || 30
@@ -70,16 +69,6 @@ export class Terminal7 {
         this.netStatus = null
         this.ws = null
         this.pbSendTask = null
-        let d = {}
-        try {
-            d = TOML.parse(dotfile)
-        } catch(err) {
-            terminal7.run(_ =>
-                this.notify(
-                    `Using default conf as parsing the dotfile failed:<br>${err}`, 
-                10))
-        }
-        this.loadConf(d)
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,
@@ -87,8 +76,25 @@ export class Terminal7 {
      */
     async open() {
         let e = document.getElementById('terminal7')
-        console.log("in open", e)
+        console.log("in open")
         this.e = e
+        // reading conf
+        let d = {},
+            { value } = await Storage.get({key: 'dotfile'})
+        if (value == null) {
+            value = DEFAULT_DOTFILE
+            Storage.set({key: 'dotfile', value: value})
+        }
+        try {
+            d = TOML.parse(value)
+        } catch(err) {
+            d = TOML.parse(DEFAULT_DOTFILE)
+            terminal7.run(_ =>
+                this.notify(
+                    `Using default conf as parsing the dotfile failed:<br>${err}`, 
+                10))
+        }
+        this.loadConf(d)
 
         // buttons
         document.getElementById("trash-button")
@@ -132,10 +138,6 @@ export class Terminal7 {
         // hide the modal on xmark click
         addHost.querySelector(".close").addEventListener('click',  ev =>  {
             this.clear()
-        })
-        this.gates.forEach(gate => {
-            gate.open(e)
-            gate.e.classList.add("hidden")
         })
         // Handle network events for the indicator
         Network.getStatus().then(s => this.updateNetworkStatus(s))
@@ -205,12 +207,21 @@ export class Terminal7 {
             this.metaPressStart = Number.MAX_VALUE
         })
         // Load gates from local storage
-        let ls = localStorage.getItem('gates');
-        if (ls)
-            JSON.parse(ls).forEach((p) => {
-                p.store = true
-                this.addGate(p)
+        let gates
+        value = (await Storage.get({key: 'gates'})).value
+            console.log("read: ", value)
+        if (value) {
+            try {
+                gates = JSON.parse(value)
+            } catch(e) {
+                 console.log("failed to parse gates", value, e)
+                gates = []
+            }
+            gates.forEach((g) => {
+                g.store = true
+                this.addGate(g).e.classList.add("hidden")
             })
+        }
         // window.setInterval(_ => this.periodic(), 2000)
         App.addListener('appStateChange', state => {
             if (!state.isActive) {
@@ -267,20 +278,20 @@ export class Terminal7 {
             await this.storeCertificate()
         }
         this.pbVerify()
-        var invited = localStorage.getItem('invitedToPeerbook2')
-        if (invited == null) {
+        var invited = await Storage.get({key: 'invitedToPeerbook2'})
+        if (invited.value == null) {
             modal = document.getElementById("peerbook-modal")
             modal.querySelector('[name="peername"]').value =
                 this.conf.peerbook.peer_name
             modal.classList.remove("hidden")
-            localStorage.setItem('invitedToPeerbook2', 'indeed')
+            Storage.set({key: 'invitedToPeerbook2', value: 'indeed'})
         }
         // Last one: focus
         this.focus()
     }
-    setPeerbook() {
+    async setPeerbook() {
         var e   = document.getElementById("peerbook-modal"),
-            dotfile = localStorage.getItem('dotfile') || DEFAULT_DOTFILE,
+            dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE,
             email = e.querySelector('[name="email"]').value,
             peername = e.querySelector('[name="peername"]').value
         dotfile += `
@@ -288,7 +299,7 @@ export class Terminal7 {
 email = "${email}"
 peer_name = "${peername}"\n`
 
-        localStorage.setItem("dotfile", dotfile)
+        Storage.set({key: "dotfile", value: dotfile})
         this.loadConf(TOML.parse(dotfile))
         e.classList.add("hidden")
         this.notify("Your email was added to the dotfile")
@@ -321,11 +332,11 @@ peer_name = "${peername}"\n`
             this.wsConnect()
         })
     }
-    toggleSettings(ev) {
+    async toggleSettings(ev) {
         var modal   = document.getElementById("settings-modal"),
             button  = document.getElementById("dotfile-button"),
             area    =  document.getElementById("edit-conf"),
-            conf    =  localStorage.getItem("dotfile") || DEFAULT_DOTFILE
+            conf    =  (await Storage.get({key: "dotfile"})).value || DEFAULT_DOTFILE
 
         area.value = conf
 
@@ -359,7 +370,7 @@ peer_name = "${peername}"\n`
         document.getElementById("dotfile-button").classList.remove("on")
         this.confEditor.save()
         this.loadConf(TOML.parse(area.value))
-        localStorage.setItem("dotfile", area.value)
+        Storage.set({key: "dotfile", value: area.value})
         this.cells.forEach(c => {
             if (typeof(c.setTheme) == "function")
                 c.setTheme(this.conf.theme)
@@ -501,7 +512,7 @@ peer_name = "${peername}"\n`
             this.onTouch("move", ev), false)
     }
     /*
-     * Terminal7.addGate is used to add a gate to a host.
+     * Terminal7.a.ddGate is used to add a gate to a host.
      * the function ensures the gate has a unique name adds the gate to
      * the `gates` property, stores and returns it.
      */
@@ -537,7 +548,7 @@ peer_name = "${peername}"\n`
         g.open(this.e)
         return g
     }
-    storeGates() { 
+    async storeGates() { 
         let out = []
         this.gates.forEach((h) => {
             if (h.store) {
@@ -548,7 +559,7 @@ peer_name = "${peername}"\n`
             }
         })
         console.log("Storing gates:", out)
-        localStorage.setItem('gates', JSON.stringify(out))
+        await Storage.set({key: 'gates', value: JSON.stringify(out)})
     }
     clear() {
         this.e.querySelectorAll('.temporal').forEach(e => e.remove())
