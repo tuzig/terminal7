@@ -395,6 +395,10 @@ export class Gate {
         })
         return r
     }
+    reset() {
+        this.clear()
+        this.restoreState(null)
+    }
     restoreState(state) {
         if ((this.marker != -1) && (this.windows.length > 0)) {
             // if there's a marker it's a reconnect, re-open all gate's dcs
