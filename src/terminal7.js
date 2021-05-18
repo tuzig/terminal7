@@ -534,10 +534,6 @@ peer_name = "${peername}"\n`
         this.gates.forEach(i => {
             if (props.name == i.name) {
                 i.online = props.online
-                if (i.online == true)
-                    i.nameE.parentNode.parentNode.classList.remove("offline")
-                else
-                    i.nameE.parentNode.parentNode.classList.add("offline")
                 nameFound = true
             }
         })
@@ -973,7 +969,7 @@ peer_name = "${peername}"\n`
             return
         }
         if (m["peers"] !== undefined) {
-            this.notify("\uD83D\uDCD6 Got server list")
+            this.notify("\uD83D\uDCD6 Got a fresh server list")
             m["peers"].forEach(p => {
                 if (p.kind == "webexec") 
                     this.addGate(p)
@@ -993,6 +989,10 @@ peer_name = "${peername}"\n`
         if (m.answer !== undefined ) {
             var answer = JSON.parse(atob(m.answer))
             g.peerConnect(answer)
+            return
+        }
+        if (m.peer_update !== undefined) {
+            g.online = m.peer_update.online
             return
         }
     }

@@ -40,7 +40,20 @@ export class Gate {
         this.msgs = {}
         this.marker = -1
         this.fp = props.fp
-        this.online = props.online
+        this._online = props.online
+    }
+    get online() {
+        return this._online
+    }
+    set online(v) {
+        if (this.online != v) {
+            if (v)
+                this.nameE.parentNode.parentNode.classList.remove("offline")
+            else
+                this.nameE.parentNode.parentNode.classList.add("offline")
+            this.notify(`is now ${v?'on':'off'}line`)
+            this._online = v
+        }
     }
 
     /*
