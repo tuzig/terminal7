@@ -113,6 +113,8 @@ export class Terminal7 {
                 .addEventListener("click", ev => this.toggleHelp())
         document.getElementById("help-button")
                 .addEventListener("click", ev => this.toggleHelp())
+        document.getElementById("refresh")
+                .addEventListener("click", ev => this.pbVerify())
         let addHost = document.getElementById("add-host")
         document.getElementById('plus-host').addEventListener(
             'click', ev => {

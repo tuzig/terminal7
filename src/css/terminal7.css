@@ -343,10 +343,6 @@ nav.tabbar-search {
 #version a {
     text-decoration: underline;
 }
-#plus-host  i {
-    font-size: 60px;
-    line-height: 70px;
-}
 #hosts-wrapper {
     float:right;
     position: relative;
@@ -530,4 +526,18 @@ td {
 input[name="fingerprint"] {
     width: 25em; 
     margin: 8px auto;
+}
+.home-page-second-bar {
+    display: block;
+    width: 100% ;
+}
+.home-page-second-bar button {
+     width: 10%;
+ }
+ #refresh {
+     border-left: 1px solid #373702;
+     float: right;
+ }
+#plus-host  {
+    float: left;
 }

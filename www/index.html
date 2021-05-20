@@ -19,15 +19,13 @@
               </a>
           </div>
           <h2>Please choose your destination:</h2>
-          <div id="hosts-wrapper"><ul id="hosts">
-              <li id="plus-host" class="border">
-                  <a> <i class="f7-icons">plus</i></a>
-              </li>
-          </ul></div>
+          <div id="hosts-wrapper">
+            <ul id="hosts"> </ul>
+          </div>
       </div>
       <div id="add-host" class="hidden modal border" >
           <form>
-            <h2>Add a Host</h2>
+            <h2>Add a Server</h2>
             <label for="uname">Address</label>
             <input type="text" placeholder="IP or host name" name="hostaddr"
                 required>
@@ -38,7 +36,7 @@
             <label for="remember">Remember host</label>
             <footer>
             <a href="https://github.com/tuzig/webexec/#install">
-              webexec installation instructions
+              server installation instructions
             </a>.
             </footer>
             <nav class="two-buttons">
@@ -209,6 +207,15 @@
                 <button type="button" class="reset"><i class="f7-icons">arrow_2_circlepath</i></button>
             </nav>
       </div>
+    <div class="tabbar bar">
+      <nav class="home-page-second-bar">
+          <button type="button" class="add-tab" id="plus-host" >
+                <i class="f7-icons">
+                  plus</i></button>
+          <button type="button" id="refresh"><i class="f7-icons">
+                  arrow_2_circlepath</i></button>
+      </nav>
+    </div>
   </div>
   <div id="navbar" class="bar">
       <nav class="six-buttons">

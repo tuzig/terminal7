@@ -89,7 +89,7 @@ export class Gate {
             this.e.appendChild(t)
         }
         // Add the gates' signs to the home page
-        let plusHost = document.getElementById("plus-host")
+        let hostsE = document.getElementById("hosts")
         let li = document.createElement('li'),
             a = document.createElement('a'),
             addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
@@ -106,7 +106,7 @@ export class Gate {
         if (this.online == false)
             li.classList.add("offline")
         li.appendChild(a)
-        plusHost.parentNode.prepend(li)
+        hostsE.prepend(li)
         // TODO: find a cleaner way to transfer the gate to the touch listener
         li.gate = this
         a.gate = this
