@@ -1,6 +1,6 @@
 {
   "name": "terminal7",
-  "version": "0.15.4",
+  "version": "0.15.5",
   "description": "A touchable terminal emulator & multiplexer tablet app",
   "main": "src/index.js",
   "private": true,
@@ -41,9 +41,9 @@
   },
   "devDependencies": {
     "chai": "^4.2.0",
-    "css-loader": "^3.5.2",
+    "css-loader": "^5.2.4",
     "file-loader": "^6.1.0",
-    "karma": "^5.2.1",
+    "karma": "^6.3.2",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^3.1.0",
     "karma-cli": "^2.0.0",
