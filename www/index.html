@@ -36,6 +36,11 @@
                 required>
             <input type="checkbox" checked name="remember">
             <label for="remember">Remember host</label>
+            <footer>
+            <a href="https://github.com/tuzig/webexec/#install">
+              webexec installation instructions
+            </a>.
+            </footer>
             <nav class="two-buttons">
                 <button type="button" class="close">
                     <i class="f7-icons close">xmark</i>
@@ -104,28 +109,26 @@
       <div id="peerbook-modal" class="hidden modal border">
         <h1>Greetings &amp; Salutations &#x1F596;</h1>
         <p>
-        Welcome to our beta, please join the dicussion on our
-        <a href="https://discord.gg/GneEDB7ZZQ">discord server</a>.<br>
-        To use Terminal7 you will need a server with our backend -
-        webexec - running. webexec supports Mac and Linux running on
-        a desktop, a Pi or a hosted server. Installation is simple,
-        just follow the
+        Welcome to our beta. To start using Terminal7 you will need a server
+        with the webexec program running. You can use any *Nix machine as your 
+        server. Installation is prety simple, just follow the
         <a href="https://github.com/tuzig/webexec/#install">instructions</a>.
         </p>
-          <h2>Peerbook Invitation</h2>
+          <h2>&#x1F4D6; Peerbook Invitation &#x1F4D6;</h2>
         <p>
-          peerbook is an online signalling server that let's Terminal7 connect
+          peerbook is an online signalling server that connects Terminal7
           to behind-the-NAT servers.
-          peerbook also keeps a private, secure address book so you don't have
+          peerbook keeps a private, secure address book so you don't need
           to key addresses or copy tokens.
           <form action="#">
               <div class="compact-fields">
-              <label for="email">Owner's email</label>
-              <input type="text" placeholder="email address" name="email"
+              <label for="email">email</label>
+              <input type="text" placeholder="leave empty to skip and use static addresses" name="email"
                 required>
               <label for="peername">Peer's name</label>
               <input type="text" name="peername" required>
               </div>
+              <footer>* your email will only be used to authorize peers</footer>
           <nav class="two-buttons">
               <button type="button" class="close"><i class="f7-icons">
                       xmark</i></button>
