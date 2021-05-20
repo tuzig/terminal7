@@ -316,28 +316,25 @@ peer_name = "${peername}"\n`
         var host = this.conf.net.peerbook
         if (typeof host != "string" || typeof email != "string")
             return
-        Http.request({url: `https://${host}/verify`, 
+        fetch(`https://${host}/verify`,  {
             headers: {"Content-Type": "application/json"},
             method: 'POST',
-            data: {kind: "terminal7",
+            body: JSON.stringify({kind: "terminal7",
                 name: this.conf.peerbook.peer_name,
                 email: email,
                 fp: terminal7.getFingerprint()
-            }
+            })
         }).then(response => {
-            if (response.status < 200 || response.status >= 300) {
-                if (response.status == 409) {
-                    var e = document.getElementById("reset-cert"),
-                        pbe = document.getElementById("reset-cert-error")
-                    pbe.innerHTML = response.data 
-                    e.classList.remove("hidden")
-                } else
-                    notify(`${response.data}`)
-                return
+            if (response.ok)
+                return response.json()
+            if (response.status == 409) {
+                var e = document.getElementById("reset-cert"),
+                    pbe = document.getElementById("reset-cert-error")
+                pbe.innerHTML = response.data 
+                e.classList.remove("hidden")
             }
-            var v = JSON.parse(response.data)
-            this.wsConnect()
-        })
+            throw new Error(`verification failed: ${response.data}`)
+        }).then(m => this.onPBMessage(m))
     }
     async toggleSettings(ev) {
         var modal   = document.getElementById("settings-modal"),
@@ -797,7 +794,8 @@ peer_name = "${peername}"\n`
             offl.add("hidden")
             if (this.activeG)
                 this.activeG.connect()
-            this.wsConnect()
+            else 
+                this.pbVerify()
         }
         else {
             offl.remove("hidden")
@@ -936,7 +934,11 @@ peer_name = "${peername}"\n`
                 url = encodeURI(`wss://${host}/ws?fp=${fp}&name=${name}&kind=terminal7&email=${email}`),
                 ws = new WebSocket(url)
             this.ws = ws
-            ws.onmessage = ev => this.onPBMessage(ev.data)
+            ws.onmessage = ev => {
+                var m = JSON.parse(ev.data)
+                console.log("got ws message", m)
+                this.onPBMessage(m)
+            }
             ws.onerror = ev => {
                 // TODO: Add some info avour the error
                 this.notify("\uD83D\uDCD6 WebSocket Error")
@@ -965,10 +967,7 @@ peer_name = "${peername}"\n`
             }
         }
     }
-    onPBMessage(msg) {
-        console.log("got pb message", msg)
-        var m
-        m = JSON.parse(msg)
+    onPBMessage(m) {
         if (m["code"] !== undefined) {
             this.notify(`\uD83D\uDCD6 ${m["text"]}`)
             return

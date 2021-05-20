@@ -41,27 +41,15 @@ export class Gate {
         this.marker = -1
         this.fp = props.fp
         this._online = props.online
-        this.offlineTimer = null
     }
     get online() {
         return this._online
     }
     set online(v) {
-        if (v) {
-            if (this.offlineTimer != null)  {
-                clearTimeout(this.offlineTimer)
-                this.offlineTimer = null
-            } else
-                this.notify("is online")
-
+        if (v)
             this.nameE.parentNode.parentNode.classList.remove("offline")
-        }
-        else if (this.offlineTimer == null)
-            this.offlineTimer = terminal7.run(_ => {
-                this.nameE.parentNode.parentNode.classList.add("offline")
-                this.offlineTimer = null
-            this.notify("is offline")
-            }, 5000)
+        else
+            this.nameE.parentNode.parentNode.classList.add("offline")
         this._online = v
     }
 
@@ -185,7 +173,9 @@ export class Gate {
     updateConnectionState(state) {
         console.log(`updating ${this.name} state to ${state}`)
         if (state == "connected") {
-            this.notify("WebRTC connected")
+            this.notify("Connected")
+            if (terminal7.ws != null)
+                terminal7.ws.close()
             this.boarding = true
             document.getElementById("downstream-indicator").classList.remove("failed")
             // show help for first timer
@@ -229,6 +219,7 @@ export class Gate {
      * peerConnect connects the webrtc session with the peer
      */
     peerConnect(offer) {
+        this.notify("Connecting")
         let sd = new RTCSessionDescription(offer)
         this.pc.setRemoteDescription(sd)
             .catch (e => {
@@ -428,7 +419,6 @@ export class Gate {
             console.log("Restoring with marker, open dcs")
             this.panes().forEach(p => p.openDC())
         } else if (state && (state.windows.length > 0)) {
-            this.notify("Restoring layout")
             console.log("Restoring layout: ", state)
             this.clear()
             state.windows.forEach(w =>  {
