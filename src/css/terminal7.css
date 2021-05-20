@@ -102,6 +102,7 @@ dd { margin-inline-start: 0; }
     border-style: solid;
     border-radius: 6px;
 }
+footer { padding-top: 1em; }
 p a, footer a {
     text-decoration: underline;
 }

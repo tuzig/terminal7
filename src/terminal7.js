@@ -268,11 +268,14 @@ export class Terminal7 {
                 this.clear()
             })
         // peerbook button and modal
-        modal   = document.getElementById("peerbook-modal")
+        modal = document.getElementById("peerbook-modal")
         modal.querySelector(".close").addEventListener('click',
             ev => this.clear() )
         modal.querySelector(".save").addEventListener('click',
-            ev => this.setPeerbook())
+            ev => {
+                this.setPeerbook()
+                this.clear()
+            })
         // certificates
         let certs = await this.getCertificates()
         if (certs.length == 0) {
@@ -296,6 +299,8 @@ export class Terminal7 {
             dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE,
             email = e.querySelector('[name="email"]').value,
             peername = e.querySelector('[name="peername"]').value
+        if (email == "")
+            return
         dotfile += `
 [peerbook]
 email = "${email}"
