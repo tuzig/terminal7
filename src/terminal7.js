@@ -917,13 +917,14 @@ peer_name = "${peername}"\n`
     }
     pbSend(m) {
         // null message are used to trigger connection, ignore them
-        if (m != null &&
-            this.ws != null && this.ws.readyState == WebSocket.OPEN) {
+        if (m != null) {
+            if (this.ws != null && this.ws.readyState == WebSocket.OPEN) {
                 console.log("sending to pb:", m)
                 this.ws.send(JSON.stringify(m))
                 return
+            }
+            PBPending.push(m)
         }
-        PBPending.push(m)
         this.wsConnect()
     }
     wsConnect() {
@@ -950,10 +951,6 @@ peer_name = "${peername}"\n`
                 ws.onerror = undefined
                 ws.onmessage = undefined
                 this.ws = null
-                if (PBPending.length > 0) {
-                    console.log("keeping the ws open")
-                    this.pbSend(null)
-                }
 
             }
             ws.onopen = ev => {
@@ -977,14 +974,19 @@ peer_name = "${peername}"\n`
         if (m["peers"] !== undefined) {
             this.notify("\uD83D\uDCD6 Got a fresh server list")
             m["peers"].forEach(p => {
-                if (p.kind == "webexec") 
+                if ((p.kind == "webexec") && p.verified) 
                     this.addGate(p)
             })
             return
         }
+        if (m["verified"] !== undefined) {
+            if (!m["verified"])
+                this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
+            return
+        }
         var g = this.gates.find(g => g.fp == m.source_fp)
         if (typeof g != "object") {
-            console.log(`received bad gate: ${m.source_fp}`)
+            console.log("received bad gate", m)
             return
         }
         if (m.candidate !== undefined) {
