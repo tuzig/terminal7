@@ -118,7 +118,7 @@ a {
     background-color: #271D30;
     padding: 2%;
     position: fixed;
-    bottom: 40pt;
+    bottom: 54pt;
     left: 50%;
     transform: translate(-50%, 0);
     width: 40em;
@@ -279,7 +279,7 @@ nav .on { color: #00FA00 !important; }
     z-index: 9;
     margin: 0 auto;
     padding: 4px;
-    bottom: 40pt;
+    bottom: 54pt;
     left: 50%;
     width: 60em;
     max-width: 96%;
@@ -303,7 +303,7 @@ nav.tabbar-search {
 .tabbar-search>input {
     padding: 0 0.5em;
     border-right: 1px solid #373702;
-    font-size: 18pt;
+    font-size: 16pt;
     flex: 10 1 auto;
     width: 5em;
     line-height: 24pt;
@@ -401,7 +401,8 @@ label {
 }
 #log {
     position: absolute;
-    bottom: 122px;
+    right : 0px;
+    bottom: 72px;
     margin: 0;
     padding: 0;
     z-index: 6;
@@ -414,7 +415,6 @@ label {
     opacity: 0;
     transition: all .75s ease;
     transform: translate(100%, 0);
-    right : 4px;
 }
 #log.show {
     opacity: 0.8;
