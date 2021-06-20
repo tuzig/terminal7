@@ -84,7 +84,7 @@ export class Cell {
         })
 
         h.on('pinch', e => {
-            console.log(e.additionalEvent, e.distance, e.velocityX, e.velocityY, e.direction, e.isFinal)
+            terminal7.log(e.additionalEvent, e.distance, e.velocityX, e.velocityY, e.direction, e.isFinal)
             if (e.deltaTime < this.lastEventT)
                 this.lastEventT = 0
             if ((e.deltaTime - this.lastEventT < 200) ||

@@ -16,7 +16,7 @@ export class Layout extends Cell {
      * The new object wraps the `basedOn` cell and makes it his first son
      */
     constructor(dir, basedOn) {
-        console.log("in layout constructore")
+        terminal7.log("in layout constructore")
         super({
             sx: basedOn.sx || 1.0, 
             sy: basedOn.sy || 1.0,
@@ -132,11 +132,11 @@ export class Layout extends Cell {
                 r += `${c.sx.toFixed(3)}x${c.sy.toFixed(3)}`
             }
             catch(e) {
-                console.log(i, c)
+                terminal7.log(i, c)
             }
             r += `,${c.xoff.toFixed(3)},${c.yoff.toFixed(3)}`
             if (c == that)
-                console.log("ERROR: layout shouldn't have `this` in his cells")
+                terminal7.log("ERROR: layout shouldn't have `this` in his cells")
             // TODO: remove this workaround - `c != that`
             if ((c != that) && (typeof c.toText == "function"))
                 r += c.toText()

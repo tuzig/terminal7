@@ -171,7 +171,7 @@ export class Gate {
      * state changes.
      */
     updateConnectionState(state) {
-        console.log(`updating ${this.name} state to ${state}`)
+        terminal7.log(`updating ${this.name} state to ${state}`)
         if (state == "connected") {
             this.notify("Connected")
             if (terminal7.ws != null)
@@ -202,7 +202,7 @@ export class Gate {
                 this.stopBoarding()
                 terminal7.onDisconnect(this)
             } else
-                console.log("Ignoring a peer terminal7.cells.forEach(c => event after disconnect")
+                terminal7.log("Ignoring a peer terminal7.cells.forEach(c => event after disconnect")
         }
     }
     /*
@@ -246,7 +246,7 @@ export class Gate {
             return
         }
         this.boarding = true
-        console.log(`connecting to ${this.name}...`)
+        terminal7.log(`connecting to ${this.name}...`)
         // cleanup
         this.pendingCDCMsgs = []
         this.disengagePC()
@@ -298,12 +298,12 @@ export class Gate {
             } 
         }
         this.pc.onnegotiationneeded = e => {
-            console.log("on negotiation needed", e)
+            terminal7.log("on negotiation needed", e)
             this.pc.createOffer().then(d => {
                 this.pc.setLocalDescription(d)
                 if (typeof(this.fp) == "string") {
                     offer = btoa(JSON.stringify(d))
-                    console.log("got offer", offer)
+                    terminal7.log("got offer", offer)
                     terminal7.pbSend({target: this.fp, offer: offer})
                 }
             })
@@ -339,7 +339,7 @@ export class Gate {
         else {
             // message stays frozen when retrting
             const s = msg.payload || JSON.stringify(msg)
-            console.log("sending ctrl message ", s)
+            terminal7.log("sending ctrl message ", s)
             if (msg.tries == undefined) {
                 msg.tries = 0
                 msg.payload = s
@@ -347,7 +347,7 @@ export class Gate {
                 this.notify(
                      `msg #${msg.message_id} no ACK in ${timeout}ms, trying ${retries-1} more times`)
             if (msg.tries++ < retries) {
-                console.log(`sending ctrl msg ${msg.message_id} for ${msg.tries} time`)
+                terminal7.log(`sending ctrl msg ${msg.message_id} for ${msg.tries} time`)
                 try {
                     this.cdc.send(s)
                 } catch(err) {
@@ -374,7 +374,7 @@ export class Gate {
                 this.restoreState(state)
                 terminal7.run(_ => {
                     this.marker = -1
-                    console.log("resotre done, fitting peers")
+                    terminal7.log("resotre done, fitting peers")
                     this.panes().forEach(p => p.fit())
                 }, 100)
             }
@@ -418,10 +418,10 @@ export class Gate {
         if ((this.marker != -1) && (this.windows.length > 0)) {
             // if there's a marker it's a reconnect, re-open all gate's dcs
             // TODO: validate the current layout is like the state
-            console.log("Restoring with marker, open dcs")
+            terminal7.log("Restoring with marker, open dcs")
             this.panes().forEach(p => p.openDC())
         } else if (state && (state.windows.length > 0)) {
-            console.log("Restoring layout: ", state)
+            terminal7.log("Restoring layout: ", state)
             this.clear()
             state.windows.forEach(w =>  {
                 let win = this.addWindow(w.name)
@@ -432,11 +432,11 @@ export class Gate {
             })
         } else if ((state == null) || (state.windows.length == 0)) {
             // create the first window and pane
-            console.log("Fresh state, creating the first pane")
+            terminal7.log("Fresh state, creating the first pane")
             this.activeW = this.addWindow("", true)
         }
         else
-            console.log(`not restoring. ${state}, ${wl}`)
+            terminal7.log(`not restoring. ${state}, ${wl}`)
 
         if (!this.activeW)
             this.activeW = this.windows[0]
@@ -446,7 +446,7 @@ export class Gate {
      * Adds a window, opens it and returns it
      */
     addWindow(name, createPane) {
-        console.log(`adding Window: ${name}`)
+        terminal7.log(`adding Window: ${name}`)
         let id = this.windows.length
         let w = new Window({name:name, gate: this, id: id})
         this.windows.push(w)
@@ -469,12 +469,12 @@ export class Gate {
     openCDC() {
         var cdc = this.pc.createDataChannel('%')
         this.cdc = cdc
-        console.log("<opening cdc")
+        terminal7.log("<opening cdc")
         cdc.onopen = () => {
             if (this.pendingCDCMsgs.length > 0)
                 // TODO: why the time out? why 100mili?
                 terminal7.run(() => {
-                    console.log("sending pending messages:", this.pendingCDCMsgs)
+                    terminal7.log("sending pending messages:", this.pendingCDCMsgs)
                     this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m), ABIT)
                     this.pendingCDCMsgs = []
                 }, 100)
@@ -489,7 +489,7 @@ export class Gate {
                 window.clearTimeout(this.msgs[i])
                 delete this.msgs[i]
                 const handler = this.onack[i]
-                console.log("got cdc message:",  msg)
+                terminal7.log("got cdc message:",  msg)
                 if (msg.type == "nack") {
                     document.getElementById("downstream-indicator").classList.add("failed")
                     this.nameE.classList.add("failed")
@@ -504,7 +504,7 @@ export class Gate {
                     delete this.onack[msg.args.ref]
                 }
                 else
-                    console.log("Got a cdc ack with no handler", msg)
+                    terminal7.log("Got a cdc ack with no handler", msg)
             }
         }
         return cdc
@@ -529,7 +529,7 @@ export class Gate {
             this.pc.onconnectionstatechange = undefined
             this.pc.onmessage = undefined
             this.pc.onnegotiationneeded = undefined
-            console.log("Gate disengaged")
+            terminal7.log("Gate disengaged")
             this.pc = null
         }
     }
@@ -646,7 +646,7 @@ export class Gate {
      * and closes the peer connection.
      */
     disengage(cb) {
-        console.log(`disengaging. boarding ${this.boarding}`)
+        terminal7.log(`disengaging. boarding ${this.boarding}`)
         if (!this.boarding) {
             if (cb) cb()
             return
@@ -662,7 +662,7 @@ export class Gate {
         this.boarding = false
         this.onack[id] = (nack, payload) => {
             this.marker = parseInt(payload)
-            console.log("got a marker", this.marker)
+            terminal7.log("got a marker", this.marker)
             if (cb) cb()
         }
     }

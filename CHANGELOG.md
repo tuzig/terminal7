@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- dump debug log to clipboard using META-\`
+
 ### Fixed 
 
 - hiding disconnect model on connect

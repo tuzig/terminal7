@@ -153,7 +153,7 @@ export class Pane extends Cell {
                 terminal7.run(this.fit, 20*this.retries)
             }
             else {
-                console.log(`fit failed ${this.retries} times. giving up`)
+                terminal7.log(`fit failed ${this.retries} times. giving up`)
                 if (cb instanceof Function) cb(null)
             }
             return
@@ -175,7 +175,7 @@ export class Pane extends Cell {
         if (this.t !== undefined)
             this.t.focus()
         else 
-            console.log("can't focus, this.t is undefined")
+            terminal7.log("can't focus, this.t is undefined")
     }
     /*
      * Splitting the pane, receivees a dir-  either "topbottom" or "rightleft"
@@ -235,10 +235,10 @@ export class Pane extends Cell {
         label = this.webexecID?`>${this.webexecID}`:
            `${tSize},${terminal7.conf.exec.shell}`
 
-        console.log(`opening dc with label: "${label}`)
+        terminal7.log(`opening dc with label: "${label}`)
         this.d = this.gate.pc.createDataChannel(label)
         this.d.onclose = e => {
-            console.log(`on dc "${this.webexecID}" close, marker - ${this.gate.marker}`)
+            terminal7.log(`on dc "${this.webexecID}" close, marker - ${this.gate.marker}`)
             this.state = "disconnected"
             if (this.gate.marker == -1)
                 this.close()
@@ -265,7 +265,7 @@ export class Pane extends Cell {
             this.webexecID = parseInt(msg.split(",")[0])
             if (isNaN(this.webexecID)) {
                 this.gate.notify("Failed to restore pane, reseting gate", true)
-                console.log(`got an error on pane connect: ${msg}`)
+                terminal7.log(`got an error on pane connect: ${msg}`)
                 terminal7.logDisplay(true)
                 terminal7.run(_ => this.gate.reset(), 10)
             } else
@@ -284,7 +284,7 @@ export class Pane extends Cell {
     updateCopyMode() {
         let b = this.t.buffer.active
         if (this.cmSY) {
-            console.log(`select: cursor: ${b.cursorX}, ${b.cursorY}
+            terminal7.log(`select: cursor: ${b.cursorX}, ${b.cursorY}
                                  start: ${this.cmSX}, ${this.cmSY}`)
             if ((this.cmSY < b.cursorY) ||
                 ((this.cmSY == b.cursorY) && this.cmSX < b.cursorX))
@@ -387,7 +387,7 @@ export class Pane extends Cell {
             if (ev.keyCode == 32) {
                 this.cmSY = b.cursorY
                 this.cmSX = b.cursorX
-                console.log(`set cmSX & Y to ${this.cmSX}, ${this.cmSY}`)
+                terminal7.log(`set cmSX & Y to ${this.cmSX}, ${this.cmSY}`)
             }
             else
                 this.gate.notify("TODO: Add copy mode help")
@@ -474,7 +474,7 @@ export class Pane extends Cell {
     }
     handleMetaKey(ev) {
         var f = null
-        console.log(`Handling meta key ${ev.key}`)
+        terminal7.log(`Handling meta key ${ev.key}`)
         switch (ev.key) {
         case "c":
             if (this.t.hasSelection()) 
@@ -535,7 +535,11 @@ export class Pane extends Cell {
         case "ArrowDown":
             f = () => this.w.moveFocus("down")
             break
+        case "`":
+            f = () => terminal7.dumpLog()
+            break
         }
+
         if (f != null) {
             f()
             ev.preventDefault()

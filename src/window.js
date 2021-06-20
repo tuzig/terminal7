@@ -137,7 +137,7 @@ export class Window {
             }, ABIT)
         }, { once: true })
         i.addEventListener('change', (e) => {
-            console.log("change", e)
+            terminal7.log("change", e)
             let p = e.target.parentNode
             p.w.name = e.target.value
             this.gate.sendState()

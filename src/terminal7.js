@@ -7,6 +7,7 @@
  */
 import { Gate } from './gate.js'
 import { Window } from './window.js'
+import { CyclicArray } from './cyclic.js'
 import * as Hammer from 'hammerjs'
 import * as TOML from '@iarna/toml'
 import * as imageMapResizer from './imageMapResizer.js'
@@ -17,10 +18,11 @@ import { dialogAddOn } from 'codemirror/addon/dialog/dialog.js'
 import { formatDate } from './utils.js'
 import '@capacitor-community/http'
 
-import { Plugins } from '@capacitor/core'
+import { Plugins, FilesystemDirectory } from '@capacitor/core'
 import { openDB } from 'idb'
 
-const { App, BackgroundTask, Clipboard, Device, Http, Network, Storage  } = Plugins
+const { App, BackgroundTask, Clipboard, Device, Http, Network, Storage,
+        Filesystem } = Plugins
 var PBPending = []
 
 const DEFAULT_DOTFILE = `[theme]
@@ -69,6 +71,7 @@ export class Terminal7 {
         this.netStatus = null
         this.ws = null
         this.pbSendTask = null
+        this.logBuffer = CyclicArray(settings.logLines || 100)
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,
@@ -76,7 +79,7 @@ export class Terminal7 {
      */
     async open() {
         let e = document.getElementById('terminal7')
-        console.log("in open")
+        this.log("in open")
         this.e = e
         // reading conf
         let d = {},
@@ -183,7 +186,7 @@ export class Terminal7 {
                         _ => this.storeCertificate().then(
                             _ => this.getCertificates().then(
                                 _ => this.pbVerify()))))
-                .catch(e => console.log(e))
+                .catch(e => terminal7.log(e))
             })
             ev.target.parentNode.parentNode.classList.add("hidden")
 
@@ -213,12 +216,12 @@ export class Terminal7 {
         // Load gates from local storage
         let gates
         value = (await Storage.get({key: 'gates'})).value
-            console.log("read: ", value)
+        this.log("read: ", value)
         if (value) {
             try {
                 gates = JSON.parse(value)
             } catch(e) {
-                 console.log("failed to parse gates", value, e)
+                 terminal7.log("failed to parse gates", value, e)
                 gates = []
             }
             gates.forEach((g) => {
@@ -231,9 +234,9 @@ export class Terminal7 {
             if (!state.isActive) {
                 // We're getting suspended. disengage.
                 let taskId = BackgroundTask.beforeExit(async () => {
-                    console.log("Benched. Disengaging from all gates")
+                    terminal7.log("Benched. Disengaging from all gates")
                     this.disengage(() => {
-                        console.log("finished disengaging")
+                        terminal7.log("finished disengaging")
                         this.clearTimeouts()
                         BackgroundTask.finish({taskId})
                     })
@@ -242,7 +245,7 @@ export class Terminal7 {
             else {
                 // We're back! ensure we have the latest network status and 
                 // reconnect to the active gate
-                console.log("Active ☀️")
+                terminal7.log("Active ☀️")
                 this.clearTimeouts()
                 Network.getStatus().then(s => this.updateNetworkStatus(s))
             }
@@ -266,7 +269,7 @@ export class Terminal7 {
             ev => {
                 var area = document.getElementById("edit-conf")
                 this.confEditor.save()
-                Clipboard.write({string: area.value});
+                Clipboard.write({string: area.value})
                 this.clear()
             })
         // peerbook button and modal
@@ -460,7 +463,7 @@ peer_name = "${peername}"\n`
         if (type == "move") {
             if (this.gesture == null) {
                 let rect = pane.e.getBoundingClientRect()
-                console.log(x, y, rect)
+                this.log(x, y, rect)
                 // identify pan event on a border
                 if (Math.abs(rect.x - x) < this.borderHotSpotSize)
                     this.gesture = "panborderleft"
@@ -472,7 +475,7 @@ peer_name = "${peername}"\n`
                     this.gesture = "panborderbottom"
                 else 
                     return
-                console.log(`identified: ${this.gesture}`)
+                this.log(`identified: ${this.gesture}`)
             } 
             if (this.gesture.startsWith("panborder")) {
                 let where = this.gesture.slice(9),
@@ -481,7 +484,7 @@ peer_name = "${peername}"\n`
                             : x / document.body.offsetWidth
                 if (dest > 1.0)
                     dest = 1.0
-                console.log(`moving ${where} border of #${pane.id} to ${dest}`)
+                this.log(`moving ${where} border of #${pane.id} to ${dest}`)
                 pane.layout.moveBorder(pane, where, dest)
             }
             this.lastT = ev.changedTouches
@@ -560,7 +563,7 @@ peer_name = "${peername}"\n`
                     name:h.name, windows: ws, store: true})
             }
         })
-        console.log("Storing gates:", out)
+        this.log("Storing gates:", out)
         await Storage.set({key: 'gates', value: JSON.stringify(out)})
     }
     clear() {
@@ -689,7 +692,7 @@ peer_name = "${peername}"\n`
                         this.notify(`Failed the connect. Maybe ${gate.addr} is wrong`)
                 else
                     this.notify("Wrong password")
-                console.log("ssh failed to connect", ev)
+                this.log("ssh failed to connect", ev)
             })
     }
     onNoSignal(gate) {
@@ -790,7 +793,7 @@ peer_name = "${peername}"\n`
         let cl = document.getElementById("connectivity").classList,
             offl = document.getElementById("offline").classList
         this.netStatus = status
-        console.log(`updateNetwrokStatus: ${status.connected}`)
+        this.log(`updateNetwrokStatus: ${status.connected}`)
         if (status.connected) {
             cl.remove("failed")
             offl.add("hidden")
@@ -853,7 +856,7 @@ peer_name = "${peername}"\n`
                 })
             }).catch(e => {
                 db.close()
-                console.log(`got an error opening db ${e}`)
+                this.log(`got an error opening db ${e}`)
                 resolve(null)
             })
         })
@@ -865,11 +868,11 @@ peer_name = "${peername}"\n`
               namedCurve: "P-256",
               expires: 31536000000
             }).then(cert => {
-                console.log("Generated cert", cert)
+                this.log("Generated cert", cert)
                 this.certificates = [cert]
                 resolve(this.certificates)
             }).catch(e => {
-                console.log(`failed generating cert ${e}`)
+                this.log(`failed generating cert ${e}`)
                 resolve(null)
             })
         })
@@ -889,12 +892,12 @@ peer_name = "${peername}"\n`
                 store.add(c).then(_ => {
                     db.close()
                     resolve(this.certificates[0]).catch(e => {
-                        console.log(`got an error storing cert ${e}`)
+                        this.log(`got an error storing cert ${e}`)
                         resolve(null)
                     })
                 })
             }).catch(e => {
-                console.log (`got error from open db ${e}`)
+                this.log (`got error from open db ${e}`)
                 db.close()
                 resolve(null)
             })
@@ -919,7 +922,7 @@ peer_name = "${peername}"\n`
         // null message are used to trigger connection, ignore them
         if (m != null) {
             if (this.ws != null && this.ws.readyState == WebSocket.OPEN) {
-                console.log("sending to pb:", m)
+                this.log("sending to pb:", m)
                 this.ws.send(JSON.stringify(m))
                 return
             }
@@ -939,7 +942,7 @@ peer_name = "${peername}"\n`
             this.ws = ws
             ws.onmessage = ev => {
                 var m = JSON.parse(ev.data)
-                console.log("got ws message", m)
+                this.log("got ws message", m)
                 this.onPBMessage(m)
             }
             ws.onerror = ev => {
@@ -954,11 +957,11 @@ peer_name = "${peername}"\n`
 
             }
             ws.onopen = ev => {
-                console.log("on open ws", ev)
+                this.log("on open ws", ev)
                 if (this.pbSendTask == null)
                     this.pbSendTask = this.run(_ => {
                         PBPending.forEach(m => {
-                            console.log("sending ", m)
+                            this.log("sending ", m)
                             this.ws.send(JSON.stringify(m))})
                         this.pbSendTask = null
                         PBPending = []
@@ -986,7 +989,7 @@ peer_name = "${peername}"\n`
         }
         var g = this.gates.find(g => g.fp == m.source_fp)
         if (typeof g != "object") {
-            console.log("received bad gate", m)
+            this.log("received bad gate", m)
             return
         }
         if (m.candidate !== undefined) {
@@ -1003,5 +1006,33 @@ peer_name = "${peername}"\n`
             g.online = m.peer_update.online
             return
         }
+    }
+    log (...args) {
+        var line = ""
+        args.forEach(a => line += JSON.stringify(a) + " ")
+        console.log(line)
+        this.logBuffer.push(line)
+    }
+    async dumpLog() {
+        var data = "",
+            path = `terminal7_${suffix}.log`,
+            suffix = new Date().toISOString().replace(/[^0-9]/g,"")
+        while (this.logBuffer.length > 0) {
+            data += this.logBuffer.shift() + "\n"
+        }
+        Clipboard.write({string: data})
+        this.notify("Log copied to clipboard")
+        /* TODO: wwould be nice to store log to file, problme is 
+         * Storage pluging failes
+        try { 
+            await Filesystem.writeFile({
+                path: path,
+                data: data,
+                directory: FilesystemDirectory.Documents
+            })i
+        } catch(e) { 
+            terminal7.log(e)
+        }
+        */
     }
 }

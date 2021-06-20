@@ -15,5 +15,5 @@ document.addEventListener("DOMContentLoaded", () => {
         window.terminal7 = new Terminal7()
         terminal7.open()
     }
-    StatusBar.hide().catch(_=> console.log("StatusBar is not sypported") )
+    StatusBar.hide().catch(_=> terminal7.log("StatusBar is not sypported") )
 })
