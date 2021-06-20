@@ -183,8 +183,9 @@ export class Gate {
                 terminal7.ws.close()
             this.boarding = true
             document.getElementById("downstream-indicator").classList.remove("failed")
-            var m = this.e.querySelector(".disconnect")
-            if (m != null) m.remove()
+            var m = terminal7.e.querySelector(".disconnect")
+            if (m != null)
+                m.remove()
             // show help for first timer
             Storage.get({key: "first_gate"}).then(v => {
                 if (v.value != "1") {
