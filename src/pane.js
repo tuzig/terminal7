@@ -264,10 +264,9 @@ export class Pane extends Cell {
             this.state = "connected"
             this.webexecID = parseInt(msg.split(",")[0])
             if (isNaN(this.webexecID)) {
-                this.gate.notify("Failed to restore pane, reseting gate", true)
+                this.gate.notify(msg, true)
                 terminal7.log(`got an error on pane connect: ${msg}`)
-                terminal7.logDisplay(true)
-                terminal7.run(_ => this.gate.reset(), 10)
+                this.close()
             } else
                 this.gate.onPaneConnected(this)
         }

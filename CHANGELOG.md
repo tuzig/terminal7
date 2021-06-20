@@ -11,10 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - dump debug log to clipboard using META-\`
+- watchdog when connection through peerbook
 
 ### Fixed 
 
 - hiding disconnect model on connect
+- properly handle missing shell
 
 ## [0.15.6] - 2020/5/21
 
