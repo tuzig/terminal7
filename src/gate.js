@@ -41,6 +41,7 @@ export class Gate {
         this.marker = -1
         this.fp = props.fp
         this._online = props.online
+        this.watchDog = null
     }
     get online() {
         return this._online
@@ -174,6 +175,10 @@ export class Gate {
         terminal7.log(`updating ${this.name} state to ${state}`)
         if (state == "connected") {
             this.notify("Connected")
+            if (this.watchDog != null) {
+                window.clearTimeout(this.watchDog)
+                this.watchDog = null
+            }
             if (terminal7.ws != null)
                 terminal7.ws.close()
             this.boarding = true
@@ -260,8 +265,15 @@ export class Gate {
         let offer = ""
         this.pc.onicecandidate = ev => {
             if (typeof(this.fp) == "string") {
-                if (ev.candidate)
+                if (ev.candidate) {
                     terminal7.pbSend({target: this.fp, candidate: ev.candidate})
+                    if (this.watchDog != null)
+                        window.clearTimeout(this.watchDog)
+                    this.watchDog = terminal7.run(_ => {
+                        this.watchDog = null
+                        terminal7.onDisconnect(this)
+                    }, terminal7.conf.net.timeout)
+                }
             } else if (!ev.candidate) {
                 offer = btoa(JSON.stringify(this.pc.localDescription))
                 this.notify("Sending connection request")
