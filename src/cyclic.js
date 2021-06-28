@@ -18,9 +18,10 @@ CyclicArray.prototype.push = function () {
   for (var i = 0; i < arguments.length; i++) {
     this.list[this.tail] = arguments[i]
     this.tail = (this.tail + 1) % this.capacity
-    this.length++
-    if (this.length > this.capacity) this.length = this.capacity
-    if (this.length === this.capacity && this.tail > this.head) this.head = this.tail
+    if (this.length == this.capacity)
+      this.head = this.tail
+    else
+      this.length++
   }
 }
 
