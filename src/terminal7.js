@@ -1015,8 +1015,8 @@ peer_name = "${peername}"\n`
     }
     async dumpLog() {
         var data = "",
-            path = `terminal7_${suffix}.log`,
-            suffix = new Date().toISOString().replace(/[^0-9]/g,"")
+            suffix = new Date().toISOString().replace(/[^0-9]/g,""),
+            path = `terminal7_${suffix}.log`
         while (this.logBuffer.length > 0) {
             data += this.logBuffer.shift() + "\n"
         }
