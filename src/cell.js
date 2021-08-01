@@ -142,6 +142,10 @@ export class Cell {
     toggleZoom() {
         if (this.zoomed) {
             // Zoom out
+            if (this.resizeObserver != null) {
+                this.resizeObserver.disconnect()
+                this.resizeObserver  = null
+            }
             let te = this.zoomedE.children[0].children[0]
             this.e.appendChild(te)
             document.body.removeChild(this.zoomedE)
@@ -160,8 +164,8 @@ export class Cell {
             document.body.appendChild(c)
             this.zoomedE = c
             this.w.e.classList.add("hidden")
-            const resizeObserver = new ResizeObserver(_ => this.styleZoomed(e))
-            resizeObserver.observe(e);
+            this.resizeObserver = new ResizeObserver(_ => this.styleZoomed(e))
+            this.resizeObserver.observe(e);
         }
         this.zoomed = !this.zoomed
         terminal7.run(_ => this.focus(), ABIT)
