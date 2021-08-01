@@ -184,8 +184,7 @@ export class Terminal7 {
                 store.clear().then(_ => 
                     this.generateCertificate().then(
                         _ => this.storeCertificate().then(
-                            _ => this.getCertificates().then(
-                                _ => this.pbVerify()))))
+                                _ => this.pbVerify())))
                 .catch(e => terminal7.log(e))
             })
             ev.target.parentNode.parentNode.classList.add("hidden")
@@ -281,13 +280,18 @@ export class Terminal7 {
                 this.setPeerbook()
                 this.clear()
             })
-        // certificates
-        let certs = await this.getCertificates()
-        if (certs.length == 0) {
-            await this.generateCertificate()
-            await this.storeCertificate()
-        }
-        this.pbVerify()
+        // get the fingerprint and connect to peerbook
+        this.getFingerprint().then(_ => {
+            if (this.certificates.length > 0) 
+                this.pbVerify()
+            else {
+                this.generateCertificate().then(_ => {
+                    this.storeCertificate().then(_ => {
+                        this.pbVerify()
+                    })
+                })
+            }
+        })
         var invited = await Storage.get({key: 'invitedToPeerbook2'})
         if (invited.value == null) {
             modal = document.getElementById("peerbook-modal")
@@ -317,29 +321,33 @@ peer_name = "${peername}"\n`
         this.notify("Your email was added to the dotfile")
     }
     pbVerify() {
-        var email = this.conf.peerbook.email
-        var host = this.conf.net.peerbook
+        var email = this.conf.peerbook.email,
+            host = this.conf.net.peerbook
+
         if (typeof host != "string" || typeof email != "string")
             return
-        fetch(`https://${host}/verify`,  {
-            headers: {"Content-Type": "application/json"},
-            method: 'POST',
-            body: JSON.stringify({kind: "terminal7",
-                name: this.conf.peerbook.peer_name,
-                email: email,
-                fp: terminal7.getFingerprint()
-            })
-        }).then(response => {
-            if (response.ok)
-                return response.json()
-            if (response.status == 409) {
-                var e = document.getElementById("reset-cert"),
-                    pbe = document.getElementById("reset-cert-error")
-                pbe.innerHTML = response.data 
-                e.classList.remove("hidden")
-            }
-            throw new Error(`verification failed: ${response.data}`)
-        }).then(m => this.onPBMessage(m))
+
+        this.getFingerprint().then(fp => {
+            fetch(`https://${host}/verify`,  {
+                headers: {"Content-Type": "application/json"},
+                method: 'POST',
+                body: JSON.stringify({kind: "terminal7",
+                    name: this.conf.peerbook.peer_name,
+                    email: email,
+                    fp: fp
+                })
+            }).then(response => {
+                if (response.ok)
+                    return response.json()
+                if (response.status == 409) {
+                    var e = document.getElementById("reset-cert"),
+                        pbe = document.getElementById("reset-cert-error")
+                    pbe.innerHTML = response.data 
+                    e.classList.remove("hidden")
+                }
+                throw new Error(`verification failed: ${response.data}`)
+            }).then(m => this.onPBMessage(m))
+        })
     }
     async toggleSettings(ev) {
         var modal   = document.getElementById("settings-modal"),
@@ -831,14 +839,12 @@ peer_name = "${peername}"\n`
     }
     // gets the will formatted fingerprint from the current certificate
     getFingerprint() {
-        var cert = this.certificates[0].getFingerprints()[0]
-        return cert.value.toUpperCase().replaceAll(":", "")
-    }
-    // gets the certificate from indexDB. If they are not there, create them
-    getCertificates() {
+        // gets the certificate from indexDB. If they are not there, create them
         return new Promise(resolve => {
-            if (this.certificates)
-                resolve(this.certificates)
+            if (this.certificates) {
+                var cert = this.certificates[0].getFingerprints()[0]
+                resolve(cert.value.toUpperCase().replaceAll(":", ""))
+            }
             openDB("t7", 1, { 
                     upgrade(db) {
                         db.createObjectStore('certificates', {keyPath: 'id',
@@ -849,15 +855,17 @@ peer_name = "${peername}"\n`
                     store = tx.objectStore("certificates")
                  store.getAll().then(certificates => {
                     this.certificates = certificates
-                     db.close()
-                    resolve(this.certificates)
+                    db.close()
+                    var cert = certificates[0].getFingerprints()[0]
+                    resolve(cert.value.toUpperCase().replaceAll(":", ""))
                  }).catch(e => {
-                    resolve(null)
+                    this.log(`got a db error getting the fp: ${e}`)
+                    resolve(e)
                 })
             }).catch(e => {
                 db.close()
                 this.log(`got an error opening db ${e}`)
-                resolve(null)
+                resolve(e)
             })
         })
     }
@@ -931,11 +939,10 @@ peer_name = "${peername}"\n`
         this.wsConnect()
     }
     wsConnect() {
-        if (this.ws == null && this.certificates != null) {
-            var email = this.conf.peerbook.email
-            if (typeof email != "string") return
-            var fp = this.getFingerprint(),
-                host = this.conf.net.peerbook,
+        var email = this.conf.peerbook.email
+        if ((this.ws != null) || ( typeof email != "string")) return
+        this.getFingerprint().then(fp => {
+            var host = this.conf.net.peerbook,
                 name = this.conf.peerbook.peer_name,
                 url = encodeURI(`wss://${host}/ws?fp=${fp}&name=${name}&kind=terminal7&email=${email}`),
                 ws = new WebSocket(url)
@@ -967,7 +974,7 @@ peer_name = "${peername}"\n`
                         PBPending = []
                     }, 10)
             }
-        }
+        })
     }
     onPBMessage(m) {
         if (m["code"] !== undefined) {

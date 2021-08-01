@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed 
 
+- starting up with no gates
 - hiding disconnect model on connect
 - properly handle missing shell
 
