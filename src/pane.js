@@ -625,6 +625,8 @@ export class Pane extends Cell {
         }
         if (this.w.activeP && this.webexecID == this.w.activeP.webexecID)
             cell.active = true
+        if (this.zoomed)
+            cell.zoomed = true
         return cell
     }
 }

@@ -17,7 +17,6 @@ export class Cell {
         this.xoff = props.xoff || 0
         this.yoff = props.yoff || 0
         this.zoomed = false
-        this.zoomedE = null
     }
     /*
      * Creates the HTML elment that will store our dimensions and content
@@ -146,10 +145,10 @@ export class Cell {
                 this.resizeObserver.disconnect()
                 this.resizeObserver  = null
             }
-            let te = this.zoomedE.children[0].children[0]
+            let te = terminal7.zoomedE.children[0].children[0]
             this.e.appendChild(te)
-            document.body.removeChild(this.zoomedE)
-            this.zoomedE = null
+            terminal7.zoomedE.remove()
+            terminal7.zoomedE = null
             this.w.e.classList.remove("hidden")
         } else {
             let c = document.createElement('div'),
@@ -162,12 +161,13 @@ export class Cell {
             this.styleZoomed(e)
             this.catchFingers(e)
             document.body.appendChild(c)
-            this.zoomedE = c
+            terminal7.zoomedE = c
             this.w.e.classList.add("hidden")
             this.resizeObserver = new ResizeObserver(_ => this.styleZoomed(e))
             this.resizeObserver.observe(e);
         }
         this.zoomed = !this.zoomed
+        this.gate.sendState()
         terminal7.run(_ => this.focus(), ABIT)
     }
 }

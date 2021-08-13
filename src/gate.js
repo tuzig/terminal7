@@ -529,6 +529,10 @@ export class Gate {
         console.trace("Clearing gate")
         this.e.querySelector(".tabbar-names").innerHTML = ""
         this.e.querySelectorAll(".window").forEach(e => e.remove())
+        if (terminal7.zoomedE != null) {
+            terminal7.zoomedE.remove()
+            terminal7.zoomedE = null
+        }
         this.windows = []
         this.breadcrumbs = []
         this.msgs = {}

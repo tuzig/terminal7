@@ -71,7 +71,8 @@ export class Terminal7 {
         this.netStatus = null
         this.ws = null
         this.pbSendTask = null
-        this.logBuffer = CyclicArray(settings.logLines || 100)
+        this.logBuffer = CyclicArray(settings.logLines || 101)
+        this.zoomedE = null
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,
@@ -731,6 +732,7 @@ peer_name = "${peername}"\n`
         })
         e.querySelector(".reconnect").addEventListener('click', ev => {
             this.clear()
+            gate.clear()
             gate.connect()
         })
         this.e.appendChild(e)
@@ -762,6 +764,7 @@ peer_name = "${peername}"\n`
     clearTimeouts() {
         this.timeouts.forEach(t => window.clearTimeout(t))
         this.timeouts = []
+        this.gates.forEach(g => g.updateID = null)
     }
     periodic() {
         var now = new Date()

@@ -62,11 +62,7 @@ export class Window {
             a.nameE.classList.remove("on")
             a.e.classList.add("hidden")
         }
-        if (this.activeP && this.activeP.zoomed) {
-            this.e.classList.add("hidden")
-            this.activeP.zoomedE.classList.remove("hidden")
-        }
-        else
+        if (terminal7.zoomedE == null)
             this.e.classList.remove("hidden")
         this.nameE.classList.add("on")
         this.gate.activeW = this
@@ -105,6 +101,8 @@ export class Window {
                 let p = l.addPane(cell)
                 if (cell.active)
                     this.activeP = p
+                if (cell.zoomed)
+                    p.toggleZoom()
             }
         })
         return l
@@ -154,7 +152,7 @@ export class Window {
         this.e.remove()
         // if we're zoomed in, the pane is a child of body
         if (this.activeP && this.activeP.zoomed)
-            document.body.removeChild(this.activeP.zoomedE)
+            terminal7.zoomedE.remove()
         this.gate.windows.splice(this.gate.windows.indexOf(this), 1)
         // if we removed a window it means the user can add a window
         this.gate.e.querySelector(".add-tab").classList.remove("off")

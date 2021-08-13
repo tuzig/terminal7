@@ -297,17 +297,17 @@ describe("terminal7", function() {
             p0.toggleZoom()
             //TODO: test the terminal is changing size 
             //expect(p0.t.rows).above(r0)
-            expect(p0.zoomedE).to.exist
-            expect(p0.zoomedE.classList.contains("zoomed")).to.be.true
-            expect(p0.zoomedE.children[0].classList.contains("pane")).to.be.true
-            expect(p0.zoomedE.children[0].classList.contains("pane")).to.be.true
+            expect(terminal7.zoomedE).to.exist
+            expect(terminal7.zoomedE.classList.contains("zoomed")).to.be.true
+            expect(terminal7.zoomedE.children[0].classList.contains("pane")).to.be.true
+            expect(terminal7.zoomedE.children[0].classList.contains("pane")).to.be.true
             p0.toggleZoom()
-            expect(p0.zoomedE).to.be.null
+            expect(terminal7.zoomedE).to.be.null
             expect(p0.sx).to.equal(0.4)
             p0.toggleZoom()
-            expect(p0.zoomedE).to.exist
-            expect(p0.zoomedE.classList.contains("zoomed")).to.be.true
-            expect(p0.zoomedE.children[0].classList.contains("pane")).to.be.true
+            expect(terminal7.zoomedE).to.exist
+            expect(terminal7.zoomedE.classList.contains("zoomed")).to.be.true
+            expect(terminal7.zoomedE.children[0].classList.contains("pane")).to.be.true
         })
 
     })
