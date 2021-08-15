@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - starting up with no gates
 - hiding disconnect model on connect
 - properly handle missing shell
+- properly restoring a zoomed session
+- when control messages sending fails 3 times, show disconnect modal
 
 ## [0.15.6] - 2020/5/21
 

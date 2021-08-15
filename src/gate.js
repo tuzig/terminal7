@@ -371,6 +371,8 @@ export class Gate {
             } else {
                 this.notify(
                      `#${msg.message_id} tried ${retries} times and given up`)
+                this.stopBoarding()
+                terminal7.onDisconnect(this)
             }
         }
         return msg.message_id
