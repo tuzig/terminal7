@@ -6,7 +6,7 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.16.0] - 2021/8/15
 
 ### Added
 
@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - properly restoring a zoomed session
 - when control messages sending fails 3 times, show disconnect modal
 
-## [0.15.6] - 2020/5/21
+## [0.15.6] - 2021/5/21
 
 ### Added
 
@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - connecting to peerbook only when needed
 
-## [0.15.5] - 2020/5/19
+## [0.15.5] - 2021/5/19
 
 ### Fixed
 
@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - latest peerbook protocol 
 - improved messages
 
-## [0.15.4] - 2020/5/4
+## [0.15.4] - 2021/5/4
 
 ### Added
 
@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - hiding model when clicking 'X'
 - ssri, an indirect dependecy, was bumped to improved security
 
-## [0.15.3] - 2020/4/26
+## [0.15.3] - 2021/4/26
 
 ### Fixed
 
@@ -60,13 +60,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - using a new local storage key to display the welcome messgae
 - reconnect to peerbook after getting back to the foreground
 
-## [0.15.2] - 2020/4/26
+## [0.15.2] - 2021/4/26
 
 ### Fixed 
 
 - welcome dialog
 
-## [0.15.1] - 2020/4/26
+## [0.15.1] - 2021/4/26
 
 ### Fixed 
 
@@ -74,13 +74,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - crashing when dotfile had errors
 - settings change not reconnecting to peerbook
 
-## [0.15.0] - 2020/4/20
+## [0.15.0] - 2021/4/20
 
 ### Added 
 
 - supporting peerbook, a signaling server and adderss book
 
-## [0.14.2] - 2020/3/10
+## [0.14.2] - 2021/3/10
 
 ### Fixed
 
@@ -91,7 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cut and border pan work with only single finger
 - two finger scroll doesn't change the font size
 
-## [0.14.1] - 2020/2/23
+## [0.14.1] - 2021/2/23
 
 ### Added
 
@@ -108,7 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - community link is working properly
 - gate doesn't close when there are open windows
 
-## [0.14.0] - 2020/1/21
+## [0.14.0] - 2021/1/21
 
 ### Changed 
 
@@ -116,14 +116,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   authenticate
 
 
-## [0.13.1] - 2020/1/17
+## [0.13.1] - 2021/1/17
 
 ### Fixed 
 
 - pane not closing on shell exit
 - panes not resizing properly when changing to portrait and back
 
-## [0.13.0] - 2020/1/14
+## [0.13.0] - 2021/1/14
 
 ### Added
 
@@ -140,7 +140,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improoved notification wording
 - Focusing on the right window and pane after restore
 
-## [0.12.2] - 2020/1/3
+## [0.12.2] - 2021/1/3
 
 ### Fixed 
 
