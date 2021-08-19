@@ -147,7 +147,7 @@ export class Cell {
             }
             let te = terminal7.zoomedE.children[0].children[0]
             this.e.appendChild(te)
-            terminal7.zoomedE.remove()
+            document.body.removeChild(terminal7.zoomedE)
             terminal7.zoomedE = null
             this.w.e.classList.remove("hidden")
         } else {

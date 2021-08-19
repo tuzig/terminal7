@@ -532,7 +532,7 @@ export class Gate {
         this.e.querySelector(".tabbar-names").innerHTML = ""
         this.e.querySelectorAll(".window").forEach(e => e.remove())
         if (terminal7.zoomedE != null) {
-            terminal7.zoomedE.remove()
+            document.body.removeChild(terminal7.zoomedE)
             terminal7.zoomedE = null
         }
         this.windows = []

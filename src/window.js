@@ -62,7 +62,11 @@ export class Window {
             a.nameE.classList.remove("on")
             a.e.classList.add("hidden")
         }
-        if (terminal7.zoomedE == null)
+        if (this.activeP && this.activeP.zoomed) {
+            this.e.classList.add("hidden")
+            terminal7.zoomedE.classList.remove("hidden")
+        }
+        else
             this.e.classList.remove("hidden")
         this.nameE.classList.add("on")
         this.gate.activeW = this
