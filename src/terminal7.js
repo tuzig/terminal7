@@ -659,6 +659,7 @@ peer_name = "${peername}"\n`
             gate.connect()
         })
         e.querySelector(".close").addEventListener('click', ev => {
+            gate.clear()
             terminal7.goHome()
         })
         this.e.appendChild(e)

@@ -156,7 +156,7 @@ export class Window {
         this.e.remove()
         // if we're zoomed in, the pane is a child of body
         if (this.activeP && this.activeP.zoomed)
-            terminal7.zoomedE.remove()
+            this.activeP.toggleZoom()
         this.gate.windows.splice(this.gate.windows.indexOf(this), 1)
         // if we removed a window it means the user can add a window
         this.gate.e.querySelector(".add-tab").classList.remove("off")
