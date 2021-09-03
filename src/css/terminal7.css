@@ -317,6 +317,10 @@ nav.tabbar-search {
 .tabbar-search button.search-close {
     border-right: 0;
 }
+
+button.rename-close {
+    border-right: 0;
+}
 .tabbar-search>input {
     padding: 0 0.5em;
     border-right: 1px solid #373702;
