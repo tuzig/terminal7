@@ -286,6 +286,23 @@ nav .on { color: #00FA00 !important; }
     transform: translate(-50%, 0);
     border-color: #F952F9;
 }
+
+.rename-box {
+    position: fixed;
+    display: inline-block;
+    box-sizing: border-box;
+    background-color: #271D30;
+    z-index: 9;
+    margin: 0 auto;
+    padding: 4px;
+    bottom: 54pt;
+    left: 50%;
+    width: 60em;
+    max-width: 96%;
+    transform: translate(-50%, 0);
+    border-color: #F952F9;
+}
+
 nav.tabbar-search {
     padding: 0.2em 1em;
     display: flex;
@@ -298,6 +315,10 @@ nav.tabbar-search {
     flex: 1 1 0;
 }
 .tabbar-search button.search-close {
+    border-right: 0;
+}
+
+button.rename-close {
     border-right: 0;
 }
 .tabbar-search>input {
