@@ -127,6 +127,12 @@ export class Cell {
      * Cell.close removes a cell's elment and removes itself from the window
      */
     close() {
+        // zero canvas dimension to free it
+        this.e.querySelectorAll("canvas").forEach(canvas => {
+            canvas.height = 0;
+            canvas.width = 0;
+        })
+
         this.e.remove()
         if (this.layout)
             this.layout.onClose(this)

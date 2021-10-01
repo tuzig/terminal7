@@ -11,8 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fingerprint is now properly displayed
-- Static IP connections
+- fingerprint is now properly displayed
+- static IP connections
+- clearing memory when closing pane
 
 ### Changed
 
