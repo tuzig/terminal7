@@ -9,9 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   
 ## Unreleased
 
+### Fixed
+
+- Fingerprint is now properly displayed
+- Static IP connections
+
 ### Changed
 
-- tab name is edited in a mosal
+- tab name is edited in a modal
 
 ## [0.16.2] - 2021/9/3
 

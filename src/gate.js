@@ -278,36 +278,38 @@ export class Gate {
             } else if (!ev.candidate) {
                 offer = btoa(JSON.stringify(this.pc.localDescription))
                 this.notify("Sending connection request")
-                fetch('http://'+this.addr+'/connect', {
-                    headers: {"Content-Type": "application/json"},
-                    method: 'POST',
-                    body: JSON.stringify({api_version: 0,
-                        offer: offer,
-                        fingerprint: terminal7.getFingerprint()
-                    })
-                }).then(response => {
-                    if (response.status == 401)
-                        throw new Error('unautherized');
-                    if (!response.ok)
-                        throw new Error(
-                          `HTTP POST failed with status ${response.status}`)
-                    return response.text()
-                }).then(data => {
-                    if (!this.verified) {
-                        this.verified = true
-                        // TODO: store when making real changes
-                        // terminal7.storeGates()
-                    }
-                    var answer = JSON.parse(atob(data))
-                    this.peerConnect(answer)
-                }).catch(error => {
-                    if (error.message == 'unautherized') 
-                        this.copyFingerprint()
-                    else {
-                        this.notify(`HTTP POST to ${this.addr} failed: ${error}`)
-                        terminal7.onNoSignal(this)
-                    }
-                 })
+                terminal7.getFingerprint().then(fp =>
+                    fetch('http://'+this.addr+'/connect', {
+                        headers: {"Content-Type": "application/json"},
+                        method: 'POST',
+                        body: JSON.stringify({api_version: 0,
+                            offer: offer,
+                            fingerprint: fp
+                        })
+                    }).then(response => {
+                        if (response.status == 401)
+                            throw new Error('unautherized');
+                        if (!response.ok)
+                            throw new Error(
+                              `HTTP POST failed with status ${response.status}`)
+                        return response.text()
+                    }).then(data => {
+                        if (!this.verified) {
+                            this.verified = true
+                            // TODO: store when making real changes
+                            // terminal7.storeGates()
+                        }
+                        var answer = JSON.parse(atob(data))
+                        this.peerConnect(answer)
+                    }).catch(error => {
+                        if (error.message == 'unautherized') 
+                            this.copyFingerprint()
+                        else {
+                            this.notify(`HTTP POST to ${this.addr} failed: ${error}`)
+                            terminal7.onNoSignal(this)
+                        }
+                     })
+                )
             } 
         }
         this.pc.onnegotiationneeded = e => {
@@ -600,11 +602,11 @@ export class Gate {
     }
     copyFingerprint() {
         let ct = document.getElementById("copy-fingerprint"),
-            addr = this.addr.substr(0, this.addr.indexOf(":")),
-            fp =  terminal7.getFingerprint()
+            addr = this.addr.substr(0, this.addr.indexOf(":"))
+        terminal7.getFingerprint().then(fp =>
+                ct.querySelector('[name="fingerprint"]').value = fp)
         document.getElementById("ct-address").innerHTML = addr
         document.getElementById("ct-name").innerHTML = this.name
-        ct.querySelector('[name="fingerprint"]').value = fp
         ct.classList.remove("hidden")
         ct.querySelector(".copy").addEventListener('click', ev => {
             ct.classList.add("hidden")
@@ -614,12 +616,14 @@ export class Gate {
         })
         ct.querySelector("form").addEventListener('submit', ev => {
             ev.preventDefault()
-            terminal7.ssh(ct,  this,
-                `cat <<<"${fp}" >> ~/.webexec/authorized_tokens`,
-                _ => {
-                    ct.classList.add("hidden")
-                    this.connect()
-                })
+            terminal7.getFingerprint().then(fp =>
+                terminal7.ssh(ct,  this,
+                    `cat <<<"${fp}" >> ~/.webexec/authorized_tokens`,
+                    _ => {
+                        ct.classList.add("hidden")
+                        this.connect()
+                    })
+            )
         })
  
         ct.querySelector(".close").addEventListener('click',  ev =>  {
