@@ -7,6 +7,7 @@
  */
 import { Gate } from './gate.js'
 import { Window } from './window.js'
+import { CyclicArray } from './cyclic.js'
 import * as Hammer from 'hammerjs'
 import * as TOML from '@iarna/toml'
 import * as imageMapResizer from './imageMapResizer.js'
@@ -15,10 +16,14 @@ import { vimMode } from 'codemirror/keymap/vim.js'
 import { tomlMode} from 'codemirror/mode/toml/toml.js'
 import { dialogAddOn } from 'codemirror/addon/dialog/dialog.js'
 import { formatDate } from './utils.js'
-import { Plugins } from '@capacitor/core'
+import '@capacitor-community/http'
+
+import { Plugins, FilesystemDirectory } from '@capacitor/core'
 import { openDB } from 'idb'
 
-const { App, BackgroundTask, Clipboard, Network  } = Plugins
+const { App, BackgroundTask, Clipboard, Device, Http, Network, Storage,
+        Filesystem } = Plugins
+var PBPending = []
 
 const DEFAULT_DOTFILE = `[theme]
 foreground = "#00FAFA"
@@ -35,6 +40,7 @@ shell = "bash"
 timeout = 3000
 retries = 3
 ice_server = "stun:stun2.l.google.com:19302"
+peerbook = "pb.terminal7.dev"
 
 [ui]
 quickest_press = 1000
@@ -47,16 +53,6 @@ pinch_max_y_velocity = 0.1
 [features]
 copy_mode = true
 `
-const WELCOME_MESSAGE = `<h1>Greetings & Salutations!</h1>
-<p>
-To join our beta you will need a server with a public IP/DNS.
-Our backend supports Mac and Linux running on a desktop, a Pi or a hosted
-server. 
-</p><p>
-Once you add your server's address we will try to connect and
-fail as the backend agent is not there. Then we will guide you through its
-installation.
-</p>`
 
 export class Terminal7 {
     /*
@@ -69,7 +65,6 @@ export class Terminal7 {
         this.timeouts = []
         this.activeG = null
         window.terminal7 = this
-        let dotfile = localStorage.getItem('dotfile') || DEFAULT_DOTFILE
         this.scrollLingers4     = settings.scrollLingers4 || 2000
         this.shortestLongPress  = settings.shortestLongPress || 1000
         this.borderHotSpotSize  = settings.borderHotSpotSize || 30
@@ -77,25 +72,43 @@ export class Terminal7 {
         this.confEditor = null
         this.flashTimer = null
         this.netStatus = null
-        this.loadConf(TOML.parse(dotfile))
+        this.ws = null
+        this.pbSendTask = null
+        this.logBuffer = CyclicArray(settings.logLines || 101)
+        this.zoomedE = null
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,
      * loads the gates from local storage and redirects to home
      */
-    async open(e) {
-        if (!e) {
-            // create the container element
-            e = document.createElement('div')
-            e.id = "terminal7"
-            document.body.appendChild(e)
-        }
+    async open() {
+        let e = document.getElementById('terminal7')
+        this.log("in open")
         this.e = e
+        // reading conf
+        let d = {},
+            { value } = await Storage.get({key: 'dotfile'})
+        if (value == null) {
+            value = DEFAULT_DOTFILE
+            Storage.set({key: 'dotfile', value: value})
+        }
+        try {
+            d = TOML.parse(value)
+        } catch(err) {
+            d = TOML.parse(DEFAULT_DOTFILE)
+            terminal7.run(_ =>
+                this.notify(
+                    `Using default conf as parsing the dotfile failed:<br>${err}`, 
+                10))
+        }
+        this.loadConf(d)
 
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",
-                    ev => this.activeG.activeW.activeP.close())
+                    ev =>  {
+                        if (this.activeG)
+                            this.activeG.activeW.activeP.close()})
         document.getElementById("home-button")
                 .addEventListener("click", ev => this.goHome())
         document.getElementById("log-button")
@@ -103,8 +116,12 @@ export class Terminal7 {
         document.getElementById("search-button")
                 .addEventListener("click", ev => 
                     this.activeG && this.activeG.activeW.activeP.toggleSearch())
+        document.getElementById("help-gate")
+                .addEventListener("click", ev => this.toggleHelp())
         document.getElementById("help-button")
                 .addEventListener("click", ev => this.toggleHelp())
+        document.getElementById("refresh")
+                .addEventListener("click", ev => this.pbVerify())
         let addHost = document.getElementById("add-host")
         document.getElementById('plus-host').addEventListener(
             'click', ev => {
@@ -132,10 +149,6 @@ export class Terminal7 {
         // hide the modal on xmark click
         addHost.querySelector(".close").addEventListener('click',  ev =>  {
             this.clear()
-        })
-        this.gates.forEach(gate => {
-            gate.open(e)
-            gate.e.classList.add("hidden")
         })
         // Handle network events for the indicator
         Network.getStatus().then(s => this.updateNetworkStatus(s))
@@ -166,6 +179,23 @@ export class Terminal7 {
         })
         resetHost.querySelector(".close").addEventListener('click',  ev =>
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
+        // setting up reset cert events
+        let resetCert = document.getElementById("reset-cert")
+        resetCert.querySelector(".reset").addEventListener('click',  ev => {
+            openDB("t7", 1).then(db => {
+                let tx = db.transaction("certificates", "readwrite"),
+                    store = tx.objectStore("certificates")
+                store.clear().then(_ => 
+                    this.generateCertificate().then(
+                        _ => this.storeCertificate().then(
+                                _ => this.pbVerify())))
+                .catch(e => terminal7.log(e))
+            })
+            ev.target.parentNode.parentNode.classList.add("hidden")
+
+        })
+        resetCert.querySelector(".close").addEventListener('click',  ev =>
+            ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
         this.goHome()
         document.addEventListener("keydown", ev => {
             if (ev.key == "Meta") {
@@ -187,35 +217,38 @@ export class Terminal7 {
             this.metaPressStart = Number.MAX_VALUE
         })
         // Load gates from local storage
-        let ls = localStorage.getItem('gates');
-        if (ls)
-            JSON.parse(ls).forEach((p) => {
-                p.store = true
-                this.addGate(p)
+        let gates
+        value = (await Storage.get({key: 'gates'})).value
+        this.log("read: ", value)
+        if (value) {
+            try {
+                gates = JSON.parse(value)
+            } catch(e) {
+                 terminal7.log("failed to parse gates", value, e)
+                gates = []
+            }
+            gates.forEach((g) => {
+                g.store = true
+                this.addGate(g).e.classList.add("hidden")
             })
-        if (!localStorage.getItem('welcomed')) {
-            this.notify(WELCOME_MESSAGE)
-            localStorage.setItem('welcomed', 'indeed')
         }
         // window.setInterval(_ => this.periodic(), 2000)
         App.addListener('appStateChange', state => {
             if (!state.isActive) {
-                if (window.BackgroundTask) {
-                    // We're getting suspended. disengage.
-                    let taskId = BackgroundTask.beforeExit(async () => {
-                        console.log("Benched. Disengaging from all gates")
-                        this.disengage(() => {
-                            console.log("finished disengaging")
-                            this.clearTimeouts()
-                            BackgroundTask.finish({taskId})
-                        })
+                // We're getting suspended. disengage.
+                let taskId = BackgroundTask.beforeExit(async () => {
+                    terminal7.log("Benched. Disengaging from all gates")
+                    this.disengage(() => {
+                        terminal7.log("finished disengaging")
+                        this.clearTimeouts()
+                        BackgroundTask.finish({taskId})
                     })
-                }
+                })
             }
             else {
                 // We're back! ensure we have the latest network status and 
                 // reconnect to the active gate
-                console.log("Active ☀️")
+                terminal7.log("Active ☀️")
                 this.clearTimeouts()
                 Network.getStatus().then(s => this.updateNetworkStatus(s))
             }
@@ -239,24 +272,92 @@ export class Terminal7 {
             ev => {
                 var area = document.getElementById("edit-conf")
                 this.confEditor.save()
-                Clipboard.write({string: area.value});
+                Clipboard.write({string: area.value})
                 this.clear()
             })
-        console.log('waiting for certs...',)
-        let certs = await this.getCertificates()
-        console.log('got certs', certs)
-        if (!certs || certs.length == 0) {
-            await this.generateCertificate()
-            await this.storeCertificate()
+        // peerbook button and modal
+        modal = document.getElementById("peerbook-modal")
+        modal.querySelector(".close").addEventListener('click',
+            ev => this.clear() )
+        modal.querySelector(".save").addEventListener('click',
+            ev => {
+                this.setPeerbook()
+                this.clear()
+            })
+        // get the fingerprint and connect to peerbook
+        this.getFingerprint().then(_ => {
+            if (this.certificates.length > 0) 
+                this.pbVerify()
+            else {
+                this.generateCertificate().then(_ => {
+                    this.storeCertificate().then(_ => {
+                        this.pbVerify()
+                    })
+                })
+            }
+        })
+        var invited = await Storage.get({key: 'invitedToPeerbook2'})
+        if (invited.value == null) {
+            modal = document.getElementById("peerbook-modal")
+            modal.querySelector('[name="peername"]').value =
+                this.conf.peerbook.peer_name
+            modal.classList.remove("hidden")
+            Storage.set({key: 'invitedToPeerbook2', value: 'indeed'})
         }
         // Last one: focus
         this.focus()
     }
-    toggleSettings(ev) {
+    async setPeerbook() {
+        var e   = document.getElementById("peerbook-modal"),
+            dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE,
+            email = e.querySelector('[name="email"]').value,
+            peername = e.querySelector('[name="peername"]').value
+        if (email == "")
+            return
+        dotfile += `
+[peerbook]
+email = "${email}"
+peer_name = "${peername}"\n`
+
+        Storage.set({key: "dotfile", value: dotfile})
+        this.loadConf(TOML.parse(dotfile))
+        e.classList.add("hidden")
+        this.notify("Your email was added to the dotfile")
+    }
+    pbVerify() {
+        var email = this.conf.peerbook.email,
+            host = this.conf.net.peerbook
+
+        if (typeof host != "string" || typeof email != "string")
+            return
+
+        this.getFingerprint().then(fp => {
+            fetch(`https://${host}/verify`,  {
+                headers: {"Content-Type": "application/json"},
+                method: 'POST',
+                body: JSON.stringify({kind: "terminal7",
+                    name: this.conf.peerbook.peer_name,
+                    email: email,
+                    fp: fp
+                })
+            }).then(response => {
+                if (response.ok)
+                    return response.json()
+                if (response.status == 409) {
+                    var e = document.getElementById("reset-cert"),
+                        pbe = document.getElementById("reset-cert-error")
+                    pbe.innerHTML = response.data 
+                    e.classList.remove("hidden")
+                }
+                throw new Error(`verification failed: ${response.data}`)
+            }).then(m => this.onPBMessage(m))
+        })
+    }
+    async toggleSettings(ev) {
         var modal   = document.getElementById("settings-modal"),
             button  = document.getElementById("dotfile-button"),
             area    =  document.getElementById("edit-conf"),
-            conf    =  localStorage.getItem("dotfile") || DEFAULT_DOTFILE
+            conf    =  (await Storage.get({key: "dotfile"})).value || DEFAULT_DOTFILE
 
         area.value = conf
 
@@ -290,7 +391,7 @@ export class Terminal7 {
         document.getElementById("dotfile-button").classList.remove("on")
         this.confEditor.save()
         this.loadConf(TOML.parse(area.value))
-        localStorage.setItem("dotfile", area.value)
+        Storage.set({key: "dotfile", value: area.value})
         this.cells.forEach(c => {
             if (typeof(c.setTheme) == "function")
                 c.setTheme(this.conf.theme)
@@ -298,6 +399,7 @@ export class Terminal7 {
         document.getElementById("settings-modal").classList.add("hidden")
         this.confEditor.toTextArea()
         this.confEditor = null
+        this.pbVerify()
 
     }
     /*
@@ -373,7 +475,7 @@ export class Terminal7 {
         if (type == "move") {
             if (this.gesture == null) {
                 let rect = pane.e.getBoundingClientRect()
-                console.log(x, y, rect)
+                this.log(x, y, rect)
                 // identify pan event on a border
                 if (Math.abs(rect.x - x) < this.borderHotSpotSize)
                     this.gesture = "panborderleft"
@@ -385,7 +487,7 @@ export class Terminal7 {
                     this.gesture = "panborderbottom"
                 else 
                     return
-                console.log(`identified: ${this.gesture}`)
+                this.log(`identified: ${this.gesture}`)
             } 
             if (this.gesture.startsWith("panborder")) {
                 let where = this.gesture.slice(9),
@@ -394,7 +496,7 @@ export class Terminal7 {
                             : x / document.body.offsetWidth
                 if (dest > 1.0)
                     dest = 1.0
-                console.log(`moving ${where} border of #${pane.id} to ${dest}`)
+                this.log(`moving ${where} border of #${pane.id} to ${dest}`)
                 pane.layout.moveBorder(pane, where, dest)
             }
             this.lastT = ev.changedTouches
@@ -431,7 +533,7 @@ export class Terminal7 {
             this.onTouch("move", ev), false)
     }
     /*
-     * Terminal7.addGate is used to add a gate to a host.
+     * Terminal7.a.ddGate is used to add a gate to a host.
      * the function ensures the gate has a unique name adds the gate to
      * the `gates` property, stores and returns it.
      */
@@ -449,20 +551,21 @@ export class Terminal7 {
             p.addr = `${addr}:7777`
 
         this.gates.forEach(i => {
-            if (props.name == i.name)
+            if (props.name == i.name) {
+                i.online = props.online
                 nameFound = true
+            }
         })
         if (nameFound) {
             return "Gate name is not unique"
         }
 
         let g = new Gate(p)
-        console.log(`adding ${g.user}@${g.addr} & saving gates`)
         this.gates.push(g)
         g.open(this.e)
         return g
     }
-    storeGates() { 
+    async storeGates() { 
         let out = []
         this.gates.forEach((h) => {
             if (h.store) {
@@ -472,8 +575,8 @@ export class Terminal7 {
                     name:h.name, windows: ws, store: true})
             }
         })
-        console.log("Storing gates:", out)
-        localStorage.setItem('gates', JSON.stringify(out))
+        this.log("Storing gates:", out)
+        await Storage.set({key: 'gates', value: JSON.stringify(out)})
     }
     clear() {
         this.e.querySelectorAll('.temporal').forEach(e => e.remove())
@@ -559,6 +662,7 @@ export class Terminal7 {
             gate.connect()
         })
         e.querySelector(".close").addEventListener('click', ev => {
+            gate.clear()
             terminal7.goHome()
         })
         this.e.appendChild(e)
@@ -601,7 +705,7 @@ export class Terminal7 {
                         this.notify(`Failed the connect. Maybe ${gate.addr} is wrong`)
                 else
                     this.notify("Wrong password")
-                console.log("ssh failed to connect", ev)
+                this.log("ssh failed to connect", ev)
             })
     }
     onNoSignal(gate) {
@@ -632,6 +736,7 @@ export class Terminal7 {
         })
         e.querySelector(".reconnect").addEventListener('click', ev => {
             this.clear()
+            gate.clear()
             gate.connect()
         })
         this.e.appendChild(e)
@@ -663,6 +768,7 @@ export class Terminal7 {
     clearTimeouts() {
         this.timeouts.forEach(t => window.clearTimeout(t))
         this.timeouts = []
+        this.gates.forEach(g => g.updateID = null)
     }
     periodic() {
         var now = new Date()
@@ -688,19 +794,28 @@ export class Terminal7 {
              else 
                 callCB()
         }, 10)
+        if (this.ws != null) {
+            this.ws.onopen = undefined
+            this.ws.onmessage = undefined
+            this.ws.onerror = undefined
+            this.ws.onclose = undefined
+            this.ws.close()
+            this.ws = null
+        }
         callCB()
     }
     updateNetworkStatus (status) {
         let cl = document.getElementById("connectivity").classList,
             offl = document.getElementById("offline").classList
         this.netStatus = status
-        console.log(`updateNetwrokStatus: ${status.connected}`)
+        this.log(`updateNetwrokStatus: ${status.connected}`)
         if (status.connected) {
             cl.remove("failed")
             offl.add("hidden")
-            this.clear()
             if (this.activeG)
                 this.activeG.connect()
+            else 
+                this.pbVerify()
         }
         else {
             offl.remove("hidden")
@@ -720,61 +835,60 @@ export class Terminal7 {
         this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1
         this.conf.net.iceServer = this.conf.net.ice_server ||
             "stun:stun2.l.google.com:19302"
+        this.conf.net.peerbook = this.conf.net.peerbook ||
+            "pb.terminal7.dev"
         this.conf.net.timeout = this.conf.net.timeout || 3000
         this.conf.net.retries = this.conf.net.retries || 3
+        if (!this.conf.peerbook) this.conf.peerbook = {}
+        if (!this.conf.peerbook.peer_name)
+            Device.getInfo().then(i =>
+                this.conf.peerbook.peer_name = `${i.name}'s ${i.model}`)
     }
     // gets the will formatted fingerprint from the current certificate
     getFingerprint() {
-        console.log(this.certificates[0]);
-        var f = this.certificates[0].getFingerprints()[0]
-        return `${f.algorithm} ${f.value.toUpperCase()}`
-    }
-    // gets the certificate from indexDB. If they are not there, create them
-    async getCertificates() {
-        console.log('Opening DB 0')
-        if (this.certificates)
-            return this.certificates
-        console.log('Opening DB')
-        let db = null
-        try {
-            let db = await openDB("t7", 1, { 
-                upgrade(db) {
-                    console.log('Upgrade')
-                    db.createObjectStore('certificates', {keyPath: 'id',
-                        autoIncrement: true})
-                },
-                blocked() {
-                    console.log('Blocked')
-                },
-            })
-            console.log('Got DB', db)
-            let tx = db.transaction("certificates"),
-            store = tx.objectStore("certificates")
-            let certificates = await store.getAll()
-            this.certificates = certificates
-            db.close()
-            return this.certificates
-        } catch {
-            console.log(`got an error opening db ${e}`)
-            if (db) {
-                db.close()
+        // gets the certificate from indexDB. If they are not there, create them
+        return new Promise(resolve => {
+            if (this.certificates) {
+                var cert = this.certificates[0].getFingerprints()[0]
+                resolve(cert.value.toUpperCase().replaceAll(":", ""))
             }
-        }
-        return null
+            openDB("t7", 1, { 
+                    upgrade(db) {
+                        db.createObjectStore('certificates', {keyPath: 'id',
+                            autoIncrement: true})
+                    },
+            }).then(db => {
+                let tx = db.transaction("certificates"),
+                    store = tx.objectStore("certificates")
+                 store.getAll().then(certificates => {
+                    this.certificates = certificates
+                    db.close()
+                    var cert = certificates[0].getFingerprints()[0]
+                    resolve(cert.value.toUpperCase().replaceAll(":", ""))
+                 }).catch(e => {
+                    this.log(`got a db error getting the fp: ${e}`)
+                    resolve(e)
+                })
+            }).catch(e => {
+                db.close()
+                this.log(`got an error opening db ${e}`)
+                resolve(e)
+            })
+        })
     }
     generateCertificate() {
         return new Promise(resolve=> {
-            console.log('generating certs')
+            this.log('generating the certificate')
             RTCPeerConnection.generateCertificate({
               name: "ECDSA",
               namedCurve: "P-256",
               expires: 31536000000
             }).then(cert => {
-                console.log("Generated cert", cert)
+                this.log("Generated cert", cert)
                 this.certificates = [cert]
                 resolve(this.certificates)
             }).catch(e => {
-                console.log(`failed generating cert ${e}`)
+                this.log(`failed generating cert ${e}`)
                 resolve(null)
             })
         })
@@ -794,12 +908,12 @@ export class Terminal7 {
                 store.add(c).then(_ => {
                     db.close()
                     resolve(this.certificates[0]).catch(e => {
-                        console.log(`got an error storing cert ${e}`)
+                        this.log(`got an error storing cert ${e}`)
                         resolve(null)
                     })
                 })
             }).catch(e => {
-                console.log (`got error from open db ${e}`)
+                this.log (`got error from open db ${e}`)
                 db.close()
                 resolve(null)
             })
@@ -819,5 +933,121 @@ export class Terminal7 {
         else
             this.focus()
         // TODO: When at home remove the "on" from the home butto
+    }
+    pbSend(m) {
+        // null message are used to trigger connection, ignore them
+        if (m != null) {
+            if (this.ws != null && this.ws.readyState == WebSocket.OPEN) {
+                this.log("sending to pb:", m)
+                this.ws.send(JSON.stringify(m))
+                return
+            }
+            PBPending.push(m)
+        }
+        this.wsConnect()
+    }
+    wsConnect() {
+        var email = this.conf.peerbook.email
+        if ((this.ws != null) || ( typeof email != "string")) return
+        this.getFingerprint().then(fp => {
+            var host = this.conf.net.peerbook,
+                name = this.conf.peerbook.peer_name,
+                url = encodeURI(`wss://${host}/ws?fp=${fp}&name=${name}&kind=terminal7&email=${email}`),
+                ws = new WebSocket(url)
+            this.ws = ws
+            ws.onmessage = ev => {
+                var m = JSON.parse(ev.data)
+                this.log("got ws message", m)
+                this.onPBMessage(m)
+            }
+            ws.onerror = ev => {
+                // TODO: Add some info avour the error
+                this.notify("\uD83D\uDCD6 WebSocket Error")
+            }
+            ws.onclose = ev => {
+                ws.onclose = undefined
+                ws.onerror = undefined
+                ws.onmessage = undefined
+                this.ws = null
+
+            }
+            ws.onopen = ev => {
+                this.log("on open ws", ev)
+                if (this.pbSendTask == null)
+                    this.pbSendTask = this.run(_ => {
+                        PBPending.forEach(m => {
+                            this.log("sending ", m)
+                            this.ws.send(JSON.stringify(m))})
+                        this.pbSendTask = null
+                        PBPending = []
+                    }, 10)
+            }
+        })
+    }
+    onPBMessage(m) {
+        if (m["code"] !== undefined) {
+            this.notify(`\uD83D\uDCD6 ${m["text"]}`)
+            return
+        }
+        if (m["peers"] !== undefined) {
+            this.notify("\uD83D\uDCD6 Got a fresh server list")
+            m["peers"].forEach(p => {
+                if ((p.kind == "webexec") && p.verified) 
+                    this.addGate(p)
+            })
+            return
+        }
+        if (m["verified"] !== undefined) {
+            if (!m["verified"])
+                this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
+            return
+        }
+        var g = this.gates.find(g => g.fp == m.source_fp)
+        if (typeof g != "object") {
+            this.log("received bad gate", m)
+            return
+        }
+        if (m.candidate !== undefined) {
+            g.pc.addIceCandidate(m.candidate).catch(e =>
+                g.notify(`ICE candidate error: ${e}`))
+            return
+        }
+        if (m.answer !== undefined ) {
+            var answer = JSON.parse(atob(m.answer))
+            g.peerConnect(answer)
+            return
+        }
+        if (m.peer_update !== undefined) {
+            g.online = m.peer_update.online
+            return
+        }
+    }
+    log (...args) {
+        var line = ""
+        args.forEach(a => line += JSON.stringify(a) + " ")
+        console.log(line)
+        this.logBuffer.push(line)
+    }
+    async dumpLog() {
+        var data = "",
+            suffix = new Date().toISOString().replace(/[^0-9]/g,""),
+            path = `terminal7_${suffix}.log`
+        while (this.logBuffer.length > 0) {
+            data += this.logBuffer.shift() + "\n"
+        }
+        Clipboard.write({string: data})
+        this.notify("Log copied to clipboard")
+        /* TODO: wwould be nice to store log to file, problme is 
+         * Storage pluging failes
+        try { 
+            await Filesystem.writeFile({
+                path: path,
+                data: data,
+                directory: FilesystemDirectory.Documents
+            })i
+        } catch(e) { 
+            terminal7.log(e)
+        }
+        */
     }
 }

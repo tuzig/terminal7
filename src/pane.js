@@ -109,15 +109,6 @@ export class Pane extends Cell {
         })
         return this.t
     }
-    // updateBufferPosition() {
-    //     var v
-    //     const b = this.t.buffer.active,
-    //           pos = this.t.getSelectionPosition()
-    //     if (pos !== undefined)
-    //         v = `[${pos.startRow}/${b.length}]`
-    //     else
-    //         v = `[${b.baseY + b.cursorY + 1}/${b.length}]`
-    // }
     setTheme(theme) {
         this.t.setOption("theme", theme)
     }
@@ -138,7 +129,12 @@ export class Pane extends Cell {
         var oldr = this.t.rows,
             oldc = this.t.cols,
             ret = false
-            
+
+        // there's no point in fitting when in the middle of a restore
+        //  it happens in the eend anyway
+        if (this.gate.marker != -1) {
+            return
+        }
         try {
             this.fitAddon.fit()
         } catch {
@@ -147,7 +143,7 @@ export class Pane extends Cell {
                 terminal7.run(this.fit, 20*this.retries)
             }
             else {
-                console.log(`fit failed ${this.retries} times. giving up`)
+                terminal7.log(`fit failed ${this.retries} times. giving up`)
                 if (cb instanceof Function) cb(null)
             }
             return
@@ -169,7 +165,7 @@ export class Pane extends Cell {
         if (this.t !== undefined)
             this.t.focus()
         else 
-            console.log("can't focus, this.t is undefined")
+            terminal7.log("can't focus, this.t is undefined")
     }
     /*
      * Splitting the pane, receivees a dir-  either "topbottom" or "rightleft"
@@ -229,10 +225,10 @@ export class Pane extends Cell {
         label = this.webexecID?`>${this.webexecID}`:
            `${tSize},${terminal7.conf.exec.shell}`
 
-        console.log(`opening dc with label: "${label}`)
+        terminal7.log(`opening dc with label: "${label}`)
         this.d = this.gate.pc.createDataChannel(label)
         this.d.onclose = e => {
-            console.log(`on dc "${this.webexecID}" close, marker - ${this.gate.marker}`)
+            terminal7.log(`on dc "${this.webexecID}" close, marker - ${this.gate.marker}`)
             this.state = "disconnected"
             if (this.gate.marker == -1)
                 this.close()
@@ -259,7 +255,7 @@ export class Pane extends Cell {
             this.webexecID = parseInt(msg.split(",")[0])
             if (isNaN(this.webexecID)) {
                 this.gate.notify(msg, true)
-                terminal7.logDisplay(true)
+                terminal7.log(`got an error on pane connect: ${msg}`)
                 this.close()
             } else
                 this.gate.onPaneConnected(this)
@@ -274,102 +270,29 @@ export class Pane extends Cell {
         super.toggleZoom()
         this.fit()
     }
+    updateCopyMode() {
+        let b = this.t.buffer.active
+        if (this.cmSY) {
+            terminal7.log(`select: cursor: ${b.cursorX}, ${b.cursorY}
+                                 start: ${this.cmSX}, ${this.cmSY}`)
+            if ((this.cmSY < b.cursorY) ||
+                ((this.cmSY == b.cursorY) && this.cmSX < b.cursorX))
+                this.t.select(this.cmSX, this.cmSY, 
+                               b.cursorX  - this.cmSX
+                              + this.t.cols * (b.cursorY - this.cmSY))
+            else
+                this.t.select(b.cursorX, b.cursorY, 
+                              this.cmSX - b.cursorX
+                              + this.t.cols * (this.cmSY - b.cursorY))
+        }
+        this.updateBufferPosition()
+    }
     /*
      * Pane.handleCopyModeKey(ev) is called on a key press event when the
      * pane is in copy mode. 
      * Copy mode uses vim movment commands to let the user for text, mark it 
      * and copy it.
      */
-    // handleCopyModeKey(ev) {
-    //     let b = this.t.buffer.active,
-    //         updateSelection = false,
-    //         postWrite = () => { this.updateCopyMode() }
-    //     // special handling for numbers
-    //     if (ev.keyCode >=48 && ev.keyCode <= 57) {
-    //         this.cmRep = this.cmRep * 10 + ev.keyCode - 48
-    //         return
-    //     }
-    //     let r = (this.cmRep==0)?1:this.cmRep
-    //     switch (ev.key) {
-    //     case "Enter":
-    //         if (this.t.hasSelection()) {
-    //             Clipboard.write(this.t.getSelection())
-    //             this.cmSY = false
-    //             this.t.clearSelection()
-    //             break
-    //         }
-    //     case "n":
-    //         this.findNext()
-    //         break
-    //     case "f":
-    //         if (ev.ctrlKey)
-    //             this.t.scrollToLine(b.baseY+this.t.rows-2)
-    //         else if (ev.metaKey)
-    //             this.toggleSearch()
-    //         else
-    //             this.notify("TODO: go back a a word")
-    //         break
-    //     case "b":
-    //         if (ev.ctrlKey)
-    //             this.t.scrollToLine(b.baseY-this.t.rows+2)
-    //         else
-    //             this.notify("TODO: go back a a word")
-    //         break
-    //     case "p":
-    //         this.findPrevious()
-    //         break
-    //     case "o":
-    //         if (REGEX_SEARCH) {
-    //             var u = this.t.getSelection()
-    //             Browser.open({url: u})
-    //         }
-    //         break
-    //     case "Escape":
-    //     case "q":
-    //         this.exitCopyMode()
-    //         break
-    //     case "ArrowUp":
-    //     case "k":
-    //         if (r > b.cursorY) {
-    //             // we need to scroll
-    //             this.t.scrollToLine(b.viewportY-r+b.cursorY)
-    //             /*
-    //             for (var i=0; i < r - b.cursorY; i++)
-    //                 this.t.write(aE.scrollDown)
-    //             */
-    //             this.t.write(aE.cursorTo(b.cursorX, 0), postWrite)
-    //         }
-    //         else
-    //             this.t.write(aE.cursorUp(r), postWrite)
-    //         this.updateBufferPosition()
-    //         break
-    //     case "ArrowDown":
-    //     case "j":
-    //         this.t.write(aE.cursorDown(r), postWrite)
-    //         break
-    //     case "ArrowRight":
-    //     case "l":
-    //         this.t.write(aE.cursorForward(r), postWrite)
-    //         break
-    //     case "ArrowLeft":
-    //     case "h":
-    //         this.t.write(aE.cursorBackward(r), postWrite)
-    //         break
-    //     case "?":
-    //     case "/":
-    //         this.showSearch()
-    //         break
-    //     default:
-    //         if (ev.keyCode == 32) {
-    //             this.cmSY = b.cursorY
-    //             this.cmSX = b.cursorX
-    //             console.log(`set cmSX & Y to ${this.cmSX}, ${this.cmSY}`)
-    //         }
-    //         else
-    //             this.gate.notify("TODO: Add copy mode help")
-    //     }
-    //     this.cmRep = 0
-    // }
     /*
      * toggleSearch displays and handles pane search
      * First, tab names are replaced with an input field for the search string
@@ -390,7 +313,6 @@ export class Pane extends Cell {
         // show the search field
         const se = this.gate.e.querySelector(".search-box")
         se.classList.remove("hidden")
-        // this.updateBufferPosition()
         document.getElementById("search-button").classList.add("on")
         // TODO: restore regex search
         let u = se.querySelector("a[href='#find-url']"),
@@ -405,7 +327,6 @@ export class Pane extends Cell {
                 ev.stopPropagation()
                 this.focus()
                 i.value = this.searchTerm = urlRegex
-                // this.handleCopyModeKey({keyCode: 13})
             }
             // TODO: findPrevious does not work well
             f.onclick = _ => this.searchAddon.findPrevious(fileRegex, SEARCH_OPTS)
@@ -437,12 +358,11 @@ export class Pane extends Cell {
         this.copymodeAddon.stop();
         this.t.clearSelection()
         this.t.scrollToBottom()
-        // this.t.write(aE.cursorTo(this.cmX, this.cmY))
         this.focus()
     }
     handleMetaKey(ev) {
         var f = null
-        console.log(`Handling meta key ${ev.key}`)
+        terminal7.log(`Handling meta key ${ev.key}`)
         switch (ev.key) {
         case "c":
             if (this.t.hasSelection()) 
@@ -504,7 +424,11 @@ export class Pane extends Cell {
         case "ArrowDown":
             f = () => this.w.moveFocus("down")
             break
+        case "`":
+            f = () => terminal7.dumpLog()
+            break
         }
+
         if (f != null) {
             f()
             ev.preventDefault()
@@ -589,6 +513,8 @@ export class Pane extends Cell {
         }
         if (this.w.activeP && this.webexecID == this.w.activeP.webexecID)
             cell.active = true
+        if (this.zoomed)
+            cell.zoomed = true
         return cell
     }
 }

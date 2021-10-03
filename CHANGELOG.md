@@ -6,7 +6,107 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.14.2] - 2020/3/10
+  
+## [0.16.3] - 2021/10/1
+
+### Fixed
+
+- fingerprint is now properly displayed
+- static IP connections
+- clearing memory when closing pane
+
+### Changed
+
+- tab name is edited in a modal
+
+## [0.16.2] - 2021/9/3
+
+### Fixed
+
+- help screen doesn't get cropped
+- exit when on zoomed work
+
+## [0.16.1] - 2021/8/15
+
+### Fixed 
+
+- exiting from zoom
+
+## [0.16.0] - 2021/8/11
+
+### Added
+
+- dump debug log to clipboard using META-\`
+- watchdog when connection through peerbook
+
+### Fixed 
+
+- starting up with no gates
+- hiding disconnect model on connect
+- properly handle missing shell
+- properly restoring a zoomed session
+- when control messages sending fails 3 times, show disconnect modal
+
+## [0.15.6] - 2021/5/21
+
+### Added
+
+- secondary nav bar in home with + and reset
+
+### Fixed
+
+- connecting to peerbook only when needed
+
+## [0.15.5] - 2021/5/19
+
+### Fixed
+
+- improved handling of reseted servers
+- latest peerbook protocol 
+- improved messages
+
+## [0.15.4] - 2021/5/4
+
+### Added
+
+- invitation to chat in welcome modal
+- letting the user reset the certificate when associated with another user
+
+### Fixed
+
+- using the apps userDefaults storage instead of the browser's localStorage
+- hiding model when clicking 'X'
+- ssri, an indirect dependecy, was bumped to improved security
+
+## [0.15.3] - 2021/4/26
+
+### Fixed
+
+- notifying unverified peers on their verification
+- using a new local storage key to display the welcome messgae
+- reconnect to peerbook after getting back to the foreground
+
+## [0.15.2] - 2021/4/26
+
+### Fixed 
+
+- welcome dialog
+
+## [0.15.1] - 2021/4/26
+
+### Fixed 
+
+- welcome dialog should show now
+- crashing when dotfile had errors
+- settings change not reconnecting to peerbook
+
+## [0.15.0] - 2021/4/20
+
+### Added 
+
+- supporting peerbook, a signaling server and adderss book
+
+## [0.14.2] - 2021/3/10
 
 ### Fixed
 
@@ -17,7 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cut and border pan work with only single finger
 - two finger scroll doesn't change the font size
 
-## [0.14.1] - 2020/2/23
+## [0.14.1] - 2021/2/23
 
 ### Added
 
@@ -34,7 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - community link is working properly
 - gate doesn't close when there are open windows
 
-## [0.14.0] - 2020/1/21
+## [0.14.0] - 2021/1/21
 
 ### Changed 
 
@@ -42,14 +142,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   authenticate
 
 
-## [0.13.1] - 2020/1/17
+## [0.13.1] - 2021/1/17
 
 ### Fixed 
 
 - pane not closing on shell exit
 - panes not resizing properly when changing to portrait and back
 
-## [0.13.0] - 2020/1/14
+## [0.13.0] - 2021/1/14
 
 ### Added
 
@@ -66,7 +166,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improoved notification wording
 - Focusing on the right window and pane after restore
 
-## [0.12.2] - 2020/1/3
+## [0.12.2] - 2021/1/3
 
 ### Fixed 
 

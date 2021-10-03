@@ -10,7 +10,7 @@ import { Window } from './window.js'
 import { Pane } from './pane.js'
 
 import { Plugins } from '@capacitor/core'
-const { Browser, Clipboard } = Plugins
+const { Browser, Clipboard, Storage } = Plugins
 const ABIT    = 10  // ashort period of time, in milli
 
 /*
@@ -35,11 +35,23 @@ export class Gate {
         // a mapping of refrence number to function called on received ack
         this.onack = {}
         this.breadcrumbs = []
-        this.peer = null
         this.updateID  = null
         this.timeoutID = null
         this.msgs = {}
         this.marker = -1
+        this.fp = props.fp
+        this._online = props.online
+        this.watchDog = null
+    }
+    get online() {
+        return this._online
+    }
+    set online(v) {
+        if (v)
+            this.nameE.parentNode.parentNode.classList.remove("offline")
+        else
+            this.nameE.parentNode.parentNode.classList.add("offline")
+        this._online = v
     }
 
     /*
@@ -77,22 +89,25 @@ export class Gate {
             */
             this.e.appendChild(t)
         }
-        if (!this.store)  {
-            this.nameE = null
-            return
-        }
         // Add the gates' signs to the home page
-        let plusHost = document.getElementById("plus-host")
+        let hostsE = document.getElementById("hosts")
         let li = document.createElement('li'),
             a = document.createElement('a'),
             addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
-        a.addEventListener("click", ev => this.connect())
+        a.addEventListener("click", ev => {
+            if (this.online == false)
+                terminal7.notify(`\uD83D\uDCD6 ${this.name} is offline`)
+            else
+                this.connect()
+        })
         li.classList.add("border")
         this.nameE = document.createElement('h1')
         this.nameE.innerHTML = this.name || this.addr
         a.appendChild(this.nameE)
+        if (this.online == false)
+            li.classList.add("offline")
         li.appendChild(a)
-        plusHost.parentNode.prepend(li)
+        hostsE.prepend(li)
         // TODO: find a cleaner way to transfer the gate to the touch listener
         li.gate = this
         a.gate = this
@@ -116,6 +131,10 @@ export class Gate {
      * edit start the edit-host user-assitance
      */
     edit() {
+        if (typeof(this.fp) == "string") {
+            this.notify("Got peer from \uD83D\uDCD6, connect only")
+            return
+        }
         let editHost = document.getElementById("edit-host")
         editHost.gate = this
         editHost.querySelector('[name="hostaddr"]').value = this.addr
@@ -153,17 +172,27 @@ export class Gate {
      * state changes.
      */
     updateConnectionState(state) {
-        console.log(`updating ${this.name} state to ${state}`)
+        terminal7.log(`updating ${this.name} state to ${state}`)
         if (state == "connected") {
-            this.notify("WebRTC connected")
+            this.notify("Connected")
+            if (this.watchDog != null) {
+                window.clearTimeout(this.watchDog)
+                this.watchDog = null
+            }
+            if (terminal7.ws != null)
+                terminal7.ws.close()
             this.boarding = true
             document.getElementById("downstream-indicator").classList.remove("failed")
+            var m = terminal7.e.querySelector(".disconnect")
+            if (m != null)
+                m.remove()
             // show help for first timer
-            if (!localStorage.getItem("first_gate")) {
-                terminal7.run(terminal7.toggleHelp, 1000)
-                localStorage.setItem("first_gate", "1") 
-            }
-            
+            Storage.get({key: "first_gate"}).then(v => {
+                if (v.value != "1") {
+                    terminal7.run(terminal7.toggleHelp, 1000)
+                    Storage.set({key: "first_gate", value: "1"}) 
+                }
+            })
         }
         else if (state == "disconnected") {
             // TODO: add warn class
@@ -179,7 +208,7 @@ export class Gate {
                 this.stopBoarding()
                 terminal7.onDisconnect(this)
             } else
-                console.log("Ignoring a peer terminal7.cells.forEach(c => event after disconnect")
+                terminal7.log("Ignoring a peer terminal7.cells.forEach(c => event after disconnect")
         }
     }
     /*
@@ -198,6 +227,7 @@ export class Gate {
      * peerConnect connects the webrtc session with the peer
      */
     peerConnect(offer) {
+        this.notify("Connecting")
         let sd = new RTCSessionDescription(offer)
         this.pc.setRemoteDescription(sd)
             .catch (e => {
@@ -212,7 +242,7 @@ export class Gate {
      */
     connect() {
         // do nothing when the network is down
-        if (!terminal7.netStatus.connected)
+        if (!terminal7.netStatus || !terminal7.netStatus.connected)
             return
         // if we're already boarding, just focus
         if (this.boarding) {
@@ -222,7 +252,7 @@ export class Gate {
             return
         }
         this.boarding = true
-        console.log(`connecting to ${this.name}...`)
+        terminal7.log(`connecting to ${this.name}...`)
         // cleanup
         this.pendingCDCMsgs = []
         this.disengagePC()
@@ -235,45 +265,66 @@ export class Gate {
 
         let offer = ""
         this.pc.onicecandidate = ev => {
-            if (ev.candidate && !offer) {
-              offer = btoa(JSON.stringify(this.pc.localDescription))
-              this.notify("Sending connection request")
-              fetch('http://'+this.addr+'/connect', {
-                headers: {"Content-Type": "application/json"},
-                method: 'POST',
-                  body: JSON.stringify({api_version: 0,
-                      offer: offer,
-                      fingerprint: terminal7.getFingerprint()
-                  })
-              }).then(response => {
-                    if (response.status == 401)
-                        throw new Error('unautherized');
-                    if (!response.ok)
-                        throw new Error(
-                          `HTTP POST failed with status ${response.status}`)
-                    return response.text()
-              }).then(data => {
-                    if (!this.verified) {
-                        this.verified = true
-                        terminal7.storeGates()
-                    }
-                    this.peer = JSON.parse(atob(data))
-                    this.peerConnect(this.peer)
-                }).catch(error => {
-                    if (error.message == 'unautherized') 
-                        this.copyFingerprint()
-                    else {
-                        this.notify(`HTTP POST to ${this.addr} failed: ${error}`)
-                        terminal7.onNoSignal(this)
-                    }
-                 })
+            if (typeof(this.fp) == "string") {
+                if (ev.candidate) {
+                    terminal7.pbSend({target: this.fp, candidate: ev.candidate})
+                    if (this.watchDog != null)
+                        window.clearTimeout(this.watchDog)
+                    this.watchDog = terminal7.run(_ => {
+                        this.watchDog = null
+                        terminal7.onDisconnect(this)
+                    }, terminal7.conf.net.timeout)
+                }
+            } else if (!ev.candidate) {
+                offer = btoa(JSON.stringify(this.pc.localDescription))
+                this.notify("Sending connection request")
+                terminal7.getFingerprint().then(fp =>
+                    fetch('http://'+this.addr+'/connect', {
+                        headers: {"Content-Type": "application/json"},
+                        method: 'POST',
+                        body: JSON.stringify({api_version: 0,
+                            offer: offer,
+                            fingerprint: fp
+                        })
+                    }).then(response => {
+                        if (response.status == 401)
+                            throw new Error('unautherized');
+                        if (!response.ok)
+                            throw new Error(
+                              `HTTP POST failed with status ${response.status}`)
+                        return response.text()
+                    }).then(data => {
+                        if (!this.verified) {
+                            this.verified = true
+                            // TODO: store when making real changes
+                            // terminal7.storeGates()
+                        }
+                        var answer = JSON.parse(atob(data))
+                        this.peerConnect(answer)
+                    }).catch(error => {
+                        if (error.message == 'unautherized') 
+                            this.copyFingerprint()
+                        else {
+                            this.notify(`HTTP POST to ${this.addr} failed: ${error}`)
+                            terminal7.onNoSignal(this)
+                        }
+                     })
+                )
             } 
         }
         this.pc.onnegotiationneeded = e => {
-            console.log("on negotiation needed", e)
-            this.pc.createOffer().then(d => this.pc.setLocalDescription(d))
+            terminal7.log("on negotiation needed", e)
+            this.pc.createOffer().then(d => {
+                this.pc.setLocalDescription(d)
+                if (typeof(this.fp) == "string") {
+                    offer = btoa(JSON.stringify(d))
+                    terminal7.log("got offer", offer)
+                    terminal7.pbSend({target: this.fp, offer: offer})
+                }
+            })
         }
         this.openCDC()
+
         if (this.marker == -1)
             this.getLayout()
         else
@@ -303,7 +354,7 @@ export class Gate {
         else {
             // message stays frozen when retrting
             const s = msg.payload || JSON.stringify(msg)
-            console.log("sending ctrl message ", s)
+            terminal7.log("sending ctrl message ", s)
             if (msg.tries == undefined) {
                 msg.tries = 0
                 msg.payload = s
@@ -311,7 +362,7 @@ export class Gate {
                 this.notify(
                      `msg #${msg.message_id} no ACK in ${timeout}ms, trying ${retries-1} more times`)
             if (msg.tries++ < retries) {
-                console.log(`sending ctrl msg ${msg.message_id} for ${msg.tries} time`)
+                terminal7.log(`sending ctrl msg ${msg.message_id} for ${msg.tries} time`)
                 try {
                     this.cdc.send(s)
                 } catch(err) {
@@ -322,6 +373,8 @@ export class Gate {
             } else {
                 this.notify(
                      `#${msg.message_id} tried ${retries} times and given up`)
+                this.stopBoarding()
+                terminal7.onDisconnect(this)
             }
         }
         return msg.message_id
@@ -334,9 +387,14 @@ export class Gate {
                 this.notify("Failed to restore from marker")
                 this.getLayout()
             }
-            else
+            else {
                 this.restoreState(state)
-            terminal7.run(_ => this.marker = -1, 1)
+                terminal7.run(_ => {
+                    this.marker = -1
+                    terminal7.log("resotre done, fitting peers")
+                    this.panes().forEach(p => p.fit())
+                }, 100)
+            }
         }
     }
     /*
@@ -350,6 +408,7 @@ export class Gate {
         this.onack[msgId] = (isNack, state) => {
             if (isNack) {
                 this.notify("FAILED to get payload")
+                this.marker = -1
                 this.restoreState({})
             } else {
                 this.restoreState(state)
@@ -358,7 +417,7 @@ export class Gate {
         }
     }
     /*
-     * returns a list of panes
+     * returns an array of panes
      */
     panes() {
         var r = []
@@ -368,15 +427,18 @@ export class Gate {
         })
         return r
     }
+    reset() {
+        this.clear()
+        this.restoreState(null)
+    }
     restoreState(state) {
         if ((this.marker != -1) && (this.windows.length > 0)) {
             // if there's a marker it's a reconnect, re-open all gate's dcs
             // TODO: validate the current layout is like the state
-            console.log("Restoring with marker, open dcs")
+            terminal7.log("Restoring with marker, open dcs")
             this.panes().forEach(p => p.openDC())
         } else if (state && (state.windows.length > 0)) {
-            this.notify("Restoring layout")
-            console.log("Restoring layout: ", state)
+            terminal7.log("Restoring layout: ", state)
             this.clear()
             state.windows.forEach(w =>  {
                 let win = this.addWindow(w.name)
@@ -387,11 +449,11 @@ export class Gate {
             })
         } else if ((state == null) || (state.windows.length == 0)) {
             // create the first window and pane
-            console.log("Fresh state, creating the first pane")
+            terminal7.log("Fresh state, creating the first pane")
             this.activeW = this.addWindow("", true)
         }
         else
-            console.log(`not restoring. ${state}, ${wl}`)
+            terminal7.log(`not restoring. ${state}, ${wl}`)
 
         if (!this.activeW)
             this.activeW = this.windows[0]
@@ -401,7 +463,7 @@ export class Gate {
      * Adds a window, opens it and returns it
      */
     addWindow(name, createPane) {
-        console.log(`adding Window: ${name}`)
+        terminal7.log(`adding Window: ${name}`)
         let id = this.windows.length
         let w = new Window({name:name, gate: this, id: id})
         this.windows.push(w)
@@ -424,12 +486,12 @@ export class Gate {
     openCDC() {
         var cdc = this.pc.createDataChannel('%')
         this.cdc = cdc
-        console.log("<opening cdc")
+        terminal7.log("<opening cdc")
         cdc.onopen = () => {
             if (this.pendingCDCMsgs.length > 0)
                 // TODO: why the time out? why 100mili?
                 terminal7.run(() => {
-                    console.log("sending pending messages:", this.pendingCDCMsgs)
+                    terminal7.log("sending pending messages:", this.pendingCDCMsgs)
                     this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m), ABIT)
                     this.pendingCDCMsgs = []
                 }, 100)
@@ -444,7 +506,7 @@ export class Gate {
                 window.clearTimeout(this.msgs[i])
                 delete this.msgs[i]
                 const handler = this.onack[i]
-                console.log("got cdc message:",  msg)
+                terminal7.log("got cdc message:",  msg)
                 if (msg.type == "nack") {
                     document.getElementById("downstream-indicator").classList.add("failed")
                     this.nameE.classList.add("failed")
@@ -459,7 +521,7 @@ export class Gate {
                     delete this.onack[msg.args.ref]
                 }
                 else
-                    console.log("Got a cdc ack with no handler", msg)
+                    terminal7.log("Got a cdc ack with no handler", msg)
             }
         }
         return cdc
@@ -471,6 +533,8 @@ export class Gate {
         console.trace("Clearing gate")
         this.e.querySelector(".tabbar-names").innerHTML = ""
         this.e.querySelectorAll(".window").forEach(e => e.remove())
+        if (this.activeW && this.activeW.activeP.zoomed)
+            this.activeW.activeP.toggleZoom()
         this.windows = []
         this.breadcrumbs = []
         this.msgs = {}
@@ -484,7 +548,7 @@ export class Gate {
             this.pc.onconnectionstatechange = undefined
             this.pc.onmessage = undefined
             this.pc.onnegotiationneeded = undefined
-            console.log("Gate disengaged")
+            terminal7.log("Gate disengaged")
             this.pc = null
         }
     }
@@ -518,7 +582,7 @@ export class Gate {
         })
         return { windows: wins }
     }
-    sendState(cb) {
+    sendState() {
         if (this.updateID == null)
             this.updateID = terminal7.run(_ => { 
                 let msg = {
@@ -527,9 +591,6 @@ export class Gate {
                 }
                 this.updateID = null
                 this.sendCTRLMsg(msg)
-                if (cb) {
-                    cb()
-                }
             }, 100)
     }
     onPaneConnected(pane) {
@@ -541,13 +602,11 @@ export class Gate {
     }
     copyFingerprint() {
         let ct = document.getElementById("copy-fingerprint"),
-            addr = this.addr.substr(0, this.addr.indexOf(":")),
-            cert =  terminal7.certificates[0].getFingerprints()[0]
-
-        cert = `${cert.algorithm} ${cert.value.toUpperCase()}`
+            addr = this.addr.substr(0, this.addr.indexOf(":"))
+        terminal7.getFingerprint().then(fp =>
+                ct.querySelector('[name="fingerprint"]').value = fp)
         document.getElementById("ct-address").innerHTML = addr
         document.getElementById("ct-name").innerHTML = this.name
-        ct.querySelector('[name="fingerprint"]').value = cert
         ct.classList.remove("hidden")
         ct.querySelector(".copy").addEventListener('click', ev => {
             ct.classList.add("hidden")
@@ -557,12 +616,14 @@ export class Gate {
         })
         ct.querySelector("form").addEventListener('submit', ev => {
             ev.preventDefault()
-            terminal7.ssh(ct,  this,
-                `cat <<<"${cert}" >> ~/.webexec/authorized_tokens`,
-                _ => {
-                    ct.classList.add("hidden")
-                    this.connect()
-                })
+            terminal7.getFingerprint().then(fp =>
+                terminal7.ssh(ct,  this,
+                    `cat <<<"${fp}" >> ~/.webexec/authorized_tokens`,
+                    _ => {
+                        ct.classList.add("hidden")
+                        this.connect()
+                    })
+            )
         })
  
         ct.querySelector(".close").addEventListener('click',  ev =>  {
@@ -606,7 +667,7 @@ export class Gate {
      * and closes the peer connection.
      */
     disengage(cb) {
-        console.log(`disengaging. boarding ${this.boarding}`)
+        terminal7.log(`disengaging. boarding ${this.boarding}`)
         if (!this.boarding) {
             if (cb) cb()
             return
@@ -622,7 +683,7 @@ export class Gate {
         this.boarding = false
         this.onack[id] = (nack, payload) => {
             this.marker = parseInt(payload)
-            console.log("got a marker", this.marker)
+            terminal7.log("got a marker", this.marker)
             if (cb) cb()
         }
     }

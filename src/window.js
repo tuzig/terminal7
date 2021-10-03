@@ -64,7 +64,7 @@ export class Window {
         }
         if (this.activeP && this.activeP.zoomed) {
             this.e.classList.add("hidden")
-            this.activeP.zoomedE.classList.remove("hidden")
+            terminal7.zoomedE.classList.remove("hidden")
         }
         else
             this.e.classList.remove("hidden")
@@ -105,6 +105,8 @@ export class Window {
                 let p = l.addPane(cell)
                 if (cell.active)
                     this.activeP = p
+                if (cell.zoomed)
+                    p.toggleZoom()
             }
         })
         return l
@@ -117,35 +119,36 @@ export class Window {
     }
     /*
      * Replace the window name with an input field and updates the window
-     * name when the field is changed. If we lose focus, we drop the changes.
-     * In any case we remove the input field.
+     * name when the field is changed. 
      */
     rename() {
         let e = this.nameE
-        e.innerHTML= `<input size='10' name='window-name'>`
-        let i = e.children[0]
-        i.focus()
-        // On losing focus, replace the input element with the name
-        // TODO: chrome fires too many blur events and wher remove
-        // the input element too soon
-        i.addEventListener('blur', (e) => {
-            let p = e.target.parentNode
-            this.gate.sendState()
+        const se = this.gate.e.querySelector(".rename-box")
+        se.classList.remove("hidden")
+        const textbox = this.gate.e.querySelector("#name-input")
+        textbox.value = e.innerHTML
+        textbox.focus()
+        const that = this
+
+        var handler = function (event) {
+            if (event.keyCode == 13 || event.type != "keyup") {
+                console.log(event)
+            that.gate.sendState()
+            that.activeP.focus()
+            se.classList.add("hidden")
             terminal7.run(() => {
-                p.innerHTML = p.w.name
-                this.activeP.focus()
+                e.w.name = event.target.value
+                e.innerHTML = event.target.value
             }, ABIT)
-        }, { once: true })
-        i.addEventListener('change', (e) => {
-            console.log("change", e)
-            let p = e.target.parentNode
-            p.w.name = e.target.value
-            this.gate.sendState()
-            terminal7.run(() => {
-                p.innerHTML = p.w.name
-                this.activeP.focus()
-            }, 0)
-        })
+
+            textbox.removeEventListener('change', handler)
+            textbox.removeEventListener('blur', handler)
+        }
+        }
+
+        textbox.addEventListener('keyup', handler)
+        textbox.addEventListener('change', handler)
+        textbox.addEventListener('blur', handler)
     }
     close() {
         // remove the window name
@@ -153,8 +156,8 @@ export class Window {
         // remove the element, panes and tabbar gone as they are childs
         this.e.remove()
         // if we're zoomed in, the pane is a child of body
-        if (this.activeP.zoomed)
-            document.body.removeChild(this.activeP.zoomedE)
+        if (this.activeP && this.activeP.zoomed)
+            this.activeP.toggleZoom()
         this.gate.windows.splice(this.gate.windows.indexOf(this), 1)
         // if we removed a window it means the user can add a window
         this.gate.e.querySelector(".add-tab").classList.remove("off")

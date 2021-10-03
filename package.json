@@ -1,6 +1,6 @@
 {
   "name": "terminal7",
-  "version": "0.14.2",
+  "version": "0.16.3",
   "description": "A touchable terminal emulator & multiplexer tablet app",
   "main": "src/index.js",
   "private": true,
@@ -19,6 +19,7 @@
     "publish": null
   },
   "dependencies": {
+    "@capacitor-community/http": "^0.3.0",
     "@capacitor/cli": "<3",
     "@capacitor/core": "<3",
     "@capacitor/ios": "<3",
@@ -29,20 +30,20 @@
     "glob": "^7.1.6",
     "hammerjs": "^2.0.8",
     "idb": "^6.0.0",
-    "npm": "<7",
+    "npm": "^6.14.14",
     "uuid": "^8.3.1",
     "web": "0.0.2",
     "websocket-extensions": ">=0.1.4",
-    "xterm": "<5",
+    "xterm": "4.10.0",
     "xterm-addon-fit": "^0.3.0",
     "xterm-addon-search": "^0.7.0",
     "xterm-webfont": "^2.0.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",
-    "css-loader": "^3.5.2",
+    "css-loader": "^5.2.4",
     "file-loader": "^6.1.0",
-    "karma": "^5.2.1",
+    "karma": "^6.3.2",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^3.1.0",
     "karma-cli": "^2.0.0",
@@ -57,12 +58,12 @@
     "puppeteer": "^3.1.0",
     "source-map-loader": "^1.1.0",
     "style-loader": "^1.1.4",
-    "ts-loader": "^8.1.0",
-    "typescript": "^4.2.3",
+    "ts-loader": "<9",
+    "typescript": "<5",
     "url-loader": "^4.1.0",
-    "webpack": "^4.42.1",
+    "webpack": "<5",
     "webpack-cli": "^3.3.11",
-    "webpack-dev-server": "^3.11.0"
+    "webpack-dev-server": "<4"
   },
   "scripts": {
     "dev": "npm run build && npx cap serve",

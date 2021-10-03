@@ -102,6 +102,7 @@ dd { margin-inline-start: 0; }
     border-style: solid;
     border-radius: 6px;
 }
+footer { padding-top: 1em; }
 p a, footer a {
     text-decoration: underline;
 }
@@ -117,7 +118,7 @@ a {
     background-color: #271D30;
     padding: 2%;
     position: fixed;
-    bottom: 40pt;
+    bottom: 54pt;
     left: 50%;
     transform: translate(-50%, 0);
     width: 40em;
@@ -278,13 +279,30 @@ nav .on { color: #00FA00 !important; }
     z-index: 9;
     margin: 0 auto;
     padding: 4px;
-    bottom: 40pt;
+    bottom: 54pt;
     left: 50%;
     width: 60em;
     max-width: 96%;
     transform: translate(-50%, 0);
     border-color: #F952F9;
 }
+
+.rename-box {
+    position: fixed;
+    display: inline-block;
+    box-sizing: border-box;
+    background-color: #271D30;
+    z-index: 9;
+    margin: 0 auto;
+    padding: 4px;
+    bottom: 54pt;
+    left: 50%;
+    width: 30em;
+    max-width: 96%;
+    transform: translate(-50%, 0);
+    border-color: #F952F9;
+}
+
 nav.tabbar-search {
     padding: 0.2em 1em;
     display: flex;
@@ -299,10 +317,14 @@ nav.tabbar-search {
 .tabbar-search button.search-close {
     border-right: 0;
 }
+
+button.rename-close {
+    border-right: 0;
+}
 .tabbar-search>input {
     padding: 0 0.5em;
     border-right: 1px solid #373702;
-    font-size: 18pt;
+    font-size: 16pt;
     flex: 10 1 auto;
     width: 5em;
     line-height: 24pt;
@@ -341,10 +363,6 @@ nav.tabbar-search {
 }
 #version a {
     text-decoration: underline;
-}
-#plus-host  i {
-    font-size: 60px;
-    line-height: 70px;
 }
 #hosts-wrapper {
     float:right;
@@ -404,7 +422,8 @@ label {
 }
 #log {
     position: absolute;
-    bottom: 110px;
+    right : 0px;
+    bottom: 72px;
     margin: 0;
     padding: 0;
     z-index: 6;
@@ -417,7 +436,6 @@ label {
     opacity: 0;
     transition: all .75s ease;
     transform: translate(100%, 0);
-    right : 4px;
 }
 #log.show {
     opacity: 0.8;
@@ -487,6 +505,9 @@ td {
     position: absolute;
     z-index: 3;
 }    
+.offline {
+    opacity: 60%;
+}
 #hosts .pressed { box-shadow: 4px 4px 5px 0 #F952F9; }
 .tabbar-names .pressed { font-weight: bold; }
 #offline {
@@ -500,6 +521,8 @@ td {
 #help-home, #help-gate {
     visibility: hidden;
     opacity: 0;
+    display: flex;
+    max-height: calc(100% - 56px);
     position: fixed;
     left: 0;
     bottom: 56px;
@@ -514,4 +537,30 @@ td {
 }
 #help-gate {
     border-top: 2px dashed #F952F9;
+}
+.compact-fields {
+    max-width: 20em;
+    margin-right: auto;
+    margin-left: auto;
+}
+#peerbook-modal p {
+    text-align: left;
+}
+input[name="fingerprint"] {
+    width: 25em; 
+    margin: 8px auto;
+}
+.home-page-second-bar {
+    display: block;
+    width: 100% ;
+}
+.home-page-second-bar button {
+     width: 10%;
+ }
+ #refresh {
+     border-left: 1px solid #373702;
+     float: right;
+ }
+#plus-host  {
+    float: left;
 }

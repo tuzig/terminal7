@@ -1,8 +1,8 @@
-<!doctype html>
-<html>
+<!DOCTYPE HTML>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, user-scalable=no" />
+    <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no">
   <title>Terminal 7</title>
   <script src="terminal7.bundle.js"></script>
 </head>
@@ -16,27 +16,30 @@
           <h1>Welcome to Terminal 7 </h1>
           <div id="version" target="_blank">
               <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md">
-                  version 0.14.2
+                  version 0.16.3
               </a>
           </div>
           <h2>Please choose your destination:</h2>
-          <div id="hosts-wrapper"><ul id="hosts">
-              <li id="plus-host" class="border">
-                  <a> <i class="f7-icons">plus</i></a>
-              </li>
-          </ul></div>
+          <div id="hosts-wrapper">
+            <ul id="hosts"> </ul>
+          </div>
       </div>
       <div id="add-host" class="hidden modal border" >
           <form>
-            <h2>Add a Host</h2>
+            <h2>Add a Server</h2>
             <label for="uname">Address</label>
             <input type="text" placeholder="IP or host name" name="hostaddr"
-                required="required">
+                required>
             <label for="uname">Name</label>
             <input type="text" placeholder="Enter Hostname" name="hostname"
-                required="required">
-            <input type="checkbox" checked="checked" name="remember">
+                required>
+            <input type="checkbox" checked name="remember">
             <label for="remember">Remember host</label>
+            <footer>
+            <a href="https://github.com/tuzig/webexec/#install">
+              server installation instructions
+            </a>.
+            </footer>
             <nav class="two-buttons">
                 <button type="button" class="close">
                     <i class="f7-icons close">xmark</i>
@@ -54,8 +57,7 @@
                 Most likely because the fingerprint is not in:
                 <b id="ct-confile"> ~/.webexec/authorized_tokens</b>
             </p>
-            <input type="text" name="fingerprint" readonly
-                style="width: 25em; margin: 8px auto;">
+            <input type="text" name="fingerprint" readonly >
             <p>To proceed, you can either copy the fingerprint using another
                 terminal or we can use ssh to take care of that for you:
             </p>
@@ -95,20 +97,54 @@
             </a>
           </footer>
           <nav class="three-buttons">
-              <button type="button" class="close"><i class="f7-icons">xmark</i>
-              <button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i>
-              <button type="button" class="save"><i class="f7-icons">floppy_disk</i>
+              <button type="button" class="close"><i class="f7-icons">
+                      xmark</i></button>
+              <button type="button" class="copy"><i class="f7-icons">
+                      doc_on_clipboard</i></button>
+              <button type="button" class="save"><i class="f7-icons">
+                      floppy_disk</i></button>
           </nav>
+      </div>
+      <div id="peerbook-modal" class="hidden modal border">
+        <h1>Greetings &amp; Salutations &#x1F596;</h1>
+        <p>
+        Welcome to our beta. To start using Terminal7 you will need a server
+        with the webexec program running. You can use any *Nix machine as your 
+        server. Installation is prety simple, just follow the
+        <a href="https://github.com/tuzig/webexec/#install">instructions</a>.
+        </p>
+          <h2>&#x1F4D6; Peerbook Invitation &#x1F4D6;</h2>
+        <p>
+          peerbook is an online signalling server that connects Terminal7
+          to behind-the-NAT servers.
+          peerbook keeps a private, secure address book so you don't need
+          to key addresses or copy tokens.
+          <form action="#">
+              <div class="compact-fields">
+              <label for="email">email</label>
+              <input type="text" placeholder="leave empty to skip and use static addresses" name="email"
+                required>
+              <label for="peername">Peer's name</label>
+              <input type="text" name="peername" required>
+              </div>
+              <footer>* your email will only be used to authorize peers</footer>
+          <nav class="two-buttons">
+              <button type="button" class="close"><i class="f7-icons">
+                      xmark</i></button>
+              <button type="submit" class="save"><i class="f7-icons">
+                      floppy_disk</i></button>
+          </nav>
+          </form>
       </div>
       <div id="edit-host" class="hidden modal border" >
           <form id="edit-host-form">
             <h2>Edit Host</h2>
             <label for="uname">Address</label>
             <input type="text" placeholder="IP or host name" name="hostaddr"
-                required="required">
+                required>
             <label for="uname">Name</label>
             <input type="text" placeholder="Enter Hostname" name="hostname"
-                required="required">
+                required>
             <nav class="four-buttons">
                 <button type="button" class="close"><i class="f7-icons">xmark</i></button>
                 <button type="button" class="trash"><i class="f7-icons">bin_xmark</i></button>
@@ -124,26 +160,26 @@
       <div id="help-gate">
         <map name="help-gate-links">
             <area shape="rect" coords="2000,0,2439,300"  alt="githublink"
-                  href="https://github.com/tuzig/terminal7" target="_top"/>
+                  href="https://github.com/tuzig/terminal7" target="_top">
             <area shape="rect" coords="2000,500,2439,640"  alt="server side"
-                  href="https://github.com/tuzig/webexec" target="_top"/>
+                  href="https://github.com/tuzig/webexec" target="_top">
             <area shape="rect" coords="2000,640,2439,770"  alt="change log"
                   href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md"
-                  target="_top"/>
+                  target="_top">
             <area shape="rect" coords="2000,770,2439,895" alt="community"
-                  href="https://discord.gg/DTKN2kGu"
-                  target="_top"/>
+                  href="https://discord.gg/GneEDB7ZZQ"
+                  target="_top">
             <area shape="rect" coords="2000,895,2439,1020"  alt="security"
                   href="https://github.com/tuzig/webexec/blob/master/docs/security.md"
-                  target="_top"/>
+                  target="_top">
             <area shape="rect" coords="2000,1020,2439,1145"  alt="support"
-                  href="mailto:support@tuzig.com"/>
+                  href="mailto:support@tuzig.com">
         </map>
-          <img usemap='#help-gate-links' src="img/help-gate.png"
-            alt="gate help screen" width="100%"/>
+          <img usemap="#help-gate-links" src="img/help-gate.png"
+            alt="gate help screen" width="100%">
       </div>
       <div id="keys-help" class="hidden modal border" >
-          <table>
+          <table><tbody>
         <tr> <td>Toggle Fullscreen</td> <td>⌘&nbsp;Z</td> </tr>
         <tr> <td>Move Focus</td> <td>⌘&nbsp;&larr;&uarr;&darr;&rarr;</td> </tr>
         <tr> <td>Search Pane Buffer</td> <td>⌘&nbsp;/</td> </tr>
@@ -158,10 +194,31 @@
         <tr> <td>Toggle Log</td> <td>⌘&nbsp;L</td> </tr>
         <tr> <td>Close Pane</td> <td>⌘&nbsp;D</td> </tr>
         <tr> <td>Reset Connection</td> <td>⌘&nbsp;R</td> </tr>
-            </table>
+        <tr> <td>Dump log to clipboard</td> <td>⌘&nbsp;`</td> </tr>
+              </tbody></table>
       </div>
+      <div id="reset-cert" class="hidden modal border" >
+        <p>peerbook returned an error:</p>
+        <code id="reset-cert-error"> </code>
+        <p>
+            You can either edit the settings and change the email or press the
+            reset button to generate a new certificate.
+            </p>
+            <nav class="two-buttons">
+                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+                <button type="button" class="reset"><i class="f7-icons">arrow_2_circlepath</i></button>
+            </nav>
+      </div>
+    <div class="tabbar bar">
+      <nav class="home-page-second-bar">
+          <button type="button" class="add-tab" id="plus-host" >
+                <i class="f7-icons">
+                  plus</i></button>
+          <button type="button" id="refresh"><i class="f7-icons">
+                  arrow_2_circlepath</i></button>
+      </nav>
+    </div>
   </div>
-   
   <div id="navbar" class="bar">
       <nav class="six-buttons">
           <button type="button" id="home-button" class="on"><i class="f7-icons">house</i></button>
@@ -180,9 +237,8 @@
 </div>
     <template id="disconnect-template">
        <div class="disconnect modal border temporal"><form>
-          <h1></h1>
-          <p>Please check the board for details.</p>
-          <p>How would you like to proceed?</p>
+          <h1>Gate disconnected</h2>
+          <p style="text-align:center;">How would you like to proceed?</p>
           <nav class="two-buttons">
               <button type="button" class="close"><i class="f7-icons close">xmark</i></button>
               <button type="submit"><i class="f7-icons reconnect">arrow_2_circlepath</i></button>
@@ -213,44 +269,55 @@
     </template>
     <!-- every gate creates his own tabbar based on the template below -->
     <template id="gate-template">
-        <div class="windows-container">
-        </div>
-        <div class="hidden search-box border">
-            <nav class="tabbar-search">
-                <button class="search-close"><i class="f7-icons">xmark</i></button>
-                <input type="text" name="search-term">
-                <!-- TODO: make url & file search work 
-                <a href="#find-url" class="hidden">URL</a>
-                <a href="#find-file" class="hidden">File</a>
-                -->
-                <button class="search-up"><i class="f7-icons">arrowtriangle_up</i></button>
-                <button class="search-down"><i class="f7-icons">arrowtriangle_down</i></button>
-            </nav>
-        </div>
+    <div class="windows-container">
+    </div>
+    <div class="hidden search-box border">
+      <nav class="tabbar-search">
+        <button type="button" class="search-close"><i class="f7-icons">xmark</i></button>
+        <input type="text" name="search-term">
+        <!-- TODO: make url & file search work 
+        <a href="#find-url" class="hidden">URL</a>
+        <a href="#find-file" class="hidden">File</a>
+        -->
+        <button type="button" class="search-up"><i class="f7-icons">arrowtriangle_up</i></button>
+        <button type="button" class="search-down"><i class="f7-icons">arrowtriangle_down</i></button>
+      </nav>
+    </div>
+    <div class="hidden rename-box border">
+      <nav class="tabbar-search">
+        <button type="button" class="rename-close"><i class="f7-icons">xmark</i></button>
+        <input type="text" name="new-name" id="name-input">
+      </nav>
+    </div>
 
-        <template id="divider-template">
-            <div class="divider hidden">
-                <img width="8" height="44" src="img/divider.png" />
-            </div>
-        </template>
-        <div class="tabbar bar"> 
-        <nav class="tabbar-names-nav">
-            <button class="add-tab"><i class="f7-icons">plus</i></button>
-            <nav class="tabbar-names internal">
-            </nav>
-            <button class="reset"><i class="f7-icons">arrow_2_circlepath</i></button>
-        </nav>
+    <template id="divider-template">
+        <div class="divider hidden">
+            <img width="8" height="44" src="img/divider.png" alt="a divider">
         </div>
+    </template>
+    <div class="tabbar bar">
+      <nav class="tabbar-names-nav">
+          <button type="button" class="add-tab"><i class="f7-icons">
+                  plus</i></button>
+          <nav class="tabbar-names internal">
+          </nav>
+          <button type="button" class="reset"><i class="f7-icons">
+                  arrow_2_circlepath</i></button>
+      </nav>
+    </div>
     </template>
     <template id="reset-gate-template">
       <div class="reset-gate hidden modal border" >
           <p>What kind of reset whould you like?</p>
           <dl>
-             <dt><button class="text-button sizes">Sizes</button></dt>
+             <dt><button type="button" class="text-button sizes">
+                     Sizes</button></dt>
               <dd>Fitting terminals and refreshing all panes' sizes</dd>
-              <dt><button class="text-button channels">Data Channels</button></dt>
-              <dd>Replacing all data channels with fresh ones</dd> 
-              <dt><button class="text-button all">Connection</button></dt>
+              <dt><button type="button" class="text-button channels">
+                      Data Channels</button></dt>
+              <dd>Replacing all data channels with fresh ones</dd>
+              <dt><button type="button" class="text-button all">
+                      Connection</button></dt>
               <dd>Drop the peer connection and re-connect</dd>
           </dl>
       </div>

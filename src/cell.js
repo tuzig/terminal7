@@ -17,7 +17,6 @@ export class Cell {
         this.xoff = props.xoff || 0
         this.yoff = props.yoff || 0
         this.zoomed = false
-        this.zoomedE = null
     }
     /*
      * Creates the HTML elment that will store our dimensions and content
@@ -84,7 +83,7 @@ export class Cell {
         })
 
         h.on('pinch', e => {
-            console.log(e.additionalEvent, e.distance, e.velocityX, e.velocityY, e.direction, e.isFinal)
+            terminal7.log(e.additionalEvent, e.distance, e.velocityX, e.velocityY, e.direction, e.isFinal)
             if (e.deltaTime < this.lastEventT)
                 this.lastEventT = 0
             if ((e.deltaTime - this.lastEventT < 200) ||
@@ -128,9 +127,16 @@ export class Cell {
      * Cell.close removes a cell's elment and removes itself from the window
      */
     close() {
+        // zero canvas dimension to free it
+        this.e.querySelectorAll("canvas").forEach(canvas => {
+            canvas.height = 0;
+            canvas.width = 0;
+        })
+
         this.e.remove()
         if (this.layout)
             this.layout.onClose(this)
+        this.gate.sendState()
     }
     styleZoomed(e) {
         let H = document.body.offsetHeight
@@ -141,10 +147,14 @@ export class Cell {
     toggleZoom() {
         if (this.zoomed) {
             // Zoom out
-            let te = this.zoomedE.children[0].children[0]
+            if (this.resizeObserver != null) {
+                this.resizeObserver.disconnect()
+                this.resizeObserver  = null
+            }
+            let te = terminal7.zoomedE.children[0].children[0]
             this.e.appendChild(te)
-            document.body.removeChild(this.zoomedE)
-            this.zoomedE = null
+            document.body.removeChild(terminal7.zoomedE)
+            terminal7.zoomedE = null
             this.w.e.classList.remove("hidden")
         } else {
             let c = document.createElement('div'),
@@ -157,12 +167,13 @@ export class Cell {
             this.styleZoomed(e)
             this.catchFingers(e)
             document.body.appendChild(c)
-            this.zoomedE = c
+            terminal7.zoomedE = c
             this.w.e.classList.add("hidden")
-            const resizeObserver = new ResizeObserver(_ => this.styleZoomed(e))
-            resizeObserver.observe(e);
+            this.resizeObserver = new ResizeObserver(_ => this.styleZoomed(e))
+            this.resizeObserver.observe(e);
         }
         this.zoomed = !this.zoomed
+        this.gate.sendState()
         terminal7.run(_ => this.focus(), ABIT)
     }
 }

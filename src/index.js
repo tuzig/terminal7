@@ -11,12 +11,9 @@ const { StatusBar } = Plugins
  */
 document.addEventListener("DOMContentLoaded", () => {
     // do nothing when running a test
-    if (window.StatusBar) {
-        StatusBar.hide()
-    }
     if (window.__html__ == undefined) {
         window.terminal7 = new Terminal7()
-        console.log("openening terminal7")
-        terminal7.open(document.getElementById('terminal7'))
+        terminal7.open()
     }
+    StatusBar.hide().catch(_=> terminal7.log("StatusBar is not sypported") )
 })

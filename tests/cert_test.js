@@ -1,4 +1,4 @@
-/*! Terminal 7 Ceritificate tests
+/* Terminal 7 Ceritificate tests
  *
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
@@ -20,15 +20,14 @@ describe("certificates", () => {
     })
     after(() => terminal7.clearTimeouts())
     it("can be create, stored and read", async () => {
-        let certs = await t.getCertificates()
-        expect(certs.length).to.equal(0)
-        certs = await t.generateCertificate()
+        let fp = await t.getFingerprint()
+        expect(t.certificates.length).to.equal(0)
+        let certs = await t.generateCertificate()
         expect(certs.length).to.equal(1)
         await t.storeCertificate()
-        certs = await t.getCertificates()
-        expect(certs.length).to.equal(1)
-        let fingerprint = t.getFingerprint()
-        expect(fingerprint.length).to.equal(103)
-        expect(fingerprint.startsWith("sha-256")).to.be.true
+        fp = await t.getFingerprint()
+        expect(t.certificates.length).to.equal(1)
+        let fingerprint = await t.getFingerprint()
+        expect(fingerprint.length).to.equal(64)
     })
 })
