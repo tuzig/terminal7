@@ -67,7 +67,8 @@ export class Pane extends Cell {
         this.searchAddon = new SearchAddon()
         this.copymodeAddon = new CopymodeAddon()
         this.copymodeAddon.searchAddon = this.searchAddon;
-        this.copymodeAddon.onstop = () => { console.log('STOPPED'); }
+        this.copymodeAddon.onstop = () => 
+            terminal7.run(_ => this.focus(), 10)
 
         // there's a container div we need to get xtermjs to fit properly
         this.e.appendChild(con)
@@ -78,9 +79,6 @@ export class Pane extends Cell {
         this.t.loadAddon(this.fitAddon)
         this.t.loadAddon(this.searchAddon)
         this.t.loadAddon(this.copymodeAddon)
-        this.copymodeAddon.onstop = _ => {
-            this.focus()
-        }
         this.createDividers()
         this.t.loadWebfontAndOpen(con).then(_ => {
             this.fit(pane => { if (pane != null) pane.openDC() })
