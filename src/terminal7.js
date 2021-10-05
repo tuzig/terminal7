@@ -49,9 +49,6 @@ cut_min_distance = 80
 cut_min_speed = 2.5
 # no pinch when scrolling -> y velocity higher than XTZ px/ms
 pinch_max_y_velocity = 0.1
-
-[features]
-copy_mode = true
 `
 
 export class Terminal7 {
@@ -202,9 +199,6 @@ export class Terminal7 {
                 this.metaPressStart = Date.now()
                 this.run(_ => {
                     let e = document.getElementById('keys-help')
-                    if (!this.conf.features["copy_mode"])
-                        e.querySelectorAll('.copy_mode').forEach(i =>
-                            i.style.display = "none")
                     if (Date.now() - this.metaPressStart > 987)
                         e.classList.remove('hidden')
                 }, terminal7.conf.ui.quickest_press)
@@ -825,7 +819,6 @@ peer_name = "${peername}"\n`
     }
     loadConf(conf) {
         this.conf = conf
-        this.conf.features = this.conf.features || {}
         this.conf.ui = this.conf.ui || {}
         this.conf.net = this.conf.net || {}
         this.conf.ui.quickest_press = this.conf.ui.quickest_press || 1000
