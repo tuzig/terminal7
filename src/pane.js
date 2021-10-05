@@ -78,6 +78,9 @@ export class Pane extends Cell {
         this.t.loadAddon(this.fitAddon)
         this.t.loadAddon(this.searchAddon)
         this.t.loadAddon(this.copymodeAddon)
+        this.copymodeAddon.onstop = _ => {
+            this.focus()
+        }
         this.createDividers()
         this.t.loadWebfontAndOpen(con).then(_ => {
             this.fit(pane => { if (pane != null) pane.openDC() })
@@ -393,10 +396,8 @@ export class Pane extends Cell {
             f = () => this.split("rightleft")
             break
         case "[":
-            console.log('COPYMODE START?', terminal7.conf.features);
-            f = () => (terminal7.conf.features.copy_mode)
-                      ?this.copymodeAddon.start()
-                      :null
+            console.log('starting copy more on Cmd-[')
+            f = () => this.copymodeAddon.start()
             break
         case "f":
             f = () => this.toggleSearch()

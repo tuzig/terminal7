@@ -1,5 +1,5 @@
 import { Plugins } from '@capacitor/core'
-import { Terminal, ITerminalAddon, ISelectionPosition } from 'xterm';
+import { Terminal, ITerminalAddon, ISelectionPosition, IBufferCellPosition } from 'xterm';
 import { SearchAddon } from 'xterm-addon-search';
 
 const { Clipboard } = Plugins
@@ -7,25 +7,29 @@ const { Clipboard } = Plugins
 export class CopymodeAddon implements ITerminalAddon {
     
     isActive = false;
-    endSelection = false;
+    endSelection: boolean | null = null;
     t: Terminal = null;
     selection: ISelectionPosition = null;
     keyListener: any;
     searchAddon: SearchAddon = null;
+    cursor: IBufferCellPosition = null
+    marking: boolean = false;
     onstop: () => void = null;
 
     activate(terminal: Terminal): void {
         this.t = terminal;
         this.t.onSelectionChange(() => this.selectionChanged())
         this.keyListener = (ev: KeyboardEvent) => this.keyPress(ev);
+        document.addEventListener('keydown', this.keyListener)
     }
 
     dispose() {
+        document.removeEventListener('keydown', this.keyListener)
     }
 
     selectionChanged() {
         const selection = this.t.getSelectionPosition();
-        this.selection = selection;
+        this.marking = selection != null
         if (selection) {
             this.start();
         } else {
@@ -36,13 +40,47 @@ export class CopymodeAddon implements ITerminalAddon {
     keyPress(ev: KeyboardEvent) {
         const key = ev.key;
         const buffer = this.t.buffer.active;
+        var x, y, newX, newY;
         if (!this.isActive) {
             return;
         }
+        // chose the x & y we're going to change
+        if (!this.marking) {
+            x = this.cursor.x
+            y =  this.cursor.y; 
+        }
+        else if (this.endSelection) {
+            x = this.selection.endColumn
+            y = this.selection.endRow; 
+        }
+        else {
+            x = this.selection.startColumn;
+            y = this.selection.startRow; 
+        }
+        newX = x
+        newY = y
         switch(key) {
-            case '[':
+            // space is used to toggle the marking state
             case ' ':
-                this.endSelection = !this.endSelection;
+                if (!this.marking) {
+                    // entering marking mode, start the selection on the cursor
+                    // with unknown direction
+                    this.selection = {
+                        startColumn: this.cursor.x,
+                        endColumn: this.cursor.x,
+                        startRow: this.cursor.y,
+                        endRow: this.cursor.y
+                    }
+                    this.endSelection = null
+                } else {
+                    // copy the selection start|end to the cursor
+                    this.cursor = {
+                        x: this.endSelection?this.selection.endColumn:this.selection.startColumn,
+                        y: this.endSelection?this.selection.endRow:this.selection.startRow
+                    }
+                }
+                this.marking = !this.marking;
+                this.updateSelection();
                 break;
             case 'Enter':
                 this.complete();
@@ -63,60 +101,86 @@ export class CopymodeAddon implements ITerminalAddon {
                 break;
             case 'ArrowLeft':
             case 'h':
-                if (!this.endSelection) {
-                    if (this.selection.startColumn > 0) {
-                        this.selection.startColumn -= 1;
-                    }
-                } else {
-                    if (this.selection.endColumn > 0) {
-                        this.selection.endColumn -= 1;
-                    }    
-                }
-                this.updateSelection();
+                if (x > 0) 
+                    newX = x - 1;
+                if (this.marking && (this.endSelection == null))
+                    this.endSelection = false;
                 break;
             case 'ArrowRight':
             case 'l':
-                if (!this.endSelection) {
-                    if (this.selection.startColumn < this.t.cols) {
-                        this.selection.startColumn += 1;
-                    }
-                } else {         
-                    if (this.selection.startColumn < this.t.cols) {
-                        this.selection.endColumn += 1;
-                    }              
-                }
-                this.updateSelection();
+                if (x < this.t.cols - 2)
+                    newX = x + 1;
+                if (this.marking && (this.endSelection == null))
+                    this.endSelection = true;
                 break;
             case 'ArrowDown':
             case 'j':
-                if (!this.endSelection) {
-                    if (this.selection.startRow < buffer.cursorY) {
-                        this.selection.startRow += 1;
-                    }
-                } else {         
-                    if (this.selection.endRow < buffer.cursorY) {
-                        this.selection.endRow += 1;
-                    }                   
-                }
-                this.updateSelection();
+                if (y < this.t.rows + buffer.viewportY - 1)
+                    newY = y + 1;
+                else 
+                    this.t.scrollLines(1)
+                if (this.marking && (this.endSelection == null))
+                    this.endSelection = true;
                 break;
             case 'ArrowUp':
             case 'k':
-                if (!this.endSelection) {
-                    if (this.selection.startRow > 0) {
-                        this.selection.startRow -= 1;
-                    }    
-                } else { 
-                    if (this.selection.endRow > 0) {
-                        this.selection.endRow -= 1;
-                    }                           
-                }
-                this.updateSelection();
+                if (y > buffer.viewportY)
+                    newY = y - 1
+                else 
+                    this.t.scrollLines(-1)
+                if (this.marking && (this.endSelection == null))
+                    this.endSelection = false
                 break;
         }
+        if ((newY != y) || (newX != x)) {
+            if (!this.marking) {
+                this.cursor.x = newX;
+                this.cursor.y = newY; 
+            }
+            else if (this.endSelection) {
+                if ((newY < this.selection.startRow) || 
+                   ((newY == this.selection.startRow)
+                    && (newX < this.selection.startColumn))) {
+                    this.endSelection = false;
+                    this.selection.endRow = this.selection.startRow;
+                    this.selection.endColumn = this.selection.startColumn;
+                    this.selection.startRow = newY;
+                    this.selection.startColumn = newX;
+                } else {
+                    this.selection.endColumn = newX;
+                    this.selection.endRow = newY;
+                }
+            }
+            else {
+                if ((newY > this.selection.endRow) ||
+                    ((newY == this.selection.endRow)
+                     && (newX > this.selection.endColumn))) {
+                    this.endSelection = true;
+                    this.selection.startRow = this.selection.endRow;
+                    this.selection.startColumn = this.selection.endColumn;
+                    this.selection.endRow = newY;
+                    this.selection.endColumn = newX;
+                } else {
+                    this.selection.startColumn = newX;
+                    this.selection.startRow = newY;
+                }
+            }
+        }
+        this.updateSelection();
+        this.t.blur()
     }
 
     updateSelection() {
+        // maybe we've got just a cursor?
+        if (!this.marking) {
+            console.log("using selection to draw a cursor at", this.cursor);
+            this.t.setOption("selectionStyle", "mark-start")
+            this.t.select(this.cursor.x, this.cursor.y, 1);
+            return
+        }
+        // we've got a selection!
+        this.t.setOption("selectionStyle",
+            this.endSelection?"mark-end":"mark-start");
         if (!this.endSelection) {
             if (this.selection.startRow > this.selection.endRow) {
                 this.selection.endRow = this.selection.startRow;                
@@ -141,40 +205,34 @@ export class CopymodeAddon implements ITerminalAddon {
         if (selectionLength === 0) {
             selectionLength = 1;
         }
+        console.log("updating selection", this.selection.startColumn, this.selection.startRow, selectionLength);
         this.t.select(this.selection.startColumn, this.selection.startRow, selectionLength);
-        this.selectionChanged();
     }
 
     start() {
-        console.log('COPYMODE START');
+        console.log('starting copy mode', this.isActive);
         if (!this.isActive) {
-            if (!this.t.getSelectionPosition()) {
-                const buffer = this.t.buffer.active;
-                this.selection = {
-                    startColumn: buffer.cursorX,
-                    endColumn: buffer.cursorX,
-                    startRow: buffer.cursorY,
-                    endRow: buffer.cursorY
-                }
-                this.updateSelection();
-                return;
-            } else {
-                this.selection = this.t.getSelectionPosition();
-            }
             this.isActive = true;
-            this.endSelection = false;
-            document.addEventListener('keydown', this.keyListener)
+            this.selection = this.t.getSelectionPosition();
+            if (!this.selection) {
+                const buffer = this.t.buffer.active;
+                this.cursor = {x: buffer.cursorX,
+                               y: buffer.cursorY + buffer.baseY};
+                this.marking = false;
+            } else {
+                this.marking = true;
+            }
+            this.endSelection = null;
             document.querySelector('#copy-mode-indicator').classList.remove('hidden');
             this.t.blur();
         }
     }
 
     stop() {
-        console.log('COPYMODE STOP');
         if (this.isActive) {
             this.isActive = false;
-            document.removeEventListener('keydown', this.keyListener)
             document.querySelector('#copy-mode-indicator').classList.add('hidden');
+            this.t.clearSelection()
             if (this.onstop) {
                 this.onstop();
             }
@@ -182,11 +240,9 @@ export class CopymodeAddon implements ITerminalAddon {
     }
 
     complete () {
-        console.log('COPYMODE COMPLETE');
         if (this.t.hasSelection()) {
             Clipboard.write({string: this.t.getSelection()})
                 .then(() => {
-                    this.t.clearSelection();
                     this.t.focus();
                     this.stop();
                 })
