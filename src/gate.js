@@ -77,12 +77,10 @@ export class Gate {
                 this.activeW.activeP.focus()
             })
             t.querySelector(".search-up").addEventListener('click', _ =>
-                this.activeW.activeP.findNext(
-                    this.e.querySelector("input[name='search-term']").value))
+                this.activeW.activeP.findNext())
 
             t.querySelector(".search-down").addEventListener('click', _ => 
-                this.activeW.activeP.findPrevious(
-                    this.e.querySelector("input[name='search-term']").value))
+                this.activeW.activeP.findNext())
             /* TODO: handle the bang
             let b = t.querySelector(".bang")
             b.addEventListener('click', (e) => {new window from active pane})

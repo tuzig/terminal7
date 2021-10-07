@@ -8,7 +8,6 @@ import { Plugins } from '@capacitor/core'
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
-import { CopymodeAddon } from './copy-mode/copymode-addon.ts'
 import { Cell } from './cell.js'
 import { fileRegex, urlRegex } from './utils.js'
 
@@ -35,9 +34,10 @@ export class Pane extends Cell {
         this.webexecID = props.webexec_id || null
         this.fontSize = props.fontSize || 12
         this.theme = props.theme || terminal7.conf.theme
-        this.searchVisible = false
-        this.cmRep = 0
-        this.cmSY = false
+        this.copyMode = false
+        this.cmAtEnd = null
+        this.cmCursor = null
+        this.cmMarking = false
         this.dividers = []
     }
 
@@ -65,10 +65,6 @@ export class Pane extends Cell {
         })
         this.fitAddon = new FitAddon()
         this.searchAddon = new SearchAddon()
-        this.copymodeAddon = new CopymodeAddon()
-        this.copymodeAddon.searchAddon = this.searchAddon;
-        this.copymodeAddon.onstop = () => 
-            terminal7.run(_ => this.focus(), 10)
 
         // there's a container div we need to get xtermjs to fit properly
         this.e.appendChild(con)
@@ -78,8 +74,8 @@ export class Pane extends Cell {
         // the canvas gets the touch event and the nadler needs to get back here
         this.t.loadAddon(this.fitAddon)
         this.t.loadAddon(this.searchAddon)
-        this.t.loadAddon(this.copymodeAddon)
         this.createDividers()
+        this.t.onSelectionChange(() => this.selectionChanged())
         this.t.loadWebfontAndOpen(con).then(_ => {
             this.fit(pane => { if (pane != null) pane.openDC() })
 
@@ -100,9 +96,19 @@ export class Pane extends Cell {
                     return true
             })
             this.t.onData(d =>  {
-                if (!this.copymodeAddon.isActive && (this.d != null)
-                    && (this.d.readyState == "open"))
-                    this.d.send(d)
+                if (this.copyMode) {
+                    this.handleCMKey(d)
+                    return
+                }
+                if (this.d == null) {
+                    this.gate.notify("Peer is disconnected")
+                    return
+                }
+                if (this.d.readyState != "open") {
+                    this.gate.notify(`data channel is {this.d.readyState}`)
+                    returC
+                }
+                this.d.send(d)
             })
             const resizeObserver = new ResizeObserver(_ => this.fit())
             resizeObserver.observe(this.e);
@@ -271,54 +277,23 @@ export class Pane extends Cell {
         super.toggleZoom()
         this.fit()
     }
-    updateCopyMode() {
-        let b = this.t.buffer.active
-        if (this.cmSY) {
-            terminal7.log(`select: cursor: ${b.cursorX}, ${b.cursorY}
-                                 start: ${this.cmSX}, ${this.cmSY}`)
-            if ((this.cmSY < b.cursorY) ||
-                ((this.cmSY == b.cursorY) && this.cmSX < b.cursorX))
-                this.t.select(this.cmSX, this.cmSY, 
-                               b.cursorX  - this.cmSX
-                              + this.t.cols * (b.cursorY - this.cmSY))
-            else
-                this.t.select(b.cursorX, b.cursorY, 
-                              this.cmSX - b.cursorX
-                              + this.t.cols * (this.cmSY - b.cursorY))
-        }
-        this.updateBufferPosition()
-    }
-    /*
-     * Pane.handleCopyModeKey(ev) is called on a key press event when the
-     * pane is in copy mode. 
-     * Copy mode uses vim movment commands to let the user for text, mark it 
-     * and copy it.
-     */
-    /*
-     * toggleSearch displays and handles pane search
-     * First, tab names are replaced with an input field for the search string
-     * as the user keys in the chars the display is scrolled to their first
-     * occurences on the terminal buffer and the user can use line-mode vi
-     * keys to move around, mark text and yank it
-     */
-    toggleSearch() {
-        this.searchVisible = !this.searchVisible
-        if (this.searchVisible) {
-            this.copymodeAddon.stop();
-            this.showSearch()
-        }
-        else
-            this.exitSearch() 
-    }
-    showSearch() {
+    showSearch(searchDown) {
         // show the search field
+        this.searchDown = searchDown || false
         const se = this.gate.e.querySelector(".search-box")
         se.classList.remove("hidden")
         document.getElementById("search-button").classList.add("on")
         // TODO: restore regex search
-        let u = se.querySelector("a[href='#find-url']"),
-            f = se.querySelector("a[href='#find-file']"),
+        let up = se.querySelector(".search-up"),
+            down = se.querySelector(".search-down"),
             i = se.querySelector("input[name='search-term']")
+        if (searchDown) {
+            up.classList.add("hidden")
+            down.classList.remove("hidden")
+        } else {
+            up.classList.remove("hidden")
+            down.classList.add("hidden")
+        }
         if (REGEX_SEARCH) {
             i.setAttribute("placeholder", "regex here")
             u.classList.remove("hidden")
@@ -340,14 +315,32 @@ export class Pane extends Cell {
             if (ev.keyCode == 13) {
                 ev.preventDefault()
                 ev.stopPropagation()
+                this.copyMode = true
+                this.hideSearch()
+                this.findNext(i.value)
                 this.focus()
-                this.searchTerm = ev.target.value
-                this.findPrevious();
-                this.hideSearch();
-                this.copymodeAddon.start();
             }
         }
         i.focus()
+    }
+    enterCopyMode(marking) {
+        if (marking)
+            this.cmMarking = true
+        if (!this.copyMode) {
+            this.copyMode = true
+            this.cmInitCursor()
+            this.cmAtEnd = null
+            document.querySelector('#copy-mode-indicator').classList.remove('hidden')
+        }
+    }
+    exitCopyMode() {
+        if (this.copyMode) {
+            this.copyMode = false
+            document.querySelector('#copy-mode-indicator').classList.add('hidden')
+            this.t.clearSelection()
+            this.t.scrollToBottom()
+            this.focus()
+        }
     }
     hideSearch() {
         const se = this.gate.e.querySelector(".search-box")
@@ -356,10 +349,7 @@ export class Pane extends Cell {
     }
     exitSearch() {
         this.hideSearch();
-        this.copymodeAddon.stop();
-        this.t.clearSelection()
-        this.t.scrollToBottom()
-        this.focus()
+        this.exitCopyMode();
     }
     handleMetaKey(ev) {
         var f = null
@@ -394,11 +384,11 @@ export class Pane extends Cell {
             f = () => this.split("rightleft")
             break
         case "[":
-            console.log('starting copy more on Cmd-[')
-            f = () => this.copymodeAddon.start()
+   
+            f = () => this.enterCopyMode()
             break
         case "f":
-            f = () => this.toggleSearch()
+            f = () => this.showSearch()
             break
         // next two keys are on the gate level
         case "t":
@@ -436,20 +426,22 @@ export class Pane extends Cell {
         }
         return true
     }
-    findPrevious(searchTerm) {
-        if (searchTerm != undefined)
-            this.searchTerm = searchTerm
-        if (this.searchTerm != undefined
-            && !this.searchAddon.findNext(this.searchTerm, SEARCH_OPTS))
-            this.gate.notify(`Couldn't find "${this.searchTerm}"`)
-    }
     findNext(searchTerm) {
         if (searchTerm != undefined)
             this.searchTerm = searchTerm
-        if (this.searchTerm != undefined
-            && !this.searchAddon.findPrevious(this.searchTerm, SEARCH_OPTS))
-            // TODO: it's too intrusive. use bell?
-            this.gate.notify(`Couldn't find "${this.searchTerm}"`)
+
+        if (this.searchTerm != undefined) {
+            if (this.searchDown)
+                if (!this.searchAddon.findNext(this.searchTerm, SEARCH_OPTS))
+                    this.gate.notify(`Couldn't find "${this.searchTerm}"`)
+                else 
+                    this.enterCopyMode(true)
+            if (!this.searchDown)
+                if (!this.searchAddon.findPrevious(this.searchTerm, SEARCH_OPTS))
+                    this.gate.notify(`Couldn't find "${this.searchTerm}"`)
+                else 
+                    this.enterCopyMode(true)
+        }
     }
     /*
      * createDividers creates a top and left educationsl dividers.
@@ -516,5 +508,189 @@ export class Pane extends Cell {
             cell.zoomed = true
         return cell
     }
+    // listening for terminal selection changes
+    selectionChanged() {
+        const selection = this.t.getSelectionPosition()
+ 
+        if (selection != null)
+            this.enterCopyMode(true)
+    }
+    handleCMKey(key) {
+        const buffer = this.t.buffer.active
+        var x, y, newX, newY,
+            selection = this.t.getSelectionPosition()
+        // chose the x & y we're going to change
+        if (!this.cmMarking) {
+            // cursor is set on start so we use it as default selection
+            if (!this.cmCursor)
+                this.cmInitCursor()
+            x = this.cmCursor.x
+            y =  this.cmCursor.y; 
+            selection = {
+                startColumn: x,
+                endColumn: x,
+                startRow: y,
+                endRow: y
+            }
+        }
+        else if (this.cmAtEnd) {
+            x = selection.endColumn
+            y = selection.endRow; 
+        }
+        else {
+            x = selection.startColumn
+            y = selection.startRow; 
+        }
+        newX = x
+        newY = y
+        switch(key) {
+            // space is used to toggle the marking state
+            case ' ':
+                if (!this.cmMarking) {
+                    // entering marking mode, start the selection on the cursor
+                    // with unknown direction
+                    this.cmAtEnd = null
+                } else {
+                    this.cmInitCursor()
+                }
+                this.cmMarking = !this.cmMarking
+                console.log("setting marking:", this.cmMarking)
+                this.cmSelectionUpdate(selection)
+                break
+            case "\r":
+                if (this.t.hasSelection())
+                    Clipboard.write({string: this.t.getSelection()})
+                    .then(() => this.exitCopyMode())
+                else
+                    this.exitCopyMode();
+                break
+            case '/':
+                this.showSearch(true)
+                break
+            case '?':
+                this.showSearch()
+                break
+            case 'Escape':
+            case 'q':
+                this.exitCopyMode()
+                break
+            case 'n':
+                this.findNext()
+                break
+            case '\x1b[D':
+            case 'h':
+                if (x > 0) 
+                    newX = x - 1
+                if (this.cmAtEnd === null)
+                    this.cmAtEnd = false
+                break
+            case '\x1b[C':
+            case 'l':
+                if (x < this.t.cols - 2)
+                    newX = x + 1
+                if (this.cmAtEnd === null)
+                    this.cmAtEnd = true
+                break
+            case '\x1b[B':
+            case 'j':
+                newY = y + 1
+                if (y < this.t.rows + buffer.viewportY - 1)
+                    this.t.scrollLines(1)
+                if (this.cmAtEnd === null)
+                    this.cmAtEnd = true
+                break
+            case '\x1b[A':
+            case 'k':
+                newY = y - 1
+                if (y > buffer.viewportY)
+                    this.t.scrollLines(-1)
+                if (this.cmAtEnd === null)
+                    this.cmAtEnd = false
+                break
+        }
+        if ((newY != y) || (newX != x)) {
+            if (!this.cmMarking) {
+                this.cmCursor.x = newX
+                this.cmCursor.y = newY; 
+            }
+            else if (this.cmAtEnd) {
+                if ((newY < selection.startRow) || 
+                   ((newY == selection.startRow)
+                    && (newX < selection.startColumn))) {
+                    this.cmAtEnd = false
+                    selection.endRow = selection.startRow
+                    selection.endColumn = selection.startColumn
+                    selection.startRow = newY
+                    selection.startColumn = newX
+                } else {
+                    selection.endColumn = newX
+                    selection.endRow = newY
+                }
+            }
+            else {
+                if ((newY > selection.endRow) ||
+                    ((newY == selection.endRow)
+                     && (newX > selection.endColumn))) {
+                    this.cmAtEnd = true
+                    selection.startRow = selection.endRow
+                    selection.startColumn = selection.endColumn
+                    selection.endRow = newY
+                    selection.endColumn = newX
+                } else {
+                    selection.startColumn = newX
+                    selection.startRow = newY
+                }
+            }
+            this.cmSelectionUpdate(selection)
+        }
+    }
+    cmInitCursor() {
+        var selection = this.t.getSelectionPosition()
+        if (selection) {
+            this.cmCursor = {
+                x: this.cmAtEnd?selection.endColumn:selection.startColumn,
+                y: this.cmAtEnd?selection.endRow:selection.startRow
+            }
+            return
+        }
+        const buffer = this.t.buffer.active
+        this.cmCursor = {x: buffer.cursorX,
+                         y: buffer.cursorY + buffer.baseY}
+    }
+    cmSelectionUpdate(selection) {
+        // maybe we've got just a cursor?
+        if (!this.cmMarking) {
+            console.log("using selection to draw a cursor at", this.cmCursor)
+            this.t.setOption("selectionStyle", "mark-start")
+            this.t.select(this.cmCursor.x, this.cmCursor.y, 1)
+            return
+        }
+        // we've got a selection!
+        this.t.setOption("selectionStyle",
+            this.cmAtEnd?"mark-end":"mark-start")
+        if (!this.cmAtEnd) {
+            if (selection.startRow > selection.endRow) {
+                selection.endRow = selection.startRow
+            }
+            if (selection.endRow === selection.startRow) {
+                if (selection.startColumn > selection.endColumn) {
+                    selection.endColumn = selection.startColumn
+                }    
+            }
+        } else {
+            if (selection.startRow > selection.endRow) {
+                selection.startRow = selection.endRow
+            }
+            if (selection.startRow === selection.endRow) {
+                if (selection.startColumn > selection.endColumn) {
+                    selection.startColumn = selection.endColumn
+                }    
+            }
+        }
+        const rowLength = this.t.cols
+        let selectionLength = rowLength*(selection.endRow - selection.startRow) + selection.endColumn - selection.startColumn
+        if (selectionLength == 0) selectionLength = 1
+        console.log("updating selection", selection.startColumn, selection.startRow, selectionLength)
+        this.t.select(selection.startColumn, selection.startRow, selectionLength)
+    }
 }
-
