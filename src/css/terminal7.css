@@ -538,6 +538,9 @@ td {
 #help-gate {
     border-top: 2px dashed #F952F9;
 }
+#help-copymode {
+    width: 25em;
+}
 .compact-fields {
     max-width: 20em;
     margin-right: auto;

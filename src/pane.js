@@ -22,7 +22,7 @@ const  REGEX_SEARCH        = false,
             caseSensitive: true}
 
 
-const { Browser, Clipboard } = Plugins
+const { Browser, Clipboard, Storage } = Plugins
 export class Pane extends Cell {
     constructor(props) {
         props.className = "pane"
@@ -343,6 +343,13 @@ export class Pane extends Cell {
             this.cmInitCursor()
             this.cmAtEnd = null
             document.querySelector('#copy-mode-indicator').classList.remove('hidden')
+            Storage.get({key: "first_copymode"}).then(v => {
+                if (v.value != "1") {
+                    var e = document.getElementById("help-copymode")
+                    e.classList.remove("hidden")
+                    Storage.set({key: "first_copymode", value: "1"})
+                }
+            })
         }
     }
     exitCopyMode() {
