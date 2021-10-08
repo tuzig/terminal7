@@ -112,7 +112,7 @@ export class Terminal7 {
                 .addEventListener("click", ev => this.logDisplay())
         document.getElementById("search-button")
                 .addEventListener("click", ev => 
-                    this.activeG && this.activeG.activeW.activeP.toggleSearch())
+                   this.activeG && this.activeG.activeW.activeP.toggleSearch())
         document.getElementById("help-gate")
                 .addEventListener("click", ev => this.toggleHelp())
         document.getElementById("help-button")

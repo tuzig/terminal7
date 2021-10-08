@@ -78,28 +78,33 @@ export class Pane extends Cell {
         this.t.onSelectionChange(() => this.selectionChanged())
         this.t.loadWebfontAndOpen(con).then(_ => {
             this.fit(pane => { if (pane != null) pane.openDC() })
-
             this.t.textarea.tabIndex = -1
-            con.querySelector(".xterm-cursor-layer").p = this
             this.t.attachCustomKeyEventHandler(ev => {
+                var doNothing = true
                 // ctrl c is a special case 
                 if (ev.ctrlKey && (ev.key == "c")) {
-                    this.d.send(String.fromCharCode(3))
-                    return false
+                    if (this.d == null) {
+                        this.d.send(String.fromCharCode(3))
+                        doNothing = false
+                    }
                 }
                 if (ev.metaKey && (ev.key != "Shift") && (ev.key != "Meta")) {
                     // ensure help won't pop
                     terminal7.metaPressStart = Number.MAX_VALUE
-                    return this.handleMetaKey(ev)
+                    doNothing = this.handleMetaKey(ev)
                 }
-                else
-                    return true
+                else if (this.copyMode) {
+                    if  (ev.type == "keydown")
+                        this.handleCMKey(ev.key)
+                    doNothing = false
+                }
+                if (!doNothing) {
+                    ev.stopPropagation()
+                    ev.preventDefault()
+                }
+                return doNothing
             })
             this.t.onData(d =>  {
-                if (this.copyMode) {
-                    this.handleCMKey(d)
-                    return
-                }
                 if (this.d == null) {
                     this.gate.notify("Peer is disconnected")
                     return
@@ -277,6 +282,16 @@ export class Pane extends Cell {
         super.toggleZoom()
         this.fit()
     }
+    toggleSearch(searchDown) {
+        const se = this.gate.e.querySelector(".search-box")
+        if (se.classList.contains("hidden"))
+            this.showSearch()
+        else {
+            this.hideSearch()
+            this.focus()
+        }
+    }
+
     showSearch(searchDown) {
         // show the search field
         this.searchDown = searchDown || false
@@ -313,12 +328,9 @@ export class Pane extends Cell {
 
         i.onkeydown = ev => {
             if (ev.keyCode == 13) {
-                ev.preventDefault()
-                ev.stopPropagation()
-                this.copyMode = true
-                this.hideSearch()
                 this.findNext(i.value)
-                this.focus()
+                this.hideSearch()
+                terminal7.run(_ => this.t.focus(), 10)
             }
         }
         i.focus()
@@ -427,8 +439,11 @@ export class Pane extends Cell {
         return true
     }
     findNext(searchTerm) {
-        if (searchTerm != undefined)
+        if (searchTerm != undefined) {
+            this.cmAtEnd = null
+            this.t.setOption("selectionStyle", "plain")
             this.searchTerm = searchTerm
+        }
 
         if (this.searchTerm != undefined) {
             if (this.searchDown)
@@ -516,12 +531,11 @@ export class Pane extends Cell {
             this.enterCopyMode(true)
     }
     handleCMKey(key) {
-        const buffer = this.t.buffer.active
         var x, y, newX, newY,
             selection = this.t.getSelectionPosition()
         // chose the x & y we're going to change
-        if (!this.cmMarking) {
-            // cursor is set on start so we use it as default selection
+        if ((!this.cmMarking) || (selection == null)) {
+            this.cmMarking = false
             if (!this.cmCursor)
                 this.cmInitCursor()
             x = this.cmCursor.x
@@ -557,7 +571,7 @@ export class Pane extends Cell {
                 console.log("setting marking:", this.cmMarking)
                 this.cmSelectionUpdate(selection)
                 break
-            case "\r":
+            case "Enter":
                 if (this.t.hasSelection())
                     Clipboard.write({string: this.t.getSelection()})
                     .then(() => this.exitCopyMode())
@@ -577,33 +591,31 @@ export class Pane extends Cell {
             case 'n':
                 this.findNext()
                 break
-            case '\x1b[D':
+            case 'ArrowLeft':
             case 'h':
                 if (x > 0) 
                     newX = x - 1
                 if (this.cmAtEnd === null)
                     this.cmAtEnd = false
                 break
-            case '\x1b[C':
+            case 'ArrowRight':
             case 'l':
                 if (x < this.t.cols - 2)
                     newX = x + 1
                 if (this.cmAtEnd === null)
                     this.cmAtEnd = true
                 break
-            case '\x1b[B':
+            case 'ArrowDown':
             case 'j':
-                newY = y + 1
-                if (y < this.t.rows + buffer.viewportY - 1)
-                    this.t.scrollLines(1)
+                if (y < this.t.buffer.active.baseY + this.t.rows)
+                    newY = y + 1
                 if (this.cmAtEnd === null)
                     this.cmAtEnd = true
                 break
-            case '\x1b[A':
+            case 'ArrowUp':
             case 'k':
-                newY = y - 1
-                if (y > buffer.viewportY)
-                    this.t.scrollLines(-1)
+                if (y > 0)
+                    newY = y - 1
                 if (this.cmAtEnd === null)
                     this.cmAtEnd = false
                 break
@@ -632,8 +644,6 @@ export class Pane extends Cell {
                     ((newY == selection.endRow)
                      && (newX > selection.endColumn))) {
                     this.cmAtEnd = true
-                    selection.startRow = selection.endRow
-                    selection.startColumn = selection.endColumn
                     selection.endRow = newY
                     selection.endColumn = newX
                 } else {
@@ -642,6 +652,12 @@ export class Pane extends Cell {
                 }
             }
             this.cmSelectionUpdate(selection)
+            if ((newY >= this.t.buffer.active.viewportY + this.t.rows) ||
+                (newY < this.t.buffer.active.viewportY)) {
+                let scroll = newY - this.t.buffer.active.viewportY
+                this.t.scrollLines(scroll, true)
+                console.log(scroll, this.t.buffer.active.viewportY, this.t.buffer.active.baseY)
+            }
         }
     }
     cmInitCursor() {
@@ -655,19 +671,19 @@ export class Pane extends Cell {
         }
         const buffer = this.t.buffer.active
         this.cmCursor = {x: buffer.cursorX,
-                         y: buffer.cursorY + buffer.baseY}
+                         y: buffer.cursorY + buffer.viewportY}
     }
     cmSelectionUpdate(selection) {
-        // maybe we've got just a cursor?
+        if (this.cmAtEnd == null)
+            this.t.setOption("selectionStyle", "plain")
+        else
+            this.t.setOption("selectionStyle", this.cmAtEnd?"mark-end":"mark-start")
+        // maybe it's a cursor
         if (!this.cmMarking) {
             console.log("using selection to draw a cursor at", this.cmCursor)
-            this.t.setOption("selectionStyle", "mark-start")
             this.t.select(this.cmCursor.x, this.cmCursor.y, 1)
             return
         }
-        // we've got a selection!
-        this.t.setOption("selectionStyle",
-            this.cmAtEnd?"mark-end":"mark-start")
         if (!this.cmAtEnd) {
             if (selection.startRow > selection.endRow) {
                 selection.endRow = selection.startRow
@@ -690,7 +706,6 @@ export class Pane extends Cell {
         const rowLength = this.t.cols
         let selectionLength = rowLength*(selection.endRow - selection.startRow) + selection.endColumn - selection.startColumn
         if (selectionLength == 0) selectionLength = 1
-        console.log("updating selection", selection.startColumn, selection.startRow, selectionLength)
         this.t.select(selection.startColumn, selection.startRow, selectionLength)
     }
 }
