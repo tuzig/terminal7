@@ -306,27 +306,21 @@ nav .on { color: #00FA00 !important; }
 nav.tabbar-search {
     padding: 0.2em 1em;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    align-content: center;
+    align-content: stretch;
 }
 .tabbar-search>button {
     padding: 0 0.5em;
     flex: 1 1 0;
+    border: 0;
 }
-.tabbar-search button.search-close {
-    border-right: 0;
-}
-
 button.rename-close {
     border-right: 0;
 }
 .tabbar-search>input {
     padding: 0 0.5em;
-    border-right: 1px solid #373702;
+    border: 0;
     font-size: 16pt;
     flex: 10 1 auto;
-    width: 5em;
     line-height: 24pt;
 }
 .active {

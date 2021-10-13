@@ -403,7 +403,8 @@ peer_name = "${peername}"\n`
      */
     onTouch(type, ev) {
         let e = ev.target,
-            pane = e.closest(".cell").cell,
+            cell = e.closest(".cell"),
+            pane = (cell != null)?cell.cell:undefined,
             nameB = e.gate && e.gate.nameE.parentNode.parentNode
         if (type == "start") {
             this.touch0 = Date.now() 
