@@ -5,7 +5,6 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import * as Hammer from 'hammerjs'
 import { Window } from './window.js'
 import { Pane } from './pane.js'
 

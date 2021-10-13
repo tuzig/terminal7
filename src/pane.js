@@ -53,8 +53,6 @@ export class Pane extends Cell {
      */
     openTerminal() {
         var con = document.createElement("div")
-
-        con.p = this
         this.t = new Terminal({
             convertEol: false,
             fontFamily: "FiraCode",

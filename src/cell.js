@@ -25,7 +25,7 @@ export class Cell {
     createElement(className) {
         // creates the div element that will hold the term
         this.e = document.createElement("div")
-        this.e.p = this
+        this.e.cell = this
         this.e.classList = "cell"
         if (typeof className == "string")
             this.e.classList.add(className)
