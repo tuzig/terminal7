@@ -81,7 +81,7 @@ export class Pane extends Cell {
                 var doNothing = true
                 // ctrl c is a special case 
                 if (ev.ctrlKey && (ev.key == "c")) {
-                    if (this.d == null) {
+                    if (this.d != null) {
                         this.d.send(String.fromCharCode(3))
                         doNothing = false
                     }
