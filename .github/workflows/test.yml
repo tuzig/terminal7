@@ -10,8 +10,6 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 14
-      - uses: webfactory/ssh-agent@v0.4.1
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      - run: npm ci
+      - run: apt-get update && apt-get install -y git chromium
+      - run: yarn install --frozen-lockfile
       - run: npm test
