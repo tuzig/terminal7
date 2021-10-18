@@ -35,7 +35,7 @@ body {
   background-color: #271D30;
   overflow: hidden;
 }
-
+* {box-sizing: border-box; }
 *:focus { outline: none; } 
 
 h1, h2, h3 {
@@ -182,31 +182,31 @@ a {
     box-sizing: border-box;
     background-color: #271D30;
 }
-#navbar>nav {
-    position: relative;
-    padding: 0;
-    width: 100%
-}
 #navbar {
+    padding: 0;
+    width: 100%;
+    display: flex;
+    align-content: stretch;
     bottom: 18pt;
     text-align: center;
 }
-nav {
-    display: table;
+#navbar button {
+    flex: 1;
+    cursor: pointer;
+    border-right: 1px solid #373702;
 }
-.topbar {
+.tabbar {
     display: flex;
     align-content: stretch;
     padding: 0;
     width: 100%;
 }
-.topbar button {
+.tabbar button {
     flex: 1 0 10%;
     border: none;
     position: relative;
-    top: 4pt;
 }
-.topbar nav {
+.tabbar nav {
     flex: 10 1 80%;
     display: flex;
     align-content: stretch;
@@ -214,37 +214,33 @@ nav {
     border-left: 1px solid #D9F505;
     border-bottom: 1px solid #D9F505;
     background-color: black;
-    border-radius: 0 0 12px 12px;
+    border-radius: 0 0 6px 6px;
     min-height: min-content;
     overflow-x: auto;
      -ms-overflow-style: none;
      overflow: -moz-scrollbars-none;
      flex-wrap: nowrap;
      position: relative;
+     align-items: flex-end;
  }
- .tabbar nav::-webkit-scrollbar {
+.home-topbar {
+    align-content: space-between;
+}
+nav::-webkit-scrollbar {
      display: none; /*Safari and Chrome*/
 }
-.tabbar-names>a {
+.tabbar a {
     flex: 1 0 auto; 
     border-right: 1px solid #373702;
     text-align: center;
     font-size: 18pt;
-    line-height: 30pt;
+    line-height: 31pt;
     text-decoration: none; 
     color: inherit;
     width: max-content;
-    padding: 5px;
 }
 nav button:last-child {
     border: none;
-}
-nav button {
-    cursor: pointer;
-    border-right: 1px solid #373702;
-    /* box-sizing: border-box; */
-    display: table-cell;
-    text-align: center
 }
 .two-buttons button { width: 50% }
 .three-buttons button { width: 33.33% }
@@ -256,8 +252,8 @@ nav .on { color: #00FA00 !important; }
 .off { color: #373702; }
 /* vertical align the nav bar buttons */
 .tabbar {
-    height: 41pt;
-    bottom: 44pt;
+    height: 34pt;
+    bottom: 51pt;
     color: #373702;
 }
 .windows-container {
@@ -266,43 +262,6 @@ nav .on { color: #00FA00 !important; }
     left: 0;
     width: 100%;
     position: fixed;
-}
-.tabbar input {
-  font-size: 16pt;
-  line-height: 16pt;
-  background-color: black;
-  color: inherit;
-}
-.tabbar button {
-    float: left;
-}
-.tabbar .internal {
-    float:left;
-    margin: 0;
-    padding: 0;
-    width: 80%;
-    background: black;
-    /* border-top: 4px double #373702; */
-    border-bottom: 1px solid #D9F505;
-    border-right: 1px solid #D9F505;
-    border-left: 1px solid #D9F505;
-    border-radius: 0 0 12px 12px;
-    text-align: center;
-    box-sizing: border-box;
-}
-.internal>div:last-child {
-    border-right: none;
-}
-.internal>div {
-    display: table-cell;
-    text-align: center;
-    border-right: 1px solid #373702;
-}
-.internal>div a {
-    font-size: 18pt;
-    line-height: 30pt;
-    text-decoration: none; 
-    color: inherit;
 }
 .search-box {
     position: fixed;
@@ -580,17 +539,9 @@ input[name="fingerprint"] {
     width: 25em; 
     margin: 8px auto;
 }
-.home-page-second-bar {
-    display: block;
-    width: 100% ;
-}
-.home-page-second-bar button {
-     width: 10%;
- }
  #refresh {
      border-left: 1px solid #373702;
-     float: right;
  }
 #plus-host  {
-    float: left;
+     border-right: 1px solid #373702;
 }
