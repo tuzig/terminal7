@@ -182,7 +182,7 @@ a {
     box-sizing: border-box;
     background-color: #271D30;
 }
-#navbar>nav, .tabbar-names-nav {
+#navbar>nav {
     position: relative;
     padding: 0;
     width: 100%
@@ -194,11 +194,47 @@ a {
 nav {
     display: table;
 }
-.tabbar-names-nav button {
+.topbar {
+    display: flex;
+    align-content: stretch;
+    padding: 0;
+    width: 100%;
+}
+.topbar button {
+    flex: 1 0 10%;
     border: none;
-    width: 10%;
     position: relative;
     top: 4pt;
+}
+.topbar nav {
+    flex: 10 1 80%;
+    display: flex;
+    align-content: stretch;
+    border-right: 1px solid #D9F505;
+    border-left: 1px solid #D9F505;
+    border-bottom: 1px solid #D9F505;
+    background-color: black;
+    border-radius: 0 0 12px 12px;
+    min-height: min-content;
+    overflow-x: auto;
+     -ms-overflow-style: none;
+     overflow: -moz-scrollbars-none;
+     flex-wrap: nowrap;
+     position: relative;
+ }
+ .tabbar nav::-webkit-scrollbar {
+     display: none; /*Safari and Chrome*/
+}
+.tabbar-names>a {
+    flex: 1 0 auto; 
+    border-right: 1px solid #373702;
+    text-align: center;
+    font-size: 18pt;
+    line-height: 30pt;
+    text-decoration: none; 
+    color: inherit;
+    width: max-content;
+    padding: 5px;
 }
 nav button:last-child {
     border: none;
@@ -267,9 +303,6 @@ nav .on { color: #00FA00 !important; }
     line-height: 30pt;
     text-decoration: none; 
     color: inherit;
-}
-.tabbar-names>i {
-    width: 10%;
 }
 .search-box {
     position: fixed;

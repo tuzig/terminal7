@@ -32,8 +32,7 @@ export class Window {
         e.appendChild(this.e)
 
         // Add the name with link to tab bar
-        let div = document.createElement('div'),
-            a = document.createElement('a')
+        let a = document.createElement('a')
         a.id = this.e.id+'-name'
         a.w = this
         a.setAttribute('href', `#${this.e.id}`)
@@ -47,9 +46,8 @@ export class Window {
         h.on("rename", ev => this.rename())
         h.on("switch", (ev) => this.focus())
         */
-        div.appendChild(a)
         this.nameE = a
-        this.gate.e.querySelector(".tabbar-names").appendChild(div)
+        this.gate.e.querySelector(".tabbar-names").appendChild(a)
     }
     /*
      * Change the active window, all other windows and
@@ -152,7 +150,7 @@ export class Window {
     }
     close() {
         // remove the window name
-        this.nameE.parentNode.remove()
+        this.nameE.remove()
         // remove the element, panes and tabbar gone as they are childs
         this.e.remove()
         // if we're zoomed in, the pane is a child of body

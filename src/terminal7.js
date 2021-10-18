@@ -44,7 +44,7 @@ peerbook = "pb.terminal7.dev"
 
 [ui]
 quickest_press = 1000
-max_tabs = 3
+max_tabs = 10
 cut_min_distance = 80
 cut_min_speed = 2.5
 # no pinch when scrolling -> y velocity higher than XTZ px/ms
