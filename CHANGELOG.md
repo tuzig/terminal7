@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   
 ## Unreleased
 
+### Added
+
+- tab names bar scrolls on the user's touch
+
+### Changed
+
+- default maximum tabs changed to 10
+
 ### Fixed
 
 - CTRL-c is working again
