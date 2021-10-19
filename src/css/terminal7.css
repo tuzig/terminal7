@@ -501,7 +501,8 @@ td {
     opacity: 60%;
 }
 #hosts .pressed { box-shadow: 4px 4px 5px 0 #F952F9; }
-.tabbar-names .pressed { font-weight: bold; }
+.tabbar-names .on::before { content: "❲" }
+.tabbar-names .on::after { content: "❳"; }
 #offline {
     bottom: unset;
     top: 50%;
@@ -523,7 +524,7 @@ td {
     transition: all .75s ease;
 }
 #help-home.show, #help-gate.show {
-    opacity: 0.8;
+    opacity: 0.9;
     visibility: visible;
     transition: all .75s ease;
 }
