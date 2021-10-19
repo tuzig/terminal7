@@ -139,8 +139,24 @@ a {
     margin: 1.5em auto 0;
     padding-top: 2%;
 }
-#keys-help {
-    width: auto;
+.keys-help {
+    width: 100%;
+    overflow-x: auto;
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: no-wrap;
+    gap: 0.5em;
+}
+.keys-help table {
+    flex: 1;
+    border-collapse: collapse;
+    margin-right: 1em;
+}
+.keys-help tr {
+    border-bottom: 1px solid #373702;
+}
+.keys-help tr:last-child {
+    border-bottom: none;
 }
 .window {
     position: absolute;
@@ -469,12 +485,13 @@ label {
 #indicators .off {
     color: #003F00;
 }
-.modal table {
-    margin: 0 auto;
+#help-copymode, #keys-help {
+    width: 50em;
 }
+
 td {
     text-align: left;
-    padding:0.5em;
+    padding:0.5em 0;
 }
 .divider {
     position: absolute;
@@ -512,9 +529,6 @@ td {
 }
 #help-gate {
     border-top: 2px dashed #F952F9;
-}
-#help-copymode {
-    width: 25em;
 }
 .compact-fields {
     max-width: 20em;

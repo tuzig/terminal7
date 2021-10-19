@@ -78,29 +78,32 @@ export class Pane extends Cell {
             this.fit(pane => { if (pane != null) pane.openDC() })
             this.t.textarea.tabIndex = -1
             this.t.attachCustomKeyEventHandler(ev => {
-                var doNothing = true
+                var toDo = true
                 // ctrl c is a special case 
                 if (ev.ctrlKey && (ev.key == "c")) {
                     if (this.d != null) {
                         this.d.send(String.fromCharCode(3))
-                        doNothing = false
+                        toDo = false
                     }
                 }
-                if (ev.metaKey && (ev.key != "Shift") && (ev.key != "Meta")) {
-                    // ensure help won't pop
-                    terminal7.metaPressStart = Number.MAX_VALUE
-                    doNothing = this.handleMetaKey(ev)
+                if (ev.metaKey) {
+                    if ((ev.key != "Shift") && (ev.key != "Meta")) {
+                        // ensure help won't pop
+                        console.log("WTF")
+                        terminal7.metaPressStart = Number.MAX_VALUE
+                        toDo = this.handleMetaKey(ev)
+                    }
                 }
                 else if (this.copyMode) {
                     if  (ev.type == "keydown")
                         this.handleCMKey(ev.key)
-                    doNothing = false
+                    toDo = false
                 }
-                if (!doNothing) {
+                if (!toDo) {
                     ev.stopPropagation()
                     ev.preventDefault()
                 }
-                return doNothing
+                return toDo
             })
             this.t.onData(d =>  {
                 if (this.d == null) {

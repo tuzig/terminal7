@@ -158,20 +158,24 @@
           <p>Terminal 7 will activate on reconnect</p>
       </div>
       <div id="help-copymode" class="hidden modal border">
-          <h2>First time in Copy Mode</h2>
-          <p>
+          <h2>Copy Mode Help</h2>
+          <p style="text-align:left;">
               With copy mode you can search, mark and copy text from
               the active pane's buffer.
           </p>
+          <div class="keys-help">
           <table><tbody>
         <tr> <td>Move</td> <td>hjkl &larr;&uarr;&darr;&rarr;</td> </tr>
         <tr> <td>Mark</td> <td>Space</td> </tr>
         <tr> <td>Copy &amp; Exit </td> <td>Enter</td> </tr>
         <tr> <td>Search Backward</td> <td>?</td> </tr>
+        </tbody></table>
+          <table><tbody>
         <tr> <td>Search Forward</td> <td>/</td> </tr>
         <tr> <td>Quit</td> <td>q</td> </tr>
         <tr> <td>Hide This</td> <td>Tap This</td> </tr>
         </tbody></table>
+          </div>
       </div>
       <div id="help-gate">
         <map name="help-gate-links">
@@ -194,7 +198,7 @@
           <img usemap="#help-gate-links" src="img/help-gate.png"
             alt="gate help screen" width="100%">
       </div>
-      <div id="keys-help" class="hidden modal border" >
+      <div id="keys-help" class="keys-help hidden modal border" >
           <table><tbody>
         <tr> <td>Toggle Fullscreen</td> <td>⌘&nbsp;Z</td> </tr>
         <tr> <td>Move Focus</td> <td>⌘&nbsp;&larr;&uarr;&darr;&rarr;</td> </tr>
@@ -204,6 +208,8 @@
         <tr> <td>Smaller Font</td> <td>⌘&nbsp;-</td> </tr>
         <tr> <td>Reset Font</td> <td>⌘&nbsp;0</td> </tr>
         <tr> <td>Split Top to Bottom</td> <td>⌘&nbsp;%</td> </tr>
+          </tbody></table>
+          <table><tbody>
         <tr> <td>Split Right to Left</td> <td>⌘&nbsp;"</td> </tr>
         <tr> <td>Rename Tab</td> <td>⌘&nbsp;,</td> </tr>
         <tr> <td>New Tab</td> <td>⌘&nbsp;T</td> </tr>
@@ -211,6 +217,7 @@
         <tr> <td>Close Pane</td> <td>⌘&nbsp;D</td> </tr>
         <tr> <td>Reset Connection</td> <td>⌘&nbsp;R</td> </tr>
         <tr> <td>Dump log to clipboard</td> <td>⌘&nbsp;`</td> </tr>
+        <tr> <td>Hide This</td> <td>Tap This</td> </tr>
               </tbody></table>
       </div>
       <div id="reset-cert" class="hidden modal border" >

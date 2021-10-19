@@ -74,6 +74,16 @@ export class Terminal7 {
         this.logBuffer = CyclicArray(settings.logLines || 101)
         this.zoomedE = null
     }
+showKeyHelp () {
+    if (Date.now() - this.metaPressStart > 987) {
+        var e
+        if (this.activeG && this.activeG.activeW.activeP.copyMode )
+            e = document.getElementById('help-copymode')
+        else
+            e = document.getElementById('keys-help')
+        e.classList.remove('hidden')
+    }
+}
     /*
      * Terminal7.open opens terminal on the given DOM element,
      * loads the gates from local storage and redirects to home
@@ -117,10 +127,10 @@ export class Terminal7 {
                 .addEventListener("click", ev => this.toggleHelp())
         document.getElementById("help-button")
                 .addEventListener("click", ev => this.toggleHelp())
-        document.getElementById("help-copymode")
-                .addEventListener("click", ev => this.clear())
         document.getElementById("refresh")
                 .addEventListener("click", ev => this.pbVerify())
+        document.querySelectorAll(".modal").forEach(e => 
+                e.addEventListener("click", ev => this.clear()))
         let addHost = document.getElementById("add-host")
         document.getElementById('plus-host').addEventListener(
             'click', ev => {
@@ -199,17 +209,12 @@ export class Terminal7 {
         document.addEventListener("keydown", ev => {
             if (ev.key == "Meta") {
                 this.metaPressStart = Date.now()
-                this.run(_ => {
-                    let e = document.getElementById('keys-help')
-                    if (Date.now() - this.metaPressStart > 987)
-                        e.classList.remove('hidden')
-                }, terminal7.conf.ui.quickest_press)
+                this.run(_ => this.showKeyHelp(), terminal7.conf.ui.quickest_press)
             } else
                 this.metaPressStart = Number.MAX_VALUE
         })
         document.addEventListener("keyup", ev => {
             // hide the keys help when releasing any key
-            document.getElementById('keys-help').classList.add('hidden')
             this.metaPressStart = Number.MAX_VALUE
         })
         // Load gates from local storage
@@ -916,8 +921,10 @@ peer_name = "${peername}"\n`
         })
     }
     toggleHelp() {
-        // TODO: add help for home
+        // TODO: add help for home & copy-mode
         // var helpId = (this.activeG)? "help-gate":"help-home",
+        // var helpId = (this.activeG && this.activeG.activeW.activeP.copyMode)?
+        // "help-copymode":"help-gate",
         var helpId = "help-gate",
             ecl = document.getElementById(helpId).classList,
             bcl = document.getElementById("help-button").classList
