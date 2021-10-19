@@ -986,7 +986,7 @@ peer_name = "${peername}"\n`
             return
         }
         if (m["peers"] !== undefined) {
-            this.notify("\uD83D\uDCD6 Got a fresh server list")
+            // this.notify("\uD83D\uDCD6 Got a fresh server list")
             m["peers"].forEach(p => {
                 if ((p.kind == "webexec") && p.verified) 
                     this.addGate(p)

@@ -174,32 +174,26 @@ a {
 .fas {
     line-height: 5.5vh !important;
 }
-.bar {
-    margin: 0;
-    position: fixed;
-    left: 0;
-    width: 100%;
-    box-sizing: border-box;
-    background-color: #271D30;
-}
 #navbar {
-    padding: 0;
-    width: 100%;
-    display: flex;
-    align-content: stretch;
     bottom: 18pt;
-    text-align: center;
+    position: fixed;
 }
-#navbar button {
+nav button {
     flex: 1;
     cursor: pointer;
     border-right: 1px solid #373702;
 }
-.tabbar {
+nav button:last-child {
+    border: none;
+}
+nav {
     display: flex;
     align-content: stretch;
+    align-items: center;
     padding: 0;
+    margin: 0;
     width: 100%;
+    background-color: #271D30;
 }
 .tabbar button {
     flex: 1 0 10%;
@@ -239,13 +233,6 @@ nav::-webkit-scrollbar {
     color: inherit;
     width: max-content;
 }
-nav button:last-child {
-    border: none;
-}
-.two-buttons button { width: 50% }
-.three-buttons button { width: 33.33% }
-.four-buttons button { width: 25% }
-.six-buttons button { width: 16.66% }
 nav .on { color: #00FA00 !important; }
 .failed { color: #F952F9 !important; }
 .warn { color: #FAFA00 !important; }
@@ -253,8 +240,10 @@ nav .on { color: #00FA00 !important; }
 /* vertical align the nav bar buttons */
 .tabbar {
     height: 34pt;
+    left: 0; 
     bottom: 51pt;
     color: #373702;
+    position: fixed;
 }
 .windows-container {
     bottom: 85pt;
