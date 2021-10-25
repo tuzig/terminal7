@@ -23,6 +23,7 @@ import { openDB } from 'idb'
 
 const { App, BackgroundTask, Clipboard, Device, Http, Network, Storage,
         Filesystem } = Plugins
+
 var PBPending = []
 
 const DEFAULT_DOTFILE = `[theme]
@@ -73,6 +74,7 @@ export class Terminal7 {
         this.pbSendTask = null
         this.logBuffer = CyclicArray(settings.logLines || 101)
         this.zoomedE = null
+        this.pendingPanes = {}
     }
 showKeyHelp () {
     if (Date.now() - this.metaPressStart > 987) {

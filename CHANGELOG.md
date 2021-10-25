@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - tab names bar scrolls on the user's touch
+- iPadOS 15 support
 
 ### Changed
 

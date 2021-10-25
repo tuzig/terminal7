@@ -320,6 +320,33 @@ export class Gate {
                 }
             })
         }
+        this.pc.ondatachannel = e => {
+            e.channel.onopen = () => {
+                var l = e.channel.label
+                var m = l.split(":"),
+                    msgID = parseInt(m[0]),
+                    webexecID = parseInt(m[1])
+                if (isNaN(webexecID) || isNaN(msgID)) {
+                    this.gate.notify("Failed to open pane")
+                    terminal7.log(`got a channel with a bad label: ${l}`)
+                    this.close()
+                } else {
+                    var pane = terminal7.pendingPanes[msgID]
+                    delete terminal7.pendingPanes[msgID]
+                    pane.state = "connected"
+                    pane.d = e.channel
+                    pane.webexecID = webexecID
+                    e.channel.onmessage = m => pane.onMessage(m)
+                    e.channel.onclose = e => {
+                        terminal7.log(`on dc "${webexecID}" close, marker - ${pane.gate.marker}`)
+                        pane.state = "disconnected"
+                        if (this.marker == -1)
+                            pane.close()
+                    }
+                    this.onPaneConnected(pane)
+                }
+            }
+        }
         this.openCDC()
 
         if (this.marker == -1)
