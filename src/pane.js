@@ -248,28 +248,14 @@ export class Pane extends Cell {
             })
             terminal7.pendingPanes[msgID] = this
         } else {
-            label = this.webexecID?`>${this.webexecID}`:
-               `${tSize},${terminal7.conf.exec.shell}`
-
-            terminal7.log(`opening dc with label: "${label}`)
-            this.d = this.gate.pc.createDataChannel(label)
-            this.d.onclose = e => {
-                terminal7.log(`on dc "${this.webexecID}" close, marker - ${this.gate.marker}`)
-                this.state = "disconnected"
-                if (this.gate.marker == -1)
-                    this.close()
-            }
-            this.d.onopen = () => {
-                this.state = "opened"
-                terminal7.run(() => {
-                    if (this.state == "opened") {
-                        this.gate.notify("Data channel is opened, but no first message")
-                        this.gate.stopBoarding()
-                    }}, terminal7.conf.net.timeout)
-            }
-            this.d.onmessage = m => this.onMessage(m)
-
-            return this.d
+            this.updateID = null
+            var msgID = this.gate.sendCTRLMsg({
+                type: "reconnect_pane", 
+                args: { 
+                    id: this.webexecID
+                }
+            })
+            terminal7.pendingPanes[msgID] = this
         }
     }
     // called when a message is received from the server
