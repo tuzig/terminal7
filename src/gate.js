@@ -87,8 +87,8 @@ export class Gate {
             this.e.appendChild(t)
         }
         // Add the gates' signs to the home page
-        let hostsE = document.getElementById("hosts")
-        let li = document.createElement('li'),
+        let hostsE = document.getElementById(this.fp?"peerbook-hosts":"static-hosts")
+        let li = document.createElement('div'),
             a = document.createElement('a'),
             addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
         a.addEventListener("click", ev => {
@@ -104,7 +104,7 @@ export class Gate {
         if (this.online == false)
             li.classList.add("offline")
         li.appendChild(a)
-        hostsE.prepend(li)
+        hostsE.appendChild(li)
         // TODO: find a cleaner way to transfer the gate to the touch listener
         li.gate = this
         a.gate = this

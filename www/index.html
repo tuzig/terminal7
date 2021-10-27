@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-  <meta name="viewport" content="initial-scale=1,user-scalable=no, width=device-width, height=device-height, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no,  shrink-to-fit=no" />
+    <!-- , height=device-height, viewport-fit=cover"> -->
 
   <title>Terminal 7</title>
   <script src="terminal7.bundle.js"></script>
@@ -14,16 +15,29 @@
           </ul>
       </div>
       <div id="home">
-          <h1>Welcome to Terminal 7 </h1>
-          <div id="version" target="_blank">
-              <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md">
-                  version 0.17.2
-              </a>
-          </div>
-          <h2>Please choose your destination:</h2>
-          <div id="hosts-wrapper">
-            <ul id="hosts"> </ul>
-          </div>
+          <h2>Destinations</h2>
+          <div id="hosts-container">
+              <div class="hosts" id="static-hosts">
+                  <h3>Static</h3>
+                  <div class="border">
+                      <button type="button" id="add-static-host" >
+                          <i class="f7-icons"> plus</i>
+                      </button>
+                  </div>
+              </div>
+              <div class="hosts" id="peerbook-hosts">
+                  <h3>PeerBook</h3>
+                  <div class="border">
+                      <button type="button" id="add-peerbook" >
+                          <i class="f7-icons"> plus</i>
+                      </button>
+                </div>
+                <div class="border">
+                  <button type="button" id="refresh"><i class="f7-icons">
+                          arrow_2_circlepath</i></button>
+                      </div>
+                  </div>
+                </div>
       </div>
       <div id="add-host" class="hidden modal border" >
           <form>
@@ -96,6 +110,11 @@
                target="_blank">
                  settings
             </a>
+          <div id="version" target="_blank">
+              <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md">
+                  version 0.17.2
+              </a>
+          </div>
           </footer>
           <nav>
               <button type="button" class="close"><i class="f7-icons">
@@ -233,14 +252,6 @@
                 <button type="button" class="reset"><i class="f7-icons">arrow_2_circlepath</i></button>
             </nav>
       </div>
-    <nav class="tabbar" style="padding: 8px 0; ">
-          <button type="button" class="add-tab" id="plus-host" >
-                <i class="f7-icons">
-                  plus</i></button>
-          <nav style="visibility:hidden;"></nav>
-          <button type="button" id="refresh"><i class="f7-icons">
-                  arrow_2_circlepath</i></button>
-    </nav>
   </div>
   <nav id="navbar" class="bar">
           <button type="button" id="home-button" class="on"><i class="f7-icons">house</i></button>

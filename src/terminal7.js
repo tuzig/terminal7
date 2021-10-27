@@ -131,10 +131,10 @@ showKeyHelp () {
                 .addEventListener("click", ev => this.toggleHelp())
         document.getElementById("refresh")
                 .addEventListener("click", ev => this.pbVerify())
-        document.querySelectorAll(".modal").forEach(e => 
+        document.querySelectorAll("#help-copymode, #keys-help").forEach(e => 
                 e.addEventListener("click", ev => this.clear()))
         let addHost = document.getElementById("add-host")
-        document.getElementById('plus-host').addEventListener(
+        document.getElementById('add-static-host').addEventListener(
             'click', ev => {
                 this.logDisplay(false)
                 addHost.querySelector("form").reset()
@@ -286,6 +286,12 @@ showKeyHelp () {
             ev => {
                 this.setPeerbook()
                 this.clear()
+            })
+        document.getElementById('add-peerbook').addEventListener(
+            'click', ev => {
+                this.logDisplay(false)
+                // modal.querySelector("form").reset()
+                modal.classList.remove("hidden")
             })
         // get the fingerprint and connect to peerbook
         this.getFingerprint().then(_ => {
@@ -842,7 +848,16 @@ peer_name = "${peername}"\n`
             "pb.terminal7.dev"
         this.conf.net.timeout = this.conf.net.timeout || 3000
         this.conf.net.retries = this.conf.net.retries || 3
-        if (!this.conf.peerbook) this.conf.peerbook = {}
+        var apb = document.getElementById("add-peerbook").parentNode,
+            rpb = document.getElementById("refresh").parentNode
+        if (!this.conf.peerbook) {
+            apb.style.removeProperty("display")
+            rpb.style.display = "none"
+            this.conf.peerbook = {}
+        } else {
+            rpb.style.removeProperty("display")
+            apb.style.display = "none"
+        }
         if (!this.conf.peerbook.peer_name)
             Device.getInfo().then(i =>
                 this.conf.peerbook.peer_name = `${i.name}'s ${i.model}`)

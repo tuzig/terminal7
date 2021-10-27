@@ -41,16 +41,18 @@ body {
 h1, h2, h3 {
   text-align: center;
 }
+#home h1, .hosts button i {
+    font-size: 44px;
+}
 #home h1 {
-    font-size: 44pt;
     margin: 0;
 }
 .modal h1 {
     font-size: 22pt;
     margin: 0;
 }
-h2 { margin: 0.3em; }
-h3 { margin: 0.2em; }
+h2 { margin: 0.3em;}
+h3 { margin: 0.2em; color: #F952F9; }
 
 #terminal7 {
     height: 100%; 
@@ -198,7 +200,7 @@ a {
 nav button {
     flex: 1;
     cursor: pointer;
-    border-right: 1px solid #373702;
+    border-right: 2px solid #373702;
 }
 nav button:last-child {
     border: none;
@@ -339,15 +341,21 @@ button.rename-close {
     height: -webkit-fill-available;
 }
 #home:target {
-    z-index: 5
+    display: block;
 }
 #home {
-    width: 100%;
-    background-color: #271D30;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    width:100%;
+    display: none;
+    padding-top: 3em;
+    text-align: center;
+    margin: 0 auto;
+    height: calc(100% - 56px);
+    overflow-y: auto;
+    max-width: 1024px;
+}
+#home h2 {
+    text-decoration: underline;
+    font-size: 44px; 
 }
 #home p { font-size: 24pt; }
 #version {
@@ -356,34 +364,34 @@ button.rename-close {
 #version a {
     text-decoration: underline;
 }
-#hosts-wrapper {
-    float:right;
-    position: relative;
-    left: -50%;
+#hosts-container { 
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
 }
-#hosts .border {
-    border-color: #F952F9;
-}
-#hosts {
-    position: relative;
-    left: 50%;
+.hosts {
+    width: 100%;
+    flex: 1;
 }
 
-#hosts li {
-    display: block;
-    float: left;
-    height: 100px;
+.hosts>* {
     cursor: pointer;
     margin: 1em; 
-    padding: 0.2em 1.2em;
+    padding: 0.8em;
 }
-#hosts li a {
-    position: relative;
-    top: 50%;
-    transform: translate(0, -50%);
-    float: left;
-    display: block;
+.hosts a {
     text-decoration: none;
+}
+.hosts .border {
+    border-color: #D9F505;
+}
+.hosts h3 {
+    font-size: 36px;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+.hosts button {
+    padding: 1em;
 }
 .modal form {
     text-align: left;
@@ -499,9 +507,10 @@ td {
     z-index: 3;
 }    
 .offline {
-    opacity: 60%;
+    opacity: 25%;
+    border-color: #373702;
 }
-#hosts .pressed { box-shadow: 4px 4px 5px 0 #F952F9; }
+.hosts .pressed { box-shadow: 4px 4px 4px 0 #373702; }
 .tabbar-names .on::before { content: "❲" }
 .tabbar-names .on::after { content: "❳"; }
 #offline {
@@ -543,10 +552,4 @@ td {
 input[name="fingerprint"] {
     width: 25em; 
     margin: 8px auto;
-}
- #refresh {
-     border-left: 1px solid #373702;
- }
-#plus-host  {
-     border-right: 1px solid #373702;
 }
