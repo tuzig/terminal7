@@ -292,7 +292,7 @@ showKeyHelp () {
             'click', ev => {
                 this.logDisplay(false)
                 // modal.querySelector("form").reset()
-                modal.classList.remove("hidden")
+                document.getElementById("peerbook-modal").classList.remove("hidden")
             })
         // get the fingerprint and connect to peerbook
         this.getFingerprint().then(_ => {
