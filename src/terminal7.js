@@ -24,6 +24,7 @@ import { openDB } from 'idb'
 const { App, BackgroundTask, Clipboard, Device, Http, Network, Storage,
         Filesystem } = Plugins
 
+
 var PBPending = []
 
 const DEFAULT_DOTFILE = `[theme]
@@ -305,13 +306,14 @@ showKeyHelp () {
                 })
             }
         })
-        var invited = await Storage.get({key: 'invitedToPeerbook2'})
-        if (invited.value == null) {
-            modal = document.getElementById("peerbook-modal")
-            modal.querySelector('[name="peername"]').value =
-                this.conf.peerbook.peer_name
+        modal = document.getElementById("greetings-modal")
+        var greated = await Storage.get({key: 'greated'})
+        if (greated.value == null) {
+            modal.addEventListener('click', ev => {
+                this.clear()
+                Storage.set({key: 'greated', value: 'indeed'})
+            })
             modal.classList.remove("hidden")
-            Storage.set({key: 'invitedToPeerbook2', value: 'indeed'})
         }
         // Last one: focus
         this.focus()

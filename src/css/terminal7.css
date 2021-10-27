@@ -76,6 +76,7 @@ button {
 }
 .text-button {
     display: inline-block;
+    cursor: pointer;
     padding: 0.35em 1.2em;
     margin: 0 0.3em 0.3em 0;
     border-color: #D9F505;
@@ -545,6 +546,21 @@ td {
     max-width: 20em;
     margin-right: auto;
     margin-left: auto;
+}
+
+#greetings-modal h2 {
+    color: #F952F9;
+}
+#greetings-modal h3 {
+    padding-top: 1em;
+}
+#greetings-modal button {
+    background-color: inherit;
+    margin-top: 1em;
+}
+#greetings-modal p {
+    text-align: left;
+    line-height: 26px;
 }
 #peerbook-modal p {
     text-align: left;
