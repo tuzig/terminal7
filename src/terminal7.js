@@ -16,13 +16,14 @@ import { vimMode } from 'codemirror/keymap/vim.js'
 import { tomlMode} from 'codemirror/mode/toml/toml.js'
 import { dialogAddOn } from 'codemirror/addon/dialog/dialog.js'
 import { formatDate } from './utils.js'
-import '@capacitor-community/http'
-
-import { Plugins, FilesystemDirectory } from '@capacitor/core'
 import { openDB } from 'idb'
 
-const { App, BackgroundTask, Clipboard, Device, Http, Network, Storage,
-        Filesystem } = Plugins
+import { App } from '@capacitor/app'
+import { Clipboard } from '@capacitor/clipboard'
+import { Network } from '@capacitor/network'
+import { Storage } from '@capacitor/storage'
+import { BackgroundTask } from '@robingenz/capacitor-background-task';
+
 
 
 var PBPending = []

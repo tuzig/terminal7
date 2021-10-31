@@ -1,0 +1,25 @@
+🖖 Greetings & Salutations 🖖
+O°º¤ø,¸¸,ø¤º°`°º¤ø,¸,ø¤°º¤ø,¸
+
+Thanks for trying our new 7th gen terminal.
+
+We're still at 1.0.X so things might break. It's quite safe - all
+your work is on the server and eventually you'll manage to reconnect.
+
+Worst case scenarios is you'll have to close & open the app
+and press CTRL-L in each pane.
+
+    Troubleshooting
+¯¯̿̿'̿̿̿̿̿̿̿'̿̿̿)͇̿̿)̿̿̿̿ '̿̿̿̿̿̿\̵͇̿̿\=(•̪̀●́)=o/̵͇̿̿/'̿̿ ̿ ̿̿
+
+CTRL-L has been refreshing terminals since the 70s, use it freely. 
+
+If the connection gets stuck there you can reset the connection by 
+switching to another app and back.
+
+If switching doesn't help, the problem is probably state related. Close the
+app and re-open.
+
+If all fails or you found a recurring issue, 
+please take a screenshot, copt the log - ⌘` - and email us at
+support@terminal7.dev 

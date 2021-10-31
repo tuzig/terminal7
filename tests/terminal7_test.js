@@ -9,10 +9,7 @@ import { Terminal7 } from "../src/terminal7.js"
 import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
 import { assert } from "chai"
-import { Plugins } from '@capacitor/core'
-
-const { Storage } = Plugins
-
+import { Storage } from '@capacitor/storage'
 
 describe("terminal7", function() {
     var t, e

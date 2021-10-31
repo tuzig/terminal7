@@ -8,8 +8,8 @@
 import { Window } from './window.js'
 import { Pane } from './pane.js'
 
-import { Plugins } from '@capacitor/core'
-const { Browser, Clipboard, Storage } = Plugins
+import { Clipboard } from '@capacitor/clipboard'
+import { Storage } from '@capacitor/storage'
 const ABIT    = 10  // ashort period of time, in milli
 
 /*

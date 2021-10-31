@@ -1,0 +1,386 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no,  shrink-to-fit=no" />
+    <!-- , height=device-height, viewport-fit=cover"> -->
+
+  <title>Terminal 7</title>
+  <script src="terminal7.bundle.js"></script>
+</head>
+<body>
+  <div id="terminal7">
+      <div id="log" class="border">
+          <ul id="log-msgs">
+          </ul>
+      </div>
+      <div id="home">
+          <h2>Destinations</h2>
+          <div id="hosts-container">
+              <div class="hosts" id="static-hosts">
+                  <h3>Static</h3>
+                  <div class="border">
+                      <button type="button" id="add-static-host" >
+                          <i class="f7-icons"> plus</i>
+                      </button>
+                  </div>
+              </div>
+              <div class="hosts" id="peerbook-hosts">
+                  <h3>PeerBook</h3>
+                  <div class="border">
+                      <button type="button" id="add-peerbook" >
+                          <i class="f7-icons"> plus</i>
+                      </button>
+                </div>
+                <div class="border">
+                  <button type="button" id="refresh"><i class="f7-icons">
+                          arrow_2_circlepath</i></button>
+                      </div>
+                  </div>
+                </div>
+      </div>
+      <div id="add-host" class="hidden modal border" >
+          <form>
+            <h2>Add a Server</h2>
+            <label for="uname">Address</label>
+            <input type="text" placeholder="IP or host name" name="hostaddr"
+                required>
+            <label for="uname">Name</label>
+            <input type="text" placeholder="Enter Hostname" name="hostname"
+                required>
+            <input type="checkbox" checked name="remember">
+            <label for="remember">Remember host</label>
+            <footer>
+            <a href="https://github.com/tuzig/webexec/#install">
+              server installation instructions
+            </a>.
+            </footer>
+            <nav>
+                <button type="button" class="close">
+                    <i class="f7-icons close">xmark</i>
+                </button>
+                <button type="submit">
+                    <i class="f7-icons submit">phone_arrow_up_right</i>
+                </button>
+            </nav>
+          </form>
+      </div>
+      <div id="copy-fingerprint" class="hidden modal border" >
+        <form>
+            <p>We're sorry, but the host at <code id="ct-address"> </code>
+            (aka <b id="ct-name"></b>) refused our fingerprint.
+                Most likely because the fingerprint is not in:
+                <b id="ct-confile"> ~/.webexec/authorized_tokens</b>
+            </p>
+            <input type="text" name="fingerprint" readonly >
+            <p>To proceed, you can either copy the fingerprint using another
+                terminal or we can use ssh to take care of that for you:
+            </p>
+            <label for="uname">Username</label>
+            <input type="text" placeholder="your system username" name="uname" required>
+            <label for="pass">Password</label>
+            <input type="password" placeholder="your password" name="pass" required>
+            <nav>
+                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+                <button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i></button>
+                <button type="submit"><i class="f7-icons">phone_arrow_up_right</i></button>
+            </nav>
+        </form>
+      </div>
+      <div id="reset-host" class="hidden modal border" >
+        <form>
+            <p>Reseting our agent on host <code id="rh-address"> </code>
+            (aka <b id="rh-name"></b>) requires your crendetials.
+            </p>
+            <label for="uname">Username</label>
+            <input type="text" placeholder="your system username" name="uname" required>
+            <label for="pass">Password</label>
+            <input type="password" placeholder="your password" name="pass" required>
+            <nav>
+                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+                <button type="submit"><i class="f7-icons">arrow_2_circlepath</i></button>
+            </nav>
+        </form>
+      </div>
+      <div id="greetings-modal" class="hidden modal border">
+          <h1>🖖 Greetings & Salutations 🖖</h1>
+          <h3> Thanks for trying our new 7th gen terminal</h3>
+          </p><p>
+                We're still at 1.0.X so things might break.
+                Don't worry - your work is safe. It's all 
+                on the server and eventually you'll reconnect.
+          </p><p>
+                Worst case scenarios is you'll have to close 
+                and open the app and hit CTRL-L.
+          </p>
+          <h2>Troubleshooting</h2>
+          <p>
+                CTRL-L has been refreshing terminals since the
+                70s, use it freely. 
+          </p><p>
+                If the connection gets stuck you can reset the connection by
+                switching to another app and back.
+          </p><p>
+                If switching doesn't help, the problem is probably
+                state related. Close the app and re-open.
+          </p><p>
+                If all fails or you found a recurring issue, 
+                please take a screenshot, copy the log using ⌘ `
+                and email us at <a href="mainto:support@terminal7.dev">support@terminal7.dev</a>
+                </p>
+          <button type="button" class="text-button">Enter</button>
+      </div>
+      <div id="settings-modal" class="hidden modal border">
+          <textarea id="edit-conf" lines="20" cols="40">
+          </textarea>
+          <footer>using vi to edit the toml-formatted
+            <a href="https://github.com/tuzig/terminal7/wiki/Setting-file-format"
+               target="_blank">
+                 settings
+            </a>
+          <div id="version" target="_blank">
+              <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md">
+                  version 0.17.2
+              </a>
+          </div>
+          </footer>
+          <nav>
+              <button type="button" class="close"><i class="f7-icons">
+                      xmark</i></button>
+              <button type="button" class="copy"><i class="f7-icons">
+                      doc_on_clipboard</i></button>
+              <button type="button" class="save"><i class="f7-icons">
+                      floppy_disk</i></button>
+          </nav>
+      </div>
+      <div id="peerbook-modal" class="hidden modal border">
+          <!--
+        <p>
+        Welcome to our beta. To start using Terminal7 you will need a server
+        with the webexec program running. You can use any *Nix machine as your 
+        server. Installation is prety simple, just follow the
+        <a href="https://github.com/tuzig/webexec/#install">instructions</a>.
+        </p> -->
+          <h2>&#x1F4D6; Peerbook Invitation &#x1F4D6;</h2>
+        <p>
+          peerbook is a signalling server and and address book.
+          It let's you easily connect to ephermal IP hosts and behind-the-NAT
+          server.
+        </p><p>
+          Terminal7 user are invited to use a free 5 peer addrress book
+        </p>
+          <form action="#">
+              <div class="compact-fields">
+              <label for="email">email</label>
+              <input type="text" placeholder="leave empty to skip and use static addresses" name="email"
+                required>
+              <label for="peername">Peer's name</label>
+              <input type="text" name="peername" required>
+              </div>
+              <footer>* your email will only be used to authorize peers</footer>
+          <nav>
+              <button type="button" class="close"><i class="f7-icons">
+                      xmark</i></button>
+              <button type="submit" class="save"><i class="f7-icons">
+                      floppy_disk</i></button>
+          </nav>
+          </form>
+      </div>
+      <div id="edit-host" class="hidden modal border" >
+          <form id="edit-host-form">
+            <h2>Edit Host</h2>
+            <label for="uname">Address</label>
+            <input type="text" placeholder="IP or host name" name="hostaddr"
+                required>
+            <label for="uname">Name</label>
+            <input type="text" placeholder="Enter Hostname" name="hostname"
+                required>
+            <nav>
+                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+                <button type="button" class="trash"><i class="f7-icons">bin_xmark</i></button>
+                <button type="button" class="reset"><i class="f7-icons">arrow_2_circlepath</i></button>
+                <button type="submit"><i class="f7-icons">floppy_disk</i></button>
+            </nav>
+          </form>
+      </div>
+      <div id="offline" class="hidden modal border non-clearable" >
+          <h1>Network is down</h1>
+          <p>Terminal 7 will activate on reconnect</p>
+      </div>
+      <div id="help-copymode" class="hidden modal border">
+          <h2>Copy Mode Help</h2>
+          <p style="text-align:left;">
+              With copy mode you can search, mark and copy text from
+              the active pane's buffer.
+          </p>
+          <div class="keys-help">
+          <table><tbody>
+        <tr> <td>Move</td> <td>hjkl &larr;&uarr;&darr;&rarr;</td> </tr>
+        <tr> <td>Mark</td> <td>Space</td> </tr>
+        <tr> <td>Copy &amp; Exit </td> <td>Enter</td> </tr>
+        <tr> <td>Search Backward</td> <td>?</td> </tr>
+        </tbody></table>
+          <table><tbody>
+        <tr> <td>Search Forward</td> <td>/</td> </tr>
+        <tr> <td>Quit</td> <td>q</td> </tr>
+        <tr> <td>Hide This</td> <td>Tap This</td> </tr>
+        </tbody></table>
+          </div>
+      </div>
+      <div id="help-gate">
+        <map name="help-gate-links">
+            <area shape="rect" coords="2000,0,2439,300"  alt="githublink"
+                  href="https://github.com/tuzig/terminal7" target="_top">
+            <area shape="rect" coords="2000,500,2439,640"  alt="server side"
+                  href="https://github.com/tuzig/webexec" target="_top">
+            <area shape="rect" coords="2000,640,2439,770"  alt="change log"
+                  href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md"
+                  target="_top">
+            <area shape="rect" coords="2000,770,2439,895" alt="community"
+                  href="https://discord.gg/GneEDB7ZZQ"
+                  target="_top">
+            <area shape="rect" coords="2000,895,2439,1020"  alt="security"
+                  href="https://github.com/tuzig/webexec/blob/master/docs/security.md"
+                  target="_top">
+            <area shape="rect" coords="2000,1020,2439,1145"  alt="support"
+                  href="mailto:support@tuzig.com">
+        </map>
+          <img usemap="#help-gate-links" src="img/help-gate.png"
+            alt="gate help screen" width="100%">
+      </div>
+      <div id="keys-help" class="keys-help hidden modal border" >
+          <table><tbody>
+        <tr> <td>Toggle Fullscreen</td> <td>⌘&nbsp;Z</td> </tr>
+        <tr> <td>Move Focus</td> <td>⌘&nbsp;&larr;&uarr;&darr;&rarr;</td> </tr>
+        <tr> <td>Search Pane Buffer</td> <td>⌘&nbsp;/</td> </tr>
+        <tr class="copy_mode"> <td>Enter Copy Mode</td> <td>⌘&nbsp;[</td> </tr>
+        <tr> <td>Bigger Font</td> <td>⌘&nbsp;+</td> </tr>
+        <tr> <td>Smaller Font</td> <td>⌘&nbsp;-</td> </tr>
+        <tr> <td>Reset Font</td> <td>⌘&nbsp;0</td> </tr>
+        <tr> <td>Split Top to Bottom</td> <td>⌘&nbsp;%</td> </tr>
+          </tbody></table>
+          <table><tbody>
+        <tr> <td>Split Right to Left</td> <td>⌘&nbsp;"</td> </tr>
+        <tr> <td>Rename Tab</td> <td>⌘&nbsp;,</td> </tr>
+        <tr> <td>New Tab</td> <td>⌘&nbsp;T</td> </tr>
+        <tr> <td>Toggle Log</td> <td>⌘&nbsp;L</td> </tr>
+        <tr> <td>Close Pane</td> <td>⌘&nbsp;D</td> </tr>
+        <tr> <td>Reset Connection</td> <td>⌘&nbsp;R</td> </tr>
+        <tr> <td>Dump log to clipboard</td> <td>⌘&nbsp;`</td> </tr>
+        <tr> <td>Hide This</td> <td>Tap This</td> </tr>
+              </tbody></table>
+      </div>
+      <div id="reset-cert" class="hidden modal border" >
+        <p>peerbook returned an error:</p>
+        <code id="reset-cert-error"> </code>
+        <p>
+            You can either edit the settings and change the email or press the
+            reset button to generate a new certificate.
+            </p>
+            <nav>
+                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+                <button type="button" class="reset"><i class="f7-icons">arrow_2_circlepath</i></button>
+            </nav>
+      </div>
+  </div>
+  <nav id="navbar" class="bar">
+          <button type="button" id="home-button" class="on"><i class="f7-icons">house</i></button>
+          <button type="button" id="log-button"><i class="f7-icons">bubble_right</i></button>
+          <button type="button" id="trash-button" class="off"><i class="f7-icons">rectangle_fill_badge_xmark</i></button>
+          <button type="button" id="search-button" class="off"><i class="f7-icons">doc_text_search</i></button>
+          <button type="button" id="help-button"><i class="f7-icons">question</i></button>
+          <button type="button" id="dotfile-button"><i class="f7-icons">gear</i></button>
+  </nav>
+
+<div id="indicators">
+    <i id="connectivity" class="f7-icons">dot_radiowaves_left_right</i>
+    <i id="downstream-indicator" class="f7-icons off">arrow_down</i>
+    <i id="copy-mode-indicator" class="f7-icons hidden">doc_on_doc</i>
+</div>
+    <template id="disconnect-template">
+       <div class="disconnect modal border temporal"><form>
+          <h1>Gate disconnected</h2>
+          <p style="text-align:center;">How would you like to proceed?</p>
+          <nav>
+              <button type="button" class="close"><i class="f7-icons close">xmark</i></button>
+              <button type="submit"><i class="f7-icons reconnect">arrow_2_circlepath</i></button>
+          </nav>
+       </form></div>
+    </template>
+    <template id="nosignal-template">
+        <div class="modal border temporal"><form>
+          <h1><span class="name"></span>: Connection Error</h1>
+          <p>If <span class="address"></span> is the wrong address click
+              <a href="#" class="edit-link">here</a></p>
+          <p>To connect, we need webexec installed and its agent running.
+          To install webexec on a *NIX server, please read the
+            <a href="https://github.com/tuzig/webexec#webexec">
+                installation guide</a>.</p>
+          <p>If it is installed we can use SSH and start it for you:
+          </p>
+          <label for="uname">Username</label>
+          <input type="text" placeholder="your system username" name="uname" required>
+          <label for="pass">Password</label>
+          <input type="password" placeholder="your password" name="pass" required>
+          <nav>
+              <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+              <button type="button" class="reconnect"><i class="f7-icons">arrow_2_circlepath</i></button>
+              <button type="submit"><i class="f7-icons">rays</i></button>
+          </nav>
+      </form></div>
+    </template>
+    <!-- every gate creates his own tabbar based on the template below -->
+    <template id="gate-template">
+    <div class="windows-container">
+    </div>
+    <div class="hidden search-box border">
+      <nav class="tabbar-search">
+        <button type="button" class="search-up"><i class="f7-icons">arrowtriangle_up</i></button>
+        <button type="button" class="search-down"><i class="f7-icons">arrowtriangle_down</i></button>
+        <!-- TODO: implment the url & file buttons
+        <a href="#find-url" class="hidden">URL</a>
+        <a href="#find-file" class="hidden">File</a>
+        -->
+        <input type="text" name="search-term">
+        <button type="button" class="search-close"><i class="f7-icons">xmark</i></button>
+      </nav>
+    </div>
+    <div class="hidden rename-box border">
+      <nav class="tabbar-search">
+        <button type="button" class="rename-close"><i class="f7-icons">xmark</i></button>
+        <input type="text" name="new-name" id="name-input">
+      </nav>
+    </div>
+
+    <template id="divider-template">
+        <div class="divider hidden">
+            <img width="8" height="44" src="img/divider.png" alt="a divider">
+        </div>
+    </template>
+    <nav class="tabbar">
+          <button type="button" class="add-tab"><i class="f7-icons">
+                  plus</i></button>
+          <nav class="tabbar-names">
+          </nav>
+          <button type="button" class="reset"><i class="f7-icons">
+                  arrow_2_circlepath</i></button>
+    </nav>
+    </template>
+    <template id="reset-gate-template">
+      <div class="reset-gate hidden modal border" >
+          <p>What kind of reset whould you like?</p>
+          <dl>
+             <dt><button type="button" class="text-button sizes">
+                     Sizes</button></dt>
+              <dd>Fitting terminals and refreshing all panes' sizes</dd>
+              <dt><button type="button" class="text-button channels">
+                      Data Channels</button></dt>
+              <dd>Replacing all data channels with fresh ones</dd>
+              <dt><button type="button" class="text-button all">
+                      Connection</button></dt>
+              <dd>Drop the peer connection and re-connect</dd>
+          </dl>
+      </div>
+    </template>
+</body>
+</html>

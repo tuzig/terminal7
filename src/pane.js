@@ -4,8 +4,9 @@
  *  Copyright: (c) 2021 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Plugins } from '@capacitor/core'
 import { Terminal } from 'xterm'
+import { Clipboard } from '@capacitor/clipboard'
+import { Storage } from '@capacitor/storage'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { Cell } from './cell.js'
@@ -21,8 +22,6 @@ const  REGEX_SEARCH        = false,
             incremental: false,
             caseSensitive: true}
 
-
-const { Browser, Clipboard, Storage } = Plugins
 
 export class Pane extends Cell {
     constructor(props) {
