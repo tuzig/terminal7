@@ -2,13 +2,6 @@
 # yarn lockfile v1
 
 
-"@capacitor-community/http@^0.3.0":
-  version "0.3.2"
-  resolved "https://registry.yarnpkg.com/@capacitor-community/http/-/http-0.3.2.tgz#1f115ecbc5d97abe00443080eb0896ad327d4f5f"
-  integrity sha512-yBHwQof07KRQqZpQHwymKByJfcZmjRAaFwXXd9w0w52GIjr9AlZ0Qg1R60Czbi4mgQdiqk90nsZIXrRpxpsAZA==
-  dependencies:
-    "@capacitor/core" "2.4.7"
-
 "@capacitor/app@^1.0.5":
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/@capacitor/app/-/app-1.0.5.tgz#9512235d0b686edf2f32d75b32abecbe383aa633"
@@ -41,26 +34,17 @@
   resolved "https://registry.yarnpkg.com/@capacitor/clipboard/-/clipboard-1.0.5.tgz#9a73e85f8a030abf5367e694d9f272ec26dc905f"
   integrity sha512-+FY07/RwoAhgp8E16LNIYn/ucsorBchsuHlznOlFVbh/4ITb6Vxx20he4hb3jf6UeBESt+T/K8vk2U6/TZ95bQ==
 
-"@capacitor/core@2.4.7":
-  version "2.4.7"
-  resolved "https://registry.yarnpkg.com/@capacitor/core/-/core-2.4.7.tgz#f3b4d5728db7e764c1153da5e67d369bda35b772"
-  integrity sha512-ZPzXXQ4EPwR/ZhNDkmlxyzw4FvquIl/ROj8HMMM0MEd4xZfM8ulNGPIL6br9TWdlFLGBKq40eymPZjKaivGnig==
-  dependencies:
-    tslib "^1.9.0"
-
-"@capacitor/core@<4", "@capacitor/core@latest":
+"@capacitor/core@<4":
   version "3.2.5"
   resolved "https://registry.yarnpkg.com/@capacitor/core/-/core-3.2.5.tgz#3aee6d68d113f5c043593c2327b0fc827f64e1f4"
   integrity sha512-sr5ZhbdCUL6FAiyNEDpSKDEzjHCOsCA5R32inRergcPFRpOArsQi/NfhoMLHaZwZ78HAn9bfFV7JkoSr46NDDw==
   dependencies:
     tslib "^2.1.0"
 
-"@capacitor/http@^0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@capacitor/http/-/http-0.0.2.tgz#a5a3f29d1682662c62736aa953823b9a178e7073"
-  integrity sha512-3UPqYOmVkAQjCWWowSDGPnBkXY7znbPE7lNs8nhwTmE2E5fXTvjHM8PV15zOyn+nenY7zEu9Air49fGjrX+Tjg==
-  dependencies:
-    "@capacitor/core" latest
+"@capacitor/device@^1.0.5":
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/@capacitor/device/-/device-1.0.5.tgz#0593756531fd4280ab514c6e0da072872185f027"
+  integrity sha512-59JcDAkmyE63xh2sdqE6rK5qgsfpojW9J972f3ejeyRGSNp6zRYl+IOJZIoieKgrByuRa9/bSKNaipc/2u3Z7w==
 
 "@capacitor/ios@<4":
   version "3.2.5"
@@ -7021,11 +7005,6 @@ ts-loader@<9:
     micromatch "^4.0.0"
     semver "^7.3.4"
 
-tslib@^1.9.0:
-  version "1.14.1"
-  resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.14.1.tgz#cf2d38bdc34a134bcaf1091c41f6619e2f672d00"
-  integrity sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==
-
 tslib@^2.0.1, tslib@^2.1.0, tslib@^2.3.1:
   version "2.3.1"
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.3.1.tgz#e8a335add5ceae51aa261d32a490158ef042ef01"
@@ -7662,9 +7641,9 @@ xterm-webfont@^2.0.0:
   dependencies:
     fontfaceobserver "2.*"
 
-"xterm@git+https://github.com/tuzig/xterm.js.git#c482b233286f6cb24f466069db9343a8b45a1669":
+"xterm@git+https://github.com/tuzig/xterm.js.git":
   version "4.14.1"
-  resolved "git+https://github.com/tuzig/xterm.js.git#c482b233286f6cb24f466069db9343a8b45a1669"
+  resolved "git+https://github.com/tuzig/xterm.js.git#77bafd8905a175a85fcef7c448ea91d81906ff95"
 
 y18n@^3.2.1:
   version "3.2.2"

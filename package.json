@@ -19,12 +19,11 @@
     "publish": null
   },
   "dependencies": {
-    "@capacitor-community/http": "^0.3.0",
     "@capacitor/app": "^1.0.5",
     "@capacitor/cli": "<4",
     "@capacitor/clipboard": "^1.0.5",
     "@capacitor/core": "<4",
-    "@capacitor/http": "^0.0.2",
+    "@capacitor/device": "^1.0.5",
     "@capacitor/ios": "<4",
     "@capacitor/network": "^1.0.5",
     "@capacitor/storage": "^1.2.2",
@@ -39,7 +38,7 @@
     "uuid": "<9",
     "web": "0.0.2",
     "websocket-extensions": ">=0.1.4",
-    "xterm": "git+https://github.com/tuzig/xterm.js.git#c482b233286f6cb24f466069db9343a8b45a1669",
+    "xterm": "git+https://github.com/tuzig/xterm.js.git",
     "xterm-addon-fit": "^0.3.0",
     "xterm-addon-search": "^0.7.0",
     "xterm-webfont": "^2.0.0"
@@ -74,7 +73,8 @@
   "scripts": {
     "dev": "npm run build && npx serve www",
     "test": "karma start --single-run",
-    "build": "npx webpack --output www/terminal7.bundle.js && npx cap copy"
+    "build": "npx webpack --output www/terminal7.bundle.js && npx cap copy",
+    "postinstall": "cd ./node_modules/xterm && yarn install && npm run package"
   },
   "repository": {
     "type": "git",

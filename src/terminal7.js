@@ -22,6 +22,7 @@ import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
+import { Device } from '@capacitor/device'
 import { BackgroundTask } from '@robingenz/capacitor-background-task';
 
 
@@ -96,6 +97,7 @@ showKeyHelp () {
         let e = document.getElementById('terminal7')
         this.log("in open")
         this.e = e
+        await Storage.migrate()
         // reading conf
         let d = {},
             { value } = await Storage.get({key: 'dotfile'})
@@ -862,9 +864,16 @@ peer_name = "${peername}"\n`
             apb.style.display = "none"
         }
         if (!this.conf.peerbook.peer_name)
-            Device.getInfo().then(i =>
+            Device.getInfo()
+            .then(i =>
                 this.conf.peerbook.peer_name = `${i.name}'s ${i.model}`)
+            .catch(err => {
+                console.log("Device info error", err)
+                this.conf.peerbook.peer_name = "John Doe"
+            })
     }
+
+
     // gets the will formatted fingerprint from the current certificate
     getFingerprint() {
         // gets the certificate from indexDB. If they are not there, create them
