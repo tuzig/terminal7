@@ -23,8 +23,6 @@ import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
 import { Device } from '@capacitor/device'
-import { BackgroundTask } from '@robingenz/capacitor-background-task';
-
 
 
 var PBPending = []
@@ -243,16 +241,9 @@ showKeyHelp () {
         App.addListener('appStateChange', state => {
             if (!state.isActive) {
                 // We're getting suspended. disengage.
-                let taskId = BackgroundTask.beforeExit(async () => {
-                    terminal7.log("Benched. Disengaging from all gates")
-                    this.disengage(() => {
-                        terminal7.log("finished disengaging")
-                        this.clearTimeouts()
-                        BackgroundTask.finish({taskId})
-                    })
-                })
-            }
-            else {
+                terminal7.log("Benched. Disengaging from all gates")
+                this.disengage(() => this.clearTimeouts())
+            } else {
                 // We're back! ensure we have the latest network status and 
                 // reconnect to the active gate
                 terminal7.log("Active ☀️")
@@ -297,18 +288,6 @@ showKeyHelp () {
                 // modal.querySelector("form").reset()
                 document.getElementById("peerbook-modal").classList.remove("hidden")
             })
-        // get the fingerprint and connect to peerbook
-        this.getFingerprint().then(_ => {
-            if (this.certificates.length > 0) 
-                this.pbVerify()
-            else {
-                this.generateCertificate().then(_ => {
-                    this.storeCertificate().then(_ => {
-                        this.pbVerify()
-                    })
-                })
-            }
-        })
         modal = document.getElementById("greetings-modal")
         var greated = await Storage.get({key: 'greated'})
         if (greated.value == null) {
@@ -363,8 +342,12 @@ peer_name = "${peername}"\n`
                     pbe.innerHTML = response.data 
                     e.classList.remove("hidden")
                 }
-                throw new Error(`verification failed: ${response.data}`)
+                response.body.getReader().read().then(({done, value}) => {
+                    this.notify("&#x1F4D6;&nbsp;"+String.fromCharCode(...value))
+                })
+                throw new Error(`verification failed`)
             }).then(m => this.onPBMessage(m))
+            .catch(err => Function.prototype())
         })
     }
     async toggleSettings(ev) {
@@ -830,7 +813,18 @@ peer_name = "${peername}"\n`
             if (this.activeG)
                 this.activeG.connect()
             else 
-                this.pbVerify()
+                // get the fingerprint and connect to peerbook
+                this.getFingerprint().then(_ => {
+                    if (this.certificates.length > 0) 
+                        this.pbVerify()
+                    else {
+                        this.generateCertificate().then(_ => {
+                            this.storeCertificate().then(_ => {
+                                this.pbVerify()
+                            })
+                        })
+                    }
+                })
         }
         else {
             offl.remove("hidden")
@@ -864,6 +858,8 @@ peer_name = "${peername}"\n`
             apb.style.display = "none"
         }
         if (!this.conf.peerbook.peer_name)
+            this.conf.peerbook.peer_name = "John Doe"
+/*
             Device.getInfo()
             .then(i =>
                 this.conf.peerbook.peer_name = `${i.name}'s ${i.model}`)
@@ -871,6 +867,7 @@ peer_name = "${peername}"\n`
                 console.log("Device info error", err)
                 this.conf.peerbook.peer_name = "John Doe"
             })
+            */
     }
 
 
@@ -937,10 +934,7 @@ peer_name = "${peername}"\n`
                 c.id = 1
                 store.add(c).then(_ => {
                     db.close()
-                    resolve(this.certificates[0]).catch(e => {
-                        this.log(`got an error storing cert ${e}`)
-                        resolve(null)
-                    })
+                    resolve(this.certificates[0])
                 })
             }).catch(e => {
                 this.log (`got error from open db ${e}`)

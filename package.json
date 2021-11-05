@@ -19,6 +19,7 @@
     "publish": null
   },
   "dependencies": {
+    "@capacitor/android": "^3.2.5",
     "@capacitor/app": "^1.0.5",
     "@capacitor/cli": "<4",
     "@capacitor/clipboard": "^1.0.5",
@@ -38,7 +39,8 @@
     "uuid": "<9",
     "web": "0.0.2",
     "websocket-extensions": ">=0.1.4",
-    "xterm": "git+https://github.com/tuzig/xterm.js.git",
+    "workbox-webpack-plugin": "^6.3.0",
+    "xterm": "git+https://github.com/tuzig/xterm.js.git#semver:<5.0",
     "xterm-addon-fit": "^0.3.0",
     "xterm-addon-search": "^0.7.0",
     "xterm-webfont": "^2.0.0"
@@ -68,10 +70,11 @@
     "url-loader": "^4.1.0",
     "webpack": "<5",
     "webpack-cli": "^3.3.11",
-    "webpack-dev-server": "<4"
+    "webpack-dev-server": "<4",
+    "yarn": "^1.22.17"
   },
   "scripts": {
-    "dev": "npm run build && npx serve www",
+    "dev": "npm run build && npx serve -p 8000 www",
     "test": "karma start --single-run",
     "build": "npx webpack --output www/terminal7.bundle.js && npx cap copy",
     "postinstall": "cd ./node_modules/xterm && yarn install && npm run package"

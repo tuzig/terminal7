@@ -1,7 +1,7 @@
 {
   "appId": "dev.terminal7",
   "appName": "Terminal7",
-  "bundledWebRuntime": false,
+  "bundledWebRuntime": true,
   "npmClient": "npm",
   "webDir": "www",
   "plugins": {

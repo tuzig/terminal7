@@ -1,4 +1,6 @@
 const path = require('path');
+const {GenerateSW} = require('workbox-webpack-plugin');
+const genRanHex = (size = 24) => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 
 module.exports = {
     mode: "development",
@@ -30,5 +32,32 @@ module.exports = {
           },
     ]},
     devServer: { host: "0.0.0.0"},
-    devtool: "inline-source-map"
+    devtool: "inline-source-map",
+    plugins: [ new GenerateSW({
+        clientsClaim: true,
+        skipWaiting: true
+        /*,
+        additionalManifestEntries: [
+            {
+                "url": "/fonts/FiraSansCondensed-Regular.ttf",
+                "revision": "1"
+            }, {
+                "url": "/fonts/FiraCode-VariableFont_wght.ttf",
+                "revision": "1"
+            }, {
+                "url": "/fonts/Framework7Icons-Regular.eot",
+                "revision": "1"
+            }, {
+                "url": "/fonts/Framework7Icons-Regular.ttf",
+                "revision": "1"
+            }, {
+                "url": "/fonts/Framework7Icons-Regular.woff",
+                "revision": "1"
+            }, {
+                "url": "/fonts/Framework7Icons-Regular.woff2",
+                "revision": "1"
+            }
+        ] 
+        */
+    })]
 };
