@@ -74,7 +74,7 @@
     "yarn": "^1.22.17"
   },
   "scripts": {
-    "dev": "npm run build && npx serve -p 8000 www",
+    "start": "npm run build && npx serve -p 8000 www",
     "test": "karma start --single-run",
     "build": "npx webpack --output www/terminal7.bundle.js && npx cap copy",
     "postinstall": "cd ./node_modules/xterm && yarn install && npm run package"

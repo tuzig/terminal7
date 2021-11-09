@@ -37,7 +37,7 @@ npx cap sync ios
 To start terminal 7 in the browser use:
 
 ```console
-npm run dev
+npm start
 ```
 
 and point your browser at http://localhost:3333
