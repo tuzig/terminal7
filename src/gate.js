@@ -1,4 +1,4 @@
-/*! Terminal 7 Gate
+/*! Terminal 8 Gate
  *  This file contains the code that makes a terminal 7 gate. The gate class
  *  represents a server and it may be boarding - aka connected - or not.
  *
@@ -162,7 +162,6 @@ export class Gate {
             delete this.msgs[id]
         }
         this.boarding = false
-        document.getElementById("downstream-indicator").classList.add("failed")
     }
     /*
      * updateConnectionState(state) is called on peer connection
@@ -230,6 +229,7 @@ export class Gate {
             .catch (e => {
                 this.notify(`Failed to set remote description: ${e}`)
                 this.stopBoarding()
+                document.getElementById("downstream-indicator").classList.add("failed")
                 terminal7.onDisconnect(this)
             })
     }
@@ -398,6 +398,7 @@ export class Gate {
                 this.notify(
                      `#${msg.message_id} tried ${retries} times and given up`)
                 this.stopBoarding()
+                document.getElementById("downstream-indicator").classList.add("failed")
                 terminal7.onDisconnect(this)
             }
         }
@@ -614,12 +615,20 @@ export class Gate {
                     args: { Payload: this.dump() }
                 }
                 this.updateID = null
-                this.sendCTRLMsg(msg)
+                let msgId = this.sendCTRLMsg(msg)
+                this.onack[msgId] = (isNack, state) => {
+                    if ((this.windows.length == 0) && (this.pc)) {
+                        console.log("Closing pc after updating to empty state")
+                        this.pc.close()
+                        this.stopBoarding()
+                        this.disengagePC()
+                    }
+                }
             }, 100)
     }
     onPaneConnected(pane) {
         // hide notifications
-        terminal7.logDisplay(false)
+        terminal7.clear()
         //enable search
         document.getElementById("search-button").classList.remove("off")
         document.getElementById("trash-button").classList.remove("off")
