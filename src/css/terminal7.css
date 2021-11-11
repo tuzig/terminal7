@@ -1,6 +1,6 @@
 /*
  * Main colors:
- * yellow - #D9F505
+ * yellow - #D4ED37
  * dark yellow - #373702
  * magenta - #F952F9
  * light blue - #00FAFA
@@ -79,7 +79,7 @@ button {
     cursor: pointer;
     padding: 0.35em 1.2em;
     margin: 0 0.3em 0.3em 0;
-    border-color: #D9F505;
+    border-color: #D4ED37;
     color: #00FA00;
     border-radius: 0.15em;
     font-weight: 300;
@@ -114,7 +114,7 @@ a {
     color: #00FAFA;
 }
 .focused {
-    border-color: #D9F505 !important;
+    border-color: #D4ED37 !important;
 }
 .modal {
     z-index: 6;
@@ -224,9 +224,9 @@ nav {
     flex: 10 1 80%;
     display: flex;
     align-content: stretch;
-    border-right: 1px solid #D9F505;
-    border-left: 1px solid #D9F505;
-    border-bottom: 1px solid #D9F505;
+    border-right: 1px solid #D4ED37;
+    border-left: 1px solid #D4ED37;
+    border-bottom: 1px solid #D4ED37;
     background-color: black;
     border-radius: 0 0 12px 12px;
     min-height: min-content;
@@ -267,7 +267,7 @@ nav .on { color: #00FA00 !important; }
 }
 .windows-container {
     bottom: 85pt;
-    top: 16pt;
+    top: 0;
     left: 0;
     width: 100%;
     position: fixed;
@@ -384,7 +384,7 @@ button.rename-close {
     text-decoration: none;
 }
 .hosts .border {
-    border-color: #D9F505;
+    border-color: #D4ED37;
 }
 .hosts h3 {
     font-size: 36px;
