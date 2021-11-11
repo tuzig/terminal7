@@ -35,29 +35,11 @@ module.exports = {
     devtool: "inline-source-map",
     plugins: [ new GenerateSW({
         clientsClaim: true,
-        skipWaiting: true
-        /*,
+        skipWaiting: true,
         additionalManifestEntries: [
             {
-                "url": "/fonts/FiraSansCondensed-Regular.ttf",
-                "revision": "1"
-            }, {
-                "url": "/fonts/FiraCode-VariableFont_wght.ttf",
-                "revision": "1"
-            }, {
-                "url": "/fonts/Framework7Icons-Regular.eot",
-                "revision": "1"
-            }, {
-                "url": "/fonts/Framework7Icons-Regular.ttf",
-                "revision": "1"
-            }, {
-                "url": "/fonts/Framework7Icons-Regular.woff",
-                "revision": "1"
-            }, {
-                "url": "/fonts/Framework7Icons-Regular.woff2",
-                "revision": "1"
-            }
-        ] 
-        */
+                "url": "index.html",
+                "revision": genRanHex()
+            }]
     })]
 };
