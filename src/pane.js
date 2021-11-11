@@ -112,7 +112,7 @@ export class Pane extends Cell {
                     return
                 }
                 if (this.d.readyState != "open") {
-                    this.gate.notify(`data channel is {this.d.readyState}`)
+                    this.gate.notify(`data channel is ${this.d.readyState}`)
                     return
                 }
                 this.d.send(d)
