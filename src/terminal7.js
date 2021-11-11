@@ -582,6 +582,7 @@ peer_name = "${peername}"\n`
             if (!e.classList.contains("non-clearable"))
                 e.classList.add("hidden")
         })
+        terminal7.logDisplay(false)
         this.focus()
     }
     goHome() {
