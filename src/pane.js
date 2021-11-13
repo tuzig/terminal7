@@ -356,7 +356,10 @@ export class Pane extends Cell {
             this.copyMode = true
             this.cmInitCursor()
             this.cmAtEnd = null
-            this.e.style.borderColor = COPYMODE_BORDER_COLOR
+            if (this.zoomed)
+                terminal7.zoomedE.children[0].style.borderColor = COPYMODE_BORDER_COLOR
+            else
+                this.e.style.borderColor = COPYMODE_BORDER_COLOR
             Storage.get({key: "first_copymode"}).then(v => {
                 if (v.value != "1") {
                     var e = document.getElementById("help-copymode")
@@ -372,6 +375,10 @@ export class Pane extends Cell {
             this.e.style.borderColor = FOCUSED_BORDER_COLOR
             this.t.clearSelection()
             this.t.scrollToBottom()
+            if (this.zoomed)
+                terminal7.zoomedE.children[0].style.borderColor = FOCUSED_BORDER_COLOR
+            else
+                this.e.style.borderColor = FOCUSED_BORDER_COLOR
             this.focus()
         }
     }
