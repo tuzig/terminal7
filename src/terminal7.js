@@ -399,136 +399,15 @@ peer_name = "${peername}"\n`
         this.pbVerify()
 
     }
-    /*
-     * terminal7.onTouch is called on all browser's touch events
-     */
-    onTouch(type, ev) {
-        let e = ev.target,
-            cell = e.closest(".cell"),
-            pane = (cell != null)?cell.cell:undefined,
-            nameB = e.gate && e.gate.nameE.parentNode.parentNode
-        if (type == "start") {
-            this.touch0 = Date.now() 
-            this.firstT = this.lastT = ev.changedTouches
-            if (e.gate instanceof Gate)
-                nameB.classList.add("pressed")
-            if (e.w instanceof Window)
-                e.classList.add("pressed")
-            return 
-        } 
-        if ((type == "cancel") || (ev.changedTouches.length != 1)) {
-            this.touch0 = null
-            this.firstT = []
-            this.lastT = []
-            this.gesture = null
-            if (e.gate instanceof Gate)
-                nameB.classList.remove("pressed")
-            return
-        }
-
-        if (this.firstT.length == 0)
-            return
-
-        let x  = ev.changedTouches[0].pageX,
-            y  = ev.changedTouches[0].pageY,
-            dx = this.firstT[0].pageX - x,
-            dy = this.firstT[0].pageY - y,
-            d  = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2)),
-            deltaT = Date.now() - this.touch0,
-            s  = d/deltaT,
-            r = Math.abs(dx / dy),
-            topb  = r < 1.0
-
-
-        if (e.gate instanceof Gate) {
-            let longPress = terminal7.conf.ui.quickest_press
-            if (deltaT > longPress) {
-                nameB.classList.remove("pressed")
-                e.gate.edit()
-            }
-            if (type == 'end')
-                nameB.classList.remove("pressed")
-            return
-        }
-        if (e.w instanceof Window) {
-            let longPress = terminal7.conf.ui.quickest_press
-            if (deltaT > longPress) {
-                e.classList.remove("pressed")
-                e.w.rename()
-                return
-            }
-            if (type == 'end') {
-                e.classList.remove("pressed")
-                e.w.gate.breadcrumbs.push(e.w)
-                e.w.focus()
-            }
-            return
-        }
-
-        if (pane === undefined)  {
-            return
-        }
-        let lx = (x / document.body.offsetWidth - pane.xoff) / pane.sx,
-            ly = (y / document.body.offsetHeight - pane.yoff) / pane.sy
-        if (type == "move") {
-            if (this.gesture == null) {
-                let rect = pane.e.getBoundingClientRect()
-                this.log(x, y, rect)
-                // identify pan event on a border
-                if (Math.abs(rect.x - x) < this.borderHotSpotSize)
-                    this.gesture = "panborderleft"
-                else if (Math.abs(rect.right - x) < this.borderHotSpotSize) 
-                    this.gesture = "panborderright"
-                else if (Math.abs(y - rect.y) < this.borderHotSpotSize)
-                    this.gesture = "panbordertop"
-                else if (Math.abs(y - rect.bottom) < this.borderHotSpotSize)
-                    this.gesture = "panborderbottom"
-                else 
-                    return
-                this.log(`identified: ${this.gesture}`)
-            } 
-            if (this.gesture.startsWith("panborder")) {
-                let where = this.gesture.slice(9),
-                    dest = ((where == "top") || (where == "bottom"))
-                            ? y / document.body.offsetHeight
-                            : x / document.body.offsetWidth
-                if (dest > 1.0)
-                    dest = 1.0
-                this.log(`moving ${where} border of #${pane.id} to ${dest}`)
-                pane.layout.moveBorder(pane, where, dest)
-            }
-            this.lastT = ev.changedTouches
-        }
-        if (type == "end") {
-            if ((ev.changedTouches.length == 1)
-                && (d > this.conf.ui.cutMinDistance)
-                && (s > this.conf.ui.cutMinSpeed)) {
-                    // it's a cut!!
-                    let p = ev.target.p
-                    if (!pane.zoomed)  {
-                        let t = pane.split((topb)?"topbottom":"rightleft",
-                                           (topb)?lx:ly)
-                        // t.focus()
-                    }
-                }
-            this.touch0 = null
-            this.firstT = []
-            this.gesture = null
-        }
-    }
     catchFingers() {
         var start,
             last,
-            firstT = [],
+            firstT = null,
             gesture = null
-        this.e.addEventListener("touchstart", ev =>
-            this.onTouch("start", ev), false)
-        this.e.addEventListener("touchend", ev =>
-            this.onTouch("end", ev), false)
-        this.e.addEventListener("touchcancel", ev =>
-            this.onTouch("cancel", ev), false)
-        this.e.addEventListener("touchmove", ev =>
-            this.onTouch("move", ev), false)
+        this.e.addEventListener("pointerdown", ev => this.onPointerDown(ev))
+        this.e.addEventListener("pointerup", ev => this.onPointerUp(ev))
+        this.e.addEventListener("pointercancel", ev => this.onPointerCancel(ev))
+        this.e.addEventListener("pointermove", ev => this.onPointerMove(ev))
     }
     /*
      * Terminal7.a.ddGate is used to add a gate to a host.
@@ -1052,5 +931,112 @@ peer_name = "${peername}"\n`
             terminal7.log(e)
         }
         */
+    }
+    onPointerCancel(ev) {
+        let hGate = ev.target.closest(".home-gate")
+        this.pointer0 = null
+        this.firstT = null
+        this.lastT = null
+        this.gesture = null
+        if (hGate)
+            hGate.classList.remove("pressed")
+        return
+    }
+/*
+ * onPointer is called on all browser's touch events
+ */
+    onPointerDown(ev) {
+        let e = ev.target,
+            hGate = e.closest(".home-gate")
+        /*
+        if ((ev.pointerType == "mouse") && (ev.pressure == 0))
+            return
+            */
+        this.pointer0 = Date.now() 
+        this.firstT = {pageX: ev.pageX, pageY: ev.pageY}
+        if (hGate)
+            hGate.classList.add("pressed")
+        // only dividers know their panes
+        if (e.pane === undefined)
+            return
+        // identify pan gesture
+        if (e.classList.contains("left-divider"))
+            this.gesture = { where: "left", pane: e.pane}
+        else if (e.classList.contains("top-divider"))
+            this.gesture = { where: "top", pane: e.pane}
+        else  {
+            console.log("failed to identify pan directorion")
+            return
+        }
+        this.log(`identified: ${this.gesture}`)
+    } 
+    onPointerEnd(ev) {
+        let e = ev.target,
+            hGate = e.closest(".home-gate")
+
+        this.gesture = null
+
+        if (this.firstT && hGate) {
+            let deltaT = Date.now() - this.pointer0
+
+            hGate.classList.remove("pressed")
+            if (deltaT > this.conf.ui.quickest_press) {
+                ev.stopPropagation()
+                ev.preventDefault()
+                e.gate.edit()
+            }
+        }
+    }
+    onPointerMove(ev) {
+        let x  = ev.pageX,
+            y  = ev.pageY
+
+        /*
+        if ((ev.pointerType == "mouse") && (ev.pressure == 0))
+            return
+            */
+
+        if (this.gesture) {
+            let where = this.gesture.where,
+                dest = Math.min(1.0, (where == "top")
+                        ? y / document.body.offsetHeight
+                        : x / document.body.offsetWidth)
+            this.gesture.pane.layout.moveBorder(this.gesture.pane, where, dest)
+            ev.stopPropagation()
+            ev.preventDefault()
+        }
+    }
+    onPointerUp(ev) {
+        if (this.firstT) {
+            let deltaT = Date.now() - this.pointer0,
+                    x  = ev.pageX,
+                    y  = ev.pageY,
+                    dx = this.firstT.pageX - x,
+                    dy = this.firstT.pageY - y,
+                    d  = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2)),
+                    s  = d/deltaT,
+                    r = Math.abs(dx / dy)
+
+            if ((d > this.conf.ui.cutMinDistance)
+                && (s > this.conf.ui.cutMinSpeed)) {
+                // it's a cut!!
+                let cell = ev.target.closest(".cell"),
+                    pane = (cell != null)?cell.cell:undefined
+                if (pane && !pane.zoomed)  {
+                    if (r < 1.0)
+                        pane.split("topbottom",
+                            (x / document.body.offsetWidth - pane.xoff) / pane.sx)
+                    else
+                        pane.split("rightleft",
+                            (y / document.body.offsetHeight - pane.yoff) / pane.sy)
+                    ev.stopPropagation()
+                    ev.preventDefault()
+                    // t.focus()
+                }
+            }
+        }
+        this.pointer0 = null
+        this.firstT = null
+        this.gesture = null
     }
 }

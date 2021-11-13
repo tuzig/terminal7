@@ -505,6 +505,19 @@ td {
     position: absolute;
     z-index: 3;
 }    
+.divider * {
+    pointer-events: none;
+}
+.top-divider { 
+    transform: rotate(90deg);
+    cursor: row-resize;
+    padding: 20px 40px;
+}
+.left-divider {  
+    cursor: col-resize; 
+    padding: 40px 20px;
+}
+
 .offline {
     opacity: 25%;
     border-color: #373702;

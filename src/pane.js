@@ -179,7 +179,7 @@ export class Pane extends Cell {
     focus() {
         super.focus()
         if (this.t !== undefined)
-            this.t.focus()
+            terminal7.run(_ => this.t.focus(), 10)
         else 
             terminal7.log("can't focus, this.t is undefined")
     }
@@ -500,9 +500,9 @@ export class Pane extends Cell {
             d.forEach((e, i) => {
                 this.w.e.prepend(e)
                 e = this.w.e.children[0]
+                e.classList.add((i==0)?"left-divider":"top-divider")
+                e.pane = this
                 this.dividers.push(e)
-                if (i == 1)
-                    e.style.transform = "rotate(90deg)"
             })
         }
     }
@@ -515,17 +515,17 @@ export class Pane extends Cell {
             H = this.w.e.offsetHeight,
             d = this.dividers[0]
         if (this.xoff > 0.001 & this.sy * H > 50) {
-            // add elft divider
-            d.style.left = `${this.xoff * W - 4}px`
-            d.style.top = `${(this.yoff + this.sy/2)* H - 22}px`
+            // refresh left divider position
+            d.style.left = `${this.xoff * W - 4 - 20 }px`
+            d.style.top = `${(this.yoff + this.sy/2)* H - 22 - 40}px`
             d.classList.remove("hidden")
         } else
             d.classList.add("hidden")
         d = this.dividers[1]
         if (this.yoff > 0.001 & this.sx * W > 50) {
-            // add top divider
-            d.style.top = `${this.yoff * H - 25}px`
-            d.style.left = `${(this.xoff + this.sx/2)* W - 22}px`
+            // refresh top divider position
+            d.style.top = `${this.yoff * H - 25 - 20 }px`
+            d.style.left = `${(this.xoff + this.sx/2)* W - 22 - 40}px`
             d.classList.remove("hidden")
         } else
             d.classList.add("hidden")

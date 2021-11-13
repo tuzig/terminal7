@@ -38,14 +38,12 @@ export class Window {
         a.setAttribute('href', `#${this.e.id}`)
         a.innerHTML = this.name
         // Add gestures on the window name for rename and drag to trash
-        /*
         let h = new Hammer.Manager(a, {})
         h.options.domEvents=true; // enable dom events
         h.add(new Hammer.Press({event: "rename", pointers: 1}))
         h.add(new Hammer.Tap({event: "switch", pointers: 1}))
         h.on("rename", ev => this.rename())
         h.on("switch", (ev) => this.focus())
-        */
         this.nameE = a
         this.gate.e.querySelector(".tabbar-names").appendChild(a)
     }
