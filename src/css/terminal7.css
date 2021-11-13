@@ -7,6 +7,9 @@
  * green - #00FA00
  * background - #271D30
  */
+:root {
+    --indicator-color: #00FA00
+}
 @font-face {
     font-family: "FiraSans";
     font-style: normal;
@@ -112,9 +115,6 @@ p a, footer a {
 a {
     text-decoration: none;
     color: #00FAFA;
-}
-.focused {
-    border-color: #D4ED37 !important;
 }
 .modal {
     z-index: 6;
@@ -512,8 +512,8 @@ td {
     border-color: #373702;
 }
 .hosts .pressed { box-shadow: 4px 4px 4px 0 #373702; }
-.tabbar-names .on::before { content: "❲" }
-.tabbar-names .on::after { content: "❳"; }
+.tabbar-names .on::before { content: "❲ "; color: var(--indicator-color);}
+.tabbar-names .on::after { content: " ❳"; color: var(--indicator-color);}
 #offline {
     bottom: unset;
     top: 50%;

@@ -3,7 +3,9 @@
  *  Copyright: (c) 2021 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-const  ABIT                = 10
+const   ABIT                = 10,
+        FOCUSED_BORDER_COLOR = "#D4ED37",
+        UNFOCUSED_BORDER_COLOR = "#373702"
 
 export class Cell {
     constructor(props) {
@@ -39,11 +41,11 @@ export class Cell {
     focus() {
         this.active = true
         if (this.w.activeP !== null) {
-            this.w.activeP.e.classList.remove("focused")
+            this.w.activeP.e.style.borderColor = UNFOCUSED_BORDER_COLOR
             this.w.activeP.active = false
         }
         this.w.activeP = this
-        this.e.classList.add("focused")
+        this.e.style.borderColor = FOCUSED_BORDER_COLOR
     }
     /*
      * Used to grow/shrink the terminal based on containing element dimensions
@@ -162,6 +164,7 @@ export class Cell {
                 te = this.e.removeChild(this.e.children[0])
             c.classList.add("zoomed")
             e.classList.add("pane", "focused")
+            e.style.borderColor = FOCUSED_BORDER_COLOR
             e.appendChild(te)
             c.appendChild(e)
             this.styleZoomed(e)

@@ -10,7 +10,8 @@ import { Pane } from './pane.js'
 
 import { Clipboard } from '@capacitor/clipboard'
 import { Storage } from '@capacitor/storage'
-const ABIT    = 10  // ashort period of time, in milli
+const ABIT    = 10,
+    FAILED_COLOR = "red"// ashort period of time, in milli
 
 /*
  * The gate class abstracts a host connection
@@ -163,6 +164,10 @@ export class Gate {
         }
         this.boarding = false
     }
+    setIndicatorColor(color) {
+            this.e.querySelector(".tabbar-names").style.setProperty(
+                "--indicator-color", color)
+    }
     /*
      * updateConnectionState(state) is called on peer connection
      * state changes.
@@ -178,7 +183,8 @@ export class Gate {
             if (terminal7.ws != null)
                 terminal7.ws.close()
             this.boarding = true
-            document.getElementById("downstream-indicator").classList.remove("failed")
+
+            this.setIndicatorColor("unset")
             var m = terminal7.e.querySelector(".disconnect")
             if (m != null)
                 m.remove()
@@ -194,7 +200,7 @@ export class Gate {
             // TODO: add warn class
             this.notify("WebRTC disconnected and may reconnect or close")
             this.lastDisconnect = Date.now()
-            document.getElementById("downstream-indicator").classList.add("failed")
+            this.setIndicatorColor(FAILED_COLOR)
         }
         else if ((state != "new") && (state != "connecting") && this.boarding) {
             // handle connection failures
@@ -223,13 +229,12 @@ export class Gate {
      * peerConnect connects the webrtc session with the peer
      */
     peerConnect(offer) {
-        this.notify("Connecting")
         let sd = new RTCSessionDescription(offer)
         this.pc.setRemoteDescription(sd)
             .catch (e => {
                 this.notify(`Failed to set remote description: ${e}`)
                 this.stopBoarding()
-                document.getElementById("downstream-indicator").classList.add("failed")
+                this.setIndicatorColor(FAILED_COLOR)
                 terminal7.onDisconnect(this)
             })
     }
@@ -398,7 +403,7 @@ export class Gate {
                 this.notify(
                      `#${msg.message_id} tried ${retries} times and given up`)
                 this.stopBoarding()
-                document.getElementById("downstream-indicator").classList.add("failed")
+                this.setIndicatorColor(FAILED_COLOR)
                 terminal7.onDisconnect(this)
             }
         }
@@ -533,11 +538,11 @@ export class Gate {
                 const handler = this.onack[i]
                 terminal7.log("got cdc message:",  msg)
                 if (msg.type == "nack") {
-                    document.getElementById("downstream-indicator").classList.add("failed")
+                    this.setIndicatorColor(FAILED_COLOR)
                     this.nameE.classList.add("failed")
                 }
                 else {
-                    document.getElementById("downstream-indicator").classList.remove("failed")
+                    this.setIndicatorColor("unset")
                     this.nameE.classList.remove("failed")
                 }
                 if (handler != undefined) {

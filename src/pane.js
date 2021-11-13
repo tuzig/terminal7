@@ -16,6 +16,8 @@ import * as aE from 'ansi-escapes'
 import * as XtermWebfont from 'xterm-webfont'
 
 const  REGEX_SEARCH        = false,
+      COPYMODE_BORDER_COLOR = "#F952F9",
+        FOCUSED_BORDER_COLOR = "#D4ED37",
        SEARCH_OPTS = {
             regex: REGEX_SEARCH,
             wholeWord: false,
@@ -39,6 +41,7 @@ export class Pane extends Cell {
         this.cmCursor = null
         this.cmMarking = false
         this.dividers = []
+        this.flashTimer = null
     }
 
     /*
@@ -257,9 +260,20 @@ export class Pane extends Cell {
             terminal7.pendingPanes[msgID] = this
         }
     }
+    flashIndicator () {
+        if (this.flashTimer == null) {
+            let  flashTime = terminal7.conf.indicators && terminal7.conf.indicators.flash
+                             || 88
+            this.gate.setIndicatorColor("#373702")
+            this.flashTimer = terminal7.run(_ => {
+                this.flashTimer = null
+                this.gate.setIndicatorColor("unset")
+            }, flashTime) 
+        }
+    }
     // called when a message is received from the server
     onMessage (m) {
-        terminal7.onMessage(m)
+        this.flashIndicator()
         if (this.state == "opened") {
             var enc = new TextDecoder("utf-8"),
                 msg = enc.decode(m.data)
@@ -342,7 +356,7 @@ export class Pane extends Cell {
             this.copyMode = true
             this.cmInitCursor()
             this.cmAtEnd = null
-            document.querySelector('#copy-mode-indicator').classList.remove('hidden')
+            this.e.style.borderColor = COPYMODE_BORDER_COLOR
             Storage.get({key: "first_copymode"}).then(v => {
                 if (v.value != "1") {
                     var e = document.getElementById("help-copymode")
@@ -355,7 +369,7 @@ export class Pane extends Cell {
     exitCopyMode() {
         if (this.copyMode) {
             this.copyMode = false
-            document.querySelector('#copy-mode-indicator').classList.add('hidden')
+            this.e.style.borderColor = FOCUSED_BORDER_COLOR
             this.t.clearSelection()
             this.t.scrollToBottom()
             this.focus()

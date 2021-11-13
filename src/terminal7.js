@@ -582,16 +582,13 @@ peer_name = "${peername}"\n`
             if (!e.classList.contains("non-clearable"))
                 e.classList.add("hidden")
         })
-        terminal7.logDisplay(false)
+        this.logDisplay(false)
         this.focus()
     }
     goHome() {
         let s = document.getElementById('home-button'),
-            h = document.getElementById('home'),
-            hc = document.getElementById('downstream-indicator')
+            h = document.getElementById('home')
         s.classList.add('on')
-        hc.classList.add('off')
-        hc.classList.remove('on', 'failed')
         if (this.activeG) {
             this.activeG.e.classList.add("hidden")
             this.activeG = null
@@ -622,24 +619,6 @@ peer_name = "${peername}"\n`
                 .classList.remove("on")
         }
         this.focus()
-    }
-    /*
-     * OnMessage is called by the pane when they recieve traffic.
-     * if the indicator is not alreay flushing it will flush it
-     */
-    onMessage(m) {
-        if (this.flashTimer == null) {
-            let  e = document.getElementById("downstream-indicator"),
-                 flashTime = this.conf.indicators && this.conf.indicators.flash
-                             || 88
-            e.classList.remove("failed", "off")
-            e.classList.add("on")
-            this.flashTimer = terminal7.run(_ => {
-                this.flashTimer = null
-                e.classList.remove("on")
-                e.classList.add("off")
-            }, flashTime) 
-        }
     }
     /*
      * onDisconnect is called when a gate disconnects.
@@ -804,13 +783,11 @@ peer_name = "${peername}"\n`
         callCB()
     }
     updateNetworkStatus (status) {
-        let cl = document.getElementById("connectivity").classList,
-            offl = document.getElementById("offline").classList
+        let off = document.getElementById("offline").classList
         this.netStatus = status
         this.log(`updateNetwrokStatus: ${status.connected}`)
         if (status.connected) {
-            cl.remove("failed")
-            offl.add("hidden")
+            off.add("hidden")
             if (this.activeG)
                 this.activeG.connect()
             else 
@@ -828,8 +805,7 @@ peer_name = "${peername}"\n`
                 })
         }
         else {
-            offl.remove("hidden")
-            cl.add("failed")
+            off.remove("hidden")
             this.gates.forEach(g => g.stopBoarding())
         }
     }
