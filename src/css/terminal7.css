@@ -8,7 +8,8 @@
  * background - #271D30
  */
 :root {
-    --indicator-color: #00FA00
+    --indicator-color: #00FA00;
+    --local-border: #F952F9;
 }
 @font-face {
     font-family: "FiraSans";
@@ -224,9 +225,7 @@ nav {
     flex: 10 1 80%;
     display: flex;
     align-content: stretch;
-    border-right: 1px solid #D4ED37;
-    border-left: 1px solid #D4ED37;
-    border-bottom: 1px solid #D4ED37;
+    border: 1px solid var(--local-border);
     background-color: black;
     border-radius: 0 0 12px 12px;
     min-height: min-content;
@@ -247,8 +246,8 @@ nav::-webkit-scrollbar {
     flex: 1 0 auto; 
     border-right: 1px solid #373702;
     text-align: center;
-    font-size: 18pt;
-    line-height: 33pt;
+    font-size: 18px;
+    line-height: 39px;
     text-decoration: none; 
     color: inherit;
     width: max-content;
@@ -259,7 +258,6 @@ nav .on { color: #00FA00 !important; }
 .off { color: #373702; }
 /* vertical align the nav bar buttons */
 .tabbar {
-    height: 34pt;
     left: 0; 
     bottom: 51pt;
     color: #373702;
