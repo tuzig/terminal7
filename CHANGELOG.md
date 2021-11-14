@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - default maximum tabs changed to 10
 - keyboard help display looks upgrade to look like iPadOS 15.0
+- Network activity is indicated in the tabbar
 
 ### Fixed
 
