@@ -92,12 +92,7 @@ export class Gate {
         let li = document.createElement('div'),
             a = document.createElement('a'),
             addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
-        a.addEventListener("click", ev => {
-            if (this.online == false)
-                terminal7.notify(`\uD83D\uDCD6 ${this.name} is offline`)
-            else
-                this.connect()
-        })
+        li.className = "home-gate"
         li.classList.add("border")
         this.nameE = document.createElement('h1')
         this.nameE.innerHTML = this.name || this.addr

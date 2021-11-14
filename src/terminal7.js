@@ -402,7 +402,7 @@ peer_name = "${peername}"\n`
     catchFingers() {
         var start,
             last,
-            firstT = null,
+            firstPointer = null,
             gesture = null
         this.e.addEventListener("pointerdown", ev => this.onPointerDown(ev))
         this.e.addEventListener("pointerup", ev => this.onPointerUp(ev))
@@ -935,16 +935,14 @@ peer_name = "${peername}"\n`
     onPointerCancel(ev) {
         let hGate = ev.target.closest(".home-gate")
         this.pointer0 = null
-        this.firstT = null
+        this.firstPointer = null
         this.lastT = null
         this.gesture = null
+        this.longPressGate = null
         if (hGate)
             hGate.classList.remove("pressed")
         return
     }
-/*
- * onPointer is called on all browser's touch events
- */
     onPointerDown(ev) {
         let e = ev.target,
             hGate = e.closest(".home-gate")
@@ -953,9 +951,14 @@ peer_name = "${peername}"\n`
             return
             */
         this.pointer0 = Date.now() 
-        this.firstT = {pageX: ev.pageX, pageY: ev.pageY}
-        if (hGate)
+        this.firstPointer = {pageX: ev.pageX, pageY: ev.pageY}
+        if (hGate) {
             hGate.classList.add("pressed")
+            if (!this.longPressGate)
+                this.longPressGate = this.run(ev => {
+                    hGate.gate.edit()
+                }, this.conf.ui.quickest_press)
+        }
         // only dividers know their panes
         if (e.pane === undefined)
             return
@@ -970,23 +973,6 @@ peer_name = "${peername}"\n`
         }
         this.log(`identified: ${this.gesture}`)
     } 
-    onPointerEnd(ev) {
-        let e = ev.target,
-            hGate = e.closest(".home-gate")
-
-        this.gesture = null
-
-        if (this.firstT && hGate) {
-            let deltaT = Date.now() - this.pointer0
-
-            hGate.classList.remove("pressed")
-            if (deltaT > this.conf.ui.quickest_press) {
-                ev.stopPropagation()
-                ev.preventDefault()
-                e.gate.edit()
-            }
-        }
-    }
     onPointerMove(ev) {
         let x  = ev.pageX,
             y  = ev.pageY
@@ -1007,12 +993,31 @@ peer_name = "${peername}"\n`
         }
     }
     onPointerUp(ev) {
-        if (this.firstT) {
+        let e = ev.target,
+            hGate = e.closest(".home-gate")
+
+        if (!this.pointer0)
+            return
+        if (hGate) {
+            let deltaT = Date.now() - this.pointer0
+            hGate.classList.remove("pressed")
+            clearTimeout(this.longPressGate)
+            this.longPressGate = null
+            if (deltaT > this.conf.ui.quickest_press) {
+                ev.stopPropagation()
+                ev.preventDefault()
+            } else {
+                if (!hGate.gate.fp || hGate.gate.online)
+                    hGate.gate.connect()
+                else
+                    terminal7.notify(`\uD83D\uDCD6 ${this.name} is offline`)
+            }
+        } else if (this.firstPointer) {
             let deltaT = Date.now() - this.pointer0,
                     x  = ev.pageX,
                     y  = ev.pageY,
-                    dx = this.firstT.pageX - x,
-                    dy = this.firstT.pageY - y,
+                    dx = this.firstPointer.pageX - x,
+                    dy = this.firstPointer.pageY - y,
                     d  = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2)),
                     s  = d/deltaT,
                     r = Math.abs(dx / dy)
@@ -1036,7 +1041,7 @@ peer_name = "${peername}"\n`
             }
         }
         this.pointer0 = null
-        this.firstT = null
+        this.firstPointer = null
         this.gesture = null
     }
 }
