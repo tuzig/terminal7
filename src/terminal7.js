@@ -577,15 +577,6 @@ peer_name = "${peername}"\n`
             this.clear()
             gate.edit()
         })
-        e.querySelector("form").addEventListener('submit', ev => {
-            ev.preventDefault()
-            this.ssh(this.e.lastElementChild, gate, 
-                "webexec start", ev => {
-                gate.clear()
-                this.clear()
-                terminal7.run(_ => gate.connect(), 2000)
-            })
-        })
         e.querySelector(".close").addEventListener('click', ev => {
             gate.disengage()
             gate.clear()

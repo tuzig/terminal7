@@ -581,3 +581,11 @@ input[name="fingerprint"] {
     width: 25em; 
     margin: 8px auto;
 }
+pre {
+    font-size: 24px;
+    background-color: black;
+    padding: 0.5em;
+    width: fit-content;
+    margin: 1em auto;
+    border: 1px solid var(--local-border);
+}

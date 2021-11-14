@@ -294,26 +294,18 @@
        </form></div>
     </template>
     <template id="nosignal-template">
-        <div class="modal border temporal"><form>
+        <div class="modal border temporal">
           <h1><span class="name"></span>: Connection Error</h1>
-          <p>If <span class="address"></span> is the wrong address click
-              <a href="#" class="edit-link">here</a></p>
-          <p>To connect, we need webexec installed and its agent running.
-          To install webexec on a *NIX server, please read the
-            <a href="https://github.com/tuzig/webexec#webexec">
-                installation guide</a>.</p>
-          <p>If it is installed we can use SSH and start it for you:
-          </p>
-          <label for="uname">Username</label>
-          <input type="text" placeholder="your system username" name="uname" required>
-          <label for="pass">Password</label>
-          <input type="password" placeholder="your password" name="pass" required>
+          <p id="nosignal-wrong-address" style="display:none;">
+            If <span class="address"></span> is the wrong address click
+              <a href="#" class="edit-link">here</a>.</p>
+          <p>If the problem presist ensure the server is running by:</p>
+          <pre>$ webexec status</pre> 
           <nav>
               <button type="button" class="close"><i class="f7-icons">xmark</i></button>
               <button type="button" class="reconnect"><i class="f7-icons">arrow_2_circlepath</i></button>
-              <button type="submit"><i class="f7-icons">rays</i></button>
           </nav>
-      </form></div>
+      </div>
     </template>
     <!-- every gate creates his own tabbar based on the template below -->
     <template id="gate-template">
