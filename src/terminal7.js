@@ -293,9 +293,10 @@ export class Terminal7 {
                 document.getElementById("peerbook-modal").classList.remove("hidden")
             })
 
-         if (!(window.matchMedia('(display-mode: standalone)').matches)
+         if (!((window.matchMedia('(display-mode: standalone)').matches)
+             || (window.matchMedia('(display-mode: fullscreen)').matches)
              || window.navigator.standalone
-             || document.referrer.includes('android-app://'))
+             || document.referrer.includes('android-app://')))
             this.showGreetings()
         // Last one: focus
         this.focus()
