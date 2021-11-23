@@ -21,6 +21,11 @@
           </ul>
       </div>
       <div id="home">
+          <div id="version" target="_blank">
+              <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md">
+                  version 0.18.0
+              </a>
+          </div>
           <h2>Destinations</h2>
           <div id="hosts-container">
               <div class="hosts" id="static-hosts">
@@ -108,18 +113,27 @@
             </nav>
         </form>
       </div>
+      <div id="manual-install" class="hidden modal border">
+          <p>Sorry, you have to install the app manually.
+             Check what the net says about installing PWAs in your borwser.
+             Best is to use safari on iOS and chrome on all else.
+          </p>
+      </div>
       <div id="greetings-modal" class="hidden modal border">
           <h1>🖖 Greetings & Salutations 🖖</h1>
-          <h2 style="margin-top:0.5em"> Thanks for trying our 7th gen terminal</h2>
+          <h2 style="margin-top:0.5em"> Thanks for trying Terminal7</h2>
           <p>
-                We're still at 1.0.X so things might break.
-                Don't worry - your work is safe. It's all 
-                on the server and eventually you'll reconnect.
-          </p><p>
-                Worst case scenarios is you'll have to close 
-                and open the app, reconnect and hit CTRL-L.
-          </p>
-          <button type="button" class="text-button">Enter</button>
+                Terminal7 is a touchable terminal emulator & multiplexer
+                running over WebRTC. Written for the web, Terminal7 in 
+                installed from your browser.
+            </p>
+        <p class="why-install" style="text-align: center;">
+            Install to enjoy full screen, offline<br/>
+            and playing better with other apps.
+        </p>
+        <p id="installation"></p>
+          <button type="button" class="text-button">Play</button>
+          <button id="install-button" type="button" class="text-button">Install</button>
       </div>
       <div id="settings-modal" class="hidden modal border">
           <textarea id="edit-conf" lines="20" cols="40">
@@ -129,11 +143,6 @@
                target="_blank">
                  settings
             </a>
-          <div id="version" target="_blank">
-              <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md">
-                  version 0.17.2
-              </a>
-          </div>
           </footer>
           <nav>
               <button type="button" class="close"><i class="f7-icons">

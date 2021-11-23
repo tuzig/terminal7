@@ -288,15 +288,11 @@ showKeyHelp () {
                 // modal.querySelector("form").reset()
                 document.getElementById("peerbook-modal").classList.remove("hidden")
             })
-        modal = document.getElementById("greetings-modal")
-        var greated = await Storage.get({key: 'greated'})
-        if (greated.value == null) {
-            modal.addEventListener('click', ev => {
-                this.clear()
-                Storage.set({key: 'greated', value: 'indeed'})
-            })
-            modal.classList.remove("hidden")
-        }
+
+         if (!(window.matchMedia('(display-mode: standalone)').matches)
+             || window.navigator.standalone
+             || document.referrer.includes('android-app://'))
+            this.showGreetings()
         // Last one: focus
         this.focus()
     }
@@ -1034,5 +1030,32 @@ peer_name = "${peername}"\n`
         this.pointer0 = null
         this.firstPointer = null
         this.gesture = null
+    }
+    showGreetings() {
+        let modal = document.getElementById("greetings-modal"),
+            button = document.getElementById("install-button"),
+            notes = `Sorry, we don't have a installation instructions
+for your env. Please search the web how to install PWA on your system.`,
+            pwa = {
+                title: 'Terminal7',
+                text: 'The progressive web terminal',
+                url: 'https://pwa.terminal7.dev'
+            }
+        modal.addEventListener('click', _ => this.clear())
+        if (navigator.share) {
+            document.getElementById('installation').remove()
+            button.addEventListener('click', _ => {
+               navigator.share(pwa)
+               .then(() => console.log('Successful share'))
+               .catch((error) => console.log('Error sharing', error))
+            })
+            button.classList.remove("hidden")
+        } else 
+            button.addEventListener('click', _ => {
+                let m = document.getElementById('manual-install')
+                m.classList.remove('hidden')
+                m.addEventListener('click', _ => this.clear())
+            })
+        modal.classList.remove("hidden")
     }
 }

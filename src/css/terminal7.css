@@ -359,7 +359,9 @@ button.rename-close {
 }
 #home p { font-size: 24pt; }
 #version {
-    padding-bottom: 2%;
+    position: absolute;
+    right: 10px;
+    bottom:68px;
 }
 #version a {
     text-decoration: underline;
@@ -560,6 +562,9 @@ td {
     margin-left: auto;
 }
 
+#greetings-modal {
+    max-width: 36em;
+}
 #greetings-modal h2 {
     color: #F952F9;
 }
@@ -573,6 +578,15 @@ td {
 #greetings-modal p {
     text-align: left;
     line-height: 26px;
+}
+#greetings-modal ul {
+    list-style: tibetan;
+}
+#greetings-modal li {
+    font-size:18px;
+    text-align: left;
+    line-height: 26px;
+    padding-bottom: 0.5em;
 }
 #peerbook-modal p {
     text-align: left;
@@ -588,4 +602,9 @@ pre {
     width: fit-content;
     margin: 1em auto;
     border: 1px solid var(--local-border);
+}
+.why-install {
+    margin: 0 auto;
+    text-align: center;
+    font-size: 118%;
 }
