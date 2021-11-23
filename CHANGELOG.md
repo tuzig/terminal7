@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - CTRL-c is working again
+- help modals go away when releasing meta
 
 ##  [0.17.2] - 2021/10/13
 

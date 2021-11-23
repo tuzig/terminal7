@@ -78,15 +78,15 @@ export class Terminal7 {
         this.pendingPanes = {}
     }
     showKeyHelp () {
-    if (Date.now() - this.metaPressStart > 987) {
-        var e
-        if (this.activeG && this.activeG.activeW.activeP.copyMode )
-            e = document.getElementById('help-copymode')
-        else
-            e = document.getElementById('keys-help')
-        e.classList.remove('hidden')
+        if (Date.now() - this.metaPressStart > 987) {
+            var e
+            if (this.activeG && this.activeG.activeW.activeP.copyMode )
+                e = document.getElementById('help-copymode')
+            else
+                e = document.getElementById('keys-help')
+            e.classList.remove('hidden')
+        }
     }
-}
     /*
      * Terminal7.open opens terminal on the given DOM element,
      * loads the gates from local storage and redirects to home
@@ -219,11 +219,11 @@ export class Terminal7 {
         })
         document.addEventListener("keyup", ev => {
             // hide the modals when releasing the meta key
-            if (ev.key == "Meta") {
-                this.metaPressStart = Number.MAX_VALUE
-                document.querySelectorAll("#help-copymode,#keys-help")
-                    .forEach(e => e.classList.add("hidden"))
+            if ((ev.key == "Meta") &&
+                (Date.now() - this.metaPressStart > terminal7.conf.ui.quickest_press)) {
+                this.clear()
             }
+            this.metaPressStart = Number.MAX_VALUE
         })
         // Load gates from local storage
         let gates

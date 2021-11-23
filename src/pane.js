@@ -93,7 +93,6 @@ export class Pane extends Cell {
                 if (ev.metaKey) {
                     if ((ev.key != "Shift") && (ev.key != "Meta")) {
                         // ensure help won't pop
-                        console.log("WTF")
                         terminal7.metaPressStart = Number.MAX_VALUE
                         toDo = this.handleMetaKey(ev)
                     }
