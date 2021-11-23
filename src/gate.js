@@ -137,8 +137,8 @@ export class Gate {
     focus() {
         // first hide the current focused gate
         document.getElementById("home-button").classList.remove("on")
-        document.getElementById("trash-button").classList.remove("off")
-        document.getElementById("search-button").classList.remove("off")
+        document.querySelectorAll(".pane-buttons").forEach(
+            e => e.classList.remove("off"))
         let activeG = terminal7.activeG
         if (activeG) {
             activeG.e.classList.add("hidden")
@@ -630,8 +630,8 @@ export class Gate {
         // hide notifications
         terminal7.clear()
         //enable search
-        document.getElementById("search-button").classList.remove("off")
-        document.getElementById("trash-button").classList.remove("off")
+        document.querySelectorAll(".pane-buttons").forEach(
+            e => e.classList.remove("off"))
     }
     copyFingerprint() {
         let ct = document.getElementById("copy-fingerprint"),

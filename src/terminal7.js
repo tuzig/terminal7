@@ -135,6 +135,14 @@ export class Terminal7 {
                 .addEventListener("click", ev => this.pbVerify())
         document.querySelectorAll("#help-copymode, #keys-help").forEach(e => 
                 e.addEventListener("click", ev => this.clear()))
+        document.getElementById("divide-h")
+                .addEventListener("click", ev =>  {
+                    if (this.activeG)
+                        this.activeG.activeW.activeP.split("rightleft", 0.5)})
+        document.getElementById("divide-v")
+                .addEventListener("click", ev =>  {
+                    if (this.activeG)
+                        this.activeG.activeW.activeP.split("topbottom", 0.5)})
         let addHost = document.getElementById("add-host")
         document.getElementById('add-static-host').addEventListener(
             'click', ev => {
@@ -475,9 +483,8 @@ peer_name = "${peername}"\n`
         }
         // hide the modals
         this.clear()
-        // trash and search are off
-        document.getElementById("search-button").classList.add("off")
-        document.getElementById("trash-button").classList.add("off")
+        document.querySelectorAll(".pane-buttons").forEach(
+            e => e.classList.add("off"))
         window.location.href = "#home"
     }
     /* 

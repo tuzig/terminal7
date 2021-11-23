@@ -9,6 +9,13 @@
     <meta name="apple-mobile-web-app-title" content="Terminal7" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <link rel="apple-touch-icon" href="/img/logo192.png">
+    <link rel="apple-touch-startup-image" href="images/splash/launch-640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+    <link rel="apple-touch-startup-image" href="/img/launch-750x1294.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+    <link rel="apple-touch-startup-image" href="/img/launch-1242x2148.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+    <link rel="apple-touch-startup-image" href="/img/launch-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+    <link rel="apple-touch-startup-image" href="/img/launch-1536x2048.png" media="(min-device-width: 768px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait)">
+    <link rel="apple-touch-startup-image" href="/img/launch-1668x2224.png" media="(min-device-width: 834px) and (max-device-width: 834px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait)">
+    <link rel="apple-touch-startup-image" href="/img/launch-2048x2732.png" media="(min-device-width: 1024px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait)">
 
   <title>Terminal 7</title>
   <script src="capacitor.js"></script>
@@ -286,8 +293,11 @@
   <nav id="navbar" class="bar">
           <button type="button" id="home-button" class="on"><i class="f7-icons">house</i></button>
           <button type="button" id="log-button"><i class="f7-icons">bubble_right</i></button>
-          <button type="button" id="trash-button" class="off"><i class="f7-icons">rectangle_fill_badge_xmark</i></button>
-          <button type="button" id="search-button" class="off"><i class="f7-icons">doc_text_search</i></button>
+          <button type="button" id="trash-button" class="pane-buttons off"><i class="f7-icons">rectangle_fill_badge_xmark</i></button>
+          <button type="button" id="divide-h" class="pane-buttons off"><i class="f7-icons">divide</i></button>
+          <button type="button" id="divide-v" class="pane-buttons off">
+              <i class="f7-icons" style="display: inline-block; transform: rotate(90deg);">divide</i></button>
+          <button type="button" id="search-button" class="pane-buttons off"><i class="f7-icons">doc_text_search</i></button>
           <button type="button" id="help-button"><i class="f7-icons">question</i></button>
           <button type="button" id="dotfile-button"><i class="f7-icons">gear</i></button>
   </nav>
