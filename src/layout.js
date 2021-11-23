@@ -103,14 +103,16 @@ export class Layout extends Cell {
         p.id = terminal7.cells.length
         let pane = new Pane(p)
         terminal7.cells.push(pane)
-        if (p.parent instanceof Cell)
+        if (p.parent instanceof Cell) {
             this.cells.splice(this.cells.indexOf(p.parent)+1, 0, pane)
-        else
+            pane.openTerminal(props.parent.webexecID)
+        } else {
             this.cells.push(pane)
+            pane.openTerminal()
+        }
         
         // opening the terminal and the datachannel are heavy so we wait
         // for 10 msecs to let the new layout refresh
-        pane.openTerminal()
         return pane
     }
     /*

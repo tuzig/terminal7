@@ -54,7 +54,7 @@ export class Pane extends Cell {
     /*
      * Pane.openTerminal opens an xtermjs terminal on our element
      */
-    openTerminal() {
+    openTerminal(parent) {
         var con = document.createElement("div")
         this.t = new Terminal({
             convertEol: false,
@@ -79,7 +79,7 @@ export class Pane extends Cell {
         this.createDividers()
         this.t.onSelectionChange(() => this.selectionChanged())
         this.t.loadWebfontAndOpen(con).then(_ => {
-            this.fit(pane => { if (pane != null) pane.openDC() })
+            this.fit(pane => { if (pane != null) pane.openDC(parent) })
             this.t.textarea.tabIndex = -1
             this.t.attachCustomKeyEventHandler(ev => {
                 var toDo = true
@@ -226,7 +226,7 @@ export class Pane extends Cell {
         return p
 
     }
-    openDC() {
+    openDC(parent) {
         var tSize = this.t.rows+'x'+this.t.cols,
             label = ""
         this.buffer = []
@@ -245,7 +245,8 @@ export class Pane extends Cell {
                 args: { 
                     command: [terminal7.conf.exec.shell],
                     rows: this.t.rows,
-                    cols: this.t.cols
+                    cols: this.t.cols,
+                    parent: parent || 0
                 }
             })
             terminal7.pendingPanes[msgID] = this
