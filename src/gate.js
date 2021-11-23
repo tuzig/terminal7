@@ -94,7 +94,7 @@ export class Gate {
             addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
         li.className = "home-gate"
         li.classList.add("border")
-        this.nameE = document.createElement('h1')
+        this.nameE = document.createElement('p')
         this.nameE.innerHTML = this.name || this.addr
         a.appendChild(this.nameE)
         if (this.online == false)
