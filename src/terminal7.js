@@ -77,7 +77,7 @@ export class Terminal7 {
         this.zoomedE = null
         this.pendingPanes = {}
     }
-showKeyHelp () {
+    showKeyHelp () {
     if (Date.now() - this.metaPressStart > 987) {
         var e
         if (this.activeG && this.activeG.activeW.activeP.copyMode )
@@ -218,8 +218,12 @@ showKeyHelp () {
                 this.metaPressStart = Number.MAX_VALUE
         })
         document.addEventListener("keyup", ev => {
-            // hide the keys help when releasing any key
-            this.metaPressStart = Number.MAX_VALUE
+            // hide the modals when releasing the meta key
+            if (ev.key == "Meta") {
+                this.metaPressStart = Number.MAX_VALUE
+                document.querySelectorAll("#help-copymode,#keys-help")
+                    .forEach(e => e.classList.add("hidden"))
+            }
         })
         // Load gates from local storage
         let gates
