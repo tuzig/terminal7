@@ -20,5 +20,9 @@
   "display": "fullscreen",
   "scope": "/",
   "theme_color": "#271D30",
-  "description": "A touchable terminal emulator & multiplexer over webrtc"
+  "description": "A touchable terminal emulator & multiplexer over WebRTC",
+  "related_applications": [{
+    "platform": "webapp",
+    "url": "https://pwa.terminal7.dev/terminal7.webmanifest"
+  }]
 }

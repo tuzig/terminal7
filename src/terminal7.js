@@ -301,13 +301,26 @@ export class Terminal7 {
                 document.getElementById("peerbook-modal").classList.remove("hidden")
             })
 
+         // if we're not in an app
          if (!((window.matchMedia('(display-mode: standalone)').matches)
              || (window.matchMedia('(display-mode: fullscreen)').matches)
              || window.navigator.standalone
              || document.referrer.includes('android-app://')))
-            this.showGreetings()
-        // Last one: focus
-        this.focus()
+            if (navigator.getInstalledRelatedApps) 
+                navigator.getInstalledRelatedApps().then(relatedApps => {
+                    if (relatedApps.length == 0) {
+                        this.showGreetings()
+                    }
+                    else 
+                        this.notify("PWA installed, better use it")
+                })
+            else {
+               this.showGreetings()
+            }
+        else {
+            this.startApp()
+            this.focus()
+        }
     }
     async setPeerbook() {
         var e   = document.getElementById("peerbook-modal"),
@@ -1044,30 +1057,77 @@ peer_name = "${peername}"\n`
         this.gesture = null
     }
     showGreetings() {
-        let modal = document.getElementById("greetings-modal"),
-            button = document.getElementById("install-button"),
-            notes = `Sorry, we don't have a installation instructions
-for your env. Please search the web how to install PWA on your system.`,
-            pwa = {
-                title: 'Terminal7',
-                text: 'The progressive web terminal',
-                url: 'https://pwa.terminal7.dev'
-            }
-        modal.addEventListener('click', _ => this.clear())
-        if (navigator.share) {
-            document.getElementById('installation').remove()
-            button.addEventListener('click', _ => {
-               navigator.share(pwa)
-               .then(() => console.log('Successful share'))
-               .catch((error) => console.log('Error sharing', error))
-            })
-            button.classList.remove("hidden")
-        } else 
-            button.addEventListener('click', _ => {
+        let modal = document.getElementById("greetings-modal")
+            
+        modal.querySelector(".play-button").addEventListener('click', _ => {
+            this.clear()
+            this.startApp()
+        })
+        document.getElementById("install-button").addEventListener('click', ev => {
+            if (window.installPrompt !== undefined) {
+                window.installPrompt.prompt()
+                window.installPrompt.userChoice.then(outcome => {
+                    if (outcome) {
+                        this.clear()
+                        this.startApp()
+                    }
+                })
+            } else {
                 let m = document.getElementById('manual-install')
+                modal.classList.add('hidden')
                 m.classList.remove('hidden')
-                m.addEventListener('click', _ => this.clear())
-            })
+                m.querySelector(".close").addEventListener('click', _ => this.clear())
+            }
+            ev.preventDefault()
+            ev.stopPropagation()
+        })
         modal.classList.remove("hidden")
+    }
+    startApp() {
+        var a = localStorage.getItem("onboard")
+        if (a !== null)
+            return
+        var modal = document.getElementById("onboarding")
+        modal.classList.remove("hidden")
+        modal.querySelector(".onmobile").addEventListener('click', ev => {
+            localStorage.setItem("onboard", "yep")
+            modal = document.getElementById("mobile-instructions")
+            modal.classList.remove("hidden")
+            modal.querySelector(".close").addEventListener('click', _ =>
+                this.clear())
+            modal.querySelector(".copy").addEventListener('click', ev => {
+                this.clear()
+                Clipboard.write({string: "curl https://get.webexec.sh | bash"})
+                this.notify("Command copied to the clipboard")
+                ev.stopPropagation()
+                ev.preventDefault()
+            })
+        })
+        modal.querySelector(".ongpos").addEventListener('click', ev => {
+            localStorage.setItem("onboard", "yep")
+            var gate = this.addGate({
+                addr: "localhost:7777",
+                name: "localhost",
+                online: true,
+                store: true
+            })
+            this.storeGates()
+            modal = document.getElementById("localhost-instructions")
+            modal.classList.remove("hidden")
+            modal.querySelector(".close").addEventListener('click', _ =>
+                this.clear())
+            modal.querySelector(".copy").addEventListener('click', ev => {
+                this.notify("Command copied to the clipboard")
+                Clipboard.write({string: "curl https://get.webexec.sh | bash"})
+                ev.stopPropagation()
+                ev.preventDefault()
+            })
+            modal.querySelector(".connect").addEventListener('click', ev => {
+                this.clear()
+                gate.connect()
+                ev.stopPropagation()
+                ev.preventDefault()
+            })
+        })
     }
 }

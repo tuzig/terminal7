@@ -2,14 +2,15 @@
  * Main colors:
  * yellow - #D4ED37
  * dark yellow - #373702
- * magenta - #F952F9
- * light blue - #00FAFA
- * green - #00FA00
+ * magenta - #F952F9 use var(--local-border)
+ * light blue - #00FAFA: use var(--text-color)
+ * green - #00FA00: use var(--inidcator-color)
  * background - #271D30
  */
 :root {
     --indicator-color: #00FA00;
     --local-border: #F952F9;
+    --text-color: #00FAFA
 }
 @font-face {
     font-family: "FiraSans";
@@ -54,7 +55,7 @@ h1, h2, h3 {
 }
 .modal h1 {
     font-size: 22pt;
-    margin: 0;
+    /* margin: 0; */
 }
 h2 { margin: 0.3em;}
 h3 { margin: 0.2em; color: #F952F9; }
@@ -84,12 +85,10 @@ button {
     cursor: pointer;
     padding: 0.35em 1.2em;
     margin: 0 0.3em 0.3em 0;
-    border-color: #D4ED37;
-    color: #00FA00;
+    border-color: var(--local-border);
+    color: var(--local-border);
     border-radius: 0.15em;
     font-weight: 300;
-    background-color: black;
-    transition: all 0.2s;
     font-size: 30px;
 } 
 @media all and (max-width:30em){
@@ -97,9 +96,6 @@ button {
         display:block;
         margin:0.4em auto;
     }
-}
-#terminal7 ul {
-    list-style:none;
 }
 dd:not(:last-child) {
     margin-bottom: 1.5em;
@@ -137,10 +133,12 @@ a {
     margin-top: 0; 
     margin-bottom: 1em;
 }
+.modal nav:not(.navtext) { 
+    border-top: 1px #373702 solid;
+}
 .modal nav { 
     clear: both;
     width: 100%; 
-    border-top: 1px #373702 solid;
     margin: 1.5em auto 0;
     padding-top: 2%;
 }
@@ -205,7 +203,7 @@ nav button {
     cursor: pointer;
     border-right: 2px solid #373702;
 }
-nav button:last-child {
+nav:not(.navtext) button:last-child {
     border: none;
 }
 nav {
@@ -580,15 +578,19 @@ td {
 }
 #greetings-modal p {
     text-align: left;
-    line-height: 26px;
+    font-size: 16px;
+    line-height: 24px;
+    padding: 0.5em 1.2em;
 }
-#greetings-modal ul {
+.modal ul {
+    width: fit-content;
     list-style: tibetan;
+    margin: 0 auto;
 }
-#greetings-modal li {
-    font-size:18px;
+.modal li {
+    font-size:20px;
     text-align: left;
-    line-height: 26px;
+    line-height: 30px;
     padding-bottom: 0.5em;
 }
 #peerbook-modal p {
@@ -606,8 +608,12 @@ pre {
     margin: 1em auto;
     border: 1px solid var(--local-border);
 }
-.why-install {
-    margin: 0 auto;
-    text-align: center;
-    font-size: 118%;
+.navtext button {
+    flex: 1;
+    margin: 1em;
+    box-shadow: 0 10px 6px -10px var(--text-color);
+}
+.navtext>div {
+    flex: 1;
+    margin: 0 1em;
 }

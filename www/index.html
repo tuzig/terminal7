@@ -9,13 +9,6 @@
     <meta name="apple-mobile-web-app-title" content="Terminal7" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <link rel="apple-touch-icon" href="/img/logo192.png">
-    <link rel="apple-touch-startup-image" href="images/splash/launch-640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
-    <link rel="apple-touch-startup-image" href="/img/launch-750x1294.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
-    <link rel="apple-touch-startup-image" href="/img/launch-1242x2148.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
-    <link rel="apple-touch-startup-image" href="/img/launch-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
-    <link rel="apple-touch-startup-image" href="/img/launch-1536x2048.png" media="(min-device-width: 768px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait)">
-    <link rel="apple-touch-startup-image" href="/img/launch-1668x2224.png" media="(min-device-width: 834px) and (max-device-width: 834px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait)">
-    <link rel="apple-touch-startup-image" href="/img/launch-2048x2732.png" media="(min-device-width: 1024px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait)">
 
   <title>Terminal 7</title>
   <script src="capacitor.js"></script>
@@ -95,6 +88,7 @@
                 terminal or we can use ssh to take care of that for you:
             </p>
             <label for="uname">Username</label>
+
             <input type="text" placeholder="your system username" name="uname" required>
             <label for="pass">Password</label>
             <input type="password" placeholder="your password" name="pass" required>
@@ -121,26 +115,69 @@
         </form>
       </div>
       <div id="manual-install" class="hidden modal border">
-          <p>Sorry, you have to install the app manually.
-             Check what the net says about installing PWAs in your borwser.
-             Best is to use safari on iOS and chrome on all else.
-          </p>
+          <h1 style="margin:1em;">Installation Instructions</h1>
+          <ul>
+          <li>To install the app look for the PWA install icon at the edge
+          of the browser's url field
+          <li>On an iPad, press the share button and then "Add to home screen"
+          <li>Firefox has poor PWA support, better use chrome or edge or safari
+              on the iPad
+          </ul>
+            <nav>
+                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+            </nav>
       </div>
       <div id="greetings-modal" class="hidden modal border">
           <h1>🖖 Greetings & Salutations 🖖</h1>
           <h2 style="margin-top:0.5em"> Thanks for trying Terminal7</h2>
           <p>
-                Terminal7 is a touchable terminal emulator & multiplexer
-                running over WebRTC. Written for the web, Terminal7 in 
-                installed from your browser.
-            </p>
-        <p class="why-install" style="text-align: center;">
-            Install to enjoy full screen, offline<br/>
-            and playing better with other apps.
+                Terminal7 is a progressive web terminal emulator and multiplexer
+                over WebRTC. Inspired by tmux, Terminal7 is a reincarnation
+                with three key differences:
         </p>
-        <p id="installation"></p>
-          <button type="button" class="text-button">Play</button>
+        <div>
+        <ul>
+            <li>Running over a mobile network</li>
+            <li>Grpahics display output</li>
+            <li>Tablet first interface</li>
+        </ul>
+        </div>
+        <p>
+        You can play with Terminal7 in your browser or
+        you can install it to enjoy full screen,
+            offline and playing better with other apps
+        </p>
+          <nav class="navtext">
+          <button type="button" class="play-button text-button">Play</button>
           <button id="install-button" type="button" class="text-button">Install</button>
+          </nav>
+      </div>
+      <div id="onboarding" class="hidden modal border">
+          <h1>What is the local operating system type?</h1>
+          <nav class="navtext">
+              <button type="button" class="onmobile text-button">Mobile</button>
+              <button type="button" class="ongpos text-button">GPOS</button>
+          </nav>
+      </div>
+      <div id="localhost-instructions" class="hidden modal border">
+          <h1 style="margin:1em;">localhost added</h1>
+          <p>Please open a terminal and run:</p>
+          <pre>curl https://get.webexec.sh | bash</pre>
+          <nav>
+            <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+            <button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i></button>
+            <button type="button" class="connect"><i class="f7-icons">phone_arrow_up_right</i></button>
+          </nav>
+      </div>
+      <div id="mobile-instructions" class="hidden modal border">
+          <h1 style="margin:1em;">Mobile instructions</h1>
+          <p>To use Terminal7 you need a host with `webexec` installed:</p>
+          <pre>curl https://get.webexec.sh | bash</pre>
+          <nav>
+            <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+            <button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i></button>
+            <button type="button" class="connect"><i class="f7-icons">phone_arrow_up_right</i></button>
+          </nav>
       </div>
       <div id="settings-modal" class="hidden modal border">
           <textarea id="edit-conf" lines="20" cols="40">
