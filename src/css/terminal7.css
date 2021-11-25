@@ -447,6 +447,7 @@ label {
 #log-msgs {
     margin: 0;
     padding: 0;
+    list-style: none;
 }
 .log-msg {
     font-size: 16px;
