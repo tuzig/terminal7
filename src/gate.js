@@ -295,6 +295,7 @@ export class Gate {
         this.pconicecandidateerror = ev => {
             console.log("icecandidate error", ev.errorCode)
             if (ev.errorCode == 401) {
+                this.notify("Getting fresh ICE servers")
                 this.getIceServers().then(servers => {
                     terminal7.iceServers = servers
                     this.openPC(servers)
