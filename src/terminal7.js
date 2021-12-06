@@ -42,7 +42,7 @@ shell = "bash"
 timeout = 3000
 retries = 3
 ice_server = "stun:stun2.l.google.com:19302"
-peerbook = "pb.terminal7.dev"
+peerbook = "peerbook.io"
 
 [ui]
 quickest_press = 1000
