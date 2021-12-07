@@ -1097,7 +1097,7 @@ peer_name = "${peername}"\n`
                 this.clear())
             modal.querySelector(".copy").addEventListener('click', ev => {
                 this.clear()
-                Clipboard.write({string: "curl -L https://get.webexec.sh | bash"})
+                Clipboard.write({string: "curl -sLo webexec.sh https://get.webexec.sh && bash webexec.sh; rm webexec.sh"})
                 this.notify("Command copied to the clipboard")
                 ev.stopPropagation()
                 ev.preventDefault()
@@ -1118,7 +1118,7 @@ peer_name = "${peername}"\n`
                 this.clear())
             modal.querySelector(".copy").addEventListener('click', ev => {
                 this.notify("Command copied to the clipboard")
-                Clipboard.write({string: "curl -L https://get.webexec.sh | bash"})
+                Clipboard.write({string: "curl -sLo webexec.sh https://get.webexec.sh && bash webexec.sh; rm webexec.sh"})
                 ev.stopPropagation()
                 ev.preventDefault()
             })
