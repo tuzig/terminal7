@@ -602,10 +602,12 @@ input[name="fingerprint"] {
     margin: 8px auto;
 }
 pre {
+    text-align: left;
     overflow: auto;
     white-space: pre-wrap;
     margin: 1em auto;
     font-family: "FiraCode";
+    -webkit-user-select: all;
     user-select: all;
     font-size: 20px;
     background-color: black;
