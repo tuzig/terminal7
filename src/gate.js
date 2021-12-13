@@ -730,11 +730,14 @@ export class Gate {
     }
     updateNameE() {
         this.nameE.innerHTML = this.name
+        if (!this.fp) {
+            // there's nothing more to update for static hosts
+            return
+        }
         if (this.verified)
             this.nameE.classList.remove("unverified")
-        else 
+        else
             this.nameE.classList.add("unverified")
-
         if (this.online)
             this.nameE.classList.remove("offline")
         else
