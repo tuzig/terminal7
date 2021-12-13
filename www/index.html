@@ -23,32 +23,27 @@
       <div id="home">
           <div id="version" target="_blank">
               <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md">
-                  version 0.18.0
+                  version 0.18.2
               </a>
           </div>
           <h2>Destinations</h2>
           <div id="hosts-container">
               <div class="hosts" id="static-hosts">
                   <h3>Static</h3>
-                  <div class="border">
-                      <button type="button" id="add-static-host" >
-                          <i class="f7-icons"> plus</i>
-                      </button>
-                  </div>
+                  <button type="button" class="text-button" id="add-static-host" >
+                      <i class="f7-icons"> plus</i>
+                  </button>
               </div>
               <div class="hosts" id="peerbook-hosts">
                   <h3>PeerBook</h3>
-                  <div class="border">
-                      <button type="button" id="add-peerbook" >
-                          <i class="f7-icons"> plus</i>
-                      </button>
-                </div>
-                <div class="border">
-                  <button type="button" id="refresh"><i class="f7-icons">
-                          arrow_2_circlepath</i></button>
-                      </div>
-                  </div>
-                </div>
+                  <button type="button" class="text-button" id="add-peerbook" >
+                      <i class="f7-icons"> plus</i>
+                  </button>
+                  <button type="button" class="text-button" id="refresh">
+                      <i class="f7-icons">arrow_2_circlepath</i>
+                  </button>
+              </div>
+          </div>
       </div>
       <div id="add-host" class="hidden modal border" >
           <form>
@@ -62,9 +57,8 @@
             <input type="checkbox" checked name="remember">
             <label for="remember">Remember host</label>
             <footer>
-            <a href="https://github.com/tuzig/webexec/#install">
-              server installation instructions
-            </a>.
+              to install a server:
+          <pre>curl -sLo webexec.sh https://get.webexec.sh && bash webexec.sh; rm webexec.sh</pre>
             </footer>
             <nav>
                 <button type="button" class="close">
@@ -117,11 +111,11 @@
       <div id="manual-install" class="hidden modal border">
           <h1 style="margin:1em;">Installation Instructions</h1>
           <ul>
-          <li>To install the app look for the PWA install icon at the edge
-          of the browser's url field
           <li>On an iPad, press the share button and then "Add to Home Screen"
           <li>Firefox has poor PWA support, better use chrome or edge or safari
               on the iPad
+          <li>To install the app look for the PWA install icon at the edge
+          of the browser's url field
           </ul>
             <nav>
                 <button type="button" class="close"><i class="f7-icons">xmark</i></button>
@@ -162,7 +156,7 @@
       <div id="localhost-instructions" class="hidden modal border">
           <h1 style="margin:1em;">localhost added</h1>
           <p>Please open a terminal and run:</p>
-          <pre>curl -L https://get.webexec.sh | bash</pre>
+          <pre>curl -sLo webexec.sh https://get.webexec.sh && bash webexec.sh; rm webexec.sh</pre>
           <nav>
             <button type="button" class="close"><i class="f7-icons">xmark</i></button>
             <button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i></button>
@@ -172,7 +166,7 @@
       <div id="mobile-instructions" class="hidden modal border">
           <h1 style="margin:1em;">Mobile instructions</h1>
           <p>To use Terminal7 you need a host with `webexec` installed:</p>
-          <pre>curl -L https://get.webexec.sh | bash</pre>
+          <pre>curl -sLo webexec.sh https://get.webexec.sh && bash webexec.sh; rm webexec.sh</pre>
           <nav>
             <button type="button" class="close"><i class="f7-icons">xmark</i></button>
             <button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i></button>
@@ -207,11 +201,11 @@
         </p> -->
           <h2>&#x1F4D6; PeerBook Registration &#x1F4D6;</h2>
         <p>
-          Terminal7 supports peerbook.io - a signalling server and an address book.
-          Based on web sockets and 2FA, peerbook simplifies connecting to
+          peerbook.io is signalling server and an address book.
+          peerbook helps with fingerprints exchange,
           ephermal IP hosts and behind-the-NAT servers.
         </p><p>
-          Regsiter to get your peerbook and help us test the service. 
+          Regsiter to get your peerbook and help us test the service: 
         </p>
           <form action="#">
               <div class="compact-fields">
@@ -229,6 +223,13 @@
                       floppy_disk</i></button>
           </nav>
           </form>
+      </div>
+      <div id="edit-unverified-pbhost" class="hidden modal border" >
+            <h2>Unverified Host</h2>
+            <p>Please visit <a target="_blank">PeerBook</a> to verify</p>
+            <nav>
+                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+            </nav>
       </div>
       <div id="edit-host" class="hidden modal border" >
           <form id="edit-host-form">
@@ -351,12 +352,11 @@
     </template>
     <template id="nosignal-template">
         <div class="modal border temporal">
-          <h1><span class="name"></span>: Connection Error</h1>
+          <h1><span class="name"></span> Error</h1>
           <p id="nosignal-wrong-address" style="display:none;">
             If <span class="address"></span> is the wrong address click
               <a href="#" class="edit-link">here</a>.</p>
-          <p>If the problem presist ensure the server is running by:</p>
-          <pre>$ webexec status</pre> 
+          <p class="server-error"></p>
           <nav>
               <button type="button" class="close"><i class="f7-icons">xmark</i></button>
               <button type="button" class="reconnect"><i class="f7-icons">arrow_2_circlepath</i></button>

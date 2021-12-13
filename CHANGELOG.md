@@ -13,6 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Notification on ICE servers refresh
 
+## [0.18.2] - 2021/12/08
+
+### Fixed
+
+- Can copy install one-line on the iPad
+- Peerbook invitation text
+
+## [0.18.1] - 2021/12/07
+
+### Changed 
+
+- Updated webexec installation instructions
+
 ## [0.18.0] - 2021/11/30
 
 ### Added

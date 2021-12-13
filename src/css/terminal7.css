@@ -47,7 +47,7 @@ body {
 h1, h2, h3 {
   text-align: center;
 }
-#home h1, .hosts button i {
+#home h1 {
     font-size: 44px;
 }
 #home h1 {
@@ -80,7 +80,7 @@ button {
   font-family: Courier new;
   */
 }
-.text-button {
+.text-button, .hosts button {
     display: inline-block;
     cursor: pointer;
     padding: 0.35em 1.2em;
@@ -395,6 +395,13 @@ button.rename-close {
 }
 .hosts button {
     padding: 1em;
+    box-shadow: 7px 6px 28px 1px rgba(0, 0, 0, 0.24);
+    margin: 0.5em;
+    width: 80%
+}
+.hosts button:active {
+    transform: scale(0.98);
+    box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
 }
 .modal form {
     text-align: left;
@@ -525,9 +532,10 @@ td {
 
 .offline {
     opacity: 25%;
-    border-color: #373702;
 }
-.hosts .pressed { box-shadow: 4px 4px 4px 0 #373702; }
+.unverified {
+    border-style: dashed;
+}
 .tabbar-names .on::before { content: "❲ "; color: var(--indicator-color);}
 .tabbar-names .on::after { content: " ❳"; color: var(--indicator-color);}
 #offline {
@@ -602,17 +610,22 @@ input[name="fingerprint"] {
     margin: 8px auto;
 }
 pre {
-    font-size: 24px;
+    text-align: left;
+    overflow: auto;
+    white-space: pre-wrap;
+    margin: 1em auto;
+    font-family: "FiraCode";
+    -webkit-user-select: all;
+    user-select: all;
+    font-size: 20px;
     background-color: black;
     padding: 0.5em;
-    width: fit-content;
-    margin: 1em auto;
     border: 1px solid var(--local-border);
 }
+footer pre { font-size: 14px; }
 .navtext button {
     flex: 1;
     margin: 1em;
-    box-shadow: 0 10px 6px -10px var(--text-color);
 }
 .navtext>div {
     flex: 1;
