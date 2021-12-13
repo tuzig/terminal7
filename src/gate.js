@@ -40,18 +40,9 @@ export class Gate {
         this.msgs = {}
         this.marker = -1
         this.fp = props.fp
-        this._online = props.online
+        this.online = props.online
         this.watchDog = null
-    }
-    get online() {
-        return this._online
-    }
-    set online(v) {
-        if (v)
-            this.nameE.parentNode.parentNode.classList.remove("offline")
-        else
-            this.nameE.parentNode.parentNode.classList.add("offline")
-        this._online = v
+        this.verified = props.verified || false
     }
 
     /*
@@ -89,22 +80,14 @@ export class Gate {
         }
         // Add the gates' signs to the home page
         let hostsE = document.getElementById(this.fp?"peerbook-hosts":"static-hosts")
-        let li = document.createElement('div'),
-            a = document.createElement('a'),
+        let b = document.createElement('button'),
             addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
-        li.className = "home-gate"
-        li.classList.add("border")
-        this.nameE = document.createElement('p')
+        b.className = "text-button"
+        this.nameE = b
         this.nameE.innerHTML = this.name || this.addr
-        a.appendChild(this.nameE)
-        if (this.online == false)
-            li.classList.add("offline")
-        li.appendChild(a)
-        hostsE.appendChild(li)
-        // TODO: find a cleaner way to transfer the gate to the touch listener
-        li.gate = this
-        a.gate = this
-        this.nameE.gate = this
+        this.updateNameE()
+        hostsE.appendChild(b)
+        b.gate = this
     }
     delete() {
         terminal7.gates.splice(this.id, 1)
@@ -124,18 +107,26 @@ export class Gate {
      * edit start the edit-host user-assitance
      */
     edit() {
+        var editHost
         if (typeof(this.fp) == "string") {
-            this.notify("Got peer from \uD83D\uDCD6, connect only")
-            return
+            if (this.verified) {
+                this.notify("Got peer from \uD83D\uDCD6, connect only")
+                return
+            }
+            editHost = document.getElementById("edit-unverified-pbhost")
+            editHost.querySelector("a").setAttribute("href",
+                "https://"+ terminal7.conf.net.peerbook)
+        } else {
+            editHost = document.getElementById("edit-host")
+            editHost.querySelector('[name="hostaddr"]').value = this.addr
+            editHost.querySelector('[name="hostname"]').value = this.name
         }
-        let editHost = document.getElementById("edit-host")
         editHost.gate = this
-        editHost.querySelector('[name="hostaddr"]').value = this.addr
-        editHost.querySelector('[name="hostname"]').value = this.name
         editHost.classList.remove("hidden")
     }
     focus() {
-        // first hide the current focused gate
+        terminal7.logDisplay(false)
+        // hide the current focused gate
         document.getElementById("home-button").classList.remove("on")
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.remove("off"))
@@ -150,14 +141,14 @@ export class Gate {
     }
     // stops all communication 
     stopBoarding() {
-        if (!this.boarding)
-            return
+        // this.setIndicatorColor(FAILED_COLOR)
         // clear all pending messages
         for (var id in this.msgs) {
             window.clearTimeout(this.msgs[id])
             delete this.msgs[id]
         }
         this.boarding = false
+        terminal7.onDisconnect(this)
     }
     setIndicatorColor(color) {
             this.e.querySelector(".tabbar-names").style.setProperty(
@@ -169,16 +160,14 @@ export class Gate {
      */
     updateConnectionState(state) {
         terminal7.log(`updating ${this.name} state to ${state}`)
+        this.notify("connection state: " + state)
         if (state == "connected") {
-            this.notify("Connected")
+            terminal7.logDisplay(false)
             if (this.watchDog != null) {
                 window.clearTimeout(this.watchDog)
                 this.watchDog = null
             }
-            if (terminal7.ws != null)
-                terminal7.ws.close()
             this.boarding = true
-
             this.setIndicatorColor("unset")
             var m = terminal7.e.querySelector(".disconnect")
             if (m != null)
@@ -193,7 +182,6 @@ export class Gate {
         }
         else if (state == "disconnected") {
             // TODO: add warn class
-            this.notify("WebRTC disconnected and may reconnect or close")
             this.lastDisconnect = Date.now()
             this.setIndicatorColor(FAILED_COLOR)
         }
@@ -201,24 +189,10 @@ export class Gate {
             // handle connection failures
             let now = Date.now()
             if (now - this.lastDisconnect > 100) {
-                this.notify("WebRTC closed")
                 this.stopBoarding()
-                terminal7.onDisconnect(this)
             } else
                 terminal7.log("Ignoring a peer terminal7.cells.forEach(c => event after disconnect")
         }
-    }
-    /*
-     * clearLog cleans the log and the status modals
-     */
-    clearLog() {
-        /*
-        this.log.forEach(m => m.remove())
-        this.log = []
-        */
-        // hide the disconnect modal
-        // document.getElementById("disconnect-modal").classList.add("hidden")
-        document.getElementById("log").classList.add("hidden")
     }
     /*
      * peerConnect connects the webrtc session with the peer
@@ -248,11 +222,17 @@ export class Gate {
             this.focus()
             return
         }
-        this.boarding = true
-        terminal7.log(`connecting to ${this.name}...`)
+        this.notify("Initiating connection")
         // cleanup
         this.pendingCDCMsgs = []
         this.disengagePC()
+        // start the connection watchdog
+        if (this.watchDog != null)
+            window.clearTimeout(this.watchDog)
+        this.watchDog = terminal7.run(_ => {
+            this.watchDog = null
+            this.stopBoarding()
+        }, terminal7.conf.net.timeout)
         // exciting times.... a connection is born!
         this.pc = new RTCPeerConnection({
             iceServers: [ { urls: terminal7.conf.net.iceServer }],
@@ -265,16 +245,9 @@ export class Gate {
             if (typeof(this.fp) == "string") {
                 if (ev.candidate) {
                     terminal7.pbSend({target: this.fp, candidate: ev.candidate})
-                    if (this.watchDog != null)
-                        window.clearTimeout(this.watchDog)
-                    this.watchDog = terminal7.run(_ => {
-                        this.watchDog = null
-                        terminal7.onDisconnect(this)
-                    }, terminal7.conf.net.timeout)
                 }
             } else if (!ev.candidate) {
                 offer = btoa(JSON.stringify(this.pc.localDescription))
-                this.notify("Sending connection request")
                 terminal7.getFingerprint().then(fp =>
                     fetch('http://'+this.addr+'/connect', {
                         headers: {"Content-Type": "application/json"},
@@ -293,18 +266,15 @@ export class Gate {
                     }).then(data => {
                         if (!this.verified) {
                             this.verified = true
-                            // TODO: store when making real changes
-                            // terminal7.storeGates()
+                            terminal7.storeGates()
                         }
                         var answer = JSON.parse(atob(data))
                         this.peerConnect(answer)
                     }).catch(error => {
                         if (error.message == 'unautherized') 
                             this.copyFingerprint()
-                        else {
-                            this.notify(`HTTP POST to ${this.addr} failed: ${error}`)
-                            terminal7.onNoSignal(this)
-                        }
+                        else
+                            terminal7.onNoSignal(this, error)
                      })
                 )
             } 
@@ -362,8 +332,6 @@ export class Gate {
      * channel open or adds it to the queue if we're early to the party
      */
     sendCTRLMsg(msg) {
-        if (!this.boarding)
-            return
         const timeout = parseInt(terminal7.conf.net.timeout),
               retries = parseInt(terminal7.conf.net.retries),
               now = Date.now()
@@ -398,8 +366,6 @@ export class Gate {
                 this.notify(
                      `#${msg.message_id} tried ${retries} times and given up`)
                 this.stopBoarding()
-                this.setIndicatorColor(FAILED_COLOR)
-                terminal7.onDisconnect(this)
             }
         }
         return msg.message_id
@@ -483,6 +449,7 @@ export class Gate {
         if (!this.activeW)
             this.activeW = this.windows[0]
         this.focus()
+        this.boarding = true
     }
     /*
      * Adds a window, opens it and returns it
@@ -756,9 +723,21 @@ export class Gate {
         })
         e.querySelector(".all").addEventListener('click', _ => {
             this.e.querySelector(".reset-gate").classList.toggle("hidden")
-            this.stopBoarding()
+            // this.stopBoarding()
             this.connect()
         })
         this.e.appendChild(e)
+    }
+    updateNameE() {
+        this.nameE.innerHTML = this.name
+        if (this.verified)
+            this.nameE.classList.remove("unverified")
+        else 
+            this.nameE.classList.add("unverified")
+
+        if (this.online)
+            this.nameE.classList.remove("offline")
+        else
+            this.nameE.classList.add("offline")
     }
 }

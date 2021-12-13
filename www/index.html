@@ -30,25 +30,20 @@
           <div id="hosts-container">
               <div class="hosts" id="static-hosts">
                   <h3>Static</h3>
-                  <div class="border">
-                      <button type="button" id="add-static-host" >
-                          <i class="f7-icons"> plus</i>
-                      </button>
-                  </div>
+                  <button type="button" class="text-button" id="add-static-host" >
+                      <i class="f7-icons"> plus</i>
+                  </button>
               </div>
               <div class="hosts" id="peerbook-hosts">
                   <h3>PeerBook</h3>
-                  <div class="border">
-                      <button type="button" id="add-peerbook" >
-                          <i class="f7-icons"> plus</i>
-                      </button>
-                </div>
-                <div class="border">
-                  <button type="button" id="refresh"><i class="f7-icons">
-                          arrow_2_circlepath</i></button>
-                      </div>
-                  </div>
-                </div>
+                  <button type="button" class="text-button" id="add-peerbook" >
+                      <i class="f7-icons"> plus</i>
+                  </button>
+                  <button type="button" class="text-button" id="refresh">
+                      <i class="f7-icons">arrow_2_circlepath</i>
+                  </button>
+              </div>
+          </div>
       </div>
       <div id="add-host" class="hidden modal border" >
           <form>
@@ -229,6 +224,13 @@
           </nav>
           </form>
       </div>
+      <div id="edit-unverified-pbhost" class="hidden modal border" >
+            <h2>Unverified Host</h2>
+            <p>Please visit <a target="_blank">PeerBook</a> to verify</p>
+            <nav>
+                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+            </nav>
+      </div>
       <div id="edit-host" class="hidden modal border" >
           <form id="edit-host-form">
             <h2>Edit Host</h2>
@@ -350,12 +352,11 @@
     </template>
     <template id="nosignal-template">
         <div class="modal border temporal">
-          <h1><span class="name"></span>: Connection Error</h1>
+          <h1><span class="name"></span> Error</h1>
           <p id="nosignal-wrong-address" style="display:none;">
             If <span class="address"></span> is the wrong address click
               <a href="#" class="edit-link">here</a>.</p>
-          <p>If the problem presist ensure the server is running by:</p>
-          <pre>$ webexec status</pre> 
+          <p class="server-error"></p>
           <nav>
               <button type="button" class="close"><i class="f7-icons">xmark</i></button>
               <button type="button" class="reconnect"><i class="f7-icons">arrow_2_circlepath</i></button>

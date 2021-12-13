@@ -42,7 +42,6 @@ shell = "bash"
 timeout = 3000
 retries = 3
 ice_server = "stun:stun2.l.google.com:19302"
-peerbook = "pb.terminal7.dev"
 
 [ui]
 quickest_press = 1000
@@ -60,6 +59,8 @@ export class Terminal7 {
     constructor(settings) {
         settings = settings || {}
         this.gates = []
+        // peerbook gats are a map of fingerprints to gates
+        this.PBGates = {}
         this.cells = []
         this.timeouts = []
         this.activeG = null
@@ -177,6 +178,8 @@ export class Terminal7 {
             this.updateNetworkStatus(s))
         this.catchFingers()
         // setting up edit host events
+        document.getElementById("edit-unverified-pbhost").addEventListener(
+            "click", _ => this.clear())
         let editHost = document.getElementById("edit-host")
         editHost.querySelector("form").addEventListener('submit', ev => {
             ev.preventDefault()
@@ -249,11 +252,10 @@ export class Terminal7 {
                 this.addGate(g).e.classList.add("hidden")
             })
         }
-        // window.setInterval(_ => this.periodic(), 2000)
         App.addListener('appStateChange', state => {
             if (!state.isActive) {
                 // We're getting suspended. disengage.
-                terminal7.log("Benched. Disengaging from all gates")
+                this.notify("Benched")
                 this.disengage(() => this.clearTimeouts())
             } else {
                 // We're back! ensure we have the latest network status and 
@@ -369,7 +371,6 @@ peer_name = "${peername}"\n`
                 })
                 throw new Error(`verification failed`)
             }).then(m => this.onPBMessage(m))
-            .catch(err => Function.prototype())
         })
     }
     async toggleSettings(ev) {
@@ -471,7 +472,7 @@ peer_name = "${peername}"\n`
                 let ws = []
                 h.windows.forEach((w) => ws.push(w.id))
                 out.push({id: h.id, addr: h.addr, user: h.user, secret: h.secret,
-                    name:h.name, windows: ws, store: true})
+                    name:h.name, windows: ws, store: true, verified: h.verified})
             }
         })
         this.log("Storing gates:", out)
@@ -524,7 +525,7 @@ peer_name = "${peername}"\n`
      * onDisconnect is called when a gate disconnects.
      */
     onDisconnect(gate) {
-        if (gate != this.activeG)
+        if (!terminal7.netStatus.connected || (gate != this.activeG))
             return
         let e = document.getElementById("disconnect-template")
         e = e.content.cloneNode(true)
@@ -536,7 +537,6 @@ peer_name = "${peername}"\n`
         e.querySelector("form").addEventListener('submit', ev => {
             this.clear()
             gate.boarding = false
-            gate.clear()
             gate.connect()
         })
         e.querySelector(".close").addEventListener('click', ev => {
@@ -586,7 +586,7 @@ peer_name = "${peername}"\n`
                 this.log("ssh failed to connect", ev)
             })
     }
-    onNoSignal(gate) {
+    onNoSignal(gate, error) {
         let e = document.getElementById("nosignal-template")
         e = e.content.cloneNode(true)
         this.clear()
@@ -608,6 +608,7 @@ peer_name = "${peername}"\n`
             gate.clear()
             gate.connect()
         })
+        e.querySelector(".server-error").innerHTML = error.message
         this.e.appendChild(e)
     }
     /*
@@ -638,13 +639,9 @@ peer_name = "${peername}"\n`
         this.timeouts.forEach(t => window.clearTimeout(t))
         this.timeouts = []
         this.gates.forEach(g => g.updateID = null)
-    }
-    periodic() {
-        var now = new Date()
-        this.gates.forEach(g => {
-            if (g.periodic instanceof Function) 
-                g.periodic(now)
-        })
+        if (this.PBGates) 
+            Object.keys(this.PBGates).forEach(
+                k => this.PBGates[k].updateID = null)
     }
     /*
      * disengage gets each active gate to disengae
@@ -657,6 +654,14 @@ peer_name = "${peername}"\n`
                 g.disengage(_ => count--)
             }
         })
+        if (this.PBGates)
+            Object.keys(this.PBGates).forEach(k => {
+                var g = this.PBGates[k]
+                if (g.boarding) {
+                    count++
+                    g.disengage(_ => count--)
+                }
+            })
         let callCB = () => terminal7.run(() => {
             if (count == 0)
                 cb()
@@ -694,8 +699,7 @@ peer_name = "${peername}"\n`
                         })
                     }
                 })
-        }
-        else {
+        } else {
             off.remove("hidden")
             this.gates.forEach(g => g.stopBoarding())
         }
@@ -712,11 +716,14 @@ peer_name = "${peername}"\n`
         this.conf.net.iceServer = this.conf.net.ice_server ||
             "stun:stun2.l.google.com:19302"
         this.conf.net.peerbook = this.conf.net.peerbook ||
-            "pb.terminal7.dev"
+            "api.peerbook.io"
+        if (this.conf.net.peerbook == "pb.terminal7.dev")
+            terminal7.notify(`\uD83D\uDCD6 Your setting include an old peerbook addres.<br/>
+                              Please click <i class="f7-icons">gear</i> and change net.peerbook to "api.peerbook.io"`)
         this.conf.net.timeout = this.conf.net.timeout || 3000
         this.conf.net.retries = this.conf.net.retries || 3
-        var apb = document.getElementById("add-peerbook").parentNode,
-            rpb = document.getElementById("refresh").parentNode
+        var apb = document.getElementById("add-peerbook"),
+            rpb = document.getElementById("refresh")
         if (!this.conf.peerbook) {
             apb.style.removeProperty("display")
             rpb.style.display = "none"
@@ -884,11 +891,7 @@ peer_name = "${peername}"\n`
             return
         }
         if (m["peers"] !== undefined) {
-            // this.notify("\uD83D\uDCD6 Got a fresh server list")
-            m["peers"].forEach(p => {
-                if ((p.kind == "webexec") && p.verified) 
-                    this.addGate(p)
-            })
+            this.syncPBPeers(m["peers"])
             return
         }
         if (m["verified"] !== undefined) {
@@ -896,7 +899,7 @@ peer_name = "${peername}"\n`
                 this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
             return
         }
-        var g = this.gates.find(g => g.fp == m.source_fp)
+        var g = this.PBGates[m.source_fp]
         if (typeof g != "object") {
             this.log("received bad gate", m)
             return
@@ -945,30 +948,25 @@ peer_name = "${peername}"\n`
         */
     }
     onPointerCancel(ev) {
-        let hGate = ev.target.closest(".home-gate")
         this.pointer0 = null
         this.firstPointer = null
         this.lastT = null
         this.gesture = null
         this.longPressGate = null
-        if (hGate)
-            hGate.classList.remove("pressed")
         return
     }
     onPointerDown(ev) {
-        let e = ev.target,
-            hGate = e.closest(".home-gate")
+        let e = ev.target
         /*
         if ((ev.pointerType == "mouse") && (ev.pressure == 0))
             return
             */
         this.pointer0 = Date.now() 
         this.firstPointer = {pageX: ev.pageX, pageY: ev.pageY}
-        if (hGate) {
-            hGate.classList.add("pressed")
+        if (e.gate) {
             if (!this.longPressGate)
                 this.longPressGate = this.run(ev => {
-                    hGate.gate.edit()
+                    e.gate.edit()
                 }, this.conf.ui.quickest_press)
         }
         // only dividers know their panes
@@ -1006,23 +1004,25 @@ peer_name = "${peername}"\n`
     }
     onPointerUp(ev) {
         let e = ev.target,
-            hGate = e.closest(".home-gate")
+            hosts = e.closest(".hosts button")
 
         if (!this.pointer0)
             return
-        if (hGate) {
+        if (hosts) {
             let deltaT = Date.now() - this.pointer0
-            hGate.classList.remove("pressed")
             clearTimeout(this.longPressGate)
             this.longPressGate = null
             if (deltaT > this.conf.ui.quickest_press) {
                 ev.stopPropagation()
                 ev.preventDefault()
             } else {
-                if (!hGate.gate.fp || hGate.gate.online)
-                    hGate.gate.connect()
+                // that's for the refresh and static host add
+                if (!e.gate)
+                    return
+                if (!e.gate.fp || e.gate.verified && e.gate.online)
+                    e.gate.connect()
                 else
-                    terminal7.notify(`\uD83D\uDCD6 ${this.name} is offline`)
+                    e.gate.edit()
             }
         } else if (this.firstPointer) {
             let deltaT = Date.now() - this.pointer0,
@@ -1131,5 +1131,21 @@ peer_name = "${peername}"\n`
                 ev.preventDefault()
             })
         })
+    }
+    syncPBPeers(peers) {
+        peers.forEach(p => {
+            var g = this.PBGates[p.fp]
+            if (g != undefined) {
+                g.online = p.online
+                g.name = p.name
+                g.verified = p.verified
+                g.updateNameE()
+            } else if (p.kind == "webexec") {
+                let g = new Gate(p)
+                this.PBGates[p.fp] = g
+                g.open(this.e)
+            }
+        })
+        this.notify("\uD83D\uDCD6 Refreshed")
     }
 }
