@@ -710,6 +710,7 @@ peer_name = "${peername}"\n`
         this.conf.net = this.conf.net || {}
         this.conf.ui.quickest_press = this.conf.ui.quickest_press || 1000
         this.conf.ui.max_tabs = this.conf.ui.max_tabs || 3
+        this.conf.ui.leader = this.conf.ui.leader || "a"
         this.conf.ui.cutMinSpeed = this.conf.ui.cut_min_speed || 2.2
         this.conf.ui.cutMinDistance = this.conf.ui.cut_min_distance || 50
         this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1

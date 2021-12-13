@@ -42,6 +42,7 @@ export class Pane extends Cell {
         this.cmMarking = false
         this.dividers = []
         this.flashTimer = null
+        this.aLeader = false
     }
 
     /*
@@ -83,19 +84,23 @@ export class Pane extends Cell {
             this.t.textarea.tabIndex = -1
             this.t.attachCustomKeyEventHandler(ev => {
                 var toDo = true
+                var meta = false
                 // ctrl c is a special case 
-                if (ev.ctrlKey && (ev.key == "c")) {
-                    if (this.d != null) {
-                        this.d.send(String.fromCharCode(3))
-                        toDo = false
-                    }
+                if (ev.ctrlKey && (ev.key == "c") && (this.d != null)) {
+                    this.d.send(String.fromCharCode(3))
+                    toDo = false
                 }
-                if (ev.metaKey) {
-                    if ((ev.key != "Shift") && (ev.key != "Meta")) {
-                        // ensure help won't pop
-                        terminal7.metaPressStart = Number.MAX_VALUE
-                        toDo = this.handleMetaKey(ev)
-                    }
+                if (ev.ctrlKey && (ev.key == terminal7.conf.ui.leader)) {
+                    this.aLeader = !this.aLeader
+                    toDo = !this.aLeader
+                }
+                else if (ev.metaKey && (ev.key != "Shift") && (ev.key != "Meta") ||
+                    this.aLeader && (ev.key != terminal7.conf.ui.leader) 
+                                 && (ev.key != 'Control')) {
+                    // ensure help won't pop
+                    terminal7.metaPressStart = Number.MAX_VALUE
+                    toDo = this.handleMetaKey(ev)
+                    this.aLeader = false
                 }
                 else if (this.copyMode) {
                     if  (ev.type == "keydown")

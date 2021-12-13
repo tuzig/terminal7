@@ -142,7 +142,7 @@ a {
     margin: 1.5em auto 0;
     padding-top: 2%;
 }
-.keys-help {
+.keys-help>div {
     width: 100%;
     overflow-x: auto;
     display: flex;
@@ -195,7 +195,8 @@ a {
     line-height: 5.5vh !important;
 }
 #navbar {
-    bottom: 18pt;
+    bottom: 0;
+    padding: 18px 0;
     position: fixed;
 }
 nav button {
@@ -348,7 +349,7 @@ button.rename-close {
     text-align: center;
     margin: 0 auto;
     height: calc(100% - 56px);
-    overflow-y: auto;
+    overflow-y: hidden;
     max-width: 1024px;
 }
 #home h2 {

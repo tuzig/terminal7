@@ -21,8 +21,9 @@
           </ul>
       </div>
       <div id="home">
-          <div id="version" target="_blank">
-              <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md">
+          <div id="version">
+              <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md"
+                  target="_blank">
                   version 0.18.2
               </a>
           </div>
@@ -210,12 +211,11 @@
           <form action="#">
               <div class="compact-fields">
               <label for="email">email</label>
-              <input type="text" placeholder="leave empty to skip and use static addresses" name="email"
+              <input type="text" placeholder="will only be used to manage your peers" name="email"
                 required>
               <label for="peername">Peer's name</label>
               <input type="text" name="peername" required>
               </div>
-              <footer>* your email will only be used to authorize peers and manage the service</footer>
           <nav>
               <button type="button" class="close"><i class="f7-icons">
                       xmark</i></button>
@@ -294,6 +294,8 @@
             alt="gate help screen" width="100%">
       </div>
       <div id="keys-help" class="keys-help hidden modal border" >
+          <p>Use CTRL-A if your keyboard has no ⌘</p>
+          <div>
           <table><tbody>
         <tr> <td>Toggle Fullscreen</td> <td>⌘&nbsp;Z</td> </tr>
         <tr> <td>Move Focus</td> <td>⌘&nbsp;&larr;&uarr;&darr;&rarr;</td> </tr>
@@ -314,6 +316,7 @@
         <tr> <td>Dump log to clipboard</td> <td>⌘&nbsp;`</td> </tr>
         <tr> <td>Hide This</td> <td>Tap This</td> </tr>
               </tbody></table>
+          </div>
       </div>
       <div id="reset-cert" class="hidden modal border" >
         <p>peerbook returned an error:</p>
