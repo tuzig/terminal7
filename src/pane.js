@@ -17,7 +17,7 @@ import * as XtermWebfont from 'xterm-webfont'
 
 const  REGEX_SEARCH        = false,
       COPYMODE_BORDER_COLOR = "#F952F9",
-        FOCUSED_BORDER_COLOR = "#D4ED37",
+        FOCUSED_BORDER_COLOR = "#F4DB53",
        SEARCH_OPTS = {
             regex: REGEX_SEARCH,
             wholeWord: false,

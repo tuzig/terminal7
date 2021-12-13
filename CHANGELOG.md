@@ -6,7 +6,18 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-  
+## Unreleased 
+
+### Fixed
+
+- Fail connection attempts to stop you from trying again
+- PeerBook synchronization - showing unverified peer and helping you verify
+
+### Changed
+
+- Home page look & feel
+- The yellow is warmer (copied from elflord)
+
 ## [0.18.2] - 2021/12/08
 
 ### Fixed

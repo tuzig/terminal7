@@ -1,6 +1,5 @@
 /*
  * Main colors:
- * yellow - #D4ED37
  * dark yellow - #373702
  * magenta - #F952F9 use var(--local-border)
  * light blue - #00FAFA: use var(--text-color)
@@ -10,7 +9,8 @@
 :root {
     --indicator-color: #00FA00;
     --local-border: #F952F9;
-    --text-color: #00FAFA
+    --text-color: #01FAFA;
+    --remote-border: #F4DB53;
 }
 @font-face {
     font-family: "FiraSans";
@@ -386,7 +386,7 @@ button.rename-close {
     text-decoration: none;
 }
 .hosts .border {
-    border-color: #D4ED37;
+    border-color: var(--remote-border);
 }
 .hosts h3 {
     font-size: 36px;

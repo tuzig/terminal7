@@ -4,7 +4,7 @@
  *  License: GPLv3
  */
 const   ABIT                = 10,
-        FOCUSED_BORDER_COLOR = "#D4ED37",
+        FOCUSED_BORDER_COLOR = "#F4DB53",
         UNFOCUSED_BORDER_COLOR = "#373702"
 
 export class Cell {
