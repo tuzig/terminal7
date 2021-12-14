@@ -11,6 +11,7 @@
     --local-border: #F952F9;
     --text-color: #01FAFA;
     --remote-border: #F4DB53;
+    --background: #271D30;
 }
 @font-face {
     font-family: "FiraSans";
@@ -40,6 +41,10 @@ body {
   color: #00FAFA;
   background-color: #271D30;
   overflow: hidden;
+}
+body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--local-border) var(--backgeound);
 }
 * {box-sizing: border-box; }
 *:focus { outline: none; } 
@@ -349,7 +354,7 @@ button.rename-close {
     text-align: center;
     margin: 0 auto;
     height: calc(100% - 56px);
-    overflow-y: hidden;
+    overflow-y: auto;
     max-width: 1024px;
 }
 #home h2 {
