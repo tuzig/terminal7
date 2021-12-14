@@ -559,9 +559,10 @@ export class Pane extends Cell {
     // listening for terminal selection changes
     selectionChanged() {
         const selection = this.t.getSelectionPosition()
- 
-        if (selection != null)
-            this.enterCopyMode(true)
+        if (selection != null) {
+            Clipboard.write({string: this.t.getSelection()})
+            this.t.clearSelection()
+        }
     }
     handleCMKey(key) {
         var x, y, newX, newY,
