@@ -234,13 +234,54 @@ export class Gate {
             this.stopBoarding()
         }, terminal7.conf.net.timeout)
         // exciting times.... a connection is born!
+        if (terminal7.iceServers)
+            this.openPC(terminal7.iceServers)
+        else
+            this.getIceServers().then(servers => {
+                terminal7.iceServers = servers
+                this.openPC(servers)
+            })
+    }
+    getIceServers() {
+        return new Promise(resolve => {
+            fetch("https://"+terminal7.conf.net.peerbook+'/turn', {method: 'POST'})
+            .then(response => {
+                if (!response.ok)
+                    throw new Error(
+                      `HTTP POST failed with status ${response.status}`)
+                return response.text()
+            }).then(data => {
+                if (!this.verified) {
+                    this.verified = true
+                    // TODO: store when making real changes
+                    // terminal7.storeGates()
+                }
+                var answer = JSON.parse(data)
+                // return an array with the conf's server and subspace's
+                resolve([{ urls: terminal7.conf.net.iceServer},
+                         answer["ice_servers"][0]])
+
+            }).catch(error => terminal7.onNoSignal(this))
+        })
+    }
+    openPC(ice_servers) {
         this.pc = new RTCPeerConnection({
-            iceServers: [ { urls: terminal7.conf.net.iceServer }],
+            iceServers: ice_servers,
             certificates: terminal7.certificates})
         this.pc.onconnectionstatechange = e =>
             this.updateConnectionState(this.pc.connectionState)
 
         let offer = ""
+        this.pconicecandidateerror = ev => {
+            console.log("icecandidate error", ev.errorCode)
+            if (ev.errorCode == 401) {
+                this.notify("Getting fresh ICE servers")
+                this.getIceServers().then(servers => {
+                    terminal7.iceServers = servers
+                    this.openPC(servers)
+                })
+            }
+        }
         this.pc.onicecandidate = ev => {
             if (typeof(this.fp) == "string") {
                 if (ev.candidate) {
