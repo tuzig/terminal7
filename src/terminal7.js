@@ -684,8 +684,10 @@ peer_name = "${peername}"\n`
         this.log(`updateNetwrokStatus: ${status.connected}`)
         if (status.connected) {
             off.add("hidden")
-            if (this.activeG)
+            if (this.activeG) {
                 this.activeG.connect()
+                this.activeG.focus()
+            }
             else 
                 // get the fingerprint and connect to peerbook
                 this.getFingerprint().then(_ => {
