@@ -26,10 +26,7 @@ and run our backend project - [webexec](https://github.com/tuzig/webexec)
 
 
 ```console
-gem install ffi -- --enable-system-libffi        # to install the gem manually
-bundle config build.ffi --enable-system-libffi   # for bundle install
 yarn install
-npx cap sync ios
 ```
 
 ## Running
