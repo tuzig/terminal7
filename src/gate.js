@@ -417,6 +417,7 @@ export class Gate {
         this.onack[msgId] = (isNack, state) => {
             if (isNack) {
                 this.notify("Failed to restore from marker")
+                this.marker = -1
                 this.getLayout()
             }
             else {
