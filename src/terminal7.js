@@ -307,6 +307,7 @@ export class Terminal7 {
          if (!((window.matchMedia('(display-mode: standalone)').matches)
              || (window.matchMedia('(display-mode: fullscreen)').matches)
              || window.navigator.standalone
+             || (Capacitor.getPlatform() != "web")
              || document.referrer.includes('android-app://')))
             if (navigator.getInstalledRelatedApps) 
                 navigator.getInstalledRelatedApps().then(relatedApps => {
@@ -320,7 +321,7 @@ export class Terminal7 {
                this.showGreetings()
             }
         else {
-            this.startApp()
+            this.onBoard()
             this.focus()
         }
     }
@@ -1064,7 +1065,7 @@ peer_name = "${peername}"\n`
             
         modal.querySelector(".play-button").addEventListener('click', _ => {
             this.clear()
-            this.startApp()
+            this.onBoard()
         })
         document.getElementById("install-button").addEventListener('click', ev => {
             if (window.installPrompt !== undefined) {
@@ -1072,7 +1073,7 @@ peer_name = "${peername}"\n`
                 window.installPrompt.userChoice.then(outcome => {
                     if (outcome) {
                         this.clear()
-                        this.startApp()
+                        this.onBoard()
                     }
                 })
             } else {
@@ -1086,10 +1087,11 @@ peer_name = "${peername}"\n`
         })
         modal.classList.remove("hidden")
     }
-    startApp() {
-        var a = localStorage.getItem("onboard")
-        if (a !== null)
+    onBoard() {
+        if ((a !== null) || (Capacitor.getPlatform() != "web")) {
+            localStorage.setItem("onmobile", "1")
             return
+        }
         var modal = document.getElementById("onboarding")
         modal.classList.remove("hidden")
         modal.querySelector(".onmobile").addEventListener('click', ev => {
