@@ -45,10 +45,10 @@ and point your browser at http://localhost:3333
 
 Terminal7 adds a global `window.terminal7` you can use in the debugger.
 
-## Development
+## Contribuiting
 
-We welcome bug reports as well as ideas for new features.
-If you are ready to code yourslef, follow these steps:
+We welcome bug reports and ideas for new features.
+Please feel free to open an issue or if you are ready to code yourself, follow these steps:
 
 1. Fork it
 2. Clone it
