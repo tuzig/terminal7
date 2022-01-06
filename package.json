@@ -35,7 +35,6 @@
     "glob": "<8",
     "hammerjs": "<3",
     "idb": "<7",
-    "npm": "<7",
     "uuid": "^8.3.2",
     "web": "0.0.2",
     "websocket-extensions": ">=0.1.4",
