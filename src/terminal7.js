@@ -169,7 +169,7 @@ export class Terminal7 {
             }
         })
         // hide the modal on xmark click
-        addHost.querySelector(".close").addEventListener('click',  ev =>  {
+        addHost.querySelector(".close").addEventListener('click',  _ =>  {
             this.clear()
         })
         // Handle network events for the indicator
@@ -185,9 +185,9 @@ export class Terminal7 {
             ev.preventDefault()
             editHost.gate.editSubmit(ev)
         })
-        editHost.querySelector(".close").addEventListener('click',  ev =>
+        editHost.querySelector(".close").addEventListener('click',  _ =>
             terminal7.clear())
-        editHost.querySelector(".trash").addEventListener('click',  ev => {
+        editHost.querySelector(".trash").addEventListener('click',  _ => {
             editHost.gate.delete()
             terminal7.clear()
         })
@@ -1103,7 +1103,7 @@ peer_name = "${peername}"\n`
                 this.clear())
             modal.querySelector(".copy").addEventListener('click', ev => {
                 this.clear()
-                Clipboard.write({string: "curl -sLo webexec.sh https://get.webexec.sh && bash webexec.sh; rm webexec.sh"})
+                Clipboard.write({string: 'bash -c "$(curl -sL https://get.webexec.sh)"'})
                 this.notify("Command copied to the clipboard")
                 ev.stopPropagation()
                 ev.preventDefault()
@@ -1125,7 +1125,7 @@ peer_name = "${peername}"\n`
                 this.clear())
             modal.querySelector(".copy").addEventListener('click', ev => {
                 this.notify("Command copied to the clipboard")
-                Clipboard.write({string: "curl -sLo webexec.sh https://get.webexec.sh && bash webexec.sh; rm webexec.sh"})
+                Clipboard.write({string: 'bash -c "$(curl -sL https://get.webexec.sh)"'})
                 ev.stopPropagation()
                 ev.preventDefault()
             })

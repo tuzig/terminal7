@@ -59,7 +59,7 @@
             <label for="remember">Remember host</label>
             <footer>
               to install a server:
-          <pre>curl -sLo webexec.sh https://get.webexec.sh && bash webexec.sh; rm webexec.sh</pre>
+          <pre>bash -c "$(curl -sL https://get.webexec.sh)"</pre>
             </footer>
             <nav>
                 <button type="button" class="close">
@@ -157,7 +157,7 @@
       <div id="localhost-instructions" class="hidden modal border">
           <h1 style="margin:1em;">localhost added</h1>
           <p>Please open a terminal and run:</p>
-          <pre>curl -sLo webexec.sh https://get.webexec.sh && bash webexec.sh; rm webexec.sh</pre>
+          <pre>bash -c "$(curl -sL https://get.webexec.sh)"</pre>
           <nav>
             <button type="button" class="close"><i class="f7-icons">xmark</i></button>
             <button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i></button>
@@ -167,7 +167,7 @@
       <div id="mobile-instructions" class="hidden modal border">
           <h1 style="margin:1em;">Mobile instructions</h1>
           <p>To use Terminal7 you need a host with `webexec` installed:</p>
-          <pre>curl -sLo webexec.sh https://get.webexec.sh && bash webexec.sh; rm webexec.sh</pre>
+          <pre>bash -c "$(curl -sL https://get.webexec.sh)"</pre>
           <nav>
             <button type="button" class="close"><i class="f7-icons">xmark</i></button>
             <button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i></button>
