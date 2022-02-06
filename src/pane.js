@@ -61,7 +61,7 @@ export class Pane extends Cell {
             convertEol: false,
             fontFamily: "FiraCode",
             fontSize: this.fontSize,
-            rendererType: "canvas",
+            rendererType: (Capacitor.getPlatform()=="ios")?"dom":"canvas",
             theme: this.theme,
             rows:24,
             cols:80
