@@ -239,7 +239,6 @@ export class Terminal7 {
         // Load gates from local storage
         let gates
         value = (await Storage.get({key: 'gates'})).value
-        this.log("read: ", value)
         if (value) {
             try {
                 gates = JSON.parse(value)
@@ -252,19 +251,22 @@ export class Terminal7 {
                 this.addGate(g).e.classList.add("hidden")
             })
         }
-        App.addListener('appStateChange', state => {
-            if (!state.isActive) {
-                // We're getting suspended. disengage.
-                this.notify("Benched")
-                this.disengage(() => this.clearTimeouts())
-            } else {
-                // We're back! ensure we have the latest network status and 
-                // reconnect to the active gate
-                terminal7.log("Active ☀️")
-                this.clearTimeouts()
-                Network.getStatus().then(s => this.updateNetworkStatus(s))
-            }
-        })
+        let onMobile = (await Storage.get({key: 'onmobile'})).value == '1'
+        if (onMobile) {
+            App.addListener('appStateChange', state => {
+                if (!state.isActive) {
+                    // We're getting suspended. disengage.
+                    this.notify("Benched")
+                    this.disengage(() => this.clearTimeouts())
+                } else {
+                    // We're back! ensure we have the latest network status and 
+                    // reconnect to the active gate
+                    terminal7.log("Active ☀️")
+                    this.clearTimeouts()
+                    Network.getStatus().then(s => this.updateNetworkStatus(s))
+                }
+            })
+        }
         document.getElementById("log").addEventListener("click",
             _ => this.logDisplay(false))
 

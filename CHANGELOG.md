@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Font is now nerdy patched
 
+### Fixed 
+
+- Network connections are not disconnected on GPOS
+
 ## [0.19.3] - 2022/2/6
 
 ### Fixed 
