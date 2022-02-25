@@ -240,17 +240,22 @@ export class Gate {
             this.getIceServers().then(servers => {
                 terminal7.iceServers = servers
                 this.openPC(servers)
-            })
+            }).catch(() => terminal7.onNoSignal(this))
     }
     getIceServers() {
-        return new Promise(resolve => {
-            fetch("https://"+terminal7.conf.net.peerbook+'/turn', {method: 'POST'})
+        return new Promise((resolve, reject) => {
+            const ctrl = new AbortController(),
+                  tId = setTimeout(() => ctrl.abort(), 5000)
+
+            fetch("https://"+terminal7.conf.net.peerbook+'/turn',
+                  {method: 'POST', signal: ctrl.signal })
             .then(response => {
                 if (!response.ok)
                     throw new Error(
                       `HTTP POST failed with status ${response.status}`)
                 return response.text()
             }).then(data => {
+                clearTimeout(tId)
                 if (!this.verified) {
                     this.verified = true
                     // TODO: store when making real changes
@@ -261,7 +266,10 @@ export class Gate {
                 resolve([{ urls: terminal7.conf.net.iceServer},
                          answer["ice_servers"][0]])
 
-            }).catch(error => terminal7.onNoSignal(this))
+            }).catch(error => {
+                clearTimeout(tId)
+                reject()
+            })
         })
     }
     openPC(ice_servers) {

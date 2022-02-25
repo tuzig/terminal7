@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Network connections are not disconnected on GPOS
 - Spaces are trimmed from the end of copied lines
+- Added a timeout for turn servers fetch
 
 ## [0.19.3] - 2022/2/6
 
