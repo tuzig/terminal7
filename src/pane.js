@@ -402,7 +402,7 @@ export class Pane extends Cell {
         switch (ev.key) {
         case "c":
             if (this.t.hasSelection()) 
-                Clipboard.write({string: this.t.getSelection()})
+                this.copySelection()
             break
         case "z":
             f = () => this.toggleZoom()
@@ -560,9 +560,18 @@ export class Pane extends Cell {
     selectionChanged() {
         const selection = this.t.getSelectionPosition()
         if (selection != null) {
-            Clipboard.write({string: this.t.getSelection()})
+            this.copySelection()
             this.t.clearSelection()
         }
+    }
+    copySelection() {
+        let i,
+            ret = "",
+            lines = this.t.getSelection().split('\n')
+        for (i = 0; i < lines.length; i++)
+            ret += lines[i].trimEnd()+'\n'
+    
+        return Clipboard.write({string: ret})
     }
     handleCMKey(key) {
         var x, y, newX, newY,
@@ -607,8 +616,7 @@ export class Pane extends Cell {
                 break
             case "Enter":
                 if (this.t.hasSelection())
-                    Clipboard.write({string: this.t.getSelection()})
-                    .then(() => this.exitCopyMode())
+                    this.copySlection().then(this.exitCopyMode())
                 else
                     this.exitCopyMode();
                 break
