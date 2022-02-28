@@ -8,6 +8,7 @@
 import { Window } from './window.js'
 import { Pane } from './pane.js'
 
+import { SSHPlugin } from 'capacitor-ssh-plugin'
 import { Clipboard } from '@capacitor/clipboard'
 import { Storage } from '@capacitor/storage'
 const ABIT    = 10,
@@ -27,22 +28,18 @@ export class Gate {
         this.store = props.store
         this.name = (!props.name)?`${this.user}@${this.addr}`:props.name
         // 
-        this.pc = null
         this.windows = []
         this.boarding = false
-        this.pendingCDCMsgs = []
         this.lastMsgId = 0
         // a mapping of refrence number to function called on received ack
-        this.onack = {}
         this.breadcrumbs = []
         this.updateID  = null
         this.timeoutID = null
-        this.msgs = {}
-        this.marker = -1
         this.fp = props.fp
         this.online = props.online
         this.watchDog = null
         this.verified = props.verified || false
+        this.SSHSession = null
     }
 
     /*
@@ -59,7 +56,7 @@ export class Gate {
         let t = document.getElementById("gate-template")
         if (t) {
             t = t.content.cloneNode(true)
-             this.openReset(t)
+            this.openReset(t)
             t.querySelector(".add-tab").addEventListener(
                 'click', _ => this.newTab())
             t.querySelector(".search-close").addEventListener('click', _ =>  {
@@ -155,7 +152,7 @@ export class Gate {
                 "--indicator-color", color)
     }
     /*
-     * updateConnectionState(state) is called on peer connection
+     * updateConnectionState(state) is called when the connection
      * state changes.
      */
     updateConnectionState(state) {
@@ -195,21 +192,7 @@ export class Gate {
         }
     }
     /*
-     * peerConnect connects the webrtc session with the peer
-     */
-    peerConnect(offer) {
-        let sd = new RTCSessionDescription(offer)
-        this.pc.setRemoteDescription(sd)
-            .catch (e => {
-                this.notify(`Failed to set remote description: ${e}`)
-                this.stopBoarding()
-                this.setIndicatorColor(FAILED_COLOR)
-                terminal7.onDisconnect(this)
-            })
-    }
-    /*
-     * connect opens a webrtc peer connection to the host and then opens
-     * the control channel and authenticates.
+     * connect connects to the gate
      */
     connect() {
         // do nothing when the network is down
@@ -223,9 +206,6 @@ export class Gate {
             return
         }
         this.notify("Initiating connection")
-        // cleanup
-        this.pendingCDCMsgs = []
-        this.disengagePC()
         // start the connection watchdog
         if (this.watchDog != null)
             window.clearTimeout(this.watchDog)
@@ -233,229 +213,62 @@ export class Gate {
             this.watchDog = null
             this.stopBoarding()
         }, terminal7.conf.net.timeout)
-        // exciting times.... a connection is born!
-        if (terminal7.iceServers)
-            this.openPC(terminal7.iceServers)
-        else
-            this.getIceServers().then(servers => {
-                terminal7.iceServers = servers
-                this.openPC(servers)
-            }).catch(() => terminal7.onNoSignal(this))
+        this.connector = new webrtcConnector({fp: this.fp})
+        this.connector.onError = msg => terminal7.onNoSignal(this, msg)
+        this.connector.onWarning = msg => this.notify(msg)
+        this.connector.onResize = () => this.panes().forEach(p => p.fit())
+        this.connector.onRestore = (state) => this.restoreState(state)
+        this.connector.onStateChange = (state) => this.updateConnectionState(state)
+        this.connector.connect()
     }
-    getIceServers() {
-        return new Promise((resolve, reject) => {
-            const ctrl = new AbortController(),
-                  tId = setTimeout(() => ctrl.abort(), 5000)
 
-            fetch("https://"+terminal7.conf.net.peerbook+'/turn',
-                  {method: 'POST', signal: ctrl.signal })
-            .then(response => {
+    /*
+     * peerConnect is used by websocket connections to connect the session with the peer
+     */
+    peerConnect(offer) {
+        let sd = new RTCSessionDescription(offer)
+        this.pc.setRemoteDescription(sd)
+            .catch (e => {
+                this.notify(`Failed to set remote description: ${e}`)
+                this.stopBoarding()
+                this.setIndicatorColor(FAILED_COLOR)
+                terminal7.onDisconnect(this)
+            })
+    }
+    WebSockConnect(ev) {
+        offer = btoa(JSON.stringify(this.pc.localDescription))
+        terminal7.getFingerprint().then(fp =>
+            fetch('http://'+this.addr+'/connect', {
+                headers: {"Content-Type": "application/json"},
+                method: 'POST',
+                body: JSON.stringify({api_version: 0,
+                    offer: offer,
+                    fingerprint: fp
+                })
+            }).then(response => {
+                if (response.status == 401)
+                    throw new Error('unautherized');
                 if (!response.ok)
                     throw new Error(
                       `HTTP POST failed with status ${response.status}`)
                 return response.text()
             }).then(data => {
-                clearTimeout(tId)
                 if (!this.verified) {
                     this.verified = true
-                    // TODO: store when making real changes
-                    // terminal7.storeGates()
+                    terminal7.storeGates()
                 }
-                var answer = JSON.parse(data)
-                // return an array with the conf's server and subspace's
-                resolve([{ urls: terminal7.conf.net.iceServer},
-                         answer["ice_servers"][0]])
-
+                var answer = JSON.parse(atob(data))
+                this.peerConnect(answer)
             }).catch(error => {
-                clearTimeout(tId)
-                reject()
-            })
-        })
-    }
-    openPC(ice_servers) {
-        this.pc = new RTCPeerConnection({
-            iceServers: ice_servers,
-            certificates: terminal7.certificates})
-        this.pc.onconnectionstatechange = e =>
-            this.updateConnectionState(this.pc.connectionState)
-
-        let offer = ""
-        this.pconicecandidateerror = ev => {
-            console.log("icecandidate error", ev.errorCode)
-            if (ev.errorCode == 401) {
-                this.notify("Getting fresh ICE servers")
-                this.getIceServers().then(servers => {
-                    terminal7.iceServers = servers
-                    this.openPC(servers)
-                })
-            }
-        }
-        this.pc.onicecandidate = ev => {
-            if (typeof(this.fp) == "string") {
-                if (ev.candidate) {
-                    terminal7.pbSend({target: this.fp, candidate: ev.candidate})
-                }
-            } else if (!ev.candidate) {
-                offer = btoa(JSON.stringify(this.pc.localDescription))
-                terminal7.getFingerprint().then(fp =>
-                    fetch('http://'+this.addr+'/connect', {
-                        headers: {"Content-Type": "application/json"},
-                        method: 'POST',
-                        body: JSON.stringify({api_version: 0,
-                            offer: offer,
-                            fingerprint: fp
-                        })
-                    }).then(response => {
-                        if (response.status == 401)
-                            throw new Error('unautherized');
-                        if (!response.ok)
-                            throw new Error(
-                              `HTTP POST failed with status ${response.status}`)
-                        return response.text()
-                    }).then(data => {
-                        if (!this.verified) {
-                            this.verified = true
-                            terminal7.storeGates()
-                        }
-                        var answer = JSON.parse(atob(data))
-                        this.peerConnect(answer)
-                    }).catch(error => {
-                        if (error.message == 'unautherized') 
-                            this.copyFingerprint()
-                        else
-                            terminal7.onNoSignal(this, error)
-                     })
-                )
-            } 
-        }
-        this.pc.onnegotiationneeded = e => {
-            terminal7.log("on negotiation needed", e)
-            this.pc.createOffer().then(d => {
-                this.pc.setLocalDescription(d)
-                if (typeof(this.fp) == "string") {
-                    offer = btoa(JSON.stringify(d))
-                    terminal7.log("got offer", offer)
-                    terminal7.pbSend({target: this.fp, offer: offer})
-                }
-            })
-        }
-        this.pc.ondatachannel = e => {
-            e.channel.onopen = () => {
-                var l = e.channel.label
-                var m = l.split(":"),
-                    msgID = parseInt(m[0]),
-                    webexecID = parseInt(m[1])
-                if (isNaN(webexecID) || isNaN(msgID)) {
-                    this.gate.notify("Failed to open pane")
-                    terminal7.log(`got a channel with a bad label: ${l}`)
-                    this.close()
-                } else {
-                    var pane = terminal7.pendingPanes[msgID]
-                    delete terminal7.pendingPanes[msgID]
-                    pane.state = "connected"
-                    pane.d = e.channel
-                    pane.webexecID = webexecID
-                    e.channel.onmessage = m => pane.onMessage(m)
-                    e.channel.onclose = e => {
-                        terminal7.log(`on dc "${webexecID}" close, marker - ${pane.gate.marker}`)
-                        pane.state = "disconnected"
-                        if (this.marker == -1)
-                            pane.close()
-                    }
-                    this.onPaneConnected(pane)
-                }
-            }
-        }
-        this.openCDC()
-
-        if (this.marker == -1)
-            this.getLayout()
-        else
-            this.setMarker()
+                if (error.message == 'unautherized') 
+                    this.copyFingerprint()
+                else
+                    terminal7.onNoSignal(this, error)
+             })
+        )
     }
     notify(message) {    
         terminal7.notify(`${this.name}: ${message}`)
-    }
-    /*
-     * sencCTRLMsg gets a control message and sends it if we have a control
-     * channel open or adds it to the queue if we're early to the party
-     */
-    sendCTRLMsg(msg) {
-        const timeout = parseInt(terminal7.conf.net.timeout),
-              retries = parseInt(terminal7.conf.net.retries),
-              now = Date.now()
-        // helps us ensure every message gets only one Id
-        if (msg.message_id === undefined) 
-            msg.message_id = this.lastMsgId++
-        // don't change the time if it's a retransmit
-        if (msg.time == undefined)
-            msg.time = Date.now()
-        if (!this.cdc || this.cdc.readyState != "open")
-            this.pendingCDCMsgs.push(msg)
-        else {
-            // message stays frozen when retrting
-            const s = msg.payload || JSON.stringify(msg)
-            terminal7.log("sending ctrl message ", s)
-            if (msg.tries == undefined) {
-                msg.tries = 0
-                msg.payload = s
-            } else if (msg.tries == 1)
-                this.notify(
-                     `msg #${msg.message_id} no ACK in ${timeout}ms, trying ${retries-1} more times`)
-            if (msg.tries++ < retries) {
-                terminal7.log(`sending ctrl msg ${msg.message_id} for ${msg.tries} time`)
-                try {
-                    this.cdc.send(s)
-                } catch(err) {
-                    this.notify(`Sending ctrl message failed: ${err}`)
-                }
-                this.msgs[msg.message_id] = terminal7.run(
-                      () => this.sendCTRLMsg(msg), timeout)
-            } else {
-                this.notify(
-                     `#${msg.message_id} tried ${retries} times and given up`)
-                this.stopBoarding()
-            }
-        }
-        return msg.message_id
-    }
-    setMarker() {
-        let msgId = this.sendCTRLMsg({type: "restore",
-                                      args: { marker: this.marker }})
-        this.onack[msgId] = (isNack, state) => {
-            if (isNack) {
-                this.notify("Failed to restore from marker")
-                this.marker = -1
-                this.getLayout()
-            }
-            else {
-                this.restoreState(state)
-                terminal7.run(_ => {
-                    this.marker = -1
-                    terminal7.log("resotre done, fitting peers")
-                    this.panes().forEach(p => p.fit())
-                }, 100)
-            }
-        }
-    }
-    /*
-     * getLayout sends the get_payload and restores the state once it gets it
-     */
-    getLayout() {
-        let msgId = this.sendCTRLMsg({
-            type: "get_payload",
-            args: {}
-        })
-        this.onack[msgId] = (isNack, state) => {
-            if (isNack) {
-                this.notify("FAILED to get payload")
-                this.marker = -1
-                this.restoreState({})
-            } else {
-                this.restoreState(state)
-                terminal7.run(_ => this.marker = -1, 100)
-            }
-        }
     }
     /*
      * returns an array of panes
@@ -477,7 +290,7 @@ export class Gate {
             // if there's a marker it's a reconnect, re-open all gate's dcs
             // TODO: validate the current layout is like the state
             terminal7.log("Restoring with marker, open dcs")
-            this.panes().forEach(p => p.openDC())
+            this.panes().forEach(p => p.openChannel())
         } else if (state && (state.windows.length > 0)) {
             terminal7.log("Restoring layout: ", state)
             this.clear()
@@ -523,52 +336,6 @@ export class Gate {
         return w
     }
     /*
-     * openCDC opens the control channel and handle incoming messages
-     */
-    openCDC() {
-        var cdc = this.pc.createDataChannel('%')
-        this.cdc = cdc
-        terminal7.log("<opening cdc")
-        cdc.onopen = () => {
-            if (this.pendingCDCMsgs.length > 0)
-                // TODO: why the time out? why 100mili?
-                terminal7.run(() => {
-                    terminal7.log("sending pending messages:", this.pendingCDCMsgs)
-                    this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m), ABIT)
-                    this.pendingCDCMsgs = []
-                }, 100)
-        }
-        cdc.onmessage = m => {
-            const d = new TextDecoder("utf-8"),
-                  msg = JSON.parse(d.decode(m.data))
-
-            // handle Ack
-            if ((msg.type == "ack") || (msg.type == "nack")) {
-                let i = msg.args.ref
-                window.clearTimeout(this.msgs[i])
-                delete this.msgs[i]
-                const handler = this.onack[i]
-                terminal7.log("got cdc message:",  msg)
-                if (msg.type == "nack") {
-                    this.setIndicatorColor(FAILED_COLOR)
-                    this.nameE.classList.add("failed")
-                }
-                else {
-                    this.setIndicatorColor("unset")
-                    this.nameE.classList.remove("failed")
-                }
-                if (handler != undefined) {
-                    handler(msg.type=="nack", msg.args.body)
-                    // just to make sure we'll never  call it twice
-                    delete this.onack[msg.args.ref]
-                }
-                else
-                    terminal7.log("Got a cdc ack with no handler", msg)
-            }
-        }
-        return cdc
-    }
-    /*
      * clear clears the gates memory and display
      */
     clear() {
@@ -593,20 +360,6 @@ export class Gate {
             terminal7.log("Gate disengaged")
             this.pc = null
         }
-    }
-    /*
-     * Host.sendSize sends a control message with the pane's size to the server
-     */
-    sendSize(pane) {
-        if ((this.pc != null) && pane.webexecID)
-            this.sendCTRLMsg({
-                type: "resize", 
-                args: {
-                       pane_id: pane.webexecID,
-                       sx: pane.t.cols,
-                       sy: pane.t.rows
-                }
-            })
     }
     /*
      * dump dumps the host to a state object
@@ -768,7 +521,7 @@ export class Gate {
             this.marker = 0
             this.panes().forEach(p => {
                 p.d.close()
-                p.openDC()
+                p.openChannel()
             })
         })
         e.querySelector(".all").addEventListener('click', _ => {
@@ -793,4 +546,30 @@ export class Gate {
         else
             this.nameE.classList.add("offline")
     }
+    /*
+    SSHConnect(ev) {
+        if (ev.candidate) {
+            if (!this.SSHSession) {
+                SSHPlugin.startSessionByPasswd({
+                    hostname: "192.168.1.18",
+                    port: 22,
+                    username: "daonb",
+                    password: "Quadra840AV"}, m => this.onSSHOutput(m)).then(ret => {
+                        this.SSHSession = ret.session
+                        SSHPlugin.startShell({pty: 6, session: ret.session}, m =>
+                            this.SSHSendCandidate(ev)})
+                    })
+            } else 
+                SSHSendCandidate(json.stringify(ev.candidate))
+
+        } else
+            console.log("no candidate", ev)
+    }
+    onSSHOutput(m) {
+        console.log("got message", m)
+    }
+    SSHSendCandidate(can) {
+        this.SSHSession.write
+    }
+    */
 }

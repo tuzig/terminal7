@@ -33,7 +33,7 @@ export class Pane extends Cell {
         this.state = "init"
         this.d = null
         this.active = false
-        this.webexecID = props.webexec_id || null
+        this.channelID = props.webexec_id || null
         this.fontSize = props.fontSize || 12
         this.theme = props.theme || terminal7.conf.theme
         this.copyMode = false
@@ -80,7 +80,7 @@ export class Pane extends Cell {
         this.createDividers()
         this.t.onSelectionChange(() => this.selectionChanged())
         this.t.loadWebfontAndOpen(con).then(_ => {
-            this.fit(pane => { if (pane != null) pane.openDC(parent) })
+            this.fit(pane => { if (pane != null) pane.openChannel(parent) })
             this.t.textarea.tabIndex = -1
             this.t.attachCustomKeyEventHandler(ev => {
                 var toDo = true
@@ -230,40 +230,28 @@ export class Pane extends Cell {
         return p
 
     }
-    openDC(parent) {
-        var tSize = this.t.rows+'x'+this.t.cols,
-            label = ""
-        this.buffer = []
-
+    openChannel(parent) {
         // stop listening to old channel events
         if (this.d) {
             this.d.onclose = undefined
             this.d.onopen = undefined
             this.d.onmessage = undefined
         }
-
-        if (!this.webexecID) {
-            this.updateID = null
-            var msgID = this.gate.sendCTRLMsg({
-                type: "add_pane", 
-                args: { 
-                    command: [terminal7.conf.exec.shell],
-                    rows: this.t.rows,
-                    cols: this.t.cols,
-                    parent: parent || 0
+        this.gate.connector.openShell(this.channelID, parent, this.t.rows, this.t.cols)
+            .then((channel, id) => {
+                this.state = "connected"
+                this.d = channel
+                this.channelID = id
+                channel.onmessage = m => pane.onMessage(m)
+                channel.onclose = e => {
+                    terminal7.log(`on channel "${id}" close, marker - ${this.gate.marker}`)
+                    this.state = "disconnected"
+                    //TODO: do we need this test?
+                    if (this.marker == -1)
+                        this.close()
                 }
+                this.gate.onPaneConnected(this)
             })
-            terminal7.pendingPanes[msgID] = this
-        } else {
-            this.updateID = null
-            var msgID = this.gate.sendCTRLMsg({
-                type: "reconnect_pane", 
-                args: { 
-                    id: this.webexecID
-                }
-            })
-            terminal7.pendingPanes[msgID] = this
-        }
     }
     flashIndicator () {
         if (this.flashTimer == null) {
@@ -279,19 +267,7 @@ export class Pane extends Cell {
     // called when a message is received from the server
     onMessage (m) {
         this.flashIndicator()
-        if (this.state == "opened") {
-            var enc = new TextDecoder("utf-8"),
-                msg = enc.decode(m.data)
-            this.state = "connected"
-            this.webexecID = parseInt(msg.split(",")[0])
-            if (isNaN(this.webexecID)) {
-                this.gate.notify(msg, true)
-                terminal7.log(`got an error on pane connect: ${msg}`)
-                this.close()
-            } else
-                this.gate.onPaneConnected(this)
-        }
-        else if (this.state == "connected") {
+         if (this.state == "connected") {
             this.write(new Uint8Array(m.data))
         }
         else
@@ -537,6 +513,7 @@ export class Pane extends Cell {
     }
     close() {
         if (this.d)
+            // TODO: why not just call close?
             this.d.onclose = undefined
         this.dividers.forEach(d => d.classList.add("hidden"))
         super.close()
@@ -548,9 +525,9 @@ export class Pane extends Cell {
             xoff: this.xoff,
             yoff: this.yoff,
             fontSize: this.fontSize,
-            webexec_id: this.webexecID,
+            webexec_id: this.channelID,
         }
-        if (this.w.activeP && this.webexecID == this.w.activeP.webexecID)
+        if (this.w.activeP && this.channelID == this.w.activeP.channelID)
             cell.active = true
         if (this.zoomed)
             cell.zoomed = true

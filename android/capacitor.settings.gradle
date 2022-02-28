@@ -19,3 +19,6 @@ project(':capacitor-storage').projectDir = new File('../node_modules/@capacitor/
 
 include ':robingenz-capacitor-background-task'
 project(':robingenz-capacitor-background-task').projectDir = new File('../node_modules/@robingenz/capacitor-background-task/android')
+
+include ':capacitor-ssh-plugin'
+project(':capacitor-ssh-plugin').projectDir = new File('../node_modules/capacitor-ssh-plugin/android')
