@@ -961,10 +961,8 @@
   resolved "https://registry.yarnpkg.com/@capacitor/storage/-/storage-1.2.3.tgz#5d5873f2890d0ba3717cef97ecfea7b02823a122"
   integrity sha512-Rc5CKS53sfxokF5dxzNQDhig4lnZonky6VqskHZKTe3Ltl37FKmrG+I8ttZCinFZ5MPWfGSuP44m93hsQqitjQ==
 
-"@iarna/toml@<3":
-  version "2.2.5"
-  resolved "https://registry.yarnpkg.com/@iarna/toml/-/toml-2.2.5.tgz#b32366c89b43c6f8cefbdefac778b9c828e3ba8c"
-  integrity sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==
+"@iarna/toml@file:../iarna-toml":
+  version "3.0.0"
 
 "@ionic/cli-framework-output@^2.2.1":
   version "2.2.2"
@@ -6552,9 +6550,8 @@ xterm-webfont@^2.0.0:
   dependencies:
     fontfaceobserver "2.*"
 
-"xterm@git+https://github.com/tuzig/xterm.js.git#semver:<5.0":
-  version "4.15.101"
-  resolved "git+https://github.com/tuzig/xterm.js.git#18fd3b3eb0b0293c70daa121912585c5e5e9aa3a"
+"xterm@file:../xterm.js":
+  version "4.17.0"
 
 y18n@^4.0.0:
   version "4.0.3"

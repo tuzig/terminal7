@@ -12,7 +12,6 @@ import { SearchAddon } from 'xterm-addon-search'
 import { Cell } from './cell.js'
 import { fileRegex, urlRegex } from './utils.js'
 
-import * as aE from 'ansi-escapes'
 import * as XtermWebfont from 'xterm-webfont'
 
 const  REGEX_SEARCH        = false,

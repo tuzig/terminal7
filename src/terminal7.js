@@ -19,6 +19,7 @@ import { formatDate } from './utils.js'
 import { openDB } from 'idb'
 
 import { App } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
@@ -1090,7 +1091,7 @@ peer_name = "${peername}"\n`
         modal.classList.remove("hidden")
     }
     onBoard() {
-        if ((a !== null) || (Capacitor.getPlatform() != "web")) {
+        if (Capacitor.getPlatform() != "web") {
             localStorage.setItem("onmobile", "1")
             return
         }
