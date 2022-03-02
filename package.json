@@ -66,14 +66,17 @@
     "ts-loader": "<9",
     "typescript": "<5",
     "url-loader": "^4.1.0",
+    "vite": "^2.8.5",
+    "vite-plugin-pwa": "^0.11.13",
     "webpack": "<5",
     "webpack-cli": "^3.3.11",
     "yarn": "^1.22.17"
   },
   "scripts": {
-    "start": "npm run build && npx serve -p 8000 www",
+    "start": "vite",
+    "serve": "vite build && vite preview",
     "test": "karma start --single-run",
-    "build": "npx webpack --output www/terminal7.bundle.js && npx cap copy",
+    "build": "vite build",
     "postinstall": "cd ./node_modules/xterm && yarn install && npm run package"
   },
   "repository": {
