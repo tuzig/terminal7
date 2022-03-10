@@ -12,7 +12,7 @@ import { SearchAddon } from 'xterm-addon-search'
 import { Cell } from './cell.js'
 import { fileRegex, urlRegex } from './utils.js'
 
-import * as XtermWebfont from 'xterm-webfont'
+import XtermWebfont from 'xterm-webfont'
 
 const  REGEX_SEARCH        = false,
       COPYMODE_BORDER_COLOR = "#F952F9",
@@ -34,7 +34,7 @@ export class Pane extends Cell {
         this.active = false
         this.webexecID = props.webexec_id || null
         this.fontSize = props.fontSize || 12
-        this.theme = props.theme || terminal7.conf.theme
+        this.theme = props.theme || this.t7.conf.theme
         this.copyMode = false
         this.cmAtEnd = null
         this.cmCursor = null
@@ -89,15 +89,15 @@ export class Pane extends Cell {
                     this.d.send(String.fromCharCode(3))
                     toDo = false
                 }
-                if (ev.ctrlKey && (ev.key == terminal7.conf.ui.leader)) {
+                if (ev.ctrlKey && (ev.key == this.t7.conf.ui.leader)) {
                     this.aLeader = !this.aLeader
                     toDo = !this.aLeader
                 }
                 else if (ev.metaKey && (ev.key != "Shift") && (ev.key != "Meta") ||
-                    this.aLeader && (ev.key != terminal7.conf.ui.leader) 
+                    this.aLeader && (ev.key != this.t7.conf.ui.leader) 
                                  && (ev.key != 'Control')) {
                     // ensure help won't pop
-                    terminal7.metaPressStart = Number.MAX_VALUE
+                    this.t7.metaPressStart = Number.MAX_VALUE
                     toDo = this.handleMetaKey(ev)
                     this.aLeader = false
                 }
@@ -157,12 +157,12 @@ export class Pane extends Cell {
         try {
             this.fitAddon.fit()
         } catch {
-            if (this.retries < terminal7.conf.retries) {
+            if (this.retries < this.t7.conf.retries) {
                 this.retries++
-                terminal7.run(this.fit, 20*this.retries)
+                this.t7.run(this.fit, 20*this.retries)
             }
             else {
-                terminal7.log(`fit failed ${this.retries} times. giving up`)
+                this.t7.log(`fit failed ${this.retries} times. giving up`)
                 if (cb instanceof Function) cb(null)
             }
             return
@@ -182,9 +182,9 @@ export class Pane extends Cell {
     focus() {
         super.focus()
         if (this.t !== undefined)
-            terminal7.run(_ => this.t.focus(), 10)
+            this.t7.run(_ => this.t.focus(), 10)
         else 
-            terminal7.log("can't focus, this.t is undefined")
+            this.t7.log("can't focus, this.t is undefined")
     }
     /*
      * Splitting the pane, receivees a dir-  either "topbottom" or "rightleft"
@@ -246,13 +246,13 @@ export class Pane extends Cell {
             var msgID = this.gate.sendCTRLMsg({
                 type: "add_pane", 
                 args: { 
-                    command: [terminal7.conf.exec.shell],
+                    command: [this.t7.conf.exec.shell],
                     rows: this.t.rows,
                     cols: this.t.cols,
                     parent: parent || 0
                 }
             })
-            terminal7.pendingPanes[msgID] = this
+            this.t7.pendingPanes[msgID] = this
         } else {
             this.updateID = null
             var msgID = this.gate.sendCTRLMsg({
@@ -261,15 +261,15 @@ export class Pane extends Cell {
                     id: this.webexecID
                 }
             })
-            terminal7.pendingPanes[msgID] = this
+            this.t7.pendingPanes[msgID] = this
         }
     }
     flashIndicator () {
         if (this.flashTimer == null) {
-            let  flashTime = terminal7.conf.indicators && terminal7.conf.indicators.flash
+            let  flashTime = this.t7.conf.indicators && this.t7.conf.indicators.flash
                              || 88
             this.gate.setIndicatorColor("#373702")
-            this.flashTimer = terminal7.run(_ => {
+            this.flashTimer = this.t7.run(_ => {
                 this.flashTimer = null
                 this.gate.setIndicatorColor("unset")
             }, flashTime) 
@@ -285,7 +285,7 @@ export class Pane extends Cell {
             this.webexecID = parseInt(msg.split(",")[0])
             if (isNaN(this.webexecID)) {
                 this.gate.notify(msg, true)
-                terminal7.log(`got an error on pane connect: ${msg}`)
+                this.t7.log(`got an error on pane connect: ${msg}`)
                 this.close()
             } else
                 this.gate.onPaneConnected(this)
@@ -348,7 +348,7 @@ export class Pane extends Cell {
             if (ev.keyCode == 13) {
                 this.findNext(i.value)
                 this.hideSearch()
-                terminal7.run(_ => this.t.focus(), 10)
+                this.t7.run(_ => this.t.focus(), 10)
             }
         }
         i.focus()
@@ -361,7 +361,7 @@ export class Pane extends Cell {
             this.cmInitCursor()
             this.cmAtEnd = null
             if (this.zoomed)
-                terminal7.zoomedE.children[0].style.borderColor = COPYMODE_BORDER_COLOR
+                this.t7.zoomedE.children[0].style.borderColor = COPYMODE_BORDER_COLOR
             else
                 this.e.style.borderColor = COPYMODE_BORDER_COLOR
             Storage.get({key: "first_copymode"}).then(v => {
@@ -380,7 +380,7 @@ export class Pane extends Cell {
             this.t.clearSelection()
             this.t.scrollToBottom()
             if (this.zoomed)
-                terminal7.zoomedE.children[0].style.borderColor = FOCUSED_BORDER_COLOR
+                this.t7.zoomedE.children[0].style.borderColor = FOCUSED_BORDER_COLOR
             else
                 this.e.style.borderColor = FOCUSED_BORDER_COLOR
             this.focus()
@@ -397,7 +397,7 @@ export class Pane extends Cell {
     }
     handleMetaKey(ev) {
         var f = null
-        terminal7.log(`Handling meta key ${ev.key}`)
+        this.t7.log(`Handling meta key ${ev.key}`)
         switch (ev.key) {
         case "c":
             if (this.t.hasSelection()) 
@@ -443,7 +443,7 @@ export class Pane extends Cell {
             break
         // this key is at terminal level
         case "l":
-            f = () => terminal7.logDisplay()
+            f = () => this.t7.logDisplay()
             break
         case "ArrowLeft":
             f = () => this.w.moveFocus("left")
@@ -458,7 +458,7 @@ export class Pane extends Cell {
             f = () => this.w.moveFocus("down")
             break
         case "`":
-            f = () => terminal7.dumpLog()
+            f = () => this.t7.dumpLog()
             break
         }
 

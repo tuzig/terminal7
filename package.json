@@ -35,9 +35,7 @@
     "hammerjs": "<3",
     "idb": "<7",
     "uuid": "^8.3.2",
-    "web": "0.0.2",
-    "websocket-extensions": ">=0.1.4",
-    "xterm": "file:../xterm.js",
+    "xterm": "git+https://github.com/tuzig/xterm.js.git#semver:<5.0",
     "xterm-addon-fit": "^0.3.0",
     "xterm-addon-search": "^0.7.0",
     "xterm-webfont": "^2.0.0"
@@ -59,10 +57,13 @@
     "yarn": "^1.22.17"
   },
   "scripts": {
-    "start": "vite",
-    "serve": "vite build && vite preview",
+    "start": "npm run dev",
+    "dev": "vite",
+    "stage": "vite build --sourcemap && vite preview",
+    "run": "cap run ios",
     "test": "vitest",
     "build": "vite build --sourcemap",
+    "clean": "rm -rf dist ios/App/App/public/*",
     "postinstall": "cd ./node_modules/xterm && yarn install && npm run package"
   },
   "repository": {
