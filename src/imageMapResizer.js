@@ -4,9 +4,6 @@
  *  License: MIT
  */
 
-;(function() {
-  'use strict'
-
   function scaleImageMap() {
     function resizeMap() {
       function resizeAreaTag(cachedAreaCoords, idx) {
@@ -61,8 +58,7 @@
       ) {
         resizeMap()
       }
-    }
-
+    }_
     function addEventListeners() {
       image.addEventListener('load', resizeMap, false) //Detect late image loads in IE11
       window.addEventListener('focus', resizeMap, false) //Cope with window being resized whilst on another tab
@@ -144,20 +140,4 @@
       return maps
     }
   }
-
-  if (typeof define === 'function' && define.amd) {
-    define([], factory)
-  } else if (typeof module === 'object' && typeof module.exports === 'object') {
-    module.exports = factory() //Node for browserfy
-  } else {
-    window.imageMapResize = factory()
-  }
-
-  if ('jQuery' in window) {
-    window.jQuery.fn.imageMapResize = function $imageMapResizeF() {
-      return this.filter('map')
-        .each(scaleImageMap)
-        .end()
-    }
-  }
-})()
+export let imageMapResizer = factory()

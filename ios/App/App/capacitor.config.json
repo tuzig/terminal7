@@ -2,8 +2,8 @@
 	"appId": "dev.terminal7",
 	"appName": "Terminal7",
 	"bundledWebRuntime": true,
-	"npmClient": "npm",
-	"webDir": "www",
+	"npmClient": "yarn",
+	"webDir": "dist",
 	"plugins": {
 		"SplashScreen": {
 			"launchShowDuration": 0

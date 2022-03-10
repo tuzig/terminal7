@@ -3,6 +3,7 @@
  *  Copyright: (c) 2021 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
+import * as Hammer from 'hammerjs'
 const   ABIT                = 10,
         FOCUSED_BORDER_COLOR = "#F4DB53",
         UNFOCUSED_BORDER_COLOR = "#373702"
@@ -19,6 +20,7 @@ export class Cell {
         this.xoff = props.xoff || 0
         this.yoff = props.yoff || 0
         this.zoomed = false
+        this.t7 = window.terminal7
     }
     /*
      * Creates the HTML elment that will store our dimensions and content
@@ -85,11 +87,11 @@ export class Cell {
         })
 
         h.on('pinch', e => {
-            terminal7.log(e.additionalEvent, e.distance, e.velocityX, e.velocityY, e.direction, e.isFinal)
+            this.t7.log(e.additionalEvent, e.distance, e.velocityX, e.velocityY, e.direction, e.isFinal)
             if (e.deltaTime < this.lastEventT)
                 this.lastEventT = 0
             if ((e.deltaTime - this.lastEventT < 200) ||
-                 (e.velocityY > terminal7.conf.ui.pinchMaxYVelocity))
+                 (e.velocityY > this.t7.conf.ui.pinchMaxYVelocity))
                 return
             this.lastEventT = e.deltaTime
             if (e.additionalEvent == "pinchout") 
@@ -153,10 +155,10 @@ export class Cell {
                 this.resizeObserver.disconnect()
                 this.resizeObserver  = null
             }
-            let te = terminal7.zoomedE.children[0].children[0]
+            let te = this.t7.zoomedE.children[0].children[0]
             this.e.appendChild(te)
-            document.body.removeChild(terminal7.zoomedE)
-            terminal7.zoomedE = null
+            document.body.removeChild(this.t7.zoomedE)
+            this.t7.zoomedE = null
             this.w.e.classList.remove("hidden")
         } else {
             let c = document.createElement('div'),
@@ -170,13 +172,13 @@ export class Cell {
             this.styleZoomed(e)
             this.catchFingers(e)
             document.body.appendChild(c)
-            terminal7.zoomedE = c
+            this.t7.zoomedE = c
             this.w.e.classList.add("hidden")
-            this.resizeObserver = new ResizeObserver(_ => this.styleZoomed(e))
+            this.resizeObserver = new window.ResizeObserver(_ => this.styleZoomed(e))
             this.resizeObserver.observe(e);
         }
         this.zoomed = !this.zoomed
         this.gate.sendState()
-        terminal7.run(_ => this.focus(), ABIT)
+        this.t7.run(_ => this.focus(), ABIT)
     }
 }
