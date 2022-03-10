@@ -11,4 +11,4 @@ jobs:
         with:
           node-version: 16
       - run: yarn install --frozen-lockfile
-      - run: CHROMIUM_BIN=$(which chrome) npm test
+      - run: npm test
