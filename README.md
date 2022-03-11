@@ -14,8 +14,9 @@ The code here is mainly ES6 with no framworks. We do use the following projects:
 
 - capacitorjs for app packaging
 - xterm.js for terminal emulation
-- webpack to package the source
-- karma, mocha & chai for tests.
+- yarn for package management
+- vite for packaging
+- vitest for testing
 
 For networking we use WebRTC, the web standard protocol for real time
 communications. It's a UDP based web-era protocol with wide support and a great

@@ -5,9 +5,9 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Terminal7 } from "../src/terminal7.js"
 import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
+import { Terminal7Mock } from '../src/test_utils.ts'
 import { assert } from "chai"
 import { Storage } from '@capacitor/storage'
 
@@ -18,12 +18,13 @@ describe("terminal7", function() {
      */
     beforeEach(async () => {
         await Storage.clear()
-        document.body.innerHTML = __html__['www/index.html']
-        e = document.getElementById("terminal7")
-        t = new Terminal7()
+        console.log("before each")
+        t = new Terminal7Mock()
+        e = document.getElementById("t7")
+        window.terminal7=t
         t.open(e)
     })
-    after(() => terminal7.clearTimeouts())
+    afterEach(() => t && t.clearTimeouts())
     describe("gate", () => {
         it("starts with no gates", () => {
             expect(t.gates.length).to.equal(0)
@@ -294,22 +295,22 @@ describe("terminal7", function() {
             p0.toggleZoom()
             //TODO: test the terminal is changing size 
             //expect(p0.t.rows).above(r0)
-            expect(terminal7.zoomedE).to.exist
-            expect(terminal7.zoomedE.classList.contains("zoomed")).to.be.true
-            expect(terminal7.zoomedE.children[0].classList.contains("pane")).to.be.true
-            expect(terminal7.zoomedE.children[0].classList.contains("pane")).to.be.true
+            expect(t.zoomedE).to.exist
+            expect(t.zoomedE.classList.contains("zoomed")).to.be.true
+            expect(t.zoomedE.children[0].classList.contains("pane")).to.be.true
+            expect(t.zoomedE.children[0].classList.contains("pane")).to.be.true
             p0.toggleZoom()
-            expect(terminal7.zoomedE).to.be.null
+            expect(t.zoomedE).to.be.null
             expect(p0.sx).to.equal(0.4)
             p0.toggleZoom()
-            expect(terminal7.zoomedE).to.exist
-            expect(terminal7.zoomedE.classList.contains("zoomed")).to.be.true
-            expect(terminal7.zoomedE.children[0].classList.contains("pane")).to.be.true
+            expect(t.zoomedE).to.exist
+            expect(t.zoomedE.classList.contains("zoomed")).to.be.true
+            expect(t.zoomedE.children[0].classList.contains("pane")).to.be.true
         })
 
     })
+    /* TODO: fix this
     describe("gate", () => {
-        /* TODO: fix this
         it("can be stored & loaded", async function() {
             t.addGate({
                 addr: 'localgate',
@@ -329,8 +330,8 @@ describe("terminal7", function() {
             expect(t2.gates[0].user).to.equal("guest")
             expect(t2.gates[1].user).to.equal("root")
         })
-        */
     })
+        */
     describe("layout", () => {
         var h, w, p0 
         it("can be restored from a simple layout and dumped", () => {

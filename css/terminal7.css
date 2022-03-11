@@ -96,12 +96,14 @@ button {
     font-weight: 300;
     font-size: 30px;
 } 
+/* TODO: fix this bit of lipstick
 @media all and (max-width:30em){
     .text-button {
         display:block;
         margin:0.4em auto;
     }
 }
+*/
 dd:not(:last-child) {
     margin-bottom: 1.5em;
 }

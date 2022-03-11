@@ -20,6 +20,7 @@ export class Window {
         this.rootLayout = null
         this.e = null
         this.activeP = null
+        this.t7 = window.terminal7
     }
     /*
      * Window.open opens creates the window's element and the first layout and
@@ -60,7 +61,7 @@ export class Window {
         }
         if (this.activeP && this.activeP.zoomed) {
             this.e.classList.add("hidden")
-            terminal7.zoomedE.classList.remove("hidden")
+            this.t7.zoomedE.classList.remove("hidden")
         }
         else
             this.e.classList.remove("hidden")
@@ -72,8 +73,8 @@ export class Window {
     }
     addLayout(dir, basedOn) {
         let l = new Layout(dir, basedOn)
-        l.id = terminal7.cells.length
-        terminal7.cells.push(l)
+        l.id = this.t7.cells.length
+        this.t7.cells.push(l)
         if (this.rootLayout == null)
             this.rootLayout = l
         return l
@@ -132,7 +133,7 @@ export class Window {
             that.gate.sendState()
             that.activeP.focus()
             se.classList.add("hidden")
-            terminal7.run(() => {
+            this.t7.run(() => {
                 e.w.name = event.target.value
                 e.innerHTML = event.target.value
             }, ABIT)
@@ -192,7 +193,7 @@ export class Window {
                     && (p.xoff <= x) && (p.xoff+p.sx >= x))
                 break
         }
-        terminal7.cells.forEach(c => {
+        this.t7.cells.forEach(c => {
             if ((nextPane == null) && (c instanceof Pane)
                 && c.w && (c.w == this))
                 if (match(c))
