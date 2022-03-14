@@ -19,7 +19,7 @@ export class SSHSession extends RTBaseSession {
         this.byPass.passwork = password
         this.byPass.port = port
     }
-    open() {
+    connect() {
         SSHPlugin.startSessionByPasswd(this.byPass).then(id => {
             this.id = id
             this.onStateChange("connected")

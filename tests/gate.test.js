@@ -112,7 +112,7 @@ describe("gate", () => {
         g.connect()
         await sleep(200)
         expect(g.boarding).to.equal(true)
-        expect(g.session.open).toHaveBeenCalledTimes(1)
+        expect(g.session.connect).toHaveBeenCalledTimes(1)
         expect(g.session.openChannel).toHaveBeenCalledTimes(1)
         expect(g.session.openChannel.mock.calls[0]).toEqual(["bash", undefined, 80, 24])
         let panes = g.panes()

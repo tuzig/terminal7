@@ -223,7 +223,7 @@ export class Gate {
             console.log("TBD: update layouy", layout)
         }
         console.log("opening session")
-        this.session.open()
+        this.session.connect()
         /*
         this.connector = new webrtcConnector({fp: this.fp})
         this.connector.onError = msg => this.t7.onNoSignal(this, msg)
@@ -420,9 +420,7 @@ export class Gate {
             if (cb) cb()
             return
         }
-        this.session.disconnect.then(marker => {
-            this.marker = pmarker
-            this.t7.log("got a marker", this.marker)
+        this.session.disconnect().then(() => {
             if (cb) cb()
         })
     }

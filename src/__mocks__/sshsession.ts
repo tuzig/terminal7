@@ -14,7 +14,7 @@ export class SSHSession implements RTSession {
     onPayloadUpdate: (payload: string) => void
     constructor(address: string, username: string, password: string, port?: number=22) {
     }
-    open = vi.fn(() => setTimeout(_ => this.onStateChange("connected"), 0))
+    connect = vi.fn(() => setTimeout(_ => this.onStateChange("connected"), 0))
     openChannel = vi.fn((cmd: string, parent: RTChannelID, sx?: number, sy?: number) => {
         return new Promise(resolve => {
             setTimeout(_ => {

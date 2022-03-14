@@ -1,8 +1,6 @@
 export type CallbackType = (e: Event) => void
 export type RTChannelID = string
-export type RTState = "new" | "connecting" | "connected" | "disconnected" | "failed"
-
-type RTMarker = number
+export type RTState = "new" | "connecting" | "connected" | "reconnected" | "disconnected" | "failed"
 
 export interface Event {
     state: string
@@ -29,10 +27,10 @@ export interface RTSession {
         Promise<RTChannel>
     close(): Promise<void>
     reconnectChannel(id: ChannelId): Promise<RTChannel>
-    getPayload?(): Promise<string>
-    setPayload?(payload: object): Promise<void>
-    disconnect(): Promise<RTMarker>
-    open(): void
+    getPayload(): Promise<string>
+    setPayload(payload: object): Promise<void>
+    disconnect(): Promise<void>
+    connect(): void
 }
 
 export class RTBaseSession implements RTSession {
@@ -46,9 +44,9 @@ export class RTBaseSession implements RTSession {
             resolve()
         })
     }
-    disconnect(): Promise<RTMarker>{
+    disconnect(): Promise<void>{
         return new Promise(resolve=> {
-            resolve(0)
+            resolve()
         })
     }
 }
