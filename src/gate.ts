@@ -7,6 +7,8 @@
  */
 import { Window } from './window.js'
 import { Pane } from './pane.js'
+import { RTSession } from './rtsession.ts'
+import { SSHSession } from './sshsession.ts'
 
 import { SSHPlugin } from 'capacitor-ssh-plugin'
 import { Clipboard } from '@capacitor/clipboard'
@@ -18,6 +20,7 @@ const ABIT    = 10,
  * The gate class abstracts a host connection
  */
 export class Gate {
+    session: RTSession
     constructor (props) {
         // given properties
         this.id = props.id
@@ -40,7 +43,6 @@ export class Gate {
         this.watchDog = null
         this.verified = props.verified || false
         this.t7 = window.terminal7
-        this.SSHSession = null
     }
 
     /*
@@ -153,10 +155,10 @@ export class Gate {
                 "--indicator-color", color)
     }
     /*
-     * updateConnectionState(state) is called when the connection
+     * onSessionState(state) is called when the connection
      * state changes.
      */
-    updateConnectionState(state) {
+    onSessionState(state: RTState) {
         this.t7.log(`updating ${this.name} state to ${state}`)
         this.notify("connection state: " + state)
         if (state == "connected") {
@@ -177,6 +179,7 @@ export class Gate {
                     Storage.set({key: "first_gate", value: "1"}) 
                 }
             })
+            this.session.getPayload().then(layout => this.setLayout(layout))
         }
         else if (state == "disconnected") {
             // TODO: add warn class
@@ -197,8 +200,6 @@ export class Gate {
      */
     connect() {
         // do nothing when the network is down
-        if (!this.t7.netStatus || !this.t7.netStatus.connected)
-            return
         // if we're already boarding, just focus
         if (this.boarding) {
             if (this.windows.length == 0)
@@ -214,60 +215,25 @@ export class Gate {
             this.watchDog = null
             this.stopBoarding()
         }, this.t7.conf.net.timeout)
+        
+        this.session = new SSHSession(this.addr, this.user, this.secret)
+        this.session.onStateChange = state => this.onSessionState(state)
+        this.session.onPayloadUpdate = layout => {
+            this.notify("TBD: update new layout")
+            console.log("TBD: update layouy", layout)
+        }
+        console.log("opening session")
+        this.session.open()
+        /*
         this.connector = new webrtcConnector({fp: this.fp})
         this.connector.onError = msg => this.t7.onNoSignal(this, msg)
         this.connector.onWarning = msg => this.notify(msg)
         this.connector.onResize = () => this.panes().forEach(p => p.fit())
-        this.connector.onRestore = (state) => this.restoreState(state)
-        this.connector.onStateChange = (state) => this.updateConnectionState(state)
+        this.connector.onStateChange = (state) => this.onSessionState(state)
         this.connector.connect()
+        */
     }
 
-    /*
-     * peerConnect is used by websocket connections to connect the session with the peer
-     */
-    peerConnect(offer) {
-        let sd = new RTCSessionDescription(offer)
-        this.pc.setRemoteDescription(sd)
-            .catch (e => {
-                this.notify(`Failed to set remote description: ${e}`)
-                this.stopBoarding()
-                this.setIndicatorColor(FAILED_COLOR)
-                this.t7.onDisconnect(this)
-            })
-    }
-    WebSockConnect(ev) {
-        offer = btoa(JSON.stringify(this.pc.localDescription))
-        this.t7.getFingerprint().then(fp =>
-            fetch('http://'+this.addr+'/connect', {
-                headers: {"Content-Type": "application/json"},
-                method: 'POST',
-                body: JSON.stringify({api_version: 0,
-                    offer: offer,
-                    fingerprint: fp
-                })
-            }).then(response => {
-                if (response.status == 401)
-                    throw new Error('unautherized');
-                if (!response.ok)
-                    throw new Error(
-                      `HTTP POST failed with status ${response.status}`)
-                return response.text()
-            }).then(data => {
-                if (!this.verified) {
-                    this.verified = true
-                    this.t7.storeGates()
-                }
-                var answer = JSON.parse(atob(data))
-                this.peerConnect(answer)
-            }).catch(error => {
-                if (error.message == 'unautherized') 
-                    this.copyFingerprint()
-                else
-                    this.t7.onNoSignal(this, error)
-             })
-        )
-    }
     notify(message) {    
         this.t7.notify(`${this.name}: ${message}`)
     }
@@ -284,31 +250,30 @@ export class Gate {
     }
     reset() {
         this.clear()
-        this.restoreState(null)
+        this.setLayout(null)
     }
-    restoreState(state) {
-        if ((this.marker != -1) && (this.windows.length > 0)) {
-            // if there's a marker it's a reconnect, re-open all gate's dcs
-            // TODO: validate the current layout is like the state
-            this.t7.log("Restoring with marker, open dcs")
-            this.panes().forEach(p => p.openChannel())
-        } else if (state && (state.windows.length > 0)) {
-            this.t7.log("Restoring layout: ", state)
-            this.clear()
-            state.windows.forEach(w =>  {
-                let win = this.addWindow(w.name)
-                win.restoreLayout(w.layout)
-                if (w.active) {
-                    this.activeW = win
-                }
-            })
-        } else if ((state == null) || (state.windows.length == 0)) {
+    setLayout(state: object) {
+        if (state == null) { //  || (state.windows.length == 0)) {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
             this.activeW = this.addWindow("", true)
+            return
         }
-        else
-            this.t7.log(`not restoring. ${state}, ${wl}`)
+        if ((this.marker != -1) && (this.windows.length > 0)) {
+            // if there's a marker it's a reconnect, re-open all gate's dcs
+            // TODO: validate the current layout is like the state
+            this.t7.log("Restoring with marker, opening channel")
+            this.panes().forEach(p => p.openChannel())
+            return
+        } 
+        this.t7.log("Setting layout: ", state)
+        this.clear()
+        state.windows.forEach(w =>  {
+            let win = this.addWindow(w.name)
+            win.restoreLayout(w.layout)
+            if (w.active) 
+                this.activeW = win
+        })
 
         if (!this.activeW)
             this.activeW = this.windows[0]
@@ -340,7 +305,7 @@ export class Gate {
      * clear clears the gates memory and display
      */
     clear() {
-        console.trace("Clearing gate")
+        console.log("Clearing gate")
         this.e.querySelector(".tabbar-names").innerHTML = ""
         this.e.querySelectorAll(".window").forEach(e => e.remove())
         if (this.activeW && this.activeW.activeP.zoomed)
@@ -349,18 +314,6 @@ export class Gate {
         this.breadcrumbs = []
         this.msgs = {}
         this.marker = -1
-    }
-    /*
-     * disengagePC silently removes all event handler from the peer connections
-     */
-    disengagePC() {
-        if (this.pc != null) {
-            this.pc.onconnectionstatechange = undefined
-            this.pc.onmessage = undefined
-            this.pc.onnegotiationneeded = undefined
-            this.t7.log("Gate disengaged")
-            this.pc = null
-        }
     }
     /*
      * dump dumps the host to a state object
@@ -379,23 +332,14 @@ export class Gate {
         return { windows: wins }
     }
     sendState() {
-        if (this.updateID == null)
-            this.updateID = this.t7.run(_ => { 
-                let msg = {
-                    type: "set_payload", 
-                    args: { Payload: this.dump() }
+        if ((this.updateID == null) && this.session)
+            this.session.setPayload(this.dump()).then(_ => {
+                if ((this.windows.length == 0) && (this.pc)) {
+                    console.log("Closing gate after updating to empty state")
+                    this.stopBoarding()
+                    this.disengage()
                 }
-                this.updateID = null
-                let msgId = this.sendCTRLMsg(msg)
-                this.onack[msgId] = (isNack, state) => {
-                    if ((this.windows.length == 0) && (this.pc)) {
-                        console.log("Closing pc after updating to empty state")
-                        this.pc.close()
-                        this.stopBoarding()
-                        this.disengagePC()
-                    }
-                }
-            }, 100)
+            })
     }
     onPaneConnected(pane) {
         // hide notifications
@@ -472,24 +416,15 @@ export class Gate {
      */
     disengage(cb) {
         this.t7.log(`disengaging. boarding ${this.boarding}`)
-        if (!this.boarding) {
+        if (!this.boarding || !this.session) {
             if (cb) cb()
             return
         }
-        let msg = {
-                type: "mark",
-                args: null
-            },
-            id = this.sendCTRLMsg(msg)
-
-        // signaling restore is in progress
-        this.marker = 0
-        this.boarding = false
-        this.onack[id] = (nack, payload) => {
-            this.marker = parseInt(payload)
+        this.session.disconnect.then(marker => {
+            this.marker = pmarker
             this.t7.log("got a marker", this.marker)
             if (cb) cb()
-        }
+        })
     }
     closeActivePane() {
         this.activeW.activeP.close()

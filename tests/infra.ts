@@ -1,4 +1,5 @@
-import { Terminal7 } from "./terminal7.js"
+import { RTSession, RTChannel } from "../src//rtsession.ts"
+import { Terminal7 } from "../src/terminal7.js"
 
 class resizeObs {
     constructor(cb) {
@@ -10,16 +11,24 @@ class resizeObs {
     }
 }
 
-export class Terminal7Mock extends Terminal7{
+export function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
+
+export class Terminal7Mock extends Terminal7 {
+    conf = { ui: {max_tabs: 10 },
+                  net: {timeout: 1000 }, 
+                  exec: {shell: "bash" }
+    }
     constructor() {
         super({})
-        this.conf = { ui: {max_tabs: 10 }}
         window.ResizeObserver = resizeObs
         document.body.innerHTML = `
 <div id='t7'></div>
 <div id='static-hosts'></div>
 <div id='log'></div>
 <div id='log-button'></div>
+<div id='log-msgs'></div>
+<div id='help-button'></div>
+<div id='help-gate'></div>
 <div id='home-button'></div>
     <template id="gate-template">
     <div class="windows-container">

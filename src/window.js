@@ -130,17 +130,17 @@ export class Window {
         var handler = function (event) {
             if (event.keyCode == 13 || event.type != "keyup") {
                 console.log(event)
-            that.gate.sendState()
-            that.activeP.focus()
-            se.classList.add("hidden")
-            this.t7.run(() => {
-                e.w.name = event.target.value
-                e.innerHTML = event.target.value
-            }, ABIT)
+                that.gate.sendState()
+                that.activeP.focus()
+                se.classList.add("hidden")
+                this.t7.run(() => {
+                    e.w.name = event.target.value
+                    e.innerHTML = event.target.value
+                }, ABIT)
 
-            textbox.removeEventListener('change', handler)
-            textbox.removeEventListener('blur', handler)
-        }
+                textbox.removeEventListener('change', handler)
+                textbox.removeEventListener('blur', handler)
+            }
         }
 
         textbox.addEventListener('keyup', handler)

@@ -5,7 +5,7 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Gate } from './gate.js'
+import { Gate } from './gate.ts'
 import { Window } from './window.js'
 import { CyclicArray } from './cyclic.js'
 import * as Hammer from 'hammerjs'
@@ -166,7 +166,8 @@ export class Terminal7 {
                 this.notify(gate)
             else {
                 this.clear()
-                gate.connect()
+                if (this.t7.netStatus && this.t7.netStatus.connected)
+                    gate.connect()
             }
         })
         // hide the modal on xmark click
@@ -437,7 +438,7 @@ peer_name = "${peername}"\n`
         this.e.addEventListener("pointermove", ev => this.onPointerMove(ev))
     }
     /*
-     * Terminal7.a.ddGate is used to add a gate to a host.
+     * Terminal7.addGate is used to add a gate to a host.
      * the function ensures the gate has a unique name adds the gate to
      * the `gates` property, stores and returns it.
      */
@@ -628,7 +629,7 @@ peer_name = "${peername}"\n`
         li.innerHTML = `<time>${t}</time><p>${message}</p>`
         li.classList = "log-msg"
         ul.appendChild(li)
-        terminal7.logDisplay(true)
+        this.logDisplay(true)
     }
     run(cb, delay) {
         var i = this.timeouts.length,

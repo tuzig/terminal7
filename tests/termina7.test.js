@@ -7,9 +7,12 @@
  */
 import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
-import { Terminal7Mock } from '../src/test_utils.ts'
+import { Terminal7Mock } from './infra.ts'
 import { assert } from "chai"
 import { Storage } from '@capacitor/storage'
+
+vi.mock('xterm')
+vi.mock('../src/sshsession.ts')
 
 describe("terminal7", function() {
     var t, e
@@ -25,82 +28,6 @@ describe("terminal7", function() {
         t.open(e)
     })
     afterEach(() => t && t.clearTimeouts())
-    describe("gate", () => {
-        it("starts with no gates", () => {
-            expect(t.gates.length).to.equal(0)
-        })
-        it("s state can be dumped", () => {
-            let state = { windows: [
-                { name: "hello",
-                  layout: {
-                        dir: "topbottom",
-                        sx: 0.8,
-                        sy: 0.6,
-                        xoff: 0.1,
-                        yoff: 0.2,
-                        cells: [
-                            {
-                                sx: 0.8,
-                                sy: 0.3,
-                                xoff: 0.1,
-                                yoff: 0.2,
-                            }, {
-                                sx: 0.8,
-                                sy: 0.3,
-                                xoff: 0.1,
-                                yoff: 0.5,
-                                active: true,
-                            },
-                        ],
-                  },
-                }, { name: "world",
-                  active: true,
-                  layout: {
-                        dir: "rightleft",
-                        sx: 0.8,
-                        sy: 0.6,
-                        xoff: 0.1,
-                        yoff: 0.2,
-                        cells: [
-                            {
-                                sx: 0.4,
-                                sy: 0.6,
-                                xoff: 0.1,
-                                yoff: 0.2,
-                            }, {
-                                sx: 0.4,
-                                sy: 0.6,
-                                xoff: 0.5,
-                                yoff: 0.2,
-                                active: true,
-                            },
-                        ],
-                  },
-                },
-            ]}
-            let h = t.addGate()
-            h.open(e)
-            h.restoreState(state)
-            expect(h.windows.length).to.equal(2)
-            let w = h.activeW
-            expect(w.rootLayout.dir).to.equal("rightleft")
-            expect(w.name).to.equal("world")
-            expect(w.rootLayout.cells[0].xoff).to.equal(0.1)
-            expect(w.rootLayout.cells[1].xoff).to.equal(0.5)
-            expect(w.activeP.xoff).to.equal(0.5)
-            let d = h.dump()
-            expect(d.windows.length).to.equal(2)
-            expect(d.windows[0].layout.dir).to.equal("topbottom")
-            expect(d.windows[0].layout.cells.length).to.equal(2)
-            expect(d.windows[0].layout.cells[0].yoff).to.equal(0.2)
-            expect(d.windows[0].layout.cells[1].yoff).to.equal(0.5)
-        })
-        it("has a unique name", () => {
-            let g = t.addGate({name:"foo"})
-            let g2 = t.addGate({name:"foo"})
-            expect(g2).to.equal("Gate name is not unique")
-        })
-    })
     describe("window", () => {
         var h, w, p0
         beforeEach(() => {

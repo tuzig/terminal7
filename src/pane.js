@@ -4,13 +4,15 @@
  *  Copyright: (c) 2021 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
+import { Cell } from './cell.js'
+import { SSHSession } from './sshsession.ts'
+import { fileRegex, urlRegex } from './utils.js'
 import { Terminal } from 'xterm'
+import { Capacitor } from '@capacitor/core'
 import { Clipboard } from '@capacitor/clipboard'
 import { Storage } from '@capacitor/storage'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
-import { Cell } from './cell.js'
-import { fileRegex, urlRegex } from './utils.js'
 
 import XtermWebfont from 'xterm-webfont'
 
@@ -79,7 +81,10 @@ export class Pane extends Cell {
         this.createDividers()
         this.t.onSelectionChange(() => this.selectionChanged())
         this.t.loadWebfontAndOpen(con).then(_ => {
-            this.fit(pane => { if (pane != null) pane.openChannel(parent) })
+            this.fit(pane => { 
+               if (pane != null)
+                  pane.openChannel(parent)
+            })
             this.t.textarea.tabIndex = -1
             this.t.attachCustomKeyEventHandler(ev => {
                 var toDo = true
@@ -123,7 +128,7 @@ export class Pane extends Cell {
                 }
                 this.d.send(d)
             })
-            const resizeObserver = new ResizeObserver(_ => this.fit())
+            const resizeObserver = new window.ResizeObserver(_ => this.fit())
             resizeObserver.observe(this.e);
         })
         return this.t
@@ -151,9 +156,11 @@ export class Pane extends Cell {
 
         // there's no point in fitting when in the middle of a restore
         //  it happens in the eend anyway
+        /*
         if (this.gate.marker != -1) {
             return
         }
+        */
         try {
             this.fitAddon.fit()
         } catch {
@@ -229,49 +236,30 @@ export class Pane extends Cell {
         return p
 
     }
+    onChannelConnected(channel) {
+        this.d = channel
+        this.channelID = channel.id
+        channel.onData = m => this.onChannelData(m)
+        channel.onClose = e => {
+            this.t7.log(`on channel "${id}" close, marker - ${this.gate.marker}`)
+            this.state = "disconnected"
+            //TODO: do we need this test?
+            // if (this.marker == -1)
+            this.close()
+        }
+    }
     openChannel(parent) {
-        // stop listening to old channel events
-        if (this.d) {
-            this.d.onclose = undefined
-            this.d.onopen = undefined
-            this.d.onmessage = undefined
-        }
-        this.gate.connector.openShell(this.channelID, parent, this.t.rows, this.t.cols)
-            .then((channel, id) => {
-                this.state = "connected"
-                this.d = channel
-                this.channelID = id
-                channel.onmessage = m => this.onMessage(m)
-                channel.onclose = e => {
-                    this.t7.log(`on channel "${id}" close, marker - ${this.gate.marker}`)
-                    this.state = "disconnected"
-                    //TODO: do we need this test?
-                    if (this.marker == -1)
-                        this.close()
-                }
-            })      
-        if (!this.webexecID) {
-            this.updateID = null
-            var msgID = this.gate.sendCTRLMsg({
-                type: "add_pane", 
-                args: { 
-                    command: [this.t7.conf.exec.shell],
-                    rows: this.t.rows,
-                    cols: this.t.cols,
-                    parent: parent || 0
-                }
-            })
-            this.t7.pendingPanes[msgID] = this
+        if (!this.gate.session)
+            return
+        if (this.channelID) {
+            this.gate.session.openChannel(this.channelID)
+            .then(channel => this.onChannelConnected(channel))
         } else {
-            this.updateID = null
-            var msgID = this.gate.sendCTRLMsg({
-                type: "reconnect_pane", 
-                args: { 
-                    id: this.webexecID
-                }
-            })
+            // console.trace(this.gate)
+            this.gate.session.openChannel(
+                this.t7.conf.exec.shell, parent, this.t.cols, this.t.rows)
+            .then(channel => this.onChannelConnected(channel))
         }
-        this.gate.onPaneConnected(this)
     }
     flashIndicator () {
         if (this.flashTimer == null) {
@@ -285,7 +273,7 @@ export class Pane extends Cell {
         }
     }
     // called when a message is received from the server
-    onMessage (m) {
+    onChannelData (m) {
         this.flashIndicator()
          if (this.state == "connected") {
             this.write(new Uint8Array(m.data))

@@ -3,7 +3,6 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   test: {
-    // ...
       environment: "jsdom",
       reporters: "verbose",
       globals: true,
