@@ -2,17 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <link rel="manifest" href="terminal7.webmanifest">
-
+    <title>Terminal 7</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no,  shrink-to-fit=no" />
+    <meta name="description" content="A touchable terminal multiplexer & emulator running over WebRTC">
+    <link rel="icon" href="/public/logo.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="/public/favicon.ico" type="image/png" sizes="48x48 32x32">
+    <link rel="mask-icon" href="/public/logo.svg" color="#271D30">
+    <link rel="apple-touch-icon" href="/public/logo192.png">
+    <meta name="theme-color" content="#271D30">
     <meta name="apple-touch-fullscreen" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Terminal7" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <link rel="apple-touch-icon" href="/img/logo192.png">
-
-  <title>Terminal 7</title>
-  <script src="capacitor.js"></script>
-  <script src="terminal7.bundle.js"></script>
+    <script type="module" src="/main.js"></script>
 </head>
 <body>
   <div id="terminal7">
@@ -112,11 +113,11 @@
       <div id="manual-install" class="hidden modal border">
           <h1 style="margin:1em;">Installation Instructions</h1>
           <ul>
-          <li>On an iPad, press the share button and then "Add to Home Screen"
+              <li>On an iPad, press the share button and then "Add to Home Screen"</li>
           <li>Firefox has poor PWA support, better use chrome or edge or safari
-              on the iPad
+              on the iPad</li>
           <li>To install the app look for the PWA install icon at the edge
-          of the browser's url field
+              of the browser's url field</li>
           </ul>
             <nav>
                 <button type="button" class="close"><i class="f7-icons">xmark</i></button>
@@ -345,7 +346,7 @@
 
     <template id="disconnect-template">
        <div class="disconnect modal border temporal"><form>
-          <h1>Gate disconnected</h2>
+          <h1>Gate disconnected</h1>
           <p style="text-align:center;">How would you like to proceed?</p>
           <nav>
               <button type="button" class="close"><i class="f7-icons close">xmark</i></button>

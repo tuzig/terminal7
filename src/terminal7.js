@@ -10,7 +10,7 @@ import { Window } from './window.js'
 import { CyclicArray } from './cyclic.js'
 import * as Hammer from 'hammerjs'
 import * as TOML from '@iarna/toml'
-import * as imageMapResizer from './imageMapResizer.js'
+import { imageMapResizer } from './imageMapResizer.js'
 import CodeMirror from 'codemirror/src/codemirror.js'
 import { vimMode } from 'codemirror/keymap/vim.js'
 import { tomlMode} from 'codemirror/mode/toml/toml.js'
@@ -19,6 +19,7 @@ import { formatDate } from './utils.js'
 import { openDB } from 'idb'
 
 import { App } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
@@ -1090,7 +1091,7 @@ peer_name = "${peername}"\n`
         modal.classList.remove("hidden")
     }
     onBoard() {
-        if ((a !== null) || (Capacitor.getPlatform() != "web")) {
+        if (Capacitor.getPlatform() != "web") {
             localStorage.setItem("onmobile", "1")
             return
         }

@@ -43,6 +43,7 @@ export class Gate {
         this.online = props.online
         this.watchDog = null
         this.verified = props.verified || false
+        this.t7 = window.terminal7
     }
 
     /*
@@ -63,7 +64,7 @@ export class Gate {
             t.querySelector(".add-tab").addEventListener(
                 'click', _ => this.newTab())
             t.querySelector(".search-close").addEventListener('click', _ =>  {
-                terminal7.logDisplay(false)
+                this.t7.logDisplay(false)
                 this.activeW.activeP.exitSearch()
                 this.activeW.activeP.focus()
             })
@@ -90,8 +91,8 @@ export class Gate {
         b.gate = this
     }
     delete() {
-        terminal7.gates.splice(this.id, 1)
-        terminal7.storeGates()
+        this.t7.gates.splice(this.id, 1)
+        this.t7.storeGates()
         // remove the host from the home screen
         this.nameE.parentNode.parentNode.remove()
     }
@@ -100,8 +101,8 @@ export class Gate {
         this.addr = editHost.querySelector('[name="hostaddr"]').value 
         this.name = editHost.querySelector('[name="hostname"]').value
         this.nameE.innerHTML = this.name || this.addr
-        terminal7.storeGates()
-        terminal7.clear()
+        this.t7.storeGates()
+        this.t7.clear()
     }
     /*
      * edit start the edit-host user-assitance
@@ -115,7 +116,7 @@ export class Gate {
             }
             editHost = document.getElementById("edit-unverified-pbhost")
             editHost.querySelector("a").setAttribute("href",
-                "https://"+ terminal7.conf.net.peerbook)
+                "https://"+ this.t7.conf.net.peerbook)
         } else {
             editHost = document.getElementById("edit-host")
             editHost.querySelector('[name="hostaddr"]').value = this.addr
@@ -125,16 +126,16 @@ export class Gate {
         editHost.classList.remove("hidden")
     }
     focus() {
-        terminal7.logDisplay(false)
+        this.t7.logDisplay(false)
         // hide the current focused gate
         document.getElementById("home-button").classList.remove("on")
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.remove("off"))
-        let activeG = terminal7.activeG
+        let activeG = this.t7.activeG
         if (activeG) {
             activeG.e.classList.add("hidden")
         }
-        terminal7.activeG = this
+        this.t7.activeG = this
         this.e.classList.remove("hidden")
         this.e.querySelectorAll(".window").forEach(w => w.classList.add("hidden"))
         this.activeW.focus()
@@ -148,7 +149,7 @@ export class Gate {
             delete this.msgs[id]
         }
         this.boarding = false
-        terminal7.onDisconnect(this)
+        this.t7.onDisconnect(this)
     }
     setIndicatorColor(color) {
             this.e.querySelector(".tabbar-names").style.setProperty(
@@ -159,23 +160,23 @@ export class Gate {
      * state changes.
      */
     updateConnectionState(state) {
-        terminal7.log(`updating ${this.name} state to ${state}`)
+        this.t7.log(`updating ${this.name} state to ${state}`)
         this.notify("connection state: " + state)
         if (state == "connected") {
-            terminal7.logDisplay(false)
+            this.t7.logDisplay(false)
             if (this.watchDog != null) {
                 window.clearTimeout(this.watchDog)
                 this.watchDog = null
             }
             this.boarding = true
             this.setIndicatorColor("unset")
-            var m = terminal7.e.querySelector(".disconnect")
+            var m = this.t7.e.querySelector(".disconnect")
             if (m != null)
                 m.remove()
             // show help for first timer
             Storage.get({key: "first_gate"}).then(v => {
                 if (v.value != "1") {
-                    terminal7.run(terminal7.toggleHelp, 1000)
+                    this.t7.run(this.t7.toggleHelp, 1000)
                     Storage.set({key: "first_gate", value: "1"}) 
                 }
             })
@@ -191,7 +192,7 @@ export class Gate {
             if (now - this.lastDisconnect > 100) {
                 this.stopBoarding()
             } else
-                terminal7.log("Ignoring a peer terminal7.cells.forEach(c => event after disconnect")
+                this.t7.log("Ignoring a peer this.t7.cells.forEach(c => event after disconnect")
         }
     }
     /*
@@ -204,7 +205,7 @@ export class Gate {
                 this.notify(`Failed to set remote description: ${e}`)
                 this.stopBoarding()
                 this.setIndicatorColor(FAILED_COLOR)
-                terminal7.onDisconnect(this)
+                this.t7.onDisconnect(this)
             })
     }
     /*
@@ -213,7 +214,7 @@ export class Gate {
      */
     connect() {
         // do nothing when the network is down
-        if (!terminal7.netStatus || !terminal7.netStatus.connected)
+        if (!this.t7.netStatus || !this.t7.netStatus.connected)
             return
         // if we're already boarding, just focus
         if (this.boarding) {
@@ -229,25 +230,25 @@ export class Gate {
         // start the connection watchdog
         if (this.watchDog != null)
             window.clearTimeout(this.watchDog)
-        this.watchDog = terminal7.run(_ => {
+        this.watchDog = this.t7.run(_ => {
             this.watchDog = null
             this.stopBoarding()
-        }, terminal7.conf.net.timeout)
+        }, this.t7.conf.net.timeout)
         // exciting times.... a connection is born!
-        if (terminal7.iceServers)
-            this.openPC(terminal7.iceServers)
+        if (this.t7.iceServers)
+            this.openPC(this.t7.iceServers)
         else
             this.getIceServers().then(servers => {
-                terminal7.iceServers = servers
+                this.t7.iceServers = servers
                 this.openPC(servers)
-            }).catch(() => terminal7.onNoSignal(this))
+            }).catch(() => this.t7.onNoSignal(this))
     }
     getIceServers() {
         return new Promise((resolve, reject) => {
             const ctrl = new AbortController(),
                   tId = setTimeout(() => ctrl.abort(), 5000)
 
-            fetch("https://"+terminal7.conf.net.peerbook+'/turn',
+            fetch("https://"+this.t7.conf.net.peerbook+'/turn',
                   {method: 'POST', signal: ctrl.signal })
             .then(response => {
                 if (!response.ok)
@@ -259,11 +260,11 @@ export class Gate {
                 if (!this.verified) {
                     this.verified = true
                     // TODO: store when making real changes
-                    // terminal7.storeGates()
+                    // this.t7.storeGates()
                 }
                 var answer = JSON.parse(data)
                 // return an array with the conf's server and subspace's
-                resolve([{ urls: terminal7.conf.net.iceServer},
+                resolve([{ urls: this.t7.conf.net.iceServer},
                          answer["ice_servers"][0]])
 
             }).catch(error => {
@@ -275,7 +276,7 @@ export class Gate {
     openPC(ice_servers) {
         this.pc = new RTCPeerConnection({
             iceServers: ice_servers,
-            certificates: terminal7.certificates})
+            certificates: this.t7.certificates})
         this.pc.onconnectionstatechange = e =>
             this.updateConnectionState(this.pc.connectionState)
 
@@ -285,7 +286,7 @@ export class Gate {
             if (ev.errorCode == 401) {
                 this.notify("Getting fresh ICE servers")
                 this.getIceServers().then(servers => {
-                    terminal7.iceServers = servers
+                    this.t7.iceServers = servers
                     this.openPC(servers)
                 })
             }
@@ -293,11 +294,11 @@ export class Gate {
         this.pc.onicecandidate = ev => {
             if (typeof(this.fp) == "string") {
                 if (ev.candidate) {
-                    terminal7.pbSend({target: this.fp, candidate: ev.candidate})
+                    this.t7.pbSend({target: this.fp, candidate: ev.candidate})
                 }
             } else if (!ev.candidate) {
                 offer = btoa(JSON.stringify(this.pc.localDescription))
-                terminal7.getFingerprint().then(fp =>
+                this.t7.getFingerprint().then(fp =>
                     fetch('http://'+this.addr+'/connect', {
                         headers: {"Content-Type": "application/json"},
                         method: 'POST',
@@ -315,7 +316,7 @@ export class Gate {
                     }).then(data => {
                         if (!this.verified) {
                             this.verified = true
-                            terminal7.storeGates()
+                            this.t7.storeGates()
                         }
                         var answer = JSON.parse(atob(data))
                         this.peerConnect(answer)
@@ -323,19 +324,19 @@ export class Gate {
                         if (error.message == 'unautherized') 
                             this.copyFingerprint()
                         else
-                            terminal7.onNoSignal(this, error)
+                            this.t7.onNoSignal(this, error)
                      })
                 )
             } 
         }
         this.pc.onnegotiationneeded = e => {
-            terminal7.log("on negotiation needed", e)
+            this.t7.log("on negotiation needed", e)
             this.pc.createOffer().then(d => {
                 this.pc.setLocalDescription(d)
                 if (typeof(this.fp) == "string") {
                     offer = btoa(JSON.stringify(d))
-                    terminal7.log("got offer", offer)
-                    terminal7.pbSend({target: this.fp, offer: offer})
+                    this.t7.log("got offer", offer)
+                    this.t7.pbSend({target: this.fp, offer: offer})
                 }
             })
         }
@@ -347,17 +348,17 @@ export class Gate {
                     webexecID = parseInt(m[1])
                 if (isNaN(webexecID) || isNaN(msgID)) {
                     this.gate.notify("Failed to open pane")
-                    terminal7.log(`got a channel with a bad label: ${l}`)
+                    this.t7.log(`got a channel with a bad label: ${l}`)
                     this.close()
                 } else {
-                    var pane = terminal7.pendingPanes[msgID]
-                    delete terminal7.pendingPanes[msgID]
+                    var pane = this.t7.pendingPanes[msgID]
+                    delete this.t7.pendingPanes[msgID]
                     pane.state = "connected"
                     pane.d = e.channel
                     pane.webexecID = webexecID
                     e.channel.onmessage = m => pane.onMessage(m)
                     e.channel.onclose = e => {
-                        terminal7.log(`on dc "${webexecID}" close, marker - ${pane.gate.marker}`)
+                        this.t7.log(`on dc "${webexecID}" close, marker - ${pane.gate.marker}`)
                         pane.state = "disconnected"
                         if (this.marker == -1)
                             pane.close()
@@ -374,15 +375,15 @@ export class Gate {
             this.setMarker()
     }
     notify(message) {    
-        terminal7.notify(`${this.name}: ${message}`)
+        this.t7.notify(`${this.name}: ${message}`)
     }
     /*
      * sencCTRLMsg gets a control message and sends it if we have a control
      * channel open or adds it to the queue if we're early to the party
      */
     sendCTRLMsg(msg) {
-        const timeout = parseInt(terminal7.conf.net.timeout),
-              retries = parseInt(terminal7.conf.net.retries),
+        const timeout = parseInt(this.t7.conf.net.timeout),
+              retries = parseInt(this.t7.conf.net.retries),
               now = Date.now()
         // helps us ensure every message gets only one Id
         if (msg.message_id === undefined) 
@@ -395,7 +396,7 @@ export class Gate {
         else {
             // message stays frozen when retrting
             const s = msg.payload || JSON.stringify(msg)
-            terminal7.log("sending ctrl message ", s)
+            this.t7.log("sending ctrl message ", s)
             if (msg.tries == undefined) {
                 msg.tries = 0
                 msg.payload = s
@@ -403,13 +404,13 @@ export class Gate {
                 this.notify(
                      `msg #${msg.message_id} no ACK in ${timeout}ms, trying ${retries-1} more times`)
             if (msg.tries++ < retries) {
-                terminal7.log(`sending ctrl msg ${msg.message_id} for ${msg.tries} time`)
+                this.t7.log(`sending ctrl msg ${msg.message_id} for ${msg.tries} time`)
                 try {
                     this.cdc.send(s)
                 } catch(err) {
                     this.notify(`Sending ctrl message failed: ${err}`)
                 }
-                this.msgs[msg.message_id] = terminal7.run(
+                this.msgs[msg.message_id] = this.t7.run(
                       () => this.sendCTRLMsg(msg), timeout)
             } else {
                 this.notify(
@@ -430,9 +431,9 @@ export class Gate {
             }
             else {
                 this.restoreState(state)
-                terminal7.run(_ => {
+                this.t7.run(_ => {
                     this.marker = -1
-                    terminal7.log("resotre done, fitting peers")
+                    this.t7.log("resotre done, fitting peers")
                     this.panes().forEach(p => p.fit())
                 }, 100)
             }
@@ -453,7 +454,7 @@ export class Gate {
                 this.restoreState({})
             } else {
                 this.restoreState(state)
-                terminal7.run(_ => this.marker = -1, 100)
+                this.t7.run(_ => this.marker = -1, 100)
             }
         }
     }
@@ -462,7 +463,7 @@ export class Gate {
      */
     panes() {
         var r = []
-        terminal7.cells.forEach(c => {
+        this.t7.cells.forEach(c => {
             if (c instanceof Pane && (c.gate == this))
                 r.push(c)
         })
@@ -476,10 +477,10 @@ export class Gate {
         if ((this.marker != -1) && (this.windows.length > 0)) {
             // if there's a marker it's a reconnect, re-open all gate's dcs
             // TODO: validate the current layout is like the state
-            terminal7.log("Restoring with marker, open dcs")
+            this.t7.log("Restoring with marker, open dcs")
             this.panes().forEach(p => p.openDC())
         } else if (state && (state.windows.length > 0)) {
-            terminal7.log("Restoring layout: ", state)
+            this.t7.log("Restoring layout: ", state)
             this.clear()
             state.windows.forEach(w =>  {
                 let win = this.addWindow(w.name)
@@ -490,11 +491,11 @@ export class Gate {
             })
         } else if ((state == null) || (state.windows.length == 0)) {
             // create the first window and pane
-            terminal7.log("Fresh state, creating the first pane")
+            this.t7.log("Fresh state, creating the first pane")
             this.activeW = this.addWindow("", true)
         }
         else
-            terminal7.log(`not restoring. ${state}, ${wl}`)
+            this.t7.log(`not restoring. ${state}, ${wl}`)
 
         if (!this.activeW)
             this.activeW = this.windows[0]
@@ -505,11 +506,11 @@ export class Gate {
      * Adds a window, opens it and returns it
      */
     addWindow(name, createPane) {
-        terminal7.log(`adding Window: ${name}`)
+        this.t7.log(`adding Window: ${name}`)
         let id = this.windows.length
         let w = new Window({name:name, gate: this, id: id})
         this.windows.push(w)
-        if (this.windows.length >= terminal7.conf.ui.max_tabs)
+        if (this.windows.length >= this.t7.conf.ui.max_tabs)
             this.e.querySelector(".add-tab").classList.add("off")
         w.open(this.e.querySelector(".windows-container"))
         if (createPane) {
@@ -528,12 +529,12 @@ export class Gate {
     openCDC() {
         var cdc = this.pc.createDataChannel('%')
         this.cdc = cdc
-        terminal7.log("<opening cdc")
+        this.t7.log("<opening cdc")
         cdc.onopen = () => {
             if (this.pendingCDCMsgs.length > 0)
                 // TODO: why the time out? why 100mili?
-                terminal7.run(() => {
-                    terminal7.log("sending pending messages:", this.pendingCDCMsgs)
+                this.t7.run(() => {
+                    this.t7.log("sending pending messages:", this.pendingCDCMsgs)
                     this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m), ABIT)
                     this.pendingCDCMsgs = []
                 }, 100)
@@ -548,7 +549,7 @@ export class Gate {
                 window.clearTimeout(this.msgs[i])
                 delete this.msgs[i]
                 const handler = this.onack[i]
-                terminal7.log("got cdc message:",  msg)
+                this.t7.log("got cdc message:",  msg)
                 if (msg.type == "nack") {
                     this.setIndicatorColor(FAILED_COLOR)
                     this.nameE.classList.add("failed")
@@ -563,7 +564,7 @@ export class Gate {
                     delete this.onack[msg.args.ref]
                 }
                 else
-                    terminal7.log("Got a cdc ack with no handler", msg)
+                    this.t7.log("Got a cdc ack with no handler", msg)
             }
         }
         return cdc
@@ -590,7 +591,7 @@ export class Gate {
             this.pc.onconnectionstatechange = undefined
             this.pc.onmessage = undefined
             this.pc.onnegotiationneeded = undefined
-            terminal7.log("Gate disengaged")
+            this.t7.log("Gate disengaged")
             this.pc = null
         }
     }
@@ -626,7 +627,7 @@ export class Gate {
     }
     sendState() {
         if (this.updateID == null)
-            this.updateID = terminal7.run(_ => { 
+            this.updateID = this.t7.run(_ => { 
                 let msg = {
                     type: "set_payload", 
                     args: { Payload: this.dump() }
@@ -645,7 +646,7 @@ export class Gate {
     }
     onPaneConnected(pane) {
         // hide notifications
-        terminal7.clear()
+        this.t7.clear()
         //enable search
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.remove("off"))
@@ -653,7 +654,7 @@ export class Gate {
     copyFingerprint() {
         let ct = document.getElementById("copy-fingerprint"),
             addr = this.addr.substr(0, this.addr.indexOf(":"))
-        terminal7.getFingerprint().then(fp =>
+        this.t7.getFingerprint().then(fp =>
                 ct.querySelector('[name="fingerprint"]').value = fp)
         document.getElementById("ct-address").innerHTML = addr
         document.getElementById("ct-name").innerHTML = this.name
@@ -666,8 +667,8 @@ export class Gate {
         })
         ct.querySelector("form").addEventListener('submit', ev => {
             ev.preventDefault()
-            terminal7.getFingerprint().then(fp =>
-                terminal7.ssh(ct,  this,
+            this.t7.getFingerprint().then(fp =>
+                this.t7.ssh(ct,  this,
                     `cat <<<"${fp}" >> ~/.webexec/authorized_tokens`,
                     _ => {
                         ct.classList.add("hidden")
@@ -685,7 +686,7 @@ export class Gate {
         this.breadcrumbs = this.breadcrumbs.filter(x => x != w)
         if (this.windows.length == 0) {
             this.clear()
-            terminal7.goHome()
+            this.t7.goHome()
         }
         else
             if (this.breadcrumbs.length > 0)
@@ -705,7 +706,7 @@ export class Gate {
         this.clear()
         this.disengagePC()
         let e = document.getElementById("reset-host")
-        terminal7.ssh(e, this, `webexec restart --address ${this.addr}`,
+        this.t7.ssh(e, this, `webexec restart --address ${this.addr}`,
             _ => e.classList.add("hidden")) 
     }
     fit() {
@@ -717,7 +718,7 @@ export class Gate {
      * and closes the peer connection.
      */
     disengage(cb) {
-        terminal7.log(`disengaging. boarding ${this.boarding}`)
+        this.t7.log(`disengaging. boarding ${this.boarding}`)
         if (!this.boarding) {
             if (cb) cb()
             return
@@ -733,7 +734,7 @@ export class Gate {
         this.boarding = false
         this.onack[id] = (nack, payload) => {
             this.marker = parseInt(payload)
-            terminal7.log("got a marker", this.marker)
+            this.t7.log("got a marker", this.marker)
             if (cb) cb()
         }
     }
@@ -741,7 +742,7 @@ export class Gate {
         this.activeW.activeP.close()
     }
     newTab() {
-        if (this.windows.length < terminal7.conf.ui.max_tabs) {
+        if (this.windows.length < this.t7.conf.ui.max_tabs) {
             let w = this.addWindow("", true)
             this.breadcrumbs.push(w)
             w.focus()

@@ -16,7 +16,6 @@ export class Layout extends Cell {
      * The new object wraps the `basedOn` cell and makes it his first son
      */
     constructor(dir, basedOn) {
-        terminal7.log("in layout constructore")
         super({
             sx: basedOn.sx || 1.0, 
             sy: basedOn.sy || 1.0,
@@ -25,6 +24,7 @@ export class Layout extends Cell {
             w: basedOn.w || null,
             className: "layout",
             gate: basedOn.gate ||null})
+        this.t7.log("in layout constructore")
         this.dir = dir
         // if we're based on a cell, we make it our first cell
         if (basedOn instanceof Cell) {
@@ -51,7 +51,7 @@ export class Layout extends Cell {
         if (c.zoomed) {
             c.toggleZoom()
         }
-        terminal7.cells.splice(terminal7.cells.indexOf(c), 1)
+        this.t7.cells.splice(this.t7.cells.indexOf(c), 1)
         // if this is the only pane in the layout, close the layout
         if (this.cells.length == 1) {
             if (this.layout != null)
@@ -100,9 +100,9 @@ export class Layout extends Cell {
         p.w = this.w
         p.gate = this.gate
         p.layout = this
-        p.id = terminal7.cells.length
+        p.id = this.t7.cells.length
         let pane = new Pane(p)
-        terminal7.cells.push(pane)
+        this.t7.cells.push(pane)
         if (p.parent instanceof Cell) {
             this.cells.splice(this.cells.indexOf(p.parent)+1, 0, pane)
             pane.openTerminal(props.parent.webexecID)
@@ -119,7 +119,7 @@ export class Layout extends Cell {
      * waits a bit for the DOM to refresh and moves the dividers
      */
     refreshDividers() {
-        terminal7.run(_ => this.cells.forEach(c => {
+        this.t7.run(_ => this.cells.forEach(c => {
             c.refreshDividers()
         }), ABIT)
     }
@@ -136,11 +136,11 @@ export class Layout extends Cell {
                 r += `${c.sx.toFixed(3)}x${c.sy.toFixed(3)}`
             }
             catch(e) {
-                terminal7.log(i, c)
+                this.t7.log(i, c)
             }
             r += `,${c.xoff.toFixed(3)},${c.yoff.toFixed(3)}`
             if (c == that)
-                terminal7.log("ERROR: layout shouldn't have `this` in his cells")
+                this.t7.log("ERROR: layout shouldn't have `this` in his cells")
             // TODO: remove this workaround - `c != that`
             if ((c != that) && (typeof c.toText == "function"))
                 r += c.toText()
