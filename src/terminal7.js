@@ -347,35 +347,45 @@ peer_name = "${peername}"\n`
         this.notify("Your email was added to the dotfile")
     }
     pbVerify() {
-        var email = this.conf.peerbook.email,
-            host = this.conf.net.peerbook
+        return new Promise((resolve, reject) => {
+            var email = this.conf.peerbook.email,
+                insecure = this.conf.peerbook.insecure,
+                host = this.conf.net.peerbook
 
-        if (typeof host != "string" || typeof email != "string")
-            return
+            if (typeof host != "string" || typeof email != "string")
+                resolve()
 
-        this.getFingerprint().then(fp => {
-            fetch(`https://${host}/verify`,  {
-                headers: {"Content-Type": "application/json"},
-                method: 'POST',
-                body: JSON.stringify({kind: "terminal7",
-                    name: this.conf.peerbook.peer_name,
-                    email: email,
-                    fp: fp
+            this.getFingerprint().then(fp => {
+                const schema = insecure?"http":"https",
+                      url = `${schema}://${host}/verify`
+                console.log("fetching from " + url)
+                fetch(url,  {
+                    headers: {"Content-Type": "application/json"},
+                    method: 'POST',
+                    body: JSON.stringify({kind: "terminal7",
+                        name: this.conf.peerbook.peer_name,
+                        email: email,
+                        fp: fp
+                    })
+                }).then(response => {
+                    if (response.ok)
+                        return response.json()
+                    if (response.status == 409) {
+                        var e = document.getElementById("reset-cert"),
+                            pbe = document.getElementById("reset-cert-error")
+                        pbe.innerHTML = response.data 
+                        e.classList.remove("hidden")
+                    }
+                    response.body.getReader().read().then(({done, value}) => {
+                        this.notify(
+                            "&#x1F4D6;&nbsp;"+String.fromCharCode(...value))
+                    })
+                    reject(new Error(`verification failed`))
+                }).then(m => {
+                    this.onPBMessage(m)
+                    resolve()
                 })
-            }).then(response => {
-                if (response.ok)
-                    return response.json()
-                if (response.status == 409) {
-                    var e = document.getElementById("reset-cert"),
-                        pbe = document.getElementById("reset-cert-error")
-                    pbe.innerHTML = response.data 
-                    e.classList.remove("hidden")
-                }
-                response.body.getReader().read().then(({done, value}) => {
-                    this.notify("&#x1F4D6;&nbsp;"+String.fromCharCode(...value))
-                })
-                throw new Error(`verification failed`)
-            }).then(m => this.onPBMessage(m))
+            })
         })
     }
     async toggleSettings(ev) {
@@ -703,7 +713,8 @@ peer_name = "${peername}"\n`
                             this.storeCertificate().then(_ => {
                                 this.pbVerify()
                             })
-                        })
+                        }).catch(e =>
+                            console.log(`Failed generating cert: ${e}`))
                     }
                 })
         } else {
@@ -771,10 +782,10 @@ peer_name = "${peername}"\n`
                 let tx = db.transaction("certificates"),
                     store = tx.objectStore("certificates")
                  store.getAll().then(certificates => {
-                    this.certificates = certificates
-                    db.close()
-                    var cert = certificates[0].getFingerprints()[0]
-                    resolve(cert.value.toUpperCase().replaceAll(":", ""))
+                     this.certificates = certificates
+                     db.close()
+                     var cert = certificates[0].getFingerprints()[0]
+                     resolve(cert.value.toUpperCase().replaceAll(":", ""))
                  }).catch(e => {
                     this.log(`got a db error getting the fp: ${e}`)
                     resolve(e)
@@ -787,7 +798,7 @@ peer_name = "${peername}"\n`
         })
     }
     generateCertificate() {
-        return new Promise(resolve=> {
+        return new Promise((resolve, reject)=> {
             this.log('generating the certificate')
             RTCPeerConnection.generateCertificate({
               name: "ECDSA",
@@ -799,7 +810,7 @@ peer_name = "${peername}"\n`
                 resolve(this.certificates)
             }).catch(e => {
                 this.log(`failed generating cert ${e}`)
-                resolve(null)
+                reject(e)
             })
         })
     }

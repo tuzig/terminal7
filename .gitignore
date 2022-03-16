@@ -27,4 +27,5 @@ typings/
 # resources
 resources/ios
 resources/android
-www/fonts/
+# testing
+bb/webexec/config/agent.*

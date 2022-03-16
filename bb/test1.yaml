@@ -1,0 +1,13 @@
+version: "3.9"
+  terminal7:
+    build: 
+      context: .
+      dockerfile: ./bb/terminal7/Dockerfile
+  webexec:
+    build: ./bb/webexec
+  peerbook:
+    build: ./bb/peerbook
+    environment:
+      REDIS_HOST: redis
+  redis:
+    image: "redis:alpine"

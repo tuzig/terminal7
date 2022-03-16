@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  runner:
+    build: 
+      context: .
+      dockerfile: ./bb/runner/Dockerfile
+    volumes:
+      - ./bb/runner:/runner
+      - ./bb/result:/result
+    command: "wait-for-it.sh terminal7:80 -- mocha --recursive --timeout 10000 ."
+  terminal7:
+    build: 
+      context: .
+      dockerfile: ./bb/terminal7/Dockerfile
+    volumes:
+      - ./dist:/terminal7
+  webexec:
+    build:
+      context: .
+      dockerfile: ./bb/webexec/Dockerfile
+    volumes:
+      - ./bb/webexec/config:/home/webexec/.config/webexec
+  peerbook:
+    build:
+      context: .
+      dockerfile: ./bb/peerbook/Dockerfile
+    expose:
+      - "17777"
+    environment:
+      REDIS_HOST: redis:6379
+  redis:
+    image: "redis:alpine"
