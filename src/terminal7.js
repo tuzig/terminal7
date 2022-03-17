@@ -352,8 +352,10 @@ peer_name = "${peername}"\n`
                 insecure = this.conf.peerbook.insecure,
                 host = this.conf.net.peerbook
 
-            if (typeof host != "string" || typeof email != "string")
+            if ((typeof host != "string") || (typeof email != "string") || (email == "")) {
                 resolve()
+                return
+            }
 
             this.getFingerprint().then(fp => {
                 const schema = insecure?"http":"https",
@@ -367,7 +369,8 @@ peer_name = "${peername}"\n`
                         email: email,
                         fp: fp
                     })
-                }).then(response => {
+                }).then(async response => {
+                    console.log("got response", response.status)
                     if (response.ok)
                         return response.json()
                     if (response.status == 409) {
@@ -384,7 +387,7 @@ peer_name = "${peername}"\n`
                 }).then(m => {
                     this.onPBMessage(m)
                     resolve()
-                })
+                }).catch(e => { reject(e) })
             })
         })
     }
@@ -772,6 +775,7 @@ peer_name = "${peername}"\n`
             if (this.certificates) {
                 var cert = this.certificates[0].getFingerprints()[0]
                 resolve(cert.value.toUpperCase().replaceAll(":", ""))
+                return
             }
             openDB("t7", 1, { 
                     upgrade(db) {
@@ -1161,6 +1165,7 @@ peer_name = "${peername}"\n`
                 g.verified = p.verified
                 g.updateNameE()
             } else if (p.kind == "webexec") {
+                console.log("adding gate:", p)
                 let g = new Gate(p)
                 this.PBGates[p.fp] = g
                 g.open(this.e)

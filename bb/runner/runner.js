@@ -1,10 +1,12 @@
 const puppeteer = require('puppeteer'),
       chai = require('chai'),
+      redis = require('redis'),
       expect = chai.expect,
       local = process.env.LOCALDEV !== undefined,
       url = local?"http://localhost:3000":"http://terminal7"
 
 var browser, page, server
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
 describe('Terminal7', function() {
     if (local)
@@ -27,25 +29,17 @@ describe('Terminal7', function() {
         console.log(`Launched browser`)
         const browserVersion = await browser.version()
         console.log(`Started ${browserVersion}`)
-    })
-
-    beforeEach(async function() {
         page = await browser.newPage()
         page.on('console', (msg) => console.log('console log:', msg.text()));
+        page.on('error', (msg) => console.log('page error', msg.text()));
         const response = await page.goto(url)
-        expect(response.ok()).to.be.true
-    })
-
-    afterEach(async function() {
-        await page.close()
+        expect(response.status()).to.equal(200)
     })
 
     after(async function() {
         await browser.close()
     })
     it('renders', async() => {
-        const response = await page.goto(url)
-        expect(response.ok()).to.be.true
         await page.screenshot({ path: `/result/home.png` })
     })
     /*
@@ -55,13 +49,34 @@ describe('Terminal7', function() {
     })
     */
     it('registers with peerbook', async function() {
-        const gateCount = await page.evaluate(async() => {
+        await page.evaluate(async() => {
+            window.terminal7.notify = console.log
             window.terminal7.conf.net.peerbook = "peerbook:17777"
             window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
             console.log("b4 verify")
-            await window.terminal7.pbVerify()
-            return window.terminal7.PBGates.length  // window.terminal7.PBGates.length
+            try {
+                await window.terminal7.pbVerify()
+            } catch(e) {
+                console.log("pbVerify return error", e.toString())
+            }
         })
-        expect(gateCount).to.equal(2)
+        const rc = redis.createClient({url: 'redis://redis'})
+        rc.on('error', err => console.log('Redis client error', err))
+        await rc.connect()
+        for await (const key of rc.scanIterator({MATCH:'peer*'})) {
+            console.log("verifying: " +key)
+            await rc.hSet(key, 'verified', "1")
+        }
+        const ng = await page.evaluate(async() => {
+            await window.terminal7.pbVerify()
+            var n = 0
+            for (const [fp, gate] of Object.entries(window.terminal7.PBGates)) {
+                console.log("connecting to: ", gate.fp)
+                gate.connect()
+                n += 1
+            }
+            return n
+        })
+        expect(ng).to.equal(1)
     })
 })

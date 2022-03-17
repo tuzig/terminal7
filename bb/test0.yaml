@@ -7,7 +7,11 @@ services:
     volumes:
       - ./bb/runner:/runner
       - ./bb/result:/result
-    command: "wait-for-it.sh terminal7:80 -- mocha --recursive --timeout 10000 ."
+    depends_on:
+      - peerbook
+      - terminal7
+      - webexec
+    command: "wait-for-it.sh terminal7:80 -- wait-for-it.sh peerbook:17777 -- mocha --recursive --timeout 10000 ."
   terminal7:
     build: 
       context: .
@@ -18,6 +22,8 @@ services:
     build:
       context: .
       dockerfile: ./bb/webexec/Dockerfile
+    depends_on:
+      - peerbook
     volumes:
       - ./bb/webexec/config:/home/webexec/.config/webexec
   peerbook:
@@ -26,6 +32,8 @@ services:
       dockerfile: ./bb/peerbook/Dockerfile
     expose:
       - "17777"
+    depends_on:
+      - redis
     environment:
       REDIS_HOST: redis:6379
   redis:
