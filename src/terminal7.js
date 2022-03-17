@@ -252,8 +252,7 @@ export class Terminal7 {
                 this.addGate(g).e.classList.add("hidden")
             })
         }
-        let onMobile = (await Storage.get({key: 'onmobile'})).value == '1'
-        if (onMobile) {
+        if (Capacitor.getPlatform() != "web") {
             App.addListener('appStateChange', state => {
                 if (!state.isActive) {
                     // We're getting suspended. disengage.
@@ -1092,14 +1091,12 @@ peer_name = "${peername}"\n`
     }
     onBoard() {
         if (Capacitor.getPlatform() != "web") {
-            localStorage.setItem("onmobile", "1")
             return
         }
         var modal = document.getElementById("onboarding")
         modal.classList.remove("hidden")
         modal.querySelector(".onmobile").addEventListener('click', ev => {
             localStorage.setItem("onboard", "yep")
-            localStorage.setItem("onmobile", "1")
             modal = document.getElementById("mobile-instructions")
             modal.classList.remove("hidden")
             modal.querySelector(".close").addEventListener('click', _ =>
@@ -1114,7 +1111,6 @@ peer_name = "${peername}"\n`
         })
         modal.querySelector(".ongpos").addEventListener('click', ev => {
             localStorage.setItem("onboard", "yep")
-            localStorage.setItem("onmobile", "0")
             var gate = this.addGate({
                 addr: "localhost:7777",
                 name: "localhost",
