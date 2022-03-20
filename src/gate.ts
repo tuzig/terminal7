@@ -259,7 +259,7 @@ export class Gate {
         this.setLayout(null)
     }
     setLayout(state: object) {
-        if (state == null) { //  || (state.windows.length == 0)) {
+        if ((state == null) || (state.windows.length == 0)) {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
             this.activeW = this.addWindow("", true)

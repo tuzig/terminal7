@@ -61,10 +61,8 @@ describe('Terminal7', function() {
         await waitPort({host:'webexec', port:7777})
         await page.evaluate(async() => {
             window.terminal7.notify = console.log
-            // window.terminal7.conf.exec.shell = "sh"
             window.terminal7.conf.net.peerbook = "peerbook:17777"
             window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
-            console.log("b4 verify")
             try {
                 await window.terminal7.pbVerify()
             } catch(e) {
@@ -122,7 +120,7 @@ describe('Terminal7', function() {
         const pane2State = await page.evaluate(async() => {
             const pane = window.terminal7.activeG.activeW.activeP
             const pane2 = pane.split("topbottom")
-            await window.sleep(2000)
+            await window.sleep(100)
             if (pane2.d)
                 return pane2.d.readyState
             else
@@ -145,5 +143,38 @@ describe('Terminal7', function() {
         await sleep(2000)
         await page.screenshot({ path: `/result/aftersplitnclose.png` })
         expect(panes3).to.equal(1)
+        console.log("test layout persistence")
+        const pane3State = await page.evaluate(async() => {
+            const pane = window.terminal7.activeG.activeW.activeP
+            const pane2 = pane.split("topbottom")
+            await window.sleep(100)
+            if (pane2.d)
+                return pane2.d.readyState
+            else
+                return "unopened"
+        })
+        expect(pane3State).to.equal("open")
+        await page.screenshot({ path: `/result/b4reset.png` })
+        await page.reload({waitUntil: "networkidle2"})
+        const panes4 = await page.evaluate(async() => {
+            // after reload, need to set all globals
+            window.sleep = (ms) => new Promise(r => setTimeout(r, ms))
+            document.getElementById("greetings-modal").classList.add("hidden")
+            window.terminal7.notify = console.log
+            window.terminal7.conf.net.peerbook = "peerbook:17777"
+            window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
+            await window.terminal7.pbVerify()
+            await window.sleep(1000)
+            var n = 0
+            for (const [fp, gate] of Object.entries(window.terminal7.PBGates)) {
+                console.log("connecting to: ", gate.fp)
+                gate.connect()
+                break
+            }
+            await window.sleep(2000)
+            return document.querySelectorAll(".pane").length
+        })
+        await page.screenshot({ path: `/result/final.png` })
+        expect(panes4).to.equal(2)
     })
 })

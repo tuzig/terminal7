@@ -1,6 +1,8 @@
 
 import { BaseSession, Channel }  from './session.ts' 
 
+const TIMEOUT = 5000
+
 // SSHSession is an implmentation of a real time session over ssh
 export class PeerbookChannel extends BaseSession {
     dataChannel: RTCDataChannel
@@ -45,6 +47,7 @@ export class PeerbookSession extends BaseSession {
     cdc: RTCDataChannel
     pc: any
     lastMsgId: Number
+    t7: any
     constructor(fp: string) {
         super()
         this.fp = fp
@@ -119,30 +122,31 @@ export class PeerbookSession extends BaseSession {
         const channel = new PeerbookChannel(this, id, dc)
         resolve(channel)
     }
-    openChannel(cmd: string, parent: RTChannelID, sx: number, sy: number):
-        Promise<RTChannel> {
+    openChannel(cmdorid: ChannelID): Promise<Channel>
+    openChannel(cmdorid: string | ChannelID, parent: ChannelID, sx: number, sy: number):
+         Promise<Channel> {
         return new Promise((resolve, reject) => {
-            var msgID = this.sendCTRLMsg({
-                type: "add_pane", 
-                args: { 
-                    command: [this.t7.conf.exec.shell],
-                    rows: sy,
-                    cols: sx,
-                    parent: parent || 0
-                }
-            })
-            this.pendingChannels[msgID] = 
-                (channel, id) => this.channelOpened(channel, id, resolve)
-        })
-    }
-    openChanne?(id: RTChannelID): Promise<RTChannel> {
-        return new Promise((resolve, reject) => {
-            var msgID = this.sendCTRLMsg({
-                type: "reconnect_pane", 
-                args: { id: id }
-            })
-            this.pendingChannels[msgID] = 
-                (channel, id) => this.channelOpened(channel, id, resolve)
+            if (sx !== undefined) {
+                var msgID = this.sendCTRLMsg({
+                    type: "add_pane", 
+                    args: { 
+                        command: [cmdorid],
+                        rows: sy,
+                        cols: sx,
+                        parent: parent || 0
+                    }
+                }, Function.prototype(), Function.prototype())
+            } else {
+                var msgID = this.sendCTRLMsg({
+                    type: "reconnect_pane", 
+                    args: { id: cmdorid }
+                }, Function.prototype(), Function.prototype())
+            }
+            let watchdog = setTimeout(_ => reject("timeout"), TIMEOUT)
+            this.pendingChannels[msgID] = (channel, id) => {
+                clearTimeout(watchdog)
+                this.channelOpened(channel, id, resolve)
+            }
         })
     }
     close(): Promise<void>{
@@ -150,7 +154,7 @@ export class PeerbookSession extends BaseSession {
     getIceServers() {
         return new Promise((resolve, reject) => {
             const ctrl = new AbortController(),
-                  tId = setTimeout(() => ctrl.abort(), 5000),
+                  tId = setTimeout(() => ctrl.abort(), TIMEOUT),
                   insecure = this.conf.peerbook.insecure,
                   schema = insecure?"http":"https"
 
@@ -190,9 +194,9 @@ export class PeerbookSession extends BaseSession {
                 // TODO: why the time out? why 100mili?
                 this.t7.run(() => {
                     this.t7.log("sending pending messages:", this.pendingCDCMsgs)
-                    this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m))
+                    this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m[0], m[1], m[2]))
                     this.pendingCDCMsgs = []
-                }, 100)
+                }, 0)
         }
         cdc.onmessage = m => {
             const d = new TextDecoder("utf-8"),
@@ -242,7 +246,7 @@ export class PeerbookSession extends BaseSession {
             msg.time = Date.now()
         this.msgHandlers[msg.message_id] = [resolve, reject]
         if (!this.cdc || this.cdc.readyState != "open")
-            this.pendingCDCMsgs.push(msg)
+            this.pendingCDCMsgs.push([msg, resolve, reject])
         else {
             // message stays frozen when restrting
             const s = msg.payload || JSON.stringify(msg)
@@ -258,7 +262,7 @@ export class PeerbookSession extends BaseSession {
                 try {
                     this.cdc.send(s)
                 } catch(err) {
-                    this.notify(`Sending ctrl message failed: ${err}`)
+                    this.t7.notify(`Sending ctrl message failed: ${err}`)
                 }
                 this.msgs[msg.message_id] = this.t7.run(
                       () => this.sendCTRLMsg(msg), timeout)
@@ -282,5 +286,21 @@ export class PeerbookSession extends BaseSession {
         this.pc.addIceCandidate(candidate).catch(e =>
             this.t7.notify(`ICE candidate error: ${e}`))
         return
+    }
+    getPayload(): Promise<string | null>{
+        return new Promise((resolve, reject) => 
+            this.sendCTRLMsg({
+                type: "get_payload",
+                args: {}
+            }, resolve, reject)
+        )
+    }
+    setPayload(payload: string): Promise<void>{
+        return new Promise((resolve, reject) =>
+            this.sendCTRLMsg({
+                type: "set_payload",
+                args: {Payload: payload}
+            }, resolve, reject)
+        )
     }
 }

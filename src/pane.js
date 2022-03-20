@@ -175,9 +175,9 @@ export class Pane extends Cell {
         }
         this.refreshDividers()
         if (this.t.rows != oldr || this.t.cols != oldc) {
-            this.gate.sendState()
-            if (this.d)
+            if (this.d) {
                 this.d.resize(this.t.cols, this.t.rows)
+            }
             ret = true
         }
         if (cb instanceof Function) cb(this)
@@ -244,6 +244,7 @@ export class Pane extends Cell {
             this.t7.log(`on channel "${channel.id}" close`)
             this.close()
         }
+        this.gate.sendState()
     }
     openChannel(parent) {
         if (!this.gate.session)
