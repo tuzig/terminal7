@@ -1,14 +1,15 @@
 const puppeteer = require('puppeteer'),
       chai = require('chai'),
       redis = require('redis'),
+      waitPort = require('wait-port'),
       expect = chai.expect,
       local = process.env.LOCALDEV !== undefined,
       url = local?"http://localhost:3000":"http://terminal7"
 
-var browser, page, server
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
 describe('Terminal7', function() {
+    var browser, page
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
     if (local)
         this.timeout(100000)
     before(async function() {
@@ -30,10 +31,17 @@ describe('Terminal7', function() {
         const browserVersion = await browser.version()
         console.log(`Started ${browserVersion}`)
         page = await browser.newPage()
-        page.on('console', (msg) => console.log('console log:', msg.text()));
-        page.on('error', (msg) => console.log('page error', msg.text()));
+        page.on('console', (msg) => console.log('console log:', msg.text()))
+        page.on('error', (msg) => console.log('on error', msg.text()))
+        page.on('pageerror', (msg) => console.log('on pageerror', msg.text()))
+        await waitPort({host:'terminal7', port:80})
         const response = await page.goto(url)
         expect(response.status()).to.equal(200)
+        // add terminal7 initializtion and globblas
+        await page.evaluate(async() => {
+            window.sleep = (ms) => new Promise(r => setTimeout(r, ms))
+            document.getElementById("greetings-modal").classList.add("hidden")
+        })
     })
 
     after(async function() {
@@ -49,8 +57,11 @@ describe('Terminal7', function() {
     })
     */
     it('registers with peerbook', async function() {
+        await waitPort({host:'peerbook', port:17777})
+        await waitPort({host:'webexec', port:7777})
         await page.evaluate(async() => {
             window.terminal7.notify = console.log
+            // window.terminal7.conf.exec.shell = "sh"
             window.terminal7.conf.net.peerbook = "peerbook:17777"
             window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
             console.log("b4 verify")
@@ -67,7 +78,8 @@ describe('Terminal7', function() {
             console.log("verifying: " +key)
             await rc.hSet(key, 'verified', "1")
         }
-        const ng = await page.evaluate(async() => {
+        await sleep(500)
+        const gates = await page.evaluate(async() => {
             await window.terminal7.pbVerify()
             var n = 0
             for (const [fp, gate] of Object.entries(window.terminal7.PBGates)) {
@@ -77,6 +89,61 @@ describe('Terminal7', function() {
             }
             return n
         })
-        expect(ng).to.equal(1)
+        expect(gates).to.equal(1)
+        await sleep(2000)
+        console.log("verifying a pane is open")
+        const panes = await page.evaluate(() => {
+            return document.querySelectorAll(".pane").length
+        })
+        expect(panes).to.equal(1)
+        console.log("verifying gate help is visible")
+        const helpVisible = await page.evaluate(async () => {
+            const help = document.getElementById("help-gate"),
+                  style = window.getComputedStyle(help)
+            return style.display !== 'none'
+        })
+        expect(helpVisible).to.be.true
+        console.log("verifying a pane is visible")
+        const paneVisible = await page.evaluate(() => {
+            const help = document.getElementById("help-gate"),
+                  pane = document.querySelector(".pane"),
+                  style = window.getComputedStyle(pane)
+            help.classList.toggle("show")
+            return (style.display !== 'none')
+        })
+        expect(paneVisible).to.be.true
+        console.log("verifying a pane's data channel is open")
+        const paneState = await page.evaluate(() => {
+            const pane = window.terminal7.activeG.activeW.activeP
+            return pane.d.readyState
+        })
+        expect(paneState).to.equal("open")
+        console.log("verifying a pane can be split")
+        const pane2State = await page.evaluate(async() => {
+            const pane = window.terminal7.activeG.activeW.activeP
+            const pane2 = pane.split("topbottom")
+            await window.sleep(2000)
+            if (pane2.d)
+                return pane2.d.readyState
+            else
+                return "unopened"
+        })
+        expect(pane2State).to.equal("open")
+        console.log("verifying a pane can be closed")
+        const exitState = await page.evaluate(() => {
+            const pane = window.terminal7.activeG.activeW.activeP
+            try {
+                pane.d.send("exit\n")
+                return "success"
+            } catch(e) { return e.toString() }
+        })
+        expect(exitState).to.equal("success")
+        await sleep(2000)
+        const panes3 = await page.evaluate(() => {
+            return window.terminal7.activeG.panes().length
+        })
+        await sleep(2000)
+        await page.screenshot({ path: `/result/aftersplitnclose.png` })
+        expect(panes3).to.equal(1)
     })
 })

@@ -1,4 +1,4 @@
-import { RTBaseSession }  from './rtsession.ts' 
+import { BaseSession }  from './session.ts' 
 
 export interface SSHSessionByPass {
     address: string
@@ -8,7 +8,7 @@ export interface SSHSessionByPass {
 }
 
 // SSHSession is an implmentation of a real time session over ssh
-export class SSHSession extends RTBaseSession {
+export class SSHSession extends BaseSession {
     byPass: SSHSessionByPass;
     onStateChange : (state: RTState) => void
     onPayloadUpdate: (payload: string) => void

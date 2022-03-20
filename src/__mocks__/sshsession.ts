@@ -1,6 +1,6 @@
-import { RTSession, RTChannel } from "../src/rtsession.ts"
+import { Session, Channel } from "../src/session.ts"
 
-class MockChannel implements RTChannel {
+class MockChannel implements Channel {
     id = 1
     onClose: CallbackType
     onData: CallbackType
@@ -9,13 +9,13 @@ class MockChannel implements RTChannel {
     resize = vi.fn(_ => new Promise(resolve => setTimeout(_ => resolve(), 0)))
 }
 
-export class SSHSession implements RTSession {
-    onStateChange: (state: RTState) => void
+export class SSHSession implements Session {
+    onStateChange: (state: State) => void
     onPayloadUpdate: (payload: string) => void
     constructor(address: string, username: string, password: string, port?: number=22) {
     }
     connect = vi.fn(() => setTimeout(_ => this.onStateChange("connected"), 0))
-    openChannel = vi.fn((cmd: string, parent: RTChannelID, sx?: number, sy?: number) => {
+    openChannel = vi.fn((cmd: string, parent: ChannelID, sx?: number, sy?: number) => {
         return new Promise(resolve => {
             setTimeout(_ => {
                 let c = new MockChannel()

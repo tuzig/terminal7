@@ -873,10 +873,12 @@ peer_name = "${peername}"\n`
         var email = this.conf.peerbook.email
         if ((this.ws != null) || ( typeof email != "string")) return
         this.getFingerprint().then(fp => {
-            var host = this.conf.net.peerbook,
-                name = this.conf.peerbook.peer_name,
-                url = encodeURI(`wss://${host}/ws?fp=${fp}&name=${name}&kind=terminal7&email=${email}`),
-                ws = new WebSocket(url)
+            const host = this.conf.net.peerbook,
+                  name = this.conf.peerbook.peer_name,
+                  insecure = this.conf.peerbook.insecure,
+                  schema = insecure?"ws":"wss",
+                  url = encodeURI(`${schema}://${host}/ws?fp=${fp}&name=${name}&kind=terminal7&email=${email}`),
+                  ws = new WebSocket(url)
             this.ws = ws
             ws.onmessage = ev => {
                 var m = JSON.parse(ev.data)
@@ -927,13 +929,12 @@ peer_name = "${peername}"\n`
             return
         }
         if (m.candidate !== undefined) {
-            g.pc.addIceCandidate(m.candidate).catch(e =>
-                g.notify(`ICE candidate error: ${e}`))
+            g.session.peerCandidate(m.candidate)
             return
         }
         if (m.answer !== undefined ) {
             var answer = JSON.parse(atob(m.answer))
-            g.peerConnect(answer)
+            g.session.peerAnswer(answer)
             return
         }
         if (m.peer_update !== undefined) {
@@ -1106,6 +1107,9 @@ peer_name = "${peername}"\n`
         modal.classList.remove("hidden")
     }
     onBoard() {
+        var a = localStorage.getItem("onboard")
+        if (a !== null)
+            return
         var modal = document.getElementById("onboarding")
         modal.classList.remove("hidden")
         modal.querySelector(".onmobile").addEventListener('click', ev => {
@@ -1158,7 +1162,6 @@ peer_name = "${peername}"\n`
                 g.verified = p.verified
                 g.updateNameE()
             } else if (p.kind == "webexec") {
-                console.log("adding gate:", p)
                 let g = new Gate(p)
                 this.PBGates[p.fp] = g
                 g.open(this.e)

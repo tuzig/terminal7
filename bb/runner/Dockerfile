@@ -12,13 +12,12 @@ RUN apk add --no-cache \
       bash \
       yarn
 
-RUN wget --quiet https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh -O /usr/sbin/wait-for-it.sh \
-     && chmod +x /usr/sbin/wait-for-it.sh
 # Tell Puppeteer to skip installing Chrome. We'll be using the installed package.
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 COPY ./bb/runner/package.json .
-RUN yarn install --verbose --no-lockfile
+COPY ./bb/runner/yarn.lock .
+RUN yarn install --frozen-lockfile
 WORKDIR /runner
 ENV PATH="${PATH}:/node_modules/.bin"

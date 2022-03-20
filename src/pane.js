@@ -31,7 +31,6 @@ export class Pane extends Cell {
         props.className = "pane"
         super(props)
         this.catchFingers()
-        this.state = "init"
         this.d = null
         this.active = false
         this.channelID = props.webexec_id || null
@@ -81,10 +80,6 @@ export class Pane extends Cell {
         this.createDividers()
         this.t.onSelectionChange(() => this.selectionChanged())
         this.t.loadWebfontAndOpen(con).then(_ => {
-            this.fit(pane => { 
-               if (pane != null)
-                  pane.openChannel(parent)
-            })
             this.t.textarea.tabIndex = -1
             this.t.attachCustomKeyEventHandler(ev => {
                 var toDo = true
@@ -130,6 +125,10 @@ export class Pane extends Cell {
             })
             const resizeObserver = new window.ResizeObserver(_ => this.fit())
             resizeObserver.observe(this.e);
+            this.fit(pane => { 
+               if (pane != null)
+                  pane.openChannel(parent)
+            })
         })
         return this.t
     }
@@ -177,7 +176,8 @@ export class Pane extends Cell {
         this.refreshDividers()
         if (this.t.rows != oldr || this.t.cols != oldc) {
             this.gate.sendState()
-            this.gate.sendSize(this)
+            if (this.d)
+                this.d.resize(this.t.cols, this.t.rows)
             ret = true
         }
         if (cb instanceof Function) cb(this)
@@ -239,23 +239,25 @@ export class Pane extends Cell {
     onChannelConnected(channel) {
         this.d = channel
         this.channelID = channel.id
-        channel.onData = m => this.onChannelData(m)
+        channel.onMessage = m => this.onChannelMessage(m)
         channel.onClose = e => {
-            this.t7.log(`on channel "${id}" close, marker - ${this.gate.marker}`)
-            this.state = "disconnected"
-            //TODO: do we need this test?
-            // if (this.marker == -1)
+            this.t7.log(`on channel "${channel.id}" close`)
             this.close()
         }
     }
     openChannel(parent) {
         if (!this.gate.session)
             return
+        if (this.d) {
+            this.d.onClose = undefined
+            this.d.onMessage = undefined
+        }
+
+        this.buffer = []
         if (this.channelID) {
             this.gate.session.openChannel(this.channelID)
             .then(channel => this.onChannelConnected(channel))
         } else {
-            // console.trace(this.gate)
             this.gate.session.openChannel(
                 this.t7.conf.exec.shell, parent, this.t.cols, this.t.rows)
             .then(channel => this.onChannelConnected(channel))
@@ -273,13 +275,9 @@ export class Pane extends Cell {
         }
     }
     // called when a message is received from the server
-    onChannelData (m) {
+    onChannelMessage (m) {
         this.flashIndicator()
-         if (this.state == "connected") {
-            this.write(new Uint8Array(m.data))
-        }
-        else
-            this.gate.notify(`${this.state} & dropping a message: ${m.data}`)
+        this.write(new Uint8Array(m.data))
     }
     toggleZoom() {
         super.toggleZoom()

@@ -11,7 +11,7 @@ services:
       - peerbook
       - terminal7
       - webexec
-    command: "wait-for-it.sh terminal7:80 -- wait-for-it.sh peerbook:17777 -- mocha --recursive --timeout 10000 ."
+    command: "mocha --timeout 20000 --exit *.js"
   terminal7:
     build: 
       context: .
@@ -38,3 +38,5 @@ services:
       REDIS_HOST: redis:6379
   redis:
     image: "redis:alpine"
+    command: [sh, -c, "rm -f /data/dump.rdb && redis-server"]  # disable persistence
+
