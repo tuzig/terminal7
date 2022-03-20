@@ -238,13 +238,16 @@ export class Pane extends Cell {
     }
     onChannelConnected(channel) {
         this.d = channel
-        this.channelID = channel.id
         channel.onMessage = m => this.onChannelMessage(m)
         channel.onClose = e => {
             this.t7.log(`on channel "${channel.id}" close`)
             this.close()
         }
-        this.gate.sendState()
+        if (!this.channelID) {
+            this.channelID = channel.id
+            // got a new channel, update the state
+            this.gate.sendState()
+        }
     }
     openChannel(parent) {
         if (!this.gate.session)

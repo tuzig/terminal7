@@ -1047,6 +1047,8 @@ peer_name = "${peername}"\n`
                 else
                     e.gate.edit()
             }
+        } else if (this.gesture) {
+            this.activeG.sendState()
         } else if (this.firstPointer) {
             let deltaT = Date.now() - this.pointer0,
                     x  = ev.pageX,
@@ -1074,8 +1076,7 @@ peer_name = "${peername}"\n`
                     // t.focus()
                 }
             }
-        }
-        this.pointer0 = null
+        }        this.pointer0 = null
         this.firstPointer = null
         this.gesture = null
     }

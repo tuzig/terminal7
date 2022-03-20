@@ -336,7 +336,8 @@ export class Gate {
         return { windows: wins }
     }
     sendState() {
-        if ((this.updateID == null) && this.session)
+        // send the state only when all panes have a channelID
+        if (this.session && (this.panes().every(p => p.channelID != null)))
             this.session.setPayload(this.dump()).then(_ => {
                 if ((this.windows.length == 0) && (this.pc)) {
                     console.log("Closing gate after updating to empty state")
