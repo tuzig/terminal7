@@ -30,7 +30,6 @@
     "@capacitor/storage": "^1.2.2",
     "@iarna/toml": "git+https://github.com/tuzig/iarna-toml.git",
     "@robingenz/capacitor-background-task": "^1.0.0",
-    "capacitor-ssh-plugin": "../capacitor-ssh-plugin",
     "codemirror": "git+https://github.com/tuzig/CodeMirror.git",
     "glob": "<8",
     "hammerjs": "<3",
