@@ -1,4 +1,4 @@
-export type CallbackType = (e: Event) => void
+export type CallbackType = (e: any) => void
 export type ChannelID = string
 export type State = "new" | "connecting" | "connected" | "reconnected" | "disconnected" | "failed"
 

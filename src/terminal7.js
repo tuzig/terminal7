@@ -258,7 +258,7 @@ export class Terminal7 {
                 if (!state.isActive) {
                     // We're getting suspended. disengage.
                     this.notify("Benched")
-                    this.disengage(() => this.clearTimeouts())
+                    this.disengage().then(() => this.clearTimeouts())
                 } else {
                     // We're back! ensure we have the latest network status and 
                     // reconnect to the active gate
@@ -663,37 +663,39 @@ peer_name = "${peername}"\n`
     /*
      * disengage gets each active gate to disengae
      */
-    disengage(cb) {
-        var count = 0
-        this.gates.forEach(g => {
-            if (g.boarding) {
-                count++
-                g.disengage(_ => count--)
-            }
-        })
-        if (this.PBGates)
-            Object.keys(this.PBGates).forEach(k => {
-                var g = this.PBGates[k]
+    disengage() {
+        return new Promise((resolve, reject) => {
+            var count = 0
+            this.gates.forEach(g => {
                 if (g.boarding) {
                     count++
-                    g.disengage(_ => count--)
+                    g.disengage().then(_ => count--)
                 }
             })
-        let callCB = () => terminal7.run(() => {
-            if (count == 0)
-                cb()
-             else 
-                callCB()
-        }, 10)
-        if (this.ws != null) {
-            this.ws.onopen = undefined
-            this.ws.onmessage = undefined
-            this.ws.onerror = undefined
-            this.ws.onclose = undefined
-            this.ws.close()
-            this.ws = null
-        }
-        callCB()
+            if (this.PBGates)
+                Object.keys(this.PBGates).forEach(k => {
+                    var g = this.PBGates[k]
+                    if (g.boarding) {
+                        count++
+                        g.disengage().then(() => count--)
+                    }
+                })
+            if (this.ws != null) {
+                this.ws.onopen = undefined
+                this.ws.onmessage = undefined
+                this.ws.onerror = undefined
+                this.ws.onclose = undefined
+                this.ws.close()
+                this.ws = null
+            }
+            let callCB = () => terminal7.run(() => {
+                if (count == 0)
+                    resolve()
+                 else 
+                    callCB()
+            }, 50)
+            callCB()
+        })
     }
     updateNetworkStatus (status) {
         let off = document.getElementById("offline").classList

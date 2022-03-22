@@ -1,10 +1,10 @@
 
-import { BaseSession, Channel }  from './session.ts' 
+import { BaseSession, BaseChannel, Channel }  from './session.ts' 
 
 const TIMEOUT = 5000
 
 // SSHSession is an implmentation of a real time session over ssh
-export class PeerbookChannel extends BaseSession {
+export class PeerbookChannel extends BaseChannel {
     dataChannel: RTCDataChannel
     session: PeerbookSession
     id: number
@@ -13,8 +13,6 @@ export class PeerbookChannel extends BaseSession {
         this.id = id
         this.session = session
         this.dataChannel = dc
-        dc.onmessage = m => this.onMessage(m)
-        dc.onclose = m => this.onClose(m)
     }
     get readyState(): string {
         if (this.dataChannel)
@@ -37,6 +35,12 @@ export class PeerbookChannel extends BaseSession {
             }, resolve, reject)
         })
     }
+    close(): Promise<void> {
+        return new Promise(resolve => {
+            this.dataChannel.close()
+            resolve()
+        })
+    }
 }
 export class PeerbookSession extends BaseSession {
     fp: string
@@ -48,6 +52,7 @@ export class PeerbookSession extends BaseSession {
     pc: any
     lastMsgId: Number
     t7: any
+    marker: number
     constructor(fp: string) {
         super()
         this.fp = fp
@@ -57,10 +62,11 @@ export class PeerbookSession extends BaseSession {
         this.msgHandlers = {}
         this.lastMsgId = 0
         this.t7 = window.terminal7
+        this.marker = -1
     }
     async connect() {
         console.log("in connect")
-        if (!this.t7.iceServers) {
+        if ((!this.t7.iceServers) && (!this.t7.conf.peerbook.insecure)) {
             try {
                 this.t7.iceServers = await this.getIceServers()
             } catch(e) {
@@ -71,8 +77,23 @@ export class PeerbookSession extends BaseSession {
         this.pc = new RTCPeerConnection({
             iceServers: this.t7.iceServer,
             certificates: this.t7.certificates})
-        this.pc.onconnectionstatechange = e =>
-            this.onStateChange(this.pc.connectionState)
+        this.pc.onconnectionstatechange = () => {
+            const state = this.pc.connectionState
+            console.log("new connection state", state, this.marker)
+            if ((state == "connected") && (this.marker != -1)) {
+                this.sendCTRLMsg({
+                    type: "restore",
+                    args: { marker: this.marker }},
+                () => {
+                    this.onStateChange(state)
+                }, error => {
+                    this.notify("Failed to restore from marker")
+                    this.onStateChange("failed")
+                })
+                this.marker = -1
+            } else 
+                this.onStateChange(state)
+        }
         let offer = ""
         this.pc.onicecandidateerror = ev => {
             console.log("icecandidate error", ev.errorCode)
@@ -119,8 +140,17 @@ export class PeerbookSession extends BaseSession {
     }
 
     channelOpened(dc: RTCDataChannel, id: number, resolve: any) {
+        console.log("channelOpened")
         const channel = new PeerbookChannel(this, id, dc)
         resolve(channel)
+        // callbacks are set after the resolve as that's 
+        // where caller's onMessage & onClose are set
+        dc.onmessage = m => channel.onMessage(m)
+        dc.onclose = m => {
+            // ignore close events when disconnecting
+            if (this.marker == -1)
+                channel.onClose(m)
+        }
     }
     openChannel(cmdorid: ChannelID): Promise<Channel>
     openChannel(cmdorid: string | ChannelID, parent: ChannelID, sx: number, sy: number):
@@ -155,7 +185,7 @@ export class PeerbookSession extends BaseSession {
         return new Promise((resolve, reject) => {
             const ctrl = new AbortController(),
                   tId = setTimeout(() => ctrl.abort(), TIMEOUT),
-                  insecure = this.conf.peerbook.insecure,
+                  insecure = this.t7.conf.peerbook.insecure,
                   schema = insecure?"http":"https"
 
             fetch(`${schema}://${this.t7.conf.net.peerbook}/turn`,
@@ -265,7 +295,7 @@ export class PeerbookSession extends BaseSession {
                     this.t7.notify(`Sending ctrl message failed: ${err}`)
                 }
                 this.msgs[msg.message_id] = this.t7.run(
-                      () => this.sendCTRLMsg(msg), timeout)
+                      () => this.sendCTRLMsg(msg, resolve, reject), timeout)
             } else {
                 this.t7.notify(
                      `#${msg.message_id} tried ${retries} times and given up`)
@@ -302,5 +332,22 @@ export class PeerbookSession extends BaseSession {
                 args: {Payload: payload}
             }, resolve, reject)
         )
+    }
+    disconnect(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (!this.pc) {
+                resolve()
+                return
+            }
+            this.sendCTRLMsg({
+                    type: "mark",
+                    args: null
+                }, (payload) => {
+                this.marker = payload
+                this.t7.log("got a marker", this.marker)
+                this.pc.close()
+                resolve()
+            }, reject)
+        })
     }
 }

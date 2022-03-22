@@ -82,7 +82,7 @@ export class Window {
     /*
      * restoreLayout restores a layout, creating the panes and layouts as needed
      */
-    restoreLayout(layout) {
+    restoreLayout(layout, oldPanes) {
         var l = this.addLayout(layout.dir, {
             w: this,
             gate: this.gate,
@@ -94,12 +94,21 @@ export class Window {
         layout.cells.forEach(cell => {
             if ("dir" in cell) {
                 // recurselvly add a new layout
-                const newL = this.restoreLayout(cell)
+                const newL = this.restoreLayout(cell, oldPanes)
                 newL.layout = l
                 l.cells.push(newL)
             }
             else {
-                let p = l.addPane(cell)
+                let p = oldPanes.find(p => p.d.id == cell.channel_id)
+                if (p) {
+                    p.layout = l
+                    p.w = this
+                    l.cells.push(p)
+                    this.e.appendChild(p.e)
+                    p.openChannel(0, cell.channel_id)
+                }
+                else 
+                    p = l.addPane(cell)
                 if (cell.active)
                     this.activeP = p
                 if (cell.zoomed)

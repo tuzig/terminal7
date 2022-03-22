@@ -104,11 +104,14 @@ export class Layout extends Cell {
         let pane = new Pane(p)
         this.t7.cells.push(pane)
         if (p.parent instanceof Cell) {
+            let parent = null
             this.cells.splice(this.cells.indexOf(p.parent)+1, 0, pane)
-            pane.openTerminal(props.parent.webexecID)
+            if (props.parent && props.parent.d)
+                parent = props.parent.d.id
+            pane.openTerminal(parent, props.channel_id)
         } else {
             this.cells.push(pane)
-            pane.openTerminal()
+            pane.openTerminal(null, props.channel_id)
         }
         
         // opening the terminal and the datachannel are heavy so we wait

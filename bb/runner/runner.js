@@ -8,7 +8,7 @@ const puppeteer = require('puppeteer'),
 
 
 describe('Terminal7', function() {
-    var browser, page
+    var browser, page,redisClient
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
     if (local)
         this.timeout(100000)
@@ -38,14 +38,38 @@ describe('Terminal7', function() {
         const response = await page.goto(url)
         expect(response.status()).to.equal(200)
         // add terminal7 initializtion and globblas
+        await waitPort({host:'peerbook', port:17777})
+        await waitPort({host:'webexec', port:7777})
+    })
+    beforeEach(async function() {
         await page.evaluate(async() => {
             window.sleep = (ms) => new Promise(r => setTimeout(r, ms))
             document.getElementById("greetings-modal").classList.add("hidden")
+            window.terminal7.notify = console.log
+            window.terminal7.conf.net.peerbook = "peerbook:17777"
+            window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
+            try {
+                await window.terminal7.pbVerify()
+            } catch(e) {
+                console.log("pbVerify return error", e.toString())
+            }
         })
+        redisClient = redis.createClient({url: 'redis://redis'})
+        redisClient.on('error', err => console.log('Redis client error', err))
+        await redisClient.connect()
+        for await (const key of redisClient.scanIterator({MATCH:'peer*'})) {
+            console.log("verifying: " +key)
+            redisClient.hSet(key, 'verified', "1")
+            await sleep(10)
+        }
     })
 
     after(async function() {
         await browser.close()
+    })
+    afterEach (async function() {
+        console.log("exit all panes")
+        await page.reload({waitUntil: "networkidle2"})
     })
     it('renders', async() => {
         await page.screenshot({ path: `/result/home.png` })
@@ -57,26 +81,6 @@ describe('Terminal7', function() {
     })
     */
     it('registers with peerbook', async function() {
-        await waitPort({host:'peerbook', port:17777})
-        await waitPort({host:'webexec', port:7777})
-        await page.evaluate(async() => {
-            window.terminal7.notify = console.log
-            window.terminal7.conf.net.peerbook = "peerbook:17777"
-            window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
-            try {
-                await window.terminal7.pbVerify()
-            } catch(e) {
-                console.log("pbVerify return error", e.toString())
-            }
-        })
-        const rc = redis.createClient({url: 'redis://redis'})
-        rc.on('error', err => console.log('Redis client error', err))
-        await rc.connect()
-        for await (const key of rc.scanIterator({MATCH:'peer*'})) {
-            console.log("verifying: " +key)
-            await rc.hSet(key, 'verified', "1")
-        }
-        await sleep(500)
         const gates = await page.evaluate(async() => {
             await window.terminal7.pbVerify()
             var n = 0
@@ -88,11 +92,12 @@ describe('Terminal7', function() {
             return n
         })
         expect(gates).to.equal(1)
-        await sleep(2000)
+        await sleep(3000)
         console.log("verifying a pane is open")
         const panes = await page.evaluate(() => {
             return document.querySelectorAll(".pane").length
         })
+        await page.screenshot({ path: `/result/WTF.png` })
         expect(panes).to.equal(1)
         console.log("verifying gate help is visible")
         const helpVisible = await page.evaluate(async () => {
@@ -171,10 +176,30 @@ describe('Terminal7', function() {
                 gate.connect()
                 break
             }
-            await window.sleep(2000)
+            await window.sleep(3000)
             return document.querySelectorAll(".pane").length
         })
-        await page.screenshot({ path: `/result/final.png` })
         expect(panes4).to.equal(2)
+    })
+    it('orderly disengages', async function() {
+        const lines = await page.evaluate(async() => {
+            await sleep(500)
+            await window.terminal7.pbVerify()
+            var n = 0
+            const [fp, gate] = Object.entries(window.terminal7.PBGates)[0]
+            console.log("connecting to: ", fp)
+            gate.connect()
+            document.getElementById("help-gate").classList.toggle("show")
+            await sleep(2000)
+            gate.activeW.activeP.d.send("seq 10; sleep 1; seq 10 100\n")
+            await gate.disengage()
+            await sleep(1100)
+            console.log("connecting... again")
+            gate.connect()
+            await sleep(2000)
+            return gate.activeW.activeP.t.buffer.active.length
+        })
+        await page.screenshot({ path: `/result/final.png` })
+        expect(lines).to.be.at.least(100)
     })
 })

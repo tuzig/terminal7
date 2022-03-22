@@ -37,13 +37,14 @@ export class Gate {
         this.lastMsgId = 0
         // a mapping of refrence number to function called on received ack
         this.breadcrumbs = []
-        this.updateID  = null
+        this.sendStateTask  = null
         this.timeoutID = null
         this.fp = props.fp
         this.online = props.online
         this.watchDog = null
         this.verified = props.verified || false
         this.t7 = window.terminal7
+        this.session = null
     }
 
     /*
@@ -144,12 +145,7 @@ export class Gate {
     stopBoarding() {
         // this.setIndicatorColor(FAILED_COLOR)
         // clear all pending messages
-        for (var id in this.msgs) {
-            window.clearTimeout(this.msgs[id])
-            delete this.msgs[id]
-        }
         this.boarding = false
-        this.t7.onDisconnect(this)
     }
     setIndicatorColor(color) {
             this.e.querySelector(".tabbar-names").style.setProperty(
@@ -192,6 +188,7 @@ export class Gate {
             let now = Date.now()
             if (now - this.lastDisconnect > 100) {
                 this.stopBoarding()
+                this.t7.onDisconnect(this)
             } else
                 this.t7.log("Ignoring a peer terminal7.cells.forEach(c => event after disconnect")
         }
@@ -203,6 +200,7 @@ export class Gate {
         // do nothing when the network is down
         // if we're already boarding, just focus
         if (this.boarding) {
+            console.log("already boarding")
             if (this.windows.length == 0)
                 this.activeW = this.addWindow("", true)
             this.focus()
@@ -210,19 +208,22 @@ export class Gate {
         }
         this.notify("Initiating connection")
         // start the connection watchdog
+        // TODO: move this to the session
         if (this.watchDog != null)
             window.clearTimeout(this.watchDog)
         this.watchDog = this.t7.run(_ => {
             this.watchDog = null
             this.stopBoarding()
+            this.t7.onDisconnect(this)
         }, this.t7.conf.net.timeout)
         
-        if (typeof this.fp == "string") {
-            this.session = new PeerbookSession(this.fp)
-        }
-        else {
-            this.session = new SSHSession(this.addr, this.user, this.secret)
-        }
+        if (this.session == null)
+            if (typeof this.fp == "string") {
+                this.session = new PeerbookSession(this.fp)
+            }
+            else {
+                this.session = new SSHSession(this.addr, this.user, this.secret)
+            }
         this.session.onStateChange = state => this.onSessionState(state)
         this.session.onPayloadUpdate = layout => {
             this.notify("TBD: update new layout")
@@ -263,20 +264,28 @@ export class Gate {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
             this.activeW = this.addWindow("", true)
-        } else if (this.windows.length > 0) {
+        /* } else if (this.windows.length > 0) {
             // if there's a marker it's a reconnect, re-open all gate's dcs
             // TODO: validate the current layout is like the state
             this.t7.log("Restoring with marker, opening channel")
-            this.panes().forEach(p => p.openChannel())
+            this.panes().forEach(p => p.openChannel()) */
         } else {
+            const oldPanes = this.panes(),
+                  tempPanes = document.createElement('div')
+
+            oldPanes.forEach(pane => tempPanes.appendChild(pane.e))
+
             this.t7.log("Setting layout: ", state)
             this.clear()
+
             state.windows.forEach(w =>  {
                 let win = this.addWindow(w.name)
-                win.restoreLayout(w.layout)
+                win.restoreLayout(w.layout, oldPanes)
                 if (w.active) 
                     this.activeW = win
             })
+            // remove all old panes
+            tempPanes.remove()
         }
 
         if (!this.activeW)
@@ -336,15 +345,20 @@ export class Gate {
         return { windows: wins }
     }
     sendState() {
-        // send the state only when all panes have a channelID
-        if (this.session && (this.panes().every(p => p.channelID != null)))
-            this.session.setPayload(this.dump()).then(_ => {
-                if ((this.windows.length == 0) && (this.pc)) {
-                    console.log("Closing gate after updating to empty state")
-                    this.stopBoarding()
-                    this.disengage()
-                }
-            })
+        if (this.sendStateTask != null)
+            return
+        // send the state only when all panes have a channel
+        if (this.session && (this.panes().every(p => p.d != null)))
+           this.sendStateTask = setTimeout(() => {
+               this.sendStateTask = null
+               this.session.setPayload(this.dump()).then(_ => {
+                    if ((this.windows.length == 0) && (this.pc)) {
+                        console.log("Closing gate after updating to empty state")
+                        this.stopBoarding()
+                        this.disengage()
+                    }
+               })
+            }, 100)
     }
     onPaneConnected(pane) {
         // hide notifications
@@ -404,9 +418,9 @@ export class Gate {
         document.getElementById("rh-name").innerHTML = this.name
         e.classList.remove("hidden")
     }
-    restartServer() {
+    async restartServer() {
         this.clear()
-        this.disengagePC()
+        await this.disengage()
         let e = document.getElementById("reset-host")
         this.t7.ssh(e, this, `webexec restart --address ${this.addr}`,
             _ => e.classList.add("hidden")) 
@@ -419,14 +433,15 @@ export class Gate {
      * It first sends a mark request and on it's ack store the restore marker
      * and closes the peer connection.
      */
-    disengage(cb) {
-        this.t7.log(`disengaging. boarding ${this.boarding}`)
-        if (!this.boarding || !this.session) {
-            if (cb) cb()
-            return
-        }
-        this.session.disconnect().then(() => {
-            if (cb) cb()
+    disengage() {
+        return new Promise(resolve => {
+            this.t7.log(`disengaging. boarding ${this.boarding}`)
+            if (!this.boarding || !this.session) {
+                resolve()
+                return
+            }
+            this.session.disconnect().then(resolve)
+            this.boarding = false
         })
     }
     closeActivePane() {
@@ -465,7 +480,7 @@ export class Gate {
         })
         e.querySelector(".all").addEventListener('click', _ => {
             this.e.querySelector(".reset-gate").classList.toggle("hidden")
-            // this.stopBoarding()
+            this.stopBoarding()
             this.connect()
         })
         this.e.appendChild(e)

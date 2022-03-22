@@ -284,7 +284,7 @@ describe("terminal7", function() {
             h = t.addGate()
             h.open(e)
             w = h.addWindow("restored")
-            w.restoreLayout(state)
+            w.restoreLayout(state, [])
             expect(w.rootLayout.dir).to.equal("topbottom")
             expect(w.rootLayout.cells[0].yoff).to.equal(0.2)
             expect(w.rootLayout.cells[1].yoff).to.equal(0.5)
@@ -325,7 +325,7 @@ describe("terminal7", function() {
                             }
                         ]
                     }
-                ]}
+                ]}, []
             )
             expect(w.rootLayout.dir).to.equal("topbottom")
             expect(w.rootLayout.cells.length).to.equal(2)

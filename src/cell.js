@@ -41,10 +41,8 @@ export class Cell {
      * Set the focus on the cell
      */
     focus() {
-        this.active = true
         if (this.w.activeP !== null) {
             this.w.activeP.e.style.borderColor = UNFOCUSED_BORDER_COLOR
-            this.w.activeP.active = false
         }
         this.w.activeP = this
         this.e.style.borderColor = FOCUSED_BORDER_COLOR
@@ -76,8 +74,10 @@ export class Cell {
             new Hammer.Tap({event: "twofingerstap", pointers: 2})])
 
         h.on('tap', e => {
-            this.focus()
-            this.gate.sendState()
+            if (this.w.activeP != this) {
+                this.focus()
+                this.gate.sendState()
+            }
         })
         h.on('twofingerstap', e => {
             this.toggleZoom()

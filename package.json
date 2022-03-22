@@ -53,7 +53,7 @@
     "start": "npm run dev",
     "dev": "vite",
     "stage": "vite build --sourcemap && vite preview",
-    "run": "cap run ios",
+    "run": "npm run build && cap run ios",
     "test": "vitest",
     "build": "vite build --sourcemap",
     "clean": "rm -rf dist ios/App/App/public/*",

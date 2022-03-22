@@ -33,7 +33,6 @@ export class Pane extends Cell {
         this.catchFingers()
         this.d = null
         this.active = false
-        this.channelID = props.webexec_id || null
         this.fontSize = props.fontSize || 12
         this.theme = props.theme || this.t7.conf.theme
         this.copyMode = false
@@ -55,7 +54,7 @@ export class Pane extends Cell {
     /*
      * Pane.openTerminal opens an xtermjs terminal on our element
      */
-    openTerminal(parent) {
+    openTerminal(parentID, channelID) {
         var con = document.createElement("div")
         this.t = new Terminal({
             convertEol: false,
@@ -127,7 +126,9 @@ export class Pane extends Cell {
             resizeObserver.observe(this.e);
             this.fit(pane => { 
                if (pane != null)
-                  pane.openChannel(parent)
+                  pane.openChannel(parentID, channelID)
+                  .catch(() => 
+                      this.gate.notify("Failed to open communication channel"))
             })
         })
         return this.t
@@ -177,6 +178,7 @@ export class Pane extends Cell {
         if (this.t.rows != oldr || this.t.cols != oldc) {
             if (this.d) {
                 this.d.resize(this.t.cols, this.t.rows)
+                this.gate.sendState()
             }
             ret = true
         }
@@ -233,39 +235,38 @@ export class Pane extends Cell {
                        xoff: xoff, yoff: yoff,
                        parent: this})
         p.focus()
+        this.gate.sendState()
         return p
-
     }
-    onChannelConnected(channel) {
+    onChannelConnected(channel, id) {
+        console.log("onChannelConnected")
+        const reconnect = this.d != null
         this.d = channel
-        channel.onMessage = m => this.onChannelMessage(m)
-        channel.onClose = e => {
-            this.t7.log(`on channel "${channel.id}" close`)
-            this.close()
-        }
-        if (!this.channelID) {
-            this.channelID = channel.id
-            // got a new channel, update the state
+        this.d.onMessage = m => this.onChannelMessage(m)
+        this.d.onClose = m => this.close()
+        if (!reconnect)
             this.gate.sendState()
-        }
     }
-    openChannel(parent) {
-        if (!this.gate.session)
-            return
-        if (this.d) {
-            this.d.onClose = undefined
-            this.d.onMessage = undefined
-        }
-
-        this.buffer = []
-        if (this.channelID) {
-            this.gate.session.openChannel(this.channelID)
-            .then(channel => this.onChannelConnected(channel))
-        } else {
-            this.gate.session.openChannel(
-                this.t7.conf.exec.shell, parent, this.t.cols, this.t.rows)
-            .then(channel => this.onChannelConnected(channel))
-        }
+    openChannel(parentID, channelID) {
+        return new Promise((resolve, reject) => {
+            if (!this.gate.session) {
+                reject("Session is not opened")
+                return
+            }
+            this.buffer = []
+            if (channelID) {
+                this.gate.session.openChannel(channelID)
+                .then((channel, id) =>this.onChannelConnected(channel, id))
+                .then(resolve)
+                .catch(m => console.log(m))
+            } else {
+                this.gate.session.openChannel(
+                    this.t7.conf.exec.shell, parentID, this.t.cols, this.t.rows)
+                .then((channel, id) =>this.onChannelConnected(channel, id))
+                .then(resolve)
+                .catch(m => console.log(m))
+            }
+        })
     }
     flashIndicator () {
         if (this.flashTimer == null) {
@@ -426,7 +427,7 @@ export class Pane extends Cell {
             f = () => this.gate.newTab()
             break
         case "r":
-            f = () => this.gate.disengage(_ => this.gate.connect())
+            f = () => this.gate.disengage().then(() => this.gate.connect())
             break
         // this key is at terminal level
         case "l":
@@ -523,8 +524,7 @@ export class Pane extends Cell {
     }
     close() {
         if (this.d)
-            // TODO: why not just call close?
-            this.d.onclose = undefined
+            this.d.close()
         this.dividers.forEach(d => d.classList.add("hidden"))
         super.close()
     }
@@ -534,10 +534,11 @@ export class Pane extends Cell {
             sy: this.sy,
             xoff: this.xoff,
             yoff: this.yoff,
-            fontSize: this.fontSize,
-            webexec_id: this.channelID,
+            fontSize: this.fontSize
         }
-        if (this.w.activeP && this.channelID == this.w.activeP.channelID)
+        if (this.d)
+            cell.channel_id = this.d.id
+        if (this.w.activeP && this == this.w.activeP)
             cell.active = true
         if (this.zoomed)
             cell.zoomed = true
