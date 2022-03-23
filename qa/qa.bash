@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 if [ $# -eq 0 ]
 then
-    echo ">>> Starting full QA testing"
+    echo ">>> Starting full QA testing <<<"
+    npm run lint
     npx vitest run
     npx vite build
     for compose in `find qa -name "lab.yaml"`

@@ -160,7 +160,6 @@ describe('session', function() {
             window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
             await window.terminal7.pbVerify()
             await window.sleep(1000)
-            var n = 0
             for (const [fp, gate] of Object.entries(window.terminal7.PBGates)) {
                 console.log("connecting to: ", fp)
                 gate.connect()
@@ -175,7 +174,6 @@ describe('session', function() {
         const lines = await page.evaluate(async() => {
             await sleep(500)
             await window.terminal7.pbVerify()
-            var n = 0
             const [fp, gate] = Object.entries(window.terminal7.PBGates)[0]
             console.log("connecting to: ", fp)
             gate.connect()

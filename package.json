@@ -59,7 +59,8 @@
     "build": "vite build --sourcemap",
     "clean": "rm -rf dist ios/App/App/public/*",
     "postinstall": "cd ./node_modules/xterm && yarn install && npm run package",
-    "qa": "./qa/qa.bash"
+    "qa": "bash ./qa/qa.bash",
+    "lint": "npx eslint qa src --ext .js,.jsx,.ts,.tsx" 
   },
   "repository": {
     "type": "git",
