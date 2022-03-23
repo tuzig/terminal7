@@ -1,7 +1,7 @@
-
-import { BaseSession, BaseChannel, Channel }  from './session.ts' 
+import { BaseSession, BaseChannel, Channel, ChannelID }  from './session' 
 
 const TIMEOUT = 5000
+type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
 
 // SSHSession is an implmentation of a real time session over ssh
 export class PeerbookChannel extends BaseChannel {
@@ -45,21 +45,21 @@ export class PeerbookChannel extends BaseChannel {
 export class PeerbookSession extends BaseSession {
     fp: string
     pendingCDCMsgs: Array<object>
-    pendingChannels: Object
-    msgs: Object
-    msgHandlers: Object
+    pendingChannels: Map<ChannelID, ChannelOpenedCB>
+    msgWatchdogs: Map<ChannelID, number>
+    msgHandlers: Map<ChannelID, Array<()=>void>>
     cdc: RTCDataChannel
-    pc: any
-    lastMsgId: Number
-    t7: any
+    pc: RTCPeerConnection
+    lastMsgId: number
+    t7: object
     marker: number
     constructor(fp: string) {
         super()
         this.fp = fp
-        this.pendingCDCMsgs = []
-        this.pendingChannels = {}
-        this.msgs = {}
-        this.msgHandlers = {}
+        this.pendingCDCMsgs = new Array()
+        this.pendingChannels = new Map()
+        this.msgWatchdogs = new Map()
+        this.msgHandlers = new Map()
         this.lastMsgId = 0
         this.t7 = window.terminal7
         this.marker = -1
@@ -87,7 +87,7 @@ export class PeerbookSession extends BaseSession {
                 () => {
                     this.onStateChange(state)
                 }, error => {
-                    this.notify("Failed to restore from marker")
+                    this.t7.notify("Failed to restore from marker")
                     this.onStateChange("failed")
                 })
                 this.marker = -1
@@ -95,7 +95,7 @@ export class PeerbookSession extends BaseSession {
                 this.onStateChange(state)
         }
         let offer = ""
-        this.pc.onicecandidateerror = ev => {
+        this.pc.onicecandidateerror = (ev: RTCPeerConnectionIceErrorEvent) => {
             console.log("icecandidate error", ev.errorCode)
             if (ev.errorCode == 401) {
                 this.t7.notify("Getting fresh ICE servers")
@@ -139,7 +139,7 @@ export class PeerbookSession extends BaseSession {
         this.openCDC()
     }
 
-    channelOpened(dc: RTCDataChannel, id: number, resolve: any) {
+    channelOpened(dc: RTCDataChannel, id: number, resolve: (channel: Channel) => void) {
         console.log("channelOpened")
         const channel = new PeerbookChannel(this, id, dc)
         resolve(channel)
@@ -152,12 +152,13 @@ export class PeerbookSession extends BaseSession {
                 channel.onClose(m)
         }
     }
-    openChannel(cmdorid: ChannelID): Promise<Channel>
-    openChannel(cmdorid: string | ChannelID, parent: ChannelID, sx: number, sy: number):
+    openChannel(id: ChannelID): Promise<Channel>
+    openChannel(cmdorid: unknown, parent?: ChannelID, sx?: number, sy?: number):
          Promise<Channel> {
         return new Promise((resolve, reject) => {
+            let msgID: number
             if (sx !== undefined) {
-                var msgID = this.sendCTRLMsg({
+                msgID = this.sendCTRLMsg({
                     type: "add_pane", 
                     args: { 
                         command: [cmdorid],
@@ -167,19 +168,17 @@ export class PeerbookSession extends BaseSession {
                     }
                 }, Function.prototype(), Function.prototype())
             } else {
-                var msgID = this.sendCTRLMsg({
+                msgID = this.sendCTRLMsg({
                     type: "reconnect_pane", 
                     args: { id: cmdorid }
                 }, Function.prototype(), Function.prototype())
             }
-            let watchdog = setTimeout(_ => reject("timeout"), TIMEOUT)
-            this.pendingChannels[msgID] = (channel, id) => {
+            const watchdog = setTimeout(() => reject("timeout"), TIMEOUT)
+            this.pendingChannels[msgID] = (channel: RTCDataChannel, id: ChannelID) => {
                 clearTimeout(watchdog)
                 this.channelOpened(channel, id, resolve)
             }
         })
-    }
-    close(): Promise<void>{
     }
     getIceServers() {
         return new Promise((resolve, reject) => {
@@ -197,17 +196,12 @@ export class PeerbookSession extends BaseSession {
                 return response.text()
             }).then(data => {
                 clearTimeout(tId)
-                if (!this.verified) {
-                    this.verified = true
-                    // TODO: store when making real changes
-                    // this.t7.storeGates()
-                }
-                var answer = JSON.parse(data)
+                const answer = JSON.parse(data)
                 // return an array with the conf's server and subspace's
                 resolve([{ urls: this.t7.conf.net.iceServer},
                          answer["ice_servers"][0]])
 
-            }).catch(error => {
+            }).catch(err => {
                 console.log("failed to get ice servers " + err.toString())
                 clearTimeout(tId)
                 reject()
@@ -216,7 +210,7 @@ export class PeerbookSession extends BaseSession {
     }
     openCDC() {
         console.log("opening cdc")
-        var cdc = this.pc.createDataChannel('%')
+        const cdc = this.pc.createDataChannel('%')
         this.cdc = cdc
         this.t7.log("<opening cdc")
         cdc.onopen = () => {
@@ -233,9 +227,9 @@ export class PeerbookSession extends BaseSession {
                   msg = JSON.parse(d.decode(m.data))
             // handle Ack
             if ((msg.type == "ack") || (msg.type == "nack")) {
-                let i = msg.args.ref
-                window.clearTimeout(this.msgs[i])
-                delete this.msgs[i]
+                const i = msg.args.ref
+                window.clearTimeout(this.msgWatchdogs[i])
+                delete this.msgWatchdogs[i]
                 const handlers = this.msgHandlers[i]
                 delete this.msgHandlers[msg.args.ref]
                 this.t7.log("got cdc message:",  msg)
@@ -294,7 +288,7 @@ export class PeerbookSession extends BaseSession {
                 } catch(err) {
                     this.t7.notify(`Sending ctrl message failed: ${err}`)
                 }
-                this.msgs[msg.message_id] = this.t7.run(
+                this.msgWatchdogs[msg.message_id] = this.t7.run(
                       () => this.sendCTRLMsg(msg, resolve, reject), timeout)
             } else {
                 this.t7.notify(
@@ -305,7 +299,7 @@ export class PeerbookSession extends BaseSession {
         return msg.message_id
     }
     peerAnswer(offer) {
-        let sd = new RTCSessionDescription(offer)
+        const sd = new RTCSessionDescription(offer)
         this.pc.setRemoteDescription(sd)
             .catch (e => {
                 this.t7.notify(`Failed to set remote description: ${e}`)

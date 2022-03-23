@@ -68,7 +68,6 @@ describe('Terminal7', function() {
         await browser.close()
     })
     afterEach (async function() {
-        console.log("exit all panes")
         await page.reload({waitUntil: "networkidle2"})
     })
     it('renders', async() => {
@@ -193,10 +192,10 @@ describe('Terminal7', function() {
             await sleep(2000)
             gate.activeW.activeP.d.send("seq 10; sleep 1; seq 10 100\n")
             await gate.disengage()
-            await sleep(1100)
+            await sleep(3000)
             console.log("connecting... again")
             gate.connect()
-            await sleep(2000)
+            await sleep(3000)
             return gate.activeW.activeP.t.buffer.active.length
         })
         await page.screenshot({ path: `/result/final.png` })

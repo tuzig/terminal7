@@ -1,4 +1,16 @@
 module.exports = {
+  root: true,
+  parser: '@typescript-eslint/parser',
+  plugins: [
+    '@typescript-eslint/eslint-plugin',
+  ],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+  ],
+}
+/* TODO: cherry pick lines from the old conf and merge with above
+module.exports = {
     "env": {
         "browser": true,
         "es6": true
@@ -17,8 +29,9 @@ module.exports = {
         "sourceType": "module"
     },
     "plugins": [
-        "@typescript-eslint"
+        "@typescript-eslint/eslint-plugin"
     ],
     "rules": {
     }
 };
+*/
