@@ -7,7 +7,7 @@ const puppeteer = require('puppeteer'),
       url = local?"http://localhost:3000":"http://terminal7"
 
 
-describe('Terminal7', function() {
+describe('session', function() {
     var browser, page,redisClient
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
     if (local)
@@ -70,21 +70,12 @@ describe('Terminal7', function() {
     afterEach (async function() {
         await page.reload({waitUntil: "networkidle2"})
     })
-    it('renders', async() => {
-        await page.screenshot({ path: `/result/home.png` })
-    })
-    /*
-    it('can generate certificate', async function() {
-        const gateCount = await page.evaluate(async() => {
-            let cert = await window.terminal7.
-    })
-    */
     it('registers with peerbook', async function() {
         const gates = await page.evaluate(async() => {
             await window.terminal7.pbVerify()
             var n = 0
             for (const [fp, gate] of Object.entries(window.terminal7.PBGates)) {
-                console.log("connecting to: ", gate.fp)
+                console.log("connecting to: ", fp)
                 gate.connect()
                 n += 1
             }
@@ -171,7 +162,7 @@ describe('Terminal7', function() {
             await window.sleep(1000)
             var n = 0
             for (const [fp, gate] of Object.entries(window.terminal7.PBGates)) {
-                console.log("connecting to: ", gate.fp)
+                console.log("connecting to: ", fp)
                 gate.connect()
                 break
             }
@@ -195,7 +186,7 @@ describe('Terminal7', function() {
             await sleep(3000)
             console.log("connecting... again")
             gate.connect()
-            await sleep(3000)
+            await sleep(5000)
             return gate.activeW.activeP.t.buffer.active.length
         })
         await page.screenshot({ path: `/result/final.png` })

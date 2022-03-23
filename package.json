@@ -3,10 +3,8 @@
   "version": "0.19.3",
   "description": "A touchable terminal emulator & multiplexer tablet app",
   "main": "src/index.js",
-  "private": true,
-  "bin": {
-    "terminal7": "download_browser.js"
-  },
+  "homepage": "https://terminal7.dev",
+  "private": false,
   "build": {
     "appId": "dev.terminal7",
     "files": [
@@ -41,11 +39,12 @@
     "xterm-webfont": "^2.0.0"
   },
   "devDependencies": {
-    "jsdom": "^19.0.0",
-    "typescript": "<5",
-    "eslint": "<9",
     "@typescript-eslint/eslint-plugin": "<6",
     "@typescript-eslint/parser": "<6",
+    "eslint": "<9",
+    "eslint-plugin-mocha": "^10.0.3",
+    "jsdom": "^19.0.0",
+    "typescript": "<5",
     "vite": "^2.8.5",
     "vite-plugin-pwa": "^0.11.13",
     "vitest": "^0.5.9",
@@ -68,7 +67,6 @@
   },
   "keywords": [
     "terminal",
-    "javascript",
     "tmux",
     "webrtc"
   ],
@@ -77,11 +75,27 @@
   "bugs": {
     "url": "https://github.com/tuzig/terminal7/issues"
   },
-  "homepage": "https://github.com/tuzig/terminal7#readme",
   "mocha": {
     "watch-files": [
       "src/*.js",
       "test/*.js"
     ]
+  },
+  "eslintConfig": {
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint/eslint-plugin",
+      "mocha"
+    ],
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:mocha/recommended"
+    ],
+    "env": {
+      "mocha": true,
+      "browser": true
+    }
   }
 }
