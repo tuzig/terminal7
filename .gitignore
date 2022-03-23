@@ -28,4 +28,5 @@ typings/
 resources/ios
 resources/android
 # testing
-bb/webexec/config/agent.*
+qa/webexec/config/agent.*
+qa/result

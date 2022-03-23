@@ -59,7 +59,8 @@
     "test": "vitest",
     "build": "vite build --sourcemap",
     "clean": "rm -rf dist ios/App/App/public/*",
-    "postinstall": "cd ./node_modules/xterm && yarn install && npm run package"
+    "postinstall": "cd ./node_modules/xterm && yarn install && npm run package",
+    "qa": "./qa/qa.bash"
   },
   "repository": {
     "type": "git",

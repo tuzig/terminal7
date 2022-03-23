@@ -3,10 +3,10 @@ services:
   runner:
     build: 
       context: .
-      dockerfile: ./bb/runner/Dockerfile
+      dockerfile: ./qa/runner/Dockerfile
     volumes:
-      - ./bb/runner:/runner
-      - ./bb/result:/result
+      - ./qa/session:/runner
+      - ./qa/result:/result
     depends_on:
       - peerbook
       - terminal7
@@ -15,21 +15,21 @@ services:
   terminal7:
     build: 
       context: .
-      dockerfile: ./bb/terminal7/Dockerfile
+      dockerfile: ./qa/terminal7/Dockerfile
     volumes:
       - ./dist:/terminal7
   webexec:
     build:
       context: .
-      dockerfile: ./bb/webexec/Dockerfile
+      dockerfile: ./qa/webexec/Dockerfile
     depends_on:
       - peerbook
     volumes:
-      - ./bb/webexec/config:/home/webexec/.config/webexec
+      - ./qa/webexec/config:/home/webexec/.config/webexec
   peerbook:
     build:
       context: .
-      dockerfile: ./bb/peerbook/Dockerfile
+      dockerfile: ./qa/peerbook/Dockerfile
     expose:
       - "17777"
     depends_on:
