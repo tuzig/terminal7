@@ -211,11 +211,7 @@ export class Terminal7 {
             openDB("t7", 1).then(db => {
                 let tx = db.transaction("certificates", "readwrite"),
                     store = tx.objectStore("certificates")
-                store.clear().then(_ => 
-                    this.generateCertificate().then(
-                        _ => this.storeCertificate().then(
-                                _ => this.pbVerify())))
-                .catch(e => terminal7.log(e))
+                store.clear().then(() => this.pbVerify())
             })
             ev.target.parentNode.parentNode.classList.add("hidden")
 
@@ -387,7 +383,7 @@ peer_name = "${peername}"\n`
                     this.onPBMessage(m)
                     resolve()
                 }).catch(e => { reject(e) })
-            })
+            }).catch(e => console.log("Failed to get FP" + e))
         })
     }
     async toggleSettings(ev) {
@@ -708,19 +704,7 @@ peer_name = "${peername}"\n`
                 this.activeG.focus()
             }
             else 
-                // get the fingerprint and connect to peerbook
-                this.getFingerprint().then(_ => {
-                    if (this.certificates.length > 0) 
-                        this.pbVerify()
-                    else {
-                        this.generateCertificate().then(_ => {
-                            this.storeCertificate().then(_ => {
-                                this.pbVerify()
-                            })
-                        }).catch(e =>
-                            console.log(`Failed generating cert: ${e}`))
-                    }
-                })
+                this.pbVerify()
         } else {
             off.remove("hidden")
             this.gates.forEach(g => g.stopBoarding())
@@ -772,7 +756,7 @@ peer_name = "${peername}"\n`
     // gets the will formatted fingerprint from the current certificate
     getFingerprint() {
         // gets the certificate from indexDB. If they are not there, create them
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             if (this.certificates) {
                 var cert = this.certificates[0].getFingerprints()[0]
                 resolve(cert.value.toUpperCase().replaceAll(":", ""))
@@ -789,16 +773,18 @@ peer_name = "${peername}"\n`
                  store.getAll().then(certificates => {
                      this.certificates = certificates
                      db.close()
-                     var cert = certificates[0].getFingerprints()[0]
+                     const cert = certificates[0].getFingerprints()[0]
                      resolve(cert.value.toUpperCase().replaceAll(":", ""))
-                 }).catch(e => {
-                    this.log(`got a db error getting the fp: ${e}`)
-                    resolve(e)
+                 }).catch(() => {
+                    this.generateCertificate()
+                    .then(cert => resolve(
+                        cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")))
+                    .catch(reject)
                 })
             }).catch(e => {
                 db.close()
                 this.log(`got an error opening db ${e}`)
-                resolve(e)
+                reject(e)
             })
         })
     }
@@ -810,9 +796,11 @@ peer_name = "${peername}"\n`
               namedCurve: "P-256",
               expires: 31536000000
             }).then(cert => {
-                this.log("Generated cert", cert)
+                this.log("Generated cert")
                 this.certificates = [cert]
-                resolve(this.certificates)
+                this.storeCertificate()
+                .then(() => resolve(cert))
+                .catch(reject)
             }).catch(e => {
                 this.log(`failed generating cert ${e}`)
                 reject(e)
@@ -820,7 +808,7 @@ peer_name = "${peername}"\n`
         })
     }
     storeCertificate() {
-        return new Promise(resolve=> {
+        return new Promise((resolve, reject) => {
             openDB("t7", 1, { 
                     upgrade(db) {
                         db.createObjectStore('certificates', {keyPath: 'id',
@@ -831,10 +819,11 @@ peer_name = "${peername}"\n`
                     store = tx.objectStore("certificates"),
                     c = this.certificates[0]
                 c.id = 1
-                store.add(c).then(_ => {
+                store.add(c).then(() => {
                     db.close()
+                    console.log("stored certificate")
                     resolve(this.certificates[0])
-                })
+                }).catch(reject)
             }).catch(e => {
                 this.log (`got error from open db ${e}`)
                 db.close()
