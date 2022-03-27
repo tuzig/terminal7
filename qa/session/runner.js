@@ -40,10 +40,17 @@ describe('session', function() {
         // add terminal7 initializtion and globblas
         await waitPort({host:'peerbook', port:17777})
         await waitPort({host:'webexec', port:7777})
-    })
-    beforeEach(async function() {
         await page.evaluate(async() => {
-            window.sleep = (ms) => new Promise(r => setTimeout(r, ms))
+            window.sleep = ms => new Promise(r => setTimeout(r, ms))
+            window.forTrue = f => new Promise(resolve => {
+                const testnwait = () => {
+                    if (f())
+                        resolve()
+                    else
+                        setTimeout(testnwait, 50)
+                }
+                testnwait()
+            })
             document.getElementById("greetings-modal").classList.add("hidden")
             window.terminal7.notify = console.log
             window.terminal7.conf.net.peerbook = "peerbook:17777"
@@ -57,46 +64,38 @@ describe('session', function() {
         redisClient = redis.createClient({url: 'redis://redis'})
         redisClient.on('error', err => console.log('Redis client error', err))
         await redisClient.connect()
-        for await (const key of redisClient.scanIterator({MATCH:'peer*'})) {
+        const keys = await redisClient.keys('peer*')
+        keys.forEach(async key => {
             console.log("verifying: " +key)
-            redisClient.hSet(key, 'verified', "1")
-            await sleep(10)
-        }
+            await redisClient.hSet(key, 'verified', "1")
+        })
     })
 
     after(async function() {
         await browser.close()
     })
-    afterEach (async function() {
-        await page.reload({waitUntil: "networkidle2"})
-    })
-    it('registers with peerbook', async function() {
-        const gates = await page.evaluate(async() => {
+    it('registers with peerbook, connects, disengages & reconnect', async function() {
+        console.log(">>> suite starts")
+        await page.evaluate(async() => {
             await window.terminal7.pbVerify()
             var n = 0
-            for (const [fp, gate] of Object.entries(window.terminal7.PBGates)) {
-                console.log("connecting to: ", fp)
-                gate.connect()
-                n += 1
-            }
-            return n
+            const gate = Object.values(window.terminal7.PBGates)[0]
+            gate.connect()
+            await forTrue(() => gate.session && gate.session.pc && gate.session.pc.connectionState == "connected")
         })
-        expect(gates).to.equal(1)
-        await sleep(3000)
-        console.log("verifying a pane is open")
+        console.log(">>> gate connected")
         const panes = await page.evaluate(() => {
             return document.querySelectorAll(".pane").length
         })
-        await page.screenshot({ path: `/result/WTF.png` })
         expect(panes).to.equal(1)
-        console.log("verifying gate help is visible")
+        console.log(">>> with a single pane")
         const helpVisible = await page.evaluate(async () => {
             const help = document.getElementById("help-gate"),
                   style = window.getComputedStyle(help)
             return style.display !== 'none'
         })
         expect(helpVisible).to.be.true
-        console.log("verifying a pane is visible")
+        console.log(">>> verifying a pane is visible")
         const paneVisible = await page.evaluate(() => {
             const help = document.getElementById("help-gate"),
                   pane = document.querySelector(".pane"),
@@ -105,13 +104,13 @@ describe('session', function() {
             return (style.display !== 'none')
         })
         expect(paneVisible).to.be.true
-        console.log("verifying a pane's data channel is open")
+        console.log(">>> verifying a pane's data channel is open")
         const paneState = await page.evaluate(() => {
             const pane = window.terminal7.activeG.activeW.activeP
             return pane.d.readyState
         })
         expect(paneState).to.equal("open")
-        console.log("verifying a pane can be split")
+        console.log(">>> verifying a pane can be split")
         const pane2State = await page.evaluate(async() => {
             const pane = window.terminal7.activeG.activeW.activeP
             const pane2 = pane.split("topbottom")
@@ -122,7 +121,7 @@ describe('session', function() {
                 return "unopened"
         })
         expect(pane2State).to.equal("open")
-        console.log("verifying a pane can be closed")
+        console.log(">>> verifying a pane can be closed")
         const exitState = await page.evaluate(() => {
             const pane = window.terminal7.activeG.activeW.activeP
             try {
@@ -131,13 +130,9 @@ describe('session', function() {
             } catch(e) { return e.toString() }
         })
         expect(exitState).to.equal("success")
-        await sleep(2000)
-        const panes3 = await page.evaluate(() => {
-            return window.terminal7.activeG.panes().length
+        await page.evaluate(async() => {
+            await forTrue(() =>  window.terminal7.activeG.panes().length == 1)
         })
-        await sleep(2000)
-        await page.screenshot({ path: `/result/aftersplitnclose.png` })
-        expect(panes3).to.equal(1)
         console.log("test layout persistence")
         const pane3State = await page.evaluate(async() => {
             const pane = window.terminal7.activeG.activeW.activeP
@@ -151,40 +146,50 @@ describe('session', function() {
         expect(pane3State).to.equal("open")
         await page.screenshot({ path: `/result/b4reset.png` })
         await page.reload({waitUntil: "networkidle2"})
-        const panes4 = await page.evaluate(async() => {
+        await page.evaluate(async() => {
             // after reload, need to set all globals
             window.sleep = (ms) => new Promise(r => setTimeout(r, ms))
+            window.forTrue = f => new Promise(resolve => {
+                const testnwait = () => {
+                    if (f())
+                        resolve()
+                    else
+                        setTimeout(testnwait, 50)
+                }
+                testnwait()
+            })
             document.getElementById("greetings-modal").classList.add("hidden")
             window.terminal7.notify = console.log
             window.terminal7.conf.net.peerbook = "peerbook:17777"
             window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
+        })
+        console.log(">>> after browser reload")
+        const gates2 = await page.evaluate(async() => {
             await window.terminal7.pbVerify()
-            await window.sleep(1000)
-            for (const [fp, gate] of Object.entries(window.terminal7.PBGates)) {
-                console.log("connecting to: ", fp)
-                gate.connect()
-                break
-            }
-            await window.sleep(3000)
+            return Object.entries(window.terminal7.PBGates).length
+        })
+        expect(gates2).to.equal(1)
+        console.log(">>> reconnecting")
+        const panes4 = await page.evaluate(async() => {
+            const [fp, gate] = Object.entries(window.terminal7.PBGates)[0]
+            gate.connect()
+            await forTrue(() => gate.session && gate.session.pc && gate.session.pc.connectionState == "connected")
             return document.querySelectorAll(".pane").length
         })
-        expect(panes4).to.equal(2)
-    })
-    it('orderly disengages', async function() {
+        expect(panes4).to.equal(1)
+        console.log(">>> reconnected")
+        await page.screenshot({ path: `/result/WTF.png` })
         const lines = await page.evaluate(async() => {
-            await sleep(500)
-            await window.terminal7.pbVerify()
-            const [fp, gate] = Object.entries(window.terminal7.PBGates)[0]
-            console.log("connecting to: ", fp)
-            gate.connect()
-            document.getElementById("help-gate").classList.toggle("show")
-            await sleep(2000)
+            const gate = Object.values(window.terminal7.PBGates)[0]
+            await forTrue(() => gate.activeW && gate.activeW.activeP)
             gate.activeW.activeP.d.send("seq 10; sleep 1; seq 10 100\n")
-            await gate.disengage()
-            await sleep(3000)
-            console.log("connecting... again")
+            console.log(">>> disengage")
+            await gate.disengage().then(() => window.terminal7.goHome())
+            console.log(">>> connecting... again")
+            await sleep(1100)
             gate.connect()
-            await sleep(5000)
+            console.log("3 forTrue")
+            await forTrue(() => gate.activeW != null)
             return gate.activeW.activeP.t.buffer.active.length
         })
         await page.screenshot({ path: `/result/final.png` })

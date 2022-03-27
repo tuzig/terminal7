@@ -99,16 +99,7 @@ export class Window {
                 l.cells.push(newL)
             }
             else {
-                let p = oldPanes.find(p => p.d.id == cell.channel_id)
-                if (p) {
-                    p.layout = l
-                    p.w = this
-                    l.cells.push(p)
-                    this.e.appendChild(p.e)
-                    p.openChannel(0, cell.channel_id)
-                }
-                else 
-                    p = l.addPane(cell)
+                const p = l.addPane(cell, oldPanes)
                 if (cell.active)
                     this.activeP = p
                 if (cell.zoomed)

@@ -11,6 +11,7 @@ then
         docker-compose -f $compose  --project-directory . up --exit-code-from runner
     done
 else
+    npx vite build
     for arg in $@
     do
         echo ">>> setting up a lab from ./qa/$arg"
