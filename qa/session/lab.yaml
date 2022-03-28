@@ -11,7 +11,7 @@ services:
       - peerbook
       - terminal7
       - webexec
-    command: "mocha --timeout 20000 --exit *.js"
+    command: "playwright test"
   terminal7:
     build: 
       context: .

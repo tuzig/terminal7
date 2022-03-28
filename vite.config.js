@@ -6,6 +6,7 @@ export default defineConfig({
       environment: "jsdom",
       reporters: "verbose",
       globals: true,
+      exclude: [ ...configDefaults.exclude, "qa/*/*" ],
   },
   plugins: [
     VitePWA({
