@@ -26,6 +26,7 @@ test.describe('terminal 7session', ()  => {
         page = await context.newPage()
         page.on('console', (msg) => console.log('console log:', msg.text()))
         page.on('pageerror', (err: Error) => console.log('on pageerror', err.message))
+        await waitPort({host:'peerbook', port:17777})
         await waitPort({host:'terminal7', port:80})
         const response = await page.goto(url)
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
@@ -36,7 +37,6 @@ test.describe('terminal 7session', ()  => {
             window.terminal7.pbVerify()
         })
         // add terminal7 initializtion and globblas
-        await waitPort({host:'peerbook', port:17777})
         await waitPort({host:'webexec', port:7777})
         const playButton = page.locator('.play-button')
         await expect(playButton).toBeVisible()
@@ -109,19 +109,21 @@ test.describe('terminal 7session', ()  => {
     })
 
     test('disengage and reconnect', async() => {
-        await page.screenshot({ path: `/result/second.png` })
         await page.evaluate(async() => {
+            const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
             const gate = window.terminal7.activeG
             gate.activeW.activeP.d.send("seq 10; sleep 1; seq 10 100\n")
+            sleep(300)
             await gate.disengage()
-            console.log(window.terminal7.activeG.name)
+            console.log(window.terminal7.activeG, gate.name)
         })
-        await sleep(1100)
+        await page.screenshot({ path: `/result/second.png` })
+        await sleep(1000)
         await page.evaluate(async() => {
-            const gate = window.terminal7.activeG
-            gate.connect()
+            window.terminal7.activeG.connect()
         })
         // connectGate()
+        await sleep(500)
         await expect(page.locator('.pane')).toHaveCount(1)
         await page.screenshot({ path: `/result/third.png` })
         const lines = await page.evaluate(() =>

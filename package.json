@@ -57,7 +57,7 @@
     "stage": "vite build --sourcemap && vite preview",
     "run": "npm run build && cap run ios",
     "test": "vitest",
-    "build": "vite build --sourcemap",
+    "build": "vite build -c vite.dev.config.js",
     "clean": "rm -rf dist ios/App/App/public/*",
     "postinstall": "cd ./node_modules/xterm && yarn install && npm run package",
     "qa": "bash ./qa/qa.bash",

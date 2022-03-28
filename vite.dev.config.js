@@ -8,6 +8,11 @@ export default defineConfig({
       globals: true,
       exclude: [ ...configDefaults.exclude, "qa/*/*" ],
   },
+  build: {
+      sourcemap: true,
+      minify: false
+    },
+
   plugins: [
     VitePWA({
       strategies: 'injectManifest',

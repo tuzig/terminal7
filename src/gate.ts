@@ -264,11 +264,10 @@ export class Gate {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
             this.activeW = this.addWindow("", true)
-        /* } else if (this.windows.length > 0) {
-            // if there's a marker it's a reconnect, re-open all gate's dcs
+        } else if (this.windows.length > 0) {
             // TODO: validate the current layout is like the state
             this.t7.log("Restoring with marker, opening channel")
-            this.panes().forEach(p => p.openChannel()) */
+            this.panes().forEach(p => p.openChannel(0, p.d.id))
         } else {
             const oldPanes = this.panes(),
                   tempPanes = document.createElement('div')

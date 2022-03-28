@@ -53,6 +53,7 @@ export class PeerbookSession extends BaseSession {
     lastMsgId: number
     t7: object
     marker: number
+    disconnecting: boolean
     constructor(fp: string) {
         super()
         this.fp = fp
@@ -63,9 +64,23 @@ export class PeerbookSession extends BaseSession {
         this.lastMsgId = 0
         this.t7 = window.terminal7
         this.marker = -1
+        this.disconnecting = false
+    }
+    /*
+     * disengagePC silently removes all event handler from the peer connections
+     */
+    disengagePC() {
+        if (this.pc != null) {
+            this.pc.onconnectionstatechange = undefined
+            this.pc.onmessage = undefined
+            this.pc.onnegotiationneeded = undefined
+            this.pc = null
+        }
     }
     async connect() {
         console.log("in connect")
+        this.disconnecting = false
+        this.disengagePC()
         if ((!this.t7.iceServers) && (!this.t7.conf.peerbook.insecure)) {
             try {
                 this.t7.iceServers = await this.getIceServers()
@@ -148,7 +163,7 @@ export class PeerbookSession extends BaseSession {
         dc.onmessage = m => channel.onMessage(m)
         dc.onclose = m => {
             // ignore close events when disconnecting
-            if (this.marker == -1)
+            if (!this.disconnecting)
                 channel.onClose(m)
         }
     }
@@ -328,6 +343,7 @@ export class PeerbookSession extends BaseSession {
         )
     }
     disconnect(): Promise<void> {
+        this.disconnecting = true
         return new Promise((resolve, reject) => {
             if (!this.pc) {
                 resolve()
@@ -339,7 +355,6 @@ export class PeerbookSession extends BaseSession {
                 }, (payload) => {
                 this.marker = payload
                 this.t7.log("got a marker", this.marker)
-                this.pc.close()
                 resolve()
             }, reject)
         })
