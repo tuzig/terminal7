@@ -125,13 +125,12 @@ export class Window {
         const textbox = this.gate.e.querySelector("#name-input")
         textbox.value = e.innerHTML
         textbox.focus()
-        const that = this
 
-        var handler = function (event) {
+        const handler = (event) => {
             if (event.keyCode == 13 || event.type != "keyup") {
                 console.log(event)
-                that.gate.sendState()
-                that.activeP.focus()
+                this.gate.sendState()
+                this.activeP.focus()
                 se.classList.add("hidden")
                 this.t7.run(() => {
                     e.w.name = event.target.value
