@@ -126,7 +126,7 @@ export class Pane extends Cell {
             resizeObserver.observe(this.e);
             this.fit(pane => { 
                if (pane != null)
-                  pane.openChannel(parentID, channelID)
+                  pane.openChannel({parent: parentID, id: channelID})
                   .catch(() => 
                       this.gate.notify("Failed to open communication channel"))
             })
@@ -247,21 +247,21 @@ export class Pane extends Cell {
         if (!reconnect)
             this.gate.sendState()
     }
-    openChannel(parentID, channelID) {
+    openChannel(opts) {
         return new Promise((resolve, reject) => {
             if (!this.gate.session) {
                 reject("Session is not opened")
                 return
             }
             this.buffer = []
-            if (channelID) {
-                this.gate.session.openChannel(channelID)
+            if (opts.id) {
+                this.gate.session.openChannel(opts.id)
                 .then((channel, id) =>this.onChannelConnected(channel, id))
                 .then(resolve)
                 .catch(m => console.log(m))
             } else {
                 this.gate.session.openChannel(
-                    this.t7.conf.exec.shell, parentID, this.t.cols, this.t.rows)
+                    this.t7.conf.exec.shell, opts.parent, this.t.cols, this.t.rows)
                 .then((channel, id) =>this.onChannelConnected(channel, id))
                 .then(resolve)
                 .catch(m => console.log(m))

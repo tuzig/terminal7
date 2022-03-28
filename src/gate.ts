@@ -267,7 +267,7 @@ export class Gate {
         } else if (this.windows.length > 0) {
             // TODO: validate the current layout is like the state
             this.t7.log("Restoring with marker, opening channel")
-            this.panes().forEach(p => p.openChannel(0, p.d.id))
+            this.panes().forEach(p => p.openChannel({id: p.d.id}))
         } else {
             const oldPanes = this.panes(),
                   tempPanes = document.createElement('div')
@@ -474,7 +474,7 @@ export class Gate {
             this.marker = 0
             this.panes().forEach(p => {
                 p.d.close()
-                p.openChannel()
+                p.openChannel({id: p.d.id})
             })
         })
         e.querySelector(".all").addEventListener('click', _ => {
