@@ -218,7 +218,6 @@ export class Terminal7 {
         })
         resetCert.querySelector(".close").addEventListener('click',  ev =>
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
-        this.goHome()
         document.addEventListener("keydown", ev => {
             if (ev.key == "Meta") {
                 this.metaPressStart = Date.now()
@@ -322,6 +321,18 @@ export class Terminal7 {
         else {
             this.onBoard()
             this.focus()
+        }
+        Storage.get({key: "active_gate"}).then(v => {
+            if (v) {
+                const props = JSON.parse(v)
+                this.activeG = this.gates.find(gate => gate.name == props.name)
+                for (var [key, value] of props.entries())
+                    this.activeG[key] = value
+                this.activeG.connect()
+                this.activeG.focus()
+            }
+            else 
+                this.goHome()
         }
     }
     async setPeerbook() {
@@ -446,7 +457,7 @@ peer_name = "${peername}"\n`
         this.e.addEventListener("pointermove", ev => this.onPointerMove(ev))
     }
     /*
-     * Terminal7.addGate is used to add a gate to a host.
+     * Terminal7.addGate is used to add a new gate.
      * the function ensures the gate has a unique name adds the gate to
      * the `gates` property, stores and returns it.
      */
@@ -501,6 +512,7 @@ peer_name = "${peername}"\n`
         this.focus()
     }
     goHome() {
+        Storage.remove({key: "active_gate"}) 
         let s = document.getElementById('home-button'),
             h = document.getElementById('home')
         s.classList.add('on')
