@@ -107,7 +107,6 @@ test.describe('terminal 7session', ()  => {
         expect(exitState).toEqual("success")
         await expect(page.locator('.pane')).toHaveCount(1)
     })
-
     test('disengage and reconnect', async() => {
         await page.evaluate(async() => {
             const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
@@ -130,4 +129,16 @@ test.describe('terminal 7session', ()  => {
            window.terminal7.activeG.activeW.activeP.t.buffer.active.length)
         expect(lines).toEqual(103)
     })
+    test('after disengage & reconnect, a a pane can be close', async() => {
+        const exitState = await page.evaluate(() => {
+            const pane = window.terminal7.activeG.activeW.activeP
+            try {
+                pane.d.send("exit\n")
+                return "success"
+            } catch(e) { return e.toString() }
+        })
+        expect(exitState).toEqual("success")
+        await expect(page.locator('.pane')).toHaveCount(0)
+    })
+
 })
