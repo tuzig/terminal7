@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- iPadOS 15.4 fixed the rendering bug, T7 is back to fast canvas rendering
+
 ### Changed
 
 - Using vite & vitest to package and test
