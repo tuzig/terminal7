@@ -8,11 +8,15 @@ export class PeerbookChannel extends BaseChannel {
     dataChannel: RTCDataChannel
     session: PeerbookSession
     id: number
-    constructor(session: PeerbookSession, id: number, dc: RTCDataChannel) {
+    createdOn: number
+    constructor(session: PeerbookSession,
+                id: number,
+                dc: RTCDataChannel) {
         super()
         this.id = id
         this.session = session
         this.dataChannel = dc
+        this.createdOn = session.lastMarker
     }
     get readyState(): string {
         if (this.dataChannel)
@@ -52,8 +56,7 @@ export class PeerbookSession extends BaseSession {
     pc: RTCPeerConnection
     lastMsgId: number
     t7: object
-    marker: number
-    disconnecting: boolean
+    lastMarker: number
     constructor(fp: string) {
         super()
         this.fp = fp
@@ -63,8 +66,7 @@ export class PeerbookSession extends BaseSession {
         this.msgHandlers = new Map()
         this.lastMsgId = 0
         this.t7 = window.terminal7
-        this.marker = -1
-        this.disconnecting = false
+        this.lastMarker = -1
     }
     /*
      * disengagePC silently removes all event handler from the peer connections
@@ -79,7 +81,6 @@ export class PeerbookSession extends BaseSession {
     }
     async connect() {
         console.log("in connect")
-        this.disconnecting = false
         this.disengagePC()
         if ((!this.t7.iceServers) && (!this.t7.conf.peerbook.insecure)) {
             try {
@@ -94,18 +95,17 @@ export class PeerbookSession extends BaseSession {
             certificates: this.t7.certificates})
         this.pc.onconnectionstatechange = () => {
             const state = this.pc.connectionState
-            console.log("new connection state", state, this.marker)
-            if ((state == "connected") && (this.marker != -1)) {
+            console.log("new connection state", state, this.lastMarker)
+            if ((state == "connected") && (this.lastMarker != -1)) {
                 this.sendCTRLMsg({
                     type: "restore",
-                    args: { marker: this.marker }},
+                    args: { marker: this.lastMarker }},
                 () => {
                     this.onStateChange(state)
                 }, error => {
                     this.t7.notify("Failed to restore from marker")
                     this.onStateChange("failed")
                 })
-                this.marker = -1
             } else 
                 this.onStateChange(state)
         }
@@ -160,11 +160,17 @@ export class PeerbookSession extends BaseSession {
         resolve(channel)
         // callbacks are set after the resolve as that's 
         // where caller's onMessage & onClose are set
-        dc.onmessage = m => channel.onMessage(m)
+        dc.onmessage = m => {
+            // ignore close events when an older generation channel
+            if (channel.createdOn == this.lastMarker)
+                channel.onMessage(m)
+        }
         dc.onclose = m => {
-            // ignore close events when disconnecting
-            if (!this.disconnecting)
+            if (channel.createdOn == this.lastMarker) {
+                console.log("triggering channle close event as", channel.createdOn)
                 channel.onClose(m)
+            } else
+                console.log("ognoring close event on old channel", channel.createdOn, this.lastMarker)
         }
     }
     openChannel(id: ChannelID): Promise<Channel>
@@ -343,18 +349,18 @@ export class PeerbookSession extends BaseSession {
         )
     }
     disconnect(): Promise<void> {
-        this.disconnecting = true
         return new Promise((resolve, reject) => {
             if (!this.pc) {
                 resolve()
                 return
             }
+            this.lastMarker = undefined
             this.sendCTRLMsg({
                     type: "mark",
                     args: null
                 }, (payload) => {
-                this.marker = payload
-                this.t7.log("got a marker", this.marker)
+                this.t7.log("got a marker", this.lastMarker, payload)
+                this.lastMarker = payload
                 resolve()
             }, reject)
         })
