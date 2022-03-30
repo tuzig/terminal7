@@ -166,7 +166,7 @@ export class Terminal7 {
                 this.notify(gate)
             else {
                 this.clear()
-                if (this.t7.netStatus && this.t7.netStatus.connected)
+                if (this.netStatus && this.netStatus.connected)
                     gate.connect()
             }
         })
