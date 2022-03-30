@@ -6,7 +6,7 @@ const redis = require('redis')
     const local = process.env.LOCALDEV !== undefined,
           url = local?"http://localhost:3000":"http://terminal7"
 
-test.describe('terminal 7session', ()  => {
+test.describe('terminal7 session', ()  => {
 
     const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
     const connectGate = async () => {
@@ -107,27 +107,43 @@ test.describe('terminal 7session', ()  => {
         expect(exitState).toEqual("success")
         await expect(page.locator('.pane')).toHaveCount(1)
     })
-
     test('disengage and reconnect', async() => {
         await page.evaluate(async() => {
-            const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
             const gate = window.terminal7.activeG
             gate.activeW.activeP.d.send("seq 10; sleep 1; seq 10 100\n")
-            sleep(300)
-            await gate.disengage()
-            console.log(window.terminal7.activeG, gate.name)
         })
+        await sleep(100)
         await page.screenshot({ path: `/result/second.png` })
+        await page.evaluate(async() => {
+            const gate = window.terminal7.activeG
+            await gate.disengage()
+            console.log(">>> after disengage:", window.terminal7.activeG, gate.name)
+        })
         await sleep(1000)
+        await page.screenshot({ path: `/result/third.png` })
         await page.evaluate(async() => {
             window.terminal7.activeG.connect()
         })
         // connectGate()
-        await sleep(500)
         await expect(page.locator('.pane')).toHaveCount(1)
-        await page.screenshot({ path: `/result/third.png` })
+        await sleep(500)
         const lines = await page.evaluate(() =>
            window.terminal7.activeG.activeW.activeP.t.buffer.active.length)
+        await page.screenshot({ path: `/result/fourth.png` })
         expect(lines).toEqual(103)
+        // expect(lines).toBeGreaterThan(100)
     })
+    test('after disengage & reconnect, a a pane can be close', async() => {
+        await page.screenshot({ path: `/result/fifth.png` })
+        const exitState = await page.evaluate(() => {
+            const pane = window.terminal7.activeG.activeW.activeP
+            try {
+                pane.d.send("exit\n")
+                return "success"
+            } catch(e) { return e.toString() }
+        })
+        expect(exitState).toEqual("success")
+        await expect(page.locator('.pane')).toHaveCount(0)
+    })
+
 })
