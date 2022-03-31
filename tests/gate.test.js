@@ -110,7 +110,7 @@ describe("gate", () => {
         expect(typeof g).toEqual("object")
         g.open(e)
         g.connect()
-        await sleep(200)
+        await sleep(100)
         expect(g.boarding).to.equal(true)
         expect(g.session.connect).toHaveBeenCalledTimes(1)
         expect(g.session.openChannel).toHaveBeenCalledTimes(1)

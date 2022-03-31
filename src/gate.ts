@@ -346,11 +346,22 @@ export class Gate {
     sendState() {
         if (this.sendStateTask != null)
             return
+
+        const dump = this.dump()
+        var lastState = {windows: dump.windows}
+
+        if (this.fp)
+            lastState.fp = this.fp
+        else 
+            lastState.name = this.name
+        Storage.set({key: "last_state",
+                     value: JSON.stringify(lastState)})
+
         // send the state only when all panes have a channel
         if (this.session && (this.panes().every(p => p.d != null)))
            this.sendStateTask = setTimeout(() => {
                this.sendStateTask = null
-               this.session.setPayload(this.dump()).then(_ => {
+               this.session.setPayload(dump).then(_ => {
                     if ((this.windows.length == 0) && (this.pc)) {
                         console.log("Closing gate after updating to empty state")
                         this.stopBoarding()

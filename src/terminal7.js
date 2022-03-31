@@ -1,4 +1,5 @@
 /*! Terminal 7
+
  *  This file contains the code that makes terminal 7 - a webrtc based
  *  touchable terminal multiplexer.
  *
@@ -61,7 +62,7 @@ export class Terminal7 {
         settings = settings || {}
         this.gates = []
         // peerbook gats are a map of fingerprints to gates
-        this.PBGates = {}
+        this.PBGates = new Map()
         this.cells = []
         this.timeouts = []
         this.activeG = null
@@ -218,7 +219,12 @@ export class Terminal7 {
         })
         resetCert.querySelector(".close").addEventListener('click',  ev =>
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
-        this.goHome()
+
+        this.restoreState().then(restored => {
+            if (!restored)
+                this.goHome()
+        })
+
         document.addEventListener("keydown", ev => {
             if (ev.key == "Meta") {
                 this.metaPressStart = Date.now()
@@ -301,16 +307,15 @@ export class Terminal7 {
                 // modal.querySelector("form").reset()
                 document.getElementById("peerbook-modal").classList.remove("hidden")
             })
-
-         // if we're not in an app
-         if (!((window.matchMedia('(display-mode: standalone)').matches)
-             || (window.matchMedia('(display-mode: fullscreen)').matches)
-             || window.navigator.standalone
-             || (Capacitor.getPlatform() != "web")
-             || document.referrer.includes('android-app://')))
+        if (!((window.matchMedia('(display-mode: standalone)').matches)
+            || (window.matchMedia('(display-mode: fullscreen)').matches)
+            || window.navigator.standalone
+            || (Capacitor.getPlatform() != "web")
+            || document.referrer.includes('android-app://')))
             if (navigator.getInstalledRelatedApps) 
                 navigator.getInstalledRelatedApps().then(relatedApps => {
                     if (relatedApps.length == 0) {
+                        // case we're not in an app
                         this.showGreetings()
                     }
                     else 
@@ -323,6 +328,40 @@ export class Terminal7 {
             this.onBoard()
             this.focus()
         }
+    }
+    restoreState() {
+        return new Promise((resolve, reject) => {
+            Storage.get({key: "last_state"}).then(({ value }) => {
+                const state = JSON.parse(value)
+                let gate
+
+                if (!value) {
+                    resolve(false)
+                    return
+                }
+                if (state.name)
+                    gate = this.gates.find(gate => gate.name == state.name)
+                else if (state.fp) {
+                    if (this.PBGates.size == 0) {
+                        this.pendingState = state
+                        this.Notify("Restoring gate")
+                        return
+                    } else
+                        gate = this.PBGates.get(state.fp)
+                } 
+
+                if (!gate) {
+                    console.log("Invalid restore state. Starting fresh", state)
+                    this.notify("Invalid restore state. Starting fresh")
+                    resolve(false)
+                } else {
+                    // gate.setLayout(state)
+                    gate.connect()
+                    gate.focus()
+                    resolve(true)
+                }
+            })
+        })
     }
     async setPeerbook() {
         var e   = document.getElementById("peerbook-modal"),
@@ -381,6 +420,10 @@ peer_name = "${peername}"\n`
                     reject(new Error(`verification failed`))
                 }).then(m => {
                     this.onPBMessage(m)
+                    if (this.pendingState) {
+                        this.restoreState()
+                        delete this.pendingState 
+                    }
                     resolve()
                 }).catch(e => { reject(e) })
             }).catch(e => console.log("Failed to get FP" + e))
@@ -446,7 +489,7 @@ peer_name = "${peername}"\n`
         this.e.addEventListener("pointermove", ev => this.onPointerMove(ev))
     }
     /*
-     * Terminal7.addGate is used to add a gate to a host.
+     * Terminal7.addGate is used to add a new gate.
      * the function ensures the gate has a unique name adds the gate to
      * the `gates` property, stores and returns it.
      */
@@ -501,6 +544,7 @@ peer_name = "${peername}"\n`
         this.focus()
     }
     goHome() {
+        Storage.remove({key: "last_state"}) 
         let s = document.getElementById('home-button'),
             h = document.getElementById('home')
         s.classList.add('on')
@@ -652,9 +696,9 @@ peer_name = "${peername}"\n`
         this.timeouts.forEach(t => window.clearTimeout(t))
         this.timeouts = []
         this.gates.forEach(g => g.updateID = null)
-        if (this.PBGates) 
-            Object.keys(this.PBGates).forEach(
-                k => this.PBGates[k].updateID = null)
+        if (this.PBGates.size > 0) 
+            this.PBGates.forEach(
+                (fp, g) => g.updateID = null)
     }
     /*
      * disengage gets each active gate to disengae
@@ -668,9 +712,8 @@ peer_name = "${peername}"\n`
                     g.disengage().then(_ => count--)
                 }
             })
-            if (this.PBGates)
-                Object.keys(this.PBGates).forEach(k => {
-                    var g = this.PBGates[k]
+            if (this.PBGates.size > 0)
+                this.PBGates.forEach((fp, g) => {
                     if (g.boarding) {
                         count++
                         g.disengage().then(() => count--)
@@ -914,7 +957,7 @@ peer_name = "${peername}"\n`
                 this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
             return
         }
-        var g = this.PBGates[m.source_fp]
+        var g = this.PBGates.get(m.source_fp)
         if (typeof g != "object") {
             this.log("received bad gate", m)
             return
@@ -1147,7 +1190,7 @@ peer_name = "${peername}"\n`
     }
     syncPBPeers(peers) {
         peers.forEach(p => {
-            var g = this.PBGates[p.fp]
+            var g = this.PBGates.get(p.fp)
             if (g != undefined) {
                 g.online = p.online
                 g.name = p.name
@@ -1155,7 +1198,7 @@ peer_name = "${peername}"\n`
                 g.updateNameE()
             } else if (p.kind == "webexec") {
                 let g = new Gate(p)
-                this.PBGates[p.fp] = g
+                this.PBGates.set(p.fp, g)
                 g.open(this.e)
             }
         })
