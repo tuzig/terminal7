@@ -13,6 +13,8 @@ import { Clipboard } from '@capacitor/clipboard'
 import { Storage } from '@capacitor/storage'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
+import { WebglAddon } from 'xterm-addon-webgl'
+
 
 import XtermWebfont from 'xterm-webfont'
 
@@ -76,9 +78,16 @@ export class Pane extends Cell {
         // the canvas gets the touch event and the nadler needs to get back here
         this.t.loadAddon(this.fitAddon)
         this.t.loadAddon(this.searchAddon)
+
         this.createDividers()
         this.t.onSelectionChange(() => this.selectionChanged())
         this.t.loadWebfontAndOpen(con).then(_ => {
+            const webGLAddon = new WebglAddon()
+            webGLAddon.onContextLoss(e => {
+                console.log("lost context")
+                  webGLAddon.dispose()
+            })
+            this.t.loadAddon(webGLAddon)
             this.t.textarea.tabIndex = -1
             this.t.attachCustomKeyEventHandler(ev => {
                 var toDo = true

@@ -36,15 +36,16 @@
     "xterm": "git+https://github.com/tuzig/xterm.js.git#semver:<5.0",
     "xterm-addon-fit": "^0.3.0",
     "xterm-addon-search": "^0.7.0",
+    "xterm-addon-webgl": "^0.11.4",
     "xterm-webfont": "^2.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.20.1",
     "@typescript-eslint/eslint-plugin": "<6",
     "@typescript-eslint/parser": "<6",
     "eslint": "<9",
     "eslint-plugin-mocha": "^10.0.3",
     "jsdom": "^19.0.0",
-    "@playwright/test": "^1.20.1",
     "typescript": "<5",
     "vite": "^2.8.5",
     "vite-plugin-pwa": "^0.11.13",
