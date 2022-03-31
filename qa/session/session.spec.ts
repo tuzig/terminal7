@@ -39,6 +39,7 @@ test.describe('terminal7 session', ()  => {
         // add terminal7 initializtion and globblas
         await waitPort({host:'webexec', port:7777})
         const playButton = page.locator('.play-button')
+        await page.screenshot({ path: `/result/zero.png` })
         await expect(playButton).toBeVisible()
         await playButton.click()
 
@@ -65,7 +66,6 @@ test.describe('terminal7 session', ()  => {
         await expect(help).toBeVisible()
         await help.click()
         await expect(help).toBeHidden()
-        await page.screenshot({ path: `/result/zero.png` })
     })
     test('pane is visible and session is open', async () => {
         await expect(page.locator('.pane')).toHaveCount(1)
@@ -97,7 +97,7 @@ test.describe('terminal7 session', ()  => {
     })
     test('a pane can be close', async() => {
         const exitState = await page.evaluate(() => {
-            const gate = Object.values(window.terminal7.PBGates)[0],
+            const gate = window.terminal7.PBGates.values()[0],
                   pane = gate.activeW.activeP
             try {
                 pane.d.send("exit\n")
@@ -144,6 +144,16 @@ test.describe('terminal7 session', ()  => {
         })
         expect(exitState).toEqual("success")
         await expect(page.locator('.pane')).toHaveCount(0)
+    })
+    test('start a fresh connection, reset browser and be back at the gate', async() => {
+        connectGate()
+        await expect(page.locator('.pane')).toHaveCount(1)
+        await page.screenshot({ path: `/result/6.png` })
+        await page.reload({waitUntil: "networkidle"})
+        await page.screenshot({ path: `/result/7.png` })
+        await expect(page.locator('.pane')).toHaveCount(1)
+        const inGate = await page.evaluate(() => window.terminal7.activeG != null)
+        expect(inGate).toBeTruthy()
     })
 
 })
