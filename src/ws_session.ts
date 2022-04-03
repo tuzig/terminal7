@@ -1,5 +1,6 @@
 import { BaseSession, BaseChannel, Channel, ChannelID }  from './session' 
 import { PeerbookSession,  PeerbookChannel }  from './peerbook_session' 
+import { Clipboard } from '@capacitor/clipboard'
 
 // SSHSession is an implmentation of a real time session over ssh
 export class WSSession extends PeerbookSession {
@@ -108,7 +109,7 @@ export class WSSession extends PeerbookSession {
                 let sd = new RTCSessionDescription(answer)
                 this.pc.setRemoteDescription(sd)
                 .catch (e => {
-                    this.notify(`Failed to set remote description: ${e}`)
+                    this.t7.notify(`Failed to set remote description: ${e}`)
                     this.stopBoarding()
                     this.setIndicatorColor(FAILED_COLOR)
                     this.t7.onDisconnect(this)
@@ -120,5 +121,35 @@ export class WSSession extends PeerbookSession {
                     this.t7.onNoSignal(this, error)
             })
         )
+    }
+    copyFingerprint() {
+        let ct = document.getElementById("copy-fingerprint"),
+            addr = this.addr.substr(0, this.addr.indexOf(":"))
+        this.t7.getFingerprint().then(fp =>
+                ct.querySelector('[name="fingerprint"]').value = fp)
+        document.getElementById("ct-address").innerHTML = addr
+        document.getElementById("ct-name").innerHTML = this.name
+        ct.classList.remove("hidden")
+        ct.querySelector(".copy").addEventListener('click', ev => {
+            ct.classList.add("hidden")
+            Clipboard.write(
+                {string: ct.querySelector('[name="fingerprint"]').value})
+            this.t7.notify("Fingerprint copied to the clipboard")
+        })
+        ct.querySelector("form").addEventListener('submit', ev => {
+            ev.preventDefault()
+            this.t7.getFingerprint().then(fp =>
+                this.t7.ssh(ct,  this,
+                    `cat <<<"${fp}" >> ~/.webexec/authorized_tokens`,
+                    _ => {
+                        ct.classList.add("hidden")
+                        this.connect()
+                    })
+            )
+        })
+ 
+        ct.querySelector(".close").addEventListener('click',  ev =>  {
+            ct.classList.add("hidden")
+        })
     }
 }

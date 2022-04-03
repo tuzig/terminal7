@@ -12,7 +12,6 @@ import { WSSession } from './ws_session'
 import { PeerbookSession } from './peerbook_session'
 
 import { SSHPlugin } from 'capacitor-ssh-plugin'
-import { Clipboard } from '@capacitor/clipboard'
 import { Storage } from '@capacitor/storage'
 
 /*
@@ -364,36 +363,6 @@ export class Gate {
         //enable search
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.remove("off"))
-    }
-    copyFingerprint() {
-        let ct = document.getElementById("copy-fingerprint"),
-            addr = this.addr.substr(0, this.addr.indexOf(":"))
-        this.t7.getFingerprint().then(fp =>
-                ct.querySelector('[name="fingerprint"]').value = fp)
-        document.getElementById("ct-address").innerHTML = addr
-        document.getElementById("ct-name").innerHTML = this.name
-        ct.classList.remove("hidden")
-        ct.querySelector(".copy").addEventListener('click', ev => {
-            ct.classList.add("hidden")
-            Clipboard.write(
-                {string: ct.querySelector('[name="fingerprint"]').value})
-            this.notify("Fingerprint copied to the clipboard")
-        })
-        ct.querySelector("form").addEventListener('submit', ev => {
-            ev.preventDefault()
-            this.t7.getFingerprint().then(fp =>
-                this.t7.ssh(ct,  this,
-                    `cat <<<"${fp}" >> ~/.webexec/authorized_tokens`,
-                    _ => {
-                        ct.classList.add("hidden")
-                        this.connect()
-                    })
-            )
-        })
- 
-        ct.querySelector(".close").addEventListener('click',  ev =>  {
-            ct.classList.add("hidden")
-        })
     }
     goBack() {
         var w = this.breadcrumbs.pop()
