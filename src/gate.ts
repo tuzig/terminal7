@@ -154,7 +154,7 @@ export class Gate {
      */
     onSessionState(state: RTState) {
         this.t7.log(`updating ${this.name} state to ${state}`)
-        this.notify("connection state: " + state)
+        this.notify("State: " + state)
         if (state == "connected") {
             this.t7.logDisplay(false)
             if (this.watchDog != null) {
@@ -335,8 +335,7 @@ export class Gate {
 
         if (this.fp)
             lastState.fp = this.fp
-        else 
-            lastState.name = this.name
+        lastState.name = this.name
         Storage.set({key: "last_state",
                      value: JSON.stringify(lastState)})
     }

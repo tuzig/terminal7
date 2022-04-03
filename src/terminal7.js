@@ -341,11 +341,11 @@ export class Terminal7 {
                     if (fp) {
                         gate = this.PBGates.get(fp)
                         if (!gate) {
-                            gate = new Gate({fp: fp})
+                            gate = new Gate({fp: fp, name: name})
                             this.PBGates.set(fp, gate)
                             gate.open(this.e)
                         }
-                    } else if (name)
+                    } else
                         gate = this.gates.find(gate => gate.name == name)
 
                     if (!gate) {
