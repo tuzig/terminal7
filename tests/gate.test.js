@@ -5,10 +5,10 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
+import { describe} from 'vitest'
 import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
 import { Terminal7Mock, sleep } from './infra.ts'
-import { assert } from "chai"
 import { Storage } from '@capacitor/storage'
 
 vi.mock('xterm')
@@ -116,6 +116,7 @@ describe("gate", () => {
         expect(g.session.openChannel).toHaveBeenCalledTimes(1)
         expect(g.session.openChannel.mock.calls[0]).toEqual(["bash", null, 80, 24])
         let panes = g.panes()
+        await sleep(100)
         expect(panes.length).to.equal(1)
         expect(panes[0].t).not.toBeNull()
         expect(panes[0].d).not.toBeNull()

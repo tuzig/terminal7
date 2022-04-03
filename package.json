@@ -44,7 +44,6 @@
     "@typescript-eslint/eslint-plugin": "<6",
     "@typescript-eslint/parser": "<6",
     "eslint": "<9",
-    "eslint-plugin-mocha": "^10.0.3",
     "jsdom": "^19.0.0",
     "typescript": "<5",
     "vite": "^2.8.5",
@@ -78,26 +77,15 @@
   "bugs": {
     "url": "https://github.com/tuzig/terminal7/issues"
   },
-  "mocha": {
-    "watch-files": [
-      "src/*.js",
-      "test/*.js"
-    ]
-  },
   "eslintConfig": {
     "root": true,
     "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint/eslint-plugin",
-      "mocha"
-    ],
+    "plugins": [ "@typescript-eslint/eslint-plugin" ],
     "extends": [
       "eslint:recommended",
-      "plugin:@typescript-eslint/recommended",
-      "plugin:mocha/recommended"
+      "plugin:@typescript-eslint/recommended"
     ],
     "env": {
-      "mocha": true,
       "browser": true
     }
   }

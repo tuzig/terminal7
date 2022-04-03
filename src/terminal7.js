@@ -1,4 +1,4 @@
-/*! Terminal 7
+/* Terminal 7
 
  *  This file contains the code that makes terminal 7 - a webrtc based
  *  touchable terminal multiplexer.
@@ -220,10 +220,7 @@ export class Terminal7 {
         resetCert.querySelector(".close").addEventListener('click',  ev =>
             ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
 
-        this.restoreState().then(restored => {
-            if (!restored)
-                this.goHome()
-        })
+
 
         document.addEventListener("keydown", ev => {
             if (ev.key == "Meta") {
@@ -266,7 +263,7 @@ export class Terminal7 {
                     // reconnect to the active gate
                     terminal7.log("Active ☀️")
                     this.clearTimeouts()
-                    Network.getStatus().then(s => this.updateNetworkStatus(s))
+                    Network.getStatus().then(s => this.updateNetworkStatus(state))
                 }
             })
         }
@@ -307,58 +304,61 @@ export class Terminal7 {
                 // modal.querySelector("form").reset()
                 document.getElementById("peerbook-modal").classList.remove("hidden")
             })
-        if (!((window.matchMedia('(display-mode: standalone)').matches)
-            || (window.matchMedia('(display-mode: fullscreen)').matches)
-            || window.navigator.standalone
-            || (Capacitor.getPlatform() != "web")
-            || document.referrer.includes('android-app://')))
-            if (navigator.getInstalledRelatedApps) 
-                navigator.getInstalledRelatedApps().then(relatedApps => {
-                    if (relatedApps.length == 0) {
-                        // case we're not in an app
-                        this.showGreetings()
-                    }
-                    else 
-                        this.notify("PWA installed, better use it")
-                })
+        this.restoreState().catch(() => {
+            // no gate restored going home and on boarding
+            this.goHome()
+            if (!((window.matchMedia('(display-mode: standalone)').matches)
+                || (window.matchMedia('(display-mode: fullscreen)').matches)
+                || window.navigator.standalone
+                || (Capacitor.getPlatform() != "web")
+                || document.referrer.includes('android-app://')))
+                if (navigator.getInstalledRelatedApps) 
+                    navigator.getInstalledRelatedApps().then(relatedApps => {
+                        if (relatedApps.length == 0)
+                            // case we're not in an app
+                            this.showGreetings()
+                        else
+                            this.notify("PWA installed, better use it")
+                    })
+                else
+                   this.showGreetings()
             else {
-               this.showGreetings()
+                this.onBoard()
             }
-        else {
-            this.onBoard()
-            this.focus()
-        }
+        })
     }
     restoreState() {
         return new Promise((resolve, reject) => {
             Storage.get({key: "last_state"}).then(({ value }) => {
-                const state = JSON.parse(value)
-                let gate
+                if (!value)
+                    reject()
+                else {
+                    const state = JSON.parse(value),
+                          fp = state.fp,
+                          name = state.name
+                    let gate
 
-                if (!value) {
-                    resolve(false)
-                    return
-                }
-                if (state.name)
-                    gate = this.gates.find(gate => gate.name == state.name)
-                else if (state.fp) {
-                    if (this.PBGates.size == 0) {
-                        this.pendingState = state
-                        this.Notify("Restoring gate")
-                        return
-                    } else
-                        gate = this.PBGates.get(state.fp)
-                } 
+                    if (fp) {
+                        gate = this.PBGates.get(fp)
+                        if (!gate) {
+                            gate = new Gate({fp: fp})
+                            this.PBGates.set(fp, gate)
+                            gate.open(this.e)
+                        }
+                    } else if (name)
+                        gate = this.gates.find(gate => gate.name == name)
 
-                if (!gate) {
-                    console.log("Invalid restore state. Starting fresh", state)
-                    this.notify("Invalid restore state. Starting fresh")
-                    resolve(false)
-                } else {
-                    // gate.setLayout(state)
-                    gate.connect()
-                    gate.focus()
-                    resolve(true)
+                    if (!gate) {
+                        console.log("Invalid restore state. Starting fresh", state)
+                        this.notify("Invalid restore state. Starting fresh")
+                        reject()
+                    } else {
+                        this.notify("Restoring last gate")
+                        this.getFingerprint().then(() => {
+                            gate.connect()
+                            resolve()
+                        })
+                    }
                 }
             })
         })
@@ -382,7 +382,7 @@ peer_name = "${peername}"\n`
     }
     pbVerify() {
         return new Promise((resolve, reject) => {
-            var email = this.conf.peerbook.email,
+           var email = this.conf.peerbook.email,
                 insecure = this.conf.peerbook.insecure,
                 host = this.conf.net.peerbook
 
@@ -390,6 +390,7 @@ peer_name = "${peername}"\n`
                 resolve()
                 return
             }
+            this.notify("\uD83D\uDCD6 Refreshing")
 
             this.getFingerprint().then(fp => {
                 const schema = insecure?"http":"https",
@@ -420,11 +421,8 @@ peer_name = "${peername}"\n`
                     reject(new Error(`verification failed`))
                 }).then(m => {
                     this.onPBMessage(m)
-                    if (this.pendingState) {
-                        this.restoreState()
-                        delete this.pendingState 
-                    }
                     resolve()
+
                 }).catch(e => { reject(e) })
             }).catch(e => console.log("Failed to get FP" + e))
         })
@@ -695,10 +693,6 @@ peer_name = "${peername}"\n`
     clearTimeouts() {
         this.timeouts.forEach(t => window.clearTimeout(t))
         this.timeouts = []
-        this.gates.forEach(g => g.updateID = null)
-        if (this.PBGates.size > 0) 
-            this.PBGates.forEach(
-                (fp, g) => g.updateID = null)
     }
     /*
      * disengage gets each active gate to disengae
@@ -709,14 +703,20 @@ peer_name = "${peername}"\n`
             this.gates.forEach(g => {
                 if (g.boarding) {
                     count++
-                    g.disengage().then(_ => count--)
+                    g.disengage().then(() => {
+                        g.boarding = false
+                        count--
+                    })
                 }
             })
             if (this.PBGates.size > 0)
                 this.PBGates.forEach((fp, g) => {
                     if (g.boarding) {
                         count++
-                        g.disengage().then(() => count--)
+                        g.disengage().then(() => {
+                            g.boarding = false
+                            count--
+                        })
                     }
                 })
             if (this.ws != null) {
@@ -739,8 +739,8 @@ peer_name = "${peername}"\n`
     updateNetworkStatus (status) {
         let off = document.getElementById("offline").classList
         this.netStatus = status
-        this.log(`updateNetwrokStatus: ${status.connected}`)
-        if (status.connected) {
+        this.log(`updateNetworkStatus: ${status.connected}`)
+        if (status.connected || (status.connected === undefined)) {
             off.add("hidden")
             if (this.activeG) {
                 this.activeG.connect()
@@ -755,14 +755,15 @@ peer_name = "${peername}"\n`
     }
     loadConf(conf) {
         this.conf = conf
+        this.conf.exec.shell = this.conf.exec.shell || "*"
         this.conf.ui = this.conf.ui || {}
-        this.conf.net = this.conf.net || {}
         this.conf.ui.quickest_press = this.conf.ui.quickest_press || 1000
         this.conf.ui.max_tabs = this.conf.ui.max_tabs || 3
         this.conf.ui.leader = this.conf.ui.leader || "a"
         this.conf.ui.cutMinSpeed = this.conf.ui.cut_min_speed || 2.2
         this.conf.ui.cutMinDistance = this.conf.ui.cut_min_distance || 50
         this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1
+        this.conf.net = this.conf.net || {}
         this.conf.net.iceServer = this.conf.net.ice_server ||
             "stun:stun2.l.google.com:19302"
         this.conf.net.peerbook = this.conf.net.peerbook ||
@@ -1202,6 +1203,5 @@ peer_name = "${peername}"\n`
                 g.open(this.e)
             }
         })
-        this.notify("\uD83D\uDCD6 Refreshed")
     }
 }

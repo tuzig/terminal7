@@ -94,30 +94,17 @@ export class Layout extends Cell {
      * Adds a new pane. If the gate is connected the pane will open a
      * new data channel.
      */
-    addPane(props, oldPanes) {
-        let pane = null,
-            oldPane = null
-        if (Array.isArray(oldPanes)) {
-            oldPane = oldPanes.find(p => p.d.id == props.channel_id)
-        }
-        if (oldPane) {
-            pane = oldPane
-            pane.sx = props.sx
-            pane.sy = props.sy
-            pane.xoff = props.xoff
-            pane.yoff = props.yoff
-            pane.w = this.w
-            this.e.appendChild(pane.e)
-            return
-        } else  {
-            props.id = this.t7.cells.length
-            props.w = this.w
-            pane = new Pane(props || {})
-            this.t7.cells.push(pane)
-        }
+    addPane(props) {
+        // CONGRATS! a new pane is born. props must include at keast sx & sy
+        let p = props || {}
+        p.w = this.w
+        p.gate = this.gate
+        p.layout = this
+        p.channel_id = props.channel_id
+        p.id = this.t7.cells.length
+        let pane = new Pane(p)
+        this.t7.cells.push(pane)
 
-        pane.gate = this.gate
-        pane.layout = this
         if (props.parent instanceof Cell) {
             let parent = null
             this.cells.splice(this.cells.indexOf(props.parent)+1, 0, pane)

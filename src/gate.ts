@@ -14,8 +14,6 @@ import { PeerbookSession } from './peerbook_session.ts'
 import { SSHPlugin } from 'capacitor-ssh-plugin'
 import { Clipboard } from '@capacitor/clipboard'
 import { Storage } from '@capacitor/storage'
-const ABIT    = 10,
-    FAILED_COLOR = "red"// ashort period of time, in milli
 
 /*
  * The gate class abstracts a host connection
@@ -140,11 +138,10 @@ export class Gate {
         this.e.classList.remove("hidden")
         this.e.querySelectorAll(".window").forEach(w => w.classList.add("hidden"))
         this.activeW.focus()
+        this.storeState()
     }
     // stops all communication 
     stopBoarding() {
-        // this.setIndicatorColor(FAILED_COLOR)
-        // clear all pending messages
         this.boarding = false
     }
     setIndicatorColor(color) {
@@ -178,19 +175,11 @@ export class Gate {
             })
             this.session.getPayload().then(layout => this.setLayout(layout))
         }
-        else if (state == "disconnected") {
-            // TODO: add warn class
-            this.lastDisconnect = Date.now()
-            this.setIndicatorColor(FAILED_COLOR)
-        }
         else if ((state != "new") && (state != "connecting") && this.boarding) {
             // handle connection failures
             let now = Date.now()
-            if (now - this.lastDisconnect > 100) {
                 this.stopBoarding()
                 this.t7.onDisconnect(this)
-            } else
-                this.t7.log("Ignoring a peer terminal7.cells.forEach(c => event after disconnect")
         }
     }
     /*
@@ -201,9 +190,10 @@ export class Gate {
         // if we're already boarding, just focus
         if (this.boarding) {
             console.log("already boarding")
-            if (this.windows.length == 0)
+            if (!this.windows || (this.windows.length == 0))
                 this.activeW = this.addWindow("", true)
             this.focus()
+            
             return
         }
         this.notify("Initiating connection")
@@ -260,31 +250,27 @@ export class Gate {
         this.setLayout(null)
     }
     setLayout(state: object) {
-        if ((state == null) || (state.windows.length == 0)) {
+        if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
             this.activeW = this.addWindow("", true)
         } else if (this.windows.length > 0) {
             // TODO: validate the current layout is like the state
             this.t7.log("Restoring with marker, opening channel")
-            this.panes().forEach(p => p.openChannel({id: p.d.id}))
+            this.panes().forEach(p => {
+                if (p.d)
+                    p.openChannel({id: p.d.id})
+            })
         } else {
-            const oldPanes = this.panes(),
-                  tempPanes = document.createElement('div')
-
-            oldPanes.forEach(pane => tempPanes.appendChild(pane.e))
-
             this.t7.log("Setting layout: ", state)
             this.clear()
 
             state.windows.forEach(w =>  {
                 let win = this.addWindow(w.name)
-                win.restoreLayout(w.layout, oldPanes)
                 if (w.active) 
                     this.activeW = win
+                win.restoreLayout(w.layout)
             })
-            // remove all old panes
-            tempPanes.remove()
         }
 
         if (!this.activeW)
@@ -343,10 +329,7 @@ export class Gate {
         })
         return { windows: wins }
     }
-    sendState() {
-        if (this.sendStateTask != null)
-            return
-
+    storeState() {
         const dump = this.dump()
         var lastState = {windows: dump.windows}
 
@@ -356,12 +339,18 @@ export class Gate {
             lastState.name = this.name
         Storage.set({key: "last_state",
                      value: JSON.stringify(lastState)})
+    }
 
+    sendState() {
+        if (this.sendStateTask != null)
+            return
+
+        this.storeState()
         // send the state only when all panes have a channel
         if (this.session && (this.panes().every(p => p.d != null)))
            this.sendStateTask = setTimeout(() => {
                this.sendStateTask = null
-               this.session.setPayload(dump).then(_ => {
+               this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.pc)) {
                         console.log("Closing gate after updating to empty state")
                         this.stopBoarding()
