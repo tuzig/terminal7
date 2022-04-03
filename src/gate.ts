@@ -7,9 +7,9 @@
  */
 import { Window } from './window.js'
 import { Pane } from './pane.js'
-import { Session } from './session.ts'
-import { SSHSession } from './sshsession.ts'
-import { PeerbookSession } from './peerbook_session.ts'
+import { Session } from './session'
+import { WSSession } from './ws_session'
+import { PeerbookSession } from './peerbook_session'
 
 import { SSHPlugin } from 'capacitor-ssh-plugin'
 import { Clipboard } from '@capacitor/clipboard'
@@ -212,7 +212,7 @@ export class Gate {
                 this.session = new PeerbookSession(this.fp)
             }
             else {
-                this.session = new SSHSession(this.addr, this.user, this.secret)
+                this.session = new WSSession(this.addr, this.user)
             }
         this.session.onStateChange = state => this.onSessionState(state)
         this.session.onPayloadUpdate = layout => {

@@ -45,9 +45,15 @@ export class PeerbookChannel extends BaseChannel {
             resolve()
         })
     }
+    disconnect() {
+        this.dataChannel.onmessage = Function.prototype()
+        this.dataChannel.onclose = Function.prototype()
+    }
+
 }
 export class PeerbookSession extends BaseSession {
     fp: string
+    channels: Map<number, PeerbookChannel>
     pendingCDCMsgs: Array<object>
     pendingChannels: Map<ChannelID, ChannelOpenedCB>
     msgWatchdogs: Map<ChannelID, number>
@@ -60,6 +66,7 @@ export class PeerbookSession extends BaseSession {
     constructor(fp: string) {
         super()
         this.fp = fp
+        this.channels = new Map()
         this.pendingCDCMsgs = new Array()
         this.pendingChannels = new Map()
         this.msgWatchdogs = new Map()
@@ -157,6 +164,7 @@ export class PeerbookSession extends BaseSession {
     channelOpened(dc: RTCDataChannel, id: number, resolve: (channel: Channel) => void) {
         console.log("channelOpened")
         const channel = new PeerbookChannel(this, id, dc)
+        this.channels.set(id, channel)
         resolve(channel)
         // callbacks are set after the resolve as that's 
         // where caller's onMessage & onClose are set
@@ -169,6 +177,7 @@ export class PeerbookSession extends BaseSession {
             if (channel.createdOn == this.lastMarker) {
                 console.log("triggering channle close event as", channel.createdOn)
                 channel.onClose(m)
+                this.channels.delete(id)
             } else
                 console.log("ognoring close event on old channel", channel.createdOn, this.lastMarker)
         }
@@ -361,6 +370,7 @@ export class PeerbookSession extends BaseSession {
                 }, (payload) => {
                 this.t7.log("got a marker", this.lastMarker, payload)
                 this.lastMarker = payload
+                this.channels.values((c: PeerbookChannel) => c.disconnect())
                 resolve()
             }, reject)
         })
