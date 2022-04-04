@@ -11,7 +11,6 @@ import { Session } from './session'
 import { WSSession } from './ws_session'
 import { PeerbookSession } from './peerbook_session'
 
-import { SSHPlugin } from 'capacitor-ssh-plugin'
 import { Storage } from '@capacitor/storage'
 
 /*
@@ -174,11 +173,19 @@ export class Gate {
             })
             this.session.getPayload().then(layout => this.setLayout(layout))
         }
+        else if (state == "disconnected") {
+            // TODO: add warn class
+            this.lastDisconnect = Date.now()
+            this.setIndicatorColor(FAILED_COLOR)
+        }
         else if ((state != "new") && (state != "connecting") && this.boarding) {
             // handle connection failures
             let now = Date.now()
-                this.stopBoarding()
+            if (now - this.lastDisconnect > 100) {
                 this.t7.onDisconnect(this)
+                this.stopBoarding()
+            } else
+                this.t7.log("Ignoring a peer this.t7.cells.forEach(c => event after disconnect")
         }
     }
     /*
