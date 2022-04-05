@@ -160,7 +160,6 @@ export class Gate {
                 window.clearTimeout(this.watchDog)
                 this.watchDog = null
             }
-            this.boarding = true
             this.setIndicatorColor("unset")
             var m = this.t7.e.querySelector(".disconnect")
             if (m != null)
@@ -205,6 +204,7 @@ export class Gate {
             this.focus()
             return
         }
+        this.boarding = true
         this.notify("Initiating connection")
         // start the connection watchdog
         // TODO: move this to the session
