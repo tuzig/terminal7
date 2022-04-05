@@ -150,11 +150,11 @@ export class PeerbookSession extends BaseSession {
                     this.close()
                 } else {
                     const resolve = this.pendingChannels[msgID]
-                    if (typeof resolve == "function") {
+                    if (typeof resolve == "function")
                         resolve(e.channel, channelID)
-                        delete this.pendingChannels[msgID]
-                    } else
+                    else
                         console.log("Go a surprising new channel", e.channel)
+                    delete this.pendingChannels[msgID]
                 }
             }
         }
@@ -174,12 +174,13 @@ export class PeerbookSession extends BaseSession {
                 channel.onMessage(m)
         }
         dc.onclose = m => {
+            channel.disconnect()
             if (channel.createdOn == this.lastMarker) {
                 console.log("triggering channle close event as", channel.createdOn)
                 channel.onClose(m)
                 this.channels.delete(id)
             } else
-                console.log("ognoring close event on old channel", channel.createdOn, this.lastMarker)
+                console.log("ignoring close event on old channel", channel.createdOn, this.lastMarker)
         }
     }
     openChannel(id: ChannelID): Promise<Channel>
