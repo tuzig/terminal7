@@ -8,8 +8,7 @@
 import { Window } from './window.js'
 import { Pane } from './pane.js'
 import { Session } from './session'
-import { WSSession } from './ws_session'
-import { PeerbookSession } from './peerbook_session'
+import { WSSession, PeerbookSession } from './webrtc_session'
 
 import { Storage } from '@capacitor/storage'
 
