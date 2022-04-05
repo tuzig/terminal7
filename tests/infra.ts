@@ -19,6 +19,7 @@ export class Terminal7Mock extends Terminal7 {
              exec: {shell: "bash" },
              peerbook: { insecure: true },
            }
+    netStatus = {connected: true}
     constructor() {
         super({})
         window.ResizeObserver = resizeObs

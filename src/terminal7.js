@@ -176,7 +176,6 @@ export class Terminal7 {
             this.clear()
         })
         // Handle network events for the indicator
-        Network.getStatus().then(s => this.updateNetworkStatus(s))
         Network.addListener('networkStatusChange', s => 
             this.updateNetworkStatus(s))
         this.catchFingers()
@@ -263,7 +262,7 @@ export class Terminal7 {
                     // reconnect to the active gate
                     terminal7.log("Active ☀️")
                     this.clearTimeouts()
-                    Network.getStatus().then(s => this.updateNetworkStatus(state))
+                    Network.getStatus().then(s => this.updateNetworkStatus(s))
                 }
             })
         }
@@ -304,27 +303,34 @@ export class Terminal7 {
                 // modal.querySelector("form").reset()
                 document.getElementById("peerbook-modal").classList.remove("hidden")
             })
-        this.restoreState().catch(() => {
-            // no gate restored going home and on boarding
-            this.goHome()
-            if (!((window.matchMedia('(display-mode: standalone)').matches)
-                || (window.matchMedia('(display-mode: fullscreen)').matches)
-                || window.navigator.standalone
-                || (Capacitor.getPlatform() != "web")
-                || document.referrer.includes('android-app://')))
-                if (navigator.getInstalledRelatedApps) 
-                    navigator.getInstalledRelatedApps().then(relatedApps => {
-                        if (relatedApps.length == 0)
-                            // case we're not in an app
-                            this.showGreetings()
-                        else
-                            this.notify("PWA installed, better use it")
-                    })
-                else
-                   this.showGreetings()
-            else {
-                this.onBoard()
+        Network.getStatus().then(s => {
+            this.updateNetworkStatus(s)
+            if (!s.connected) {
+                this.goHome()
+                return
             }
+            this.restoreState().catch(() => {
+                // no gate restored going home and on boarding
+                this.goHome()
+                if (!((window.matchMedia('(display-mode: standalone)').matches)
+                    || (window.matchMedia('(display-mode: fullscreen)').matches)
+                    || window.navigator.standalone
+                    || (Capacitor.getPlatform() != "web")
+                    || document.referrer.includes('android-app://')))
+                    if (navigator.getInstalledRelatedApps) 
+                        navigator.getInstalledRelatedApps().then(relatedApps => {
+                            if (relatedApps.length == 0)
+                                // case we're not in an app
+                                this.showGreetings()
+                            else
+                                this.notify("PWA installed, better use it")
+                        })
+                    else
+                       this.showGreetings()
+                else {
+                    this.onBoard()
+                }
+            })
         })
     }
     restoreState() {
@@ -742,7 +748,7 @@ peer_name = "${peername}"\n`
         let off = document.getElementById("offline").classList
         this.netStatus = status
         this.log(`updateNetworkStatus: ${status.connected}`)
-        if (status.connected || (status.connected === undefined)) {
+        if (status.connected) {
             off.add("hidden")
             if (this.activeG) {
                 this.activeG.connect()

@@ -13,6 +13,7 @@ import { PeerbookSession } from './peerbook_session'
 
 import { Storage } from '@capacitor/storage'
 
+const FAILED_COLOR = "red"// ashort period of time, in milli
 /*
  * The gate class abstracts a host connection
  */
@@ -176,6 +177,7 @@ export class Gate {
         else if (state == "disconnected") {
             // TODO: add warn class
             this.lastDisconnect = Date.now()
+            // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR)
         }
         else if ((state != "new") && (state != "connecting") && this.boarding) {
@@ -193,13 +195,14 @@ export class Gate {
      */
     connect() {
         // do nothing when the network is down
+        if (!this.t7.netStatus || !this.t7.netStatus.connected)
+            return
         // if we're already boarding, just focus
         if (this.boarding) {
             console.log("already boarding")
             if (!this.windows || (this.windows.length == 0))
                 this.activeW = this.addWindow("", true)
             this.focus()
-            
             return
         }
         this.notify("Initiating connection")
@@ -282,7 +285,6 @@ export class Gate {
         if (!this.activeW)
             this.activeW = this.windows[0]
         this.focus()
-        this.boarding = true
     }
     /*
      * Adds a window, opens it and returns it
