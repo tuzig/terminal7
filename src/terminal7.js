@@ -654,8 +654,10 @@ peer_name = "${peername}"\n`
             gate.edit()
         })
         e.querySelector(".close").addEventListener('click', ev => {
-            gate.disengage()
-            gate.clear()
+            if (gate) {
+                gate.disengage()
+                gate.clear()
+            }
             terminal7.goHome()
         })
         e.querySelector(".reconnect").addEventListener('click', ev => {

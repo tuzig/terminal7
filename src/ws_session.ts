@@ -118,7 +118,7 @@ export class WSSession extends PeerbookSession {
                 if (error.message == 'unautherized') 
                     this.copyFingerprint()
                 else
-                    this.t7.onNoSignal(this, error)
+                    this.onStateChange("failed")
             })
         )
     }

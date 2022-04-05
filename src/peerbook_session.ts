@@ -279,7 +279,7 @@ export class PeerbookSession extends BaseSession {
                     else
                         console.log("A nack is unhandled", msg)
                 } else {
-                    if (typeof handlers[0] == "function")
+                    if (handlers && (typeof handlers[0] == "function"))
                         handlers[0](msg.args.body)
                     else
                         console.log("an ack is unhandled", msg)

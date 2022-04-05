@@ -402,7 +402,7 @@ export class Gate {
      */
     disengage() {
         return new Promise(resolve => {
-            this.t7.log(`disengaging. boarding ${this.boarding}`)
+            this.t7.log(`disengaging. boarding is ${this.boarding}`)
             if (!this.boarding || !this.session) {
                 resolve()
                 return
