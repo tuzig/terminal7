@@ -456,7 +456,7 @@ export class Pane extends Cell {
         case "ArrowDown":
             f = () => this.w.moveFocus("down")
             break
-        case "`":
+        case "9":
             f = () => this.t7.dumpLog()
             break
         }
