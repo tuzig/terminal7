@@ -127,7 +127,7 @@ export class Pane extends Cell {
                     this.gate.notify("Peer is disconnected")
                     return
                 }
-                if (this.d.readyState != "open") {
+                if ((this.d.readyState != "new") && (this.d.readyState != "open")) {
                     this.gate.notify(`data channel is ${this.d.readyState}`)
                     return
                 }
