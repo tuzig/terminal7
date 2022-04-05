@@ -34,7 +34,7 @@ export class WSSession extends PeerbookSession {
                     this.onStateChange(state)
                 }, error => {
                     this.t7.notify("Failed to restore from marker")
-                    this.onStateChange("failed")
+                    this.fail()
                 })
             } else 
                 this.onStateChange(state)
@@ -118,7 +118,7 @@ export class WSSession extends PeerbookSession {
                 if (error.message == 'unautherized') 
                     this.copyFingerprint()
                 else
-                    this.onStateChange("failed")
+                    this.fail()
             })
         )
     }

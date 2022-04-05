@@ -53,7 +53,6 @@ export abstract class BaseSession implements Session {
         })
     }
     setPayload(payload: string): Promise<void>{
-        console.log("TODO: set payload", payload)
         return new Promise(resolve=> {
             resolve()
         })
@@ -62,6 +61,11 @@ export abstract class BaseSession implements Session {
         return new Promise(resolve=> {
             resolve()
         })
+    }
+    fail(error) {
+        terminal7.log("Session failed with error: ", error)
+        this.onStateChange("disconnected")
+        setTimeout(() => this.onStateChange("failed"), 200)
     }
     // for reconnect
     abstract openChannel(id: ChannelID): Promise<Channel>

@@ -586,7 +586,8 @@ peer_name = "${peername}"\n`
      * onDisconnect is called when a gate disconnects.
      */
     onDisconnect(gate) {
-        if (!terminal7.netStatus.connected || (gate != this.activeG))
+        if (!terminal7.netStatus.connected || 
+            ((this.activeG != null) && (gate != this.activeG)))
             return
         let e = document.getElementById("disconnect-template")
         e = e.content.cloneNode(true)
