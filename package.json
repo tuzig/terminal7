@@ -28,7 +28,7 @@
     "@capacitor/storage": "^1.2.2",
     "@iarna/toml": "git+https://github.com/tuzig/iarna-toml.git",
     "@robingenz/capacitor-background-task": "^1.0.0",
-    "codemirror": "git+https://github.com/tuzig/CodeMirror.git",
+    "codemirror": "<6",
     "glob": "<8",
     "hammerjs": "<3",
     "idb": "<7",
