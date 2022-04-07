@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  runner:
+    build: 
+      context: .
+      dockerfile: ./qa/runner/Dockerfile
+    volumes:
+      - ./qa/ws_session:/runner
+      - ./qa/result:/result
+      - ./qa/ws_session/webexec_conf:/webexec_config
+    depends_on:
+      - terminal7
+      - webexec
+    command: "playwright test ${PWARGS}"
+  terminal7:
+    build: 
+      context: .
+      dockerfile: ./qa/terminal7/Dockerfile
+    volumes:
+      - ./dist:/terminal7
+  webexec:
+    build:
+      context: .
+      dockerfile: ./qa/webexec/Dockerfile
+    volumes:
+      - ./qa/ws_session/webexec_conf:/home/webexec/.config/webexec
+

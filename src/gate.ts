@@ -219,6 +219,7 @@ export class Gate {
         if (this.watchDog != null)
             window.clearTimeout(this.watchDog)
         this.watchDog = this.t7.run(_ => {
+            console.log("WATCHDOG stops the gate connecting")
             this.watchDog = null
             this.stopBoarding()
             this.t7.onDisconnect(this)

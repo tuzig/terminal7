@@ -348,7 +348,7 @@ export class PeerbookSession extends WebRTCSession {
                 const answer = JSON.parse(data)
                 // return an array with the conf's server and subspace's
                 resolve([{ urls: this.t7.conf.net.iceServer},
-                         answer["ice_servers"][0]])
+                         ...answer["ice_servers"]])
 
             }).catch(err => {
                 console.log("failed to get ice servers " + err.toString())
