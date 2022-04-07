@@ -15,7 +15,6 @@ dependencies {
     implementation project(':capacitor-network')
     implementation project(':capacitor-storage')
     implementation project(':robingenz-capacitor-background-task')
-    implementation project(':capacitor-ssh-plugin')
 
 }
 

@@ -22,9 +22,5 @@
 	{
 		"pkg": "@robingenz/capacitor-background-task",
 		"classpath": "dev.robingenz.capacitor.backgroundtask.BackgroundTaskPlugin"
-	},
-	{
-		"pkg": "capacitor-ssh-plugin",
-		"classpath": "dev.terminal7.plugins.ssh.SSHPlugin"
 	}
 ]
