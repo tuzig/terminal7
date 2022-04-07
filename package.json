@@ -1,6 +1,6 @@
 {
   "name": "terminal7",
-  "version": "0.19.3",
+  "version": "0.20.0",
   "description": "A touchable terminal emulator & multiplexer tablet app",
   "main": "src/index.js",
   "homepage": "https://terminal7.dev",
@@ -55,13 +55,14 @@
     "start": "npm run dev",
     "dev": "vite",
     "stage": "vite build --sourcemap && vite preview",
-    "run": "npm run build && cap run ios",
+    "run": "cap run ios",
     "test": "vitest",
     "build": "vite build -c vite.dev.config.js",
     "clean": "rm -rf dist ios/App/App/public/*",
     "postinstall": "cd ./node_modules/xterm && yarn install && npm run package",
     "qa": "bash ./qa/qa.bash",
-    "lint": "npx eslint qa src --ext .js,.jsx,.ts,.tsx"
+    "lint": "npx eslint qa src --ext .js,.jsx,.ts,.tsx",
+    "capacitor:copy:before": "npm run build"
   },
   "repository": {
     "type": "git",

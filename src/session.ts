@@ -62,8 +62,8 @@ export abstract class BaseSession implements Session {
             resolve()
         })
     }
-    fail(error) {
-        terminal7.log("Session failed with error: ", error)
+    fail(err?: Error) {
+        terminal7.log("Session failed with error: ", err)
         this.onStateChange("disconnected")
         setTimeout(() => this.onStateChange("failed"), 200)
     }

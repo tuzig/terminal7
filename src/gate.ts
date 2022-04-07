@@ -8,6 +8,7 @@
 import { Window } from './window.js'
 import { Pane } from './pane.js'
 import { Session } from './session'
+import { Clipboard } from '@capacitor/clipboard'
 import { WSSession, PeerbookSession } from './webrtc_session'
 
 import { Storage } from '@capacitor/storage'
@@ -146,6 +147,12 @@ export class Gate {
             this.e.querySelector(".tabbar-names").style.setProperty(
                 "--indicator-color", color)
     }
+    clearWatchdog() {
+        if (this.watchDog != null) {
+            window.clearTimeout(this.watchDog)
+            this.watchDog = null
+        }
+    }
     /*
      * onSessionState(state) is called when the connection
      * state changes.
@@ -155,10 +162,7 @@ export class Gate {
         this.notify("State: " + state)
         if (state == "connected") {
             this.t7.logDisplay(false)
-            if (this.watchDog != null) {
-                window.clearTimeout(this.watchDog)
-                this.watchDog = null
-            }
+            this.clearWatchdog()
             this.setIndicatorColor("unset")
             var m = this.t7.e.querySelector(".disconnect")
             if (m != null)
@@ -177,6 +181,11 @@ export class Gate {
             this.lastDisconnect = Date.now()
             // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR)
+        }
+        else if (state == "unautherized") {
+            this.clearWatchdog()
+            this.stopBoarding()
+            this.copyFingerprint()
         }
         else if ((state != "new") && (state != "connecting") && this.boarding) {
             // handle connection failures
@@ -228,7 +237,8 @@ export class Gate {
             console.log("TBD: update layouy", layout)
         }
         console.log("opening session")
-        this.session.connect()
+        // TODO: use the generated fingerprint and not t7's global fingerprint
+        this.t7.getFingerprint().then(() => this.session.connect())
         /*
         this.connector = new webrtcConnector({fp: this.fp})
         this.connector.onError = msg => this.t7.onNoSignal(this, msg)
@@ -474,6 +484,36 @@ export class Gate {
             this.nameE.classList.remove("offline")
         else
             this.nameE.classList.add("offline")
+    }
+    copyFingerprint() {
+        let ct = document.getElementById("copy-fingerprint"),
+            addr = this.addr.substr(0, this.addr.indexOf(":"))
+        this.t7.getFingerprint().then(fp =>
+                ct.querySelector('[name="fingerprint"]').value = fp)
+        document.getElementById("ct-address").innerHTML = addr
+        document.getElementById("ct-name").innerHTML = this.name
+        ct.classList.remove("hidden")
+        ct.querySelector(".copy").addEventListener('click', ev => {
+            ct.classList.add("hidden")
+            Clipboard.write(
+                {string: ct.querySelector('[name="fingerprint"]').value})
+            this.t7.notify("Fingerprint copied to the clipboard")
+        })
+        ct.querySelector("form").addEventListener('submit', ev => {
+            ev.preventDefault()
+            this.t7.getFingerprint().then(fp =>
+                this.t7.ssh(ct,  this,
+                    `cat <<<"${fp}" >> ~/.webexec/authorized_tokens`,
+                    _ => {
+                        ct.classList.add("hidden")
+                        this.connect()
+                    })
+            )
+        })
+ 
+        ct.querySelector(".close").addEventListener('click',  ev =>  {
+            ct.classList.add("hidden")
+        })
     }
     /*
     SSHConnect(ev) {

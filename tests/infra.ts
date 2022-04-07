@@ -92,4 +92,9 @@ export class Terminal7Mock extends Terminal7 {
     open(e) {
         this.e = e
     }
+    getFingerprint() {
+        return new Promise((resolve, reject) => {
+            resolve("BADFACE")
+        })
+    }
 }

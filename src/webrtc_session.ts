@@ -4,9 +4,9 @@ import { Clipboard } from '@capacitor/clipboard'
 const TIMEOUT = 5000
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
 
-export class PeerbookChannel extends BaseChannel {
+export class WebRTCChannel extends BaseChannel {
     dataChannel: RTCDataChannel
-    session: PeerbookSession
+    session: WebRTCSession
     id: number
     createdOn: number
     constructor(session: PeerbookSession,
@@ -52,9 +52,9 @@ export class PeerbookChannel extends BaseChannel {
 
 }
 
-export class PeerbookSession extends BaseSession {
+abstract class WebRTCSession extends BaseSession {
     fp: string
-    channels: Map<number, PeerbookChannel>
+    channels: Map<number, WebRTCChannel>
     pendingCDCMsgs: Array<object>
     pendingChannels: Map<ChannelID, ChannelOpenedCB>
     msgWatchdogs: Map<ChannelID, number>
@@ -87,20 +87,6 @@ export class PeerbookSession extends BaseSession {
             this.pc = null
         }
     }
-    onIceCandidate(ev: RTCPeerConnectionIceEvent) {
-        if (ev.candidate) {
-            this.t7.pbSend({target: this.fp, candidate: ev.candidate})
-        }
-    }
-    onNegotiationNeeded(e) {
-        this.t7.log("on negotiation needed", e)
-        this.pc.createOffer().then(d => {
-            this.pc.setLocalDescription(d)
-            offer = btoa(JSON.stringify(d))
-            this.t7.log("got offer", offer)
-            this.t7.pbSend({target: this.fp, offer: offer})
-        })
-    }
     async connect() {
         console.log("in connect")
         this.disengagePC()
@@ -111,7 +97,7 @@ export class PeerbookSession extends BaseSession {
                 console.log("Faield to get ice servers", e.toString())
             }
         }
-        console.log("got ice server")
+        console.log("got ice server", this.t7.iceServers)
         this.pc = new RTCPeerConnection({
             iceServers: this.t7.iceServer,
             certificates: this.t7.certificates})
@@ -142,7 +128,9 @@ export class PeerbookSession extends BaseSession {
 
         this.pc.onnegotiationneeded = e => this.onNegotiationNeeded(e)
         this.pc.ondatachannel = e => {
+            console.log(">> opening dc", e.channel.label)
             e.channel.onopen = () => {
+                console.log(">> onopen dc", e.channel.label)
                 const l = e.channel.label,
                       m = l.split(":"),
                       msgID = parseInt(m[0]),
@@ -166,7 +154,7 @@ export class PeerbookSession extends BaseSession {
 
     channelOpened(dc: RTCDataChannel, id: number, resolve: (channel: Channel) => void) {
         console.log("channelOpened")
-        const channel = new PeerbookChannel(this, id, dc)
+        const channel = new WebRTCChannel(this, id, dc)
         this.channels.set(id, channel)
         resolve(channel)
         // callbacks are set after the resolve as that's 
@@ -212,34 +200,6 @@ export class PeerbookSession extends BaseSession {
                 clearTimeout(watchdog)
                 this.channelOpened(channel, id, resolve)
             }
-        })
-    }
-    getIceServers() {
-        return new Promise((resolve, reject) => {
-            const ctrl = new AbortController(),
-                  tId = setTimeout(() => ctrl.abort(), TIMEOUT),
-                  insecure = this.t7.conf.peerbook.insecure,
-                  schema = insecure?"http":"https"
-
-            fetch(`${schema}://${this.t7.conf.net.peerbook}/turn`,
-                  {method: 'POST', signal: ctrl.signal })
-            .then(response => {
-                if (!response.ok)
-                    throw new Error(
-                      `HTTP POST failed with status ${response.status}`)
-                return response.text()
-            }).then(data => {
-                clearTimeout(tId)
-                const answer = JSON.parse(data)
-                // return an array with the conf's server and subspace's
-                resolve([{ urls: this.t7.conf.net.iceServer},
-                         answer["ice_servers"][0]])
-
-            }).catch(err => {
-                console.log("failed to get ice servers " + err.toString())
-                clearTimeout(tId)
-                reject()
-            })
         })
     }
     openCDC() {
@@ -332,19 +292,6 @@ export class PeerbookSession extends BaseSession {
         }
         return msg.message_id
     }
-    peerAnswer(offer) {
-        const sd = new RTCSessionDescription(offer)
-        this.pc.setRemoteDescription(sd)
-            .catch (e => {
-                this.t7.notify(`Failed to set remote description: ${e}`)
-                this.onStateChange("failed")
-            })
-    }
-    peerCandidate(candidate) {
-        this.pc.addIceCandidate(candidate).catch(e =>
-            this.t7.notify(`ICE candidate error: ${e}`))
-        return
-    }
     getPayload(): Promise<string | null>{
         return new Promise((resolve, reject) => 
             this.sendCTRLMsg({
@@ -374,16 +321,74 @@ export class PeerbookSession extends BaseSession {
                 }, (payload) => {
                 this.t7.log("got a marker", this.lastMarker, payload)
                 this.lastMarker = payload
-                this.channels.values((c: PeerbookChannel) => c.disconnect())
+                this.channels.values((c: WebRTCChannel) => c.disconnect())
                 resolve()
             }, reject)
         })
     }
 }
 
+export class PeerbookSession extends WebRTCSession {
+    getIceServers() {
+        return new Promise((resolve, reject) => {
+            const ctrl = new AbortController(),
+                  tId = setTimeout(() => ctrl.abort(), TIMEOUT),
+                  insecure = this.t7.conf.peerbook.insecure,
+                  schema = insecure?"http":"https"
+
+            fetch(`${schema}://${this.t7.conf.net.peerbook}/turn`,
+                  {method: 'POST', signal: ctrl.signal })
+            .then(response => {
+                if (!response.ok)
+                    throw new Error(
+                      `HTTP POST failed with status ${response.status}`)
+                return response.text()
+            }).then(data => {
+                clearTimeout(tId)
+                const answer = JSON.parse(data)
+                // return an array with the conf's server and subspace's
+                resolve([{ urls: this.t7.conf.net.iceServer},
+                         answer["ice_servers"][0]])
+
+            }).catch(err => {
+                console.log("failed to get ice servers " + err.toString())
+                clearTimeout(tId)
+                reject()
+            })
+        })
+    }
+    onIceCandidate(ev: RTCPeerConnectionIceEvent) {
+        if (ev.candidate) {
+            this.t7.pbSend({target: this.fp, candidate: ev.candidate})
+        }
+    }
+    onNegotiationNeeded(e) {
+        this.t7.log("on negotiation needed", e)
+        this.pc.createOffer().then(d => {
+            const offer = btoa(JSON.stringify(d))
+            this.pc.setLocalDescription(d)
+            this.t7.log("got offer", offer)
+            this.t7.pbSend({target: this.fp, offer: offer})
+        })
+    }
+    peerAnswer(offer) {
+        const sd = new RTCSessionDescription(offer)
+        this.pc.setRemoteDescription(sd)
+            .catch (e => {
+                this.t7.notify(`Failed to set remote description: ${e}`)
+                this.onStateChange("failed")
+            })
+    }
+    peerCandidate(candidate) {
+        this.pc.addIceCandidate(candidate).catch(e =>
+            this.t7.notify(`ICE candidate error: ${e}`))
+        return
+    }
+}
+
 
 // SSHSession is an implmentation of a real time session over ssh
-export class WSSession extends PeerbookSession {
+export class WSSession extends WebRTCSession {
     constructor(address: string, username: string) {
         super()
         this.addr = address
@@ -414,6 +419,7 @@ export class WSSession extends PeerbookSession {
                     this.verified = true
                     this.t7.storeGates()
                 }
+                // TODO move this to the last line of the last then
                 const answer = JSON.parse(atob(data))
                 let sd = new RTCSessionDescription(answer)
                 this.pc.setRemoteDescription(sd)
@@ -424,42 +430,13 @@ export class WSSession extends PeerbookSession {
                     this.t7.onDisconnect(this)
                 })
             }).catch(error => {
-                if (error.message == 'unautherized') 
-                    this.copyFingerprint()
-                else
+                if (error.message == 'unautherized')  {
+                    this.pc.close()
+                    this.onStateChange('unautherized')
+                } else
                     this.fail()
             })
         )
-    }
-    copyFingerprint() {
-        let ct = document.getElementById("copy-fingerprint"),
-            addr = this.addr.substr(0, this.addr.indexOf(":"))
-        this.t7.getFingerprint().then(fp =>
-                ct.querySelector('[name="fingerprint"]').value = fp)
-        document.getElementById("ct-address").innerHTML = addr
-        document.getElementById("ct-name").innerHTML = this.name
-        ct.classList.remove("hidden")
-        ct.querySelector(".copy").addEventListener('click', ev => {
-            ct.classList.add("hidden")
-            Clipboard.write(
-                {string: ct.querySelector('[name="fingerprint"]').value})
-            this.t7.notify("Fingerprint copied to the clipboard")
-        })
-        ct.querySelector("form").addEventListener('submit', ev => {
-            ev.preventDefault()
-            this.t7.getFingerprint().then(fp =>
-                this.t7.ssh(ct,  this,
-                    `cat <<<"${fp}" >> ~/.webexec/authorized_tokens`,
-                    _ => {
-                        ct.classList.add("hidden")
-                        this.connect()
-                    })
-            )
-        })
- 
-        ct.querySelector(".close").addEventListener('click',  ev =>  {
-            ct.classList.add("hidden")
-        })
     }
     onNegotiationNeeded(e) {
         this.t7.log("on negotiation needed", e)
@@ -467,4 +444,9 @@ export class WSSession extends PeerbookSession {
             this.pc.setLocalDescription(d)
         })
     }
+    getIceServers() {
+        return new Promise((resolve, reject) =>
+            resolve([{ urls: terminal7.conf.net.iceServer}]))
+    }
 }
+
