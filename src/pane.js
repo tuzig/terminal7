@@ -44,6 +44,7 @@ export class Pane extends Cell {
         this.dividers = []
         this.flashTimer = null
         this.aLeader = false
+        this.retries = 0
     }
 
     /*
@@ -181,6 +182,7 @@ export class Pane extends Cell {
             }
             else {
                 this.t7.log(`fit failed ${this.retries} times. giving up`)
+                this.retries = 0
                 if (cb instanceof Function) cb(null)
             }
             return
