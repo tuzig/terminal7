@@ -617,37 +617,6 @@ peer_name = "${peername}"\n`
         else
             this.e.focus()
     }
-    ssh(e, gate, cmd, cb) {
-        let uname = e.querySelector('[name="uname"]').value,
-            pass = e.querySelector('[name="pass"]').value,
-            addr = gate.addr.substr(0, gate.addr.indexOf(":"))
-        this.notify("ssh is connecting...")
-        window.cordova.plugins.sshConnect.connect(uname, pass, addr, 22,
-            resp => {
-                this.notify("ssh connected")
-                if (resp) {
-                    // TODO: make it work with non-standrad webexec locations
-                    window.cordova.plugins.sshConnect.executeCommand(
-                        cmd, 
-                        msg =>  {
-                            this.notify("ssh executed command success")
-                            if (typeof cb === "function")
-                                cb(msg)
-                        },
-                        msg => this.notify(`ssh failed: ${msg}`))
-                    window.cordova.plugins.sshConnect.disconnect()
-                }
-            }, ev => {
-                if (ev == "Connection failed. Could not connect")
-                    if (gate.verified)
-                        this.notify(ev)
-                    else
-                        this.notify(`Failed the connect. Maybe ${gate.addr} is wrong`)
-                else
-                    this.notify("Wrong password")
-                this.log("ssh failed to connect", ev)
-            })
-    }
     onNoSignal(gate, error) {
         let e = document.getElementById("nosignal-template")
         e = e.content.cloneNode(true)

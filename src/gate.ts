@@ -500,18 +500,6 @@ export class Gate {
                 {string: ct.querySelector('[name="fingerprint"]').value})
             this.t7.notify("Fingerprint copied to the clipboard")
         })
-        ct.querySelector("form").addEventListener('submit', ev => {
-            ev.preventDefault()
-            this.t7.getFingerprint().then(fp =>
-                this.t7.ssh(ct,  this,
-                    `cat <<<"${fp}" >> ~/.webexec/authorized_tokens`,
-                    _ => {
-                        ct.classList.add("hidden")
-                        this.connect()
-                    })
-            )
-        })
- 
         ct.querySelector(".close").addEventListener('click',  ev =>  {
             ct.classList.add("hidden")
         })
