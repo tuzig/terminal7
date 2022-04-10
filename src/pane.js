@@ -89,7 +89,7 @@ export class Pane extends Cell {
                   webGLAddon.dispose()
             })
             try {
-            this.t.loadAddon(webGLAddon)
+                this.t.loadAddon(webGLAddon)
             } catch (e) { console.log("no webgl: " +e.toString()) }
             this.t.textarea.tabIndex = -1
             this.t.attachCustomKeyEventHandler(ev => {

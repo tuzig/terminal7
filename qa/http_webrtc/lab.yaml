@@ -5,9 +5,9 @@ services:
       context: .
       dockerfile: ./qa/runner/Dockerfile
     volumes:
-      - ./qa/ws_session:/runner
+      - ./qa/http_webrtc:/runner
       - ./qa/result:/result
-      - ./qa/ws_session/webexec_conf:/webexec_config
+      - ./qa/http_webrtc/webexec_conf:/webexec_config
     depends_on:
       - terminal7
       - webexec
@@ -23,5 +23,4 @@ services:
       context: .
       dockerfile: ./qa/webexec/Dockerfile
     volumes:
-      - ./qa/ws_session/webexec_conf:/home/webexec/.config/webexec
-
+      - ./qa/http_webrtc/webexec_conf:/home/webexec/.config/webexec

@@ -110,10 +110,11 @@ export class Terminal7 {
             d = TOML.parse(value)
         } catch(err) {
             d = TOML.parse(DEFAULT_DOTFILE)
-            terminal7.run(_ =>
+            this.run(() =>
                 this.notify(
                     `Using default conf as parsing the dotfile failed:<br>${err}`, 
                 10))
+
         }
         this.loadConf(d)
 
