@@ -19,6 +19,8 @@ const FAILED_COLOR = "red"// ashort period of time, in milli
  */
 export class Gate {
     session: Session
+    watchDog: number
+    activeW: Window
     constructor (props) {
         // given properties
         this.id = props.id
@@ -266,10 +268,11 @@ export class Gate {
     }
     // reset reset's a gate connection by disengaging and reconnecting
     reset() {
-        this.disengage().then(() => {
-            this.clearTimeouts()
-            this.connect()
-        })
+        if (this.watchDog != null) {
+            window.clearTimeout(this.watchDog)
+            this.watchDog = null
+        }
+        this.disengage().then(() => this.connect())
     }
     setLayout(state: object) {
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
