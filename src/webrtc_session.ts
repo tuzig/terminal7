@@ -40,6 +40,7 @@ export class WebRTCChannel extends BaseChannel {
         })
     }
     close(): Promise<void> {
+        this.disconnect()
         return new Promise(resolve => {
             this.dataChannel.close()
             resolve()
@@ -165,13 +166,10 @@ abstract class WebRTCSession extends BaseSession {
                 channel.onMessage(m)
         }
         dc.onclose = m => {
-            channel.disconnect()
-            if (channel.createdOn == this.lastMarker) {
-                console.log("triggering channle close event as", channel.createdOn)
-                channel.onClose(m)
-                this.channels.delete(id)
-            } else
-                console.log("ignoring close event on old channel", channel.createdOn, this.lastMarker)
+            channel.close()
+            console.log("triggering channle close event as", m)
+            channel.onClose(m)
+            this.channels.delete(id)
         }
     }
     openChannel(id: ChannelID): Promise<Channel>
@@ -308,6 +306,8 @@ abstract class WebRTCSession extends BaseSession {
             }, resolve, reject)
         )
     }
+    // disconnect removes all channels, send a mark and resolve with
+    // the new marker and a zero-channel-session
     disconnect(): Promise<void> {
         return new Promise((resolve, reject) => {
             if (!this.pc) {
@@ -315,14 +315,17 @@ abstract class WebRTCSession extends BaseSession {
                 return
             }
             this.lastMarker = undefined
+            this.channels.forEach((c: WebRTCChannel, k: number, m: Map<number, WebRTCChannel>) => {
+                c.disconnect()
+                m.delete(k)
+            })
             this.sendCTRLMsg({
                     type: "mark",
                     args: null
                 }, (payload) => {
                 this.t7.log("got a marker", this.lastMarker, payload)
                 this.lastMarker = payload
-                this.channels.values((c: WebRTCChannel) => c.disconnect())
-                resolve()
+                resolve(payload)
             }, reject)
         })
     }
