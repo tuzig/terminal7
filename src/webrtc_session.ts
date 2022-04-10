@@ -162,8 +162,7 @@ abstract class WebRTCSession extends BaseSession {
         // where caller's onMessage & onClose are set
         dc.onmessage = m => {
             // ignore close events when an older generation channel
-            if (channel.createdOn == this.lastMarker)
-                channel.onMessage(m)
+            channel.onMessage(m)
         }
         dc.onclose = m => {
             channel.close()
@@ -314,7 +313,6 @@ abstract class WebRTCSession extends BaseSession {
                 resolve()
                 return
             }
-            this.lastMarker = undefined
             this.channels.forEach((c: WebRTCChannel, k: number, m: Map<number, WebRTCChannel>) => {
                 c.disconnect()
                 m.delete(k)

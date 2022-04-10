@@ -264,9 +264,12 @@ export class Gate {
         })
         return r
     }
+    // reset reset's a gate connection by disengaging and reconnecting
     reset() {
-        this.clear()
-        this.setLayout(null)
+        this.disengage().then(() => {
+            this.clearTimeouts()
+            this.connect()
+        })
     }
     setLayout(state: object) {
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
@@ -370,8 +373,8 @@ export class Gate {
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.pc)) {
                         console.log("Closing gate after updating to empty state")
-                        this.stopBoarding()
                         this.disengage()
+                        this.stopBoarding()
                     }
                })
             }, 100)
@@ -403,13 +406,6 @@ export class Gate {
         document.getElementById("rh-address").innerHTML = addr
         document.getElementById("rh-name").innerHTML = this.name
         e.classList.remove("hidden")
-    }
-    async restartServer() {
-        this.clear()
-        await this.disengage()
-        let e = document.getElementById("reset-host")
-        this.t7.ssh(e, this, `webexec restart --address ${this.addr}`,
-            _ => e.classList.add("hidden")) 
     }
     fit() {
         this.windows.forEach(w => w.fit())
@@ -466,8 +462,7 @@ export class Gate {
         })
         e.querySelector(".all").addEventListener('click', _ => {
             this.e.querySelector(".reset-gate").classList.toggle("hidden")
-            this.stopBoarding()
-            this.connect()
+            this.reset()
         })
         this.e.appendChild(e)
     }

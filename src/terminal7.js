@@ -587,7 +587,7 @@ peer_name = "${peername}"\n`
      * onDisconnect is called when a gate disconnects.
      */
     onDisconnect(gate) {
-        if (!terminal7.netStatus.connected || 
+        if (!this.netStatus.connected || 
             ((this.activeG != null) && (gate != this.activeG)))
             return
         let e = document.getElementById("disconnect-template")
@@ -597,14 +597,10 @@ peer_name = "${peername}"\n`
         this.pendingCDCMsgs = []
         e.querySelector("h1").textContent =
             `${gate.name} communication failure`
-        e.querySelector("form").addEventListener('submit', ev => {
-            this.clear()
-            gate.boarding = false
-            gate.connect()
-        })
-        e.querySelector(".close").addEventListener('click', ev => {
+        e.querySelector("form").addEventListener('submit', () => gate.reset())
+        e.querySelector(".close").addEventListener('click', () => {
             gate.clear()
-            terminal7.goHome()
+            this.goHome()
         })
         this.e.appendChild(e)
     }
@@ -1123,7 +1119,7 @@ peer_name = "${peername}"\n`
     }
     onBoard() {
         var a = localStorage.getItem("onboard")
-        if (a !== null)
+        if ((a !== null) || (Capacitor.getPlatform() != "web"))
             return
         var modal = document.getElementById("onboarding")
         modal.classList.remove("hidden")
