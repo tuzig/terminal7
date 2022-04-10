@@ -119,26 +119,28 @@ export class Window {
      * name when the field is changed. 
      */
     rename() {
-        let e = this.nameE
-        const se = this.gate.e.querySelector(".rename-box")
+        const e = this.nameE,
+              se = this.gate.e.querySelector(".rename-box"),
+              textbox = this.gate.e.querySelector("#name-input")
+
         se.classList.remove("hidden")
-        const textbox = this.gate.e.querySelector("#name-input")
         textbox.value = e.innerHTML
         textbox.focus()
 
         const handler = (event) => {
             if (event.keyCode == 13 || event.type != "keyup") {
                 console.log(event)
-                this.gate.sendState()
-                this.activeP.focus()
-                se.classList.add("hidden")
-                this.t7.run(() => {
-                    e.w.name = event.target.value
-                    e.innerHTML = event.target.value
-                }, ABIT)
-
                 textbox.removeEventListener('change', handler)
                 textbox.removeEventListener('blur', handler)
+                se.classList.add("hidden")
+                this.t7.run(() => {
+                    this.name = event.target.value
+                    this.nameE.innerHTML = event.target.value
+                    this.activeP.focus()
+                }, ABIT)
+                this.gate.sendState()
+                event.preventDefault()
+                event.stopPropagation()
             }
         }
 
