@@ -3,8 +3,8 @@ import * as fs from 'fs'
 import waitPort from 'wait-port'
 
 
-    const local = process.env.LOCALDEV !== undefined,
-          url = local?"http://localhost:3000":"http://terminal7"
+const local = process.env.LOCALDEV !== undefined,
+      url = local?"http://localhost:3000":"http://terminal7"
 
 test.describe('terminal7 direct WebRTC session', ()  => {
 

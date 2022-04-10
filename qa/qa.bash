@@ -4,6 +4,8 @@ then
     echo ">>> Starting full QA testing <<<"
     
     npm run lint
+
+    echo ">>> TODO: finish TypeScript refactor and pass the linter"
     npx vitest run
     if [ $? -ne 0 ]
     then
