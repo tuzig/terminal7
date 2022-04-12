@@ -130,6 +130,7 @@ export class Window {
         const handler = (event) => {
             if (event.keyCode == 13 || event.type != "keyup") {
                 console.log(event)
+                textbox.removeEventListener('keyup', handler)
                 textbox.removeEventListener('change', handler)
                 textbox.removeEventListener('blur', handler)
                 se.classList.add("hidden")
