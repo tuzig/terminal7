@@ -717,10 +717,9 @@ peer_name = "${peername}"\n`
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
             off.add("hidden")
-            if (this.activeG) {
-                this.activeG.connect()
-                this.activeG.focus()
-            }
+            const gate = this.activeG
+            if (gate)
+                gate.reset().then(() => gate.focus())
             else 
                 this.pbVerify()
         } else {

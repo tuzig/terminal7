@@ -124,12 +124,14 @@ export class Pane extends Cell {
                 return toDo
             })
             this.t.onData(d =>  {
+                const state = this.d.readyState 
+
                 if (this.d == null) {
-                    this.gate.notify("Peer is disconnected")
+                    this.gate.notify("Gate is disconnected")
                     return
                 }
-                if ((this.d.readyState != "new") && (this.d.readyState != "open")) {
-                    this.gate.notify(`data channel is ${this.d.readyState}`)
+                if (state != "open") {
+                    this.gate.notify(`Gate ins not open. It's ${state}`)
                     return
                 }
                 this.d.send(d)

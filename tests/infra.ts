@@ -15,7 +15,8 @@ export function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
 export class Terminal7Mock extends Terminal7 {
     conf = { ui: {max_tabs: 10 },
-             net: {timeout: 1000 }, 
+             net: {timeout: 1000,
+                   iceServer: ""}, 
              exec: {shell: "bash" },
              peerbook: { insecure: true },
            }

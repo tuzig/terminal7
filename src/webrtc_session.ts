@@ -1,4 +1,4 @@
-import { BaseSession, BaseChannel, Channel, ChannelID }  from './session' 
+import { BaseSession, BaseChannel, Channel, ChannelID, CallbackType }  from './session' 
 import { Clipboard } from '@capacitor/clipboard'
 
 const TIMEOUT = 5000
@@ -9,6 +9,7 @@ export class WebRTCChannel extends BaseChannel {
     session: WebRTCSession
     id: number
     createdOn: number
+    onMessage : CallbackType
     constructor(session: PeerbookSession,
                 id: number,
                 dc: RTCDataChannel) {
@@ -18,14 +19,20 @@ export class WebRTCChannel extends BaseChannel {
         this.dataChannel = dc
         this.createdOn = session.lastMarker
     }
+    // readyState can be one of the four underlying states:
+    //   "connecting", "open", "closing", closed"
+    // or a special case "disconnected" when no associated data channel
     get readyState(): string {
         if (this.dataChannel)
             return this.dataChannel.readyState
         else 
-            return "new"
+            return "disconnected"
     }
     send(data: string) {
-        this.dataChannel.send(data)
+        if (this.dataChannel)
+            this.dataChannel.send(data)
+        else 
+            this.t7.notify("data channel closed")
     }
     resize(sx: number, sy: number): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -39,16 +46,20 @@ export class WebRTCChannel extends BaseChannel {
             }, resolve, reject)
         })
     }
-    close(): Promise<void> {
-        this.disconnect()
-        return new Promise(resolve => {
-            this.dataChannel.close()
-            resolve()
-        })
+    close(): void {
+        const dc = this.dataChannel
+        if (dc) {
+            this.disconnect()
+            dc.close()
+        }
+        console.log(">>> finished close")
     }
     disconnect() {
-        this.dataChannel.onmessage = Function.prototype()
-        this.dataChannel.onclose = Function.prototype()
+        if (this.dataChannel) {
+            this.dataChannel.onmessage = Function.prototype()
+            this.dataChannel.onclose = Function.prototype()
+            this.dataChannel = null
+        }
     }
 
 }
@@ -77,6 +88,9 @@ abstract class WebRTCSession extends BaseSession {
         this.t7 = window.terminal7
         this.lastMarker = -1
     }
+    onIceCandidate(ev: RTCPeerConnectionIceEvent) {
+            return
+    }
     /*
      * disengagePC silently removes all event handler from the peer connections
      */
@@ -85,12 +99,12 @@ abstract class WebRTCSession extends BaseSession {
             this.pc.onconnectionstatechange = undefined
             this.pc.onmessage = undefined
             this.pc.onnegotiationneeded = undefined
+            this.pc.close()
             this.pc = null
         }
     }
     async connect() {
         console.log("in connect")
-        this.disengagePC()
         if ((!this.t7.iceServers) && (!this.t7.conf.peerbook.insecure)) {
             try {
                 this.t7.iceServers = await this.getIceServers()
@@ -109,9 +123,8 @@ abstract class WebRTCSession extends BaseSession {
                 this.sendCTRLMsg({
                     type: "restore",
                     args: { marker: this.lastMarker }},
-                () => {
-                    this.onStateChange(state)
-                }, error => {
+                () => this.onStateChange("connected"),
+                error => {
                     this.t7.notify("Failed to restore from marker")
                     this.onStateChange("failed")
                 })
@@ -146,18 +159,23 @@ abstract class WebRTCSession extends BaseSession {
                         resolve(e.channel, channelID)
                     else
                         console.log("Go a surprising new channel", e.channel)
-                    delete this.pendingChannels[msgID]
+                    this.pendingChannels.delete(msgID)
                 }
             }
         }
         this.openCDC()
     }
 
-    channelOpened(dc: RTCDataChannel, id: number, resolve: (channel: Channel) => void) {
-        console.log("channelOpened")
-        const channel = new WebRTCChannel(this, id, dc)
-        this.channels.set(id, channel)
-        resolve(channel)
+    // dcOpened is called when a data channel has been opened
+    onDCOpened(dc: RTCDataChannel, id: number):  WebRTCChannel {
+        this.t7.log("dcOpened", dc)
+        let channel = this.channels.get(id)
+        if (channel) 
+            channel.dataChannel = dc
+        else {
+            channel = new WebRTCChannel(this, id, dc)
+            this.channels.set(id, channel)
+        }
         // callbacks are set after the resolve as that's 
         // where caller's onMessage & onClose are set
         dc.onmessage = m => {
@@ -165,11 +183,11 @@ abstract class WebRTCSession extends BaseSession {
             channel.onMessage(m)
         }
         dc.onclose = m => {
-            channel.close()
+            this.channels.delete(id)
             console.log("triggering channle close event as", m)
             channel.onClose(m)
-            this.channels.delete(id)
         }
+        return channel
     }
     openChannel(id: ChannelID): Promise<Channel>
     openChannel(cmdorid: unknown, parent?: ChannelID, sx?: number, sy?: number):
@@ -193,25 +211,26 @@ abstract class WebRTCSession extends BaseSession {
                 }, Function.prototype(), Function.prototype())
             }
             const watchdog = setTimeout(() => reject("timeout"), TIMEOUT)
-            this.pendingChannels[msgID] = (channel: RTCDataChannel, id: ChannelID) => {
+            this.pendingChannels[msgID] = (dc: RTCDataChannel, id: ChannelID) => {
                 clearTimeout(watchdog)
-                this.channelOpened(channel, id, resolve)
+                const channel = this.onDCOpened(dc, id)
+                resolve(channel, id)
             }
         })
     }
     openCDC() {
-        console.log("opening cdc")
+        console.log(">>> opening cdc")
         const cdc = this.pc.createDataChannel('%')
         this.cdc = cdc
-        this.t7.log("<opening cdc")
         cdc.onopen = () => {
+            this.t7.log(">>> cdc opened")
             if (this.pendingCDCMsgs.length > 0)
                 // TODO: why the time out? why 100mili?
                 this.t7.run(() => {
                     this.t7.log("sending pending messages:", this.pendingCDCMsgs)
                     this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m[0], m[1], m[2]))
                     this.pendingCDCMsgs = []
-                }, 0)
+                }, 100)
         }
         cdc.onmessage = m => {
             const d = new TextDecoder("utf-8"),
@@ -220,9 +239,9 @@ abstract class WebRTCSession extends BaseSession {
             if ((msg.type == "ack") || (msg.type == "nack")) {
                 const i = msg.args.ref
                 window.clearTimeout(this.msgWatchdogs[i])
-                delete this.msgWatchdogs[i]
+                this.msgWatchdogs.delete(i)
                 const handlers = this.msgHandlers[i]
-                delete this.msgHandlers[msg.args.ref]
+                this.msgHandlers.delete(msg.args.ref)
                 this.t7.log("got cdc message:",  msg)
                 /* TODO: What do we do with a nack?
                 if (msg.type == "nack") {
@@ -266,26 +285,15 @@ abstract class WebRTCSession extends BaseSession {
             // message stays frozen when restrting
             const s = msg.payload || JSON.stringify(msg)
             this.t7.log("sending ctrl message ", s)
-            if (msg.tries == undefined) {
-                msg.tries = 0
-                msg.payload = s
-            } else if (msg.tries == 1)
-                this.t7.notify(
-                     `msg #${msg.message_id} no ACK in ${timeout}ms, trying ${retries-1} more times`)
-            if (msg.tries++ < retries) {
-                this.t7.log(`sending ctrl msg ${msg.message_id} for ${msg.tries} time`)
-                try {
-                    this.cdc.send(s)
-                } catch(err) {
-                    this.t7.notify(`Sending ctrl message failed: ${err}`)
-                }
-                this.msgWatchdogs[msg.message_id] = this.t7.run(
-                      () => this.sendCTRLMsg(msg, resolve, reject), timeout)
-            } else {
-                this.t7.notify(
-                     `#${msg.message_id} tried ${retries} times and given up`)
-                this.onStateChange("disconnected")
+            msg.payload = s
+
+            try {
+                this.cdc.send(s)
+            } catch(err) {
+                this.t7.notify(`Sending ctrl message failed: ${err}`)
             }
+            this.msgWatchdogs[msg.message_id] = this.t7.run(
+                  () => this.fail(), timeout)
         }
         return msg.message_id
     }
@@ -305,24 +313,28 @@ abstract class WebRTCSession extends BaseSession {
             }, resolve, reject)
         )
     }
-    // disconnect removes all channels, send a mark and resolve with
-    // the new marker and a zero-channel-session
+    closeChannels(): void {
+         this.channels.forEach((c: WebRTCChannel, k: number) => {
+                c.close()
+        })
+        this.t7.log("channels after deletes:", this.channels)
+    }
+    // disconnect disconnects from all channels, requests a mark and resolve with
+    // the new marker
     disconnect(): Promise<void> {
         return new Promise((resolve, reject) => {
             if (!this.pc) {
                 resolve()
                 return
             }
-            this.channels.forEach((c: WebRTCChannel, k: number, m: Map<number, WebRTCChannel>) => {
-                c.disconnect()
-                m.delete(k)
-            })
+            this.closeChannels()
             this.sendCTRLMsg({
                     type: "mark",
                     args: null
                 }, (payload) => {
                 this.t7.log("got a marker", this.lastMarker, payload)
                 this.lastMarker = payload
+                this.disengagePC()
                 resolve(payload)
             }, reject)
         })
@@ -396,58 +408,54 @@ export class WSSession extends WebRTCSession {
         this.username = username
     }
 
-    onIceCandidate(ev: RTCPeerConnectionIceEvent) {
-        if (ev.candidate)
-            return
-        const offer = btoa(JSON.stringify(this.pc.localDescription))
-        this.t7.getFingerprint().then(fp =>
-            fetch('http://'+this.addr+'/connect', {
-                headers: {"Content-Type": "application/json"},
-                method: 'POST',
-                body: JSON.stringify({api_version: 0,
-                    offer: offer,
-                    fingerprint: fp
-                })
-            }).then(response => {
-                if (response.status == 401)
-                    throw new Error('unautherized');
-                if (!response.ok)
-                    throw new Error(
-                      `HTTP POST failed with status ${response.status}`)
-                return response.text()
-            }).then(data => {
-                if (!this.verified) {
-                    this.verified = true
-                    this.t7.storeGates()
-                }
-                // TODO move this to the last line of the last then
-                const answer = JSON.parse(atob(data))
-                let sd = new RTCSessionDescription(answer)
-                this.pc.setRemoteDescription(sd)
-                .catch (e => {
-                    this.t7.notify(`Failed to set remote description: ${e}`)
-                    this.stopBoarding()
-                    this.setIndicatorColor(FAILED_COLOR)
-                    this.t7.onDisconnect(this)
-                })
-            }).catch(error => {
-                if (error.message == 'unautherized')  {
-                    this.pc.close()
-                    this.onStateChange('unautherized')
-                } else
-                    this.fail()
-            })
-        )
-    }
     onNegotiationNeeded(e) {
+        let o
         this.t7.log("on negotiation needed", e)
-        this.pc.createOffer().then(d => {
-            this.pc.setLocalDescription(d)
+        this.pc.createOffer().then(offer => {
+            console.log("offer", offer)
+            this.pc.setLocalDescription(offer)
+            const encodedO = btoa(JSON.stringify(offer))
+            this.t7.getFingerprint().then(fp =>
+                fetch('http://'+this.addr+'/connect', {
+                    headers: {"Content-Type": "application/json"},
+                    method: 'POST',
+                    body: JSON.stringify({api_version: 0,
+                        offer: encodedO,
+                        fingerprint: fp
+                    })
+                }).then(response => {
+                    if (response.status == 401)
+                        throw new Error('unauthorized');
+                    if (!response.ok)
+                        throw new Error(
+                          `HTTP POST failed with status ${response.status}`)
+                    return response.text()
+                }).then(data => {
+                    /* TODO: this needs to move
+                    if (!this.verified) {
+                        this.verified = true
+                        this.t7.storeGates()
+                    }
+                    */
+                    // TODO move this to the last line of the last then
+                    const answer = JSON.parse(atob(data))
+                    let sd = new RTCSessionDescription(answer)
+                    this.pc.setRemoteDescription(sd)
+                    .catch (e => { this.fail(e) })
+                }).catch(error => {
+                    if (error.message == 'unauthorized')  {
+                        this.disengagePC()
+                        this.onStateChange('unauthorized')
+                    } else
+                        this.fail()
+                })
+            )
+
         })
     }
     getIceServers() {
         return new Promise((resolve, reject) =>
-            resolve([{ urls: terminal7.conf.net.iceServer}]))
+            resolve([{ urls: this.t7.conf.net.iceServer}]))
     }
 }
 

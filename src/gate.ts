@@ -184,7 +184,7 @@ export class Gate {
             // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR)
         }
-        else if (state == "unautherized") {
+        else if (state == "unauthorized") {
             this.clearWatchdog()
             this.stopBoarding()
             this.copyFingerprint()
@@ -272,7 +272,7 @@ export class Gate {
             window.clearTimeout(this.watchDog)
             this.watchDog = null
         }
-        this.disengage().then(() => this.connect())
+        this.disengage().then(() => this.t7.run(() => this.connect(), 100))
     }
     setLayout(state: object) {
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
