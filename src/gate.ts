@@ -73,6 +73,9 @@ export class Gate {
 
             t.querySelector(".search-down").addEventListener('click', _ => 
                 this.activeW.activeP.findNext())
+
+            t.querySelector(".rename-close").addEventListener('click', () => 
+                this.e.querySelector(".rename-box").classList.add("hidden"))
             /* TODO: handle the bang
             let b = t.querySelector(".bang")
             b.addEventListener('click', (e) => {new window from active pane})
