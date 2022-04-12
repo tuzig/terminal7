@@ -719,7 +719,7 @@ peer_name = "${peername}"\n`
             off.add("hidden")
             const gate = this.activeG
             if (gate)
-                gate.reset().then(() => gate.focus())
+                gate.reset()
             else 
                 this.pbVerify()
         } else {
