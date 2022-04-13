@@ -38,7 +38,7 @@ selection = "#D9F505"
 flash = 100
 
 [exec]
-shell = "bash"
+shell = "*"
 
 [net]
 timeout = 3000
