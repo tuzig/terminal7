@@ -202,10 +202,13 @@ export class Gate {
                 this.t7.log("Ignoring a peer this.t7.cells.forEach(c => event after disconnect")
         }
     }
+    askPass(): string {
+        return "BADWOLF"
+    }
     /*
      * connect connects to the gate
      */
-    connect() {
+    async connect() {
         // do nothing when the network is down
         if (!this.t7.netStatus || !this.t7.netStatus.connected)
             return
@@ -236,6 +239,9 @@ export class Gate {
             }
             else {
                 this.session = new WSSession(this.addr, this.user)
+                // TODO add the port
+                // const pass = (this.pass)?this.pass: await this.askPass()
+                // this.session = new SSHSession(this.addr, this.user, pass)
             }
         this.session.onStateChange = state => this.onSessionState(state)
         this.session.onPayloadUpdate = layout => {

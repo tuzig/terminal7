@@ -10,7 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- By default using the user's default shell
+- Default configuration to use "*" for `shell` so you get the default shell 
+- "Gate ins not open..." notification fixed
+
 
 ## [0.20.1] - 2022/4/12
 

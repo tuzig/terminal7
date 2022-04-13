@@ -131,7 +131,7 @@ export class Pane extends Cell {
                     return
                 }
                 if (state != "open") {
-                    this.gate.notify(`Gate ins not open. It's ${state}`)
+                    this.gate.notify(`Sorry, gate is ${state}`)
                     return
                 }
                 this.d.send(d)
