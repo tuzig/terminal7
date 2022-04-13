@@ -1,6 +1,6 @@
 export type CallbackType = (e: unknown) => void
 export type ChannelID = number
-export type State = "new" | "connecting" | "connected" | "reconnected" | "disconnected" | "failed"
+export type State = "new" | "connecting" | "connected" | "reconnected" | "disconnected" | "failed" | "unauthorized"
 
 export interface Event {
     state: string
@@ -40,6 +40,12 @@ export abstract class BaseChannel implements Channel {
     abstract close(): Promise<void> 
     abstract send(data: string): void
     abstract resize(sx: number, sy: number): Promise<void>
+
+    constructor() {
+        this.onMessage = () => void 0
+        this.onClose = () => void 0
+    }
+
     get readyState(): string {
         return "open"
     }
@@ -53,7 +59,6 @@ export abstract class BaseSession implements Session {
         })
     }
     setPayload(payload: string): Promise<void>{
-        console.log("TODO: set payload", payload)
         return new Promise(resolve=> {
             resolve()
         })
@@ -62,6 +67,15 @@ export abstract class BaseSession implements Session {
         return new Promise(resolve=> {
             resolve()
         })
+    }
+    fail(err?: Error) {
+        if (err !== undefined)
+            terminal7.notify("Session failed: " + err.toString())
+        else
+            terminal7.notify("Session failed")
+        terminal7.log("Session failed with error: ", err)
+        this.onStateChange("disconnected")
+        setTimeout(() => this.onStateChange("failed"), 200)
     }
     // for reconnect
     abstract openChannel(id: ChannelID): Promise<Channel>

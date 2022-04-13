@@ -6,22 +6,26 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.20.1] - 2022/4/12
 
-### Fixed
+## Fixed
 
-- iPadOS 15.4 fixed the rendering bug, T7 is back to fast canvas rendering
+- Gate reconnect was flaky
+- Window rename now changes just the active window
+
+## [0.20.0] - 2022/4/10
 
 ### Changed
 
+- Rendering is super fast thanks to WebGL hardware acceleration
 - Using vite & vitest to package and test
 - Font is now nerdy patched for special icons
 
 ### Fixed 
 
-- Network connections are not disconnected on GPOS
-- Spaces are trimmed from the end of copied lines
-- Added a timeout for turn servers fetch
+- Network connections remain open on !mobile 
+- Spaces are trimmed from the end of lines copied to clipboard
+- Turn servers fetch now has a watchdog
 
 ## [0.19.3] - 2022/2/6
 

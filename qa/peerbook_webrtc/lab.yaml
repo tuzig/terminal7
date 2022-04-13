@@ -5,13 +5,13 @@ services:
       context: .
       dockerfile: ./qa/runner/Dockerfile
     volumes:
-      - ./qa/session:/runner
+      - ./qa/peerbook_webrtc:/runner
       - ./qa/result:/result
     depends_on:
       - peerbook
       - terminal7
       - webexec
-    command: "playwright test"
+    command: "playwright test ${PWARGS}"
   terminal7:
     build: 
       context: .

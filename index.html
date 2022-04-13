@@ -25,7 +25,7 @@
           <div id="version">
               <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md"
                   target="_blank">
-                  version 0.19.3
+                  version 0.20.1
               </a>
           </div>
           <h2>Destinations</h2>
@@ -77,21 +77,15 @@
             <p>We're sorry, but the host at <code id="ct-address"> </code>
             (aka <b id="ct-name"></b>) refused our fingerprint.
                 Most likely because the fingerprint is not in:
-                <b id="ct-confile"> ~/.webexec/authorized_tokens</b>
+                <b id="ct-confile"> ~/.config/webexec/authorized_tokens</b>
             </p>
             <input type="text" name="fingerprint" readonly >
-            <p>To proceed, you can either copy the fingerprint using another
-                terminal or we can use ssh to take care of that for you:
+            <p>To proceed, please add the fingerprint to the file using another
+                terminal.
             </p>
-            <label for="uname">Username</label>
-
-            <input type="text" placeholder="your system username" name="uname" required>
-            <label for="pass">Password</label>
-            <input type="password" placeholder="your password" name="pass" required>
             <nav>
                 <button type="button" class="close"><i class="f7-icons">xmark</i></button>
                 <button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i></button>
-                <button type="submit"><i class="f7-icons">phone_arrow_up_right</i></button>
             </nav>
         </form>
       </div>
@@ -277,18 +271,18 @@
         <map name="help-gate-links">
             <area shape="rect" coords="2000,0,2439,300"  alt="githublink"
                   href="https://github.com/tuzig/terminal7" target="_top">
-            <area shape="rect" coords="2000,500,2439,640"  alt="server side"
+            <area shape="rect" coords="2000,550,2439,690"  alt="server side"
                   href="https://github.com/tuzig/webexec" target="_top">
-            <area shape="rect" coords="2000,640,2439,770"  alt="change log"
+            <area shape="rect" coords="2000,690,2439,820"  alt="change log"
                   href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md"
                   target="_top">
-            <area shape="rect" coords="2000,770,2439,895" alt="community"
+            <area shape="rect" coords="2000,820,2439,945" alt="community"
                   href="https://discord.gg/GneEDB7ZZQ"
                   target="_top">
-            <area shape="rect" coords="2000,895,2439,1020"  alt="security"
+            <area shape="rect" coords="2000,945,2439,1070"  alt="security"
                   href="https://github.com/tuzig/webexec/blob/master/docs/security.md"
                   target="_top">
-            <area shape="rect" coords="2000,1020,2439,1145"  alt="support"
+            <area shape="rect" coords="2000,1070,2439,1195"  alt="support"
                   href="mailto:support@tuzig.com">
         </map>
           <img usemap="#help-gate-links" src="img/help-gate.png"
@@ -314,7 +308,7 @@
         <tr> <td>Toggle Log</td> <td>⌘&nbsp;L</td> </tr>
         <tr> <td>Close Pane</td> <td>⌘&nbsp;D</td> </tr>
         <tr> <td>Reset Connection</td> <td>⌘&nbsp;R</td> </tr>
-        <tr> <td>Dump log to clipboard</td> <td>⌘&nbsp;`</td> </tr>
+        <tr> <td>Dump log to clipboard</td> <td>⌘&nbsp;9</td> </tr>
         <tr> <td>Hide This</td> <td>Tap This</td> </tr>
               </tbody></table>
           </div>

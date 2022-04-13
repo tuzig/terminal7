@@ -15,9 +15,12 @@ export function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
 export class Terminal7Mock extends Terminal7 {
     conf = { ui: {max_tabs: 10 },
-                  net: {timeout: 1000 }, 
-                  exec: {shell: "bash" }
-    }
+             net: {timeout: 1000,
+                   iceServer: ""}, 
+             exec: {shell: "bash" },
+             peerbook: { insecure: true },
+           }
+    netStatus = {connected: true}
     constructor() {
         super({})
         window.ResizeObserver = resizeObs
@@ -89,5 +92,10 @@ export class Terminal7Mock extends Terminal7 {
     }
     open(e) {
         this.e = e
+    }
+    getFingerprint() {
+        return new Promise((resolve, reject) => {
+            resolve("BADFACE")
+        })
     }
 }

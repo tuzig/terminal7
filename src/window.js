@@ -82,7 +82,7 @@ export class Window {
     /*
      * restoreLayout restores a layout, creating the panes and layouts as needed
      */
-    restoreLayout(layout, oldPanes) {
+    restoreLayout(layout) {
         var l = this.addLayout(layout.dir, {
             w: this,
             gate: this.gate,
@@ -94,12 +94,12 @@ export class Window {
         layout.cells.forEach(cell => {
             if ("dir" in cell) {
                 // recurselvly add a new layout
-                const newL = this.restoreLayout(cell, oldPanes)
+                const newL = this.restoreLayout(cell)
                 newL.layout = l
                 l.cells.push(newL)
             }
             else {
-                const p = l.addPane(cell, oldPanes)
+                const p = l.addPane(cell)
                 if (cell.active)
                     this.activeP = p
                 if (cell.zoomed)
@@ -119,26 +119,29 @@ export class Window {
      * name when the field is changed. 
      */
     rename() {
-        let e = this.nameE
-        const se = this.gate.e.querySelector(".rename-box")
+        const e = this.nameE,
+              se = this.gate.e.querySelector(".rename-box"),
+              textbox = this.gate.e.querySelector("#name-input")
+
         se.classList.remove("hidden")
-        const textbox = this.gate.e.querySelector("#name-input")
         textbox.value = e.innerHTML
         textbox.focus()
 
         const handler = (event) => {
             if (event.keyCode == 13 || event.type != "keyup") {
                 console.log(event)
-                this.gate.sendState()
-                this.activeP.focus()
-                se.classList.add("hidden")
-                this.t7.run(() => {
-                    e.w.name = event.target.value
-                    e.innerHTML = event.target.value
-                }, ABIT)
-
+                textbox.removeEventListener('keyup', handler)
                 textbox.removeEventListener('change', handler)
                 textbox.removeEventListener('blur', handler)
+                se.classList.add("hidden")
+                this.t7.run(() => {
+                    this.name = event.target.value
+                    this.nameE.innerHTML = event.target.value
+                    this.activeP.focus()
+                }, ABIT)
+                this.gate.sendState()
+                event.preventDefault()
+                event.stopPropagation()
             }
         }
 

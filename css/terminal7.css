@@ -122,7 +122,7 @@ a {
     color: #00FAFA;
 }
 .modal {
-    z-index: 6;
+    z-index: 5;
     background-color: #271D30;
     padding: 2%;
     position: fixed;

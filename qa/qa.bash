@@ -2,9 +2,20 @@
 if [ $# -eq 0 ]
 then
     echo ">>> Starting full QA testing <<<"
+    
     npm run lint
+
+    echo ">>> TODO: finish TypeScript refactor and pass the linter"
     npx vitest run
+    if [ $? -ne 0 ]
+    then
+         exit 2
+    fi
     npx vite build
+    if [ $? -ne 0 ]
+    then
+         exit 3
+    fi
     for compose in `find qa -name "lab.yaml"`
     do
         echo ">>> bringing up a lab from `dirname $compose`"

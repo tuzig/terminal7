@@ -13,6 +13,8 @@ import { Clipboard } from '@capacitor/clipboard'
 import { Storage } from '@capacitor/storage'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
+import { WebglAddon } from 'xterm-addon-webgl'
+
 
 import XtermWebfont from 'xterm-webfont'
 
@@ -42,6 +44,7 @@ export class Pane extends Cell {
         this.dividers = []
         this.flashTimer = null
         this.aLeader = false
+        this.retries = 0
     }
 
     /*
@@ -76,9 +79,18 @@ export class Pane extends Cell {
         // the canvas gets the touch event and the nadler needs to get back here
         this.t.loadAddon(this.fitAddon)
         this.t.loadAddon(this.searchAddon)
+
         this.createDividers()
         this.t.onSelectionChange(() => this.selectionChanged())
         this.t.loadWebfontAndOpen(con).then(_ => {
+            const webGLAddon = new WebglAddon()
+            webGLAddon.onContextLoss(e => {
+                console.log("lost context")
+                  webGLAddon.dispose()
+            })
+            try {
+                this.t.loadAddon(webGLAddon)
+            } catch (e) { console.log("no webgl: " +e.toString()) }
             this.t.textarea.tabIndex = -1
             this.t.attachCustomKeyEventHandler(ev => {
                 var toDo = true
@@ -112,23 +124,25 @@ export class Pane extends Cell {
                 return toDo
             })
             this.t.onData(d =>  {
+                const state = this.d.readyState 
+
                 if (this.d == null) {
-                    this.gate.notify("Peer is disconnected")
+                    this.gate.notify("Gate is disconnected")
                     return
                 }
-                if (this.d.readyState != "open") {
-                    this.gate.notify(`data channel is ${this.d.readyState}`)
+                if (state != "open") {
+                    this.gate.notify(`Gate ins not open. It's ${state}`)
                     return
                 }
                 this.d.send(d)
             })
-            const resizeObserver = new window.ResizeObserver(_ => this.fit())
+            const resizeObserver = new window.ResizeObserver(() => this.fit())
             resizeObserver.observe(this.e);
             this.fit(pane => { 
                if (pane != null)
                   pane.openChannel({parent: parentID, id: channelID})
-                  .catch(() => 
-                      this.gate.notify("Failed to open communication channel"))
+                  .catch(e => 
+                      this.gate.notify("Failed to open communication channel: "+e))
             })
         })
         return this.t
@@ -170,6 +184,7 @@ export class Pane extends Cell {
             }
             else {
                 this.t7.log(`fit failed ${this.retries} times. giving up`)
+                this.retries = 0
                 if (cb instanceof Function) cb(null)
             }
             return
@@ -191,7 +206,7 @@ export class Pane extends Cell {
     focus() {
         super.focus()
         if (this.t !== undefined)
-            this.t7.run(_ => this.t.focus(), 10)
+            setTimeout(() => this.t.focus(), 100)
         else 
             this.t7.log("can't focus, this.t is undefined")
     }
@@ -250,7 +265,7 @@ export class Pane extends Cell {
     openChannel(opts) {
         return new Promise((resolve, reject) => {
             if (!this.gate.session) {
-                reject("Session is not opened")
+                reject("Gate has no session yet")
                 return
             }
             this.buffer = []
@@ -445,7 +460,7 @@ export class Pane extends Cell {
         case "ArrowDown":
             f = () => this.w.moveFocus("down")
             break
-        case "`":
+        case "9":
             f = () => this.t7.dumpLog()
             break
         }

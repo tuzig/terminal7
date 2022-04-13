@@ -144,7 +144,7 @@ export class Cell {
     }
     styleZoomed(e) {
         let H = document.body.offsetHeight
-        e.style.height = `${H - 44}px`
+        e.style.height = `${H - 42}px`
         e.style.top = "0px"
         e.style.width = "100%"
     }

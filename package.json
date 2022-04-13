@@ -1,6 +1,6 @@
 {
   "name": "terminal7",
-  "version": "0.19.3",
+  "version": "0.20.1",
   "description": "A touchable terminal emulator & multiplexer tablet app",
   "main": "src/index.js",
   "homepage": "https://terminal7.dev",
@@ -29,7 +29,7 @@
     "@iarna/toml": "git+https://github.com/tuzig/iarna-toml.git",
     "@robingenz/capacitor-background-task": "^1.0.0",
     "capacitor-ssh-plugin": "../capacitor-ssh-plugin",
-    "codemirror": "git+https://github.com/tuzig/CodeMirror.git",
+    "codemirror": "<6",
     "glob": "<8",
     "hammerjs": "<3",
     "idb": "<7",
@@ -37,6 +37,7 @@
     "xterm": "git+https://github.com/tuzig/xterm.js.git#semver:<5.0",
     "xterm-addon-fit": "^0.3.0",
     "xterm-addon-search": "^0.7.0",
+    "xterm-addon-webgl": "^0.11.4",
     "xterm-webfont": "^2.0.0"
   },
   "devDependencies": {
@@ -44,7 +45,6 @@
     "@typescript-eslint/eslint-plugin": "<6",
     "@typescript-eslint/parser": "<6",
     "eslint": "<9",
-    "eslint-plugin-mocha": "^10.0.3",
     "jsdom": "^19.0.0",
     "typescript": "<5",
     "vite": "^2.8.5",
@@ -55,14 +55,15 @@
   "scripts": {
     "start": "npm run dev",
     "dev": "vite",
-    "stage": "vite build --sourcemap && vite preview --port 3000",
-    "run": "npm run build && cap run ios",
+    "stage": "vite build --sourcemap && vite preview",
+    "run": "cap run ios",
     "test": "vitest",
     "build": "vite build -c vite.dev.config.js",
     "clean": "rm -rf dist ios/App/App/public/*",
     "postinstall": "cd ./node_modules/xterm && yarn install && npm run package",
     "qa": "bash ./qa/qa.bash",
-    "lint": "npx eslint qa src --ext .js,.jsx,.ts,.tsx"
+    "lint": "npx eslint qa src --ext .js,.jsx,.ts,.tsx",
+    "capacitor:copy:before": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -78,26 +79,15 @@
   "bugs": {
     "url": "https://github.com/tuzig/terminal7/issues"
   },
-  "mocha": {
-    "watch-files": [
-      "src/*.js",
-      "test/*.js"
-    ]
-  },
   "eslintConfig": {
     "root": true,
     "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint/eslint-plugin",
-      "mocha"
-    ],
+    "plugins": [ "@typescript-eslint/eslint-plugin" ],
     "extends": [
       "eslint:recommended",
-      "plugin:@typescript-eslint/recommended",
-      "plugin:mocha/recommended"
+      "plugin:@typescript-eslint/recommended"
     ],
     "env": {
-      "mocha": true,
       "browser": true
     }
   }

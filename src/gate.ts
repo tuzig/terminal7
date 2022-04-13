@@ -7,21 +7,20 @@
  */
 import { Window } from './window.js'
 import { Pane } from './pane.js'
-import { Session } from './session.ts'
-import { SSHSession } from './sshsession.ts'
-import { PeerbookSession } from './peerbook_session.ts'
-
-import { SSHPlugin } from 'capacitor-ssh-plugin'
+import { Session } from './session'
 import { Clipboard } from '@capacitor/clipboard'
-import { Storage } from '@capacitor/storage'
-const ABIT    = 10,
-    FAILED_COLOR = "red"// ashort period of time, in milli
+import { WSSession, PeerbookSession } from './webrtc_session'
 
+import { Storage } from '@capacitor/storage'
+
+const FAILED_COLOR = "red"// ashort period of time, in milli
 /*
  * The gate class abstracts a host connection
  */
 export class Gate {
     session: Session
+    watchDog: number
+    activeW: Window
     constructor (props) {
         // given properties
         this.id = props.id
@@ -74,6 +73,9 @@ export class Gate {
 
             t.querySelector(".search-down").addEventListener('click', _ => 
                 this.activeW.activeP.findNext())
+
+            t.querySelector(".rename-close").addEventListener('click', () => 
+                this.e.querySelector(".rename-box").classList.add("hidden"))
             /* TODO: handle the bang
             let b = t.querySelector(".bang")
             b.addEventListener('click', (e) => {new window from active pane})
@@ -140,16 +142,21 @@ export class Gate {
         this.e.classList.remove("hidden")
         this.e.querySelectorAll(".window").forEach(w => w.classList.add("hidden"))
         this.activeW.focus()
+        this.storeState()
     }
     // stops all communication 
     stopBoarding() {
-        // this.setIndicatorColor(FAILED_COLOR)
-        // clear all pending messages
         this.boarding = false
     }
     setIndicatorColor(color) {
             this.e.querySelector(".tabbar-names").style.setProperty(
                 "--indicator-color", color)
+    }
+    clearWatchdog() {
+        if (this.watchDog != null) {
+            window.clearTimeout(this.watchDog)
+            this.watchDog = null
+        }
     }
     /*
      * onSessionState(state) is called when the connection
@@ -157,14 +164,10 @@ export class Gate {
      */
     onSessionState(state: RTState) {
         this.t7.log(`updating ${this.name} state to ${state}`)
-        this.notify("connection state: " + state)
+        this.notify("State: " + state)
         if (state == "connected") {
             this.t7.logDisplay(false)
-            if (this.watchDog != null) {
-                window.clearTimeout(this.watchDog)
-                this.watchDog = null
-            }
-            this.boarding = true
+            this.clearWatchdog()
             this.setIndicatorColor("unset")
             var m = this.t7.e.querySelector(".disconnect")
             if (m != null)
@@ -181,16 +184,22 @@ export class Gate {
         else if (state == "disconnected") {
             // TODO: add warn class
             this.lastDisconnect = Date.now()
+            // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR)
+        }
+        else if (state == "unauthorized") {
+            this.clearWatchdog()
+            this.stopBoarding()
+            this.copyFingerprint()
         }
         else if ((state != "new") && (state != "connecting") && this.boarding) {
             // handle connection failures
             let now = Date.now()
             if (now - this.lastDisconnect > 100) {
-                this.stopBoarding()
                 this.t7.onDisconnect(this)
+                this.stopBoarding()
             } else
-                this.t7.log("Ignoring a peer terminal7.cells.forEach(c => event after disconnect")
+                this.t7.log("Ignoring a peer this.t7.cells.forEach(c => event after disconnect")
         }
     }
     /*
@@ -198,20 +207,24 @@ export class Gate {
      */
     connect() {
         // do nothing when the network is down
+        if (!this.t7.netStatus || !this.t7.netStatus.connected)
+            return
         // if we're already boarding, just focus
         if (this.boarding) {
             console.log("already boarding")
-            if (this.windows.length == 0)
+            if (!this.windows || (this.windows.length == 0))
                 this.activeW = this.addWindow("", true)
             this.focus()
             return
         }
+        this.boarding = true
         this.notify("Initiating connection")
         // start the connection watchdog
         // TODO: move this to the session
         if (this.watchDog != null)
             window.clearTimeout(this.watchDog)
         this.watchDog = this.t7.run(_ => {
+            console.log("WATCHDOG stops the gate connecting")
             this.watchDog = null
             this.stopBoarding()
             this.t7.onDisconnect(this)
@@ -222,7 +235,7 @@ export class Gate {
                 this.session = new PeerbookSession(this.fp)
             }
             else {
-                this.session = new SSHSession(this.addr, this.user, this.secret)
+                this.session = new WSSession(this.addr, this.user)
             }
         this.session.onStateChange = state => this.onSessionState(state)
         this.session.onPayloadUpdate = layout => {
@@ -230,7 +243,8 @@ export class Gate {
             console.log("TBD: update layouy", layout)
         }
         console.log("opening session")
-        this.session.connect()
+        // TODO: use the generated fingerprint and not t7's global fingerprint
+        this.t7.getFingerprint().then(() => this.session.connect())
         /*
         this.connector = new webrtcConnector({fp: this.fp})
         this.connector.onError = msg => this.t7.onNoSignal(this, msg)
@@ -255,42 +269,41 @@ export class Gate {
         })
         return r
     }
+    // reset reset's a gate connection by disengaging and reconnecting
     reset() {
-        this.clear()
-        this.setLayout(null)
+        if (this.watchDog != null) {
+            window.clearTimeout(this.watchDog)
+            this.watchDog = null
+        }
+        this.disengage().then(() => this.t7.run(() => this.connect(), 100))
     }
     setLayout(state: object) {
-        if ((state == null) || (state.windows.length == 0)) {
+        if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
             this.activeW = this.addWindow("", true)
         } else if (this.windows.length > 0) {
             // TODO: validate the current layout is like the state
             this.t7.log("Restoring with marker, opening channel")
-            this.panes().forEach(p => p.openChannel({id: p.d.id}))
+            this.panes().forEach(p => {
+                if (p.d)
+                    p.openChannel({id: p.d.id})
+            })
         } else {
-            const oldPanes = this.panes(),
-                  tempPanes = document.createElement('div')
-
-            oldPanes.forEach(pane => tempPanes.appendChild(pane.e))
-
             this.t7.log("Setting layout: ", state)
             this.clear()
 
             state.windows.forEach(w =>  {
                 let win = this.addWindow(w.name)
-                win.restoreLayout(w.layout, oldPanes)
                 if (w.active) 
                     this.activeW = win
+                win.restoreLayout(w.layout)
             })
-            // remove all old panes
-            tempPanes.remove()
         }
 
         if (!this.activeW)
             this.activeW = this.windows[0]
         this.focus()
-        this.boarding = true
     }
     /*
      * Adds a window, opens it and returns it
@@ -343,18 +356,31 @@ export class Gate {
         })
         return { windows: wins }
     }
+    storeState() {
+        const dump = this.dump()
+        var lastState = {windows: dump.windows}
+
+        if (this.fp)
+            lastState.fp = this.fp
+        lastState.name = this.name
+        Storage.set({key: "last_state",
+                     value: JSON.stringify(lastState)})
+    }
+
     sendState() {
         if (this.sendStateTask != null)
             return
+
+        this.storeState()
         // send the state only when all panes have a channel
         if (this.session && (this.panes().every(p => p.d != null)))
            this.sendStateTask = setTimeout(() => {
                this.sendStateTask = null
-               this.session.setPayload(this.dump()).then(_ => {
+               this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.pc)) {
                         console.log("Closing gate after updating to empty state")
-                        this.stopBoarding()
                         this.disengage()
+                        this.stopBoarding()
                     }
                })
             }, 100)
@@ -365,36 +391,6 @@ export class Gate {
         //enable search
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.remove("off"))
-    }
-    copyFingerprint() {
-        let ct = document.getElementById("copy-fingerprint"),
-            addr = this.addr.substr(0, this.addr.indexOf(":"))
-        this.t7.getFingerprint().then(fp =>
-                ct.querySelector('[name="fingerprint"]').value = fp)
-        document.getElementById("ct-address").innerHTML = addr
-        document.getElementById("ct-name").innerHTML = this.name
-        ct.classList.remove("hidden")
-        ct.querySelector(".copy").addEventListener('click', ev => {
-            ct.classList.add("hidden")
-            Clipboard.write(
-                {string: ct.querySelector('[name="fingerprint"]').value})
-            this.notify("Fingerprint copied to the clipboard")
-        })
-        ct.querySelector("form").addEventListener('submit', ev => {
-            ev.preventDefault()
-            this.t7.getFingerprint().then(fp =>
-                this.t7.ssh(ct,  this,
-                    `cat <<<"${fp}" >> ~/.webexec/authorized_tokens`,
-                    _ => {
-                        ct.classList.add("hidden")
-                        this.connect()
-                    })
-            )
-        })
- 
-        ct.querySelector(".close").addEventListener('click',  ev =>  {
-            ct.classList.add("hidden")
-        })
     }
     goBack() {
         var w = this.breadcrumbs.pop()
@@ -417,13 +413,6 @@ export class Gate {
         document.getElementById("rh-name").innerHTML = this.name
         e.classList.remove("hidden")
     }
-    async restartServer() {
-        this.clear()
-        await this.disengage()
-        let e = document.getElementById("reset-host")
-        this.t7.ssh(e, this, `webexec restart --address ${this.addr}`,
-            _ => e.classList.add("hidden")) 
-    }
     fit() {
         this.windows.forEach(w => w.fit())
     }
@@ -434,7 +423,7 @@ export class Gate {
      */
     disengage() {
         return new Promise(resolve => {
-            this.t7.log(`disengaging. boarding ${this.boarding}`)
+            this.t7.log(`disengaging. boarding is ${this.boarding}`)
             if (!this.boarding || !this.session) {
                 resolve()
                 return
@@ -479,8 +468,7 @@ export class Gate {
         })
         e.querySelector(".all").addEventListener('click', _ => {
             this.e.querySelector(".reset-gate").classList.toggle("hidden")
-            this.stopBoarding()
-            this.connect()
+            this.reset()
         })
         this.e.appendChild(e)
     }
@@ -498,6 +486,24 @@ export class Gate {
             this.nameE.classList.remove("offline")
         else
             this.nameE.classList.add("offline")
+    }
+    copyFingerprint() {
+        let ct = document.getElementById("copy-fingerprint"),
+            addr = this.addr.substr(0, this.addr.indexOf(":"))
+        this.t7.getFingerprint().then(fp =>
+                ct.querySelector('[name="fingerprint"]').value = fp)
+        document.getElementById("ct-address").innerHTML = addr
+        document.getElementById("ct-name").innerHTML = this.name
+        ct.classList.remove("hidden")
+        ct.querySelector(".copy").addEventListener('click', ev => {
+            ct.classList.add("hidden")
+            Clipboard.write(
+                {string: ct.querySelector('[name="fingerprint"]').value})
+            this.t7.notify("Fingerprint copied to the clipboard")
+        })
+        ct.querySelector(".close").addEventListener('click',  ev =>  {
+            ct.classList.add("hidden")
+        })
     }
     /*
     SSHConnect(ev) {
