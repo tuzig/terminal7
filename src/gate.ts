@@ -10,6 +10,7 @@ import { Pane } from './pane.js'
 import { Session } from './session'
 import { Clipboard } from '@capacitor/clipboard'
 import { WSSession, PeerbookSession } from './webrtc_session'
+import { SSHSession } from './ssh_session'
 
 import { Storage } from '@capacitor/storage'
 
@@ -18,6 +19,7 @@ const FAILED_COLOR = "red"// ashort period of time, in milli
  * The gate class abstracts a host connection
  */
 export class Gate {
+    e: Element
     session: Session
     watchDog: number
     activeW: Window
@@ -284,12 +286,33 @@ export class Gate {
         }
         this.disengage().then(() => this.t7.run(() => this.connect(), 100))
     }
+    loseState () {
+        let e = document.getElementById("lose-state-template")
+        e = e.content.cloneNode(true)
+        e.querySelector(".continue").addEventListener('click', evt => {
+            evt.target.closest(".modal").classList.toggle("hidden")
+            this.clear()
+            this.activeW = this.addWindow("", true)
+            this.focus()
+        })
+        e.querySelector(".close").addEventListener('click', evt => {
+            evt.target.closest(".modal").classList.toggle("hidden")
+            this.clear()
+            this.t7.goHome()
+        })
+        this.e.appendChild(e)
+    }
     setLayout(state: object) {
+        const winLen = this.windows.length
+        // got an empty state
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
-            this.activeW = this.addWindow("", true)
-        } else if (this.windows.length > 0) {
+            if (winLen > 0)
+                this.loseState()
+            else
+                this.activeW = this.addWindow("", true)
+        } else if (winLen > 0) {
             // TODO: validate the current layout is like the state
             this.t7.log("Restoring with marker, opening channel")
             this.panes().forEach(p => {
@@ -299,7 +322,6 @@ export class Gate {
         } else {
             this.t7.log("Setting layout: ", state)
             this.clear()
-
             state.windows.forEach(w =>  {
                 let win = this.addWindow(w.name)
                 if (w.active) 
