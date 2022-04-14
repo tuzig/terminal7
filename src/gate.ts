@@ -238,10 +238,11 @@ export class Gate {
                 this.session = new PeerbookSession(this.fp)
             }
             else {
-                this.session = new WSSession(this.addr, this.user)
+                // this.session = new WSSession(this.addr, this.user)
                 // TODO add the port
-                // const pass = (this.pass)?this.pass: await this.askPass()
-                // this.session = new SSHSession(this.addr, this.user, pass)
+                const pass = (this.pass)?this.pass: await this.askPass()
+                // TODO: add the username to add/edit forms
+                this.session = new SSHSession(this.addr, "daonb", pass)
             }
         this.session.onStateChange = state => this.onSessionState(state)
         this.session.onPayloadUpdate = layout => {

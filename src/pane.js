@@ -5,7 +5,6 @@
  *  License: GPLv3
  */
 import { Cell } from './cell.js'
-import { SSHSession } from './sshsession.ts'
 import { fileRegex, urlRegex } from './utils.js'
 import { Terminal } from 'xterm'
 import { Capacitor } from '@capacitor/core'
@@ -297,7 +296,9 @@ export class Pane extends Cell {
     // called when a message is received from the server
     onChannelMessage (m) {
         this.flashIndicator()
-        this.write(new Uint8Array(m.data))
+        // TODO: check it works from peerbook & direct
+        // this.write(new Uint8Array(m.data))
+        this.write(m.data)
     }
     toggleZoom() {
         super.toggleZoom()

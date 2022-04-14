@@ -1,5 +1,6 @@
 import { RTSession, RTChannel } from "../src//rtsession.ts"
 import { Terminal7 } from "../src/terminal7.js"
+import { Gate } from "../src/gate"
 
 class resizeObs {
     constructor(cb) {
@@ -24,6 +25,7 @@ export class Terminal7Mock extends Terminal7 {
     constructor() {
         super({})
         window.ResizeObserver = resizeObs
+        Gate.prototype.askPass = () => "BADWOLF"
         document.body.innerHTML = `
 <div id='t7'></div>
 <div id='static-hosts'></div>

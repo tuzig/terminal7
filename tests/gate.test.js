@@ -13,6 +13,7 @@ import { Storage } from '@capacitor/storage'
 
 vi.mock('xterm')
 vi.mock('../src/webrtc_session.ts')
+vi.mock('../src/ssh_session.ts')
 
 describe("gate", () => {
     var t, e

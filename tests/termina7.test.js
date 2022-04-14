@@ -12,7 +12,7 @@ import { assert } from "chai"
 import { Storage } from '@capacitor/storage'
 
 vi.mock('xterm')
-vi.mock('../src/sshsession.ts')
+vi.mock('../src/ssh_session.ts')
 
 describe("terminal7", function() {
     var t, e
