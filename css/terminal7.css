@@ -126,7 +126,7 @@ a {
     background-color: #271D30;
     padding: 2%;
     position: fixed;
-    bottom: 54pt;
+    bottom: 62pt;
     left: 50%;
     transform: translate(-50%, 0);
     width: 40em;
@@ -285,7 +285,7 @@ nav .on { color: #00FA00 !important; }
     z-index: 9;
     margin: 0 auto;
     padding: 4px;
-    bottom: 54pt;
+    bottom: 62pt;
     left: 50%;
     width: 60em;
     max-width: 96%;
@@ -301,7 +301,7 @@ nav .on { color: #00FA00 !important; }
     z-index: 9;
     margin: 0 auto;
     padding: 4px;
-    bottom: 54pt;
+    bottom: 62pt;
     left: 50%;
     width: 30em;
     max-width: 96%;
