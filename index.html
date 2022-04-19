@@ -49,13 +49,15 @@
       </div>
       <div id="add-host" class="hidden modal border" >
           <form>
-            <h2>Add a Server</h2>
-            <label for="uname">Address</label>
-            <input type="text" placeholder="IP or host name" name="hostaddr"
-                required>
+            <h2>Add a Gate</h2>
             <label for="uname">Name</label>
             <input type="text" placeholder="Enter Hostname" name="hostname"
                 required>
+            <label for="uname">Hostname</label>
+            <input type="text" placeholder="IP or host name" name="hostaddr"
+                required>
+            <label for="uname">Username</label>
+            <input type="text" placeholder="your username on the host" name="username" required>
             <input type="checkbox" checked name="remember">
             <label for="remember">Remember host</label>
             <footer>
@@ -228,13 +230,15 @@
       </div>
       <div id="edit-host" class="hidden modal border" >
           <form id="edit-host-form">
-            <h2>Edit Host</h2>
-            <label for="uname">Address</label>
-            <input type="text" placeholder="IP or host name" name="hostaddr"
-                required>
+            <h2>Gate Edit</h2>
             <label for="uname">Name</label>
             <input type="text" placeholder="Enter Hostname" name="hostname"
                 required>
+            <label for="uname">Hostname</label>
+            <input type="text" placeholder="IP or host name" name="hostaddr"
+                required>
+            <label for="uname">Username</label>
+            <input type="text" placeholder="your username on the host" name="username" required>
             <nav>
                 <button type="button" class="close"><i class="f7-icons">xmark</i></button>
                 <button type="button" class="trash"><i class="f7-icons">bin_xmark</i></button>
@@ -325,6 +329,18 @@
                 <button type="button" class="reset"><i class="f7-icons">arrow_2_circlepath</i></button>
             </nav>
       </div>
+       <div id="askpass" class="hidden modal border">
+         <form>
+           <h1></h1>
+           <p></p>
+            <label for="pass">Password</label>
+            <input type="password" placeholder="your password" name="pass" required>
+            <nav>
+                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+                <button type="submit"><i class="f7-icons">phone_arrow_up_right</i></button>
+            </nav>
+        </form>
+       </div>
   </div>
   <nav id="navbar" class="bar">
           <button type="button" id="home-button" class="on"><i class="f7-icons">house</i></button>

@@ -19,10 +19,13 @@ const FAILED_COLOR = "red"// ashort period of time, in milli
  * The gate class abstracts a host connection
  */
 export class Gate {
+    name: string
     e: Element
     session: Session
     watchDog: number
     activeW: Window
+    username: string
+    pass: string | undefined
     constructor (props) {
         // given properties
         this.id = props.id
@@ -32,6 +35,8 @@ export class Gate {
         this.secret = props.secret
         this.store = props.store
         this.name = (!props.name)?`${this.user}@${this.addr}`:props.name
+        this.username = props.username
+        this.pass = props.pass
         // 
         this.windows = []
         this.boarding = false
@@ -105,6 +110,7 @@ export class Gate {
         let editHost = document.getElementById("edit-host")
         this.addr = editHost.querySelector('[name="hostaddr"]').value 
         this.name = editHost.querySelector('[name="hostname"]').value
+        this.username = editHost.querySelector('[name="username"]').value
         this.nameE.innerHTML = this.name || this.addr
         this.t7.storeGates()
         this.t7.clear()
@@ -126,6 +132,7 @@ export class Gate {
             editHost = document.getElementById("edit-host")
             editHost.querySelector('[name="hostaddr"]').value = this.addr
             editHost.querySelector('[name="hostname"]').value = this.name
+            editHost.querySelector('[name="username"]').value = this.username
         }
         editHost.gate = this
         editHost.classList.remove("hidden")
@@ -182,19 +189,21 @@ export class Gate {
                 }
             })
             this.session.getPayload().then(layout => this.setLayout(layout))
-        }
-        else if (state == "disconnected") {
+        } else if (state == "disconnected") {
             // TODO: add warn class
             this.lastDisconnect = Date.now()
             // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR)
-        }
-        else if (state == "unauthorized") {
+        } else if (state == "unauthorized") {
             this.clearWatchdog()
             this.stopBoarding()
             this.copyFingerprint()
-        }
-        else if ((state != "new") && (state != "connecting") && this.boarding) {
+        } else if (state == "wrong password") {
+            this.clearWatchdog()
+            this.stopBoarding()
+            this.session = null
+            this.connect()
+        } else if ((state != "new") && (state != "connecting") && this.boarding) {
             // handle connection failures
             let now = Date.now()
             if (now - this.lastDisconnect > 100) {
@@ -203,9 +212,6 @@ export class Gate {
             } else
                 this.t7.log("Ignoring a peer this.t7.cells.forEach(c => event after disconnect")
         }
-    }
-    askPass(): string {
-        return "BADWOLF"
     }
     /*
      * connect connects to the gate
@@ -225,7 +231,6 @@ export class Gate {
         this.boarding = true
         this.notify("Initiating connection")
         // start the connection watchdog
-        // TODO: move this to the session
         if (this.watchDog != null)
             window.clearTimeout(this.watchDog)
         this.watchDog = this.t7.run(_ => {
@@ -235,33 +240,23 @@ export class Gate {
             this.t7.onDisconnect(this)
         }, this.t7.conf.net.timeout)
         
-        if (this.session == null)
+        if (this.session == null) {
             if (typeof this.fp == "string") {
                 this.session = new PeerbookSession(this.fp)
             }
             else {
+                let pass = this.pass
                 // this.session = new WSSession(this.addr, this.user)
                 // TODO add the port
-                const pass = (this.pass)?this.pass: await this.askPass()
-                // TODO: add the username to add/edit forms
-                this.session = new SSHSession(this.addr, "daonb", pass)
+                if (!pass) {
+                    window.clearTimeout(this.watchDog)
+                    this.watchDog = null
+                    this.askPass()
+                    return
+                }
+                this.completeConnect(pass)
             }
-        this.session.onStateChange = state => this.onSessionState(state)
-        this.session.onPayloadUpdate = layout => {
-            this.notify("TBD: update new layout")
-            console.log("TBD: update layouy", layout)
         }
-        console.log("opening session")
-        // TODO: use the generated fingerprint and not t7's global fingerprint
-        this.t7.getFingerprint().then(() => this.session.connect())
-        /*
-        this.connector = new webrtcConnector({fp: this.fp})
-        this.connector.onError = msg => this.t7.onNoSignal(this, msg)
-        this.connector.onWarning = msg => this.notify(msg)
-        this.connector.onResize = () => this.panes().forEach(p => p.fit())
-        this.connector.onStateChange = (state) => this.onSessionState(state)
-        this.connector.connect()
-        */
     }
 
     notify(message) {    
@@ -534,30 +529,43 @@ export class Gate {
             ct.classList.add("hidden")
         })
     }
-    /*
-    SSHConnect(ev) {
-        if (ev.candidate) {
-            if (!this.SSHSession) {
-                SSHPlugin.startSessionByPasswd({
-                    hostname: "192.168.1.18",
-                    port: 22,
-                    username: "daonb",
-                    password: "Quadra840AV"}, m => this.onSSHOutput(m)).then(ret => {
-                        this.SSHSession = ret.session
-                        SSHPlugin.startShell({pty: 6, session: ret.session}, m =>
-                            this.SSHSendCandidate(ev)})
-                    })
-            } else 
-                SSHSendCandidate(json.stringify(ev.candidate))
+    askPass() {
+        const hideModal = evt => evt.target.closest(".modal").classList.toggle("hidden")
+        const e = document.getElementById("askpass")
 
-        } else
-            console.log("no candidate", ev)
+        if (!e) {
+            // for debug
+            this.completeConnect("BADWOLF")
+            return
+        }
+        e.querySelector("h1").innerText = `${this.username}@${this.name}`
+        e.classList.remove("hidden")
+        this.t7.logDisplay(false)
+        e.querySelector("form").onsubmit = evt => {
+            hideModal(evt)
+            const pass = evt.target.querySelector('[name="pass"]').value
+            this.completeConnect(pass)
+            evt.stopPropagation()
+            evt.preventDefault()
+        }
+        e.querySelector(".close").onclick = evt => {
+            hideModal(evt)
+            this.stopBoarding()
+        }
+        e.querySelector('[name="pass"]').focus()
     }
-    onSSHOutput(m) {
-        console.log("got message", m)
+    completeConnect(pass: string): void {
+        // TODO: why is pass undefined?
+        this.session = new SSHSession(this.addr, this.username, pass)
+        this.session.onStateChange = state => this.onSessionState(state)
+        this.session.onPayloadUpdate = layout => {
+            this.notify("TBD: update new layout")
+            this.t7.log("TBD: update layout", layout)
+        }
+        console.log("opening session")
+        // TODO: use the generated fingerprint and not t7's global fingerprint
+        // await this.t7.getFingerprint()
+        // this.t7.run(() => this.session.connect(), 500)
+        this.session.connect()
     }
-    SSHSendCandidate(can) {
-        this.SSHSession.write
-    }
-    */
 }

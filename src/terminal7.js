@@ -336,6 +336,10 @@ export class Terminal7 {
     }
     restoreState() {
         return new Promise((resolve, reject) => {
+            if (!this.conf.autoRestore) {
+                reject()
+                return
+            }
             Storage.get({key: "last_state"}).then(({ value }) => {
                 if (!value)
                     reject()
@@ -533,7 +537,8 @@ peer_name = "${peername}"\n`
                 let ws = []
                 h.windows.forEach((w) => ws.push(w.id))
                 out.push({id: h.id, addr: h.addr, user: h.user, secret: h.secret,
-                    name:h.name, windows: ws, store: true, verified: h.verified})
+                    name:h.name, windows: ws, store: true, verified: h.verified,
+                    username:h.username})
             }
         })
         this.log("Storing gates:", out)

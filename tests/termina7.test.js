@@ -7,6 +7,7 @@
  */
 import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
+import { Gate } from '../src/gate'
 import { Terminal7Mock } from './infra.ts'
 import { assert } from "chai"
 import { Storage } from '@capacitor/storage'
@@ -22,6 +23,9 @@ describe("terminal7", function() {
     beforeEach(async () => {
         await Storage.clear()
         console.log("before each")
+        Gate.prototype.askPass = function () {
+            this.completeConnect("BADWOLF")
+        }
         t = new Terminal7Mock()
         e = document.getElementById("t7")
         window.terminal7=t

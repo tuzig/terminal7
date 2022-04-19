@@ -22,7 +22,6 @@ export class Terminal7Mock extends Terminal7 {
              peerbook: { insecure: true },
            }
     netStatus = {connected: true}
-    askPass = () => "BADWOLF"
     constructor() {
         super({})
         window.ResizeObserver = resizeObs

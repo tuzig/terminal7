@@ -123,12 +123,12 @@ export class Pane extends Cell {
                 return toDo
             })
             this.t.onData(d =>  {
-                const state = this.d.readyState 
 
-                if (this.d == null) {
+                if (!this.d) {
                     this.gate.notify("Gate is disconnected")
                     return
                 }
+                const state = this.d.readyState 
                 if (state != "open") {
                     this.gate.notify(`Sorry, gate is ${state}`)
                     return
@@ -257,7 +257,10 @@ export class Pane extends Cell {
         const reconnect = this.d != null
         this.d = channel
         this.d.onMessage = m => this.onChannelMessage(m)
-        this.d.onClose = m => this.close()
+        this.d.onClose = () => {
+            this.d = undefined 
+            this.close()
+        }
         if (!reconnect)
             this.gate.sendState()
     }

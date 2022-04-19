@@ -1,6 +1,6 @@
 export type CallbackType = (e: unknown) => void
 export type ChannelID = number
-export type State = "new" | "connecting" | "connected" | "reconnected" | "disconnected" | "failed" | "unauthorized"
+export type State = "new" | "connecting" | "connected" | "reconnected" | "disconnected" | "failed" | "unauthorized" | "wrong password"
 
 export interface Event {
     state: string
