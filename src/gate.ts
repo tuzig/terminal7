@@ -240,23 +240,22 @@ export class Gate {
             this.t7.onDisconnect(this)
         }, this.t7.conf.net.timeout)
         
-        if (this.session == null) {
-            if (typeof this.fp == "string") {
-                this.session = new PeerbookSession(this.fp)
-            }
-            else {
-                let pass = this.pass
-                // this.session = new WSSession(this.addr, this.user)
-                // TODO add the port
-                if (!pass) {
-                    window.clearTimeout(this.watchDog)
-                    this.watchDog = null
-                    this.askPass()
-                    return
-                }
-                this.completeConnect(pass)
-            }
+        if (typeof this.fp == "string") {
+            this.session = new PeerbookSession(this.fp)
         }
+        else {
+            let pass = this.pass
+            // this.session = new WSSession(this.addr, this.user)
+            // TODO add the port
+            if (!pass) {
+                window.clearTimeout(this.watchDog)
+                this.watchDog = null
+                this.askPass()
+                return
+            }
+            this.completeConnect(pass)
+        }
+
     }
 
     notify(message) {    
@@ -446,14 +445,14 @@ export class Gate {
      * and closes the peer connection.
      */
     disengage() {
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             this.t7.log(`disengaging. boarding is ${this.boarding}`)
             if (!this.boarding || !this.session) {
                 resolve()
                 return
             }
-            this.session.disconnect().then(resolve)
             this.boarding = false
+            this.session.disconnect().then(resolve).catch(reject)
         })
     }
     closeActivePane() {
@@ -543,8 +542,8 @@ export class Gate {
         this.t7.logDisplay(false)
         e.querySelector("form").onsubmit = evt => {
             hideModal(evt)
-            const pass = evt.target.querySelector('[name="pass"]').value
-            this.completeConnect(pass)
+            this.pass = evt.target.querySelector('[name="pass"]').value
+            this.completeConnect(this.pass)
             evt.stopPropagation()
             evt.preventDefault()
         }
@@ -556,7 +555,8 @@ export class Gate {
     }
     completeConnect(pass: string): void {
         // TODO: why is pass undefined?
-        this.session = new SSHSession(this.addr, this.username, pass)
+        if (this.session == null)
+            this.session = new SSHSession(this.addr, this.username, pass)
         this.session.onStateChange = state => this.onSessionState(state)
         this.session.onPayloadUpdate = layout => {
             this.notify("TBD: update new layout")
