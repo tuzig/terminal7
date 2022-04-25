@@ -161,6 +161,7 @@ export class Terminal7 {
                 gate = this.addGate({
                     addr: addHost.querySelector('[name="hostaddr"]').value,
                     name: addHost.querySelector('[name="hostname"]').value,
+                    username: addHost.querySelector('[name="username"]').value,
                     store: remember
                 })
             if (remember)
@@ -168,7 +169,7 @@ export class Terminal7 {
             if (typeof gate == "string")
                 this.notify(gate)
             else {
-                this.clear()
+                addHost.classList.add("hidden")
                 if (this.netStatus && this.netStatus.connected)
                     gate.connect()
             }
