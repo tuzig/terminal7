@@ -52,6 +52,7 @@ cut_min_distance = 80
 cut_min_speed = 2.5
 # no pinch when scrolling -> y velocity higher than XTZ px/ms
 pinch_max_y_velocity = 0.1
+# auto_restore = false
 `
 
 export class Terminal7 {
@@ -336,7 +337,7 @@ export class Terminal7 {
     }
     restoreState() {
         return new Promise((resolve, reject) => {
-            if (!this.conf.autoRestore) {
+            if (!this.conf.ui.autoRestore) {
                 reject()
                 return
             }
@@ -742,6 +743,7 @@ peer_name = "${peername}"\n`
         this.conf.ui.cutMinSpeed = this.conf.ui.cut_min_speed || 2.2
         this.conf.ui.cutMinDistance = this.conf.ui.cut_min_distance || 50
         this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1
+        this.conf.ui.autoRestore = this.conf.ui.auto_restore || false
         this.conf.net = this.conf.net || {}
         this.conf.net.iceServer = this.conf.net.ice_server ||
             "stun:stun2.l.google.com:19302"

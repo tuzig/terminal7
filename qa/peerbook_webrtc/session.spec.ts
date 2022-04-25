@@ -55,7 +55,6 @@ quickest_press = 1000
 max_tabs = 10
 cut_min_distance = 80
 cut_min_speed = 2.5
-# no pinch when scrolling -> y velocity higher than XTZ px/ms
 pinch_max_y_velocity = 0.1
 [peerbook]
 email = "joe@example.com"
@@ -180,11 +179,25 @@ insecure = true`)
         connectGate()
         await expect(page.locator('.pane')).toHaveCount(1)
         await page.screenshot({ path: `/result/6.png` })
+        // set auto restore to true
+        await page.evaluate(async () => {
+            const value = localStorage.getItem("CapacitorStorage.dotfile")
+            const lines = value.split("\n").map((l: string) => {
+                if (l == "[peerbook]")
+                    return "auto_restore = true\n" + l
+                else 
+                    return l
+            })
+            console.log(lines.join("\n"))
+            await localStorage.setItem("CapacitorStorage.dotfile", lines.join("\n"))
+        })
         await page.reload({waitUntil: "networkidle"})
+
         await page.evaluate(async () => {
             window.terminal7.notify = console.log
             window.terminal7.conf.net.peerbook = "peerbook:17777"
             window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
+            window.terminal7.conf.autoRestore = true
             await window.terminal7.pbVerify()
         })
         await sleep(1000)
