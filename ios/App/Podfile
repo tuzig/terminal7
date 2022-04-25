@@ -15,7 +15,7 @@ def capacitor_pods
   pod 'CapacitorNetwork', :path => '../../node_modules/@capacitor/network'
   pod 'CapacitorStorage', :path => '../../node_modules/@capacitor/storage'
   pod 'RobingenzCapacitorBackgroundTask', :path => '../../node_modules/@robingenz/capacitor-background-task'
-  pod 'CapacitorSshPlugin', :path => '../../../capacitor-ssh-plugin'
+  pod 'CapacitorSshPlugin', :path => '../../node_modules/capacitor-ssh-plugin'
 end
 
 target 'App' do

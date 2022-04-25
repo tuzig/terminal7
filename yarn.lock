@@ -1684,8 +1684,10 @@ caniuse-lite@^1.0.30001317:
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001323.tgz#a451ff80dec7033016843f532efda18f02eec011"
   integrity sha512-e4BF2RlCVELKx8+RmklSEIVub1TWrmdhvA5kEUueummz1XyySW0DVk+3x9HyhU9MuWTa2BhqLgEuEmUwASAdCA==
 
-capacitor-ssh-plugin@../capacitor-ssh-plugin:
-  version "0.0.1"
+capacitor-ssh-plugin@<1:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/capacitor-ssh-plugin/-/capacitor-ssh-plugin-0.1.0.tgz#ddbbf01ed70f108aef929076a9e8756adb98c9f1"
+  integrity sha512-9SBSwjS8tCdlPd/yCdh5qTtFx41EKfPgqVcvlv5ttZbmO9xivyROtTLujVR6flHLGLlAikwBqG1WH7fKPf6D/g==
 
 chai@^4.3.6:
   version "4.3.6"
@@ -1727,10 +1729,9 @@ chownr@^2.0.0:
   resolved "https://registry.yarnpkg.com/chownr/-/chownr-2.0.0.tgz#15bfbe53d2eab4cf70f18a8cd68ebe5b3cb1dece"
   integrity sha512-bIomtDF5KGpdogkLd9VspvFzk9KfpyyGlS8YFVZl7TGPBHL5snIOnxeshwVgPteQ9b4Eydl+pVbIyE1DcvCWgQ==
 
-codemirror@<6:
-  version "5.65.2"
-  resolved "https://registry.yarnpkg.com/codemirror/-/codemirror-5.65.2.tgz#5799a70cb3d706e10f60e267245e3a75205d3dd9"
-  integrity sha512-SZM4Zq7XEC8Fhroqe3LxbEEX1zUPWH1wMr5zxiBuiUF64iYOUH/JI88v4tBag8MiBS8B8gRv8O1pPXGYXQ4ErA==
+"codemirror@git+https://github.com/tuzig/CodeMirror.git":
+  version "5.65.3"
+  resolved "git+https://github.com/tuzig/CodeMirror.git#0b3a36cd5dbf08fe6794a5eb1d8c9d1419b1ba8d"
 
 color-convert@^1.9.0:
   version "1.9.3"
