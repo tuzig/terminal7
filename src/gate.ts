@@ -104,7 +104,7 @@ export class Gate {
         this.t7.gates.splice(this.id, 1)
         this.t7.storeGates()
         // remove the host from the home screen
-        this.nameE.parentNode.parentNode.remove()
+        this.nameE.remove()
     }
     editSubmit(ev) {
         let editHost = document.getElementById("edit-host")
