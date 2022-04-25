@@ -240,22 +240,14 @@ export class Gate {
             this.t7.onDisconnect(this)
         }, this.t7.conf.net.timeout)
         
-        if (typeof this.fp == "string") {
-            this.session = new PeerbookSession(this.fp)
-        }
-        else {
-            let pass = this.pass
-            // this.session = new WSSession(this.addr, this.user)
-            // TODO add the port
-            if (!pass) {
-                window.clearTimeout(this.watchDog)
-                this.watchDog = null
-                this.askPass()
-                return
-            }
-            this.completeConnect(pass)
-        }
-
+        // this.session = new WSSession(this.addr, this.user)
+        // TODO add the port
+        if (!this.pass && !this.fp) {
+            window.clearTimeout(this.watchDog)
+            this.watchDog = null
+            this.askPass()
+        } else
+            this.completeConnect()
     }
 
     notify(message) {    
@@ -543,7 +535,7 @@ export class Gate {
         e.querySelector("form").onsubmit = evt => {
             hideModal(evt)
             this.pass = evt.target.querySelector('[name="pass"]').value
-            this.completeConnect(this.pass)
+            this.completeConnect()
             evt.stopPropagation()
             evt.preventDefault()
         }
@@ -556,7 +548,11 @@ export class Gate {
     completeConnect(pass: string): void {
         // TODO: why is pass undefined?
         if (this.session == null)
-            this.session = new SSHSession(this.addr, this.username, pass)
+            if (this.fp)
+                this.session = new PeerbookSession(this.fp)
+            else
+                this.session = new SSHSession(
+                    this.addr, this.username, this.pass)
         this.session.onStateChange = state => this.onSessionState(state)
         this.session.onPayloadUpdate = layout => {
             this.notify("TBD: update new layout")

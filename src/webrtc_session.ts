@@ -180,7 +180,8 @@ abstract class WebRTCSession extends BaseSession {
         // where caller's onMessage & onClose are set
         dc.onmessage = m => {
             // ignore close events when an older generation channel
-            channel.onMessage(m)
+            const data = new Uint8Array(m.data)
+            channel.onMessage(data)
         }
         dc.onclose = m => {
             this.channels.delete(id)

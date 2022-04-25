@@ -299,9 +299,7 @@ export class Pane extends Cell {
     // called when a message is received from the server
     onChannelMessage (m) {
         this.flashIndicator()
-        // TODO: check it works from peerbook & direct
-        // this.write(new Uint8Array(m.data))
-        this.write(m.data)
+        this.write(m)
     }
     toggleZoom() {
         super.toggleZoom()

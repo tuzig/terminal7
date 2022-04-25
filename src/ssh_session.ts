@@ -61,7 +61,7 @@ export class SSHSession extends BaseSession {
                             console.log("ssh read got error ", m)
                             channel.onClose("Shell closed")
                         } else 
-                            channel.onMessage(m)
+                            channel.onMessage(m.data)
                     })
                    .then(callbackID => {
                         console.log("got from startShell: ", callbackID)
