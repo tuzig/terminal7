@@ -28,6 +28,7 @@ export class Gate {
     activeW: Window
     username: string
     pass: string | undefined
+    tryWebexec: boolean
     constructor (props) {
         // given properties
         this.id = props.id
@@ -39,6 +40,9 @@ export class Gate {
         this.name = (!props.name)?`${this.user}@${this.addr}`:props.name
         this.username = props.username
         this.pass = props.pass
+        this.tryWebexec = props.tryWebexec
+        this.online = props.online
+        this.verified = props.verified || false
         // 
         this.windows = []
         this.boarding = false
@@ -48,9 +52,7 @@ export class Gate {
         this.sendStateTask  = null
         this.timeoutID = null
         this.fp = props.fp
-        this.online = props.online
         this.watchDog = null
-        this.verified = props.verified || false
         this.t7 = window.terminal7
         this.session = null
     }
@@ -296,17 +298,33 @@ export class Gate {
         }
         this.disengage().then(() => this.t7.run(() => this.connect(), 100))
     }
-    loseState () {
+    async loseState () {
+        const fp = await this.t7.getFingerprint(),
+              rc = `bash -c "$(curl -sL https://get.webexec.sh)"
+echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
+`
+
         let e = document.getElementById("lose-state-template")
         e = e.content.cloneNode(true)
+
+        e.querySelector("pre").innerText = rc
         e.querySelector(".continue").addEventListener('click', evt => {
-            evt.target.closest(".modal").classList.toggle("hidden")
+            this.e.querySelector('.lose-state').remove()
+            e.remove()
+            this.clear()
+            this.activeW = this.addWindow("", true)
+            this.focus()
+        })
+        e.querySelector(".copy").addEventListener('click', evt => {
+            this.e.querySelector('.lose-state').remove()
+            Clipboard.write( {string: rc })
+            this.tryWebexec = true
             this.clear()
             this.activeW = this.addWindow("", true)
             this.focus()
         })
         e.querySelector(".close").addEventListener('click', evt => {
-            evt.target.closest(".modal").classList.toggle("hidden")
+            this.e.querySelector('.lose-state').remove()
             this.clear()
             this.t7.goHome()
         })

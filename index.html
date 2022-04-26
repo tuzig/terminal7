@@ -355,12 +355,22 @@
   </nav>
 
     <template id="lose-state-template">
-       <div class="disconnect modal border temporal">
-          <h1>State Lost</h1>
-          <p style="text-align:center;">How would you like to proceed?</p>
+       <div class="lose-state modal border temporal">
+          <h1>Lost Layout & Shells</h1>
+          <h3>vanilla SSH has no session memory</h3>
+          <p>To keep state while switching apps, T7 needs its backend - 
+          webexec.
+          webexec is an <a href="https://github.com/tuzig/webexec">open source</a> terminal server running over WebRTC. 
+          Please install it and unlock the full power of T7:
+          </p>
+          <pre>
+          </pre>
           <nav>
               <button type="button" class="close"><i class="f7-icons">xmark</i></button>
               <button type="button" class="continue"><i class="f7-icons">phone_arrow_up_right</i></button>
+              <button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i>&nbsp;&amp;&nbsp;
+                                                 <i class="f7-icons">phone_arrow_up_right</i>
+              </button>
           </nav>
        </div>
     </template>

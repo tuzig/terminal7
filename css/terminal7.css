@@ -210,6 +210,7 @@ nav button {
     flex: 1;
     cursor: pointer;
     border-right: 2px solid #373702;
+    font-size: 20px;
 }
 nav:not(.navtext) button:last-child {
     border: none;
@@ -638,4 +639,10 @@ footer pre { font-size: 14px; }
 .navtext>div {
     flex: 1;
     margin: 0 1em;
+}
+.lose-state pre {
+    font-size: 14px;
+}
+.lose-state p {
+    text-align: left;
 }
