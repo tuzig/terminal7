@@ -1,5 +1,5 @@
 import { SSH, SSHSessionID, TerminalType, SSHSessionByPass} from 'capacitor-ssh-plugin'
-import { Channel, BaseChannel, BaseSession, State }  from './session' 
+import { Channel, BaseChannel, BaseSession, State, Failure }  from './session' 
 
 export class SSHChannel extends BaseChannel {
     id: number
@@ -25,7 +25,7 @@ export class SSHChannel extends BaseChannel {
 export class SSHSession extends BaseSession {
     id: SSHSessionID
     byPass: SSHSessionByPass;
-    onStateChange : (state: State) => void
+    onStateChange : (state: State, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
     constructor(address: string, username: string, password: string, port=22) {
         super()
@@ -38,12 +38,16 @@ export class SSHSession extends BaseSession {
     connect() {
         SSH.startSessionByPasswd(this.byPass)
            .then(({ session }) => {
-               console.log("Got ssh session", session)
+                console.log("Got ssh session", session)
                 this.id = session
                 this.onStateChange("connected")
            }).catch(e => {
-               console.log("SSH startSession failed", e)
-               this.onStateChange("wrong password")
+                console.log("SSH startSession failed", e)
+                if (e.toString().startsWith("Error: Not imp"))
+                    this.onStateChange("failed", Failure.NotImplemented)
+                else
+                    this.onStateChange("failed", Failure.WrongPassword)
+
            })
     }
 

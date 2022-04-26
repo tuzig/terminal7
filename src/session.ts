@@ -2,6 +2,15 @@ export type CallbackType = (e: unknown) => void
 export type ChannelID = number
 export type State = "new" | "connecting" | "connected" | "reconnected" | "disconnected" | "failed" | "unauthorized" | "wrong password"
 
+// possible reasons for a failure
+export enum Failure {
+    NotImplemented,
+    WrongPassword,
+    Unauthorized,
+    BadMarker,
+    BadRemoteDescription,
+}
+
 export interface Event {
     state: string
     data: string
@@ -19,7 +28,7 @@ export interface Channel {
 }
 
 export interface Session {
-    onStateChange : CallbackType
+    onStateChange : (state: string, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
     // for reconnect
     openChannel(id: ChannelID): Promise<Channel>
@@ -51,7 +60,7 @@ export abstract class BaseChannel implements Channel {
     }
 }
 export abstract class BaseSession implements Session {
-    onStateChange : CallbackType
+    onStateChange : (state: string, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
     getPayload(): Promise<string | null>{
         return new Promise(resolve=> {
@@ -68,14 +77,14 @@ export abstract class BaseSession implements Session {
             resolve()
         })
     }
-    fail(err?: Error) {
+    fail(err?: Error, failure?: Failure) {
         if (err !== undefined)
             terminal7.notify("Session failed: " + err.toString())
         else
             terminal7.notify("Session failed")
         terminal7.log("Session failed with error: ", err)
         this.onStateChange("disconnected")
-        setTimeout(() => this.onStateChange("failed"), 200)
+        setTimeout(() => this.onStateChange("failed", failure), 200)
     }
     // for reconnect
     abstract openChannel(id: ChannelID): Promise<Channel>

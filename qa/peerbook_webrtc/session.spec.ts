@@ -197,7 +197,6 @@ insecure = true`)
             window.terminal7.notify = console.log
             window.terminal7.conf.net.peerbook = "peerbook:17777"
             window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
-            window.terminal7.conf.autoRestore = true
             await window.terminal7.pbVerify()
         })
         await sleep(1000)

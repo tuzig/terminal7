@@ -1,4 +1,4 @@
-import { BaseSession, BaseChannel, Channel, ChannelID, CallbackType }  from './session' 
+import { BaseSession, BaseChannel, Channel, ChannelID, CallbackType, Failure }  from './session' 
 import { Clipboard } from '@capacitor/clipboard'
 
 const TIMEOUT = 5000
@@ -124,9 +124,8 @@ abstract class WebRTCSession extends BaseSession {
                     type: "restore",
                     args: { marker: this.lastMarker }},
                 () => this.onStateChange("connected"),
-                error => {
-                    this.t7.notify("Failed to restore from marker")
-                    this.onStateChange("failed")
+                () => {
+                    this.onStateChange("failed", Failure.BadMarker)
                 })
             } else 
                 this.onStateChange(state)
@@ -390,7 +389,7 @@ export class PeerbookSession extends WebRTCSession {
         this.pc.setRemoteDescription(sd)
             .catch (e => {
                 this.t7.notify(`Failed to set remote description: ${e}`)
-                this.onStateChange("failed")
+                this.onStateChange("failed", Failure.BadRemoteDescription)
             })
     }
     peerCandidate(candidate) {
@@ -446,7 +445,7 @@ export class WSSession extends WebRTCSession {
                 }).catch(error => {
                     if (error.message == 'unauthorized')  {
                         this.disengagePC()
-                        this.onStateChange('unauthorized')
+                        this.onStateChange("failed", Failure.Unauthorized)
                     } else
                         this.fail()
                 })

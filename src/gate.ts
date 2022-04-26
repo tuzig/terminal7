@@ -7,7 +7,7 @@
  */
 import { Window } from './window.js'
 import { Pane } from './pane.js'
-import { Session } from './session'
+import { Failure, Session } from './session'
 import { Clipboard } from '@capacitor/clipboard'
 import { WSSession, PeerbookSession } from './webrtc_session'
 import { SSHSession } from './ssh_session'
@@ -19,7 +19,9 @@ const FAILED_COLOR = "red"// ashort period of time, in milli
  * The gate class abstracts a host connection
  */
 export class Gate {
+    id: string
     name: string
+    boarding: boolean
     e: Element
     session: Session
     watchDog: number
@@ -171,10 +173,10 @@ export class Gate {
      * onSessionState(state) is called when the connection
      * state changes.
      */
-    onSessionState(state: RTState) {
+    onSessionState(state: RTState, failure: Failure) {
         this.t7.log(`updating ${this.name} state to ${state}`)
-        this.notify("State: " + state)
         if (state == "connected") {
+            this.notify("Connected")
             this.t7.logDisplay(false)
             this.clearWatchdog()
             this.setIndicatorColor("unset")
@@ -194,24 +196,47 @@ export class Gate {
             this.lastDisconnect = Date.now()
             // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR)
-        } else if (state == "unauthorized") {
-            this.clearWatchdog()
-            this.stopBoarding()
-            this.copyFingerprint()
-        } else if (state == "wrong password") {
-            this.clearWatchdog()
-            this.stopBoarding()
+        } else if (state == "failed")  {
+            this.handleFailure(failure)
+        }
+    }
+    // handle connection failures
+    handleFailure(failure: Failure) {
+        if (!this.boarding)
+            return
+
+        this.clearWatchdog()
+        this.stopBoarding()
+        if (failure == Failure.WrongPassword) {
+            this.notify("Wrong password, please try again")
+            this.pass = null
             this.session = null
             this.connect()
-        } else if ((state != "new") && (state != "connecting") && this.boarding) {
-            // handle connection failures
-            let now = Date.now()
-            if (now - this.lastDisconnect > 100) {
-                this.t7.onDisconnect(this)
-                this.stopBoarding()
-            } else
-                this.t7.log("Ignoring a peer this.t7.cells.forEach(c => event after disconnect")
+            return
         }
+        if (failure == Failure.Unauthorized) {
+            this.clearWatchdog()
+            this.copyFingerprint()
+            return
+        }
+        if (failure == Failure.BadMarker) {
+            this.notify("Session restore failed, trying a fresh session")
+            this.clear()
+            this.connect()
+            return
+        }
+        if (failure == Failure.BadRemoteDescription) {
+            this.notify("Session signalling failed, please try again")
+        }
+        if (failure == Failure.NotImplemented)
+            this.notify("FAILED: not implemented yet")
+        if (!failure)
+            this.notify("Connection FAILED")
+        let now = Date.now()
+        if (now - this.lastDisconnect > 100) {
+            this.t7.onDisconnect(this)
+        } else
+            this.t7.log("Ignoring a peer this.t7.cells.forEach(c => event after disconnect")
     }
     /*
      * connect connects to the gate
@@ -229,7 +254,6 @@ export class Gate {
             return
         }
         this.boarding = true
-        this.notify("Initiating connection")
         // start the connection watchdog
         if (this.watchDog != null)
             window.clearTimeout(this.watchDog)
@@ -242,7 +266,7 @@ export class Gate {
         
         // this.session = new WSSession(this.addr, this.user)
         // TODO add the port
-        if (!this.pass && !this.fp) {
+        if (!this.pass && !this.fp && !this.overHttp) {
             window.clearTimeout(this.watchDog)
             this.watchDog = null
             this.askPass()
@@ -531,10 +555,10 @@ export class Gate {
         }
         e.querySelector("h1").innerText = `${this.username}@${this.name}`
         e.classList.remove("hidden")
-        this.t7.logDisplay(false)
         e.querySelector("form").onsubmit = evt => {
             hideModal(evt)
             this.pass = evt.target.querySelector('[name="pass"]').value
+            evt.target.querySelector('[name="pass"]').value = ""
             this.completeConnect()
             evt.stopPropagation()
             evt.preventDefault()
@@ -546,14 +570,14 @@ export class Gate {
         e.querySelector('[name="pass"]').focus()
     }
     completeConnect(pass: string): void {
-        // TODO: why is pass undefined?
+        this.notify("Connecting...")
         if (this.session == null)
             if (this.fp)
                 this.session = new PeerbookSession(this.fp)
             else
                 this.session = new SSHSession(
                     this.addr, this.username, this.pass)
-        this.session.onStateChange = state => this.onSessionState(state)
+        this.session.onStateChange = (state, failure?) => this.onSessionState(state, failure)
         this.session.onPayloadUpdate = layout => {
             this.notify("TBD: update new layout")
             this.t7.log("TBD: update layout", layout)
