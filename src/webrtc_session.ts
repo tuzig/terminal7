@@ -76,11 +76,13 @@ abstract class WebRTCSession extends BaseSession {
     lastMsgId: number
     t7: object
     lastMarker: number
-    constructor(fp: string) {
+    address?: string
+    constructor(fp: string, address?: string) {
         super()
         this.fp = fp
+        this.address = address
         this.channels = new Map()
-        this.pendingCDCMsgs = new Array()
+        this.pendingCDCMsgs = []
         this.pendingChannels = new Map()
         this.msgWatchdogs = new Map()
         this.msgHandlers = new Map()
@@ -401,29 +403,36 @@ export class PeerbookSession extends WebRTCSession {
 
 
 // SSHSession is an implmentation of a real time session over ssh
-export class WSSession extends WebRTCSession {
-    constructor(address: string, username: string) {
-        super()
-        this.addr = address
-        this.username = username
-    }
+export class HTTPWebRTCSession extends WebRTCSession {
+    address: string
+    fetchTimeout: number
 
+    constructor(fp: string, address?: string) {
+        super()
+        this.fetchTimeout = 500
+    }
     onNegotiationNeeded(e) {
         let o
         this.t7.log("on negotiation needed", e)
         this.pc.createOffer().then(offer => {
-            console.log("offer", offer)
             this.pc.setLocalDescription(offer)
             const encodedO = btoa(JSON.stringify(offer))
-            this.t7.getFingerprint().then(fp =>
+            this.t7.getFingerprint().then(fp => {
+                const ctrl = new AbortController(),
+                      tId = setTimeout(() => {
+                                ctrl.abort()
+                                this.fail(Failure.NotSupported)
+                            }, this.fetchTimeout)
                 fetch('http://'+this.addr+'/connect', {
                     headers: {"Content-Type": "application/json"},
                     method: 'POST',
+                    signal: ctrl.signal,
                     body: JSON.stringify({api_version: 0,
                         offer: encodedO,
                         fingerprint: fp
                     })
                 }).then(response => {
+                    clearTimeout(tId)
                     if (response.status == 401)
                         throw new Error('unauthorized');
                     if (!response.ok)
@@ -441,15 +450,15 @@ export class WSSession extends WebRTCSession {
                     const answer = JSON.parse(atob(data))
                     let sd = new RTCSessionDescription(answer)
                     this.pc.setRemoteDescription(sd)
-                    .catch (e => { this.fail(e) })
+                    .catch (e => { this.fail(Failure.BadRemoteDescription) })
                 }).catch(error => {
                     if (error.message == 'unauthorized')  {
                         this.disengagePC()
-                        this.onStateChange("failed", Failure.Unauthorized)
+                        this.fail(Failure.Unauthorized)
                     } else
                         this.fail()
                 })
-            )
+            })
 
         })
     }

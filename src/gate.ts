@@ -230,6 +230,11 @@ export class Gate {
         if (failure == Failure.BadRemoteDescription) {
             this.notify("Session signalling failed, please try again")
         }
+        if (failure == Failure.NotSupported) {
+            this.notify("webexec not running or TCP port 7777 blocked")
+            this.tryWebexec = false
+            this.connect()
+        }
         if (failure == Failure.NotImplemented)
             this.notify("FAILED: not implemented yet")
         if (!failure)
