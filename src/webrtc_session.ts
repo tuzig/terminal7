@@ -421,7 +421,8 @@ export class HTTPWebRTCSession extends WebRTCSession {
             const encodedO = btoa(JSON.stringify(offer))
             this.t7.getFingerprint().then(fp => {
                 Http.request({
-                    url: `http://${this.address}/connect`,
+                    //TODO: add port to the conf file
+                    url: `http://${this.address}:7777/connect`,
                     headers: {"Content-Type": "application/json"},
                     method: 'POST',
                     //TODO: fix the timeout in the plugin

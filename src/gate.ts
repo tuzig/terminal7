@@ -21,6 +21,7 @@ const FAILED_COLOR = "red"// ashort period of time, in milli
 export class Gate {
     id: string
     name: string
+    addr: string
     boarding: boolean
     e: Element
     session: Session

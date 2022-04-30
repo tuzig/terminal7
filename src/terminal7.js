@@ -514,9 +514,6 @@ peer_name = "${peername}"\n`
         p.verified = false
         p.tryWebexec = false
 
-        // if no port specify, use the default port
-        if (addr && (addr.indexOf(":") == -1))
-            p.addr = `${addr}:7777`
 
         this.gates.forEach(i => {
             if (props.name == i.name) {

@@ -54,7 +54,7 @@ pinch_max_y_velocity = 0.1`
 )
             localStorage.setItem("CapacitorStorage.gates", JSON.stringify(
                 [{"id":0,
-                  "addr":"webexec:7777",
+                  "addr":"webexec",
                   "name":"foo",
                   "windows":[],
                   "store":true,
@@ -68,9 +68,7 @@ pinch_max_y_velocity = 0.1`
             window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
             return await window.terminal7.getFingerprint()
         })
-        // TODO: add fp to 
         fs.writeFileSync('/webexec_config/authorized_tokens', fp + '\n')
-        //
         // add terminal7 initializtion and globblas
         await waitPort({host:'webexec', port:7777})
 
@@ -85,7 +83,6 @@ pinch_max_y_velocity = 0.1`
     test('connect to gate see help page and hide it', async () => {
         connectGate()
         await page.screenshot({ path: `/result/second.png` })
-        // await expect(page.locator('.pane')).toHaveCount(1)
         const help  = page.locator('#help-gate')
         await expect(help).toBeVisible()
         await help.click()
