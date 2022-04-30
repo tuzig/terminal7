@@ -175,7 +175,7 @@ insecure = true`)
         expect(exitState).toEqual("success")
         await expect(page.locator('.pane')).toHaveCount(0)
     })
-    test('start a fresh connection, reset browser and be back at the gate', async() => {
+    test('auto restore gate', async() => {
         connectGate()
         await expect(page.locator('.pane')).toHaveCount(1)
         await page.screenshot({ path: `/result/6.png` })
@@ -188,7 +188,6 @@ insecure = true`)
                 else 
                     return l
             })
-            console.log(lines.join("\n"))
             await localStorage.setItem("CapacitorStorage.dotfile", lines.join("\n"))
         })
         await page.reload({waitUntil: "networkidle"})

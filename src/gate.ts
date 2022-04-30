@@ -9,7 +9,7 @@ import { Window } from './window.js'
 import { Pane } from './pane.js'
 import { Failure, Session } from './session'
 import { Clipboard } from '@capacitor/clipboard'
-import { WSSession, PeerbookSession } from './webrtc_session'
+import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
 import { SSHSession } from './ssh_session'
 
 import { Storage } from '@capacitor/storage'
@@ -40,7 +40,7 @@ export class Gate {
         this.name = (!props.name)?`${this.user}@${this.addr}`:props.name
         this.username = props.username
         this.pass = props.pass
-        this.tryWebexec = props.tryWebexec
+        this.tryWebexec = props.tryWebexec || true
         this.online = props.online
         this.verified = props.verified || false
         // 
@@ -230,11 +230,6 @@ export class Gate {
         if (failure == Failure.BadRemoteDescription) {
             this.notify("Session signalling failed, please try again")
         }
-        if (failure == Failure.NotSupported) {
-            this.notify("webexec not running or TCP port 7777 blocked")
-            this.tryWebexec = false
-            this.connect()
-        }
         if (failure == Failure.NotImplemented)
             this.notify("FAILED: not implemented yet")
         if (!failure)
@@ -261,19 +256,10 @@ export class Gate {
             return
         }
         this.boarding = true
-        // start the connection watchdog
         if (this.watchDog != null)
             window.clearTimeout(this.watchDog)
-        this.watchDog = this.t7.run(_ => {
-            console.log("WATCHDOG stops the gate connecting")
-            this.watchDog = null
-            this.stopBoarding()
-            this.t7.onDisconnect(this)
-        }, this.t7.conf.net.timeout)
-        
-        // this.session = new WSSession(this.addr, this.user)
         // TODO add the port
-        if (!this.pass && !this.fp && !this.overHttp) {
+        if (!this.pass && !this.fp && !this.tryWebexec) {
             window.clearTimeout(this.watchDog)
             this.watchDog = null
             this.askPass()
@@ -308,14 +294,12 @@ export class Gate {
               rc = `bash -c "$(curl -sL https://get.webexec.sh)"
 echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
 `
-
         let e = document.getElementById("lose-state-template")
         e = e.content.cloneNode(true)
 
         e.querySelector("pre").innerText = rc
         e.querySelector(".continue").addEventListener('click', evt => {
             this.e.querySelector('.lose-state').remove()
-            e.remove()
             this.clear()
             this.activeW = this.addWindow("", true)
             this.focus()
@@ -395,6 +379,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         console.log("Clearing gate")
         this.e.querySelector(".tabbar-names").innerHTML = ""
         this.e.querySelectorAll(".window").forEach(e => e.remove())
+        this.e.querySelectorAll(".modal").forEach(e => e.remove())
         if (this.activeW && this.activeW.activeP.zoomed)
             this.activeW.activeP.toggleZoom()
         this.windows = []
@@ -593,22 +578,44 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         e.querySelector('[name="pass"]').focus()
     }
     completeConnect(pass: string): void {
-        this.notify("Connecting...")
+        let timeout = this.t7.conf.net.timeout
         if (this.session == null)
-            if (this.fp)
+            if (this.fp) {
+                this.notify("&#127884 PeerBook")
                 this.session = new PeerbookSession(this.fp)
-            else
-                this.session = new SSHSession(
-                    this.addr, this.username, this.pass)
+            }
+            else {
+                if (this.tryWebexec) {
+                    this.notify("&#127884 webexec server")
+                    this.session = new HTTPWebRTCSession(this.fp, this.addr)
+                    timeout = this.t7.conf.net.httpTimeout
+                } else {
+                    this.notify("Starting SSH session")
+                    this.session = new SSHSession(
+                        this.addr, this.username, this.pass)
+                    // next time go back to trying webexec
+                    this.tryWebexec = true
+                }
+            }
         this.session.onStateChange = (state, failure?) => this.onSessionState(state, failure)
         this.session.onPayloadUpdate = layout => {
             this.notify("TBD: update new layout")
             this.t7.log("TBD: update layout", layout)
         }
         console.log("opening session")
-        // TODO: use the generated fingerprint and not t7's global fingerprint
-        // await this.t7.getFingerprint()
-        // this.t7.run(() => this.session.connect(), 500)
+        // start the connection watchdog
+        this.watchDog = this.t7.run(_ => {
+            console.log("WATCHDOG stops the gate connecting")
+            this.watchDog = null
+            this.stopBoarding()
+            if ((!this.fp) && this.tryWebexec) {
+                this.notify("webexec server timed out. Trying SSH...")
+                this.session = null
+                this.tryWebexec = false
+                this.connect()
+            } else
+                this.t7.onDisconnect(this)
+        }, timeout)
         this.session.connect()
     }
 }

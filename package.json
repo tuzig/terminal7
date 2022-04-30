@@ -17,6 +17,7 @@
     "publish": null
   },
   "dependencies": {
+    "@capacitor-community/http": "^1.4.1",
     "@capacitor/android": "^3.2.5",
     "@capacitor/app": "^1.0.5",
     "@capacitor/cli": "<4",
@@ -75,14 +76,16 @@
     "webrtc"
   ],
   "author": "Benny Daon",
-  "license": "GPLv3",
+  "license": "GPL-3.0-only",
   "bugs": {
     "url": "https://github.com/tuzig/terminal7/issues"
   },
   "eslintConfig": {
     "root": true,
     "parser": "@typescript-eslint/parser",
-    "plugins": [ "@typescript-eslint/eslint-plugin" ],
+    "plugins": [
+      "@typescript-eslint/eslint-plugin"
+    ],
     "extends": [
       "eslint:recommended",
       "plugin:@typescript-eslint/recommended"

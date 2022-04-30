@@ -1,5 +1,6 @@
 import { BaseSession, BaseChannel, Channel, ChannelID, CallbackType, Failure }  from './session' 
 import { Clipboard } from '@capacitor/clipboard'
+import { Http } from '@capacitor-community/http';
 
 const TIMEOUT = 5000
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
@@ -76,7 +77,7 @@ abstract class WebRTCSession extends BaseSession {
     lastMsgId: number
     t7: object
     lastMarker: number
-    address?: string
+    address: string | undefined
     constructor(fp: string, address?: string) {
         super()
         this.fp = fp
@@ -115,6 +116,7 @@ abstract class WebRTCSession extends BaseSession {
             }
         }
         console.log("got ice server", this.t7.iceServers)
+        await this.t7.getFingerprint()
         this.pc = new RTCPeerConnection({
             iceServers: this.t7.iceServer,
             certificates: this.t7.certificates})
@@ -357,7 +359,7 @@ export class PeerbookSession extends WebRTCSession {
                 if (!response.ok)
                     throw new Error(
                       `HTTP POST failed with status ${response.status}`)
-                return response.text()
+                return response.data
             }).then(data => {
                 clearTimeout(tId)
                 const answer = JSON.parse(data)
@@ -408,7 +410,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
     fetchTimeout: number
 
     constructor(fp: string, address?: string) {
-        super()
+        super(fp, address)
         this.fetchTimeout = 500
     }
     onNegotiationNeeded(e) {
@@ -418,27 +420,23 @@ export class HTTPWebRTCSession extends WebRTCSession {
             this.pc.setLocalDescription(offer)
             const encodedO = btoa(JSON.stringify(offer))
             this.t7.getFingerprint().then(fp => {
-                const ctrl = new AbortController(),
-                      tId = setTimeout(() => {
-                                ctrl.abort()
-                                this.fail(Failure.NotSupported)
-                            }, this.fetchTimeout)
-                fetch('http://'+this.addr+'/connect', {
+                Http.request({
+                    url: `http://${this.address}/connect`,
                     headers: {"Content-Type": "application/json"},
                     method: 'POST',
-                    signal: ctrl.signal,
-                    body: JSON.stringify({api_version: 0,
+                    //TODO: fix the timeout in the plugin
+                    connectTimeout: this.fetchTimeout, 
+                    data: JSON.stringify({api_version: 0,
                         offer: encodedO,
                         fingerprint: fp
                     })
                 }).then(response => {
-                    clearTimeout(tId)
                     if (response.status == 401)
                         throw new Error('unauthorized');
-                    if (!response.ok)
+                    if (response.status >= 300)
                         throw new Error(
                           `HTTP POST failed with status ${response.status}`)
-                    return response.text()
+                    return response.data
                 }).then(data => {
                     /* TODO: this needs to move
                     if (!this.verified) {
@@ -452,9 +450,13 @@ export class HTTPWebRTCSession extends WebRTCSession {
                     this.pc.setRemoteDescription(sd)
                     .catch (e => { this.fail(Failure.BadRemoteDescription) })
                 }).catch(error => {
+                    console.log("POST to /connect failed", error)
                     if (error.message == 'unauthorized')  {
                         this.disengagePC()
                         this.fail(Failure.Unauthorized)
+                    // TODO: the next line is probably wrong
+                    } else if (error.message == 'timeout')  {
+                        this.fail(Failure.NotSupported)
                     } else
                         this.fail()
                 })

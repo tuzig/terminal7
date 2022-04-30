@@ -11,6 +11,7 @@
     --local-border: #F952F9;
     --text-color: #01FAFA;
     --remote-border: #F4DB53;
+    --warning: #F4DB53;
     --background: #271D30;
 }
 @font-face {
@@ -642,6 +643,9 @@ footer pre { font-size: 14px; }
 }
 .lose-state pre {
     font-size: 14px;
+}
+.lose-state h1 {
+    color: var(--warning);
 }
 .lose-state p {
     text-align: left;

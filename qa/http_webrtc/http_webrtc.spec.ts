@@ -52,15 +52,13 @@ cut_min_speed = 2.5
 # no pinch when scrolling -> y velocity higher than XTZ px/ms
 pinch_max_y_velocity = 0.1`
 )
-/*
-            localStorage.setItem("CapacitorStorage.gates",`[{"id":0,"addr":"webexec:7777","name":"foo","windows":[],"store":true,"verified":false}]`)
-            */
             localStorage.setItem("CapacitorStorage.gates", JSON.stringify(
                 [{"id":0,
                   "addr":"webexec:7777",
                   "name":"foo",
                   "windows":[],
                   "store":true,
+                  "tryWebexec": true,
                 }]
             ))
         })
@@ -85,7 +83,6 @@ pinch_max_y_velocity = 0.1`
     })
 
     test('connect to gate see help page and hide it', async () => {
-        await sleep(1000)
         connectGate()
         await page.screenshot({ path: `/result/second.png` })
         // await expect(page.locator('.pane')).toHaveCount(1)
@@ -118,7 +115,7 @@ pinch_max_y_velocity = 0.1`
         })
         await page.locator('.play-button').click()
         connectGate()
-        await page.screenshot({ path: `/result/second.png` })
+        await page.screenshot({ path: `/result/2.png` })
         await expect(page.locator('.pane')).toHaveCount(2)
     })
     test('a pane can be close', async() => {
@@ -182,22 +179,23 @@ pinch_max_y_velocity = 0.1`
         expect(exitState).toEqual("success")
         await expect(page.locator('.pane')).toHaveCount(0)
     })
-    test('start a fresh connection, reset browser and be back at the gate', async() => {
+    test('auto restore gate', async() => {
         connectGate()
         await expect(page.locator('.pane')).toHaveCount(1)
-        const channels2 = await page.evaluate(async () => {
-            return window.terminal7.activeG.session.channels.size
+        await page.evaluate(async () => {
+            const value = localStorage.getItem("CapacitorStorage.dotfile")
+            const lines = value + "\nauto_restore = true"
+            console.log(lines)
+            await localStorage.setItem("CapacitorStorage.dotfile", lines)
         })
-        expect(channels2).toEqual(1)
-        await page.screenshot({ path: `/result/6.png` })
         await page.reload({waitUntil: "networkidle"})
         await page.evaluate(async () => {
             window.terminal7.notify = console.log
         })
         await sleep(1000)
         await page.screenshot({ path: `/result/7.png` })
+        await expect(page.locator('.pane')).toHaveCount(1)
         const inGate = await page.evaluate(() => window.terminal7.activeG != null)
         expect(inGate).toBeTruthy()
-        await expect(page.locator('.pane')).toHaveCount(1)
     })
 })

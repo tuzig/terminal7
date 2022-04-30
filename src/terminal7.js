@@ -512,6 +512,7 @@ peer_name = "${peername}"\n`
         // add the id
         p.id = this.gates.length
         p.verified = false
+        p.tryWebexec = false
 
         // if no port specify, use the default port
         if (addr && (addr.indexOf(":") == -1))
@@ -754,6 +755,7 @@ peer_name = "${peername}"\n`
             terminal7.notify(`\uD83D\uDCD6 Your setting include an old peerbook addres.<br/>
                               Please click <i class="f7-icons">gear</i> and change net.peerbook to "api.peerbook.io"`)
         this.conf.net.timeout = this.conf.net.timeout || 3000
+        this.conf.net.httpTimeout = this.conf.net.http_timeout || 1000
         this.conf.net.retries = this.conf.net.retries || 3
         var apb = document.getElementById("add-peerbook"),
             rpb = document.getElementById("refresh")

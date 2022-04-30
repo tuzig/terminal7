@@ -15,7 +15,7 @@ class MockChannel implements Channel {
     }
 }
 
-export class WSSession implements Session {
+export class HTTPWebRTCSession implements Session {
     onStateChange: (state: State) => void
     onPayloadUpdate: (payload: string) => void
     constructor(address: string, username: string, password: string, port?=22) {

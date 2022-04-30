@@ -9,6 +9,7 @@ export enum Failure {
     Unauthorized,
     BadMarker,
     BadRemoteDescription,
+    NotSupported,
 }
 
 export interface Event {
@@ -77,12 +78,8 @@ export abstract class BaseSession implements Session {
             resolve()
         })
     }
-    fail(err?: Error, failure?: Failure) {
-        if (err !== undefined)
-            terminal7.notify("Session failed: " + err.toString())
-        else
-            terminal7.notify("Session failed")
-        terminal7.log("Session failed with error: ", err)
+    // fail function emulates a WebRTC connection failure flow
+    fail(failure?: Failure) {
         this.onStateChange("disconnected")
         setTimeout(() => this.onStateChange("failed", failure), 200)
     }
