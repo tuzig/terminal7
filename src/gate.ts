@@ -210,10 +210,10 @@ export class Gate {
 
         this.clearWatchdog()
         this.stopBoarding()
+        this.session = null
         if (failure == Failure.WrongPassword) {
             this.notify("Wrong password, please try again")
             this.pass = null
-            this.session = null
             this.connect()
             return
         }
@@ -425,10 +425,12 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
            this.sendStateTask = setTimeout(() => {
                this.sendStateTask = null
                this.session.setPayload(this.dump()).then(() => {
-                    if ((this.windows.length == 0) && (this.pc)) {
+                    if ((this.windows.length == 0) && (this.session != null)) {
                         console.log("Closing gate after updating to empty state")
-                        this.disengage()
-                        this.stopBoarding()
+                        this.disengage().then(() => {
+                            this.session = null
+                            this.stopBoarding()
+                        })
                     }
                })
             }, 100)
@@ -444,6 +446,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         var w = this.breadcrumbs.pop()
         this.breadcrumbs = this.breadcrumbs.filter(x => x != w)
         if (this.windows.length == 0) {
+            this.stopBoarding()
             this.clear()
             this.t7.goHome()
         }
@@ -535,19 +538,26 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         else
             this.nameE.classList.add("offline")
     }
-    copyFingerprint() {
-        let ct = document.getElementById("copy-fingerprint"),
-            addr = this.addr.substr(0, this.addr.indexOf(":"))
-        this.t7.getFingerprint().then(fp =>
-                ct.querySelector('[name="fingerprint"]').value = fp)
+    async copyFingerprint() {
+        const ct = document.getElementById("copy-fingerprint"),
+              addr = this.addr.substr(0, this.addr.indexOf(":")),
+              fp = await this.t7.getFingerprint(),
+              cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
+        this.t7.getFingerprint().then(
+            fp => ct.querySelector('pre').innerText = cmd)
+            
         document.getElementById("ct-address").innerHTML = addr
         document.getElementById("ct-name").innerHTML = this.name
         ct.classList.remove("hidden")
         ct.querySelector(".copy").addEventListener('click', ev => {
             ct.classList.add("hidden")
             Clipboard.write(
-                {string: ct.querySelector('[name="fingerprint"]').value})
-            this.t7.notify("Fingerprint copied to the clipboard")
+                {string: cmd})
+            this.t7.notify("Command copied to the clipboard")
+            if (Capacitor.getPlatform() != "web") {
+                this.tryWebexec = false
+                this.connect()
+            }
         })
         ct.querySelector(".close").addEventListener('click',  ev =>  {
             ct.classList.add("hidden")
@@ -568,6 +578,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             hideModal(evt)
             this.pass = evt.target.querySelector('[name="pass"]').value
             evt.target.querySelector('[name="pass"]').value = ""
+            this.session = null
             this.completeConnect()
             evt.stopPropagation()
             evt.preventDefault()
@@ -575,10 +586,11 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         e.querySelector(".close").onclick = evt => {
             hideModal(evt)
             this.stopBoarding()
+            this.tryWebexec = true
         }
         e.querySelector('[name="pass"]').focus()
     }
-    completeConnect(pass: string): void {
+    completeConnect(): void {
         let timeout = this.t7.conf.net.timeout
         if (this.session == null)
             if (this.fp) {
@@ -611,7 +623,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.stopBoarding()
             if ((!this.fp) && this.tryWebexec) {
                 this.notify("webexec server timed out. Trying SSH...")
-                this.session = null
                 this.tryWebexec = false
                 this.connect()
             } else

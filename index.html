@@ -60,10 +60,6 @@
             <input type="text" placeholder="your username on the host" name="username" required>
             <input type="checkbox" checked name="remember">
             <label for="remember">Remember host</label>
-            <footer>
-              to install a server:
-          <pre>bash -c "$(curl -sL https://get.webexec.sh)"</pre>
-            </footer>
             <nav>
                 <button type="button" class="close">
                     <i class="f7-icons close">xmark</i>
@@ -75,19 +71,20 @@
           </form>
       </div>
       <div id="copy-fingerprint" class="hidden modal border" >
+          <h1 class="warning">Unauthorized</h1>
         <form>
             <p>We're sorry, but the host at <code id="ct-address"> </code>
             (aka <b id="ct-name"></b>) refused our fingerprint.
-                Most likely because the fingerprint is not in:
-                <b id="ct-confile"> ~/.config/webexec/authorized_tokens</b>
+                To connect copy Terminal7's fingerprint to
+                <b id="ct-confile"> ~/.config/webexec/authorized_tokens</b> and try again:
             </p>
-            <input type="text" name="fingerprint" readonly >
-            <p>To proceed, please add the fingerprint to the file using another
-                terminal.
-            </p>
+            <pre>
+            </pre>
             <nav>
-                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
-                <button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i></button>
+              <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+              <button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i>&nbsp;&amp;&nbsp;
+                                                 <i class="f7-icons">phone_arrow_up_right</i>
+              </button>
             </nav>
         </form>
       </div>
@@ -222,7 +219,7 @@
           </form>
       </div>
       <div id="edit-unverified-pbhost" class="hidden modal border" >
-            <h2>Unverified Host</h2>
+            <h1 class="Warning">Unverified Host</h1>
             <p>Please visit <a target="_blank">PeerBook</a> to verify</p>
             <nav>
                 <button type="button" class="close"><i class="f7-icons">xmark</i></button>
@@ -248,7 +245,7 @@
           </form>
       </div>
       <div id="offline" class="hidden modal border non-clearable" >
-          <h1>Network is down</h1>
+          <h1 class="warning">Network is down</h1>
           <p>Terminal 7 will activate on reconnect</p>
       </div>
       <div id="help-copymode" class="hidden modal border">
@@ -321,7 +318,7 @@
         <p>peerbook returned an error:</p>
         <code id="reset-cert-error"> </code>
         <p>
-            You can either edit the settings and change the email or press the
+            Please edit the settings and change the email or press the
             reset button to generate a new certificate.
             </p>
             <nav>
@@ -332,8 +329,7 @@
        <div id="askpass" class="hidden modal border">
          <form>
            <h1></h1>
-           <p></p>
-            <label for="pass">Password</label>
+            <label for="pass">Please enter your password</label>
             <input type="password" placeholder="your password" name="pass" required>
             <nav>
                 <button type="button" class="close"><i class="f7-icons">xmark</i></button>
@@ -356,12 +352,11 @@
 
     <template id="lose-state-template">
        <div class="lose-state modal border temporal">
-          <h1>Lost Layout & Shells</h1>
+          <h1 class="warning">Lost Layout & Shells</h1>
           <h3>vanilla SSH has no session memory</h3>
           <p>To keep state while switching apps, T7 needs its backend - 
-          webexec.
-          webexec is an <a href="https://github.com/tuzig/webexec">open source</a> terminal server running over WebRTC. 
-          Please install it and unlock the full power of T7:
+          <a href="https://github.com/tuzig/webexec">webexec</a>. webexec is a real time
+          terminal running over WebRTC written in Go.
           </p>
           <pre>
           </pre>

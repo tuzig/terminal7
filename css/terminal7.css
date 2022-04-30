@@ -644,7 +644,7 @@ footer pre { font-size: 14px; }
 .lose-state pre {
     font-size: 14px;
 }
-.lose-state h1 {
+.warning {
     color: var(--warning);
 }
 .lose-state p {

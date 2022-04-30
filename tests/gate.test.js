@@ -110,6 +110,7 @@ describe("gate", () => {
         let g = t.addGate()
         expect(typeof g).toEqual("object")
         g.open(e)
+        g.tryWebexec = false
         g.connect()
         await sleep(100)
         expect(g.boarding).to.equal(true)

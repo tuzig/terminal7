@@ -403,7 +403,7 @@ peer_name = "${peername}"\n`
                 resolve()
                 return
             }
-            this.notify("\uD83D\uDCD6 Refreshing")
+            this.notify("Refreshing \uD83D\uDCD6")
 
             this.getFingerprint().then(fp => {
                 const schema = insecure?"http":"https",
@@ -512,8 +512,6 @@ peer_name = "${peername}"\n`
         // add the id
         p.id = this.gates.length
         p.verified = false
-        p.tryWebexec = false
-
 
         this.gates.forEach(i => {
             if (props.name == i.name) {
