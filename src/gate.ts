@@ -196,6 +196,7 @@ export class Gate {
             this.session.getPayload().then(layout => this.setLayout(layout))
         } else if (state == "disconnected") {
             // TODO: add warn class
+            this.notify("Disconnected...")
             this.lastDisconnect = Date.now()
             // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR)
