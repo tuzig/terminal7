@@ -196,7 +196,6 @@ export class Gate {
             this.session.getPayload().then(layout => this.setLayout(layout))
         } else if (state == "disconnected") {
             // TODO: add warn class
-            this.notify("Disconnected...")
             this.lastDisconnect = Date.now()
             // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR)
@@ -301,13 +300,13 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
 
         e.querySelector("pre").innerText = rc
         e.querySelector(".continue").addEventListener('click', evt => {
-            this.e.querySelector('.lose-state').remove()
+            this.t7.e.querySelector('.lose-state').remove()
             this.clear()
             this.activeW = this.addWindow("", true)
             this.focus()
         })
         e.querySelector(".copy").addEventListener('click', evt => {
-            this.e.querySelector('.lose-state').remove()
+            this.t7.e.querySelector('.lose-state').remove()
             Clipboard.write( {string: rc })
             this.tryWebexec = true
             this.clear()
@@ -315,11 +314,11 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.focus()
         })
         e.querySelector(".close").addEventListener('click', evt => {
-            this.e.querySelector('.lose-state').remove()
+            this.t7.e.querySelector('.lose-state').remove()
             this.clear()
             this.t7.goHome()
         })
-        this.e.appendChild(e)
+        this.t7.e.appendChild(e)
     }
     setLayout(state: object) {
         const winLen = this.windows.length
@@ -540,18 +539,16 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.nameE.classList.add("offline")
     }
     async copyFingerprint() {
-        const ct = document.getElementById("copy-fingerprint"),
-              addr = this.addr.substr(0, this.addr.indexOf(":")),
+        const addr = this.addr.substr(0, this.addr.indexOf(":")),
               fp = await this.t7.getFingerprint(),
-              cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
-        this.t7.getFingerprint().then(
-            fp => ct.querySelector('pre').innerText = cmd)
-            
-        document.getElementById("ct-address").innerHTML = addr
-        document.getElementById("ct-name").innerHTML = this.name
-        ct.classList.remove("hidden")
-        ct.querySelector(".copy").addEventListener('click', ev => {
-            ct.classList.add("hidden")
+              cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`,
+              e = document.getElementById("copy-fingerprint-template")
+                          .content.cloneNode(true)
+        e.querySelector('pre').innerText = cmd
+        e.querySelector('.ct-address').innerHTML = addr
+        e.querySelector('.ct-name').innerHTML = this.name
+        e.querySelector(".copy").addEventListener('click', ev => {
+            this.t7.e.querySelector('.copy-fingerprint').remove()
             Clipboard.write(
                 {string: cmd})
             this.t7.notify("Command copied to the clipboard")
@@ -560,9 +557,10 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                 this.connect()
             }
         })
-        ct.querySelector(".close").addEventListener('click',  ev =>  {
-            ct.classList.add("hidden")
+        e.querySelector(".close").addEventListener('click',  ev =>  {
+            this.t7.e.querySelector('.copy-fingerprint').remove()
         })
+        this.t7.e.appendChild(e)
     }
     askPass() {
         const hideModal = evt => evt.target.closest(".modal").classList.toggle("hidden")
