@@ -622,6 +622,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             console.log("WATCHDOG stops the gate connecting")
             this.watchDog = null
             this.stopBoarding()
+            this.session = null
             if ((!this.fp) && this.tryWebexec) {
                 this.notify("webexec server timed out. Trying SSH...")
                 this.tryWebexec = false
