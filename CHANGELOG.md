@@ -6,10 +6,11 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.20.2] - 2022/5/1
 
 ### Fixed
 
+- Added shell commands to install server and add fingerprint on related problmes
 - Default configuration to use "*" for `shell` so you get the default shell 
 - "Gate ins not open..." notification fixed
 
