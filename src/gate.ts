@@ -559,6 +559,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         })
         e.querySelector(".close").addEventListener('click',  ev =>  {
             this.t7.e.querySelector('.copy-fingerprint').remove()
+            this.clear()
+            this.t7.goHome()
         })
         this.t7.e.appendChild(e)
     }
