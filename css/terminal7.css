@@ -127,7 +127,7 @@ a {
     background-color: #271D30;
     padding: 2%;
     position: fixed;
-    bottom: 62pt;
+    bottom: 90px;
     left: 50%;
     transform: translate(-50%, 0);
     width: 40em;
@@ -443,10 +443,10 @@ label {
 #log {
     position: absolute;
     right : 0px;
-    bottom: 82px;
+    bottom: 90px;
     margin: 0;
     padding: 0;
-    z-index: 6;
+    z-index: 4;
     background-color: #271D30;
     border-color: #F952F9;
     text-align: left;
