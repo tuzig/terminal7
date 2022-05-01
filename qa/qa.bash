@@ -6,15 +6,17 @@ then
     npm run lint
 
     echo ">>> TODO: finish TypeScript refactor and pass the linter"
-    npx vitest run
+    npx vitest run || exit 1
     if [ $? -ne 0 ]
     then
-         exit 2
+        echo ">>> unit tests FAILED"
+        exit 2
     fi
     npx vite build
     if [ $? -ne 0 ]
     then
-         exit 3
+        echo ">>> unit tests FAILED"
+        exit 3
     fi
     for compose in `find qa -name "lab.yaml"`
     do
@@ -27,5 +29,11 @@ else
     do
         echo ">>> setting up a lab from ./qa/$arg"
         docker-compose -f qa/$arg/lab.yaml  --project-directory . up --exit-code-from runner
+        if [ $? -ne 0 ]
+        then
+             echo ">>> $arg FAILED"
+             exit 4
+        fi
+        echo ">>> $arg tests PASSED"
     done
 fi

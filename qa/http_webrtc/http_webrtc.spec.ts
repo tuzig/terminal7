@@ -68,7 +68,7 @@ pinch_max_y_velocity = 0.1`
             window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
             return await window.terminal7.getFingerprint()
         })
-        fs.writeFileSync('/webexec_config/authorized_tokens', fp + '\n')
+        fs.writeFileSync('/webexec_config/authorized_fingerprints', fp + '\n')
         // add terminal7 initializtion and globblas
         await waitPort({host:'webexec', port:7777})
 
