@@ -650,3 +650,13 @@ footer pre { font-size: 14px; }
 .lose-state p {
     text-align: left;
 }
+.webexec-install div {
+    position: relative;
+}
+.webexec-install button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 6px;
+    padding:8px;
+}

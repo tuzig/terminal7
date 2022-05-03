@@ -6,6 +6,16 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- Installation instruction in the edit and add host modals
+
+### Fixed
+
+- Don't assume SSH sessions are losing state
+
 ## [0.20.3] - 2022/5/3
 
 ### Fixed

@@ -312,7 +312,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
             if (winLen > 0)
-                this.loseState()
+                // TODO: find a way to identify state lost
+                console.log("this.loseState()")
             else
                 this.activeW = this.addWindow("", true)
         } else if (winLen > 0) {

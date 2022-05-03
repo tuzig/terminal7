@@ -196,9 +196,22 @@ export class Terminal7 {
             editHost.gate.delete()
             terminal7.clear()
         })
-        editHost.querySelector(".reset").addEventListener('click',  ev => {
-            this.clear()
-            editHost.gate.showResetHost(ev)
+        // add webexec installation instructions
+        const fp = await this.getFingerprint(),
+            rc = `bash -c "$(curl -sL https://get.webexec.sh)"
+echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
+        e.querySelectorAll('.webexec-install').forEach(e => {
+            e.innerHTML = `<p>To use WebRTC the server needs webexec:</p>
+<div>
+<pre>${rc}</pre>
+<button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i></button>
+</div>
+`
+            e.querySelector('button').addEventListener('click', () => {
+                this.notify("Copied commands to the clipboard")
+                Clipboard.write( {string: rc })
+            })
+
         })
         // setting up reset host event
         let resetHost = document.getElementById("reset-host")
