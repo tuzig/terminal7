@@ -88,7 +88,6 @@ abstract class WebRTCSession extends BaseSession {
         this.msgWatchdogs = new Map()
         this.msgHandlers = new Map()
         this.lastMsgId = 0
-        this.t7 = window.terminal7
         this.lastMarker = -1
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
@@ -108,6 +107,8 @@ abstract class WebRTCSession extends BaseSession {
     }
     async connect() {
         console.log("in connect")
+        this.startWatchdog()
+
         if ((!this.t7.iceServers) && (!this.t7.conf.peerbook.insecure)) {
             try {
                 this.t7.iceServers = await this.getIceServers()
@@ -121,6 +122,7 @@ abstract class WebRTCSession extends BaseSession {
             iceServers: this.t7.iceServer,
             certificates: this.t7.certificates})
         this.pc.onconnectionstatechange = () => {
+            this.clearWatchdog()
             const state = this.pc.connectionState
             console.log("new connection state", state, this.lastMarker)
             if ((state == "connected") && (this.lastMarker != -1)) {
@@ -135,6 +137,7 @@ abstract class WebRTCSession extends BaseSession {
                 this.onStateChange(state)
         }
         this.pc.onicecandidateerror = (ev: RTCPeerConnectionIceErrorEvent) => {
+            this.clearWatchdog()
             console.log("icecandidate error", ev.errorCode)
             if (ev.errorCode == 401) {
                 this.t7.notify("Getting fresh ICE servers")
@@ -392,6 +395,7 @@ export class PeerbookSession extends WebRTCSession {
         const sd = new RTCSessionDescription(offer)
         this.pc.setRemoteDescription(sd)
             .catch (e => {
+                this.clearWatchdog()
                 this.t7.notify(`Failed to set remote description: ${e}`)
                 this.onStateChange("failed", Failure.BadRemoteDescription)
             })
@@ -414,7 +418,6 @@ export class HTTPWebRTCSession extends WebRTCSession {
         this.fetchTimeout = 500
     }
     onNegotiationNeeded(e) {
-        let o
         this.t7.log("on negotiation needed", e)
         this.pc.createOffer().then(offer => {
             this.pc.setLocalDescription(offer)
@@ -451,6 +454,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
                     this.pc.setRemoteDescription(sd)
                     .catch (e => { this.fail(Failure.BadRemoteDescription) })
                 }).catch(error => {
+                    this.clearWatchdog()
                     console.log("POST to /connect failed", error)
                     if (error.message == 'unauthorized')  {
                         this.disengagePC()

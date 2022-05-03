@@ -25,7 +25,6 @@ export class Gate {
     boarding: boolean
     e: Element
     session: Session
-    watchDog: number
     activeW: Window
     username: string
     pass: string | undefined
@@ -53,7 +52,6 @@ export class Gate {
         this.sendStateTask  = null
         this.timeoutID = null
         this.fp = props.fp
-        this.watchDog = null
         this.t7 = window.terminal7
         this.session = null
     }
@@ -166,12 +164,6 @@ export class Gate {
             this.e.querySelector(".tabbar-names").style.setProperty(
                 "--indicator-color", color)
     }
-    clearWatchdog() {
-        if (this.watchDog != null) {
-            window.clearTimeout(this.watchDog)
-            this.watchDog = null
-        }
-    }
     /*
      * onSessionState(state) is called when the connection
      * state changes.
@@ -181,7 +173,6 @@ export class Gate {
         if (state == "connected") {
             this.notify("Connected")
             this.t7.logDisplay(false)
-            this.clearWatchdog()
             this.setIndicatorColor("unset")
             var m = this.t7.e.querySelector(".disconnect")
             if (m != null)
@@ -208,7 +199,6 @@ export class Gate {
         if (!this.boarding)
             return
 
-        this.clearWatchdog()
         this.stopBoarding()
         this.session = null
         if (failure == Failure.WrongPassword) {
@@ -218,7 +208,6 @@ export class Gate {
             return
         }
         if (failure == Failure.Unauthorized) {
-            this.clearWatchdog()
             this.copyFingerprint()
             return
         }
@@ -228,6 +217,14 @@ export class Gate {
             this.connect()
             return
         }
+        if (failure == Failure.TimedOut) {
+            if ((!this.fp) && this.tryWebexec) {
+                this.notify("webexec server timed out. Trying SSH...")
+                this.tryWebexec = false
+                this.connect()
+                return
+            }
+        }
         if (failure == Failure.BadRemoteDescription) {
             this.notify("Session signalling failed, please try again")
         }
@@ -235,11 +232,7 @@ export class Gate {
             this.notify("FAILED: not implemented yet")
         if (!failure)
             this.notify("Connection FAILED")
-        let now = Date.now()
-        if (now - this.lastDisconnect > 100) {
-            this.t7.onDisconnect(this)
-        } else
-            this.t7.log("Ignoring a peer this.t7.cells.forEach(c => event after disconnect")
+        this.t7.onDisconnect(this)
     }
     /*
      * connect connects to the gate
@@ -257,12 +250,8 @@ export class Gate {
             return
         }
         this.boarding = true
-        if (this.watchDog != null)
-            window.clearTimeout(this.watchDog)
         // TODO add the port
         if (!this.pass && !this.fp && !this.tryWebexec) {
-            window.clearTimeout(this.watchDog)
-            this.watchDog = null
             this.askPass()
         } else
             this.completeConnect()
@@ -284,10 +273,6 @@ export class Gate {
     }
     // reset reset's a gate connection by disengaging and reconnecting
     reset() {
-        if (this.watchDog != null) {
-            window.clearTimeout(this.watchDog)
-            this.watchDog = null
-        }
         this.disengage().then(() => this.t7.run(() => this.connect(), 100))
     }
     async loseState () {
@@ -617,19 +602,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.t7.log("TBD: update layout", layout)
         }
         console.log("opening session")
-        // start the connection watchdog
-        this.watchDog = this.t7.run(_ => {
-            console.log("WATCHDOG stops the gate connecting")
-            this.watchDog = null
-            this.stopBoarding()
-            this.session = null
-            if ((!this.fp) && this.tryWebexec) {
-                this.notify("webexec server timed out. Trying SSH...")
-                this.tryWebexec = false
-                this.connect()
-            } else
-                this.t7.onDisconnect(this)
-        }, timeout)
         this.session.connect()
     }
 }

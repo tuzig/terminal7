@@ -36,12 +36,15 @@ export class SSHSession extends BaseSession {
                       }
     }
     connect() {
+        this.startWatchdog()
         SSH.startSessionByPasswd(this.byPass)
            .then(({ session }) => {
+                this.clearWatchdog()
                 console.log("Got ssh session", session)
                 this.id = session
                 this.onStateChange("connected")
            }).catch(e => {
+                this.clearWatchdog()
                 console.log("SSH startSession failed", e)
                 if (e.toString().startsWith("Error: Not imp"))
                     this.onStateChange("failed", Failure.NotImplemented)

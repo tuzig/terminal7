@@ -10,6 +10,7 @@ export enum Failure {
     BadMarker,
     BadRemoteDescription,
     NotSupported,
+    TimedOut
 }
 
 export interface Event {
@@ -61,8 +62,13 @@ export abstract class BaseChannel implements Channel {
     }
 }
 export abstract class BaseSession implements Session {
+    watchdog: number
     onStateChange : (state: string, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
+    constructor(fp: string, address?: string)
+    constructor() {
+        this.t7 = window.terminal7
+    }
     getPayload(): Promise<string | null>{
         return new Promise(resolve=> {
             resolve(null)
@@ -80,8 +86,20 @@ export abstract class BaseSession implements Session {
     }
     // fail function emulates a WebRTC connection failure flow
     fail(failure?: Failure) {
-        this.onStateChange("disconnected")
-        setTimeout(() => this.onStateChange("failed", failure), 200)
+        this.onStateChange("failed", failure)
+    }
+    startWatchdog(){
+        this.clearWatchdog()
+        this.watchdog = this.t7.run(() => {
+            console.log("WATCHDOG stops the gate connecting")
+            this.fail(Failure.TimedOut)
+        }, this.t7.conf.net.timeout)
+    }
+    clearWatchdog() {
+        if (this.watchdog) {
+            clearTimeout(this.watchdog)
+            this.watchdog = null
+        }
     }
     // for reconnect
     abstract openChannel(id: ChannelID): Promise<Channel>
