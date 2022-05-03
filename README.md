@@ -18,14 +18,11 @@ The code here is mainly ES6 with no framworks. We do use the following projects:
 - vite for packaging
 - vitest for testing
 
-For networking we use WebRTC, the web standard protocol for real time
+For networking we use SSH or WebRTC, the web standard protocol for real time
 communications. It's a UDP based web-era protocol with wide support and a great
 implmentation in go - [pion/webrtc](https://github.com/pion/webrtc) - that we use as a base for our server's daemon.
 
 ## Installing
-
-Clone this repo and run the commands below. In your server you'll need to install
-and run our backend project - [webexec](https://github.com/tuzig/webexec)
 
 
 ```console
@@ -40,13 +37,26 @@ To start terminal 7 in the browser use:
 npm start
 ```
 
-and point your browser at http://localhost:3333
+and point your browser at http://localhost:3333. use `npm run` for the list of
+commands available
 
-Terminal7 adds a global `window.terminal7` you can use in the debugger.
+## WebRTC
 
+
+Terminal7 can use WebRTC data channels to stream standard i/o, providing secure, fast communication.
+Designed by the W3C for the mobile web, WebRTC let's T7 work well in bad internet weather and 
+use a control data channel for advanced features like the clipboard integration
+and file sharing (soon...). 
+
+Our open source WebRTC server is written in go and is based on the pion server. 
+You can install it using the one line installer or from the [source](https://github.com/tuzig/webexec)
+
+```console
+$(curl -sL https://get.webexec.sh)
+```
 ## Contribuiting
 
-We welcome bug reports and ideas for new features.
+We welcome bug reports, ideas for new features and pull requests.
 Please feel free to open an issue or if you are ready to code yourself, follow these steps:
 
 1. Fork it
@@ -56,4 +66,4 @@ Please feel free to open an issue or if you are ready to code yourself, follow t
 5. `npm test` to test your changes
 6. Commit your changes (git commit -am 'Add some feature')
 7. Push to the branch (git push origin my-new-feature)
-8. Open a new Pull Request
+8. Open a new pull request

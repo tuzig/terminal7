@@ -6,6 +6,18 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.3] - 2022/5/3
+
+### Fixed
+
+- Fixing the disconnect/reconnect flow
+- Placing modals in front of the log
+- Connection watchdog streamlined
+
+### Added 
+
+- support for webexec 0.17.0 
+
 ## [0.20.2] - 2022/5/1
 
 ### Fixed
