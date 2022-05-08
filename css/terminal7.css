@@ -105,10 +105,6 @@ button {
     }
 }
 */
-dd:not(:last-child) {
-    margin-bottom: 1.5em;
-}
-dd { margin-inline-start: 0; }
 .border, .text-button {
     border-width: 1px;
     border-style: solid;

@@ -70,7 +70,8 @@ export class Gate {
         let t = document.getElementById("gate-template")
         if (t) {
             t = t.content.cloneNode(true)
-            this.openReset(t)
+            t.querySelector(".reset").addEventListener('click', () => 
+                this.reset())
             t.querySelector(".add-tab").addEventListener(
                 'click', _ => this.newTab())
             t.querySelector(".search-close").addEventListener('click', _ =>  {
@@ -366,7 +367,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         console.log("Clearing gate")
         this.e.querySelector(".tabbar-names").innerHTML = ""
         this.e.querySelectorAll(".window").forEach(e => e.remove())
-        this.e.querySelectorAll(".modal").forEach(e => e.remove())
+        this.e.querySelectorAll(".modal").forEach(e => e.classList.add("hidden"))
         if (this.activeW && this.activeW.activeP.zoomed)
             this.activeW.activeP.toggleZoom()
         this.windows = []
@@ -466,6 +467,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                 return
             }
             this.boarding = false
+            this.notify("Disengaging...")
             this.session.disconnect().then(resolve).catch(reject)
         })
     }
@@ -478,36 +480,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.breadcrumbs.push(w)
             w.focus()
         }
-    }
-    openReset(t) {
-        //TODO: clone this from a template
-        let e = document.getElementById("reset-gate-template")
-        e = e.content.cloneNode(true)
-        t.querySelector(".reset").addEventListener('click', _ => {
-            this.e.querySelector(".reset-gate").classList.toggle("hidden")
-        })
-        e.querySelector(".sizes").addEventListener('click', _ => {
-            this.notify("Resetting sizes")
-            this.e.querySelector(".reset-gate").classList.toggle("hidden")
-            this.panes().forEach(p => {
-                if (!p.fit())
-                    this.sendSize(p)
-            })
-        })
-        e.querySelector(".channels").addEventListener('click', _ => {
-            this.notify("Resetting data channels")
-            this.e.querySelector(".reset-gate").classList.toggle("hidden")
-            this.marker = 0
-            this.panes().forEach(p => {
-                p.d.close()
-                p.openChannel({id: p.d.id})
-            })
-        })
-        e.querySelector(".all").addEventListener('click', _ => {
-            this.e.querySelector(".reset-gate").classList.toggle("hidden")
-            this.reset()
-        })
-        this.e.appendChild(e)
     }
     updateNameE() {
         this.nameE.innerHTML = this.name
@@ -578,7 +550,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         e.querySelector('[name="pass"]').focus()
     }
     completeConnect(): void {
-        let timeout = this.t7.conf.net.timeout
         if (this.session == null)
             if (this.fp) {
                 this.notify("&#127884 PeerBook")
@@ -588,7 +559,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                 if (this.tryWebexec) {
                     this.notify("&#127884 webexec server")
                     this.session = new HTTPWebRTCSession(this.fp, this.addr)
-                    timeout = this.t7.conf.net.httpTimeout
                 } else {
                     this.notify("Starting SSH session")
                     this.session = new SSHSession(

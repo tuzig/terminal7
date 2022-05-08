@@ -66,22 +66,6 @@ export class Terminal7Mock extends Terminal7 {
                   arrow_2_circlepath</i></button>
     </nav>
     </template>
-    <template id="reset-gate-template">
-      <div class="reset-gate hidden modal border" >
-          <p>What kind of reset whould you like?</p>
-          <dl>
-             <dt><button type="button" class="text-button sizes">
-                     Sizes</button></dt>
-              <dd>Fitting terminals and refreshing all panes' sizes</dd>
-              <dt><button type="button" class="text-button channels">
-                      Data Channels</button></dt>
-              <dd>Replacing all data channels with fresh ones</dd>
-              <dt><button type="button" class="text-button all">
-                      Connection</button></dt>
-              <dd>Drop the peer connection and re-connect</dd>
-          </dl>
-      </div>
-    </template>
     <template id="divider-template">
         <div class="divider hidden">
             <img width="8" height="44" src="img/divider.png" alt="a divider">
