@@ -197,6 +197,7 @@ export class Gate {
     }
     // handle connection failures
     handleFailure(failure: Failure) {
+        this.t7.log("Failure: ", failure)
         if (!this.boarding)
             return
 
@@ -209,6 +210,7 @@ export class Gate {
             return
         }
         if (failure == Failure.Unauthorized) {
+            this.notify("Unauthorized")
             this.copyFingerprint()
             return
         }
@@ -244,7 +246,7 @@ export class Gate {
             return
         // if we're already boarding, just focus
         if (this.boarding) {
-            console.log("already boarding")
+            this.t7.log("already boarding")
             if (!this.windows || (this.windows.length == 0))
                 this.activeW = this.addWindow("", true)
             this.focus()
@@ -314,7 +316,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.t7.log("Fresh state, creating the first pane")
             if (winLen > 0)
                 // TODO: find a way to identify state lost
-                console.log("this.loseState()")
+                this.t7.log("this.loseState()")
             else
                 this.activeW = this.addWindow("", true)
         } else if (winLen > 0) {
@@ -364,7 +366,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
      * clear clears the gates memory and display
      */
     clear() {
-        console.log("Clearing gate")
+        this.t7.log("Clearing gate")
         this.e.querySelector(".tabbar-names").innerHTML = ""
         this.e.querySelectorAll(".window").forEach(e => e.remove())
         this.e.querySelectorAll(".modal").forEach(e => e.classList.add("hidden"))
@@ -413,7 +415,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                this.sendStateTask = null
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
-                        console.log("Closing gate after updating to empty state")
+                        this.t7.log("Closing gate after updating to empty state")
                         this.disengage().then(() => {
                             this.session = null
                             this.stopBoarding()
@@ -572,7 +574,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.notify("TBD: update new layout")
             this.t7.log("TBD: update layout", layout)
         }
-        console.log("opening session")
+        this.t7.log("opening session")
         this.session.connect()
     }
 }
