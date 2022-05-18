@@ -393,9 +393,9 @@ export class PeerbookSession extends WebRTCSession {
     }
     peerAnswer(offer) {
         const sd = new RTCSessionDescription(offer)
+        this.clearWatchdog()
         this.pc.setRemoteDescription(sd)
             .catch (e => {
-                this.clearWatchdog()
                 this.t7.notify(`Failed to set remote description: ${e}`)
                 this.onStateChange("failed", Failure.BadRemoteDescription)
             })

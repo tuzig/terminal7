@@ -197,7 +197,7 @@ export class Gate {
     }
     // handle connection failures
     handleFailure(failure: Failure) {
-        this.t7.log("Failure: ", failure)
+        this.t7.log(failure)
         if (!this.boarding)
             return
 
@@ -210,7 +210,6 @@ export class Gate {
             return
         }
         if (failure == Failure.Unauthorized) {
-            this.notify("Unauthorized")
             this.copyFingerprint()
             return
         }
