@@ -613,8 +613,14 @@ peer_name = "${peername}"\n`
         this.pendingCDCMsgs = []
         e.querySelector("h1").textContent =
             `${gate.name} communication failure`
-        e.querySelector("form").addEventListener('submit', () => gate.reset())
-        e.querySelector(".close").addEventListener('click', () => {
+        e.querySelector("form").addEventListener('submit', ev => {
+            ev.target.closest(".modal").remove()
+            gate.reset()
+            ev.stopPropagation()
+            ev.preventDefault()
+        })
+        e.querySelector(".close").addEventListener('click', ev => {
+            ev.target.closest(".modal").remove()
             gate.clear()
             this.goHome()
         })
@@ -647,12 +653,10 @@ peer_name = "${peername}"\n`
                 gate.disengage()
                 gate.clear()
             }
-            terminal7.goHome()
+            this.goHome()
         })
         e.querySelector(".reconnect").addEventListener('click', ev => {
-            this.clear()
-            gate.clear()
-            gate.connect()
+            gate.reset()
         })
         e.querySelector(".server-error").innerHTML = error.message
         this.e.appendChild(e)

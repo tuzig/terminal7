@@ -11,13 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Session are more resilent thanks to better connection watchdog clearing
-
-## [0.20.5] - 2022/5/15
-
-### Fixed 
-
 - Reset button now works without a modal dialog
 - Modal dialogs border is back
+- Reset button on disconnect popup works as expected
 
 ## [0.20.4] - 2022/5/3
 
