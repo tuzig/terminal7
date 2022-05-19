@@ -221,7 +221,7 @@ export class Gate {
         }
         if (failure == Failure.TimedOut) {
             if ((!this.fp) && this.tryWebexec) {
-                this.notify("webexec server timed out. Trying SSH...")
+                this.notify("Timed out, trying SSH...")
                 this.tryWebexec = false
                 this.connect()
                 return
