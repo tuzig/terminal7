@@ -70,7 +70,6 @@ abstract class WebRTCSession extends BaseSession {
     channels: Map<number, WebRTCChannel>
     pendingCDCMsgs: Array<object>
     pendingChannels: Map<ChannelID, ChannelOpenedCB>
-    msgWatchdogs: Map<ChannelID, number>
     msgHandlers: Map<ChannelID, Array<()=>void>>
     cdc: RTCDataChannel
     pc: RTCPeerConnection
@@ -85,7 +84,6 @@ abstract class WebRTCSession extends BaseSession {
         this.channels = new Map()
         this.pendingCDCMsgs = []
         this.pendingChannels = new Map()
-        this.msgWatchdogs = new Map()
         this.msgHandlers = new Map()
         this.lastMsgId = 0
         this.lastMarker = -1
@@ -245,8 +243,6 @@ abstract class WebRTCSession extends BaseSession {
             // handle Ack
             if ((msg.type == "ack") || (msg.type == "nack")) {
                 const i = msg.args.ref
-                window.clearTimeout(this.msgWatchdogs[i])
-                this.msgWatchdogs.delete(i)
                 const handlers = this.msgHandlers[i]
                 this.msgHandlers.delete(msg.args.ref)
                 this.t7.log("got cdc message:",  msg)
@@ -299,8 +295,6 @@ abstract class WebRTCSession extends BaseSession {
             } catch(err) {
                 this.t7.notify(`Sending ctrl message failed: ${err}`)
             }
-            this.msgWatchdogs[msg.message_id] = this.t7.run(
-                  () => this.fail(), timeout)
         }
         return msg.message_id
     }
@@ -460,10 +454,8 @@ export class HTTPWebRTCSession extends WebRTCSession {
                         this.disengagePC()
                         this.fail(Failure.Unauthorized)
                     // TODO: the next line is probably wrong
-                    } else if (error.message == 'timeout')  {
-                        this.fail(Failure.NotSupported)
                     } else
-                        this.fail()
+                        this.fail(Failure.NotSupported)
                 })
             })
 
