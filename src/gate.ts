@@ -276,9 +276,7 @@ export class Gate {
     // reset reset's a gate connection by disengaging and reconnecting
     reset() {
         this.disengage().then(() => {
-            this.clear()
             this.t7.run(() =>  {
-                this.session = null
                 this.connect()
             }, 100)
         })

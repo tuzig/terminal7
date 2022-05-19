@@ -615,7 +615,9 @@ peer_name = "${peername}"\n`
             `${gate.name} communication failure`
         e.querySelector("form").addEventListener('submit', ev => {
             ev.target.closest(".modal").remove()
-            gate.reset()
+            gate.clear()
+            gate.session = null
+            gate.connect()
             ev.stopPropagation()
             ev.preventDefault()
         })
