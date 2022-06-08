@@ -15,8 +15,8 @@ two domains: `peerbook_webrtc` & `http_webrtc`
 The main script is `./qa/qa.bash` and when you run it with no arguments
 it starts by running the linter which fails. 
 It'll probably keep failing until we have the code in TypeScript.
-After failing the linter, the scripts runsthe unit tests and finally the scenario
-tests. 
+After failing the linter, the scripts runs the unit tests and
+finally the scenario tests. 
 
 The script can also accept one of more argument with a folder name.
 Each of these folders focus on a different aspect of users' scenarios.
