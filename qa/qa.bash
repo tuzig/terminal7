@@ -21,14 +21,14 @@ then
     for compose in `find qa -name "lab.yaml"`
     do
         echo ">>> bringing up a lab from `dirname $compose`"
-        docker-compose -f $compose  --project-directory . up --exit-code-from runner
+        docker compose -f $compose  --project-directory . up --exit-code-from runner
     done
 else
     npx vite build
     for arg in $@
     do
         echo ">>> setting up a lab from ./qa/$arg"
-        docker-compose -f qa/$arg/lab.yaml  --project-directory . up --exit-code-from runner
+        docker compose -f qa/$arg/lab.yaml  --project-directory . up --exit-code-from runner
         if [ $? -ne 0 ]
         then
              echo ">>> $arg FAILED"
