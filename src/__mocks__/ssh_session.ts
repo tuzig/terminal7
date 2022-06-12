@@ -23,7 +23,7 @@ export class SSHSession implements Session {
     }
     connect = vi.fn(() => setTimeout(() => this.onStateChange("connected"), 0))
     openChannel = vi.fn(
-        (cmd: string, parent: ChannelID, sx?: number, sy?: number) =>
+        (cmd: string, parent: ChannelID, sx?: number, sy?: number) => // eslint-disable-line
         new Promise(resolve => {
             setTimeout(() => {
                 const c = new MockChannel()

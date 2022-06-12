@@ -23,3 +23,6 @@ resources/android
 # testing
 qa/webexec/config/agent.*
 qa/result
+
+# Local Netlify folder
+.netlify

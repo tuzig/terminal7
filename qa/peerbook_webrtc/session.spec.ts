@@ -16,10 +16,6 @@ test.describe('terminal7 session', ()  => {
         await btns.last().dispatchEvent('pointerdown')
         await sleep(50)
         await btns.last().dispatchEvent('pointerup')
-        /* the white box way
-        await page.evaluate(async () => {
-           window.terminal7.PBGates.values().next().value.connect()})
-        */
     }
 
     let page: Page,
@@ -140,14 +136,14 @@ insecure = true`)
     test('disengage and reconnect', async() => {
         await page.evaluate(async() => {
             const gate = window.terminal7.activeG
-            gate.activeW.activeP.d.send("seq 10; sleep 1; seq 10 100\n")
+            gate.activeW.activeP.d.send("seq 10; sleep 1; seq 10 20\n")
         })
         await sleep(100)
         await page.screenshot({ path: `/result/second.png` })
-        await page.evaluate(async() => {
+        const lines1 = await page.evaluate(async() => {
             const gate = window.terminal7.activeG
             await gate.disengage()
-            console.log(">>> after disengage:", window.terminal7.activeG, gate.name)
+            return gate.activeW.activeP.t.buffer.active.length
         })
         await sleep(1000)
         await page.screenshot({ path: `/result/third.png` })
@@ -157,11 +153,11 @@ insecure = true`)
         // connectGate()
         await expect(page.locator('.pane')).toHaveCount(1)
         await sleep(500)
-        const lines = await page.evaluate(() =>
+        const lines2 = await page.evaluate(() =>
            window.terminal7.activeG.activeW.activeP.t.buffer.active.length)
         await page.screenshot({ path: `/result/fourth.png` })
-        // TODO: Fix the test expect(lines).toEqual(103)
-        expect(lines).toBeGreaterThan(100)
+        console.log(lines1, lines2)
+        expect(lines2-lines1).toEqual(11)
     })
     test('after disengage & reconnect, a a pane can be close', async() => {
         await page.screenshot({ path: `/result/fifth.png` })

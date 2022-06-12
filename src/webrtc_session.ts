@@ -1,5 +1,4 @@
 import { BaseSession, BaseChannel, Channel, ChannelID, CallbackType, Failure }  from './session' 
-import { Clipboard } from '@capacitor/clipboard'
 import { Http } from '@capacitor-community/http';
 
 const TIMEOUT = 5000
@@ -70,7 +69,6 @@ abstract class WebRTCSession extends BaseSession {
     channels: Map<number, WebRTCChannel>
     pendingCDCMsgs: Array<object>
     pendingChannels: Map<ChannelID, ChannelOpenedCB>
-    msgWatchdogs: Map<ChannelID, number>
     msgHandlers: Map<ChannelID, Array<()=>void>>
     cdc: RTCDataChannel
     pc: RTCPeerConnection
@@ -85,14 +83,11 @@ abstract class WebRTCSession extends BaseSession {
         this.channels = new Map()
         this.pendingCDCMsgs = []
         this.pendingChannels = new Map()
-        this.msgWatchdogs = new Map()
         this.msgHandlers = new Map()
         this.lastMsgId = 0
         this.lastMarker = -1
     }
-    onIceCandidate(ev: RTCPeerConnectionIceEvent) {
-            return
-    }
+    abstract onIceCandidate(ev: RTCPeerConnectionIceEvent): void
     /*
      * disengagePC silently removes all event handler from the peer connections
      */
@@ -245,8 +240,6 @@ abstract class WebRTCSession extends BaseSession {
             // handle Ack
             if ((msg.type == "ack") || (msg.type == "nack")) {
                 const i = msg.args.ref
-                window.clearTimeout(this.msgWatchdogs[i])
-                this.msgWatchdogs.delete(i)
                 const handlers = this.msgHandlers[i]
                 this.msgHandlers.delete(msg.args.ref)
                 this.t7.log("got cdc message:",  msg)
@@ -276,9 +269,6 @@ abstract class WebRTCSession extends BaseSession {
         return cdc
     }
     sendCTRLMsg(msg, resolve, reject) {
-        const timeout = parseInt(this.t7.conf.net.timeout),
-              retries = parseInt(this.t7.conf.net.retries),
-              now = Date.now()
         // helps us ensure every message gets only one Id
         if (msg.message_id === undefined) 
             msg.message_id = this.lastMsgId++
@@ -299,8 +289,6 @@ abstract class WebRTCSession extends BaseSession {
             } catch(err) {
                 this.t7.notify(`Sending ctrl message failed: ${err}`)
             }
-            this.msgWatchdogs[msg.message_id] = this.t7.run(
-                  () => this.fail(), timeout)
         }
         return msg.message_id
     }
@@ -321,9 +309,7 @@ abstract class WebRTCSession extends BaseSession {
         )
     }
     closeChannels(): void {
-         this.channels.forEach((c: WebRTCChannel, k: number) => {
-                c.close()
-        })
+        this.channels.forEach(c => c.close())
         this.t7.log("channels after deletes:", this.channels)
     }
     // disconnect disconnects from all channels, requests a mark and resolve with
@@ -393,9 +379,9 @@ export class PeerbookSession extends WebRTCSession {
     }
     peerAnswer(offer) {
         const sd = new RTCSessionDescription(offer)
+        this.clearWatchdog()
         this.pc.setRemoteDescription(sd)
             .catch (e => {
-                this.clearWatchdog()
                 this.t7.notify(`Failed to set remote description: ${e}`)
                 this.onStateChange("failed", Failure.BadRemoteDescription)
             })
@@ -450,9 +436,9 @@ export class HTTPWebRTCSession extends WebRTCSession {
                     */
                     // TODO move this to the last line of the last then
                     const answer = JSON.parse(atob(data))
-                    let sd = new RTCSessionDescription(answer)
+                    const sd = new RTCSessionDescription(answer)
                     this.pc.setRemoteDescription(sd)
-                    .catch (e => { this.fail(Failure.BadRemoteDescription) })
+                    .catch (() => { this.fail(Failure.BadRemoteDescription) })
                 }).catch(error => {
                     this.clearWatchdog()
                     console.log("POST to /connect failed", error)
@@ -460,17 +446,15 @@ export class HTTPWebRTCSession extends WebRTCSession {
                         this.disengagePC()
                         this.fail(Failure.Unauthorized)
                     // TODO: the next line is probably wrong
-                    } else if (error.message == 'timeout')  {
-                        this.fail(Failure.NotSupported)
                     } else
-                        this.fail()
+                        this.fail(Failure.NotSupported)
                 })
             })
 
         })
     }
     getIceServers() {
-        return new Promise((resolve, reject) =>
+        return new Promise((resolve) =>
             resolve([{ urls: this.t7.conf.net.iceServer}]))
     }
 }

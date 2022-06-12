@@ -4,13 +4,13 @@ export type State = "new" | "connecting" | "connected" | "reconnected" | "discon
 
 // possible reasons for a failure
 export enum Failure {
-    NotImplemented,
-    WrongPassword,
-    Unauthorized,
-    BadMarker,
-    BadRemoteDescription,
-    NotSupported,
-    TimedOut
+    NotImplemented='NotImplemented',
+    WrongPassword='WrongPassword',
+    Unauthorized='Unauthorized',
+    BadMarker='BadMarker',
+    BadRemoteDescription='BadRemoteDescription',
+    NotSupported='NotSupported',
+    TimedOut='TimedOut'
 }
 
 export interface Event {
@@ -74,11 +74,7 @@ export abstract class BaseSession implements Session {
             resolve(null)
         })
     }
-    setPayload(payload: string): Promise<void>{
-        return new Promise(resolve=> {
-            resolve()
-        })
-    }
+    abstract setPayload(payload: string): Promise<void>
     disconnect(): Promise<void>{
         return new Promise(resolve=> {
             resolve()

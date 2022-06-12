@@ -6,6 +6,21 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.6] - 2022/5/24
+
+## Fixed
+
+- To the bench and back does not lose the state on WebRTC connection
+- Reset buttons are working as they should
+
+## [0.20.5] - 2022/5/18
+
+### Fixed
+- Session are more resilent thanks to better connection watchdog clearing
+- Reset button now works without a modal dialog
+- Modal dialogs border is back
+- Reset button on disconnect popup works as expected
+
 ## [0.20.4] - 2022/5/3
 
 ### Added
