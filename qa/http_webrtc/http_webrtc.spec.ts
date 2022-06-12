@@ -100,7 +100,7 @@ pinch_max_y_velocity = 0.1`
     test('a pane can be split', async () => {
         await page.evaluate(async() => {
             const pane = window.terminal7.activeG.activeW.activeP
-            const pane2 = pane.split("topbottom")
+            pane.split("topbottom")
         })
         await expect(page.locator('.pane')).toHaveCount(2)
         await page.evaluate(() => window.terminal7.goHome())
@@ -154,7 +154,7 @@ pinch_max_y_velocity = 0.1`
            const buffer = window.terminal7.activeG.activeW.activeP.t.buffer.active,
                  ret = buffer.length
             console.log(">>> -------  start of buffeer --------")
-           for (var i=0; i<ret; i++)
+           for (let i=0; i<ret; i++)
                console.log(buffer.getLine(i).translateToString
 ())
             console.log(">>> -------  end of buffeer --------")

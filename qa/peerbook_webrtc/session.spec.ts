@@ -1,6 +1,6 @@
 import { test, expect, Page, BrowserContext } from '@playwright/test'
 import waitPort from 'wait-port'
-const redis = require('redis')
+import * as redis from 'redis'
 
 
     const local = process.env.LOCALDEV !== undefined,
@@ -105,7 +105,7 @@ insecure = true`)
     test('a pane can be split', async () => {
         await page.evaluate(async() => {
             const pane = window.terminal7.activeG.activeW.activeP
-            const pane2 = pane.split("topbottom")
+            pane.split("topbottom")
         })
         await expect(page.locator('.pane')).toHaveCount(2)
         await page.evaluate(() => window.terminal7.goHome())

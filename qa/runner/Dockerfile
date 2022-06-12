@@ -1,9 +1,7 @@
-FROM mcr.microsoft.com/playwright:focal
-
-# Installs latest Chromium (92) package.
-
-COPY ./qa/runner/package.json /
-COPY ./qa/runner/yarn.lock /
+FROM mcr.microsoft.com/playwright:v1.22.2-focal 
+WORKDIR /app
+ENV NODE_PATH="/usr/lib/node_modules"
+ADD ./qa/runner/package.json .
+ADD ./qa/runner/yarn.lock .
 RUN yarn install --frozen-lockfile
-WORKDIR /runner
-ENV PATH="${PATH}:/node_modules/.bin"
+CMD cp /runner/*.spec.ts . && npx playwright test ${PWARGS}
