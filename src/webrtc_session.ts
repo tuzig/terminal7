@@ -1,5 +1,4 @@
 import { BaseSession, BaseChannel, Channel, ChannelID, CallbackType, Failure }  from './session' 
-import { Clipboard } from '@capacitor/clipboard'
 import { Http } from '@capacitor-community/http';
 
 const TIMEOUT = 5000
@@ -88,9 +87,7 @@ abstract class WebRTCSession extends BaseSession {
         this.lastMsgId = 0
         this.lastMarker = -1
     }
-    onIceCandidate(ev: RTCPeerConnectionIceEvent) {
-            return
-    }
+    abstract onIceCandidate(ev: RTCPeerConnectionIceEvent): void
     /*
      * disengagePC silently removes all event handler from the peer connections
      */
@@ -272,9 +269,6 @@ abstract class WebRTCSession extends BaseSession {
         return cdc
     }
     sendCTRLMsg(msg, resolve, reject) {
-        const timeout = parseInt(this.t7.conf.net.timeout),
-              retries = parseInt(this.t7.conf.net.retries),
-              now = Date.now()
         // helps us ensure every message gets only one Id
         if (msg.message_id === undefined) 
             msg.message_id = this.lastMsgId++
@@ -315,9 +309,7 @@ abstract class WebRTCSession extends BaseSession {
         )
     }
     closeChannels(): void {
-         this.channels.forEach((c: WebRTCChannel, k: number) => {
-                c.close()
-        })
+        this.channels.forEach(c => c.close())
         this.t7.log("channels after deletes:", this.channels)
     }
     // disconnect disconnects from all channels, requests a mark and resolve with
@@ -444,9 +436,9 @@ export class HTTPWebRTCSession extends WebRTCSession {
                     */
                     // TODO move this to the last line of the last then
                     const answer = JSON.parse(atob(data))
-                    let sd = new RTCSessionDescription(answer)
+                    const sd = new RTCSessionDescription(answer)
                     this.pc.setRemoteDescription(sd)
-                    .catch (e => { this.fail(Failure.BadRemoteDescription) })
+                    .catch (() => { this.fail(Failure.BadRemoteDescription) })
                 }).catch(error => {
                     this.clearWatchdog()
                     console.log("POST to /connect failed", error)
@@ -462,7 +454,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
         })
     }
     getIceServers() {
-        return new Promise((resolve, reject) =>
+        return new Promise((resolve) =>
             resolve([{ urls: this.t7.conf.net.iceServer}]))
     }
 }

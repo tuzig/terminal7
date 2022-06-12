@@ -74,11 +74,7 @@ export abstract class BaseSession implements Session {
             resolve(null)
         })
     }
-    setPayload(payload: string): Promise<void>{
-        return new Promise(resolve=> {
-            resolve()
-        })
-    }
+    abstract setPayload(payload: string): Promise<void>
     disconnect(): Promise<void>{
         return new Promise(resolve=> {
             resolve()

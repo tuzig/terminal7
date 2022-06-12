@@ -1,4 +1,4 @@
-import { SSH, SSHSessionID, TerminalType, SSHSessionByPass} from 'capacitor-ssh-plugin'
+import { SSH, SSHSessionID, SSHSessionByPass} from 'capacitor-ssh-plugin'
 import { Channel, BaseChannel, BaseSession, State, Failure }  from './session' 
 
 export class SSHChannel extends BaseChannel {
@@ -9,7 +9,11 @@ export class SSHChannel extends BaseChannel {
                .then(() => {
                    this.onClose("Shell closed")
                    resolve()
-                }).catch(e => console.log("error from close SSH channel", e))
+                })
+                .catch(e => {
+                    console.log("error from close SSH channel", e)
+                    reject(e)
+                })
         })
     }
     send(data: string): void {
@@ -57,7 +61,6 @@ export class SSHSession extends BaseSession {
     openChannel(cmd: string, parent?: ChannelID, sx?: number, sy?: number):
          Promise<Channel> {
         return new Promise((resolve, reject) => {
-            let newC
             const channel = new SSHChannel()
             SSH.newChannel({session: this.id})
                .then(({ id }) => {
@@ -79,10 +82,16 @@ export class SSHSession extends BaseSession {
                             resolve(channel, id)
                            })
 
-                    }).catch(e => { console.log("failed startshell", e); reject(e) })
+                    }).catch(e => {
+                        console.log("failed startshell", e)
+                        reject(e) 
+                    })
                 })
         })
     }
     close(): Promise<void>{
+        return new Promise((resolve) => {
+            resolve()
+        })
     }
 }
