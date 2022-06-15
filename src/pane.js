@@ -130,7 +130,7 @@ export class Pane extends Cell {
                 }
                 const state = this.d.readyState 
                 if (state != "open") {
-                    this.gate.notify(`Sorry, gate is ${state}`)
+                    this.gate.notify(`Sorry, data channel is ${state}`)
                     return
                 }
                 this.d.send(d)
@@ -169,14 +169,9 @@ export class Pane extends Cell {
 
         // there's no point in fitting when in the middle of a restore
         //  it happens in the eend anyway
-        /*
-        if (this.gate.marker != -1) {
-            return
-        }
-        */
         try {
             this.fitAddon.fit()
-        } catch {
+        } catch (e) {
             if (this.retries < this.t7.conf.retries) {
                 this.retries++
                 this.t7.run(this.fit, 20*this.retries)
@@ -268,6 +263,8 @@ export class Pane extends Cell {
                 reject("Gate has no session yet")
                 return
             }
+            if (this.d && (this.d.readyState == "open"))
+                return
             this.buffer = []
             if (opts.id) {
                 this.gate.session.openChannel(opts.id)

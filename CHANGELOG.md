@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Reconnect after a long sleep
+- Fixed doubling of output
 
 ## [0.20.6] - 2022/5/24
 
