@@ -175,7 +175,7 @@ export class Terminal7 {
             }
         })
         // hide the modal on xmark click
-        addHost.querySelector(".close").addEventListener('click',  _ =>  {
+        addHost.querySelector(".close").addEventListener('click',  () =>  {
             this.clear()
         })
         // Handle network events for the indicator
@@ -184,15 +184,15 @@ export class Terminal7 {
         this.catchFingers()
         // setting up edit host events
         document.getElementById("edit-unverified-pbhost").addEventListener(
-            "click", _ => this.clear())
+            "click", () => this.clear())
         let editHost = document.getElementById("edit-host")
         editHost.querySelector("form").addEventListener('submit', ev => {
             ev.preventDefault()
             editHost.gate.editSubmit(ev)
         })
-        editHost.querySelector(".close").addEventListener('click',  _ =>
+        editHost.querySelector(".close").addEventListener('click',  () =>
             terminal7.clear())
-        editHost.querySelector(".trash").addEventListener('click',  _ => {
+        editHost.querySelector(".trash").addEventListener('click',  () => {
             editHost.gate.delete()
             terminal7.clear()
         })
@@ -240,7 +240,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         document.addEventListener("keydown", ev => {
             if (ev.key == "Meta") {
                 this.metaPressStart = Date.now()
-                this.run(_ => this.showKeyHelp(), terminal7.conf.ui.quickest_press)
+                this.run(() => this.showKeyHelp(), terminal7.conf.ui.quickest_press)
             } else
                 this.metaPressStart = Number.MAX_VALUE
         })
@@ -283,7 +283,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             })
         }
         document.getElementById("log").addEventListener("click",
-            _ => this.logDisplay(false))
+            () => this.logDisplay(false))
 
         // settings button and modal
         var modal   = document.getElementById("settings-modal")
@@ -646,7 +646,7 @@ peer_name = "${peername}"\n`
         this.pendingCDCMsgs = []
         e.querySelectorAll(".name").forEach(e => e.textContent = gate.name)
         e.querySelectorAll(".address").forEach(e => e.textContent = gate.addr)
-        e.querySelector(".edit-link").addEventListener('click', _ => {
+        e.querySelector(".edit-link").addEventListener('click', () => {
             this.clear()
             gate.edit()
         })
@@ -932,7 +932,7 @@ peer_name = "${peername}"\n`
             ws.onopen = ev => {
                 this.log("on open ws", ev)
                 if (this.pbSendTask == null)
-                    this.pbSendTask = this.run(_ => {
+                    this.pbSendTask = this.run(() => {
                         PBPending.forEach(m => {
                             this.log("sending ", m)
                             this.ws.send(JSON.stringify(m))})
@@ -1116,7 +1116,7 @@ peer_name = "${peername}"\n`
     showGreetings() {
         let modal = document.getElementById("greetings-modal")
             
-        modal.querySelector(".play-button").addEventListener('click', _ => {
+        modal.querySelector(".play-button").addEventListener('click', () => {
             this.clear()
             this.onBoard()
         })
@@ -1133,7 +1133,7 @@ peer_name = "${peername}"\n`
                 let m = document.getElementById('manual-install')
                 modal.classList.add('hidden')
                 m.classList.remove('hidden')
-                m.querySelector(".close").addEventListener('click', _ => this.clear())
+                m.querySelector(".close").addEventListener('click', () => this.clear())
             }
             ev.preventDefault()
             ev.stopPropagation()
@@ -1150,7 +1150,7 @@ peer_name = "${peername}"\n`
             localStorage.setItem("onboard", "yep")
             modal = document.getElementById("mobile-instructions")
             modal.classList.remove("hidden")
-            modal.querySelector(".close").addEventListener('click', _ =>
+            modal.querySelector(".close").addEventListener('click', () =>
                 this.clear())
             modal.querySelector(".copy").addEventListener('click', ev => {
                 this.clear()
@@ -1171,7 +1171,7 @@ peer_name = "${peername}"\n`
             this.storeGates()
             modal = document.getElementById("localhost-instructions")
             modal.classList.remove("hidden")
-            modal.querySelector(".close").addEventListener('click', _ =>
+            modal.querySelector(".close").addEventListener('click', () =>
                 this.clear())
             modal.querySelector(".copy").addEventListener('click', ev => {
                 this.notify("Command copied to the clipboard")
