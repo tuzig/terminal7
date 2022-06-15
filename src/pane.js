@@ -181,12 +181,10 @@ export class Pane extends Cell {
                 this.retries++
                 this.t7.run(this.fit, 20*this.retries)
             }
-            else {
-                this.t7.log(`fit failed ${this.retries} times. giving up`)
-                this.retries = 0
-                if (cb instanceof Function) cb(null)
-            }
-            return
+            else 
+                this.notify(["Failed to fit the terminal",
+                             "If things look funny,",
+                             "   try zoom & un-zoom"].join("\n"))
         }
         this.refreshDividers()
         if (this.t.rows != oldr || this.t.cols != oldc) {
