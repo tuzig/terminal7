@@ -28,7 +28,7 @@ else
     for arg in $@
     do
         echo ">>> setting up a lab from ./qa/$arg"
-        docker compose -f qa/$arg/lab.yaml  --project-directory . up --exit-code-from runner
+        docker-compose -f $arg/lab.yaml  --project-directory . up --exit-code-from runner
         if [ $? -ne 0 ]
         then
              echo ">>> $arg FAILED"

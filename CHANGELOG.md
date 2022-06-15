@@ -6,9 +6,16 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unrelease
+
+### Fixed
+
+- Reconnect after a long sleep
+- Fixed doubling of output
+
 ## [0.20.6] - 2022/5/24
 
-## Fixed
+### Fixed
 
 - To the bench and back does not lose the state on WebRTC connection
 - Reset buttons are working as they should

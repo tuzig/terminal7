@@ -87,7 +87,9 @@ abstract class WebRTCSession extends BaseSession {
         this.lastMsgId = 0
         this.lastMarker = -1
     }
-    abstract onIceCandidate(ev: RTCPeerConnectionIceEvent): void
+    onIceCandidate(ev: RTCPeerConnectionIceEvent) {
+            return
+    }
     /*
      * disengagePC silently removes all event handler from the peer connections
      */

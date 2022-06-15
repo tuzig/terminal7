@@ -11,13 +11,12 @@ services:
     depends_on:
       - terminal7
       - webexec
-    command: "playwright test ${PWARGS}"
   terminal7:
-    build: 
-      context: .
-      dockerfile: ./qa/terminal7/Dockerfile
+    image: halverneus/static-file-server:latest
+    environment:
+      PORT: 80
     volumes:
-      - ./dist:/terminal7
+      - ./dist:/web
   webexec:
     build:
       context: .
