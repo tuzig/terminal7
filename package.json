@@ -30,7 +30,7 @@
     "@iarna/toml": "git+https://github.com/tuzig/iarna-toml.git",
     "@robingenz/capacitor-background-task": "^1.0.0",
     "capacitor-ssh-plugin": "<1",
-    "codemirror": "git+https://github.com/tuzig/CodeMirror.git",
+    "@tuzig/codemirror": "5.65.5-mods",
     "glob": "<8",
     "hammerjs": "<3",
     "idb": "<7",
