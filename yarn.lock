@@ -1233,6 +1233,11 @@
   resolved "https://registry.yarnpkg.com/@tootallnate/once/-/once-2.0.0.tgz#f544a148d3ab35801c1f633a7441fd87c2e484bf"
   integrity sha512-XCuKFP5PS55gnMVu3dty8KPatLqUoy/ZYzDzAGCQ8JNFCkLXzmI7vNHCR+XpbZaMWQK/vQubr7PkYq8g470J/A==
 
+"@tuzig/codemirror@5.65.5-mods":
+  version "5.65.5-mods"
+  resolved "https://registry.yarnpkg.com/@tuzig/codemirror/-/codemirror-5.65.5-mods.tgz#74ba1a51e10422b17c8a0834762e23dca4b12f11"
+  integrity sha512-zJK3R5jAxBR+uFCtOpDDz1SaqfCqoxfLQgWEjfQftRJokhm7nWtH2Ws+M+aYIXY3rMEedMOLHuJWh5BhGdOEcg==
+
 "@tuzig/xterm@4.18.0-decoration":
   version "4.18.0-decoration"
   resolved "https://registry.yarnpkg.com/@tuzig/xterm/-/xterm-4.18.0-decoration.tgz#9438a409cc6e1a587057538c3a9da7d1262a1dea"
@@ -1639,10 +1644,6 @@ chownr@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/chownr/-/chownr-2.0.0.tgz#15bfbe53d2eab4cf70f18a8cd68ebe5b3cb1dece"
   integrity sha512-bIomtDF5KGpdogkLd9VspvFzk9KfpyyGlS8YFVZl7TGPBHL5snIOnxeshwVgPteQ9b4Eydl+pVbIyE1DcvCWgQ==
-
-"codemirror@git+https://github.com/tuzig/CodeMirror.git":
-  version "5.65.3"
-  resolved "git+https://github.com/tuzig/CodeMirror.git#0b3a36cd5dbf08fe6794a5eb1d8c9d1419b1ba8d"
 
 color-convert@^1.9.0:
   version "1.9.3"
