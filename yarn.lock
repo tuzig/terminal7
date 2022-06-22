@@ -1013,10 +1013,6 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz#b520529ec21d8e5945a1851dfd1c32e94e39ff45"
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
-"@iarna/toml@git+https://github.com/tuzig/iarna-toml.git":
-  version "3.0.0"
-  resolved "git+https://github.com/tuzig/iarna-toml.git#6db777e0747145393d75a65db5785b5231af48e0"
-
 "@ionic/cli-framework-output@^2.2.1":
   version "2.2.4"
   resolved "https://registry.yarnpkg.com/@ionic/cli-framework-output/-/cli-framework-output-2.2.4.tgz#177d8388140a2246dec111385ee63bf0343b013d"
@@ -1237,6 +1233,11 @@
   version "5.65.5-mods"
   resolved "https://registry.yarnpkg.com/@tuzig/codemirror/-/codemirror-5.65.5-mods.tgz#74ba1a51e10422b17c8a0834762e23dca4b12f11"
   integrity sha512-zJK3R5jAxBR+uFCtOpDDz1SaqfCqoxfLQgWEjfQftRJokhm7nWtH2Ws+M+aYIXY3rMEedMOLHuJWh5BhGdOEcg==
+
+"@tuzig/toml@^3.0.0-browser":
+  version "3.0.0-browser"
+  resolved "https://registry.yarnpkg.com/@tuzig/toml/-/toml-3.0.0-browser.tgz#d57930995694a77c6590fb9425e86107ca4ff756"
+  integrity sha512-Xn8k62yJrTGleinKIIlasl7IuMWzt933qA0r/9qh8s7aoIzXkX6hQ31r0glpe7dy6ytKEEwua1TrT6ZCK5rmsg==
 
 "@tuzig/xterm@4.18.0-decoration":
   version "4.18.0-decoration"

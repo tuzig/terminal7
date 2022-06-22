@@ -27,7 +27,7 @@
     "@capacitor/ios": "<4",
     "@capacitor/network": "^1.0.5",
     "@capacitor/storage": "^1.2.2",
-    "@iarna/toml": "git+https://github.com/tuzig/iarna-toml.git",
+    "@tuzig/toml": "^3.0.0-browser",
     "@robingenz/capacitor-background-task": "^1.0.0",
     "capacitor-ssh-plugin": "<1",
     "@tuzig/codemirror": "5.65.5-mods",
