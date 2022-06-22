@@ -1,6 +1,6 @@
 {
   "name": "terminal7",
-  "version": "0.20.6",
+  "version": "0.20.7",
   "description": "A touchable terminal emulator & multiplexer tablet app",
   "main": "src/index.js",
   "homepage": "https://terminal7.dev",
@@ -35,7 +35,7 @@
     "hammerjs": "<3",
     "idb": "<7",
     "uuid": "^8.3.2",
-    "xterm": "git+https://github.com/tuzig/xterm.js.git#semver:<5.0",
+    "@tuzig/xterm": "4.18.0-decoration",
     "xterm-addon-fit": "^0.3.0",
     "xterm-addon-search": "^0.7.0",
     "xterm-addon-webgl": "^0.11.4",
@@ -61,7 +61,6 @@
     "test": "vitest",
     "build": "vite build -c vite.dev.config.js",
     "clean": "rm -rf dist ios/App/App/public/*",
-    "postinstall": "cd ./node_modules/xterm && yarn install && npm run package",
     "qa": "bash ./qa/qa.bash",
     "lint": "npx eslint qa src --ext .js,.jsx,.ts,.tsx",
     "capacitor:copy:before": "npm run build"

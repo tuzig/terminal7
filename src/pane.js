@@ -6,7 +6,7 @@
  */
 import { Cell } from './cell.js'
 import { fileRegex, urlRegex } from './utils.js'
-import { Terminal } from 'xterm'
+import { Terminal } from '@tuzig/xterm'
 import { Capacitor } from '@capacitor/core'
 import { Clipboard } from '@capacitor/clipboard'
 import { Storage } from '@capacitor/storage'
@@ -57,6 +57,7 @@ export class Pane extends Cell {
      * Pane.openTerminal opens an xtermjs terminal on our element
      */
     openTerminal(parentID, channelID) {
+        console.log("in OpenTerminal")
         var con = document.createElement("div")
         this.t = new Terminal({
             convertEol: false,

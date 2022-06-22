@@ -5,13 +5,13 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { describe} from 'vitest'
+import { vi, describe, beforeAll, afterEach, it, expect } from 'vitest'
 import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
 import { Terminal7Mock, sleep } from './infra.ts'
 import { Storage } from '@capacitor/storage'
 
-vi.mock('xterm')
+vi.mock('@tuzig/xterm')
 vi.mock('../src/webrtc_session.ts')
 vi.mock('../src/ssh_session.ts')
 
