@@ -34,10 +34,10 @@ yarn install
 To start terminal 7 in the browser use:
 
 ```console
-npm start
+yarn start
 ```
 
-and point your browser at http://localhost:3333. use `npm run` for the list of
+and point your browser at http://localhost:3000. use `npm run` for the list of
 commands available
 
 ## WebRTC
@@ -61,9 +61,9 @@ Please feel free to open an issue or if you are ready to code yourself, follow t
 
 1. Fork it
 2. Clone it
-3. `yarn`
+3. `yarn install`
 4. Create your feature branch (git branch my-new-feature)
-5. `npm test` to test your changes
+5. `yarn test` to test your changes
 6. Commit your changes (git commit -am 'Add some feature')
 7. Push to the branch (git push origin my-new-feature)
 8. Open a new pull request
