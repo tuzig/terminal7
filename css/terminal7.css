@@ -319,6 +319,9 @@ button.rename-close {
     font-size: 16pt;
     flex: 10 1 auto;
     line-height: 24pt;
+    color: #01fafa;
+    background-color: #3e3446;
+    border-radius: 5px;
 }
 .active {
     font-weight: bold;

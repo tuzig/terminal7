@@ -303,9 +303,9 @@ export class Pane extends Cell {
     }
     toggleSearch(searchDown) {
         const se = this.gate.e.querySelector(".search-box")
-        if (se.classList.contains("hidden"))
+        if (se.classList.contains("hidden")) {
             this.showSearch()
-        else {
+        } else {
             this.hideSearch()
             this.focus()
         }
@@ -318,16 +318,8 @@ export class Pane extends Cell {
         se.classList.remove("hidden")
         document.getElementById("search-button").classList.add("on")
         // TODO: restore regex search
-        let up = se.querySelector(".search-up"),
-            down = se.querySelector(".search-down"),
-            i = se.querySelector("input[name='search-term']")
-        if (searchDown) {
-            up.classList.add("hidden")
-            down.classList.remove("hidden")
-        } else {
-            up.classList.remove("hidden")
-            down.classList.add("hidden")
-        }
+        let i = se.querySelector("input[name='search-term']")
+        this.disableSearchButtons()
         if (REGEX_SEARCH) {
             i.setAttribute("placeholder", "regex here")
             u.classList.remove("hidden")
@@ -348,7 +340,7 @@ export class Pane extends Cell {
         i.onkeydown = ev => {
             if (ev.keyCode == 13) {
                 this.findNext(i.value)
-                this.hideSearch()
+                this.enableSearchButtons()
                 this.t7.run(_ => this.t.focus(), 10)
             }
         }
@@ -479,16 +471,26 @@ export class Pane extends Cell {
         }
 
         if (this.searchTerm != undefined) {
-            if (this.searchDown)
-                if (!this.searchAddon.findNext(this.searchTerm, SEARCH_OPTS))
-                    this.gate.notify(`Couldn't find "${this.searchTerm}"`)
-                else 
-                    this.enterCopyMode(true)
-            if (!this.searchDown)
-                if (!this.searchAddon.findPrevious(this.searchTerm, SEARCH_OPTS))
-                    this.gate.notify(`Couldn't find "${this.searchTerm}"`)
-                else 
-                    this.enterCopyMode(true)
+            if (!this.searchAddon.findNext(this.searchTerm, SEARCH_OPTS))
+                this.gate.notify(`Couldn't find "${this.searchTerm}"`)
+            else 
+                this.enterCopyMode(true)
+        }
+    }
+    findPrev(searchTerm) {
+        if (searchTerm != undefined) {
+            this.cmAtEnd = null
+            this.t.setOption("selectionStyle", "plain")
+            this.searchTerm = searchTerm
+        }
+
+        if (this.searchTerm != undefined) {
+            if (!this.searchAddon.findPrevious(this.searchTerm, SEARCH_OPTS))
+                this.gate.notify(`Couldn't find "${this.searchTerm}"`)
+            else { 
+
+                this.enterCopyMode(true)
+            }
         }
     }
     /*
@@ -750,5 +752,19 @@ export class Pane extends Cell {
         let selectionLength = rowLength*(selection.endRow - selection.startRow) + selection.endColumn - selection.startColumn
         if (selectionLength == 0) selectionLength = 1
         this.t.select(selection.startColumn, selection.startRow, selectionLength)
+    }
+    enableSearchButtons() {
+        const se = this.gate.e.querySelector(".search-box")
+        let up = se.querySelector(".search-up"),
+            down = se.querySelector(".search-down")
+        up.classList.remove("off")
+        down.classList.remove("off")
+    }
+    disableSearchButtons() {
+        const se = this.gate.e.querySelector(".search-box")
+        let up = se.querySelector(".search-up"),
+            down = se.querySelector(".search-down")
+        up.classList.add("off")
+        down.classList.add("off")
     }
 }
