@@ -44,6 +44,7 @@ export class Pane extends Cell {
         this.flashTimer = null
         this.aLeader = false
         this.retries = 0
+        this.waitingForKey = ''
     }
 
     /*
@@ -576,7 +577,8 @@ export class Pane extends Cell {
     }
     handleCMKey(key) {
         var x, y, newX, newY,
-            selection = this.t.getSelectionPosition()
+            selection = this.t.getSelectionPosition(),
+            line
         // chose the x & y we're going to change
         if ((!this.cmMarking) || (selection == null)) {
             this.cmMarking = false
@@ -601,7 +603,45 @@ export class Pane extends Cell {
         }
         newX = x
         newY = y
-        switch(key) {
+        if (this.waitingForKey) {
+            console.log(key)
+            switch (this.waitingForKey) {
+                case 'f':
+                    line = this.getFullLine(y).trimEnd()
+                    this.cmSelectionUpdate(selection)
+                    newX = line.indexOf(key, x + 1)
+                    if (newX == -1)
+                        newX = x
+                    if (this.cmMarking)
+                        newX++
+                    break
+                case 'F':
+                    line = this.getFullLine(y).trimEnd()
+                    this.cmSelectionUpdate(selection)
+                    newX = line.lastIndexOf(key, x - 2)
+                    if (newX == -1)
+                        newX = x
+                    break
+                case 't':
+                    line = this.getFullLine(y).trimEnd()
+                    this.cmSelectionUpdate(selection)
+                    newX = line.indexOf(key, x + 1) - 1
+                    if (newX == -2)
+                        newX = x
+                    if (this.cmMarking)
+                        newX++
+                    break
+                case 'T':
+                    line = this.getFullLine(y).trimEnd()
+                    this.cmSelectionUpdate(selection)
+                    newX = line.lastIndexOf(key, x - 2) + 1
+                    if (newX == 0)
+                        newX = x
+                    break
+            }
+            this.waitingForKey = ''
+        }
+        else switch(key) {
             // space is used to toggle the marking state
             case ' ':
                 if (!this.cmMarking) {
@@ -617,7 +657,7 @@ export class Pane extends Cell {
                 break
             case "Enter":
                 if (this.t.hasSelection())
-                    this.copySlection().then(this.exitCopyMode())
+                    this.copySelection().then(this.exitCopyMode())
                 else
                     this.exitCopyMode();
                 break
@@ -662,6 +702,59 @@ export class Pane extends Cell {
                 if (this.cmAtEnd === null)
                     this.cmAtEnd = false
                 break
+            case '0':
+                newX = 0
+                break
+            case '$':
+                line = this.getFullLine(y).trimEnd()
+                this.cmSelectionUpdate(selection)
+                newX = line.length
+                if (newX != 0 && !this.cmMarking)
+                    newX--
+                break
+            case 'w':
+                line = this.getFullLine(y).trimEnd()
+                newX = line.indexOf(' ', x) + 1
+                if (newX == 0)
+                    newY = y + 1
+                if (this.cmMarking)
+                    newX++
+                break
+            case 'b':
+                if (x == 0) {
+                    line = this.getFullLine(y - 1).trimEnd()
+                    this.cmSelectionUpdate(selection)
+                    newX = line.lastIndexOf(' ') + 1
+                    newY = y - 1
+                } else {
+                    line = this.getFullLine(y).trimEnd()
+                    this.cmSelectionUpdate(selection)
+                    newX = line.lastIndexOf(' ', x - 2) + 1
+                }
+                break
+            case 'e':
+                line = this.getFullLine(y).trimEnd()
+                this.cmSelectionUpdate(selection)
+                newX = line.indexOf(' ', x + 2) - 1
+                if (x >= line.length - 1) {
+                    newY++
+                    line = this.getFullLine(newY).trimEnd()
+                    this.cmSelectionUpdate(selection)
+                    newX = line.indexOf(' ') - 1
+                }
+                if (newX == -2)
+                    newX = line.length - 1
+                if (this.cmMarking)
+                    newX++
+                break
+            case 'f':
+            case 'F':
+            case 't':
+            case 'T':
+                console.log("waiting for input")
+                this.waitingForKey = key
+                break
+            
         }
         if ((newY != y) || (newX != x)) {
             if (!this.cmMarking) {
@@ -750,5 +843,9 @@ export class Pane extends Cell {
         let selectionLength = rowLength*(selection.endRow - selection.startRow) + selection.endColumn - selection.startColumn
         if (selectionLength == 0) selectionLength = 1
         this.t.select(selection.startColumn, selection.startRow, selectionLength)
+    }
+    getFullLine(y) {
+        this.t.select(0, y, this.t.cols-2)
+        return this.t.getSelection()
     }
 }
