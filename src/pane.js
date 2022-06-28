@@ -709,8 +709,13 @@ export class Pane extends Cell {
             case 'w':
                 line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
                 newX = this.regexFindIndex(line, /(?=(\W)\1*).(?!\1)(?!\s)|(?<=\w)\w(?=\W)(?=\S)/g, x - 1) + 1
-                if (newX == 0)
-                    newY = y + 1
+                if (newX == 0)   
+                    if (this.t.buffer.active.getLine(y + 1))
+                        newY = y + 1
+                    else {
+                        newY = y
+                        newX = x
+                    }
                 if (this.cmMarking)
                     newX++
                 break
@@ -726,15 +731,16 @@ export class Pane extends Cell {
                 break
             case 'e':
                 line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
-                newX = this.regexFindIndex(line, /(?=(\W)\1*).(?!\1)(?!\s)|(?<=\w)\w(?=\W)(?=\S)/g, x) - 1
-                if (x >= line.length - 1) {
+                newX = this.regexFindIndex(line, /(?=(\W)\1*)\S(?!\1)(?!\S)|(?=(\W)\2*)\S(?!\2)(?!\W)|(?=(\w)\3*).(?!\w)/g, x)
+                while (newX == -1) {
                     newY++
-                    line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
-                    this.cmSelectionUpdate(selection)
-                    newX = line.replace(/\W/g, ' ').indexOf(' ') - 1
+                    line = this.t.buffer.active.getLine(newY)?.translateToString(true).trimEnd()
+                    if (!line) {
+                        newX = x
+                        newY--
+                    } else
+                        newX = this.regexFindIndex(line, /(?=(\W)\1*)\S(?!\1)(?!\S)|(?=(\W)\2*)\S(?!\2)(?!\W)|(?=(\w)\3*).(?!\w)/g)
                 }
-                if (newX == -2)
-                    newX = line.length - 1
                 if (this.cmMarking)
                     newX++
                 break
@@ -838,7 +844,8 @@ export class Pane extends Cell {
     regexFindIndex(str, regex, startIndex) {
         startIndex = startIndex || 0
         let match = -1
-        str.replace(regex, (_m1,_m2, i) => {
+        str.replace(regex, (...args) => {
+            let i = args.find(x => typeof(x) == "number")
             if (match == -1 && i > startIndex)
                 match = i
         })
