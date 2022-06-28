@@ -604,36 +604,31 @@ export class Pane extends Cell {
         newX = x
         newY = y
         if (this.waitingForKey) {
-            console.log(key)
             switch (this.waitingForKey) {
                 case 'f':
-                    line = this.getFullLine(y).trimEnd()
-                    this.cmSelectionUpdate(selection)
+                    line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
                     newX = line.indexOf(key, x + 1)
                     if (newX == -1)
                         newX = x
-                    if (this.cmMarking)
+                    else if (this.cmMarking)
                         newX++
                     break
                 case 'F':
-                    line = this.getFullLine(y).trimEnd()
-                    this.cmSelectionUpdate(selection)
+                    line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
                     newX = line.lastIndexOf(key, x - 2)
                     if (newX == -1)
                         newX = x
                     break
                 case 't':
-                    line = this.getFullLine(y).trimEnd()
-                    this.cmSelectionUpdate(selection)
+                    line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
                     newX = line.indexOf(key, x + 1) - 1
                     if (newX == -2)
                         newX = x
-                    if (this.cmMarking)
+                    else if (this.cmMarking)
                         newX++
                     break
                 case 'T':
-                    line = this.getFullLine(y).trimEnd()
-                    this.cmSelectionUpdate(selection)
+                    line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
                     newX = line.lastIndexOf(key, x - 2) + 1
                     if (newX == 0)
                         newX = x
@@ -706,15 +701,14 @@ export class Pane extends Cell {
                 newX = 0
                 break
             case '$':
-                line = this.getFullLine(y).trimEnd()
-                this.cmSelectionUpdate(selection)
+                line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
                 newX = line.length
                 if (newX != 0 && !this.cmMarking)
                     newX--
                 break
             case 'w':
-                line = this.getFullLine(y).trimEnd()
-                newX = line.indexOf(' ', x) + 1
+                line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
+                newX = this.regexFindIndex(line, /(?=(\W)\1*).(?!\1)(?!\s)|(?<=\w)\w(?=\W)(?=\S)/g, x - 1) + 1
                 if (newX == 0)
                     newY = y + 1
                 if (this.cmMarking)
@@ -722,25 +716,22 @@ export class Pane extends Cell {
                 break
             case 'b':
                 if (x == 0) {
-                    line = this.getFullLine(y - 1).trimEnd()
-                    this.cmSelectionUpdate(selection)
-                    newX = line.lastIndexOf(' ') + 1
+                    line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
+                    newX = line.replace(/\W/g, ' ').lastIndexOf(' ') + 1
                     newY = y - 1
                 } else {
-                    line = this.getFullLine(y).trimEnd()
-                    this.cmSelectionUpdate(selection)
-                    newX = line.lastIndexOf(' ', x - 2) + 1
+                    line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
+                    newX = line.replace(/\W/g, ' ').lastIndexOf(' ', x - 2) + 1
                 }
                 break
             case 'e':
-                line = this.getFullLine(y).trimEnd()
-                this.cmSelectionUpdate(selection)
-                newX = line.indexOf(' ', x + 2) - 1
+                line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
+                newX = this.regexFindIndex(line, /(?=(\W)\1*).(?!\1)(?!\s)|(?<=\w)\w(?=\W)(?=\S)/g, x) - 1
                 if (x >= line.length - 1) {
                     newY++
-                    line = this.getFullLine(newY).trimEnd()
+                    line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
                     this.cmSelectionUpdate(selection)
-                    newX = line.indexOf(' ') - 1
+                    newX = line.replace(/\W/g, ' ').indexOf(' ') - 1
                 }
                 if (newX == -2)
                     newX = line.length - 1
@@ -844,8 +835,13 @@ export class Pane extends Cell {
         if (selectionLength == 0) selectionLength = 1
         this.t.select(selection.startColumn, selection.startRow, selectionLength)
     }
-    getFullLine(y) {
-        this.t.select(0, y, this.t.cols-2)
-        return this.t.getSelection()
+    regexFindIndex(str, regex, startIndex) {
+        startIndex = startIndex || 0
+        let match = -1
+        str.replace(regex, (_m1,_m2, i) => {
+            if (match == -1 && i > startIndex)
+                match = i
+        })
+        return match
     }
 }
