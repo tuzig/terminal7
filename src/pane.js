@@ -44,7 +44,7 @@ export class Pane extends Cell {
         this.flashTimer = null
         this.aLeader = false
         this.retries = 0
-        this.waitingForKey = ''
+        this.lastKey = ''
     }
 
     /*
@@ -603,8 +603,10 @@ export class Pane extends Cell {
         }
         newX = x
         newY = y
-        if (this.waitingForKey) {
-            switch (this.waitingForKey) {
+        if (this.lastKey) {
+            switch (this.lastKey) {
+                case 'Escape':
+                    break
                 case 'f':
                     line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
                     newX = line.indexOf(key, x + 1)
@@ -634,7 +636,7 @@ export class Pane extends Cell {
                         newX = x
                     break
             }
-            this.waitingForKey = ''
+            this.lastKey = ''
         }
         else switch(key) {
             // space is used to toggle the marking state
@@ -749,7 +751,7 @@ export class Pane extends Cell {
             case 't':
             case 'T':
                 console.log("waiting for input")
-                this.waitingForKey = key
+                this.lastKey = key
                 break
             
         }
