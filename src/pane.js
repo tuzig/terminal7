@@ -114,8 +114,12 @@ export class Pane extends Cell {
                     this.aLeader = false
                 }
                 else if (this.copyMode) {
-                    if  (ev.type == "keydown")
-                        this.handleCMKey(ev.key)
+                    if  (ev.type == "keydown") {
+                        if (ev.ctrlKey)
+                            this.handleCMKey('C-' + ev.key)
+                        else
+                            this.handleCMKey(ev.key)
+                    }
                     toDo = false
                 }
                 if (!toDo) {
@@ -604,9 +608,19 @@ export class Pane extends Cell {
         newX = x
         newY = y
         if (this.lastKey) {
-            switch (this.lastKey) {
+            switch (key) {
                 case 'Escape':
+                case 'ArrowRight':
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                case 'ArrowDown':
                     break
+                default:
+                    if (!key.match(/^.$/))
+                        return
+                    break
+            }
+            switch (this.lastKey) {
                 case 'f':
                     line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
                     newX = line.indexOf(key, x + 1)
@@ -752,6 +766,10 @@ export class Pane extends Cell {
             case 'T':
                 console.log("waiting for input")
                 this.lastKey = key
+                break
+            case 'C-v':
+                console.log('y', this.t.buffer.active.baseY, this.t.buffer.active.viewportY, this.t.buffer.active.length)
+                newY = this.t.buffer.active.viewportY
                 break
             
         }
