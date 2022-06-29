@@ -422,6 +422,9 @@ label {
   display: block;
   border: 1px solid #ccc;
   box-sizing: border-box;
+  color: #01fafa;
+  background-color: #3e3446;
+  border-radius: 5px;
 }
 .hidden { visibility: hidden; }
 .host {
@@ -435,7 +438,7 @@ label {
 #log {
     position: absolute;
     right : 0px;
-    bottom: 112px;
+    bottom: 114px;
     margin: 0;
     padding: 0;
     z-index: 4;
@@ -623,6 +626,7 @@ pre {
     background-color: black;
     padding: 0.5em;
     border: 1px solid var(--local-border);
+    border-radius: 5px;
 }
 footer pre { font-size: 14px; }
 .navtext button {
@@ -644,6 +648,18 @@ footer pre { font-size: 14px; }
 }
 .webexec-install div {
     position: relative;
+}
+.webexec-install ::-webkit-scrollbar-thumb {
+    background: #01fafa;
+    border-radius: 5px;
+}
+
+.webexec-install ::-webkit-scrollbar-track {
+    background: #3e3446;
+    border-radius: 5px;
+}
+.webexec-install ::-webkit-scrollbar {
+    height: 14px;
 }
 .webexec-install button {
     position: absolute;
