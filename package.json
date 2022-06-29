@@ -20,6 +20,7 @@
     "@capacitor-community/http": "^1.4.1",
     "@capacitor/android": "^3.2.5",
     "@capacitor/app": "^1.0.5",
+    "@capacitor/browser": "^1.0.7",
     "@capacitor/cli": "<4",
     "@capacitor/clipboard": "^1.0.5",
     "@capacitor/core": "<4",

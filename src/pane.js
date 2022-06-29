@@ -10,6 +10,7 @@ import { Terminal } from '@tuzig/xterm'
 import { Capacitor } from '@capacitor/core'
 import { Clipboard } from '@capacitor/clipboard'
 import { Storage } from '@capacitor/storage'
+import { Browser } from '@capacitor/browser'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { WebglAddon } from 'xterm-addon-webgl'
@@ -71,7 +72,9 @@ export class Pane extends Cell {
         })
         this.fitAddon = new FitAddon()
         this.searchAddon = new SearchAddon()
-        this.WebLinksAddon = new WebLinksAddon()
+        this.WebLinksAddon = new WebLinksAddon((MouseEvent, url) => {
+            Browser.open({ url })
+        })
 
         // there's a container div we need to get xtermjs to fit properly
         this.e.appendChild(con)
