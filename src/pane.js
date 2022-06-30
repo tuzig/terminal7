@@ -341,9 +341,15 @@ export class Pane extends Cell {
             if (ev.keyCode == 13) {
                 this.findNext(i.value)
                 this.enableSearchButtons()
-                this.t7.run(_ => this.t.focus(), 10)
+                this.t7.run(() => this.t.focus(), 10)
             }
         }
+        i.addEventListener("focusout", () => {
+            if (i.value) {
+                this.searchTerm = i.value
+                this.enableSearchButtons()
+            }
+        })
         i.focus()
     }
     enterCopyMode(marking) {
