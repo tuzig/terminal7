@@ -1169,7 +1169,7 @@ peer_name = "${peername}"\n`
         modal.querySelector(".ongpos").addEventListener('click', ev => {
             localStorage.setItem("onboard", "yep")
             var gate = this.addGate({
-                addr: "localhost:7777",
+                addr: "localhost",
                 name: "localhost",
                 online: true,
                 store: true
