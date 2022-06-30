@@ -736,14 +736,16 @@ export class Pane extends Cell {
                     newX++
                 break
             case 'b':
+                line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
                 if (x == 0) {
-                    line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
-                    newX = line.replace(/\W/g, ' ').lastIndexOf(' ') + 1
-                    newY = y - 1
-                } else {
-                    line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
-                    newX = line.replace(/\W/g, ' ').lastIndexOf(' ', x - 2) + 1
+                    newY--
+                    line = this.t.buffer.active.getLine(newY).translateToString(true).trimEnd()
+                    newX = line.length
                 }
+                else
+                    newX--
+                while (newX > line.length || (line.substring(newX - 1, newX + 1).match(/^\w|\W$/) && newX > 0))
+                    newX--
                 break
             case 'e':
                 line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
