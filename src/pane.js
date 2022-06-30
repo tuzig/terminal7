@@ -539,6 +539,7 @@ export class Pane extends Cell {
         if (this.d)
             this.d.close()
         this.dividers.forEach(d => d.classList.add("hidden"))
+        document.querySelector('.add-tab').classList.remove("off")
         super.close()
     }
     dump() {
