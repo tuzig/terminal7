@@ -297,12 +297,25 @@ export class Layout extends Cell {
             this.layout && this.layout.moveBorder(this, border, dest)
             return
         }
-
+        let max = this.w.rootLayout.unfold().filter(c => c !== p1).sort((a, b) => a.xoff - b.xoff).find(c => c[off] >= p1[off])
+        dest = Math.max(dest, p0[off])
+        if (p1[s] > 0.001)
+            dest = Math.min(dest, max?.[off] || 1) 
         let by = p1[off] - dest
         p0[s] -= by
         p1[s] += by
         p1[off] = dest
         p0.refreshDividers()
         p1.refreshDividers()
+    }
+    unfold() {
+        let cells = []
+        for (const cell of this.cells) {
+            if (cell instanceof Layout)
+                cells.push(...cell.unfold())
+            else
+                cells.push(cell)
+        }
+        return cells
     }
 }
