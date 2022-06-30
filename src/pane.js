@@ -303,9 +303,9 @@ export class Pane extends Cell {
     }
     toggleSearch(searchDown) {
         const se = this.gate.e.querySelector(".search-box")
-        if (se.classList.contains("hidden")) {
+        if (se.classList.contains("hidden"))
             this.showSearch()
-        } else {
+        else {
             this.hideSearch()
             this.focus()
         }
@@ -487,10 +487,8 @@ export class Pane extends Cell {
         if (this.searchTerm != undefined) {
             if (!this.searchAddon.findPrevious(this.searchTerm, SEARCH_OPTS))
                 this.gate.notify(`Couldn't find "${this.searchTerm}"`)
-            else { 
-
+            else 
                 this.enterCopyMode(true)
-            }
         }
     }
     /*

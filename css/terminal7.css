@@ -319,7 +319,7 @@ button.rename-close {
     font-size: 16pt;
     flex: 10 1 auto;
     line-height: 24pt;
-    color: #01fafa;
+    color: var(--text-color);
     background-color: #3e3446;
     border-radius: 5px;
 }
@@ -422,7 +422,7 @@ label {
   display: block;
   border: 1px solid #ccc;
   box-sizing: border-box;
-  color: #01fafa;
+  color: var(--text-color);
   background-color: #3e3446;
   border-radius: 5px;
 }
