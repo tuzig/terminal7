@@ -767,9 +767,16 @@ export class Pane extends Cell {
                 console.log("waiting for input")
                 this.lastKey = key
                 break
-            case 'C-v':
-                console.log('y', this.t.buffer.active.baseY, this.t.buffer.active.viewportY, this.t.buffer.active.length)
-                newY = this.t.buffer.active.viewportY
+            case 'C-f':
+                newY = this.t.buffer.active.viewportY + this.t.buffer.active.length - this.t.buffer.active.baseY
+                if (newY >= this.t.buffer.active.length) 
+                    newY = this.t.buffer.active.length - 1
+                break
+            case 'C-b':
+                console.log('y', this.t.buffer.active.baseY, this.t.buffer.active.viewportY, this.t.buffer.active.length, this.t.rows)
+                newY = this.t.buffer.active.viewportY - (this.t.buffer.active.length - this.t.buffer.active.baseY)
+                if (newY < 0) 
+                    newY = 0
                 break
             
         }
