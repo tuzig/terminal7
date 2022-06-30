@@ -1056,10 +1056,24 @@ peer_name = "${peername}"\n`
 
         if (this.gesture) {
             let where = this.gesture.where,
-                dest = Math.min(1.0, (where == "top")
-                        ? y / document.body.offsetHeight
-                        : x / document.body.offsetWidth)
-            this.gesture.pane.layout.moveBorder(this.gesture.pane, where, dest)
+                pane = this.gesture.pane,
+                dest, cells, i,  min, max
+            if (where == "left" || where == "right") {
+                dest = x / document.body.offsetWidth
+                cells = this.cells.filter(c => c.constructor.name == 'Pane' && (c.xoff != pane.xoff || c == pane)).sort((a, b) => a.xoff - b.xoff)
+                i = cells.indexOf(pane)
+                min = cells[i - 1]?.xoff || 0
+                max = cells[i + 1]?.xoff || 1
+            } else {
+                dest = y / (document.querySelector('.windows-container').offsetHeight)
+                cells = this.cells.filter(c => c.constructor.name == 'Pane' && (c.yoff != pane.yoff || c == pane)).sort((a, b) => a.yoff - b.yoff)
+                i = cells.indexOf(pane)
+                min = cells[i - 1]?.yoff || 0
+                max = cells[i + 1]?.yoff || 1
+            }
+            dest = Math.max(dest, min)
+            dest = Math.min(dest, max)
+            pane.layout.moveBorder(pane, where, dest)
             ev.stopPropagation()
             ev.preventDefault()
         }
