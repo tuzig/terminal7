@@ -287,6 +287,12 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
 
         // settings button and modal
         var modal   = document.getElementById("settings-modal")
+        modal.addEventListener('click',
+            () => {
+                document.getElementById("dotfile-button").classList.remove("on")
+                this.clear()
+            }
+        )
         document.getElementById("dotfile-button")
                 .addEventListener("click", ev => this.toggleSettings(ev))
         modal.querySelector(".close").addEventListener('click',
@@ -1163,7 +1169,7 @@ peer_name = "${peername}"\n`
         modal.querySelector(".ongpos").addEventListener('click', ev => {
             localStorage.setItem("onboard", "yep")
             var gate = this.addGate({
-                addr: "localhost:7777",
+                addr: "localhost",
                 name: "localhost",
                 online: true,
                 store: true
