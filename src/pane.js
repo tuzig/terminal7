@@ -344,10 +344,13 @@ export class Pane extends Cell {
                 this.t7.run(() => this.t.focus(), 10)
             }
         }
-        i.addEventListener("focusout", () => {
+        i.addEventListener("input", () => {
+            this.searchTerm = i.value
             if (i.value) {
-                this.searchTerm = i.value
                 this.enableSearchButtons()
+            }
+            else {
+                this.disableSearchButtons()
             }
         })
         i.focus()
@@ -463,20 +466,18 @@ export class Pane extends Cell {
 
         if (f != null) {
             f()
-            ev.preventDefault()
-            ev.stopPropagation()
             return false
         }
         return true
     }
     findNext(searchTerm) {
-        if (searchTerm != undefined) {
+        if (searchTerm) {
             this.cmAtEnd = null
             this.t.setOption("selectionStyle", "plain")
             this.searchTerm = searchTerm
         }
 
-        if (this.searchTerm != undefined) {
+        if (this.searchTerm) {
             if (!this.searchAddon.findNext(this.searchTerm, SEARCH_OPTS))
                 this.gate.notify(`Couldn't find "${this.searchTerm}"`)
             else 
@@ -484,13 +485,13 @@ export class Pane extends Cell {
         }
     }
     findPrev(searchTerm) {
-        if (searchTerm != undefined) {
+        if (searchTerm) {
             this.cmAtEnd = null
             this.t.setOption("selectionStyle", "plain")
             this.searchTerm = searchTerm
         }
 
-        if (this.searchTerm != undefined) {
+        if (this.searchTerm) {
             if (!this.searchAddon.findPrevious(this.searchTerm, SEARCH_OPTS))
                 this.gate.notify(`Couldn't find "${this.searchTerm}"`)
             else 
