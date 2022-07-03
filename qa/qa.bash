@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+build_n_run() {
+    docker compose -f $1  --project-directory . build
+    docker compose -f $1  --project-directory . up --exit-code-from runner
+}
 if [ $# -eq 0 ]
 then
     echo ">>> Starting full QA testing <<<"
@@ -21,14 +25,14 @@ then
     for compose in `find qa -name "lab.yaml"`
     do
         echo ">>> bringing up a lab from `dirname $compose`"
-        docker compose -f $compose  --project-directory . up --exit-code-from runner
+        build_n_run $compose
     done
 else
     npx vite build
     for arg in $@
     do
-        echo ">>> setting up a lab from ./qa/$arg"
-        docker-compose -f $arg/lab.yaml  --project-directory . up --exit-code-from runner
+        echo ">>> setting up a lab from $arg"
+        build_n_run $arg/lab.yaml
         if [ $? -ne 0 ]
         then
              echo ">>> $arg FAILED"
