@@ -5,7 +5,6 @@ on: push
 jobs:
   test:
     runs-on: ubuntu-latest
-    timout-minutes: 20
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
@@ -13,5 +12,4 @@ jobs:
           node-version: 16
       - run: npm install --global yarn
       - run: yarn install --frozen-lockfile
-        timout-minutes: 10
       - run: npm test
