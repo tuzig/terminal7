@@ -13,6 +13,7 @@
     --remote-border: #F4DB53;
     --warning: #F4DB53;
     --background: #271D30;
+    --text-background: #11051E;
 }
 @font-face {
     font-family: "FiraSans";
@@ -319,8 +320,10 @@ button.rename-close {
     font-size: 16pt;
     flex: 10 1 auto;
     line-height: 24pt;
+    border: 1px solid var(--local-border);
+    box-sizing: border-box;
     color: var(--text-color);
-    background-color: #3e3446;
+    background-color: var(--text-background);
     border-radius: 5px;
 }
 .active {
@@ -420,10 +423,10 @@ label {
   padding: 12px 20px;
   margin: 8px 0;
   display: block;
-  border: 1px solid #ccc;
+  border: 1px solid var(--local-border);
   box-sizing: border-box;
   color: var(--text-color);
-  background-color: #3e3446;
+  background-color: var(--text-background);
   border-radius: 5px;
 }
 .hidden { visibility: hidden; }
