@@ -12,7 +12,7 @@ import { Terminal7Mock } from './infra.ts'
 import { assert } from "chai"
 import { Storage } from '@capacitor/storage'
 
-vi.mock('xterm')
+vi.mock('@tuzig/xterm')
 vi.mock('../src/ssh_session.ts')
 
 describe("terminal7", function() {
