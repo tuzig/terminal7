@@ -1,0 +1,86 @@
+/*! Terminal 7 Tests
+ *  This file contains the code that tests terminal 7 - a webrtc based
+ *  touchable terminal multiplexer.
+ *
+ *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
+ *  License: GPLv3
+ */
+import { Layout } from '../src/layout.js'
+import { Cell } from '../src/cell.js'
+import { Gate } from '../src/gate'
+import { Terminal7Mock } from './infra.ts'
+import { assert } from "chai"
+import { Storage } from '@capacitor/storage'
+import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest'
+
+vi.mock('@tuzig/xterm')
+
+describe("pane", () => {
+    var t, e, h, w, p0
+    beforeEach(async () => {
+        await Storage.clear()
+        console.log("before each")
+        Gate.prototype.askPass = function () {
+            this.completeConnect("BADWOLF")
+        }
+        t = new Terminal7Mock()
+        e = document.getElementById("t7")
+        window.terminal7=t
+        t.open(e)
+        h = t.addGate()
+        h.open(e)
+        w = h.addWindow("1,2,3 testing", true)
+        w.activeP.sx = 0.8
+        w.activeP.sy = 0.6
+        w.activeP.xoff = 0.1
+        w.activeP.yoff = 0.2
+        p0 = w.activeP
+        await p0.fit()
+        Storage.set({ key: 'first_copymode', value: 1 })
+    })
+    afterEach(() => t && t.clearTimeouts())
+    it("can forward jump words in copy mode", () => {
+        p0.t.setBuffer(["aaa aa---", "aa"])
+        p0.enterCopyMode(false)
+        p0.handleCMKey('w')
+        expect(p0.cmCursor.x).equal(4)
+        p0.handleCMKey('w')
+        expect(p0.cmCursor.x).equal(6)
+        p0.handleCMKey('w')
+        expect(p0.cmCursor).toEqual({x: 0, y: 1})
+        p0.handleCMKey('w')
+        expect(p0.cmCursor).toEqual({x: 1, y: 1})
+        p0.handleCMKey('w')
+        expect(p0.cmCursor).toEqual({x: 1, y: 1})
+    })
+    it("can backward jump words in copy mode", () => {
+        p0.t.buffer.active.cursorX = 1
+        p0.t.buffer.active.cursorY = 1
+        p0.t.setBuffer(["aaa aa---", "aa"])
+        p0.enterCopyMode(false)
+        p0.handleCMKey('b')
+        expect(p0.cmCursor).toEqual({x: 0, y: 1})
+        p0.handleCMKey('b')
+        expect(p0.cmCursor).toEqual({x: 6, y: 0})
+        p0.handleCMKey('b')
+        expect(p0.cmCursor).toEqual({x: 4, y: 0})
+        p0.handleCMKey('b')
+        expect(p0.cmCursor).toEqual({x: 0, y: 0})
+        p0.handleCMKey('b')
+        expect(p0.cmCursor).toEqual({x: 0, y: 0})
+    })
+    it("can jump to the end of words in copy mode", () => {
+        p0.t.setBuffer(["aaa aa---", "aa"])
+        p0.enterCopyMode(false)
+        p0.handleCMKey('e')
+        expect(p0.cmCursor.x).equal(2)
+        p0.handleCMKey('e')
+        expect(p0.cmCursor.x).equal(5)
+        p0.handleCMKey('e')
+        expect(p0.cmCursor.x).equal(8)
+        p0.handleCMKey('e')
+        expect(p0.cmCursor).toEqual({x: 1, y: 1})
+        p0.handleCMKey('e')
+        expect(p0.cmCursor).toEqual({x: 1, y: 1})
+    })
+})

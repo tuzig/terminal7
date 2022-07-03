@@ -724,40 +724,53 @@ export class Pane extends Cell {
                 break
             case 'w':
                 line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
-                newX = this.regexFindIndex(line, /(?=(\W)\1*).(?!\1)(?!\s)|(?<=\w)\w(?=\W)(?=\S)/g, x - 1) + 1
-                if (newX == 0)   
-                    if (this.t.buffer.active.getLine(y + 1))
-                        newY = y + 1
-                    else {
-                        newY = y
-                        newX = x
+                while (newX < line.length) {
+                    if (line.substring(newX, newX + 2).match(/\W\w/)
+                        || line.substring(newX, newX + 2).match(/\w[^\w\s]/)) {
+                        newX++
+                        break
                     }
+                    newX++
+                }
+                if (newX >= line.length - 1) {
+                    if (this.t.buffer.active.getLine(y+1).translateToString(true).trimEnd()) {
+                        newX = 0
+                        newY++
+                    }
+                    break
+                }
                 if (this.cmMarking)
                     newX++
                 break
             case 'b':
                 line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
-                if (x == 0) {
+                if (x == 0 && y > 0) {
                     newY--
                     line = this.t.buffer.active.getLine(newY).translateToString(true).trimEnd()
                     newX = line.length
                 }
-                else
+                else if (x > 0)
                     newX--
-                while (newX > line.length || (line.substring(newX - 1, newX + 1).match(/^\w|\W$/) && newX > 0))
+                while (newX > line.length || (newX > 0 && line.substring(newX - 1, newX + 1).match(/^\w|\W$/)))
                     newX--
                 break
             case 'e':
                 line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
-                newX = this.regexFindIndex(line, /(?=(\W)\1*)\S(?!\1)(?!\S)|(?=(\W)\2*)\S(?!\2)(?!\W)|(?=(\w)\3*).(?!\w)/g, x)
-                while (newX == -1) {
+                if (newX >= line.length - 1) {
+                    line = this.t.buffer.active.getLine(y+1).translateToString(true).trimEnd()
+                    if (!line) break
+                    newX = 0
                     newY++
-                    line = this.t.buffer.active.getLine(newY)?.translateToString(true).trimEnd()
-                    if (!line) {
-                        newX = x
-                        newY--
-                    } else
-                        newX = this.regexFindIndex(line, /(?=(\W)\1*)\S(?!\1)(?!\S)|(?=(\W)\2*)\S(?!\2)(?!\W)|(?=(\w)\3*).(?!\w)/g)
+                }
+                while (newX < line.length) {
+                    newX++
+                    if (newX == line.length) {
+                        newX--
+                        break
+                    }
+                    if (line.substring(newX, newX + 2).match(/\w\W/)
+                        || line.substring(newX, newX + 2).match(/[^\w\s]\w/))
+                        break
                 }
                 if (this.cmMarking)
                     newX++
