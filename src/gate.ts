@@ -19,16 +19,19 @@ const FAILED_COLOR = "red"// ashort period of time, in milli
  * The gate class abstracts a host connection
  */
 export class Gate {
-    id: string
-    name: string
+    activeW: Window
     addr: string
     boarding: boolean
     e: Element
-    session: Session
-    activeW: Window
-    username: string
+    id: string
+    name: string
     pass: string | undefined
+    secret: string
+    session: Session
     tryWebexec: boolean
+    user: string
+    username: string
+
     constructor (props) {
         // given properties
         this.id = props.id
