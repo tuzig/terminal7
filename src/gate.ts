@@ -24,6 +24,7 @@ export class Gate {
     boarding: boolean
     e: Element
     id: string
+    marker: number
     name: string
     pass: string | undefined
     secret: string
@@ -247,11 +248,13 @@ export class Gate {
         if (!this.t7.netStatus || !this.t7.netStatus.connected)
             return
         // if we're already boarding, just focus
-        if (this.boarding) {
-            this.t7.log("already boarding")
+        if (this.session) {
+            // TODO: check session's status
+            this.t7.log("already connected")
             if (!this.windows || (this.windows.length == 0))
                 this.activeW = this.addWindow("", true)
-            this.focus()
+            else
+                this.focus()
             return
         }
         this.boarding = true
@@ -282,7 +285,8 @@ export class Gate {
             this.t7.run(() =>  {
                 this.connect()
             }, 100)
-        })
+        }).catch(() => this.connect())
+                
     }
     async loseState () {
         const fp = await this.t7.getFingerprint(),
@@ -422,9 +426,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
                         this.t7.log("Closing gate after updating to empty state")
-                        this.disengage().then(() => {
+                        this.session.close().then(() => {
                             this.session = null
-                            this.stopBoarding()
+                            this.boarding = false
                         })
                     }
                })
@@ -468,15 +472,20 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
      * and closes the peer connection.
      */
     disengage() {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => { 
             this.t7.log(`disengaging. boarding is ${this.boarding}`)
-            if (!this.boarding || !this.session) {
-                resolve()
+            if (!this.session) {
+                reject("session is null")
                 return
             }
-            this.boarding = false
-            this.notify("Disengaging...")
-            this.session.disconnect().then(resolve).catch(reject)
+            this.notify("Disconnecting")
+            return this.session.disconnect().then(marker => {
+                this.session = null
+                this.marker = marker
+                resolve()
+            }).catch(() => {
+                reject("session does not support disconnect")
+            })
         })
     }
     closeActivePane() {

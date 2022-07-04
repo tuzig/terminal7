@@ -75,9 +75,10 @@ export abstract class BaseSession implements Session {
         })
     }
     abstract setPayload(payload: string): Promise<void>
+    // base disconnect is rejected as it's not supported
     disconnect(): Promise<void>{
-        return new Promise(resolve=> {
-            resolve()
+        return new Promise((resolve, reject) => {
+            reject()
         })
     }
     // fail function emulates a WebRTC connection failure flow
