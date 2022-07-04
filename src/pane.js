@@ -45,6 +45,7 @@ export class Pane extends Cell {
         this.aLeader = false
         this.retries = 0
         this.lastKey = ''
+        this.repetition = 0
     }
 
     /*
@@ -607,7 +608,18 @@ export class Pane extends Cell {
         }
         newX = x
         newY = y
-        if (this.lastKey) {
+        if (this.repetition || key.match(/[1-9]/)) {
+            if (key.match(/\d/))
+                this.repetition = 10 * this.repetition + parseInt(key)
+            else {
+                let temp = this.repetition
+                this.repetition = 0
+                for (let i = 0; i < temp; i++) {
+                    this.handleCMKey(key)
+                }
+            }
+        }
+        else if (this.lastKey) {
             switch (key) {
                 case 'Escape':
                 case 'ArrowRight':
@@ -726,33 +738,39 @@ export class Pane extends Cell {
                 line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
                 while (newX < line.length) {
                     if (line.substring(newX, newX + 2).match(/\W\w/)
-                        || line.substring(newX, newX + 2).match(/\w[^\w\s]/)) {
+                        || line.substring(newX, newX + 2).match(/\w[^\w\s]/)
+                        || line.substring(newX, newX + 2).match(/\s\S/)) {
                         newX++
                         break
                     }
                     newX++
                 }
-                if (newX >= line.length - 1) {
-                    if (this.t.buffer.active.getLine(y+1).translateToString(true).trimEnd()) {
+                if (newX >= line.length) {
+                    if (this.t.buffer.active.getLine(y+1)?.translateToString(true).trimEnd()) {
                         newX = 0
                         newY++
-                    }
-                    break
+                    } else
+                        newX = line.length - 1
                 }
                 if (this.cmMarking)
                     newX++
                 break
             case 'b':
                 line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
-                if (x == 0 && y > 0) {
+                if (x <= 0 && y > 0) {
                     newY--
                     line = this.t.buffer.active.getLine(newY).translateToString(true).trimEnd()
                     newX = line.length
                 }
-                else if (x > 0)
+                while (newX > 0) {
+                    if (line.substring(newX - 2, newX).match(/\W\w/)
+                        || line.substring(newX - 2, newX).match(/\w[^\w\s]/)
+                        || line.substring(newX - 2, newX).match(/\s\S/)) {
+                        newX--
+                        break
+                    }
                     newX--
-                while (newX > line.length || (newX > 0 && line.substring(newX - 1, newX + 1).match(/^\w|\W$/)))
-                    newX--
+                }
                 break
             case 'e':
                 line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
@@ -769,7 +787,8 @@ export class Pane extends Cell {
                         break
                     }
                     if (line.substring(newX, newX + 2).match(/\w\W/)
-                        || line.substring(newX, newX + 2).match(/[^\w\s]\w/))
+                        || line.substring(newX, newX + 2).match(/[^\w\s]\w/)
+                        || line.substring(newX, newX + 2).match(/\S\s/))
                         break
                 }
                 if (this.cmMarking)
@@ -793,7 +812,6 @@ export class Pane extends Cell {
                 if (newY < 0) 
                     newY = 0
                 break
-            
         }
         if ((newY != y) || (newX != x)) {
             if (!this.cmMarking) {
