@@ -142,11 +142,11 @@ export class Terminal7 {
                 e.addEventListener("click", ev => this.clear()))
         document.getElementById("divide-h")
                 .addEventListener("click", ev =>  {
-                    if (this.activeG)
+                    if (this.activeG && this.activeG.activeW.activeP.sy >= 0.04)
                         this.activeG.activeW.activeP.split("rightleft", 0.5)})
         document.getElementById("divide-v")
                 .addEventListener("click", ev =>  {
-                    if (this.activeG)
+                    if (this.activeG && this.activeG.activeW.activeP.sx >= 0.04)
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         let addHost = document.getElementById("add-host")
         document.getElementById('add-static-host').addEventListener(
