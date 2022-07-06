@@ -74,7 +74,12 @@ export abstract class BaseSession implements Session {
             resolve(null)
         })
     }
-    abstract setPayload(payload: string): Promise<void>
+    setPayload(payload: string): Promise<void> {
+        return new Promise((resolve) => { 
+            console.log(`ignoring payloads on ${typeof this}`)
+            resolve()
+        })
+    }
     // base disconnect is rejected as it's not supported
     disconnect(): Promise<void>{
         return new Promise((resolve, reject) => {
