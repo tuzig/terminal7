@@ -18,6 +18,7 @@ export function openFormsTerminal(e: HTMLElement) {
         fontFamily: "FiraCode",
         fontSize: 14,
         rendererType: "canvas",
+        convertEol: true,
     })
     terminal.open(e)
     const fitAddon = new FitAddon()
@@ -46,7 +47,7 @@ export class Form {
         this.field = ''
         this.results = []
         return new Promise((resolve, reject) => {
-            t.write(`\n  ${this.fields[0].desc} [${this.fields[0].default || ''}]: `)
+            this.writeCurrentField(t)
             setTimeout(() => t.focus(), 0)
             t.onKey(ev => {
                 const key = ev.domEvent.key
@@ -75,14 +76,27 @@ export class Form {
     }
 
     next(t: Terminal) {
-        t.write("\r\n")
+        const def = this.fields[this.i]
+        if (this.field != '' && def.validator) {
+            const err = def.validator(this.field)
+            if (err) {
+                t.write(`\n  ${err}`)
+                this.field = ''
+                this.writeCurrentField(t)
+                return true
+            }
+        }
+        this.results.push(this.field || this.fields[this.i].default || '')
+        this.field = ''
         if (this.i < this.fields.length - 1) {
-            this.results.push(this.field || this.fields[this.i].default || '')
             this.i++
-            t.write(`  ${this.fields[this.i].desc} [${this.fields[this.i].default || ''}]: `)
-            this.field = ''
+            this.writeCurrentField(t)
             return true
         }
         return false
+    }
+
+    writeCurrentField(t: Terminal) {
+        t.write(`\n  ${this.fields[this.i].desc} [${this.fields[this.i].default || ''}]: `)
     }
 }

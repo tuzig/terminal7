@@ -143,7 +143,7 @@ export class Gate {
             editHost = document.getElementById("edit-host")
             const e = editHost.querySelector(".terminal-container")
             const t = openFormsTerminal(e)
-            const f = new Form([{desc: "Name", default: this.name,}, {desc: "Hostname", default: this.addr}, {desc: "Username", default: this.username}])
+            const f = new Form([{desc: "Name", default: this.name, validator: (name) => name.length < 2 ? "Name is too short" : ''}, {desc: "Hostname", default: this.addr}, {desc: "Username", default: this.username}])
             f.start(t).then(results => {
                 [this.name, this.addr, this.username] = results
                 this.nameE.innerHTML = this.name || this.addr
@@ -151,6 +151,7 @@ export class Gate {
                 this.t7.clear()
             }).catch(() => this.t7.clear())
         }
+        editHost.gate = this
         editHost.classList.remove("hidden")
     }
     focus() {
