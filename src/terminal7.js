@@ -186,10 +186,6 @@ export class Terminal7 {
         document.getElementById("edit-unverified-pbhost").addEventListener(
             "click", () => this.clear())
         let editHost = document.getElementById("edit-host")
-        editHost.querySelector("form").addEventListener('submit', ev => {
-            ev.preventDefault()
-            editHost.gate.editSubmit(ev)
-        })
         editHost.querySelector(".close").addEventListener('click',  () =>
             terminal7.clear())
         editHost.querySelector(".trash").addEventListener('click',  () => {
@@ -569,6 +565,7 @@ peer_name = "${peername}"\n`
         })
         this.logDisplay(false)
         this.focus()
+        this.longPressGate = null
     }
     goHome() {
         Storage.remove({key: "last_state"}) 

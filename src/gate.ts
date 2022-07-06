@@ -11,9 +11,10 @@ import { Failure, Session } from './session'
 import { Clipboard } from '@capacitor/clipboard'
 import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
 import { SSHSession } from './ssh_session'
+import { Terminal7 } from './terminal7'
 
 import { Storage } from '@capacitor/storage'
-import { Edit } from './gate_edit.js'
+import { Form, openFormsTerminal } from './form.js'
 
 const FAILED_COLOR = "red"// ashort period of time, in milli
 /*
@@ -32,6 +33,8 @@ export class Gate {
     tryWebexec: boolean
     user: string
     username: string
+    nameE: Element
+    t7: Terminal7
 
     constructor (props) {
         // given properties
@@ -137,15 +140,22 @@ export class Gate {
             editHost.querySelector("a").setAttribute("href",
                 "https://"+ this.t7.conf.net.peerbook)
         } else {
-            // editHost = document.getElementById("edit-host")
-            // editHost.querySelector('[name="hostaddr"]').value = this.addr
-            // editHost.querySelector('[name="hostname"]').value = this.name
-            // editHost.querySelector('[name="username"]').value = this.username
-            editHost = new Edit(this)
-            editHost.openTerminal()
+            editHost = document.getElementById("edit-host")
+            const e = editHost.querySelector(".terminal-container")
+            const t = openFormsTerminal(e)
+            const f = new Form([{desc: "Name", default: this.name,}, {desc: "Hostname", default: this.addr}, {desc: "Username", default: this.username}])
+            f.start(t).then(results => {
+                [this.name, this.addr, this.username] = results
+                this.nameE.innerHTML = this.name || this.addr
+                e.innerHTML = ''
+                this.t7.storeGates()
+                this.t7.clear()
+            }).catch(() => {
+                e.innerHTML = ''
+                this.t7.clear()
+            })
         }
-        // editHost.gate = this
-        // editHost.classList.remove("hidden")
+        editHost.classList.remove("hidden")
     }
     focus() {
         this.t7.logDisplay(false)

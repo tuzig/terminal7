@@ -655,3 +655,6 @@ footer pre { font-size: 14px; }
     left: 50%;
     margin-left: -25%;
 }
+.terminal-container {
+    height: 10em;
+}
