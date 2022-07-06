@@ -83,7 +83,7 @@ export class Gate {
                 this.activeW.activeP.focus()
             })
             t.querySelector(".search-up").addEventListener('click', _ =>
-                this.activeW.activeP.findNext())
+                this.activeW.activeP.findPrev())
 
             t.querySelector(".search-down").addEventListener('click', _ => 
                 this.activeW.activeP.findNext())
