@@ -46,9 +46,8 @@ export class Form {
         this.field = ''
         this.results = []
         return new Promise((resolve, reject) => {
-            // this.resolve = resolve
-            // this.reject = reject
             t.write(`\n  ${this.fields[0].desc} [${this.fields[0].default || ''}]: `)
+            setTimeout(() => t.focus(), 0)
             t.onKey(ev => {
                 const key = ev.domEvent.key
                 switch (key) {

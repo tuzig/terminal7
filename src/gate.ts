@@ -147,13 +147,9 @@ export class Gate {
             f.start(t).then(results => {
                 [this.name, this.addr, this.username] = results
                 this.nameE.innerHTML = this.name || this.addr
-                e.innerHTML = ''
                 this.t7.storeGates()
                 this.t7.clear()
-            }).catch(() => {
-                e.innerHTML = ''
-                this.t7.clear()
-            })
+            }).catch(() => this.t7.clear())
         }
         editHost.classList.remove("hidden")
     }

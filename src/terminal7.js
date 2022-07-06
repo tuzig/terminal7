@@ -562,6 +562,9 @@ peer_name = "${peername}"\n`
         this.e.querySelectorAll('.modal').forEach(e => {
             if (!e.classList.contains("non-clearable"))
                 e.classList.add("hidden")
+            const terminalContainer = e.querySelector(".terminal-container")
+            if (terminalContainer)
+                terminalContainer.innerHTML = ''
         })
         this.logDisplay(false)
         this.focus()
