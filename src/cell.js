@@ -46,6 +46,7 @@ export class Cell {
         }
         this.w.activeP = this
         this.e.style.borderColor = FOCUSED_BORDER_COLOR
+        this.w.toggleDivideButtons()
     }
     /*
      * Used to grow/shrink the terminal based on containing element dimensions

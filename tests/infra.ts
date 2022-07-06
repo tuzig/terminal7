@@ -81,6 +81,8 @@ export class Terminal7Mock extends Terminal7 {
           </nav>
        </div>
     </template>
+    <div id="divide-v"></div>
+    <div id="divide-h"></div>
 `
 
     }

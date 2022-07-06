@@ -297,12 +297,23 @@ export class Layout extends Cell {
             this.layout && this.layout.moveBorder(this, border, dest)
             return
         }
-
+        let max = this.findNext(p1)
+        dest = Math.max(dest, p0[off] + 0.02)
+        dest = Math.min(dest, (max?.[off] || 1) - 0.02)
         let by = p1[off] - dest
         p0[s] -= by
         p1[s] += by
         p1[off] = dest
         p0.refreshDividers()
         p1.refreshDividers()
+        this.w.toggleDivideButtons()
+    }
+    findNext(c) {
+        if (this.nextCell(c))
+            return this.nextCell(c)
+        let root = this.layout?.layout
+        if (root)
+            return root.findNext(this.layout)
+        return null
     }
 }

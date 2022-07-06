@@ -204,4 +204,16 @@ export class Window {
             this.gate.sendState()
         }
     }
+    toggleDivideButtons() {
+        let bV = document.getElementById("divide-v")
+        let bH = document.getElementById("divide-h")
+        if (this.activeP.sx < 0.04)
+            bV.classList.add("off")
+        else
+            bV.classList.remove("off")
+        if (this.activeP.sy < 0.04)
+            bH.classList.add("off")
+        else
+            bH.classList.remove("off")
+    }
 }
