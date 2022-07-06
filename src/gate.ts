@@ -63,6 +63,12 @@ export class Gate {
         this.session = null
     }
 
+    static validateHostName(name) {
+        if (terminal7.gates.find(g => g.name == name))
+            return "Name already taken"
+        return null
+    }
+
     /*
      * Gate.open opens a gate element on the given element
      */
@@ -143,7 +149,7 @@ export class Gate {
             editHost = document.getElementById("edit-host")
             const e = editHost.querySelector(".terminal-container")
             const t = openFormsTerminal(e)
-            const f = new Form([{desc: "Name", default: this.name, validator: (name) => name.length < 2 ? "Name is too short" : ''}, {desc: "Hostname", default: this.addr}, {desc: "Username", default: this.username}])
+            const f = new Form([{desc: "Name", default: this.name, validator: Gate.validateHostName}, {desc: "Hostname", default: this.addr}, {desc: "Username", default: this.username}])
             f.start(t).then(results => {
                 [this.name, this.addr, this.username] = results
                 this.nameE.innerHTML = this.name || this.addr

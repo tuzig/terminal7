@@ -25,6 +25,7 @@ import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
 import { Device } from '@capacitor/device'
+import { Form, openFormsTerminal } from './form'
 
 
 var PBPending = []
@@ -150,30 +151,26 @@ export class Terminal7 {
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         let addHost = document.getElementById("add-host")
         document.getElementById('add-static-host').addEventListener(
-            'click', ev => {
+            'click', () => {
                 this.logDisplay(false)
-                addHost.querySelector("form").reset()
                 addHost.classList.remove("hidden")
+                const e = addHost.querySelector(".terminal-container")
+                const t = openFormsTerminal(e)
+                const f = new Form([{desc: "Name", validator: Gate.validateHostName}, {desc: "Hostname"}, {desc: "Username"}, {desc: "Remember hostname", default: "y", values: ["y", "n"]}])
+                f.start(t).then(results => {
+                    console.log(results)
+                    const gate = this.addGate({name: results[0], addr: results[1], username: results[2], store: results[3] == "y"})
+                    if (results[3] == "y")
+                        this.storeGates()
+                    if (typeof gate == "string")
+                        this.notify(gate)
+                    else {
+                        addHost.classList.add("hidden")
+                        if (this.netStatus && this.netStatus.connected)
+                            gate.connect()
+                    }
+                }).catch(() => this.clear())
             })
-        addHost.querySelector("form").addEventListener('submit', (ev) => {
-            ev.preventDefault()
-            let remember = addHost.querySelector('[name="remember"]').checked,
-                gate = this.addGate({
-                    addr: addHost.querySelector('[name="hostaddr"]').value,
-                    name: addHost.querySelector('[name="hostname"]').value,
-                    username: addHost.querySelector('[name="username"]').value,
-                    store: remember
-                })
-            if (remember)
-                this.storeGates()
-            if (typeof gate == "string")
-                this.notify(gate)
-            else {
-                addHost.classList.add("hidden")
-                if (this.netStatus && this.netStatus.connected)
-                    gate.connect()
-            }
-        })
         // hide the modal on xmark click
         addHost.querySelector(".close").addEventListener('click',  () =>  {
             this.clear()
@@ -527,16 +524,6 @@ peer_name = "${peername}"\n`
         // add the id
         p.id = this.gates.length
         p.verified = false
-
-        this.gates.forEach(i => {
-            if (props.name == i.name) {
-                i.online = props.online
-                nameFound = true
-            }
-        })
-        if (nameFound) {
-            return "Gate name is not unique"
-        }
 
         let g = new Gate(p)
         this.gates.push(g)

@@ -31,7 +31,6 @@ export class Form {
 
     field: string
     i: number
-    terminal: Terminal
     e: HTMLElement
     resolve: (value) => void
     reject: (reason?) => void
@@ -77,14 +76,30 @@ export class Form {
 
     next(t: Terminal) {
         const def = this.fields[this.i]
-        if (this.field != '' && def.validator) {
-            const err = def.validator(this.field)
-            if (err) {
-                t.write(`\n  ${err}`)
-                this.field = ''
-                this.writeCurrentField(t)
-                return true
+        let valid = true
+        if (!this.field && !def.default) {
+            t.write("\n  Please enter a value")
+            valid = false
+        }
+        else if (this.field != '') {
+            if (def.values) {
+                if (def.values.indexOf(this.field) ===-1) {
+                    t.write(`\n  ${this.fields[this.i].desc} must be one of: ${def.values.join(', ')}`)
+                    valid = false
+                }
             }
+            if (def.validator) {
+                const err = def.validator(this.field)
+                if (err) {
+                    t.write(`\n  ${err}`)
+                    valid = false
+                }
+            }
+        }
+        if (!valid) {
+            this.field = ''
+            this.writeCurrentField(t)
+            return true
         }
         this.results.push(this.field || this.fields[this.i].default || '')
         this.field = ''
@@ -97,6 +112,12 @@ export class Form {
     }
 
     writeCurrentField(t: Terminal) {
-        t.write(`\n  ${this.fields[this.i].desc} [${this.fields[this.i].default || ''}]: `)
+        const values = this.fields[this.i].values
+        let def = this.fields[this.i].default
+        if (values)
+            def = values.map(v => v == def ? v.toUpperCase() : v).join('/')
+        if (def)
+            def = ` [${def}]`
+        t.write(`\n  ${this.fields[this.i].desc}${def || ''}: `)
     }
 }
