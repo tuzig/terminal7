@@ -74,7 +74,7 @@ abstract class WebRTCSession extends BaseSession {
     pc: RTCPeerConnection
     lastMsgId: number
     t7: object
-    lastMarker: number
+    marker: number
     address: string | undefined
     constructor(fp: string, address?: string) {
         super()
@@ -85,7 +85,7 @@ abstract class WebRTCSession extends BaseSession {
         this.pendingChannels = new Map()
         this.msgHandlers = new Map()
         this.lastMsgId = 0
-        this.lastMarker = -1
+        this.marker = -1
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
             return
@@ -102,7 +102,7 @@ abstract class WebRTCSession extends BaseSession {
             this.pc = null
         }
     }
-    async connect() {
+    async connect(marker=-1) {
         console.log("in connect")
         this.startWatchdog()
 
@@ -121,11 +121,11 @@ abstract class WebRTCSession extends BaseSession {
         this.pc.onconnectionstatechange = () => {
             this.clearWatchdog()
             const state = this.pc.connectionState
-            console.log("new connection state", state, this.lastMarker)
-            if ((state == "connected") && (this.lastMarker != -1)) {
+            console.log("new connection state", state, marker)
+            if ((state == "connected") && (marker != -1)) {
                 this.sendCTRLMsg({
                     type: "restore",
-                    args: { marker: this.lastMarker }},
+                    args: { marker }},
                 () => this.onStateChange("connected"),
                 () => {
                     this.onStateChange("failed", Failure.BadMarker)
@@ -328,7 +328,6 @@ abstract class WebRTCSession extends BaseSession {
                     args: null
                 }, (payload) => {
                 this.t7.log("got a marker", this.lastMarker, payload)
-                this.lastMarker = payload
                 this.disengagePC()
                 resolve(payload)
             }, reject)

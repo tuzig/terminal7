@@ -5,14 +5,15 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Window } from './window.js'
+import { Clipboard } from '@capacitor/clipboard'
+import { Storage } from '@capacitor/storage'
+
 import { Pane } from './pane.js'
 import { Failure, Session } from './session'
-import { Clipboard } from '@capacitor/clipboard'
-import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
 import { SSHSession } from './ssh_session'
+import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
+import { Window } from './window.js'
 
-import { Storage } from '@capacitor/storage'
 
 const FAILED_COLOR = "red"// ashort period of time, in milli
 /*
@@ -202,11 +203,11 @@ export class Gate {
     // handle connection failures
     handleFailure(failure: Failure) {
         this.t7.log(failure)
+
+        this.session = null
+
         if (!this.boarding)
             return
-
-        this.stopBoarding()
-        this.session = null
         if (failure == Failure.WrongPassword) {
             this.notify("Wrong password, please try again")
             this.pass = null
@@ -243,7 +244,7 @@ export class Gate {
     /*
      * connect connects to the gate
      */
-    async connect() {
+    async connect(marker=-1) {
         // do nothing when the network is down
         if (!this.t7.netStatus || !this.t7.netStatus.connected)
             return
@@ -385,7 +386,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         this.windows = []
         this.breadcrumbs = []
         this.msgs = {}
-        this.marker = -1
     }
     /*
      * dump dumps the host to a state object
@@ -478,10 +478,10 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                 reject("session is null")
                 return
             }
-            this.notify("Disconnecting")
             return this.session.disconnect().then(marker => {
                 this.session = null
                 this.marker = marker
+                this.notify("Disconnected")
                 resolve()
             }).catch(() => {
                 reject("session does not support disconnect")
@@ -545,7 +545,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
 
         if (!e) {
             // for debug
-            this.completeConnect("BADWOLF")
+            this.completeConnect()
             return
         }
         e.querySelector("h1").innerText = `${this.username}@${this.name}`
@@ -590,6 +590,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.t7.log("TBD: update layout", layout)
         }
         this.t7.log("opening session")
-        this.session.connect()
+        this.session.connect(this.marker)
     }
 }

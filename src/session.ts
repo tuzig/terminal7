@@ -41,7 +41,7 @@ export interface Session {
     getPayload(): Promise<string>
     setPayload(payload: string): Promise<void>
     disconnect(): Promise<void>
-    connect(): void
+    connect(marker?: number): void
 }
 
 export abstract class BaseChannel implements Channel {

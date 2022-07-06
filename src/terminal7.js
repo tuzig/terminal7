@@ -276,7 +276,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 } else {
                     // We're back! ensure we have the latest network status and 
                     // reconnect to the active gate
-                    terminal7.log("Active ☀️")
+                    terminal7.log("☀️")
                     this.clearTimeouts()
                     Network.getStatus().then(s => this.updateNetworkStatus(s))
                 }
@@ -752,7 +752,7 @@ peer_name = "${peername}"\n`
                 this.pbVerify()
         } else {
             off.remove("hidden")
-            this.gates.forEach(g => g.stopBoarding())
+            this.gates.forEach(g => g.session = null)
         }
     }
     loadConf(conf) {
