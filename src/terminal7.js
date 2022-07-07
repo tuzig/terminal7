@@ -159,7 +159,6 @@ export class Terminal7 {
                     const t = openFormsTerminal(e)
                     const f = new Form([{ desc: "Name", validator: Gate.validateHostName }, { desc: "Hostname" }, { desc: "Username" }, { desc: "Remember hostname", default: "y", values: ["y", "n"] }])
                     f.start(t).then(results => {
-                        console.log(results)
                         const gate = this.addGate({ name: results[0], addr: results[1], username: results[2], store: results[3] == "y" })
                         if (results[3] == "y")
                             this.storeGates()
@@ -308,17 +307,13 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         // peerbook button and modal
         modal = document.getElementById("peerbook-modal")
         modal.querySelector(".close").addEventListener('click',
-            ev => this.clear() )
-        modal.querySelector(".save").addEventListener('click',
-            ev => {
-                this.setPeerbook()
-                this.clear()
-            })
+            () => this.clear() )
         document.getElementById('add-peerbook').addEventListener(
-            'click', ev => {
+            'click', () => {
                 this.logDisplay(false)
                 // modal.querySelector("form").reset()
-                document.getElementById("peerbook-modal").classList.remove("hidden")
+                modal.classList.remove("hidden")
+                this.setPeerbook()
             })
         Network.getStatus().then(s => {
             this.updateNetworkStatus(s)
@@ -391,21 +386,26 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         })
     }
     async setPeerbook() {
-        var e   = document.getElementById("peerbook-modal"),
-            dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE,
-            email = e.querySelector('[name="email"]').value,
-            peername = e.querySelector('[name="peername"]').value
-        if (email == "")
-            return
-        dotfile += `
+        var e   = document.getElementById("peerbook-modal").querySelector(".terminal-container"),
+            dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
+
+        const t = openFormsTerminal(e)
+        const f = new Form([{ desc: "email (will only be used to manage your peers)", validator: email => !email.match(/.+@.+\..+/) ? "Must be a valid email" : '' }, { desc: "Peer's name" }])
+        f.start(t).then(results => {
+            const email = results[0],
+                peername = results[1]
+
+            dotfile += `
 [peerbook]
 email = "${email}"
 peer_name = "${peername}"\n`
 
-        Storage.set({key: "dotfile", value: dotfile})
-        this.loadConf(TOML.parse(dotfile))
-        e.classList.add("hidden")
-        this.notify("Your email was added to the dotfile")
+            Storage.set({ key: "dotfile", value: dotfile })
+            this.loadConf(TOML.parse(dotfile))
+            e.classList.add("hidden")
+            this.notify("Your email was added to the dotfile")
+            this.clear()
+        }).catch(() => this.clear())
     }
     pbVerify() {
         return new Promise((resolve, reject) => {
