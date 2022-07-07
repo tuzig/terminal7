@@ -153,23 +153,25 @@ export class Terminal7 {
         document.getElementById('add-static-host').addEventListener(
             'click', () => {
                 this.logDisplay(false)
-                addHost.classList.remove("hidden")
-                const e = addHost.querySelector(".terminal-container")
-                const t = openFormsTerminal(e)
-                const f = new Form([{desc: "Name", validator: Gate.validateHostName}, {desc: "Hostname"}, {desc: "Username"}, {desc: "Remember hostname", default: "y", values: ["y", "n"]}])
-                f.start(t).then(results => {
-                    console.log(results)
-                    const gate = this.addGate({name: results[0], addr: results[1], username: results[2], store: results[3] == "y"})
-                    if (results[3] == "y")
-                        this.storeGates()
-                    if (typeof gate == "string")
-                        this.notify(gate)
-                    else {
-                        addHost.classList.add("hidden")
-                        if (this.netStatus && this.netStatus.connected)
-                            gate.connect()
-                    }
-                }).catch(() => this.clear())
+                if (addHost.classList.contains('hidden')) {
+                    addHost.classList.remove("hidden")
+                    const e = addHost.querySelector(".terminal-container")
+                    const t = openFormsTerminal(e)
+                    const f = new Form([{ desc: "Name", validator: Gate.validateHostName }, { desc: "Hostname" }, { desc: "Username" }, { desc: "Remember hostname", default: "y", values: ["y", "n"] }])
+                    f.start(t).then(results => {
+                        console.log(results)
+                        const gate = this.addGate({ name: results[0], addr: results[1], username: results[2], store: results[3] == "y" })
+                        if (results[3] == "y")
+                            this.storeGates()
+                        if (typeof gate == "string")
+                            this.notify(gate)
+                        else {
+                            addHost.classList.add("hidden")
+                            if (this.netStatus && this.netStatus.connected)
+                                gate.connect()
+                        }
+                    }).catch(() => this.clear())
+                }
             })
         // hide the modal on xmark click
         addHost.querySelector(".close").addEventListener('click',  () =>  {
