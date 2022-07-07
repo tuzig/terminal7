@@ -66,7 +66,7 @@ export class Gate {
     static validateHostName(name) {
         if (terminal7.gates.find(g => g.name == name))
             return "Name already taken"
-        return null
+        return ''
     }
 
     /*
@@ -147,15 +147,19 @@ export class Gate {
                 "https://"+ this.t7.conf.net.peerbook)
         } else {
             editHost = document.getElementById("edit-host")
-            const e = editHost.querySelector(".terminal-container")
-            const t = openFormsTerminal(e)
-            const f = new Form([{desc: "Name", default: this.name, validator: Gate.validateHostName}, {desc: "Hostname", default: this.addr}, {desc: "Username", default: this.username}])
-            f.start(t).then(results => {
-                [this.name, this.addr, this.username] = results
-                this.nameE.innerHTML = this.name || this.addr
-                this.t7.storeGates()
-                this.t7.clear()
-            }).catch(() => this.t7.clear())
+            if (editHost.classList.contains("hidden")) {
+                const e = editHost.querySelector(".terminal-container")
+                const t = openFormsTerminal(e)
+                const f = new Form([{ desc: "Name", default: this.name, validator: Gate.validateHostName }, { desc: "Hostname", default: this.addr }, { desc: "Username", default: this.username }])
+                f.chooseFields(t).then((enabled) => {
+                    f.start(t).then(results => {
+                        ['name', 'addr', 'username'].filter((_, i) => enabled[i]).forEach((k, i) => this[k] = results[i])
+                        this.nameE.innerHTML = this.name || this.addr
+                        this.t7.storeGates()
+                        this.t7.clear()
+                    }).catch(() => this.t7.clear())
+                }).catch(() => this.t7.clear())
+            }
         }
         editHost.gate = this
         editHost.classList.remove("hidden")

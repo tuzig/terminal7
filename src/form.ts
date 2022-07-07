@@ -41,6 +41,49 @@ export class Form {
         this.fields = fields
     }
 
+    chooseFields(t: Terminal) {
+        const enabled = new Array(this.fields.length).fill(false)
+        let current = 0
+        return new Promise<Array<boolean>>((resolve, reject) => {
+            t.write("\n  Choose fields to edit:")
+            t.write("\n  (Press Enter to select/deselect, D when done, Escape to cancel)")
+            t.write("\n  " + this.fields.map(f => `[ ] ${f.desc}: ${f.default}`).join('\n  '))
+            t.write("\x1B[4;4H") // move cursor to first field
+            const disposable = t.onKey(ev => {
+                const key = ev.domEvent.key
+                const char = !enabled[current] ? 'X' : ' '
+                switch (key) {
+                    case "Escape":
+                        reject()
+                        return
+                    case "ArrowUp":
+                        if (current > 0) {
+                            current--
+                            t.write("\x1B[A")
+                        }
+                        break
+                    case "ArrowDown":
+                        if (current < enabled.length - 1) {
+                            current++
+                            t.write("\x1B[B")
+                        }
+                        break
+                    case "Enter":
+                        enabled[current] = !enabled[current]
+                        t.write(char + "\x1B[1D")
+                        return
+                    case 'd':
+                        this.fields = this.fields.filter((_, i) => enabled[i])
+                        t.reset()
+                        disposable.dispose()
+                        resolve(enabled)
+                        return
+                }
+            })
+        })
+    }
+
+
     start(t: Terminal) : Promise<Results> { 
         this.i = 0
         this.field = ''
