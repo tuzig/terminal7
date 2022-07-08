@@ -284,6 +284,7 @@ nav .on { color: var(--indicator-color) !important; }
     transform: translate(-50%, 0);
     border-color: var(--local-border);
     border-radius: 0 0 12px 12px;
+    border-top: 0;
 }
 
 .rename-box {

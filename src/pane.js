@@ -351,7 +351,7 @@ export class Pane extends Cell {
 
         i.onkeydown = ev => {
             if (ev.keyCode == 13) {
-                this.findNext(i.value)
+                this.findPrev(i.value)
                 this.enableSearchButtons()
                 this.t7.run(() => this.t.focus(), 10)
             }
