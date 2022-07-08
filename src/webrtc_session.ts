@@ -110,7 +110,8 @@ abstract class WebRTCSession extends BaseSession {
             try {
                 this.t7.iceServers = await this.getIceServers()
             } catch(e) {
-                console.log("Faield to get ice servers", e.toString())
+                this.t7.iceServers = []
+                console.log(e)
             }
         }
         console.log("got ice server", this.t7.iceServers)
@@ -339,7 +340,7 @@ export class PeerbookSession extends WebRTCSession {
     getIceServers() {
         return new Promise((resolve, reject) => {
             const ctrl = new AbortController(),
-                  tId = setTimeout(() => ctrl.abort(), TIMEOUT),
+                  tId = setTimeout(() => ctrl.abort(), 1000),
                   insecure = this.t7.conf.peerbook.insecure,
                   schema = insecure?"http":"https"
 
@@ -358,9 +359,8 @@ export class PeerbookSession extends WebRTCSession {
                          ...answer["ice_servers"]])
 
             }).catch(err => {
-                console.log("failed to get ice servers " + err.toString())
                 clearTimeout(tId)
-                reject()
+                reject("failed to get ice servers " + err.toString())
             })
         })
     }

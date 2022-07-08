@@ -967,6 +967,15 @@ peer_name = "${peername}"\n`
             this.log("received bad gate", m)
             return
         }
+        if (m.peer_update !== undefined) {
+            g.online = m.peer_update.online
+            return
+        }
+        // next to are for connected session, ignore if no session
+        if (!g.session) {
+            console.log("session is close ignoring message", m)
+            return
+        }
         if (m.candidate !== undefined) {
             g.session.peerCandidate(m.candidate)
             return
@@ -974,10 +983,6 @@ peer_name = "${peername}"\n`
         if (m.answer !== undefined ) {
             var answer = JSON.parse(atob(m.answer))
             g.session.peerAnswer(answer)
-            return
-        }
-        if (m.peer_update !== undefined) {
-            g.online = m.peer_update.online
             return
         }
     }
