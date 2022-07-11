@@ -151,24 +151,33 @@ export class Terminal7 {
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         let addHost = document.getElementById("add-host")
         document.getElementById('add-static-host').addEventListener(
-            'click', () => {
+            'click', async () => {
                 this.logDisplay(false)
                 if (addHost.classList.contains('hidden')) {
+                    const fp = await this.getFingerprint(),
+                        rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     addHost.classList.remove("hidden")
                     const e = addHost.querySelector(".terminal-container")
                     const t = openFormsTerminal(e)
-                    const f = new Form([{ desc: "Name", validator: Gate.validateHostName }, { desc: "Hostname" }, { desc: "Username" }, { desc: "Remember hostname", default: "y", values: ["y", "n"] }])
+                    const f = new Form([{ desc: "Name", validator: Gate.validateHostName }, { desc: "Hostname" }, { desc: "Username" }, { desc: "Remember hostname", default: "y", values: ["y", "n"] },
+                        {
+                            desc: `\x1Bc\n  To use WebRTC the server needs webexec:\n\n\x1B[1;36m${rc}\x1B[0m\n\n  Copy to clipboard?`,
+                            validator: v => {
+                                console.log(v)
+                                if (v == "y")
+                                    Clipboard.write({ string: rc })
+                                return ''
+                            },
+                            default: "y"
+                        }
+                ])
                     f.start(t).then(results => {
                         const gate = this.addGate({ name: results[0], addr: results[1], username: results[2], store: results[3] == "y" })
                         if (results[3] == "y")
                             this.storeGates()
-                        if (typeof gate == "string")
-                            this.notify(gate)
-                        else {
-                            addHost.classList.add("hidden")
-                            if (this.netStatus && this.netStatus.connected)
-                                gate.connect()
-                        }
+                        this.clear()
+                        if (this.netStatus && this.netStatus.connected)
+                            gate.connect()
                     }).catch(() => this.clear())
                 }
             })

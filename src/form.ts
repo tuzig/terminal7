@@ -118,25 +118,21 @@ export class Form {
     }
 
     next(t: Terminal) {
-        const def = this.fields[this.i]
+        const current = this.fields[this.i]
         let valid = true
-        if (!this.field && !def.default) {
+        if (!this.field && !current.default) {
             t.write("\n  Please enter a value")
             valid = false
         }
-        else if (this.field != '') {
-            if (def.values) {
-                if (def.values.indexOf(this.field) ===-1) {
-                    t.write(`\n  ${this.fields[this.i].desc} must be one of: ${def.values.join(', ')}`)
-                    valid = false
-                }
-            }
-            if (def.validator) {
-                const err = def.validator(this.field)
-                if (err) {
-                    t.write(`\n  ${err}`)
-                    valid = false
-                }
+        else if (this.field && current.values && current.values.indexOf(this.field) == -1) {
+            t.write(`\n  ${current.desc} must be one of: ${current.values.join(', ')}`)
+            valid = false
+        }
+        else if (current.validator) {
+            const err = current.validator(this.field || current.default || '')
+            if (err) {
+                t.write(`\n  ${err}`)
+                valid = false
             }
         }
         if (!valid) {
@@ -144,7 +140,7 @@ export class Form {
             this.writeCurrentField(t)
             return true
         }
-        this.results.push(this.field || this.fields[this.i].default || '')
+        this.results.push(this.field || current.default || '')
         this.field = ''
         if (this.i < this.fields.length - 1) {
             this.i++
