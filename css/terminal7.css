@@ -268,23 +268,31 @@ nav .on { color: var(--indicator-color) !important; }
     left: 0;
     width: 100%;
     position: fixed;
+    z-index: 3;
 }
 .search-box {
     position: fixed;
     display: inline-block;
     box-sizing: border-box;
     background-color: var(--background);
-    z-index: 9;
+    z-index: 2;
     margin: 0 auto;
     padding: 3px;
     bottom: 51pt;
     left: 50%;
     width: 80%;
     max-width: 96%;
-    transform: translate(-50%, 0);
+    transform: translate(-50%, -100%);
     border-color: var(--local-border);
     border-radius: 0 0 12px 12px;
     border-top: 0;
+    transition: all .75s ease;
+    opacity: 0;
+}
+
+.search-box.show {
+    transform: translate(-50%, 0);
+    opacity: 1;
 }
 
 .rename-box {
