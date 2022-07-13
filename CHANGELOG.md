@@ -6,6 +6,23 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- Copy mode keys w, b, e, ^f, ^b and repetition factor
+- Links displayed in the terminal are now clickable
+
+### Fixed
+
+- Down search now works
+- Up search now goes the right direction
+- Log messages and search box are positioned properly
+- Search box looks
+- Toggling the new tab button when [!]reaching limit
+- Modals close on touch
+- WebRTC reconnect should be fixed now
+
 ## [0.20.7] - 2022/6/15
 
 ### Fixed

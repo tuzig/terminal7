@@ -13,6 +13,7 @@
     --remote-border: #F4DB53;
     --warning: #F4DB53;
     --background: #271D30;
+    --text-background: #11051E;
 }
 @font-face {
     font-family: "FiraSans";
@@ -40,7 +41,7 @@ body {
   text-align: center;
   font-family: 'FiraSans';
   color: #00FAFA;
-  background-color: #271D30;
+  background-color: var(--background);
   overflow: hidden;
 }
 body {
@@ -64,7 +65,7 @@ h1, h2, h3 {
     /* margin: 0; */
 }
 h2 { margin: 0.3em;}
-h3 { margin: 0.2em; color: #F952F9; }
+h3 { margin: 0.2em; color: var(--local-border); }
 
 #terminal7 {
     height: 100%; 
@@ -75,7 +76,7 @@ h3 { margin: 0.2em; color: #F952F9; }
 button {
     border: 0;
     padding:0;
-    background-color: #271D30;
+    background-color: var(--background);
     color: #00fafa;
     /*
   text-align: center;
@@ -113,7 +114,7 @@ a {
 }
 .modal {
     z-index: 5;
-    background-color: #271D30;
+    background-color: var(--background);
     padding: 2%;
     position: fixed;
     bottom: 90px;
@@ -121,7 +122,7 @@ a {
     transform: translate(-50%, 0);
     width: 40em;
     max-width: 80%;
-    border-color: #F952F9;
+    border-color: var(--local-border);
 }
 .modal p, .modal td {
     font-size: 16pt;
@@ -212,7 +213,7 @@ nav {
     padding: 0;
     margin: 0;
     width: 100%;
-    background-color: #271D30;
+    background-color: var(--background);
 }
 .tabbar button {
     flex: 1 0 10%;
@@ -250,8 +251,8 @@ nav::-webkit-scrollbar {
     color: inherit;
     width: max-content;
 }
-nav .on { color: #00FA00 !important; }
-.failed { color: #F952F9 !important; }
+nav .on { color: var(--indicator-color) !important; }
+.failed { color: var(--local-border) !important; }
 .warn { color: #FAFA00 !important; }
 .off { color: #373702; }
 /* vertical align the nav bar buttons */
@@ -272,23 +273,25 @@ nav .on { color: #00FA00 !important; }
     position: fixed;
     display: inline-block;
     box-sizing: border-box;
-    background-color: #271D30;
+    background-color: var(--background);
     z-index: 9;
     margin: 0 auto;
-    padding: 4px;
-    bottom: 62pt;
+    padding: 3px;
+    bottom: 51pt;
     left: 50%;
-    width: 60em;
+    width: 80%;
     max-width: 96%;
     transform: translate(-50%, 0);
-    border-color: #F952F9;
+    border-color: var(--local-border);
+    border-radius: 0 0 12px 12px;
+    border-top: 0;
 }
 
 .rename-box {
     position: fixed;
     display: inline-block;
     box-sizing: border-box;
-    background-color: #271D30;
+    background-color: var(--background);
     z-index: 9;
     margin: 0 auto;
     padding: 4px;
@@ -297,11 +300,11 @@ nav .on { color: #00FA00 !important; }
     width: 30em;
     max-width: 96%;
     transform: translate(-50%, 0);
-    border-color: #F952F9;
+    border-color: var(--local-border);
 }
 
 nav.tabbar-search {
-    padding: 0.2em 1em;
+    padding: 0 1em;
     display: flex;
     align-content: stretch;
 }
@@ -319,6 +322,11 @@ button.rename-close {
     font-size: 16pt;
     flex: 10 1 auto;
     line-height: 24pt;
+    border: 1px solid var(--local-border);
+    box-sizing: border-box;
+    color: var(--text-color);
+    background-color: var(--text-background);
+    border-radius: 5px;
 }
 .active {
     font-weight: bold;
@@ -417,8 +425,12 @@ label {
   padding: 12px 20px;
   margin: 8px 0;
   display: block;
-  border: 1px solid #ccc;
+  border: 1px solid var(--local-border);
   box-sizing: border-box;
+  color: var(--text-color);
+  background-color: var(--text-background);
+  border-radius: 5px;
+  font-size: 18px;
 }
 .hidden { visibility: hidden; }
 .host {
@@ -432,12 +444,12 @@ label {
 #log {
     position: absolute;
     right : 0px;
-    bottom: 90px;
+    bottom: 114px;
     margin: 0;
     padding: 0;
     z-index: 4;
-    background-color: #271D30;
-    border-color: #F952F9;
+    background-color: var(--background);
+    border-color: var(--local-border);
     text-align: left;
     width: 96%;
     max-width: 30em;
@@ -470,7 +482,7 @@ label {
 }
 .log-msg time {
     float: left;
-    color: #F952F9;
+    color: var(--local-border);
     font-family: "FiraCode";
 }
 .log-msg p {
@@ -496,7 +508,7 @@ label {
     float: right;
     text-align: center;
     padding: 0.2em;
-    color: #00FA00; 
+    color: var(--indicator-color); 
 }
 #indicators p {
     margin: 0;
@@ -554,7 +566,7 @@ td {
     left: 0;
     bottom: 56px;
     z-index: 5;
-    background-color: #271D30;
+    background-color: var(--background);
     transition: all .75s ease;
 }
 #help-home.show, #help-gate.show {
@@ -563,7 +575,7 @@ td {
     transition: all .75s ease;
 }
 #help-gate {
-    border-top: 2px dashed #F952F9;
+    border-top: 2px dashed var(--local-border);
 }
 .compact-fields {
     max-width: 20em;
@@ -575,7 +587,7 @@ td {
     max-width: 36em;
 }
 #greetings-modal h2 {
-    color: #F952F9;
+    color: var(--local-border);
 }
 #greetings-modal h3 {
     padding-top: 1em;
@@ -616,10 +628,11 @@ pre {
     font-family: "FiraCode";
     -webkit-user-select: all;
     user-select: all;
-    font-size: 20px;
+    font-size: 18px;
     background-color: black;
     padding: 0.5em;
     border: 1px solid var(--local-border);
+    border-radius: 5px;
 }
 footer pre { font-size: 14px; }
 .navtext button {
@@ -641,6 +654,18 @@ footer pre { font-size: 14px; }
 }
 .webexec-install div {
     position: relative;
+}
+.webexec-install ::-webkit-scrollbar-thumb {
+    background: var(--text-color);
+    border-radius: 5px;
+}
+
+.webexec-install ::-webkit-scrollbar-track {
+    background: var(--text-background);
+    border-radius: 5px;
+}
+.webexec-install ::-webkit-scrollbar {
+    height: 14px;
 }
 .webexec-install button {
     position: absolute;

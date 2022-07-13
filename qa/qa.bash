@@ -24,8 +24,14 @@ then
     fi
     for compose in `find qa -name "lab.yaml"`
     do
-        echo ">>> bringing up a lab from `dirname $compose`"
+        dir=$(dirname $compose)
+        echo ">>> bringing up a lab from $dir"
         build_n_run $compose
+        if [ $? -ne 0 ]
+        then
+            echo ">>> $dir tests FAILED"
+             exit 4
+        fi
     done
 else
     npx vite build

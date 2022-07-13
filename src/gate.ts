@@ -5,16 +5,19 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Window } from './window.js'
+import { Clipboard } from '@capacitor/clipboard'
+import { Storage } from '@capacitor/storage'
+
 import { Pane } from './pane.js'
 import { Failure, Session } from './session'
-import { Clipboard } from '@capacitor/clipboard'
-import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
 import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
 import { Storage } from '@capacitor/storage'
 import { Form, openFormsTerminal } from './form.js'
+import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
+import { Window } from './window.js'
+
 
 const FAILED_COLOR = "red"// ashort period of time, in milli
 /*
@@ -26,6 +29,7 @@ export class Gate {
     boarding: boolean
     e: Element
     id: string
+    marker: number
     name: string
     pass: string | undefined
     secret: string
@@ -93,7 +97,7 @@ export class Gate {
                 this.activeW.activeP.focus()
             })
             t.querySelector(".search-up").addEventListener('click', _ =>
-                this.activeW.activeP.findNext())
+                this.activeW.activeP.findPrev())
 
             t.querySelector(".search-down").addEventListener('click', _ => 
                 this.activeW.activeP.findNext())
@@ -184,6 +188,10 @@ export class Gate {
      * state changes.
      */
     onSessionState(state: RTState, failure: Failure) {
+        if (!this.session) {
+            this.t7.log(`Ignoring ${this.name} change state to ${state} as session is closed`)
+            return
+        }
         this.t7.log(`updating ${this.name} state to ${state}`)
         if (state == "connected") {
             this.notify("Connected")
@@ -212,11 +220,11 @@ export class Gate {
     // handle connection failures
     handleFailure(failure: Failure) {
         this.t7.log(failure)
+
+        this.session = null
+
         if (!this.boarding)
             return
-
-        this.stopBoarding()
-        this.session = null
         if (failure == Failure.WrongPassword) {
             this.notify("Wrong password, please try again")
             this.pass = null
@@ -253,16 +261,18 @@ export class Gate {
     /*
      * connect connects to the gate
      */
-    async connect() {
+    async connect(marker=-1) {
         // do nothing when the network is down
         if (!this.t7.netStatus || !this.t7.netStatus.connected)
             return
         // if we're already boarding, just focus
-        if (this.boarding) {
-            this.t7.log("already boarding")
+        if (this.session) {
+            // TODO: check session's status
+            this.t7.log("already connected")
             if (!this.windows || (this.windows.length == 0))
                 this.activeW = this.addWindow("", true)
-            this.focus()
+            else
+                this.focus()
             return
         }
         this.boarding = true
@@ -293,7 +303,8 @@ export class Gate {
             this.t7.run(() =>  {
                 this.connect()
             }, 100)
-        })
+        }).catch(() => this.connect())
+                
     }
     async loseState () {
         const fp = await this.t7.getFingerprint(),
@@ -392,7 +403,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         this.windows = []
         this.breadcrumbs = []
         this.msgs = {}
-        this.marker = -1
     }
     /*
      * dump dumps the host to a state object
@@ -433,9 +443,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
                         this.t7.log("Closing gate after updating to empty state")
-                        this.disengage().then(() => {
+                        this.session.close().then(() => {
                             this.session = null
-                            this.stopBoarding()
+                            this.boarding = false
                         })
                     }
                })
@@ -479,15 +489,20 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
      * and closes the peer connection.
      */
     disengage() {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => { 
             this.t7.log(`disengaging. boarding is ${this.boarding}`)
-            if (!this.boarding || !this.session) {
-                resolve()
+            if (!this.session) {
+                reject("session is null")
                 return
             }
-            this.boarding = false
-            this.notify("Disengaging...")
-            this.session.disconnect().then(resolve).catch(reject)
+            return this.session.disconnect().then(marker => {
+                this.session = null
+                this.marker = marker
+                this.notify("Disconnected")
+                resolve()
+            }).catch(() => {
+                reject("session does not support disconnect")
+            })
         })
     }
     closeActivePane() {
@@ -547,7 +562,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
 
         if (!e) {
             // for debug
-            this.completeConnect("BADWOLF")
+            this.completeConnect()
             return
         }
         e.querySelector("h1").innerText = `${this.username}@${this.name}`
@@ -592,6 +607,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.t7.log("TBD: update layout", layout)
         }
         this.t7.log("opening session")
-        this.session.connect()
+        this.session.connect(this.marker)
     }
 }

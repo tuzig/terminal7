@@ -46,6 +46,8 @@ export class Pane extends Cell {
         this.flashTimer = null
         this.aLeader = false
         this.retries = 0
+        this.lastKey = ''
+        this.repetition = 0
     }
 
     /*
@@ -119,8 +121,12 @@ export class Pane extends Cell {
                     this.aLeader = false
                 }
                 else if (this.copyMode) {
-                    if  (ev.type == "keydown")
-                        this.handleCMKey(ev.key)
+                    if  (ev.type == "keydown") {
+                        if (ev.ctrlKey)
+                            this.handleCMKey('C-' + ev.key)
+                        else
+                            this.handleCMKey(ev.key)
+                    }
                     toDo = false
                 }
                 if (!toDo) {
@@ -324,16 +330,8 @@ export class Pane extends Cell {
         se.classList.remove("hidden")
         document.getElementById("search-button").classList.add("on")
         // TODO: restore regex search
-        let up = se.querySelector(".search-up"),
-            down = se.querySelector(".search-down"),
-            i = se.querySelector("input[name='search-term']")
-        if (searchDown) {
-            up.classList.add("hidden")
-            down.classList.remove("hidden")
-        } else {
-            up.classList.remove("hidden")
-            down.classList.add("hidden")
-        }
+        let i = se.querySelector("input[name='search-term']")
+        this.disableSearchButtons()
         if (REGEX_SEARCH) {
             i.setAttribute("placeholder", "regex here")
             u.classList.remove("hidden")
@@ -353,11 +351,20 @@ export class Pane extends Cell {
 
         i.onkeydown = ev => {
             if (ev.keyCode == 13) {
-                this.findNext(i.value)
-                this.hideSearch()
-                this.t7.run(_ => this.t.focus(), 10)
+                this.findPrev(i.value)
+                this.enableSearchButtons()
+                this.t7.run(() => this.t.focus(), 10)
             }
         }
+        i.addEventListener("input", () => {
+            this.searchTerm = i.value
+            if (i.value) {
+                this.enableSearchButtons()
+            }
+            else {
+                this.disableSearchButtons()
+            }
+        })
         i.focus()
     }
     enterCopyMode(marking) {
@@ -471,30 +478,36 @@ export class Pane extends Cell {
 
         if (f != null) {
             f()
-            ev.preventDefault()
-            ev.stopPropagation()
             return false
         }
         return true
     }
     findNext(searchTerm) {
-        if (searchTerm != undefined) {
+        if (searchTerm) {
             this.cmAtEnd = null
             this.t.setOption("selectionStyle", "plain")
             this.searchTerm = searchTerm
         }
 
-        if (this.searchTerm != undefined) {
-            if (this.searchDown)
-                if (!this.searchAddon.findNext(this.searchTerm, SEARCH_OPTS))
-                    this.gate.notify(`Couldn't find "${this.searchTerm}"`)
-                else 
-                    this.enterCopyMode(true)
-            if (!this.searchDown)
-                if (!this.searchAddon.findPrevious(this.searchTerm, SEARCH_OPTS))
-                    this.gate.notify(`Couldn't find "${this.searchTerm}"`)
-                else 
-                    this.enterCopyMode(true)
+        if (this.searchTerm) {
+            if (!this.searchAddon.findNext(this.searchTerm, SEARCH_OPTS))
+                this.gate.notify(`Couldn't find "${this.searchTerm}"`)
+            else 
+                this.enterCopyMode(true)
+        }
+    }
+    findPrev(searchTerm) {
+        if (searchTerm) {
+            this.cmAtEnd = null
+            this.t.setOption("selectionStyle", "plain")
+            this.searchTerm = searchTerm
+        }
+
+        if (this.searchTerm) {
+            if (!this.searchAddon.findPrevious(this.searchTerm, SEARCH_OPTS))
+                this.gate.notify(`Couldn't find "${this.searchTerm}"`)
+            else 
+                this.enterCopyMode(true)
         }
     }
     /*
@@ -583,7 +596,8 @@ export class Pane extends Cell {
     }
     handleCMKey(key) {
         var x, y, newX, newY,
-            selection = this.t.getSelectionPosition()
+            selection = this.t.getSelectionPosition(),
+            line
         // chose the x & y we're going to change
         if ((!this.cmMarking) || (selection == null)) {
             this.cmMarking = false
@@ -608,7 +622,63 @@ export class Pane extends Cell {
         }
         newX = x
         newY = y
-        switch(key) {
+        if (this.repetition || key.match(/[1-9]/)) {
+            if (key.match(/\d/))
+                this.repetition = 10 * this.repetition + parseInt(key)
+            else {
+                let temp = this.repetition
+                this.repetition = 0
+                for (let i = 0; i < temp; i++) {
+                    this.handleCMKey(key)
+                }
+            }
+        }
+        else if (this.lastKey) {
+            switch (key) {
+                case 'Escape':
+                case 'ArrowRight':
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                case 'ArrowDown':
+                    break
+                default:
+                    if (!key.match(/^.$/))
+                        return
+                    break
+            }
+            switch (this.lastKey) {
+                case 'f':
+                    line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
+                    newX = line.indexOf(key, x + 1)
+                    if (newX == -1)
+                        newX = x
+                    else if (this.cmMarking)
+                        newX++
+                    break
+                case 'F':
+                    line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
+                    newX = line.lastIndexOf(key, x - 2)
+                    if (newX == -1)
+                        newX = x
+                    break
+                case 't':
+                    line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
+                    newX = line.indexOf(key, x + 1) - 1
+                    if (newX == -2)
+                        newX = x
+                    else if (this.cmMarking)
+                        newX++
+                    break
+                case 'T':
+                    line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
+                    newX = line.lastIndexOf(key, x - 2) + 1
+                    if (newX == 0)
+                        newX = x
+                    break
+            }
+            this.lastKey = ''
+        }
+        else switch(key) {
             // space is used to toggle the marking state
             case ' ':
                 if (!this.cmMarking) {
@@ -624,7 +694,7 @@ export class Pane extends Cell {
                 break
             case "Enter":
                 if (this.t.hasSelection())
-                    this.copySlection().then(this.exitCopyMode())
+                    this.copySelection().then(this.exitCopyMode())
                 else
                     this.exitCopyMode();
                 break
@@ -668,6 +738,93 @@ export class Pane extends Cell {
                     newY = y - 1
                 if (this.cmAtEnd === null)
                     this.cmAtEnd = false
+                break
+            case '0':
+                newX = 0
+                break
+            case '$':
+                line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
+                newX = line.length
+                if (newX != 0 && !this.cmMarking)
+                    newX--
+                break
+            case 'w':
+                line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
+                while (newX < line.length) {
+                    if (line.substring(newX, newX + 2).match(/\W\w/)
+                        || line.substring(newX, newX + 2).match(/\w[^\w\s]/)
+                        || line.substring(newX, newX + 2).match(/\s\S/)) {
+                        newX++
+                        break
+                    }
+                    newX++
+                }
+                if (newX >= line.length) {
+                    if (this.t.buffer.active.getLine(y+1)?.translateToString(true).trimEnd()) {
+                        newX = 0
+                        newY++
+                    } else
+                        newX = line.length - 1
+                }
+                if (this.cmMarking)
+                    newX++
+                break
+            case 'b':
+                line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
+                if (x <= 0 && y > 0) {
+                    newY--
+                    line = this.t.buffer.active.getLine(newY).translateToString(true).trimEnd()
+                    newX = line.length
+                }
+                while (newX > 0) {
+                    if (line.substring(newX - 2, newX).match(/\W\w/)
+                        || line.substring(newX - 2, newX).match(/\w[^\w\s]/)
+                        || line.substring(newX - 2, newX).match(/\s\S/)) {
+                        newX--
+                        break
+                    }
+                    newX--
+                }
+                break
+            case 'e':
+                line = this.t.buffer.active.getLine(y).translateToString(true).trimEnd()
+                if (newX >= line.length - 1) {
+                    line = this.t.buffer.active.getLine(y+1).translateToString(true).trimEnd()
+                    if (!line) break
+                    newX = 0
+                    newY++
+                }
+                while (newX < line.length) {
+                    newX++
+                    if (newX == line.length) {
+                        newX--
+                        break
+                    }
+                    if (line.substring(newX, newX + 2).match(/\w\W/)
+                        || line.substring(newX, newX + 2).match(/[^\w\s]\w/)
+                        || line.substring(newX, newX + 2).match(/\S\s/))
+                        break
+                }
+                if (this.cmMarking)
+                    newX++
+                break
+            case 'f':
+            case 'F':
+            case 't':
+            case 'T':
+                console.log("waiting for input")
+                this.lastKey = key
+                break
+            case 'C-f':
+                newY = this.t.buffer.active.viewportY + this.t.buffer.active.length - this.t.buffer.active.baseY
+                if (newY >= this.t.buffer.active.length) 
+                    newY = this.t.buffer.active.length - 1
+                break
+            case 'C-b':
+                console.log('y', this.t.buffer.active.baseY, this.t.buffer.active.viewportY, this.t.buffer.active.length, this.t.rows)
+                newY = this.t.buffer.active.viewportY - (this.t.buffer.active.length - this.t.buffer.active.baseY)
+                if (newY < 0) 
+                    newY = 0
                 break
         }
         if ((newY != y) || (newX != x)) {
@@ -757,5 +914,29 @@ export class Pane extends Cell {
         let selectionLength = rowLength*(selection.endRow - selection.startRow) + selection.endColumn - selection.startColumn
         if (selectionLength == 0) selectionLength = 1
         this.t.select(selection.startColumn, selection.startRow, selectionLength)
+    }
+    enableSearchButtons() {
+        const se = this.gate.e.querySelector(".search-box")
+        let up = se.querySelector(".search-up"),
+            down = se.querySelector(".search-down")
+        up.classList.remove("off")
+        down.classList.remove("off")
+    }
+    disableSearchButtons() {
+        const se = this.gate.e.querySelector(".search-box")
+        let up = se.querySelector(".search-up"),
+            down = se.querySelector(".search-down")
+        up.classList.add("off")
+        down.classList.add("off")
+    }
+    regexFindIndex(str, regex, startIndex) {
+        startIndex = startIndex || 0
+        let match = -1
+        str.replace(regex, (...args) => {
+            let i = args.find(x => typeof(x) == "number")
+            if (match == -1 && i > startIndex)
+                match = i
+        })
+        return match
     }
 }

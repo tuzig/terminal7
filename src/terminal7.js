@@ -143,11 +143,11 @@ export class Terminal7 {
                 e.addEventListener("click", ev => this.clear()))
         document.getElementById("divide-h")
                 .addEventListener("click", ev =>  {
-                    if (this.activeG)
+                    if (this.activeG && this.activeG.activeW.activeP.sy >= 0.04)
                         this.activeG.activeW.activeP.split("rightleft", 0.5)})
         document.getElementById("divide-v")
                 .addEventListener("click", ev =>  {
-                    if (this.activeG)
+                    if (this.activeG && this.activeG.activeW.activeP.sx >= 0.04)
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         let addHost = document.getElementById("add-host")
         document.getElementById('add-static-host').addEventListener(
@@ -278,7 +278,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 } else {
                     // We're back! ensure we have the latest network status and 
                     // reconnect to the active gate
-                    terminal7.log("Active ☀️")
+                    terminal7.log("☀️")
                     this.clearTimeouts()
                     Network.getStatus().then(s => this.updateNetworkStatus(s))
                 }
@@ -744,12 +744,12 @@ peer_name = "${peername}"\n`
             off.add("hidden")
             const gate = this.activeG
             if (gate)
-                gate.reset()
+                gate.connect()
             else 
                 this.pbVerify()
         } else {
             off.remove("hidden")
-            this.gates.forEach(g => g.stopBoarding())
+            this.gates.forEach(g => g.session = null)
         }
     }
     loadConf(conf) {
@@ -964,6 +964,15 @@ peer_name = "${peername}"\n`
             this.log("received bad gate", m)
             return
         }
+        if (m.peer_update !== undefined) {
+            g.online = m.peer_update.online
+            return
+        }
+        // next to are for connected session, ignore if no session
+        if (!g.session) {
+            console.log("session is close ignoring message", m)
+            return
+        }
         if (m.candidate !== undefined) {
             g.session.peerCandidate(m.candidate)
             return
@@ -971,10 +980,6 @@ peer_name = "${peername}"\n`
         if (m.answer !== undefined ) {
             var answer = JSON.parse(atob(m.answer))
             g.session.peerAnswer(answer)
-            return
-        }
-        if (m.peer_update !== undefined) {
-            g.online = m.peer_update.online
             return
         }
     }
@@ -1054,8 +1059,8 @@ peer_name = "${peername}"\n`
         if (this.gesture) {
             let where = this.gesture.where,
                 dest = Math.min(1.0, (where == "top")
-                        ? y / document.body.offsetHeight
-                        : x / document.body.offsetWidth)
+                    ? y / document.querySelector('.windows-container').offsetHeight
+                    : x / document.body.offsetWidth)
             this.gesture.pane.layout.moveBorder(this.gesture.pane, where, dest)
             ev.stopPropagation()
             ev.preventDefault()

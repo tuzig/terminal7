@@ -122,7 +122,7 @@ describe("gate", () => {
         g.open(e)
         g.tryWebexec = false
         g.connect()
-        await sleep(100)
+        await sleep(500)
         expect(g.boarding).to.equal(true)
         expect(g.session.connect).toHaveBeenCalledTimes(1)
         expect(g.session.openChannel).toHaveBeenCalledTimes(1)

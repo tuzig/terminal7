@@ -112,7 +112,7 @@ pinch_max_y_velocity = 0.1`
             window.notifications[window.notifications.length-2]
         )
         await expect(page.locator('.pane')).toHaveCount(1)
-        await expect(beforeLast).toEqual("foo: Disengaging...")
+        await expect(beforeLast).toEqual("foo: &#127884 webexec server")
 
     })
 })

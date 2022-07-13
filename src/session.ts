@@ -41,7 +41,7 @@ export interface Session {
     getPayload(): Promise<string>
     setPayload(payload: string): Promise<void>
     disconnect(): Promise<void>
-    connect(): void
+    connect(marker?: number): void
 }
 
 export abstract class BaseChannel implements Channel {
@@ -74,10 +74,16 @@ export abstract class BaseSession implements Session {
             resolve(null)
         })
     }
-    abstract setPayload(payload: string): Promise<void>
-    disconnect(): Promise<void>{
-        return new Promise(resolve=> {
+    setPayload(payload: string): Promise<void> {
+        return new Promise((resolve) => { 
+            console.log(`ignoring payloads on ${typeof this}`)
             resolve()
+        })
+    }
+    // base disconnect is rejected as it's not supported
+    disconnect(): Promise<void>{
+        return new Promise((resolve, reject) => {
+            reject()
         })
     }
     // fail function emulates a WebRTC connection failure flow

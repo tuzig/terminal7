@@ -74,7 +74,7 @@ abstract class WebRTCSession extends BaseSession {
     pc: RTCPeerConnection
     lastMsgId: number
     t7: object
-    lastMarker: number
+    marker: number
     address: string | undefined
     constructor(fp: string, address?: string) {
         super()
@@ -85,7 +85,7 @@ abstract class WebRTCSession extends BaseSession {
         this.pendingChannels = new Map()
         this.msgHandlers = new Map()
         this.lastMsgId = 0
-        this.lastMarker = -1
+        this.marker = -1
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
             return
@@ -102,7 +102,7 @@ abstract class WebRTCSession extends BaseSession {
             this.pc = null
         }
     }
-    async connect() {
+    async connect(marker=-1) {
         console.log("in connect")
         this.startWatchdog()
 
@@ -110,7 +110,8 @@ abstract class WebRTCSession extends BaseSession {
             try {
                 this.t7.iceServers = await this.getIceServers()
             } catch(e) {
-                console.log("Faield to get ice servers", e.toString())
+                this.t7.iceServers = []
+                console.log(e)
             }
         }
         console.log("got ice server", this.t7.iceServers)
@@ -121,11 +122,11 @@ abstract class WebRTCSession extends BaseSession {
         this.pc.onconnectionstatechange = () => {
             this.clearWatchdog()
             const state = this.pc.connectionState
-            console.log("new connection state", state, this.lastMarker)
-            if ((state == "connected") && (this.lastMarker != -1)) {
+            console.log("new connection state", state, marker)
+            if ((state == "connected") && (marker != -1)) {
                 this.sendCTRLMsg({
                     type: "restore",
-                    args: { marker: this.lastMarker }},
+                    args: { marker }},
                 () => this.onStateChange("connected"),
                 () => {
                     this.onStateChange("failed", Failure.BadMarker)
@@ -328,7 +329,6 @@ abstract class WebRTCSession extends BaseSession {
                     args: null
                 }, (payload) => {
                 this.t7.log("got a marker", this.lastMarker, payload)
-                this.lastMarker = payload
                 this.disengagePC()
                 resolve(payload)
             }, reject)
@@ -340,7 +340,7 @@ export class PeerbookSession extends WebRTCSession {
     getIceServers() {
         return new Promise((resolve, reject) => {
             const ctrl = new AbortController(),
-                  tId = setTimeout(() => ctrl.abort(), TIMEOUT),
+                  tId = setTimeout(() => ctrl.abort(), 1000),
                   insecure = this.t7.conf.peerbook.insecure,
                   schema = insecure?"http":"https"
 
@@ -359,9 +359,8 @@ export class PeerbookSession extends WebRTCSession {
                          ...answer["ice_servers"]])
 
             }).catch(err => {
-                console.log("failed to get ice servers " + err.toString())
                 clearTimeout(tId)
-                reject()
+                reject("failed to get ice servers " + err.toString())
             })
         })
     }
