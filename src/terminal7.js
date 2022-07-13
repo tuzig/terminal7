@@ -161,7 +161,7 @@ export class Terminal7 {
                     const t = openFormsTerminal(e)
                     const f = new Form([{ desc: "Name", validator: Gate.validateHostName }, { desc: "Hostname" }, { desc: "Username" }, { desc: "Remember hostname", default: "y", values: ["y", "n"] },
                         {
-                            desc: `\x1Bc\n  To use WebRTC the server needs webexec:\n\n\x1B[1;36m${rc}\x1B[0m\n\n  Copy to clipboard?`,
+                            desc: `\x1Bc\n  To use WebRTC the server needs webexec:\n\n\x1B[1m${rc}\x1B[0m\n\n  Copy to clipboard?`,
                             validator: v => {
                                 console.log(v)
                                 if (v == "y")
