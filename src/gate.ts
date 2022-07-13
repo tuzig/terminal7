@@ -64,7 +64,7 @@ export class Gate {
     }
 
     static validateHostName(name) {
-        if (terminal7.gates.find(g => g.name == name))
+        if (window.terminal7.gates.find(g => g.name == name))
             return "Name already taken"
         return ''
     }
@@ -150,7 +150,7 @@ export class Gate {
             if (editHost.classList.contains("hidden")) {
                 const e = editHost.querySelector(".terminal-container")
                 const t = openFormsTerminal(e)
-                const f = new Form([{ desc: "Name", default: this.name, validator: Gate.validateHostName }, { desc: "Hostname", default: this.addr }, { desc: "Username", default: this.username }])
+                const f = new Form([{ prompt: "Name", default: this.name, validator: Gate.validateHostName }, { prompt: "Hostname", default: this.addr }, { prompt: "Username", default: this.username }])
                 f.chooseFields(t).then((enabled) => {
                     f.start(t).then(results => {
                         ['name', 'addr', 'username'].filter((_, i) => enabled[i]).forEach((k, i) => this[k] = results[i])

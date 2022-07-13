@@ -159,9 +159,9 @@ export class Terminal7 {
                     addHost.classList.remove("hidden")
                     const e = addHost.querySelector(".terminal-container")
                     const t = openFormsTerminal(e)
-                    const f = new Form([{ desc: "Name", validator: Gate.validateHostName }, { desc: "Hostname" }, { desc: "Username" }, { desc: "Remember hostname", default: "y", values: ["y", "n"] },
+                    const f = new Form([{ prompt: "Name", validator: Gate.validateHostName }, { prompt: "Hostname" }, { prompt: "Username" }, { prompt: "Remember hostname", default: "y", values: ["y", "n"] },
                         {
-                            desc: `\x1Bc\n  To use WebRTC the server needs webexec:\n\n\x1B[1m${rc}\x1B[0m\n\n  Copy to clipboard?`,
+                            prompt: `\x1Bc\n  To use WebRTC the server needs webexec:\n\n\x1B[1m${rc}\x1B[0m\n\n  Copy to clipboard?`,
                             validator: v => {
                                 console.log(v)
                                 if (v == "y")
@@ -399,7 +399,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
 
         const t = openFormsTerminal(e)
-        const f = new Form([{ desc: "email (will only be used to manage your peers)", validator: email => !email.match(/.+@.+\..+/) ? "Must be a valid email" : '' }, { desc: "Peer's name" }])
+        const f = new Form([{ prompt: "email (will only be used to manage your peers)", validator: email => !email.match(/.+@.+\..+/) ? "Must be a valid email" : '' }, { prompt: "Peer's name" }])
         f.start(t).then(results => {
             const email = results[0],
                 peername = results[1]

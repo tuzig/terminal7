@@ -83,7 +83,7 @@ export class Terminal7Mock extends Terminal7 {
     </template>
     <button id="add-static-host"></button>
     <div id="add-host" class="hidden"></div>
-    <div id="edit-host" class="hidden"></div>
+    <div id="edit-host" class="hidden"><div class="terminal-container"></div></div>
 `
 
     }

@@ -2,7 +2,7 @@ import { Terminal } from "@tuzig/xterm"
 import { FitAddon } from "xterm-addon-fit"
 
 export type Fields = Array<{
-    desc:string,
+    prompt:string,
     default?:string,
     values?:Array<string>,
     validator?:(field: string) => string,
@@ -14,7 +14,7 @@ export function openFormsTerminal(e: HTMLElement) {
     const terminal = new Terminal({
         cursorBlink: true,
         cursorStyle: "block",
-        theme: terminal7.conf.theme,
+        theme: window.terminal7.conf.theme,
         fontFamily: "FiraCode",
         fontSize: 14,
         rendererType: "canvas",
@@ -47,7 +47,7 @@ export class Form {
         return new Promise<Array<boolean>>((resolve, reject) => {
             t.write("\n  Choose fields to edit:")
             t.write("\n  (Press Enter to select/deselect, D when done, Escape to cancel)")
-            t.write("\n  " + this.fields.map(f => `[ ] ${f.desc}: ${f.default}`).join('\n  '))
+            t.write("\n  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  '))
             t.write("\x1B[4;4H") // move cursor to first field
             const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
@@ -125,7 +125,7 @@ export class Form {
             valid = false
         }
         else if (this.field && current.values && current.values.indexOf(this.field) == -1) {
-            t.write(`\n  ${current.desc} must be one of: ${current.values.join(', ')}`)
+            t.write(`\n  ${current.prompt} must be one of: ${current.values.join(', ')}`)
             valid = false
         }
         else if (this.field && current.validator) {
@@ -157,6 +157,6 @@ export class Form {
             def = values.map(v => v == def ? v.toUpperCase() : v).join('/')
         if (def)
             def = ` [${def}]`
-        t.write(`\n  ${this.fields[this.i].desc}${def || ''}: `)
+        t.write(`\n  ${this.fields[this.i].prompt}${def || ''}: `)
     }
 }

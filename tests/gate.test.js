@@ -10,6 +10,7 @@ import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
 import { Terminal7Mock, sleep } from './infra.ts'
 import { Storage } from '@capacitor/storage'
+import { Gate } from '../src/gate.ts'
 
 vi.mock('@tuzig/xterm')
 vi.mock('../src/webrtc_session.ts')
@@ -107,14 +108,14 @@ describe("gate", () => {
     })
     it("can edit gate", async () => {
         let g = t.addGate({name:"foo"})
-        // g.edit()
+        g.edit()
     })
     it("has a unique name", () => {
-        // let g = t.addGate({name:"foo"})
-        // let g2 = t.addGate({name:"foo"})
-        // expect(typeof g).toEqual("object")
-        // expect(typeof g2).toEqual("string")
-        // expect(g2).to.equal("Gate name is not unique")
+        let valid = Gate.validateHostName("foo")
+        expect(valid).equal("")
+        let g = t.addGate({name:"foo"})
+        valid = Gate.validateHostName("foo")
+        expect(valid).equal("Name already taken")
     })
     it("can be connected", async () => {
         let g = t.addGate()
