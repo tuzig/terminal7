@@ -6,8 +6,8 @@
  *  License: GPLv3
  */
 import { vi, describe, beforeAll, afterEach, it, expect, beforeEach } from 'vitest'
-import { Terminal7Mock, sleep } from './infra.ts'
-import { Form } from '../src/form.ts'
+import { Terminal7Mock, sleep } from './infra'
+import { Form } from '../src/form'
 import { Terminal } from '@tuzig/xterm'
 
 vi.mock('@tuzig/xterm')
@@ -77,14 +77,14 @@ describe("form", () => {
         expect(results[0]).to.equal("one")
     })
     it("can open choose fields form", async () => {
-        const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:1 }])
+        const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
         setTimeout(() => t.pressKey("d"), 10)
         const results = await f.chooseFields(t)
         expect(t.out.slice(0,-6).endsWith("[ ] name: one\n  [ ] number: 1")).toBeTruthy()
         expect(results).toEqual([false, false])
     })
     it("can select fields", async () => {
-        const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:1 }])
+        const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
         setTimeout(() => t.pressKey("Enter"), 10)
         setTimeout(() => t.pressKey("ArrowDown"), 10)
         setTimeout(() => t.pressKey("Enter"), 10)
@@ -93,7 +93,7 @@ describe("form", () => {
         expect(results).toEqual([true, true])
     })
     it("can only edit chosen fields", async () => {
-        const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:1 }])
+        const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
         setTimeout(() => t.pressKey("Enter"), 10)
         setTimeout(() => t.pressKey("d"), 10)
         const results = await f.chooseFields(t)

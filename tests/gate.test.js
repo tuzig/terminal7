@@ -104,7 +104,6 @@ describe("gate", () => {
         let addHost = document.getElementById("add-host")
         expect(addHost.classList.contains("hidden")).toBeTruthy()
         document.getElementById("add-static-host").click()
-        // expect(addHost.classList.contains("hidden")).toBeFalsy()
     })
     it("can edit gate", async () => {
         let g = t.addGate({name:"foo"})
@@ -113,7 +112,7 @@ describe("gate", () => {
     it("has a unique name", () => {
         let valid = Gate.validateHostName("foo")
         expect(valid).equal("")
-        let g = t.addGate({name:"foo"})
+        t.addGate({name:"foo"})
         valid = Gate.validateHostName("foo")
         expect(valid).equal("Name already taken")
     })
