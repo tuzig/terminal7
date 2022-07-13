@@ -128,8 +128,8 @@ export class Form {
             t.write(`\n  ${current.desc} must be one of: ${current.values.join(', ')}`)
             valid = false
         }
-        else if (current.validator) {
-            const err = current.validator(this.field || current.default || '')
+        else if (this.field && current.validator) {
+            const err = current.validator(this.field)
             if (err) {
                 t.write(`\n  ${err}`)
                 valid = false
