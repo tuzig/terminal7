@@ -163,7 +163,6 @@ export class Terminal7 {
                         {
                             prompt: `\x1Bc\n  To use WebRTC the server needs webexec:\n\n\x1B[1m${rc}\x1B[0m\n\n  Copy to clipboard?`,
                             validator: v => {
-                                console.log(v)
                                 if (v == "y")
                                     Clipboard.write({ string: rc })
                                 return ''

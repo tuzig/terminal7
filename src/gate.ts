@@ -123,15 +123,6 @@ export class Gate {
         // remove the host from the home screen
         this.nameE.remove()
     }
-    editSubmit(ev) {
-        let editHost = document.getElementById("edit-host")
-        this.addr = editHost.querySelector('[name="hostaddr"]').value 
-        this.name = editHost.querySelector('[name="hostname"]').value
-        this.username = editHost.querySelector('[name="username"]').value
-        this.nameE.innerHTML = this.name || this.addr
-        this.t7.storeGates()
-        this.t7.clear()
-    }
     /*
      * edit start the edit-host user-assitance
      */
