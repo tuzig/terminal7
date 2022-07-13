@@ -277,7 +277,7 @@ nav .on { color: var(--indicator-color) !important; }
     background-color: var(--background);
     z-index: 2;
     margin: 0 auto;
-    padding: 3px;
+    padding: 6px;
     bottom: 51pt;
     left: 50%;
     width: 80%;
@@ -287,12 +287,10 @@ nav .on { color: var(--indicator-color) !important; }
     border-radius: 0 0 12px 12px;
     border-top: 0;
     transition: all .75s ease;
-    opacity: 0;
 }
 
 .search-box.show {
     transform: translate(-50%, 0);
-    opacity: 1;
 }
 
 .rename-box {
