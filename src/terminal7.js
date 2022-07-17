@@ -971,7 +971,6 @@ peer_name = "${peername}"\n`
             g.online = m.peer_update.online
             return
         }
-        // next to are for connected session, ignore if no session
         if (!g.session) {
             console.log("session is close ignoring message", m)
             return
@@ -1019,7 +1018,10 @@ peer_name = "${peername}"\n`
         this.firstPointer = null
         this.lastT = null
         this.gesture = null
-        this.longPressGate = null
+        if (this.longPressGate) {
+            clearTimeout(this.longPressGate)
+            this.longPressGate = null
+        }
         return
     }
     onPointerDown(ev) {

@@ -48,6 +48,7 @@ export class Pane extends Cell {
         this.retries = 0
         this.lastKey = ''
         this.repetition = 0
+        this.resizeObserver = new window.ResizeObserver(() => this.fit())
     }
 
     /*
@@ -148,8 +149,7 @@ export class Pane extends Cell {
                 }
                 this.d.send(d)
             })
-            const resizeObserver = new window.ResizeObserver(() => this.fit())
-            resizeObserver.observe(this.e);
+            this.resizeObserver.observe(this.e);
             this.fit(pane => { 
                if (pane != null)
                   pane.openChannel({parent: parentID, id: channelID})
@@ -190,9 +190,7 @@ export class Pane extends Cell {
                 this.t7.run(this.fit, 20*this.retries)
             }
             else 
-                this.notify(["Failed to fit the terminal",
-                             "If things look funny,",
-                             "   try zoom & un-zoom"].join("\n"))
+                console.log(e)
         }
         this.refreshDividers()
         if (this.t.rows != oldr || this.t.cols != oldc) {
@@ -264,7 +262,6 @@ export class Pane extends Cell {
         this.d = channel
         this.d.onMessage = m => this.onChannelMessage(m)
         this.d.onClose = () => {
-            this.d = undefined 
             this.close()
         }
         if (!reconnect)
@@ -555,8 +552,9 @@ export class Pane extends Cell {
             d.classList.add("hidden")
     }
     close() {
-        if (this.d)
-            this.d.close()
+        this.resizeObserver.unobserve(this.e);
+        // if (this.d)
+        //    this.d.close()
         this.dividers.forEach(d => d.classList.add("hidden"))
         document.querySelector('.add-tab').classList.remove("off")
         super.close()
