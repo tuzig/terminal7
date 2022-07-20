@@ -42,20 +42,21 @@ export class Form {
     }
 
     chooseFields(t: Terminal) {
-        const enabled = new Array(this.fields.length).fill(false)
+        const len = this.fields.length
+        const enabled = new Array(len).fill(false)
         let current = 0
         return new Promise<Array<boolean>>((resolve, reject) => {
             t.write("\n  Choose fields to edit:")
-            t.write("\n  (Press Enter to select/deselect, D when done, Escape to cancel)")
+            t.write("\n  [Use arrows to move, space to select, right to all, left to none]")
             t.write("\n  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  '))
-            t.write("\x1B[4;4H") // move cursor to first field
+            t.write(`\x1B[4G\x1B[${len - 1}A`) // move cursor to first field
             const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
                 const char = !enabled[current] ? 'X' : ' '
                 switch (key) {
                     case "Escape":
                         reject()
-                        return
+                        break
                     case "ArrowUp":
                         if (current > 0) {
                             current--
@@ -68,16 +69,34 @@ export class Form {
                             t.write("\x1B[B")
                         }
                         break
-                    case "Enter":
+                    case " ":
                         enabled[current] = !enabled[current]
                         t.write(char + "\x1B[1D")
-                        return
-                    case 'd':
+                        break
+                    case "Enter":
                         this.fields = this.fields.filter((_, i) => enabled[i])
                         t.reset()
                         disposable.dispose()
                         resolve(enabled)
-                        return
+                        break
+                    case "ArrowRight":
+                        enabled.fill(true)
+                        if (current != 0)
+                            t.write(`\x1B[${current}A`) // move cursor to first field
+                        for (let i in enabled) {
+                            t.write("X\x1B[1D\x1B[1B")
+                        }
+                        t.write(`\x1B[${len-current}A`) // restore cursor position
+                        break
+                    case "ArrowLeft":
+                        enabled.fill(false)
+                        if (current != 0)
+                            t.write(`\x1B[${current}A`)
+                        for (let i in enabled) {
+                            t.write(" \x1B[1D\x1B[1B")
+                        }
+                        t.write(`\x1B[${len-current}A`)
+                        break
                 }
             })
         })
@@ -117,6 +136,8 @@ export class Form {
         })
     }
 
+    // saves the current field and prints the next one
+    // returns true if there are more fields to edit, false if done
     next(t: Terminal) {
         const current = this.fields[this.i]
         let valid = true

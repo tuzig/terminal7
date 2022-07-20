@@ -15,6 +15,7 @@ vi.mock('@tuzig/xterm')
 describe("form", () => {
     let word
     const t = new Terminal()
+    // simulates a key press with the next char in the word
     function writeChar() {
         if (!word) {
             t.pressKey("Enter")
@@ -78,24 +79,25 @@ describe("form", () => {
     })
     it("can open choose fields form", async () => {
         const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
-        setTimeout(() => t.pressKey("d"), 10)
+        setTimeout(() => t.pressKey("Enter"), 10)
         const results = await f.chooseFields(t)
-        expect(t.out.slice(0,-6).endsWith("[ ] name: one\n  [ ] number: 1")).toBeTruthy()
+        console.log(JSON.stringify(t.out))
+        expect(t.out.split("\x1B")[0].endsWith("[ ] name: one\n  [ ] number: 1")).toBeTruthy()
         expect(results).toEqual([false, false])
     })
     it("can select fields", async () => {
         const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
-        setTimeout(() => t.pressKey("Enter"), 10)
+        setTimeout(() => t.pressKey(" "), 10)
         setTimeout(() => t.pressKey("ArrowDown"), 10)
+        setTimeout(() => t.pressKey(" "), 10)
         setTimeout(() => t.pressKey("Enter"), 10)
-        setTimeout(() => t.pressKey("d"), 10)
         const results = await f.chooseFields(t)
         expect(results).toEqual([true, true])
     })
     it("can only edit chosen fields", async () => {
         const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
+        setTimeout(() => t.pressKey(" "), 10)
         setTimeout(() => t.pressKey("Enter"), 10)
-        setTimeout(() => t.pressKey("d"), 10)
         const results = await f.chooseFields(t)
         expect(results).toEqual([true, false])
         f.start(t)

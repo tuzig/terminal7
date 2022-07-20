@@ -145,10 +145,20 @@ export class Gate {
             if (editHost.classList.contains("hidden")) {
                 const e = editHost.querySelector(".terminal-container")
                 const t = openFormsTerminal(e)
-                const f = new Form([{ prompt: "Name", default: this.name, validator: Gate.validateHostName }, { prompt: "Hostname", default: this.addr }, { prompt: "Username", default: this.username }])
+                const f = new Form([
+                    {
+                        prompt: "Name",
+                        default: this.name,
+                        validator: Gate.validateHostName
+                    },
+                    { prompt: "Hostname", default: this.addr },
+                    { prompt: "Username", default: this.username }
+                ])
                 f.chooseFields(t).then((enabled) => {
                     f.start(t).then(results => {
-                        ['name', 'addr', 'username'].filter((_, i) => enabled[i]).forEach((k, i) => this[k] = results[i])
+                        ['name', 'addr', 'username']
+                            .filter((_, i) => enabled[i])
+                            .forEach((k, i) => this[k] = results[i])
                         this.nameE.innerHTML = this.name || this.addr
                         this.t7.storeGates()
                         this.t7.clear()
@@ -171,7 +181,8 @@ export class Gate {
         }
         this.t7.activeG = this
         this.e.classList.remove("hidden")
-        this.e.querySelectorAll(".window").forEach(w => w.classList.add("hidden"))
+        this.e.querySelectorAll(".window")
+              .forEach(w => w.classList.add("hidden"))
         this.activeW.focus()
         this.storeState()
     }

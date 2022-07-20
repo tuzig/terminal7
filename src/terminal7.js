@@ -159,7 +159,11 @@ export class Terminal7 {
                     addHost.classList.remove("hidden")
                     const e = addHost.querySelector(".terminal-container")
                     const t = openFormsTerminal(e)
-                    const f = new Form([{ prompt: "Name", validator: Gate.validateHostName }, { prompt: "Hostname" }, { prompt: "Username" }, { prompt: "Remember hostname", default: "y", values: ["y", "n"] },
+                    const f = new Form([
+                        { prompt: "Name", validator: Gate.validateHostName },
+                        { prompt: "Hostname" },
+                        { prompt: "Username" },
+                        { prompt: "Remember hostname", default: "y", values: ["y", "n"] },
                         {
                             prompt: `\x1Bc\n  To use WebRTC the server needs webexec:\n\n\x1B[1m${rc}\x1B[0m\n\n  Copy to clipboard?`,
                             validator: v => {
@@ -169,9 +173,13 @@ export class Terminal7 {
                             },
                             default: "y"
                         }
-                ])
+                    ])
                     f.start(t).then(results => {
-                        const gate = this.addGate({ name: results[0], addr: results[1], username: results[2], store: results[3] == "y" })
+                        const gate = this.addGate({
+                            name: results[0], addr: results[1],
+                            username: results[2],
+                            store: results[3] == "y"
+                        })
                         if (results[3] == "y")
                             this.storeGates()
                         this.clear()
@@ -321,7 +329,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 this.logDisplay(false)
                 // modal.querySelector("form").reset()
                 modal.classList.remove("hidden")
-                this.setPeerbook()
+                this.peerbookForm()
             })
         Network.getStatus().then(s => {
             this.updateNetworkStatus(s)
@@ -393,12 +401,18 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             })
         })
     }
-    async setPeerbook() {
+    async peerbookForm() {
         var e   = document.getElementById("peerbook-modal").querySelector(".terminal-container"),
             dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
 
         const t = openFormsTerminal(e)
-        const f = new Form([{ prompt: "email (will only be used to manage your peers)", validator: email => !email.match(/.+@.+\..+/) ? "Must be a valid email" : '' }, { prompt: "Peer's name" }])
+        const f = new Form([
+            {
+                prompt: "email (will only be used to manage your peers)",
+                validator: email => !email.match(/.+@.+\..+/) ? "Must be a valid email" : ''
+            },
+            { prompt: "Peer's name" }
+        ])
         f.start(t).then(results => {
             const email = results[0],
                 peername = results[1]
