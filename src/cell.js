@@ -144,8 +144,14 @@ export class Cell {
         this.gate.sendState()
     }
     styleZoomed(e) {
-        let H = document.body.offsetHeight
-        e.style.height = `${H - 42}px`
+        const se = this.gate.e.querySelector(".search-box")
+        if (se.classList.contains("show")){
+            e.style.height = `${document.querySelector('.windows-container').offsetHeight}px`
+        }
+        else {
+            let H = document.body.offsetHeight
+            e.style.height = `${H - 42}px`
+        }
         e.style.top = "0px"
         e.style.width = "100%"
     }
