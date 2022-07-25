@@ -584,6 +584,7 @@ peer_name = "${peername}"\n`
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.add("off"))
         window.location.href = "#home"
+        document.title = "Terminal 7"
     }
     /* 
      * Terminal7.logDisplay display or hides the notifications.
