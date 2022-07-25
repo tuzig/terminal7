@@ -258,8 +258,7 @@ export class Gate {
             this.t7.log("already connected")
             if (!this.windows || (this.windows.length == 0))
                 this.activeW = this.addWindow("", true)
-            else
-                this.focus()
+            this.focus()
             return
         }
         this.boarding = true
