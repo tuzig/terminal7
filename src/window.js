@@ -29,7 +29,7 @@ export class Window {
     open(e) {
         this.e = document.createElement('div')
         this.e.className = "window"
-        this.e.id = `tab-${this.gate.id}.${this.id}`
+        this.e.id = `${this.gate.name}.${this.id+1}`
         e.appendChild(this.e)
 
         // Add the name with link to tab bar
@@ -67,7 +67,6 @@ export class Window {
             this.e.classList.remove("hidden")
         this.nameE.classList.add("on")
         this.gate.activeW = this
-        window.location.href=`#tab-${this.gate.id}.${this.id+1}`
         if (this.activeP)
             this.activeP.focus()
     }

@@ -47,6 +47,12 @@ export class Cell {
         this.w.activeP = this
         this.e.style.borderColor = FOCUSED_BORDER_COLOR
         this.w.toggleDivideButtons()
+        setTimeout(() =>
+            window.location.href =
+            `#${this.gate.name}.${this.w.id + 1}.${this.w.t7.cells
+                .filter(c => c.w == this.w && c.e.className == "cell pane")
+                .indexOf(this) + 1}`
+        )
     }
     /*
      * Used to grow/shrink the terminal based on containing element dimensions
