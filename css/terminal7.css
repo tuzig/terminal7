@@ -286,7 +286,7 @@ nav .on { color: var(--indicator-color) !important; }
     border-color: var(--local-border);
     border-radius: 0 0 12px 12px;
     border-top: 0;
-    transition: all .75s ease;
+    transition: transform .75s ease;
 }
 
 .search-box.show {
