@@ -137,7 +137,8 @@ export class Cell {
             canvas.height = 0;
             canvas.width = 0;
         })
-
+        if (this.zoomed)
+            this.toggleZoom()
         this.e.remove()
         if (this.layout)
             this.layout.onClose(this)
