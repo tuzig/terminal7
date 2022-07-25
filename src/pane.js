@@ -348,7 +348,8 @@ export class Pane extends Cell {
             i.setAttribute("placeholder", "search string here")
         if (this.searchTerm)
             i.value = this.searchTerm
-
+        if (this.zoomed)
+            this.styleZoomed()
         i.onkeydown = ev => {
             if (ev.keyCode == 13) {
                 this.findPrev(i.value)
@@ -404,6 +405,8 @@ export class Pane extends Cell {
         const se = this.gate.e.querySelector(".search-box")
         se.classList.remove("show")
         document.getElementById("search-button").classList.remove("on")
+        if (this.zoomed)
+            this.styleZoomed()
     }
     exitSearch() {
         this.hideSearch();

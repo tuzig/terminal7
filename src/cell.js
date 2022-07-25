@@ -144,16 +144,17 @@ export class Cell {
         this.gate.sendState()
     }
     styleZoomed(e) {
+        e = e || this.t7.zoomedE.querySelector(".pane")
         const se = this.gate.e.querySelector(".search-box")
-        if (se.classList.contains("show")){
-            e.style.height = `${document.querySelector('.windows-container').offsetHeight}px`
-        }
-        else {
-            let H = document.body.offsetHeight
-            e.style.height = `${H - 42}px`
-        }
+        let style
+        if (se.classList.contains("show"))
+            style = `${document.querySelector('.windows-container').offsetHeight - 22}px`
+        else
+            style = `${document.body.offsetHeight - 42}px`
+        e.style.height = style
         e.style.top = "0px"
         e.style.width = "100%"
+        this.fit()
     }
     toggleZoom() {
         if (this.zoomed) {
@@ -176,12 +177,11 @@ export class Cell {
             e.style.borderColor = FOCUSED_BORDER_COLOR
             e.appendChild(te)
             c.appendChild(e)
-            this.styleZoomed(e)
             this.catchFingers(e)
             document.body.appendChild(c)
             this.t7.zoomedE = c
             this.w.e.classList.add("hidden")
-            this.resizeObserver = new window.ResizeObserver(_ => this.styleZoomed(e))
+            this.resizeObserver = new window.ResizeObserver(() => this.styleZoomed(e))
             this.resizeObserver.observe(e);
         }
         this.zoomed = !this.zoomed

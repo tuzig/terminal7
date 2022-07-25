@@ -346,7 +346,7 @@ button.rename-close {
     right: 12px;
     top: 22px;
     bottom: 18px;
-    height: -webkit-fill-available;
+    height: max-content;
 }
 .zoomed .pane {
     height: -webkit-fill-available;
