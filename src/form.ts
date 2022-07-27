@@ -110,7 +110,7 @@ export class Form {
         return new Promise((resolve, reject) => {
             this.writeCurrentField(t)
             setTimeout(() => t.focus(), 0)
-            t.onKey(ev => {
+            const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
                 switch (key) {
                     case "Escape":
@@ -125,6 +125,7 @@ export class Form {
                     case "Enter":
                         if (!this.next(t)) {
                             resolve(this.results)
+                            disposable.dispose()
                             return
                         }
                         break
@@ -149,7 +150,7 @@ export class Form {
             t.write(`\n  ${current.prompt} must be one of: ${current.values.join(', ')}`)
             valid = false
         }
-        else if (this.field && current.validator) {
+        else if ((this.field) && current.validator) {
             const err = current.validator(this.field)
             if (err) {
                 t.write(`\n  ${err}`)

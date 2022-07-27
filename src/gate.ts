@@ -17,6 +17,7 @@ import { Storage } from '@capacitor/storage'
 import { Form, openFormsTerminal } from './form.js'
 import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
 import { Window } from './window.js'
+import { Terminal } from 'xterm'
 
 
 const FAILED_COLOR = "red"// ashort period of time, in milli
@@ -39,6 +40,8 @@ export class Gate {
     username: string
     nameE: Element
     t7: Terminal7
+    t0: Terminal
+    onConnected: any
 
     constructor (props) {
         // given properties
@@ -218,7 +221,9 @@ export class Gate {
                     Storage.set({key: "first_gate", value: "1"}) 
                 }
             })
-            this.session.getPayload().then(layout => this.setLayout(layout))
+            if (this.onConnected)
+                this.onConnected()
+            // this.session.getPayload().then(layout => this.setLayout(layout))
         } else if (state == "disconnected") {
             // TODO: add warn class
             this.lastDisconnect = Date.now()
@@ -272,7 +277,8 @@ export class Gate {
     /*
      * connect connects to the gate
      */
-    async connect(marker=-1) {
+    async connect(onConnected) {
+        this.onConnected = onConnected
         // do nothing when the network is down
         if (!this.t7.netStatus || !this.t7.netStatus.connected)
             return
@@ -541,30 +547,63 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.nameE.classList.add("offline")
     }
     async copyFingerprint() {
-        const addr = this.addr.substr(0, this.addr.indexOf(":")),
-              fp = await this.t7.getFingerprint(),
-              cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`,
-              e = document.getElementById("copy-fingerprint-template")
-                          .content.cloneNode(true)
-        e.querySelector('pre').innerText = cmd
-        e.querySelector('.ct-address').innerHTML = addr
-        e.querySelector('.ct-name').innerHTML = this.name
-        e.querySelector(".copy").addEventListener('click', ev => {
-            this.t7.e.querySelector('.copy-fingerprint').remove()
-            Clipboard.write(
-                {string: cmd})
-            this.t7.notify("Command copied to the clipboard")
-            if (Capacitor.getPlatform() != "web") {
-                this.tryWebexec = false
-                this.connect()
-            }
-        })
-        e.querySelector(".close").addEventListener('click',  ev =>  {
-            this.t7.e.querySelector('.copy-fingerprint').remove()
-            this.clear()
-            this.t7.goHome()
-        })
-        this.t7.e.appendChild(e)
+        const fp = await this.t7.getFingerprint(),
+              cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
+        let ans
+        const fpForm = new Form([{ 
+            prompt: `\n  We're sorry, but the host at ${this.addr} refused our fingerprint.
+  To connect copy Terminal7's fingerprint to the server and try again:
+  \n\x1B[1m${cmd}\x1B[0m\n
+  Copy to clipboard?`,
+            default: "y"
+        }])
+        try {
+            ans = (await fpForm.start(this.t0))[0]
+        } catch (e) {
+            this.t7.clear()
+            this.delete()
+        }
+        if (ans == "y")
+            Clipboard.write({ string: cmd })
+        const retryForm = new Form([{
+            prompt: "Retry connection?",
+            default: "y"
+        }])
+        try {
+            ans = (await retryForm.start(this.t0))[0]
+        } catch (e) {
+            this.t7.clear()
+            this.delete()
+        }
+        if (ans == "y")
+            this.connect()
+        else {
+            this.t7.clear()
+            this.delete()
+        }
+//         this.t0.write(`We're sorry, but the host at ${this.addr} refused our fingerprint.
+//   To connect copy Terminal7's fingerprint to ~/.config/webexec/authorized_fingerprints and try again:`)
+        //       e = document.getElementById("copy-fingerprint-template")
+        //                   .content.cloneNode(true)
+        // e.querySelector('pre').innerText = cmd
+        // e.querySelector('.ct-address').innerHTML = addr
+        // e.querySelector('.ct-name').innerHTML = this.name
+        // e.querySelector(".copy").addEventListener('click', ev => {
+        //     this.t7.e.querySelector('.copy-fingerprint').remove()
+        //     Clipboard.write(
+        //         {string: cmd})
+        //     this.t7.notify("Command copied to the clipboard")
+        //     if (Capacitor.getPlatform() != "web") {
+        //         this.tryWebexec = false
+        //         this.connect()
+        //     }
+        // })
+        // e.querySelector(".close").addEventListener('click',  ev =>  {
+        //     this.t7.e.querySelector('.copy-fingerprint').remove()
+        //     this.clear()
+        //     this.t7.goHome()
+        // })
+        // this.t7.e.appendChild(e)
     }
     askPass() {
         const hideModal = evt => evt.target.closest(".modal").classList.toggle("hidden")
