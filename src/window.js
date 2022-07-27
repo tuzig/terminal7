@@ -36,7 +36,6 @@ export class Window {
         let a = document.createElement('a')
         a.id = this.e.id+'-name'
         a.w = this
-        a.setAttribute('href', `#${this.e.id}`)
         a.innerHTML = this.name
         // Add gestures on the window name for rename and drag to trash
         let h = new Hammer.Manager(a, {})

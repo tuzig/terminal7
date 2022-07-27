@@ -350,6 +350,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                 if (w.active) 
                     this.activeW = win
                 win.restoreLayout(w.layout)
+                win.nameE?.setAttribute("href", `#pane-${win.activeP?.id}`)
             })
         }
 
