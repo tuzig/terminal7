@@ -48,28 +48,13 @@
           </div>
       </div>
       <div id="add-host" class="hidden modal border" >
-          <form>
-            <h2>Add a Gate</h2>
-            <label for="uname">Name</label>
-            <input type="text" placeholder="Enter Hostname" name="hostname"
-                required>
-            <label for="uname">Hostname</label>
-            <input type="text" placeholder="IP or host name" name="hostaddr"
-                required>
-            <label for="uname">Username</label>
-            <input type="text" placeholder="your username on the host" name="username" required>
-            <input type="checkbox" checked name="remember">
-            <label for="remember">Remember host</label>
-            <div class="webexec-install"></div>
-            <nav>
-                <button type="button" class="close">
-                    <i class="f7-icons close">xmark</i>
-                </button>
-                <button type="submit">
-                    <i class="f7-icons submit">phone_arrow_up_right</i>
-                </button>
-            </nav>
-          </form>
+          <h2>Connect to Host</h2>
+          <div class="terminal-container"></div>
+          <nav>
+              <button type="button" class="close">
+                  <i class="f7-icons close">xmark</i>
+              </button>
+          </nav>
       </div>
       <div id="reset-host" class="hidden modal border" >
         <form>
@@ -185,21 +170,11 @@
         </p><p>
           Regsiter to get your peerbook and help us test the service: 
         </p>
-          <form action="#">
-              <div class="compact-fields">
-              <label for="email">email</label>
-              <input type="text" placeholder="will only be used to manage your peers" name="email"
-                required>
-              <label for="peername">Peer's name</label>
-              <input type="text" name="peername" required>
-              </div>
+        <div class="terminal-container"></div>
           <nav>
               <button type="button" class="close"><i class="f7-icons">
                       xmark</i></button>
-              <button type="submit" class="save"><i class="f7-icons">
-                      floppy_disk</i></button>
           </nav>
-          </form>
       </div>
       <div id="edit-unverified-pbhost" class="hidden modal border" >
             <h1 class="Warning">Unverified Host</h1>
@@ -209,23 +184,12 @@
             </nav>
       </div>
       <div id="edit-host" class="hidden modal border" >
-          <form id="edit-host-form">
-            <h2>Gate Edit</h2>
-            <label for="uname">Name</label>
-            <input type="text" placeholder="Enter Hostname" name="hostname"
-                required>
-            <label for="uname">Hostname</label>
-            <input type="text" placeholder="IP or host name" name="hostaddr"
-                required>
-            <label for="uname">Username</label>
-            <input type="text" placeholder="your username on the host" name="username" required>
-            <div class="webexec-install"></div>
-            <nav>
-                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
-                <button type="button" class="trash"><i class="f7-icons">bin_xmark</i></button>
-                <button type="submit"><i class="f7-icons">floppy_disk</i></button>
-            </nav>
-          </form>
+        <h2>Gate Edit</h2>
+          <div class="terminal-container"></div>
+          <nav style="margin: 0 auto;">
+            <button type="button" class="close"><i class="f7-icons">xmark</i></button>
+            <button type="button" class="trash"><i class="f7-icons">bin_xmark</i></button>
+          </nav>
       </div>
       <div id="offline" class="hidden modal border non-clearable" >
           <h1 class="warning">Network is down</h1>

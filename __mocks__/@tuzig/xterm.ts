@@ -6,8 +6,15 @@ export class Terminal {
     onData = vi.fn()
     focus = vi.fn()
     notify = vi.fn()
+    open = vi.fn()
+    write = vi.fn(s => this.out += s)
+    reset = vi.fn()
     select = vi.fn()
     setOption = vi.fn()
+    onKey = (cb) => {
+        this.pressKey = key => cb({ domEvent: { key } })
+        return { dispose: vi.fn() }
+    }
     buffer = { active: { cursorX: 0, cursorY: 0, viewportY: 0, lines: [""],
         getLine: y => {
             return { translateToString: () => this.buffer.active.lines[y] || '' }
@@ -27,6 +34,7 @@ export class Terminal {
     }
     getSelectionPosition = () => null
     constructor (props) {
+        this.out = ""
         for (const k in props)
             this[k] = props[k]
     }

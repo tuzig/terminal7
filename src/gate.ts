@@ -11,6 +11,10 @@ import { Storage } from '@capacitor/storage'
 import { Pane } from './pane.js'
 import { Failure, Session } from './session'
 import { SSHSession } from './ssh_session'
+import { Terminal7 } from './terminal7'
+
+import { Storage } from '@capacitor/storage'
+import { Form, openFormsTerminal } from './form.js'
 import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
 import { Window } from './window.js'
 
@@ -33,6 +37,8 @@ export class Gate {
     tryWebexec: boolean
     user: string
     username: string
+    nameE: Element
+    t7: Terminal7
 
     constructor (props) {
         // given properties
@@ -59,6 +65,12 @@ export class Gate {
         this.fp = props.fp
         this.t7 = window.terminal7
         this.session = null
+    }
+
+    static validateHostName(name) {
+        if (window.terminal7.gates.find(g => g.name == name))
+            return "Name already taken"
+        return ''
     }
 
     /*
@@ -115,15 +127,6 @@ export class Gate {
         // remove the host from the home screen
         this.nameE.remove()
     }
-    editSubmit(ev) {
-        let editHost = document.getElementById("edit-host")
-        this.addr = editHost.querySelector('[name="hostaddr"]').value 
-        this.name = editHost.querySelector('[name="hostname"]').value
-        this.username = editHost.querySelector('[name="username"]').value
-        this.nameE.innerHTML = this.name || this.addr
-        this.t7.storeGates()
-        this.t7.clear()
-    }
     /*
      * edit start the edit-host user-assitance
      */
@@ -139,9 +142,29 @@ export class Gate {
                 "https://"+ this.t7.conf.net.peerbook)
         } else {
             editHost = document.getElementById("edit-host")
-            editHost.querySelector('[name="hostaddr"]').value = this.addr
-            editHost.querySelector('[name="hostname"]').value = this.name
-            editHost.querySelector('[name="username"]').value = this.username
+            if (editHost.classList.contains("hidden")) {
+                const e = editHost.querySelector(".terminal-container")
+                const t = openFormsTerminal(e)
+                const f = new Form([
+                    {
+                        prompt: "Name",
+                        default: this.name,
+                        validator: Gate.validateHostName
+                    },
+                    { prompt: "Hostname", default: this.addr },
+                    { prompt: "Username", default: this.username }
+                ])
+                f.chooseFields(t).then((enabled) => {
+                    f.start(t).then(results => {
+                        ['name', 'addr', 'username']
+                            .filter((_, i) => enabled[i])
+                            .forEach((k, i) => this[k] = results[i])
+                        this.nameE.innerHTML = this.name || this.addr
+                        this.t7.storeGates()
+                        this.t7.clear()
+                    }).catch(() => this.t7.clear())
+                }).catch(() => this.t7.clear())
+            }
         }
         editHost.gate = this
         editHost.classList.remove("hidden")
@@ -158,7 +181,8 @@ export class Gate {
         }
         this.t7.activeG = this
         this.e.classList.remove("hidden")
-        this.e.querySelectorAll(".window").forEach(w => w.classList.add("hidden"))
+        this.e.querySelectorAll(".window")
+              .forEach(w => w.classList.add("hidden"))
         this.activeW.focus()
         this.storeState()
     }

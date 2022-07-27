@@ -10,8 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Copy mode keys w, b, e, ^f, ^b and repetition factor
+- Copy mode keys 0, $, w, b, e, ^f, ^b and repetition factor
 - Links displayed in the terminal are now clickable
+- Forms now use a TUI
 
 ### Fixed
 

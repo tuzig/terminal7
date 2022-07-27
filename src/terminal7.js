@@ -25,6 +25,7 @@ import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
 import { Device } from '@capacitor/device'
+import { Form, openFormsTerminal } from './form'
 
 
 var PBPending = []
@@ -150,30 +151,43 @@ export class Terminal7 {
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         let addHost = document.getElementById("add-host")
         document.getElementById('add-static-host').addEventListener(
-            'click', ev => {
+            'click', async () => {
                 this.logDisplay(false)
-                addHost.querySelector("form").reset()
-                addHost.classList.remove("hidden")
+                if (addHost.classList.contains('hidden')) {
+                    const fp = await this.getFingerprint(),
+                        rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${fp}" >> ~/.config/webexec/authorized_fingerprints`
+                    addHost.classList.remove("hidden")
+                    const e = addHost.querySelector(".terminal-container")
+                    const t = openFormsTerminal(e)
+                    const f = new Form([
+                        { prompt: "Name", validator: Gate.validateHostName },
+                        { prompt: "Hostname" },
+                        { prompt: "Username" },
+                        { prompt: "Remember hostname", default: "y", values: ["y", "n"] },
+                        {
+                            prompt: `\x1Bc\n  To use WebRTC the server needs webexec:\n\n\x1B[1m${rc}\x1B[0m\n\n  Copy to clipboard?`,
+                            validator: v => {
+                                if (v == "y")
+                                    Clipboard.write({ string: rc })
+                                return ''
+                            },
+                            default: "y"
+                        }
+                    ])
+                    f.start(t).then(results => {
+                        const gate = this.addGate({
+                            name: results[0], addr: results[1],
+                            username: results[2],
+                            store: results[3] == "y"
+                        })
+                        if (results[3] == "y")
+                            this.storeGates()
+                        this.clear()
+                        if (this.netStatus && this.netStatus.connected)
+                            gate.connect()
+                    }).catch(() => this.clear())
+                }
             })
-        addHost.querySelector("form").addEventListener('submit', (ev) => {
-            ev.preventDefault()
-            let remember = addHost.querySelector('[name="remember"]').checked,
-                gate = this.addGate({
-                    addr: addHost.querySelector('[name="hostaddr"]').value,
-                    name: addHost.querySelector('[name="hostname"]').value,
-                    username: addHost.querySelector('[name="username"]').value,
-                    store: remember
-                })
-            if (remember)
-                this.storeGates()
-            if (typeof gate == "string")
-                this.notify(gate)
-            else {
-                addHost.classList.add("hidden")
-                if (this.netStatus && this.netStatus.connected)
-                    gate.connect()
-            }
-        })
         // hide the modal on xmark click
         addHost.querySelector(".close").addEventListener('click',  () =>  {
             this.clear()
@@ -186,10 +200,6 @@ export class Terminal7 {
         document.getElementById("edit-unverified-pbhost").addEventListener(
             "click", () => this.clear())
         let editHost = document.getElementById("edit-host")
-        editHost.querySelector("form").addEventListener('submit', ev => {
-            ev.preventDefault()
-            editHost.gate.editSubmit(ev)
-        })
         editHost.querySelector(".close").addEventListener('click',  () =>
             terminal7.clear())
         editHost.querySelector(".trash").addEventListener('click',  () => {
@@ -313,17 +323,13 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         // peerbook button and modal
         modal = document.getElementById("peerbook-modal")
         modal.querySelector(".close").addEventListener('click',
-            ev => this.clear() )
-        modal.querySelector(".save").addEventListener('click',
-            ev => {
-                this.setPeerbook()
-                this.clear()
-            })
+            () => this.clear() )
         document.getElementById('add-peerbook').addEventListener(
-            'click', ev => {
+            'click', () => {
                 this.logDisplay(false)
                 // modal.querySelector("form").reset()
-                document.getElementById("peerbook-modal").classList.remove("hidden")
+                modal.classList.remove("hidden")
+                this.peerbookForm()
             })
         Network.getStatus().then(s => {
             this.updateNetworkStatus(s)
@@ -395,22 +401,33 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             })
         })
     }
-    async setPeerbook() {
-        var e   = document.getElementById("peerbook-modal"),
-            dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE,
-            email = e.querySelector('[name="email"]').value,
-            peername = e.querySelector('[name="peername"]').value
-        if (email == "")
-            return
-        dotfile += `
+    async peerbookForm() {
+        var e   = document.getElementById("peerbook-modal").querySelector(".terminal-container"),
+            dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
+
+        const t = openFormsTerminal(e)
+        const f = new Form([
+            {
+                prompt: "email (will only be used to manage your peers)",
+                validator: email => !email.match(/.+@.+\..+/) ? "Must be a valid email" : ''
+            },
+            { prompt: "Peer's name" }
+        ])
+        f.start(t).then(results => {
+            const email = results[0],
+                peername = results[1]
+
+            dotfile += `
 [peerbook]
 email = "${email}"
 peer_name = "${peername}"\n`
 
-        Storage.set({key: "dotfile", value: dotfile})
-        this.loadConf(TOML.parse(dotfile))
-        e.classList.add("hidden")
-        this.notify("Your email was added to the dotfile")
+            Storage.set({ key: "dotfile", value: dotfile })
+            this.loadConf(TOML.parse(dotfile))
+            e.classList.add("hidden")
+            this.notify("Your email was added to the dotfile")
+            this.clear()
+        }).catch(() => this.clear())
     }
     pbVerify() {
         return new Promise((resolve, reject) => {
@@ -532,16 +549,6 @@ peer_name = "${peername}"\n`
         p.id = this.gates.length
         p.verified = false
 
-        this.gates.forEach(i => {
-            if (props.name == i.name) {
-                i.online = props.online
-                nameFound = true
-            }
-        })
-        if (nameFound) {
-            return "Gate name is not unique"
-        }
-
         let g = new Gate(p)
         this.gates.push(g)
         g.open(this.e)
@@ -566,9 +573,13 @@ peer_name = "${peername}"\n`
         this.e.querySelectorAll('.modal').forEach(e => {
             if (!e.classList.contains("non-clearable"))
                 e.classList.add("hidden")
+            const terminalContainer = e.querySelector(".terminal-container")
+            if (terminalContainer)
+                terminalContainer.innerHTML = ''
         })
         this.logDisplay(false)
         this.focus()
+        this.longPressGate = null
     }
     goHome() {
         Storage.remove({key: "last_state"}) 

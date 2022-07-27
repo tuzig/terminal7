@@ -674,3 +674,12 @@ footer pre { font-size: 14px; }
     margin: 6px;
     padding:8px;
 }
+.edit-gate {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    margin-left: -25%;
+}
+.terminal-container {
+    height: 10em;
+}
