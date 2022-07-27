@@ -315,7 +315,7 @@ export class Pane extends Cell {
     }
     toggleSearch(searchDown) {
         const se = this.gate.e.querySelector(".search-box")
-        if (se.classList.contains("hidden"))
+        if (!se.classList.contains("show"))
             this.showSearch()
         else {
             this.hideSearch()
@@ -327,7 +327,7 @@ export class Pane extends Cell {
         // show the search field
         this.searchDown = searchDown || false
         const se = this.gate.e.querySelector(".search-box")
-        se.classList.remove("hidden")
+        se.classList.add("show")
         document.getElementById("search-button").classList.add("on")
         // TODO: restore regex search
         let i = se.querySelector("input[name='search-term']")
@@ -348,7 +348,8 @@ export class Pane extends Cell {
             i.setAttribute("placeholder", "search string here")
         if (this.searchTerm)
             i.value = this.searchTerm
-
+        if (this.zoomed)
+            this.styleZoomed()
         i.onkeydown = ev => {
             if (ev.keyCode == 13) {
                 this.findPrev(i.value)
@@ -402,8 +403,10 @@ export class Pane extends Cell {
     }
     hideSearch() {
         const se = this.gate.e.querySelector(".search-box")
-        se.classList.add("hidden")
+        se.classList.remove("show")
         document.getElementById("search-button").classList.remove("on")
+        if (this.zoomed)
+            this.styleZoomed()
     }
     exitSearch() {
         this.hideSearch();
