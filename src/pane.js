@@ -176,6 +176,10 @@ export class Pane extends Cell {
     // fit a pane to the display area. If it was resized, the server is updated.
     // returns true is size was changed
     fit(cb) {
+        if (!this.t) {
+            if (cb instanceof Function) cb(this)
+            return
+        }
         var oldr = this.t.rows,
             oldc = this.t.cols,
             ret = false
@@ -257,11 +261,11 @@ export class Pane extends Cell {
         return p
     }
     onChannelConnected(channel, id) {
-        console.log("onChannelConnected")
         const reconnect = this.d != null
         this.d = channel
         this.d.onMessage = m => this.onChannelMessage(m)
         this.d.onClose = () => {
+            this.d = null
             this.close()
         }
         if (!reconnect)
@@ -552,9 +556,12 @@ export class Pane extends Cell {
             d.classList.add("hidden")
     }
     close() {
-        this.resizeObserver.unobserve(this.e);
-        // if (this.d)
-        //    this.d.close()
+        try {
+            this.resizeObserver.unobserve(this.e);
+        } catch (e) {}
+
+        if (this.d)
+            this.d.close()
         this.dividers.forEach(d => d.classList.add("hidden"))
         document.querySelector('.add-tab').classList.remove("off")
         super.close()
