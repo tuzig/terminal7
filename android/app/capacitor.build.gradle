@@ -9,12 +9,15 @@ android {
 
 apply from: "../capacitor-cordova-android-plugins/cordova.variables.gradle"
 dependencies {
+    implementation project(':capacitor-community-http')
     implementation project(':capacitor-app')
+    implementation project(':capacitor-browser')
     implementation project(':capacitor-clipboard')
     implementation project(':capacitor-device')
     implementation project(':capacitor-network')
     implementation project(':capacitor-storage')
     implementation project(':robingenz-capacitor-background-task')
+    implementation project(':capacitor-ssh-plugin')
 
 }
 

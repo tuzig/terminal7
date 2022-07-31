@@ -32,7 +32,7 @@
     "@tuzig/codemirror": "5.65.5-mods",
     "@tuzig/toml": "^3.0.0-browser",
     "@tuzig/xterm": "4.18.0-decoration",
-    "capacitor-ssh-plugin": "<1",
+    "capacitor-ssh-plugin": "<2",
     "glob": "<8",
     "hammerjs": "<3",
     "idb": "<7",
