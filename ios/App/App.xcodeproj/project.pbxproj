@@ -218,7 +218,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "export LANG=en_US.UTF-8\nexport LANGUAGE=en_US.UTF-8\nexport LC_ALL=\"en_US.UTF-8\"\ncd ../..\nnpx cap copy ios\n";
+			shellScript = "";
 		};
 /* End PBXShellScriptBuildPhase section */
 
