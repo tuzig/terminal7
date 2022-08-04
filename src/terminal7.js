@@ -248,7 +248,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
 
 
         document.addEventListener("keydown", ev => {
-            if (ev.key == "Meta") {
+            if ((ev.key == "Meta") && (Capacitor.getPlatform() != "ios")) {
                 this.metaPressStart = Date.now()
                 this.run(() => this.showKeyHelp(), terminal7.conf.ui.quickest_press)
             } else
