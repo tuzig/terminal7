@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Toggling the new tab button when [!]reaching limit
 - Modals close on touch
 - WebRTC reconnect should be fixed now
+- `exit` on SSH connected gates works
 
 ## [0.20.7] - 2022/6/15
 
