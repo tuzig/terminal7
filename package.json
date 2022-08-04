@@ -26,6 +26,7 @@
     "@capacitor/core": "<4",
     "@capacitor/device": "^1.0.5",
     "@capacitor/ios": "<4",
+    "@capacitor/keyboard": "^1.2.3",
     "@capacitor/network": "^1.0.5",
     "@capacitor/storage": "^1.2.2",
     "@robingenz/capacitor-background-task": "^1.0.0",
