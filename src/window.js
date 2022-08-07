@@ -29,7 +29,7 @@ export class Window {
     open(e) {
         this.e = document.createElement('div')
         this.e.className = "window"
-        this.e.id = `${this.gate.name}.${this.id+1}`
+        this.e.id = `tab-${this.gate.id}.${this.id}`
         e.appendChild(this.e)
 
         // Add the name with link to tab bar
