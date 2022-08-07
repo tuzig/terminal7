@@ -1220,36 +1220,6 @@ peer_name = "${peername}"\n`
             }
         }
         canary.connect()
-        // const ssh = Capacitor.isNativePlatform()
-        // Capacitor.Plugins.SSH
-
-        // const f = new Form([
-        //     { prompt: "Name", validator: Gate.validateHostName },
-        //     { prompt: "Hostname" },
-        //     { prompt: "Username" },
-        //     { prompt: "Remember hostname", default: "y", values: ["y", "n"] },
-        //     {
-        //         prompt: `\x1Bc\n  To use WebRTC the server needs webexec:\n\n\x1B[1m${rc}\x1B[0m\n\n  Copy to clipboard?`,
-        //         validator: v => {
-        //             if (v == "y")
-        //                 Clipboard.write({ string: rc })
-        //             return ''
-        //         },
-        //         default: "y"
-        //     }
-        // ])
-        // f.start(t).then(results => {
-        //     const gate = this.addGate({
-        //         name: results[0], addr: results[1],
-        //         username: results[2],
-        //         store: results[3] == "y"
-        //     })
-        //     if (results[3] == "y")
-        //         this.storeGates()
-        //     this.clear()
-        //     if (this.netStatus && this.netStatus.connected)
-        //         gate.connect()
-        // }).catch(() => this.clear())
     }
     async webRTCForm(t, hostname) {
         const fp = await this.getFingerprint(),
@@ -1288,7 +1258,6 @@ peer_name = "${peername}"\n`
                         const nameForm = new Form(fields)
                         nameForm.start(t).then(res => {
                             const name = res[0]
-                            console.log(name)
                             gate.name = name
                             gate.nameE.innerHTML = name
                             gate.nameE.classList.remove("hidden")

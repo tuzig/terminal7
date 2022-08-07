@@ -150,7 +150,7 @@ export class Form {
             t.write(`\n  ${current.prompt} must be one of: ${current.values.join(', ')}`)
             valid = false
         }
-        else if ((this.field) && current.validator) {
+        else if (this.field && current.validator) {
             const err = current.validator(this.field)
             if (err) {
                 t.write(`\n  ${err}`)

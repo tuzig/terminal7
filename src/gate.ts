@@ -223,7 +223,6 @@ export class Gate {
             })
             if (this.onConnected)
                 this.onConnected()
-            // this.session.getPayload().then(layout => this.setLayout(layout))
         } else if (state == "disconnected") {
             // TODO: add warn class
             this.lastDisconnect = Date.now()
