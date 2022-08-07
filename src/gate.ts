@@ -277,8 +277,8 @@ export class Gate {
     /*
      * connect connects to the gate
      */
-    async connect(onConnected) {
-        this.onConnected = onConnected
+    async connect(onConnected?) {
+        this.onConnected = onConnected || this.onConnected
         // do nothing when the network is down
         if (!this.t7.netStatus || !this.t7.netStatus.connected)
             return
@@ -581,29 +581,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.t7.clear()
             this.delete()
         }
-//         this.t0.write(`We're sorry, but the host at ${this.addr} refused our fingerprint.
-//   To connect copy Terminal7's fingerprint to ~/.config/webexec/authorized_fingerprints and try again:`)
-        //       e = document.getElementById("copy-fingerprint-template")
-        //                   .content.cloneNode(true)
-        // e.querySelector('pre').innerText = cmd
-        // e.querySelector('.ct-address').innerHTML = addr
-        // e.querySelector('.ct-name').innerHTML = this.name
-        // e.querySelector(".copy").addEventListener('click', ev => {
-        //     this.t7.e.querySelector('.copy-fingerprint').remove()
-        //     Clipboard.write(
-        //         {string: cmd})
-        //     this.t7.notify("Command copied to the clipboard")
-        //     if (Capacitor.getPlatform() != "web") {
-        //         this.tryWebexec = false
-        //         this.connect()
-        //     }
-        // })
-        // e.querySelector(".close").addEventListener('click',  ev =>  {
-        //     this.t7.e.querySelector('.copy-fingerprint').remove()
-        //     this.clear()
-        //     this.t7.goHome()
-        // })
-        // this.t7.e.appendChild(e)
     }
     askPass() {
         const hideModal = evt => evt.target.closest(".modal").classList.toggle("hidden")

@@ -156,139 +156,10 @@ export class Terminal7 {
             'click', async () => {
                 this.logDisplay(false)
                 if (addHost.classList.contains('hidden')) {
-                    const fp = await this.getFingerprint(),
-                        rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     addHost.classList.remove("hidden")
                     const e = addHost.querySelector(".terminal-container")
                     const t = openFormsTerminal(e)
-                    const f = new Form([
-                        { prompt: "Enter destination (ip or domain)" }
-                    ])
-                    let hostname
-                    try {
-                        hostname = (await f.start(t))[0]
-                    } catch (e) {
-                        this.clear()
-                    }
-                    t.write("\n  Testing SSH...")
-                    const canary = new SSHSession(hostname)
-                        // try to connect to SSH
-                    // try {
-                    //     await ssh.connect()
-                    // } catch(err) {
-                    //     debugger
-                    //     console.log(err)
-                    //     t.write(`Error: ${err}`)
-                    // }
-                    canary.onStateChange = state => {
-                        if (state ==="connected") {
-                            t.write(" Success!")
-                        } else if (state === "failed") {
-                            t.write(" Failed")
-                            t.write("\n  Testing WebRTC...")
-                            Http.request({
-                                url: `http://${hostname}:7777/connect`,
-                                method: 'POST',
-                                connectTimeout: this.conf.net.timeout
-                            }).then(async res => {
-                                console.log(res)
-                                t.write(" Success!\n")
-                                t.write("  Connecting...")
-                                const gate = this.addGate({
-                                    name: hostname, addr: hostname,
-                                })
-                                gate.t0 = t
-                                gate.connect(() => {
-
-                                    const saveForm = new Form([
-                                        {
-                                            prompt: "Save gate?",
-                                            default: "y",
-                                            values: ["y", "n"]
-                                        }
-                                    ])
-                                    saveForm.start(t).then(res => {
-                                        if (res[0] == "y") {
-                                            const nameForm = new Form([
-                                                {
-                                                    prompt: "Enter name",
-                                                    default: hostname,
-                                                    validator: Gate.validateHostName
-                                                }
-                                            ])
-                                            nameForm.start(t).then(res => {
-                                                const name = res[0]
-                                                console.log(name)
-                                                gate.name = name
-                                                gate.nameE.innerHTML = name
-                                                gate.store = true
-                                                this.storeGates()
-                                                this.clear()
-                                                gate.session.getPayload()
-                                                    .then(layout => gate.setLayout(layout))
-                                            }).catch(() => {
-                                                gate.delete()
-                                                this.clear()
-                                            })
-                                        } else {
-                                            gate.delete()
-                                            this.clear()
-                                            gate.session.getPayload()
-                                                .then(layout => gate.setLayout(layout))
-                                        }
-                                    }).catch(() => {
-                                        gate.delete()
-                                        this.clear()
-                                    })
-                                })
-                            }).catch(err => {
-                                console.log(err)
-                                t.write(" Failed\n")
-                                const webexecForm = new Form([{ 
-                                    prompt: `If address is correct, make sure webexec is running on ${hostname}:
-\n\x1B[1m${rc}\x1B[0m\n
-  Copy to clipboard?`,
-                                    default: "y"
-                                }])
-                                webexecForm.start(t).then(res => {
-                                    if (res[0] == "y") {
-                                        Clipboard.write( {string: rc} )
-                                    }
-                                })
-                            })
-                        }
-                    }
-                    canary.connect()
-                    // const ssh = Capacitor.isNativePlatform()
-                    // Capacitor.Plugins.SSH
-
-                    // const f = new Form([
-                    //     { prompt: "Name", validator: Gate.validateHostName },
-                    //     { prompt: "Hostname" },
-                    //     { prompt: "Username" },
-                    //     { prompt: "Remember hostname", default: "y", values: ["y", "n"] },
-                    //     {
-                    //         prompt: `\x1Bc\n  To use WebRTC the server needs webexec:\n\n\x1B[1m${rc}\x1B[0m\n\n  Copy to clipboard?`,
-                    //         validator: v => {
-                    //             if (v == "y")
-                    //                 Clipboard.write({ string: rc })
-                    //             return ''
-                    //         },
-                    //         default: "y"
-                    //     }
-                    // ])
-                    // f.start(t).then(results => {
-                    //     const gate = this.addGate({
-                    //         name: results[0], addr: results[1],
-                    //         username: results[2],
-                    //         store: results[3] == "y"
-                    //     })
-                    //     if (results[3] == "y")
-                    //         this.storeGates()
-                    //     this.clear()
-                    //     if (this.netStatus && this.netStatus.connected)
-                    //         gate.connect()
-                    // }).catch(() => this.clear())
+                    this.connectForm(t)
                 }
             })
         // hide the modal on xmark click
@@ -1326,5 +1197,162 @@ peer_name = "${peername}"\n`
                 g.open(this.e)
             }
         })
+    }
+    async connectForm(t) {
+        const f = new Form([
+            { prompt: "Enter destination (ip or domain)" }
+        ])
+        let hostname
+        try {
+            hostname = (await f.start(t))[0]
+        } catch (e) {
+            return this.clear()
+        }
+        t.write("\n  Testing SSH...")
+        const canary = new SSHSession(hostname)
+        canary.onStateChange = state => {
+            if (state === "connected") {
+                t.write(" Success!")
+            } else if (state === "failed") {
+                t.write(" Failed")
+                t.write("\n  Testing WebRTC...")
+                this.webRTCForm(t, hostname)
+            }
+        }
+        canary.connect()
+        // const ssh = Capacitor.isNativePlatform()
+        // Capacitor.Plugins.SSH
+
+        // const f = new Form([
+        //     { prompt: "Name", validator: Gate.validateHostName },
+        //     { prompt: "Hostname" },
+        //     { prompt: "Username" },
+        //     { prompt: "Remember hostname", default: "y", values: ["y", "n"] },
+        //     {
+        //         prompt: `\x1Bc\n  To use WebRTC the server needs webexec:\n\n\x1B[1m${rc}\x1B[0m\n\n  Copy to clipboard?`,
+        //         validator: v => {
+        //             if (v == "y")
+        //                 Clipboard.write({ string: rc })
+        //             return ''
+        //         },
+        //         default: "y"
+        //     }
+        // ])
+        // f.start(t).then(results => {
+        //     const gate = this.addGate({
+        //         name: results[0], addr: results[1],
+        //         username: results[2],
+        //         store: results[3] == "y"
+        //     })
+        //     if (results[3] == "y")
+        //         this.storeGates()
+        //     this.clear()
+        //     if (this.netStatus && this.netStatus.connected)
+        //         gate.connect()
+        // }).catch(() => this.clear())
+    }
+    async webRTCForm(t, hostname) {
+        const fp = await this.getFingerprint(),
+            rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${fp}" >> ~/.config/webexec/authorized_fingerprints`
+        Http.request({
+            url: `http://${hostname}:7777/connect`,
+            method: 'POST',
+            connectTimeout: this.conf.net.timeout
+        }).then(async () => {
+            t.write(" Success!\n")
+            t.write("  Connecting...")
+            const gate = this.addGate({
+                name: hostname, addr: hostname,
+            })
+            gate.t0 = t
+            gate.connect(() => {
+                const saveForm = new Form([
+                    {
+                        prompt: "Save gate?",
+                        default: "y",
+                        values: ["y", "n"]
+                    }
+                ])
+                saveForm.start(t).then(res => {
+                    if (res[0] == "y") {
+                        const validated = Gate.validateHostName(hostname)
+                        let fields = [
+                            {
+                                prompt: "Enter name",
+                                validator: Gate.validateHostName,
+                            }]
+                        if (validated == "")
+                            fields[0].default = hostname
+                        const nameForm = new Form(fields)
+                        nameForm.start(t).then(res => {
+                            const name = res[0]
+                            console.log(name)
+                            gate.name = name
+                            gate.nameE.innerHTML = name
+                            gate.store = true
+                            this.storeGates()
+                            this.clear()
+                            gate.session.getPayload()
+                                .then(layout => gate.setLayout(layout))
+                        }).catch(() => {
+                            gate.delete()
+                            this.clear()
+                        })
+                    } else {
+                        gate.delete()
+                        this.clear()
+                        gate.session.getPayload()
+                            .then(layout => gate.setLayout(layout))
+                    }
+                }).catch(() => {
+                    gate.delete()
+                    this.clear()
+                })
+            })
+        }).catch(async () => {
+            t.write(" Failed\n")
+            let ans
+            const verifyForm = new Form([{
+                prompt: `Does the address \x1B[1;37m${hostname}\x1B[0m seem correct?`,
+                values: ["y", "n"],
+                default: "y"
+            }])
+            try {
+                ans = (await verifyForm.start(t))[0]
+            } catch (e) {
+                return this.clear()
+            }
+            if (ans == "n") {
+                t.write("\x1Bc")
+                return this.connectForm(t)
+            }
+            const webexecForm = new Form([{
+                prompt: `Make sure webexec is running on ${hostname}:
+                        \n\x1B[1m${rc}\x1B[0m\n \n  Copy to clipboard?`,
+                default: "y"
+            }])
+            try {
+                ans = (await webexecForm.start(t))[0]
+            } catch (e) {
+                return this.clear()
+            }
+            if (ans == "y")
+                Clipboard.write({ string: rc })
+            const retryForm = new Form([{
+                prompt: "Retry connection?",
+                default: "y"
+            }])
+            try {
+                ans = (await retryForm.start(t))[0]
+            } catch (e) {
+                return this.clear()
+            }
+            if (ans == "y"){
+                t.write("\n\n  Retrying...")
+                this.webRTCForm(t, hostname)
+            }
+            else
+                this.clear()
+        }).catch(() => this.clear())
     }
 }
