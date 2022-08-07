@@ -15,18 +15,20 @@ import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { WebglAddon } from 'xterm-addon-webgl'
 import { WebLinksAddon } from 'xterm-addon-web-links'
+import { BELL_SOUND } from './bell.js'
 
 
 import XtermWebfont from 'xterm-webfont'
 
-const  REGEX_SEARCH        = false,
-      COPYMODE_BORDER_COLOR = "#F952F9",
-        FOCUSED_BORDER_COLOR = "#F4DB53",
-       SEARCH_OPTS = {
-            regex: REGEX_SEARCH,
-            wholeWord: false,
-            incremental: false,
-            caseSensitive: true}
+const REGEX_SEARCH = false,
+    COPYMODE_BORDER_COLOR = "#F952F9",
+    FOCUSED_BORDER_COLOR = "#F4DB53",
+    SEARCH_OPTS = {
+        regex: REGEX_SEARCH,
+        wholeWord: false,
+        incremental: false,
+        caseSensitive: true
+    }
 
 
 export class Pane extends Cell {
@@ -71,7 +73,9 @@ export class Pane extends Cell {
             rendererType: "canvas",
             theme: this.theme,
             rows:24,
-            cols:80
+            cols:80,
+            bellStyle: "sound",
+            bellSound: BELL_SOUND,
         })
         this.fitAddon = new FitAddon()
         this.searchAddon = new SearchAddon()
