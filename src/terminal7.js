@@ -1262,9 +1262,11 @@ peer_name = "${peername}"\n`
             t.write(" Success!\n")
             t.write("  Connecting...")
             const gate = this.addGate({
-                name: hostname, addr: hostname,
+                name: Math.random().toString(16).slice(2), // temp random name
+                addr: hostname,
             })
             gate.t0 = t
+            gate.nameE.classList.add("hidden")
             gate.connect(() => {
                 const saveForm = new Form([
                     {
@@ -1281,7 +1283,7 @@ peer_name = "${peername}"\n`
                                 prompt: "Enter name",
                                 validator: Gate.validateHostName,
                             }]
-                        if (validated == "")
+                        if (!validated)
                             fields[0].default = hostname
                         const nameForm = new Form(fields)
                         nameForm.start(t).then(res => {
@@ -1289,6 +1291,7 @@ peer_name = "${peername}"\n`
                             console.log(name)
                             gate.name = name
                             gate.nameE.innerHTML = name
+                            gate.nameE.classList.remove("hidden")
                             gate.store = true
                             this.storeGates()
                             this.clear()
