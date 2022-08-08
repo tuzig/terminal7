@@ -10,6 +10,7 @@ import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
 import { Terminal7Mock, sleep } from './infra.ts'
 import { Storage } from '@capacitor/storage'
+import { Gate } from '../src/gate.ts'
 
 vi.mock('@tuzig/xterm')
 vi.mock('../src/webrtc_session.ts')
@@ -99,12 +100,21 @@ describe("gate", () => {
         expect(d.windows[0].layout.cells[0].yoff).to.equal(0.2)
         expect(d.windows[0].layout.cells[1].yoff).to.equal(0.5)
     })
-    it("has a unique name", () => {
+    it("can create a gate", async () => {
+        let addHost = document.getElementById("add-host")
+        expect(addHost.classList.contains("hidden")).toBeTruthy()
+        document.getElementById("add-static-host").click()
+    })
+    it("can edit gate", async () => {
         let g = t.addGate({name:"foo"})
-        let g2 = t.addGate({name:"foo"})
-        expect(typeof g).toEqual("object")
-        expect(typeof g2).toEqual("string")
-        expect(g2).to.equal("Gate name is not unique")
+        g.edit()
+    })
+    it("has a unique name", () => {
+        let valid = Gate.validateHostName("foo")
+        expect(valid).equal("")
+        t.addGate({name:"foo"})
+        valid = Gate.validateHostName("foo")
+        expect(valid).equal("Name already taken")
     })
     it("can be connected", async () => {
         let g = t.addGate()

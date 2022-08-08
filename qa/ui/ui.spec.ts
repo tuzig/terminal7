@@ -106,13 +106,18 @@ pinch_max_y_velocity = 0.1`
         connectGate()
         await sleep(500)
         page.locator('.tabbar .reset').click()
-        await sleep(500)
-        await page.screenshot({ path: `/result/2.png` })
-        const beforeLast = await page.evaluate(async () => 
-            window.notifications[window.notifications.length-2]
-        )
+        let notConnected = true
+        let i = 0
+        while (true) {
+            const len = await page.evaluate(async () => window.notifications.length)
+            if (len == 5)
+                break;
+            await sleep(100)
+            i++
+            test.fail(i > 20, 'Timeout waiting for connection')
+        }
+        const nots = await page.evaluate(async () => window.notifications)
         await expect(page.locator('.pane')).toHaveCount(1)
-        await expect(beforeLast).toEqual("foo: &#127884 webexec server")
-
+        await expect(nots.slice(-1)[0]).toEqual("foo: Connected")
     })
 })

@@ -14,6 +14,7 @@ def capacitor_pods
   pod 'CapacitorBrowser', :path => '../../node_modules/@capacitor/browser'
   pod 'CapacitorClipboard', :path => '../../node_modules/@capacitor/clipboard'
   pod 'CapacitorDevice', :path => '../../node_modules/@capacitor/device'
+  pod 'CapacitorKeyboard', :path => '../../node_modules/@capacitor/keyboard'
   pod 'CapacitorNetwork', :path => '../../node_modules/@capacitor/network'
   pod 'CapacitorStorage', :path => '../../node_modules/@capacitor/storage'
   pod 'RobingenzCapacitorBackgroundTask', :path => '../../node_modules/@robingenz/capacitor-background-task'
