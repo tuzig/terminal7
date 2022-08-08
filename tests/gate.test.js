@@ -122,6 +122,8 @@ describe("gate", () => {
         g.open(e)
         g.tryWebexec = false
         g.connect()
+        const layout = await g.session.getPayload()
+        g.setLayout(layout)
         await sleep(500)
         expect(g.boarding).to.equal(true)
         expect(g.session.connect).toHaveBeenCalledTimes(1)

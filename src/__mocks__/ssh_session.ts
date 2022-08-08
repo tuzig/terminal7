@@ -18,10 +18,14 @@ class MockChannel implements Channel {
 export class SSHSession implements Session {
     onStateChange: (state: State) => void
     onPayloadUpdate: (payload: string) => void
+    static fail = false
+    static wrongPassword = false
     constructor(address: string, username: string, password: string, port?=22) {
         console.log("New seesion", address, username, password, port)
     }
-    connect = vi.fn(() => setTimeout(() => this.onStateChange("connected"), 0))
+    connect = vi.fn(() => setTimeout(() =>
+        SSHSession.fail ? this.onStateChange("failed")
+            : this.onStateChange("connected"), 0))
     openChannel = vi.fn(
         (cmd: string, parent: ChannelID, sx?: number, sy?: number) => // eslint-disable-line
         new Promise(resolve => {

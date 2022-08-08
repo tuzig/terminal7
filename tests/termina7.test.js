@@ -8,9 +8,12 @@
 import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
 import { Gate } from '../src/gate'
-import { Terminal7Mock } from './infra.ts'
+import { Terminal7Mock, sleep } from './infra'
 import { assert } from "chai"
 import { Storage } from '@capacitor/storage'
+import { Terminal } from '@tuzig/xterm'
+import { SSHSession } from '../src/ssh_session'
+import { expect } from 'vitest'
 
 vi.mock('@tuzig/xterm')
 vi.mock('../src/ssh_session.ts')
@@ -426,6 +429,36 @@ describe("terminal7", function() {
             expect(p3.sy).to.equal(0.2)
             expect(p4.sy).to.equal(0.2)
             expect(p4.yoff+p4.sy).to.be.closeTo(p2.yoff, 0.000001)
+        })
+    })
+    describe("gate", () => {
+        let t0
+        it("can open connection form without SSH", async () => {
+            t0 = new Terminal()
+            SSHSession.fail = true
+            t.connectForm(t0)
+            t0.pressKey("1")
+            t0.pressKey("Enter")
+            await sleep(100)
+            expect(t0.out).toMatch("Testing SSH... Failed")
+        })
+        it("can connect to SSH through form", async () => {
+            t0 = new Terminal()
+            SSHSession.fail = false
+            t.connectForm(t0)
+            t0.pressKey("1")
+            t0.pressKey("Enter")
+            await sleep(10)
+            expect(t0.out).toMatch("Testing SSH... Success!")
+            t0.pressKey("a")
+            t0.pressKey("Enter")
+            t0.pressKey("a")
+            t0.pressKey("Enter")
+            await sleep(10)
+            expect(t0.out).toMatch("Username: a")
+            expect(t0.out).toMatch("Password:")
+            expect(t0.out).toMatch("Save gate?")
+            console.log(t0.out)
         })
     })
 })
