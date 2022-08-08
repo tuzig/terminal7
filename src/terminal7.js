@@ -123,6 +123,11 @@ export class Terminal7 {
         }
         this.loadConf(d)
 
+        setTimeout(() => {
+            const log = document.getElementById("log")
+            this.logTerminal = openFormsTerminal(log)
+        }, 10)
+
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",
@@ -155,13 +160,16 @@ export class Terminal7 {
         let addHost = document.getElementById("add-host")
         document.getElementById('add-static-host').addEventListener(
             'click', async () => {
-                this.logDisplay(false)
-                if (addHost.classList.contains('hidden')) {
-                    addHost.classList.remove("hidden")
-                    const e = addHost.querySelector(".terminal-container")
-                    const t = openFormsTerminal(e)
-                    this.connectForm(t)
+                this.logDisplay(true)
+                // if (addHost.classList.contains('hidden')) {
+                    // addHost.classList.remove("hidden")
+                    // const e = document.getElementById("log")
+                    // const t = openFormsTerminal(e)
+                if (!this.logTerminal.activeForm) {
+                    this.logTerminal.activeForm = true
+                    this.connectForm(this.logTerminal)
                 }
+                // }
             })
         // hide the modal on xmark click
         addHost.querySelector(".close").addEventListener('click',  () =>  {
@@ -267,8 +275,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 }
             })
         }
-        document.getElementById("log").addEventListener("click",
-            () => this.logDisplay(false))
+        // document.getElementById("log").addEventListener("click",
+        //     () => this.logDisplay(false))
 
         // settings button and modal
         var modal   = document.getElementById("settings-modal")
