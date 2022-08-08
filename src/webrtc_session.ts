@@ -1,5 +1,6 @@
-import { BaseSession, BaseChannel, Channel, ChannelID, CallbackType, Failure }  from './session' 
 import { Http } from '@capacitor-community/http';
+import { BaseChannel, BaseSession, CallbackType, Channel, ChannelID, Failure } from './session';
+import { PeerbookConnection } from './peerbook'
 
 const TIMEOUT = 5000
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
@@ -337,6 +338,11 @@ abstract class WebRTCSession extends BaseSession {
 }
 
 export class PeerbookSession extends WebRTCSession {
+    pb: PeerbookConnection
+    constructor(fp: string, pb: PeerbookConnection) {
+        super(fp)
+        this.pb = pb
+    }
     getIceServers() {
         return new Promise((resolve, reject) => {
             const ctrl = new AbortController(),
@@ -366,7 +372,7 @@ export class PeerbookSession extends WebRTCSession {
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate) {
-            this.t7.pbSend({target: this.fp, candidate: ev.candidate})
+            this.pb.send({target: this.fp, candidate: ev.candidate})
         }
     }
     onNegotiationNeeded(e) {
@@ -375,7 +381,7 @@ export class PeerbookSession extends WebRTCSession {
             const offer = btoa(JSON.stringify(d))
             this.pc.setLocalDescription(d)
             this.t7.log("got offer", offer)
-            this.t7.pbSend({target: this.fp, offer: offer})
+            this.pb.send({target: this.fp, offer: offer})
         })
     }
     peerAnswer(offer) {
@@ -400,10 +406,6 @@ export class HTTPWebRTCSession extends WebRTCSession {
     address: string
     fetchTimeout: number
 
-    constructor(fp: string, address?: string) {
-        super(fp, address)
-        this.fetchTimeout = 500
-    }
     onNegotiationNeeded(e) {
         this.t7.log("on negotiation needed", e)
         this.pc.createOffer().then(offer => {
