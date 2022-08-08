@@ -2,8 +2,14 @@
 include ':capacitor-android'
 project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/android/capacitor')
 
+include ':capacitor-community-http'
+project(':capacitor-community-http').projectDir = new File('../node_modules/@capacitor-community/http/android')
+
 include ':capacitor-app'
 project(':capacitor-app').projectDir = new File('../node_modules/@capacitor/app/android')
+
+include ':capacitor-browser'
+project(':capacitor-browser').projectDir = new File('../node_modules/@capacitor/browser/android')
 
 include ':capacitor-clipboard'
 project(':capacitor-clipboard').projectDir = new File('../node_modules/@capacitor/clipboard/android')
@@ -19,3 +25,6 @@ project(':capacitor-storage').projectDir = new File('../node_modules/@capacitor/
 
 include ':robingenz-capacitor-background-task'
 project(':robingenz-capacitor-background-task').projectDir = new File('../node_modules/@robingenz/capacitor-background-task/android')
+
+include ':capacitor-ssh-plugin'
+project(':capacitor-ssh-plugin').projectDir = new File('../../capacitor-ssh-plugin/android')

@@ -4,6 +4,7 @@ import { Channel, BaseChannel, BaseSession, State, Failure }  from './session'
 export class SSHChannel extends BaseChannel {
     id: number
     close(): Promise<void> {
+        console.log("trying to close ssh channel")
         return new Promise((resolve, reject) => {
             SSH.closeChannel({channel: this.id})
                .then(() => {
@@ -64,14 +65,16 @@ export class SSHSession extends BaseSession {
             const channel = new SSHChannel()
             SSH.newChannel({session: this.id})
                .then(({ id }) => {
+                   console.log("got new channel with id ", id)
                 channel.id = id
                 SSH.startShell({channel: id},
                     m => {
-                        if ((!m) || (m.EOF) || ('ERROR' in m)) {
-                            console.log("ssh read got error ", m)
-                            channel.onClose("Shell closed")
-                        } else 
+                        if ('data' in m)
                             channel.onMessage(m.data)
+                        else {
+                            console.log("ssh read got error ", m.error)
+                            channel.onClose(m.error)
+                        }
                     })
                    .then(callbackID => {
                         console.log("got from startShell: ", callbackID)

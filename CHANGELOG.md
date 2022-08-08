@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Resize the terminal when the on screen keyboard is displayed/hidden
+
+## [0.21.0] - 2022/8/4
+
 ### Added
 
 - Copy mode keys 0, $, w, b, e, ^f, ^b and repetition factor
@@ -23,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Toggling the new tab button when [!]reaching limit
 - Modals close on touch
 - WebRTC reconnect should be fixed now
+- `exit` on SSH connected gates works
 
 ## [0.20.7] - 2022/6/15
 

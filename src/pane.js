@@ -15,18 +15,20 @@ import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { WebglAddon } from 'xterm-addon-webgl'
 import { WebLinksAddon } from 'xterm-addon-web-links'
+import { BELL_SOUND } from './bell.js'
 
 
 import XtermWebfont from 'xterm-webfont'
 
-const  REGEX_SEARCH        = false,
-      COPYMODE_BORDER_COLOR = "#F952F9",
-        FOCUSED_BORDER_COLOR = "#F4DB53",
-       SEARCH_OPTS = {
-            regex: REGEX_SEARCH,
-            wholeWord: false,
-            incremental: false,
-            caseSensitive: true}
+const REGEX_SEARCH = false,
+    COPYMODE_BORDER_COLOR = "#F952F9",
+    FOCUSED_BORDER_COLOR = "#F4DB53",
+    SEARCH_OPTS = {
+        regex: REGEX_SEARCH,
+        wholeWord: false,
+        incremental: false,
+        caseSensitive: true
+    }
 
 
 export class Pane extends Cell {
@@ -48,6 +50,7 @@ export class Pane extends Cell {
         this.retries = 0
         this.lastKey = ''
         this.repetition = 0
+        this.resizeObserver = new window.ResizeObserver(() => this.fit())
     }
 
     /*
@@ -70,7 +73,9 @@ export class Pane extends Cell {
             rendererType: "canvas",
             theme: this.theme,
             rows:24,
-            cols:80
+            cols:80,
+            bellStyle: "sound",
+            bellSound: BELL_SOUND,
         })
         this.fitAddon = new FitAddon()
         this.searchAddon = new SearchAddon()
@@ -148,8 +153,7 @@ export class Pane extends Cell {
                 }
                 this.d.send(d)
             })
-            const resizeObserver = new window.ResizeObserver(() => this.fit())
-            resizeObserver.observe(this.e);
+            this.resizeObserver.observe(this.e);
             this.fit(pane => { 
                if (pane != null)
                   pane.openChannel({parent: parentID, id: channelID})
@@ -176,6 +180,10 @@ export class Pane extends Cell {
     // fit a pane to the display area. If it was resized, the server is updated.
     // returns true is size was changed
     fit(cb) {
+        if (!this.t) {
+            if (cb instanceof Function) cb(this)
+            return
+        }
         var oldr = this.t.rows,
             oldc = this.t.cols,
             ret = false
@@ -190,9 +198,7 @@ export class Pane extends Cell {
                 this.t7.run(this.fit, 20*this.retries)
             }
             else 
-                this.notify(["Failed to fit the terminal",
-                             "If things look funny,",
-                             "   try zoom & un-zoom"].join("\n"))
+                console.log(e)
         }
         this.refreshDividers()
         if (this.t.rows != oldr || this.t.cols != oldc) {
@@ -259,12 +265,11 @@ export class Pane extends Cell {
         return p
     }
     onChannelConnected(channel, id) {
-        console.log("onChannelConnected")
         const reconnect = this.d != null
         this.d = channel
         this.d.onMessage = m => this.onChannelMessage(m)
         this.d.onClose = () => {
-            this.d = undefined 
+            this.d = null
             this.close()
         }
         if (!reconnect)
@@ -315,7 +320,7 @@ export class Pane extends Cell {
     }
     toggleSearch(searchDown) {
         const se = this.gate.e.querySelector(".search-box")
-        if (se.classList.contains("hidden"))
+        if (!se.classList.contains("show"))
             this.showSearch()
         else {
             this.hideSearch()
@@ -327,7 +332,7 @@ export class Pane extends Cell {
         // show the search field
         this.searchDown = searchDown || false
         const se = this.gate.e.querySelector(".search-box")
-        se.classList.remove("hidden")
+        se.classList.add("show")
         document.getElementById("search-button").classList.add("on")
         // TODO: restore regex search
         let i = se.querySelector("input[name='search-term']")
@@ -348,7 +353,8 @@ export class Pane extends Cell {
             i.setAttribute("placeholder", "search string here")
         if (this.searchTerm)
             i.value = this.searchTerm
-
+        if (this.zoomed)
+            this.styleZoomed()
         i.onkeydown = ev => {
             if (ev.keyCode == 13) {
                 this.findPrev(i.value)
@@ -402,8 +408,10 @@ export class Pane extends Cell {
     }
     hideSearch() {
         const se = this.gate.e.querySelector(".search-box")
-        se.classList.add("hidden")
+        se.classList.remove("show")
         document.getElementById("search-button").classList.remove("on")
+        if (this.zoomed)
+            this.styleZoomed()
     }
     exitSearch() {
         this.hideSearch();
@@ -555,6 +563,10 @@ export class Pane extends Cell {
             d.classList.add("hidden")
     }
     close() {
+        try {
+            this.resizeObserver.unobserve(this.e);
+        } catch (e) {}
+
         if (this.d)
             this.d.close()
         this.dividers.forEach(d => d.classList.add("hidden"))
