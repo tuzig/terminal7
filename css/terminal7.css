@@ -680,6 +680,7 @@ footer pre { font-size: 14px; }
     margin: 6px;
     padding:8px;
 }
+audio { display: none; }
 .edit-gate {
     position: fixed;
     top: 20%;
