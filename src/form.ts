@@ -6,6 +6,7 @@ export type Fields = Array<{
     default?:string,
     values?:Array<string>,
     validator?:(field: string) => string,
+    password?: boolean,
 }>
 
 export type Results = Array<string>
@@ -112,14 +113,16 @@ export class Form {
             setTimeout(() => t.focus(), 0)
             const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
+                const password = this.fields[this.i].password
                 switch (key) {
                     case "Escape":
                         reject()
                         return
                     case "Backspace":
                         if (this.field.length > 0) {
-                            t.write("\b \b")
                             this.field = this.field.slice(0, -1)
+                            if (!password)
+                                t.write("\b \b")
                         }
                         break
                     case "Enter":
@@ -131,7 +134,8 @@ export class Form {
                         break
                     default:
                         this.field += key
-                        t.write(key)
+                        if (!password)
+                            t.write(key)
                 }
             })
         })

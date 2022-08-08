@@ -240,10 +240,26 @@ export class Gate {
 
         if (!this.boarding)
             return
-        if (failure == Failure.WrongPassword) {
-            this.notify("Wrong password, please try again")
-            this.pass = null
-            this.connect()
+        if (failure == Failure.WrongPassword) { // remove second check
+            this.t0.write(" Wrong password")
+            const retryForm = new Form([{
+                prompt: "Retry connection?",
+                default: "y"
+            }])
+            retryForm.start(this.t0).then(res => {
+                if (res[0] == "y") {
+                    this.t7.webRTCForm(this.t0, this.addr)
+                } else {
+                    this.t7.clear()
+                    this.delete()
+                }
+            }).catch(() => {
+                this.t7.clear()
+                this.delete()
+            })
+            // this.notify("Wrong password, please try again")
+            // this.pass = null
+            // this.connect()
             return
         }
         if (failure == Failure.Unauthorized) {
@@ -258,7 +274,7 @@ export class Gate {
         }
         if (failure == Failure.TimedOut) {
             if ((!this.fp) && this.tryWebexec) {
-                this.notify("Timed out, trying SSH...")
+                this.t0.write(" Timed out\n  Trying SSH...")
                 this.tryWebexec = false
                 this.connect()
                 return
@@ -270,8 +286,61 @@ export class Gate {
         if (failure == Failure.NotImplemented)
             this.notify("FAILED: not implemented yet")
         if (!failure)
-            this.notify("Connection FAILED")
-        this.t7.onDisconnect(this)
+            this.notify("Connection FAILED");
+        
+            
+        (async () => {
+            const rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${this.fp}" >> ~/.config/webexec/authorized_fingerprints`
+            this.t0.write("\n  Failed to connect")
+            let ans
+            const verifyForm = new Form([{
+                prompt: `Does the address \x1B[1;37m${this.addr}\x1B[0m seem correct?`,
+                values: ["y", "n"],
+                default: "y"
+            }])
+            try {
+                ans = (await verifyForm.start(this.t0))[0]
+            } catch (e) {
+                this.t7.clear()
+                this.delete()
+            }
+            if (ans == "n") {
+                this.t0.write("\x1Bc")
+                return this.t7.connectForm(this.t0)
+            }
+            const webexecForm = new Form([{
+                prompt: `Make sure webexec is running on ${this.addr}:
+                        \n\x1B[1m${rc}\x1B[0m\n \n  Copy to clipboard?`,
+                default: "y"
+            }])
+            try {
+                ans = (await webexecForm.start(this.t0))[0]
+            } catch (e) {
+                this.t7.clear()
+                this.delete()
+            }
+            if (ans == "y")
+                Clipboard.write({ string: rc })
+            const retryForm = new Form([{
+                prompt: "Retry connection?",
+                default: "y"
+            }])
+            try {
+                ans = (await retryForm.start(this.t0))[0]
+            } catch (e) {
+                this.t7.clear()
+                this.delete()
+            }
+            if (ans == "y"){
+                this.t0.write("\n\n  Retrying...")
+                this.t7.webRTCForm(this.t0, this.addr)
+            }
+            else {
+                this.t7.clear()
+                this.delete()
+            }
+        })()
+        // this.t7.onDisconnect(this)
     }
     /*
      * connect connects to the gate
@@ -293,7 +362,17 @@ export class Gate {
         this.boarding = true
         // TODO add the port
         if (!this.pass && !this.fp && !this.tryWebexec) {
-            this.askPass()
+            const canary = new SSHSession(this.addr)
+            canary.onStateChange = (state, failure) => {
+                if (failure == Failure.NotImplemented) {
+                    this.t0.write(" Unavailable")
+                    this.completeConnect()
+                } else {
+                    this.t0.write("SSH implemented, connecting...")
+                    this.askPass()
+                } 
+            }
+            canary.connect()
         } else
             this.completeConnect()
     }
@@ -590,23 +669,47 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.completeConnect()
             return
         }
-        e.querySelector("h1").innerText = `${this.username}@${this.name}`
-        e.classList.remove("hidden")
-        e.querySelector("form").onsubmit = evt => {
-            hideModal(evt)
-            this.pass = evt.target.querySelector('[name="pass"]').value
-            evt.target.querySelector('[name="pass"]').value = ""
-            this.session = null
+        
+        const authForm = new Form([
+            { prompt: "Enter username" },
+            { prompt: "Enter password", password: true }
+        ])
+        authForm.start(this.t0).then(res => {
+            this.username = res[0]
+            this.pass = res[1]
+            this.t0.write("\n  Connecting")
             this.completeConnect()
-            evt.stopPropagation()
-            evt.preventDefault()
-        }
-        e.querySelector(".close").onclick = evt => {
-            hideModal(evt)
-            this.stopBoarding()
-            this.tryWebexec = true
-        }
-        e.querySelector('[name="pass"]').focus()
+            // this.t0.write("\n  Connecting...")
+            // const session = new SSHSession(this.addr, auth[0], auth[1])
+            // session.onStateChange = (state, failure) => {
+            //     if (state == "connected") {
+            //         this.t0.write(" Success!\n")
+            //     } else if (state == "failed" && failure == Failure.WrongPassword) {
+            //         this.t0.write(" Failed\n  Wrong credentials, try again")
+            //     }
+            // }
+            // session.connect()
+        }).catch(() => {
+            this.t7.clear()
+            this.delete()
+        })
+        // e.querySelector("h1").innerText = `${this.username}@${this.name}`
+        // e.classList.remove("hidden")
+        // e.querySelector("form").onsubmit = evt => {
+        //     hideModal(evt)
+        //     this.pass = evt.target.querySelector('[name="pass"]').value
+        //     evt.target.querySelector('[name="pass"]').value = ""
+        //     this.session = null
+        //     this.completeConnect()
+        //     evt.stopPropagation()
+        //     evt.preventDefault()
+        // }
+        // e.querySelector(".close").onclick = evt => {
+        //     hideModal(evt)
+        //     this.stopBoarding()
+        //     this.tryWebexec = true
+        // }
+        // e.querySelector('[name="pass"]').focus()
     }
     completeConnect(): void {
         if (this.session == null)
