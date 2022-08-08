@@ -276,6 +276,7 @@ export class Gate {
         // do nothing when the network is down
         if (!this.t7.netStatus || !this.t7.netStatus.connected)
             return
+        document.title = `Terminal 7: ${this.name}`
         // if we're already boarding, just focus
         if (this.session) {
             // TODO: check session's status
@@ -372,6 +373,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                 if (w.active) 
                     this.activeW = win
                 win.restoreLayout(w.layout)
+                win.nameE?.setAttribute("href", `#pane-${win.activeP?.id}`)
             })
         }
 

@@ -36,7 +36,6 @@ export class Window {
         let a = document.createElement('a')
         a.id = this.e.id+'-name'
         a.w = this
-        a.setAttribute('href', `#${this.e.id}`)
         a.innerHTML = this.name
         // Add gestures on the window name for rename and drag to trash
         let h = new Hammer.Manager(a, {})
@@ -67,7 +66,6 @@ export class Window {
             this.e.classList.remove("hidden")
         this.nameE.classList.add("on")
         this.gate.activeW = this
-        window.location.href=`#tab-${this.gate.id}.${this.id+1}`
         if (this.activeP)
             this.activeP.focus()
     }
