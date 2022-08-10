@@ -146,10 +146,17 @@ export class Gate {
                 "https://"+ this.t7.conf.net.peerbook)
         } else {
             editHost = document.getElementById("edit-host")
-            if (editHost.classList.contains("hidden")) {
-                const e = editHost.querySelector(".terminal-container")
-                const t = openFormsTerminal(e)
-                const f = new Form([
+            if (Form.activeForm) 
+                this.t7.logTerminal.focus()
+            else {
+                Form.activeForm = true
+                this.t7.logDisplay(true)
+                const f1 = new Form([
+                    { prompt: "Connect" },
+                    { prompt: "Edit" },
+                    { prompt: "\x1B[31mDelete\x1B[0m" },
+                ])
+                const f2 = new Form([
                     {
                         prompt: "Name",
                         default: this.name,
@@ -158,20 +165,49 @@ export class Gate {
                     { prompt: "Hostname", default: this.addr },
                     { prompt: "Username", default: this.username }
                 ])
-                f.chooseFields(t).then((enabled) => {
-                    f.start(t).then(results => {
-                        ['name', 'addr', 'username']
-                            .filter((_, i) => enabled[i])
-                            .forEach((k, i) => this[k] = results[i])
-                        this.nameE.innerHTML = this.name || this.addr
-                        this.t7.storeGates()
-                        this.t7.clear()
-                    }).catch(() => this.t7.clear())
-                }).catch(() => this.t7.clear())
+                const fDel = new Form([{
+                    prompt: `Delete ${this.name}?`,
+                    values: ["y", "n"],
+                    default: "n",
+                }])
+                f1.menu(this.t7.logTerminal, `\x1B[4m${this.name}\x1B[0m`)
+                    .then(choice => {
+                        switch (choice) {
+                            case 'Connect':
+                                this.connect()
+                                Form.activeForm = false
+                                break
+                            case 'Edit':
+                                f2.chooseFields(this.t7.logTerminal, `\x1B[4m${this.name}\x1B[0m edit`).then((enabled) => {
+                                    if (!enabled) {
+                                        Form.activeForm = false
+                                        this.t7.clear()
+                                        return
+                                    }
+                                    f2.start(this.t7.logTerminal).then(results => {
+                                        ['name', 'addr', 'username']
+                                            .filter((_, i) => enabled[i])
+                                            .forEach((k, i) => this[k] = results[i])
+                                        this.nameE.innerHTML = this.name || this.addr
+                                        this.t7.storeGates()
+                                        this.t7.clear()
+                                        Form.activeForm = false
+                                    }).catch(() => this.t7.clear())
+                                }).catch(() => this.t7.clear())
+                                break
+                            case "\x1B[31mDelete\x1B[0m":
+                                fDel.start(this.t7.logTerminal).then(res => {
+                                    Form.activeForm = false
+                                    if (res[0] == "y")
+                                        this.delete()
+                                })
+                                break
+                        }
+                    })
             }
         }
-        editHost.gate = this
-        editHost.classList.remove("hidden")
+        // editHost.gate = this
+        // editHost.classList.remove("hidden")
     }
     focus() {
         this.t7.logDisplay(false)
@@ -210,7 +246,6 @@ export class Gate {
         this.t7.log(`updating ${this.name} state to ${state}`)
         if (state == "connected") {
             this.notify("Connected")
-            this.t7.logDisplay(false)
             this.setIndicatorColor("unset")
             var m = this.t7.e.querySelector(".disconnect")
             if (m != null)
@@ -242,14 +277,14 @@ export class Gate {
         if (!this.boarding)
             return
         if (failure == Failure.WrongPassword) { // remove second check
-            this.t0.write(" Wrong password")
+            this.t7.logTerminal.write("  Wrong password")
             const retryForm = new Form([{
                 prompt: "Retry connection?",
                 default: "y"
             }])
-            retryForm.start(this.t0).then(res => {
+            retryForm.start(this.t7.logTerminal).then(res => {
                 if (res[0] == "y") {
-                    this.t7.webRTCForm(this.t0, this.addr)
+                    this.t7.webRTCForm(this.t7.logTerminal, this.addr)
                 } else {
                     this.t7.clear()
                     this.delete()
@@ -258,9 +293,6 @@ export class Gate {
                 this.t7.clear()
                 this.delete()
             })
-            // this.notify("Wrong password, please try again")
-            // this.pass = null
-            // this.connect()
             return
         }
         if (failure == Failure.Unauthorized) {
@@ -275,7 +307,7 @@ export class Gate {
         }
         if (failure == Failure.TimedOut) {
             if ((!this.fp) && this.tryWebexec) {
-                this.t0.write(" Timed out\n  Trying SSH...")
+                this.t7.logTerminal.writeln(" Timed out\n  Trying SSH...")
                 this.tryWebexec = false
                 this.connect()
                 return
@@ -292,7 +324,7 @@ export class Gate {
             
         (async () => {
             const rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${this.fp}" >> ~/.config/webexec/authorized_fingerprints`
-            this.t0.write("\n  Failed to connect")
+            this.t7.logTerminal.write("  Failed to connect")
             let ans
             const verifyForm = new Form([{
                 prompt: `Does the address \x1B[1;37m${this.addr}\x1B[0m seem correct?`,
@@ -300,14 +332,18 @@ export class Gate {
                 default: "y"
             }])
             try {
-                ans = (await verifyForm.start(this.t0))[0]
+                ans = (await verifyForm.start(this.t7.logTerminal))[0]
             } catch (e) {
                 this.t7.clear()
                 this.delete()
             }
+            if (!ans) {
+                this.t7.logTerminal.writeln("ESC")
+                return
+            }
             if (ans == "n") {
-                this.t0.write("\x1Bc")
-                return this.t7.connectForm(this.t0)
+                this.t7.logTerminal.write("\x1Bc")
+                return this.t7.connectForm(this.t7.logTerminal)
             }
             const webexecForm = new Form([{
                 prompt: `Make sure webexec is running on ${this.addr}:
@@ -315,7 +351,7 @@ export class Gate {
                 default: "y"
             }])
             try {
-                ans = (await webexecForm.start(this.t0))[0]
+                ans = (await webexecForm.start(this.t7.logTerminal))[0]
             } catch (e) {
                 this.t7.clear()
                 this.delete()
@@ -327,21 +363,20 @@ export class Gate {
                 default: "y"
             }])
             try {
-                ans = (await retryForm.start(this.t0))[0]
+                ans = (await retryForm.start(this.t7.logTerminal))[0]
             } catch (e) {
                 this.t7.clear()
                 this.delete()
             }
             if (ans == "y"){
-                this.t0.write("\n\n  Retrying...")
-                this.t7.webRTCForm(this.t0, this.addr)
+                this.t7.logTerminal.writeln("\n\n  Retrying...")
+                this.t7.webRTCForm(this.t7.logTerminal, this.addr)
             }
             else {
                 this.t7.clear()
                 this.delete()
             }
         })()
-        // this.t7.onDisconnect(this)
     }
     /*
      * connect connects to the gate
@@ -367,10 +402,10 @@ export class Gate {
             const canary = new SSHSession(this.addr)
             canary.onStateChange = (state, failure) => {
                 if (failure == Failure.NotImplemented) {
-                    this.t0.write(" Unavailable")
+                    this.t7.logTerminal.writeln("Unavailable")
                     this.completeConnect()
                 } else {
-                    this.t0.write("SSH implemented, connecting...")
+                    this.t7.logTerminal.writeln("SSH implemented, connecting...")
                     this.askPass()
                 } 
             }
@@ -379,8 +414,10 @@ export class Gate {
             this.completeConnect()
     }
 
-    notify(message) {    
-        this.t7.notify(`${this.name}: ${message}`)
+    notify(message) {
+        if (!this.name.startsWith("temp"))
+            message = `\x1B[4m${this.name}\x1B[0m: ${message}`
+        this.t7.notify(message)
     }
     /*
      * returns an array of panes
@@ -639,7 +676,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             default: "y"
         }])
         try {
-            ans = (await fpForm.start(this.t0))[0]
+            ans = (await fpForm.start(this.t7.logTerminal))[0]
         } catch (e) {
             this.t7.clear()
             this.delete()
@@ -651,7 +688,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             default: "y"
         }])
         try {
-            ans = (await retryForm.start(this.t0))[0]
+            ans = (await retryForm.start(this.t7.logTerminal))[0]
         } catch (e) {
             this.t7.clear()
             this.delete()
@@ -677,52 +714,25 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             { prompt: "Enter username" },
             { prompt: "Enter password", password: true }
         ])
-        authForm.start(this.t0).then(res => {
+        authForm.start(this.t7.logTerminal).then(res => {
             this.username = res[0]
             this.pass = res[1]
-            this.t0.write("\n  Connecting")
+            this.t7.logTerminal.writeln("Connecting")
             this.completeConnect()
-            // this.t0.write("\n  Connecting...")
-            // const session = new SSHSession(this.addr, auth[0], auth[1])
-            // session.onStateChange = (state, failure) => {
-            //     if (state == "connected") {
-            //         this.t0.write(" Success!\n")
-            //     } else if (state == "failed" && failure == Failure.WrongPassword) {
-            //         this.t0.write(" Failed\n  Wrong credentials, try again")
-            //     }
-            // }
-            // session.connect()
         }).catch(() => {
             this.t7.clear()
             this.delete()
         })
-        // e.querySelector("h1").innerText = `${this.username}@${this.name}`
-        // e.classList.remove("hidden")
-        // e.querySelector("form").onsubmit = evt => {
-        //     hideModal(evt)
-        //     this.pass = evt.target.querySelector('[name="pass"]').value
-        //     evt.target.querySelector('[name="pass"]').value = ""
-        //     this.session = null
-        //     this.completeConnect()
-        //     evt.stopPropagation()
-        //     evt.preventDefault()
-        // }
-        // e.querySelector(".close").onclick = evt => {
-        //     hideModal(evt)
-        //     this.stopBoarding()
-        //     this.tryWebexec = true
-        // }
-        // e.querySelector('[name="pass"]').focus()
     }
     completeConnect(): void {
         if (this.session == null)
             if (this.fp) {
-                this.notify("&#127884 PeerBook")
+                this.notify("\uD83D\uDCD6  PeerBook")
                 this.session = new PeerbookSession(this.fp, this.t7.pb)
             }
             else {
                 if (this.tryWebexec) {
-                    this.notify("&#127884 webexec server")
+                    this.notify("🎌  webexec server")
                     this.session = new HTTPWebRTCSession(this.fp, this.addr)
                 } else {
                     this.notify("Starting SSH session")

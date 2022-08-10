@@ -29,6 +29,7 @@ import { Form, openFormsTerminal } from './form'
 import { SSHSession } from './ssh_session'
 import { Http } from '@capacitor-community/http'
 import { Failure } from './session'
+import { PeerbookConnection } from './peerbook'
 
 
 
@@ -125,7 +126,12 @@ export class Terminal7 {
         setTimeout(() => {
             const log = document.getElementById("log")
             this.logTerminal = openFormsTerminal(log)
-        }, 10)
+            this.logTerminal.onKey((ev) => {
+                const key = ev.domEvent.key
+                if (key == 'Escape')
+                    this.logDisplay(false)
+            })
+        }, 100)
 
         // buttons
         document.getElementById("trash-button")
@@ -164,8 +170,10 @@ export class Terminal7 {
                     // addHost.classList.remove("hidden")
                     // const e = document.getElementById("log")
                     // const t = openFormsTerminal(e)
-                if (!this.logTerminal.activeForm) {
-                    this.logTerminal.activeForm = true
+                if (Form.activeForm)
+                    this.logTerminal.focus()
+                else {
+                    Form.activeForm = true
                     this.connectForm(this.logTerminal)
                 }
                 // }
@@ -653,16 +661,11 @@ peer_name = "${peername}"\n`
     /*
      * noitify adds a message to the teminal7 notice board
      */
-    notify(message) {    
-        let ul = document.getElementById("log-msgs"),
-            li = document.createElement("li"),
-            d = new Date(),
+    notify(message, level, ttl) {
+        const d = new Date(),
             t = formatDate(d, "HH:mm:ss.fff")
-
-        let lines = ul.querySelectorAll('li')
-        li.innerHTML = `<time>${t}</time><p>${message}</p>`
-        li.classList = "log-msg"
-        ul.appendChild(li)
+        // TODO: add color based on level
+        this.logTerminal.writeln(` >${t}< ${message}\n`)
         this.logDisplay(true)
     }
     run(cb, delay) {
@@ -883,7 +886,7 @@ peer_name = "${peername}"\n`
         const  m = JSON.parse(data)
                 
         if (m["code"] !== undefined) {
-            this.notify(`\uD83D\uDCD6 ${m["text"]}`)
+            this.notify(`\uD83D\uDCD6  ${m["text"]}`)
             return
         }
         if (m["peers"] !== undefined) {
@@ -1165,38 +1168,17 @@ peer_name = "${peername}"\n`
             return this.clear()
         }
         this.webRTCForm(t, hostname)
-        // t.write("\n  Testing SSH...")
-        // const canary = new SSHSession(hostname)
-        // canary.onStateChange = (state, failure) => {
-        //     // this.SSHForm(t, hostname)
-        //     if (state === "failed" && failure === Failure.NotImplemented) {
-        //         t.write(" Failed")
-        //         t.write("\n  Testing WebRTC...")
-        //         this.webRTCForm(t, hostname)
-        //     } else if (state === "connected") {
-        //         t.write(" Success!")
-        //     } 
-        // }
-        // canary.connect()
     }
     async webRTCForm(t, hostname) {
         const fp = await this.getFingerprint(),
             rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${fp}" >> ~/.config/webexec/authorized_fingerprints`
-        // t.write("\n  Testing WebRTC...")
-        // Http.request({
-        //     url: `http://${hostname}:7777/connect`,
-        //     method: 'POST',
-        //     connectTimeout: this.conf.net.timeout
-        // }).then(async () => {
-            // t.write(" Success!\n")
-            t.write("\n  Connecting over WebRTC...")
+            t.writeln("\n  Connecting over WebRTC...")
             const gate = this.addGate({
-                name: Math.random().toString(16).slice(2), // temp random name
+                name: "temp_" + Math.random().toString(16).slice(2), // temp random name
                 addr: hostname,
             })
             gate.t0 = t
             gate.nameE.classList.add("hidden")
-            // gate.tryWebexec = false
             gate.connect(() => {
                 t.write(" Success!")
                 const saveForm = new Form([
@@ -1242,50 +1224,11 @@ peer_name = "${peername}"\n`
                     this.clear()
                 })
             })
-        // }).catch(async () => {
-        //     t.write(" Failed\n")
-        //     let ans
-        //     const verifyForm = new Form([{
-        //         prompt: `Does the address \x1B[1;37m${hostname}\x1B[0m seem correct?`,
-        //         values: ["y", "n"],
-        //         default: "y"
-        //     }])
-        //     try {
-        //         ans = (await verifyForm.start(t))[0]
-        //     } catch (e) {
-        //         return this.clear()
-        //     }
-        //     if (ans == "n") {
-        //         t.write("\x1Bc")
-        //         return this.connectForm(t)
-        //     }
-        //     const webexecForm = new Form([{
-        //         prompt: `Make sure webexec is running on ${hostname}:
-        //                 \n\x1B[1m${rc}\x1B[0m\n \n  Copy to clipboard?`,
-        //         default: "y"
-        //     }])
-        //     try {
-        //         ans = (await webexecForm.start(t))[0]
-        //     } catch (e) {
-        //         return this.clear()
-        //     }
-        //     if (ans == "y")
-        //         Clipboard.write({ string: rc })
-        //     const retryForm = new Form([{
-        //         prompt: "Retry connection?",
-        //         default: "y"
-        //     }])
-        //     try {
-        //         ans = (await retryForm.start(t))[0]
-        //     } catch (e) {
-        //         return this.clear()
-        //     }
-        //     if (ans == "y"){
-        //         t.write("\n\n  Retrying...")
-        //         this.webRTCForm(t, hostname)
-        //     }
-        //     else
-        //         this.clear()
-        // }).catch(() => this.clear())
+    }
+    clearTempGates() {
+        this.gates.forEach(g => {
+            if (g.name.startsWith("temp_"))
+                g.delete()
+        })
     }
 }
