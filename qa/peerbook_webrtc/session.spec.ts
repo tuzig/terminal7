@@ -60,7 +60,7 @@ insecure = true`)
         await page.reload({waitUntil: "networkidle"})
         await page.evaluate(async () => {
             window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
-            await window.terminal7.pbVerify()
+            await window.terminal7.pbConnect()
         })
         // add terminal7 initializtion and globblas
         await waitPort({host:'webexec', port:7777})
@@ -77,7 +77,7 @@ insecure = true`)
         await expect(playButton).toBeVisible()
         await playButton.click()
         await page.evaluate(async () =>
-            await window.terminal7.pbVerify())
+            await window.terminal7.pbConnect())
         await page.screenshot({ path: `/result/first.png` })
         await page.locator('.onmobile').click()
         await page.locator('#mobile-instructions .close').click()
@@ -117,7 +117,7 @@ insecure = true`)
             window.terminal7.notify = console.log
             window.terminal7.conf.net.peerbook = "peerbook:17777"
             window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
-            await window.terminal7.pbVerify()
+            await window.terminal7.pbConnect()
         })
         connectGate()
         await page.screenshot({ path: `/result/second.png` })
@@ -192,7 +192,7 @@ insecure = true`)
             window.terminal7.notify = console.log
             window.terminal7.conf.net.peerbook = "peerbook:17777"
             window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
-            await window.terminal7.pbVerify()
+            await window.terminal7.pConnect()
         })
         await sleep(1000)
         await page.screenshot({ path: `/result/7.png` })

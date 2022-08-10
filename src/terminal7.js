@@ -31,7 +31,6 @@ import { Http } from '@capacitor-community/http'
 import { Failure } from './session'
 
 
-var PBPending = []
 
 const DEFAULT_DOTFILE = `[theme]
 foreground = "#00FAFA"
@@ -80,10 +79,10 @@ export class Terminal7 {
         this.flashTimer = null
         this.netStatus = null
         this.ws = null
-        this.pbSendTask = null
         this.logBuffer = CyclicArray(settings.logLines || 101)
         this.zoomedE = null
         this.pendingPanes = {}
+        this.pb = null
     }
     showKeyHelp () {
         if (Date.now() - this.metaPressStart > 987) {
@@ -146,7 +145,7 @@ export class Terminal7 {
         document.getElementById("help-button")
                 .addEventListener("click", ev => this.toggleHelp())
         document.getElementById("refresh")
-                .addEventListener("click", ev => this.pbVerify())
+                .addEventListener("click", () => this.log("not refreshing peerbook:"))
         document.querySelectorAll("#help-copymode, #keys-help").forEach(e => 
                 e.addEventListener("click", ev => this.clear()))
         document.getElementById("divide-h")
@@ -220,7 +219,13 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             openDB("t7", 1).then(db => {
                 let tx = db.transaction("certificates", "readwrite"),
                     store = tx.objectStore("certificates")
-                store.clear().then(() => this.pbVerify())
+                store.clear().then(() => {
+                    if (this.pb) {
+                        this.pb.close()
+                        this.pb = null
+                    }
+                    this.pbConnect()
+                })
             })
             ev.target.parentNode.parentNode.classList.add("hidden")
 
@@ -412,51 +417,23 @@ peer_name = "${peername}"\n`
             this.clear()
         }).catch(() => this.clear())
     }
-    pbVerify() {
+    pbConnect() {
         return new Promise((resolve, reject) => {
-           var email = this.conf.peerbook.email,
-                insecure = this.conf.peerbook.insecure,
-                host = this.conf.net.peerbook
-
-            if ((typeof host != "string") || (typeof email != "string") || (email == "")) {
+            if (this.pb) {
                 resolve()
                 return
             }
-            this.notify("Refreshing \uD83D\uDCD6")
-
             this.getFingerprint().then(fp => {
-                const schema = insecure?"http":"https",
-                      url = `${schema}://${host}/verify`
-                console.log("fetching from " + url)
-                fetch(url,  {
-                    headers: {"Content-Type": "application/json"},
-                    method: 'POST',
-                    body: JSON.stringify({kind: "terminal7",
-                        name: this.conf.peerbook.peer_name,
-                        email: email,
-                        fp: fp
-                    })
-                }).then(async response => {
-                    console.log("got response", response.status)
-                    if (response.ok)
-                        return response.json()
-                    if (response.status == 409) {
-                        var e = document.getElementById("reset-cert"),
-                            pbe = document.getElementById("reset-cert-error")
-                        pbe.innerHTML = response.data 
-                        e.classList.remove("hidden")
-                    }
-                    response.body.getReader().read().then(({done, value}) => {
-                        this.notify(
-                            "&#x1F4D6;&nbsp;"+String.fromCharCode(...value))
-                    })
-                    reject(new Error(`verification failed`))
-                }).then(m => {
-                    this.onPBMessage(m)
-                    resolve()
-
-                }).catch(e => { reject(e) })
-            }).catch(e => console.log("Failed to get FP" + e))
+                this.pb = new PeerbookConnection(fp,
+                    this.conf.peerbook.email,
+                    this.conf.peerbook.peer_name,
+                    this.conf.net.peerbook,
+                    this.conf.peerbook.insecure
+                )
+                this.pb.onUpdate = (m) => this.onPBMessage(m)
+                this.pb.connect()
+                resolve()
+            })
         })
     }
     async toggleSettings(ev) {
@@ -505,8 +482,17 @@ peer_name = "${peername}"\n`
         document.getElementById("settings-modal").classList.add("hidden")
         this.confEditor.toTextArea()
         this.confEditor = null
-        this.pbVerify()
-
+        if (this.pb &&
+            ((this.pb.host != this.conf.net.peerbook) 
+             || (this.pb.peerName != this.conf.peerbook.peer_name)
+             || (this.pb.insecure != this.conf.peerbook.insecure)
+             || (this.pb.email != this.conf.peerbook.email))
+        ) {
+            this.pb.close()
+            this.pb = null
+        }
+        if (this.conf.peerbook.email)
+            this.pbConnect()
     }
     catchFingers() {
         var start,
@@ -740,14 +726,15 @@ peer_name = "${peername}"\n`
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
             off.add("hidden")
+            this.pbConnect()
             const gate = this.activeG
             if (gate)
                 gate.connect()
-            else 
-                this.pbVerify()
         } else {
             off.remove("hidden")
             this.gates.forEach(g => g.session = null)
+            this.pb.close()
+            this.pb = null
         }
     }
     loadConf(conf) {
@@ -891,59 +878,10 @@ peer_name = "${peername}"\n`
             this.focus()
         // TODO: When at home remove the "on" from the home butto
     }
-    pbSend(m) {
-        // null message are used to trigger connection, ignore them
-        if (m != null) {
-            if (this.ws != null && this.ws.readyState == WebSocket.OPEN) {
-                this.log("sending to pb:", m)
-                this.ws.send(JSON.stringify(m))
-                return
-            }
-            PBPending.push(m)
-        }
-        this.wsConnect()
-    }
-    wsConnect() {
-        var email = this.conf.peerbook.email
-        if ((this.ws != null) || ( typeof email != "string")) return
-        this.getFingerprint().then(fp => {
-            const host = this.conf.net.peerbook,
-                  name = this.conf.peerbook.peer_name,
-                  insecure = this.conf.peerbook.insecure,
-                  schema = insecure?"ws":"wss",
-                  url = encodeURI(`${schema}://${host}/ws?fp=${fp}&name=${name}&kind=terminal7&email=${email}`),
-                  ws = new WebSocket(url)
-            this.ws = ws
-            ws.onmessage = ev => {
-                var m = JSON.parse(ev.data)
-                this.log("got ws message", m)
-                this.onPBMessage(m)
-            }
-            ws.onerror = ev => {
-                // TODO: Add some info avour the error
-                this.notify("\uD83D\uDCD6 WebSocket Error")
-            }
-            ws.onclose = ev => {
-                ws.onclose = undefined
-                ws.onerror = undefined
-                ws.onmessage = undefined
-                this.ws = null
-
-            }
-            ws.onopen = ev => {
-                this.log("on open ws", ev)
-                if (this.pbSendTask == null)
-                    this.pbSendTask = this.run(() => {
-                        PBPending.forEach(m => {
-                            this.log("sending ", m)
-                            this.ws.send(JSON.stringify(m))})
-                        this.pbSendTask = null
-                        PBPending = []
-                    }, 10)
-            }
-        })
-    }
-    onPBMessage(m) {
+    onPBMessage(data) {
+        this.log("got ws message", data)
+        const  m = JSON.parse(data)
+                
         if (m["code"] !== undefined) {
             this.notify(`\uD83D\uDCD6 ${m["text"]}`)
             return
@@ -958,12 +896,12 @@ peer_name = "${peername}"\n`
             return
         }
         var g = this.PBGates.get(m.source_fp)
-        if (typeof g != "object") {
-            this.log("received bad gate", m)
+        if (!g)
             return
-        }
-        if (m.peer_update !== undefined) {
+
+        if (m["peer_update"] !== undefined) {
             g.online = m.peer_update.online
+            g.updateNameE()
             return
         }
         if (!g.session) {
@@ -1196,19 +1134,25 @@ peer_name = "${peername}"\n`
         })
     }
     syncPBPeers(peers) {
-        peers.forEach(p => {
-            var g = this.PBGates.get(p.fp)
-            if (g != undefined) {
-                g.online = p.online
-                g.name = p.name
-                g.verified = p.verified
-                g.updateNameE()
-            } else if (p.kind == "webexec") {
-                let g = new Gate(p)
-                this.PBGates.set(p.fp, g)
-                g.open(this.e)
-            }
-        })
+        if (!peers)
+            this.PBGates = new Map()
+        else 
+            peers.forEach(p => {
+                if (p.kind != "webexec")
+                    return
+                var g = this.PBGates.get(p.fp)
+                if (g != undefined) {
+                    g.online = p.online
+                    g.name = p.name
+                    g.verified = p.verified
+                    g.updateNameE()
+                } else {
+                    g = new Gate(p)
+                    this.PBGates.set(p.fp, g)
+                    g.open(this.e)
+                }
+            })
+            // TODO: remove deleted peers
     }
     async connectForm(t) {
         const f = new Form([

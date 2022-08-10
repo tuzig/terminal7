@@ -42,6 +42,7 @@ export class Gate {
     t7: Terminal7
     t0: Terminal
     onConnected: any
+    fp: string | undefined
 
     constructor (props) {
         // given properties
@@ -717,7 +718,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         if (this.session == null)
             if (this.fp) {
                 this.notify("&#127884 PeerBook")
-                this.session = new PeerbookSession(this.fp)
+                this.session = new PeerbookSession(this.fp, this.t7.pb)
             }
             else {
                 if (this.tryWebexec) {
