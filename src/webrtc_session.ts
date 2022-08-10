@@ -11,7 +11,7 @@ export class WebRTCChannel extends BaseChannel {
     id: number
     createdOn: number
     onMessage : CallbackType
-    constructor(session: PeerbookSession,
+    constructor(session: BaseSession,
                 id: number,
                 dc: RTCDataChannel) {
         super()
