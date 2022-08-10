@@ -1,6 +1,10 @@
 import { RTSession, RTChannel } from "../src//rtsession.ts"
 import { Terminal7 } from "../src/terminal7.js"
 import { Gate } from "../src/gate"
+import { vi } from "vitest";
+import { Terminal } from "@tuzig/xterm";
+
+vi.mock("@tuzig/xterm");
 
 class resizeObs {
     constructor(cb) {
@@ -99,4 +103,5 @@ export class Terminal7Mock extends Terminal7 {
             resolve("BADFACE")
         })
     }
+    logTerminal = new Terminal()
 }
