@@ -237,7 +237,13 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             openDB("t7", 1).then(db => {
                 let tx = db.transaction("certificates", "readwrite"),
                     store = tx.objectStore("certificates")
-                store.clear().then(() => this.pbConnect())
+                store.clear().then(() => {
+                    if (this.pb) {
+                        this.pb.close()
+                        this.pb = null
+                    }
+                    this.pbConnect()
+                })
             })
             ev.target.parentNode.parentNode.classList.add("hidden")
 
@@ -430,9 +436,11 @@ peer_name = "${peername}"\n`
         }).catch(() => this.clear())
     }
     pbConnect() {
-        if (this.pb)
-            this.pb.close()
         return new Promise((resolve, reject) => {
+            if (this.pb) {
+                resolve()
+                return
+            }
             this.getFingerprint().then(fp => {
                 this.pb = new PeerbookConnection(fp,
                     this.conf.peerbook.email,
@@ -440,54 +448,10 @@ peer_name = "${peername}"\n`
                     this.conf.net.peerbook,
                     this.conf.peerbook.insecure
                 )
-                this.pb.onUpdate = (peers) => this.onPBUpdate(peers)
-                return this.pb.connect()
-            })
-        })
-    }
-    pbVerify() {
-        return new Promise((resolve, reject) => {
-           var email = this.conf.peerbook.email,
-                insecure = this.conf.peerbook.insecure,
-                host = this.conf.net.peerbook
-
-            if ((typeof host != "string") || (typeof email != "string") || (email == "")) {
+                this.pb.onUpdate = (m) => this.onPBMessage(m)
+                this.pb.connect()
                 resolve()
-                return
-            }
-            this.notify("Refreshing \uD83D\uDCD6")
-
-            this.getFingerprint().then(fp => {
-                const schema = insecure?"http":"https",
-                      url = `${schema}://${host}/verify`
-                fetch(url,  {
-                    headers: {"Content-Type": "application/json"},
-                    method: 'POST',
-                    body: JSON.stringify({kind: "terminal7",
-                        name: this.conf.peerbook.peer_name,
-                        email: email,
-                        fp: fp
-                    })
-                }).then(async response => {
-                    if (response.ok)
-                        return response.json()
-                    if (response.status == 409) {
-                        var e = document.getElementById("reset-cert"),
-                            pbe = document.getElementById("reset-cert-error")
-                        pbe.innerHTML = response.data 
-                        e.classList.remove("hidden")
-                    }
-                    response.body.getReader().read().then(({done, value}) => {
-                        this.notify(
-                            "&#x1F4D6;&nbsp;"+String.fromCharCode(...value))
-                    })
-                    reject(new Error(`verification failed`))
-                }).then(m => {
-                    this.onPBMessage(m)
-                    resolve()
-
-                }).catch(e => { reject(e) })
-            }).catch(e => console.log("Failed to get FP" + e))
+            })
         })
     }
     async toggleSettings(ev) {
@@ -541,8 +505,10 @@ peer_name = "${peername}"\n`
              || (this.pb.peerName != this.conf.peerbook.peer_name)
              || (this.pb.insecure != this.conf.peerbook.insecure)
              || (this.pb.email != this.conf.peerbook.email))
-        )
+        ) {
             this.pb.close()
+            this.pb = null
+        }
         if (this.conf.peerbook.email)
             this.pbConnect()
     }
@@ -784,6 +750,8 @@ peer_name = "${peername}"\n`
         } else {
             off.remove("hidden")
             this.gates.forEach(g => g.session = null)
+            this.pb.close()
+            this.pb = null
         }
     }
     loadConf(conf) {
@@ -926,6 +894,46 @@ peer_name = "${peername}"\n`
         else
             this.focus()
         // TODO: When at home remove the "on" from the home butto
+    }
+    onPBMessage(data) {
+        this.log("got ws message", data)
+        const  m = JSON.parse(data)
+                
+        if (m["code"] !== undefined) {
+            this.notify(`\uD83D\uDCD6 ${m["text"]}`)
+            return
+        }
+        if (m["peers"] !== undefined) {
+            this.syncPBPeers(m["peers"])
+            return
+        }
+        if (m["verified"] !== undefined) {
+            if (!m["verified"])
+                this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
+            return
+        }
+        var g = this.PBGates.get(m.source_fp)
+        if (!g)
+            return
+
+        if (m["peer_update"] !== undefined) {
+            g.online = m.peer_update.online
+            g.updateNameE()
+            return
+        }
+        if (!g.session) {
+            console.log("session is close ignoring message", m)
+            return
+        }
+        if (m.candidate !== undefined) {
+            g.session.peerCandidate(m.candidate)
+            return
+        }
+        if (m.answer !== undefined ) {
+            var answer = JSON.parse(atob(m.answer))
+            g.session.peerAnswer(answer)
+            return
+        }
     }
     log (...args) {
         var line = ""
@@ -1142,19 +1150,25 @@ peer_name = "${peername}"\n`
             })
         })
     }
-    onPBUpdate(peers) {
-        peers.forEach(p => {
-            var g = this.PBGates.get(p.fp)
-            if (g != undefined) {
-                g.online = p.online
-                g.name = p.name
-                g.verified = p.verified
-                g.updateNameE()
-            } else if (p.kind == "webexec") {
-                let g = new Gate(p)
-                this.PBGates.set(p.fp, g)
-                g.open(this.e)
-            }
-        })
+    syncPBPeers(peers) {
+        if (!peers)
+            this.PBGates = new Map()
+        else 
+            peers.forEach(p => {
+                if (p.kind != "webexec")
+                    return
+                var g = this.PBGates.get(p.fp)
+                if (g != undefined) {
+                    g.online = p.online
+                    g.name = p.name
+                    g.verified = p.verified
+                    g.updateNameE()
+                } else {
+                    g = new Gate(p)
+                    this.PBGates.set(p.fp, g)
+                    g.open(this.e)
+                }
+            })
+            // TODO: remove deleted peers
     }
 }
