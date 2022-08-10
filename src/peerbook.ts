@@ -60,9 +60,9 @@ export class PeerbookConnection {
     send(m) {
         // null message are used to trigger connection, ignore them
         if (m != null) {
-            if (PeerbookConnection.ws != null 
-                && PeerbookConnection.ws.readyState == WebSocket.OPEN) {
-                PeerbookConnection.ws.send(JSON.stringify(m))
+            if (this.ws != null 
+                && this.ws.readyState == WebSocket.OPEN) {
+                this.ws.send(JSON.stringify(m))
                 return
             }
             this.pending.push(m)
@@ -105,5 +105,8 @@ export class PeerbookConnection {
             g.session.peerAnswer(answer)
             return
         }
+    }
+    isOpen() {
+        return this.ws.readyState === WebSocket.OPEN
     }
 }

@@ -430,9 +430,12 @@ peer_name = "${peername}"\n`
         }).catch(() => this.clear())
     }
     pbConnect() {
-        if (this.pb)
-            this.pb.close()
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
+            if (!this.conf.peerbook.email || 
+               (this.pb  && this.pb.isOpen())) {
+                resolve()
+                return
+            }
             this.getFingerprint().then(fp => {
                 this.pb = new PeerbookConnection(fp,
                     this.conf.peerbook.email,
@@ -443,51 +446,6 @@ peer_name = "${peername}"\n`
                 this.pb.onUpdate = (peers) => this.onPBUpdate(peers)
                 return this.pb.connect()
             })
-        })
-    }
-    pbVerify() {
-        return new Promise((resolve, reject) => {
-           var email = this.conf.peerbook.email,
-                insecure = this.conf.peerbook.insecure,
-                host = this.conf.net.peerbook
-
-            if ((typeof host != "string") || (typeof email != "string") || (email == "")) {
-                resolve()
-                return
-            }
-            this.notify("Refreshing \uD83D\uDCD6")
-
-            this.getFingerprint().then(fp => {
-                const schema = insecure?"http":"https",
-                      url = `${schema}://${host}/verify`
-                fetch(url,  {
-                    headers: {"Content-Type": "application/json"},
-                    method: 'POST',
-                    body: JSON.stringify({kind: "terminal7",
-                        name: this.conf.peerbook.peer_name,
-                        email: email,
-                        fp: fp
-                    })
-                }).then(async response => {
-                    if (response.ok)
-                        return response.json()
-                    if (response.status == 409) {
-                        var e = document.getElementById("reset-cert"),
-                            pbe = document.getElementById("reset-cert-error")
-                        pbe.innerHTML = response.data 
-                        e.classList.remove("hidden")
-                    }
-                    response.body.getReader().read().then(({done, value}) => {
-                        this.notify(
-                            "&#x1F4D6;&nbsp;"+String.fromCharCode(...value))
-                    })
-                    reject(new Error(`verification failed`))
-                }).then(m => {
-                    this.onPBMessage(m)
-                    resolve()
-
-                }).catch(e => { reject(e) })
-            }).catch(e => console.log("Failed to get FP" + e))
         })
     }
     async toggleSettings(ev) {
@@ -543,8 +501,7 @@ peer_name = "${peername}"\n`
              || (this.pb.email != this.conf.peerbook.email))
         )
             this.pb.close()
-        if (this.conf.peerbook.email)
-            this.pbConnect()
+        this.pbConnect()
     }
     catchFingers() {
         var start,

@@ -1,5 +1,5 @@
 FROM golang:alpine
-ARG BRANCH=master
+ARG BRANCH=ws_only_conn
 RUN apk update
 RUN apk add git bash
 RUN addgroup -S peerbook && adduser -S peerbook -G peerbook
