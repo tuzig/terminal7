@@ -37,7 +37,7 @@ export interface Session {
     // for new channel
     openChannel(cmd: string, parent?: ChannelID, sx?: number, sy?: number):
         Promise<Channel>
-    close(): Promise<void>
+    close(): void
     getPayload(): Promise<string>
     setPayload(payload: string): Promise<void>
     disconnect(): Promise<void>
@@ -103,10 +103,12 @@ export abstract class BaseSession implements Session {
             this.watchdog = null
         }
     }
+    close() {
+        window.terminal7.log("close session not implmented yet for", typeof(this))
+    }
     // for reconnect
     abstract openChannel(id: ChannelID): Promise<Channel>
     abstract openChannel(cmd: string | ChannelID, parent?: ChannelID, sx?: number, sy?: number):
         Promise<Channel> 
-    abstract close(): Promise<void>
     abstract connect(): void
 }

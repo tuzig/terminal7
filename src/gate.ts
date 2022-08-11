@@ -454,10 +454,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
                         this.t7.log("Closing gate after updating to empty state")
-                        this.session.close().then(() => {
-                            this.session = null
-                            this.boarding = false
-                        })
+                        this.session.close()
+                        this.session = null
+                        this.boarding = false
                     }
                })
             }, 100)

@@ -287,8 +287,12 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             App.addListener('appStateChange', state => {
                 if (!state.isActive) {
                     // We're getting suspended. disengage.
-                    this.notify("Benched")
-                    this.disengage().then(() => this.clearTimeouts())
+                    this.pb.close()
+                    this.pb = null
+                    this.disengage().then(() => {
+                        this.clearTimeouts()
+                        this.notify("&#x1F6CC;")
+                    })
                 } else {
                     // We're back! ensure we have the latest network status and 
                     // reconnect to the active gate
@@ -747,7 +751,6 @@ peer_name = "${peername}"\n`
         } else {
             off.remove("hidden")
             this.gates.forEach(g => g.session = null)
-            this.pb.close()
             this.pb = null
         }
     }
