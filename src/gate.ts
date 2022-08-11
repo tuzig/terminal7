@@ -512,7 +512,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                 this.notify("Disconnected")
                 resolve()
             }).catch(() => {
-                reject("session does not support disconnect")
+                this.session = null
+                this.notify("Disconnected")
+                resolve()
             })
         })
     }

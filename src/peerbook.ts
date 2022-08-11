@@ -20,9 +20,8 @@ export class PeerbookConnection {
         this.pending = new Array()
     }
     connect() {
-        var firstMessage = true
-        return new Promise((resolve, reject) =>{
-            if (this.ws != null) {
+        return new Promise<void>((resolve) =>{
+            if ((this.ws != null) && this.isOpen()) {
                 resolve()
                 return
             }
@@ -30,18 +29,17 @@ export class PeerbookConnection {
                   url = encodeURI(`${schema}://${this.host}/ws?fp=${this.fp}&name=${this.peerName}&kind=terminal7&email=${this.email}`)
             this.ws = new WebSocket(url)
             this.ws.onmessage = ev => this.onUpdate(ev.data)
-            this.ws.onerror = ev => {
-                    // TODO: Add some info avour the error
-                terminal7.notify("\uD83D\uDCD6 WebSocket Error")
-            }
-            /*
+            this.ws.onerror = ev => window.terminal7.log("Peerbook WebSocket Error", ev)
             this.ws.onclose = ev => {
+                window.terminal7.log("peerbook connection closed")
+                terminal7.notify("\uD83D\uDCD6 Connection closed")
                 this.ws.onclose = undefined
                 this.ws.onerror = undefined
                 this.ws.onmessage = undefined
                 this.ws = null
-            }*/
+            }
             this.ws.onopen = ev => {
+                terminal7.notify("\uD83D\uDCD6 Connection opened")
                 resolve()
                 if ((this.pbSendTask == null) && (this.pending.length > 0))
                     this.pbSendTask = setTimeout(() => {
@@ -57,21 +55,17 @@ export class PeerbookConnection {
     }
     send(m) {
         // null message are used to trigger connection, ignore them
-        if (m != null) {
-            if (this.ws != null 
-                && this.ws.readyState == WebSocket.OPEN) {
-                this.ws.send(JSON.stringify(m))
-                return
-            }
+        const state = this.ws ? this.ws.readyState : WebSocket.CLOSED
+        if (state == WebSocket.OPEN) {
+            this.ws.send(JSON.stringify(m))
+        } else
             this.pending.push(m)
-        }
-        this.ws.send(JSON.stringify(m))
     }
     close() {
         this.ws.close()
         this.ws = null
     }
     isOpen() {
-        return this.ws.readyState === WebSocket.OPEN
+        return this.ws ? this.ws.readyState === WebSocket.OPEN : false
     }
 }
