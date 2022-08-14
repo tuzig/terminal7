@@ -178,7 +178,7 @@ export class Gate {
     focus() {
         this.t7.logDisplay(false)
         // hide the current focused gate
-        document.getElementById("map-button").classList.remove("on")
+        document.getElementById("map-button").classList.remove("off")
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.remove("off"))
         let activeG = this.t7.activeG

@@ -619,7 +619,7 @@ peer_name = "${peername}"\n`
         Storage.remove({key: "last_state"}) 
         let s = document.getElementById('map-button'),
             h = document.getElementById('map')
-        s.classList.add('on')
+        s.classList.add('off')
         if (this.activeG) {
             this.activeG.e.classList.add("hidden")
             this.activeG = null
