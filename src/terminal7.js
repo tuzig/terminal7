@@ -118,6 +118,7 @@ export class Terminal7 {
                 10))
 
         }
+        this.refreshMap()
         this.loadConf(d)
 
         // buttons
@@ -126,7 +127,7 @@ export class Terminal7 {
                     ev =>  {
                         if (this.activeG)
                             this.activeG.activeW.activeP.close()})
-        document.getElementById("home-button")
+        document.getElementById("map-button")
                 .addEventListener("click", ev => this.goHome())
         document.getElementById("log-button")
                 .addEventListener("click", ev => this.logDisplay())
@@ -137,8 +138,6 @@ export class Terminal7 {
                 .addEventListener("click", ev => this.toggleHelp())
         document.getElementById("help-button")
                 .addEventListener("click", ev => this.toggleHelp())
-        document.getElementById("refresh")
-                .addEventListener("click", () => this.log("not refreshing peerbook:"))
         document.querySelectorAll("#help-copymode, #keys-help").forEach(e => 
                 e.addEventListener("click", ev => this.clear()))
         document.getElementById("divide-h")
@@ -150,7 +149,7 @@ export class Terminal7 {
                     if (this.activeG && this.activeG.activeW.activeP.sx >= 0.04)
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         let addHost = document.getElementById("add-host")
-        document.getElementById('add-static-host').addEventListener(
+        document.getElementById('add-gate').addEventListener(
             'click', async () => {
                 this.logDisplay(false)
                 if (addHost.classList.contains('hidden')) {
@@ -282,6 +281,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 g.store = true
                 this.addGate(g).e.classList.add("hidden")
             })
+            this.refreshMap()
         }
         if (Capacitor.isNativePlatform())  {
             App.addListener('appStateChange', state => {
@@ -334,6 +334,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         modal = document.getElementById("peerbook-modal")
         modal.querySelector(".close").addEventListener('click',
             () => this.clear() )
+        /*
         document.getElementById('add-peerbook').addEventListener(
             'click', () => {
                 this.logDisplay(false)
@@ -341,6 +342,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 modal.classList.remove("hidden")
                 this.peerbookForm()
             })
+            */
         Network.getStatus().then(s => {
             this.updateNetworkStatus(s)
             if (!s.connected) {
@@ -441,7 +443,7 @@ peer_name = "${peername}"\n`
     }
     pbConnect() {
         return new Promise((resolve) => {
-            if (!this.conf.peerbook.email || 
+            if (!this.conf.peerbook || !this.conf.peerbook.email || 
                (this.pb  && this.pb.isOpen())) {
                 resolve()
                 return
@@ -539,8 +541,51 @@ peer_name = "${peername}"\n`
 
         let g = new Gate(p)
         this.gates.push(g)
-        g.open(this.e)
+        const nameE = g.open(this.e)
+        document.getElementById("gates").prepend(nameE)
         return g
+    }
+    refreshMap() {
+        const pads = document.querySelectorAll(".gate-pad")
+        var col, row
+        pads.forEach((e, i) => {
+            row = i / 4
+            col = i % 4
+            if (col % 2 == 0)
+                e.style.background = 'top / contain no-repeat url("/map/left_half.svg")'
+            else
+                e.style.background = 'top / contain no-repeat url("/map/right_half.svg")'
+        })
+        document.querySelectorAll(".empty-pad").forEach(e => e.remove())
+        const gates = document.getElementById("gates")
+        for (var i = col + 1; i < 4; i++) {
+            const e = document.createElement("div")
+            e.appendChild(document.createElement("div"))
+
+            e.className = "empty-pad"
+            if (i % 2 == 0)
+                e.style.background = 'top / contain no-repeat url("/map/left_half.svg")'
+            else
+                e.style.background = 'top / contain no-repeat url("/map/right_half.svg")'
+            gates.appendChild(e)
+        }
+        // add the footer line
+        for (i = 0; i < 4; i++) {
+            const e = document.createElement("div")
+            e.appendChild(document.createElement("div"))
+            e.className = "empty-pad"
+            if (i % 2 == 0)
+                e.style.background = 'top / contain no-repeat url("/map/footer_left_half.svg")'
+            else
+                e.style.background = 'top / contain no-repeat url("/map/footer_right_half.svg")'
+            gates.appendChild(e)
+        }
+        document.querySelectorAll(".map-TBD").forEach(e => e.remove())
+        const clear = document.createElement("div")
+        clear.style.clear = 'both'
+        clear.className = 'map-TBD'
+        gates.appendChild(clear)
+
     }
     async storeGates() { 
         let out = []
@@ -555,6 +600,7 @@ peer_name = "${peername}"\n`
         })
         this.log("Storing gates:", out)
         await Storage.set({key: 'gates', value: JSON.stringify(out)})
+        this.refreshMap()
     }
     clear() {
         this.e.querySelectorAll('.temporal').forEach(e => e.remove())
@@ -571,8 +617,8 @@ peer_name = "${peername}"\n`
     }
     goHome() {
         Storage.remove({key: "last_state"}) 
-        let s = document.getElementById('home-button'),
-            h = document.getElementById('home')
+        let s = document.getElementById('map-button'),
+            h = document.getElementById('map')
         s.classList.add('on')
         if (this.activeG) {
             this.activeG.e.classList.add("hidden")
@@ -776,18 +822,6 @@ peer_name = "${peername}"\n`
         this.conf.net.timeout = this.conf.net.timeout || 3000
         this.conf.net.httpTimeout = this.conf.net.http_timeout || 1000
         this.conf.net.retries = this.conf.net.retries || 3
-        var apb = document.getElementById("add-peerbook"),
-            rpb = document.getElementById("refresh")
-        if (!this.conf.peerbook) {
-            apb.style.removeProperty("display")
-            rpb.style.display = "none"
-            this.conf.peerbook = {}
-        } else {
-            rpb.style.removeProperty("display")
-            apb.style.display = "none"
-        }
-        if (!this.conf.peerbook.peer_name)
-            this.conf.peerbook.peer_name = "John Doe"
 /*
             Device.getInfo()
             .then(i =>
@@ -1023,11 +1057,11 @@ peer_name = "${peername}"\n`
     }
     onPointerUp(ev) {
         let e = ev.target,
-            hosts = e.closest(".hosts button")
+            gateName = e.closest(".gate-pad")
 
         if (!this.pointer0)
             return
-        if (hosts) {
+        if (gateName) {
             let deltaT = Date.now() - this.pointer0
             clearTimeout(this.longPressGate)
             this.longPressGate = null
@@ -1169,6 +1203,7 @@ peer_name = "${peername}"\n`
                     g.open(this.e)
                 }
             })
+        this.refreshMap()
             // TODO: remove deleted peers
     }
 }

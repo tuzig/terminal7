@@ -28,13 +28,13 @@ export class Terminal7Mock extends Terminal7 {
         
         document.body.innerHTML = `
 <div id='t7'></div>
-<div id='static-hosts'></div>
+<div id='gates'></div>
 <div id='log'></div>
 <div id='log-button'></div>
 <div id='log-msgs'></div>
 <div id='help-button'></div>
 <div id='help-gate'></div>
-<div id='home-button'></div>
+<div id='map-button'></div>
     <template id="gate-template">
     <div class="windows-container">
     </div>

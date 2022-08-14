@@ -33,9 +33,6 @@ export class PeerbookConnection {
             this.ws.onclose = ev => {
                 window.terminal7.log("peerbook connection closed")
                 terminal7.notify("\uD83D\uDCD6 Connection closed")
-                this.ws.onclose = undefined
-                this.ws.onerror = undefined
-                this.ws.onmessage = undefined
                 this.ws = null
             }
             this.ws.onopen = ev => {
