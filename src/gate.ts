@@ -133,7 +133,7 @@ export class Gate {
         return d
     }
     delete() {
-        this.t7.gates.splice(this.id, 1)
+        this.t7.gates.delete(this.id)
         this.t7.storeGates()
         // remove the host from the home screen
         if (this.nameE)

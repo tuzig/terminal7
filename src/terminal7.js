@@ -1162,9 +1162,12 @@ peer_name = "${peername}"\n`
                 g.verified = p.verified
                 g.updateNameE()
             } else {
+                p.id = p.fp
                 g = new Gate(p)
                 this.gates.set(p.fp, g)
+                g.addToMap()
                 g.open(this.e)
+
             }
         })
         this.refreshMap()
