@@ -264,7 +264,7 @@ nav .on { color: var(--indicator-color) !important; }
 }
 .windows-container {
     bottom: 85pt;
-    top: 0;
+    top: 22px ;
     left: 0;
     width: 100%;
     position: fixed;
@@ -689,7 +689,7 @@ footer pre { font-size: 14px; }
     width: 968px;
     margin: 0 auto;
     position: relative;
-    top: -48px;
+    top: -12px;
 }
 .map-header-wide {
     display: block;
@@ -704,7 +704,8 @@ footer pre { font-size: 14px; }
 }
 #map .text-button {
     width: 80%;
-    margin: 14% 10% 6%;
+    margin: 14% 10% 0;
+    height: 72%;
 }
 .empty-pad div {
     margin: 10%;

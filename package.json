@@ -28,6 +28,7 @@
     "@capacitor/ios": "<4",
     "@capacitor/keyboard": "^1.2.3",
     "@capacitor/network": "^1.0.5",
+    "@capacitor/status-bar": "^4.0.1",
     "@capacitor/storage": "^1.2.2",
     "@robingenz/capacitor-background-task": "^1.0.0",
     "@tuzig/codemirror": "5.65.5-mods",
