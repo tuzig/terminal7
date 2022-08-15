@@ -443,25 +443,26 @@ label {
     background-color: inherit;
 }
 #log {
-    position: absolute;
-    right : 0px;
+    position: fixed;
+    left: 50%;
     bottom: 114px;
     margin: 0;
-    padding: 0;
+    padding: 2px;
     z-index: 4;
     background-color: var(--background);
     border-color: var(--local-border);
     text-align: left;
     width: 96%;
+    max-height: 50vh;
     max-width: 30em;
     /* right: -100%; */
-    opacity: 0;
-    transition: all .75s ease;
-    transform: translate(100%, 0);
+    opacity: 0.8;
+    transition: transform .75s ease;
+    transform: translate(-50%, 200%);
+    overflow: hidden;
 }
 #log.show {
-    opacity: 0.8;
-    transform: translate(0, 0);
+    transform: translate(-50%, 0);
 }
 #log-msgs {
     margin: 0;

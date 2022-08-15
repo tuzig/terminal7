@@ -132,7 +132,7 @@ export class Terminal7 {
                 if (key == 'Escape')
                     this.logDisplay(false)
             })
-        }, 100)
+        }, 0)
 
         // buttons
         document.getElementById("trash-button")
@@ -520,7 +520,7 @@ peer_name = "${peername}"\n`
      * the function ensures the gate has a unique name adds the gate to
      * the `gates` property, stores and returns it.
      */
-    addGate(props) {
+    addGate(props, onMap = true) {
         let out = [],
             p = props || {},
             addr = p.addr,
@@ -531,8 +531,11 @@ peer_name = "${peername}"\n`
 
         let g = new Gate(p)
         this.gates.push(g)
-        const nameE = g.open(this.e)
-        document.getElementById("gates").prepend(nameE)
+        g.open(this.e)
+        if (onMap) {
+            const nameE = g.addToMap()
+            document.getElementById("gates").prepend(nameE)
+        }
         return g
     }
     refreshMap() {
@@ -604,6 +607,7 @@ peer_name = "${peername}"\n`
         this.logDisplay(false)
         this.focus()
         this.longPressGate = null
+        Form.activeForm = false
     }
     goHome() {
         Storage.remove({key: "last_state"}) 
@@ -633,13 +637,17 @@ peer_name = "${peername}"\n`
         if (show) {
             e.classList.add("show")
             document.getElementById("log-button")
-                .classList.add("on")
+            .classList.add("on")
+            e.classList.remove("hidden")
         } else {
             e.classList.remove("show")
             document.getElementById("log-button")
                 .classList.remove("on")
         }
-        this.focus()
+        if (Form.activeForm)
+            this.logTerminal.focus()
+        else
+            this.focus()
     }
     /*
      * onDisconnect is called when a gate disconnects.
@@ -1211,9 +1219,9 @@ peer_name = "${peername}"\n`
             const gate = this.addGate({
                 name: "temp_" + Math.random().toString(16).slice(2), // temp random name
                 addr: hostname,
-            })
+            }, false)
+            this.refreshMap()
             gate.t0 = t
-            gate.nameE.classList.add("hidden")
             gate.connect(() => {
                 t.write(" Success!")
                 const saveForm = new Form([
@@ -1237,10 +1245,11 @@ peer_name = "${peername}"\n`
                         nameForm.start(t).then(res => {
                             const name = res[0]
                             gate.name = name
-                            gate.nameE.innerHTML = name
-                            gate.nameE.classList.remove("hidden")
+                            const nameE = gate.addToMap()
+                            document.getElementById("gates").prepend(nameE)
                             gate.store = true
                             this.storeGates()
+                            this.refreshMap()
                             this.clear()
                             gate.session.getPayload()
                                 .then(layout => gate.setLayout(layout))

@@ -1,5 +1,6 @@
 import { Terminal } from "@tuzig/xterm"
 import { FitAddon } from "xterm-addon-fit"
+import XtermWebfont from 'xterm-webfont'
 
 export type Fields = Array<{
     prompt:string,
@@ -21,13 +22,15 @@ export function openFormsTerminal(e: HTMLElement) {
         rendererType: "canvas",
         convertEol: true,
     })
-    terminal.open(e)
     const fitAddon = new FitAddon()
     terminal.loadAddon(fitAddon)
-    fitAddon.fit()
-    terminal.write("\n")
+    terminal.loadAddon(new XtermWebfont())
     const resizeObserver = new window.ResizeObserver(() => fitAddon.fit())
     resizeObserver.observe(e);
+    terminal.loadWebfontAndOpen(e).then(() => {
+        fitAddon.fit()
+        terminal.write("\n")
+    })
     return terminal
 }
 
@@ -184,6 +187,7 @@ export class Form {
                         }
                         break
                     case "Enter":
+                        t.write("\n")
                         if (!this.next(t)) {
                             resolve(this.results)
                             disposable.dispose()

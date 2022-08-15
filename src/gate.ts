@@ -114,7 +114,6 @@ export class Gate {
             */
             this.e.appendChild(t)
         }
-        return this.addToMap()
     }
         // Add the gates' signs to the home page
     addToMap() {
@@ -134,7 +133,8 @@ export class Gate {
         this.t7.gates.splice(this.id, 1)
         this.t7.storeGates()
         // remove the host from the home screen
-        this.nameE.remove()
+        if (this.nameE)
+            this.nameE.remove()
     }
     /*
      * edit start the edit-host user-assitance
@@ -205,6 +205,7 @@ export class Gate {
                                     Form.activeForm = false
                                     if (res[0] == "y")
                                         this.delete()
+                                    this.t7.clear()
                                 })
                                 break
                         }

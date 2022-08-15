@@ -95,7 +95,7 @@ abstract class WebRTCSession extends BaseSession {
         console.log("in connect")
         this.startWatchdog()
 
-        if ((!this.t7.iceServers) && (!this.t7.conf.peerbook.insecure)) {
+        if ((!this.t7.iceServers) && (!this.t7.conf.peerbook?.insecure)) {
             try {
                 this.t7.iceServers = await this.getIceServers()
             } catch(e) {
