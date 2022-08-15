@@ -42,7 +42,7 @@ body {
   font-family: 'FiraSans';
   color: #00FAFA;
   background-color: var(--background);
-  overflow: hidden;
+  overflow: auto;
 }
 body {
   scrollbar-width: thin;
@@ -87,7 +87,7 @@ button {
   font-family: Courier new;
   */
 }
-.text-button, .hosts button {
+.text-button, .gates button {
     display: inline-block;
     cursor: pointer;
     padding: 0.35em 1.2em;
@@ -96,7 +96,7 @@ button {
     color: var(--local-border);
     border-radius: 0.15em;
     font-weight: 300;
-    font-size: 30px;
+    font-size: 20px;
 } 
 dd { display: visible; }
 .border, .text-button {
@@ -264,7 +264,7 @@ nav .on { color: var(--indicator-color) !important; }
 }
 .windows-container {
     bottom: 85pt;
-    top: 0;
+    top: 22px ;
     left: 0;
     width: 100%;
     position: fixed;
@@ -377,42 +377,37 @@ button.rename-close {
 #version a {
     text-decoration: underline;
 }
-#hosts-container { 
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
-}
-.hosts {
+.gates {
     flex: 1 0 auto;
     width: 16em;
 }
 
-.hosts>* {
+.gates>* {
     cursor: pointer;
     margin: 1em; 
     padding: 0.8em;
 }
-.hosts p {
+.gates p {
     overflow: hidden;
 }
-.hosts a {
+.gates a {
     text-decoration: none;
 }
-.hosts .border {
+.gates .border {
     border-color: var(--remote-border);
 }
-.hosts h3 {
+.gates h3 {
     font-size: 36px;
     padding-bottom: 0;
     margin-bottom: 0;
 }
-.hosts button {
+.gates button {
     padding: 1em;
     box-shadow: 7px 6px 28px 1px rgba(0, 0, 0, 0.24);
     margin: 0.5em;
     width: 80%
 }
-.hosts button:active {
+.gates button:active {
     transform: scale(0.98);
     box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
 }
@@ -689,4 +684,34 @@ audio { display: none; }
 }
 .terminal-container {
     height: 20em;
+}
+
+#map {
+    width: 968px;
+    margin: 0 auto;
+    position: relative;
+    top: -12px;
+}
+.map-header-wide {
+    display: block;
+    margin: 0 auto;
+    height: 300px;
+    background: bottom / contain no-repeat url("/map/top_wide.svg")
+}
+.gate-pad, .empty-pad {
+    width: 25%;
+    height: 105px;
+    float: left;
+}
+#map .text-button {
+    width: 80%;
+    margin: 14% 10% 0;
+    height: 72%;
+}
+.empty-pad div {
+    margin: 10%;
+    width: 80%;
+    height: 80%;
+    border: 1px dashed;
+    opacity: 25%;
 }

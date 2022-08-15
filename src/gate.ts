@@ -114,16 +114,21 @@ export class Gate {
             */
             this.e.appendChild(t)
         }
+        return this.addToMap()
+    }
         // Add the gates' signs to the home page
-        let hostsE = document.getElementById(this.fp?"peerbook-hosts":"static-hosts")
-        let b = document.createElement('button'),
-            addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
+    addToMap() {
+        const d = document.createElement('div')
+        const b = document.createElement('button')
+        d.className = "gate-pad"
         b.className = "text-button"
-        this.nameE = b
-        this.nameE.innerHTML = this.name || this.addr
-        this.updateNameE()
-        hostsE.appendChild(b)
+        d.gate = this
         b.gate = this
+        b.innerHTML = this.name || this.addr
+        this.nameE = d
+        d.appendChild(b)
+        this.updateNameE()
+        return d
     }
     delete() {
         this.t7.gates.splice(this.id, 1)
@@ -212,7 +217,7 @@ export class Gate {
     focus() {
         this.t7.logDisplay(false)
         // hide the current focused gate
-        document.getElementById("home-button").classList.remove("on")
+        document.getElementById("map-button").classList.remove("off")
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.remove("off"))
         let activeG = this.t7.activeG
@@ -574,13 +579,14 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         if (this.session && (this.panes().every(p => p.d != null)))
            this.sendStateTask = setTimeout(() => {
                this.sendStateTask = null
+               if (!this.session)
+                   return
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
                         this.t7.log("Closing gate after updating to empty state")
-                        this.session.close().then(() => {
-                            this.session = null
-                            this.boarding = false
-                        })
+                        this.session.close()
+                        this.session = null
+                        this.boarding = false
                     }
                })
             }, 100)
@@ -635,7 +641,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                 this.notify("Disconnected")
                 resolve()
             }).catch(() => {
-                reject("session does not support disconnect")
+                this.session = null
+                this.notify("Disconnected")
+                resolve()
             })
         })
     }
@@ -650,19 +658,20 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         }
     }
     updateNameE() {
-        this.nameE.innerHTML = this.name
+        const button = this.nameE.children[0]
+        button.innerHTML = this.name
         if (!this.fp) {
             // there's nothing more to update for static hosts
             return
         }
         if (this.verified)
-            this.nameE.classList.remove("unverified")
+            button.classList.remove("unverified")
         else
-            this.nameE.classList.add("unverified")
+            button.classList.add("unverified")
         if (this.online)
-            this.nameE.classList.remove("offline")
+            button.classList.remove("offline")
         else
-            this.nameE.classList.add("offline")
+            button.classList.add("offline")
     }
     async copyFingerprint() {
         const fp = await this.t7.getFingerprint(),

@@ -91,18 +91,6 @@ abstract class WebRTCSession extends BaseSession {
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
             return
     }
-    /*
-     * disengagePC silently removes all event handler from the peer connections
-     */
-    disengagePC() {
-        if (this.pc != null) {
-            this.pc.onconnectionstatechange = undefined
-            this.pc.onmessage = undefined
-            this.pc.onnegotiationneeded = undefined
-            this.pc.close()
-            this.pc = null
-        }
-    }
     async connect(marker=-1) {
         console.log("in connect")
         this.startWatchdog()
@@ -330,10 +318,18 @@ abstract class WebRTCSession extends BaseSession {
                     args: null
                 }, (payload) => {
                 this.t7.log("got a marker", this.lastMarker, payload)
-                this.disengagePC()
+                this.close()
                 resolve(payload)
             }, reject)
         })
+    }
+    close(): void {
+        if (this.pc != null) {
+            this.pc.onconnectionstatechange = undefined
+            this.pc.onnegotiationneeded = undefined
+            this.pc.close()
+            this.pc = null
+        }
     }
 }
 
@@ -446,7 +442,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
                     this.clearWatchdog()
                     console.log("POST to /connect failed", error)
                     if (error.message == 'unauthorized')  {
-                        this.disengagePC()
+                        this.close()
                         this.fail(Failure.Unauthorized)
                     // TODO: the next line is probably wrong
                     } else

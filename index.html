@@ -28,22 +28,14 @@
                   version 0.21.0
               </a>
           </div>
-          <h2>Destinations</h2>
-          <div id="hosts-container">
-              <div class="hosts" id="static-hosts">
-                  <h3>Static</h3>
-                  <button type="button" class="text-button" id="add-static-host" >
-                      <i class="f7-icons"> plus</i>
-                  </button>
-              </div>
-              <div class="hosts" id="peerbook-hosts">
-                  <h3>PeerBook</h3>
-                  <button type="button" class="text-button" id="add-peerbook" >
-                      <i class="f7-icons"> plus</i>
-                  </button>
-                  <button type="button" class="text-button" id="refresh">
-                      <i class="f7-icons">arrow_2_circlepath</i>
-                  </button>
+          <div id="map">
+              <div class="map-header-wide"></div>
+              <div id="gates">
+                  <div class="gate-pad">
+                      <button type="button" class="text-button" id="add-gate" >
+                          <i class="f7-icons">plus</i>
+                      </button>
+                 </div>
               </div>
           </div>
       </div>
@@ -286,7 +278,7 @@
        </div>
   </div>
   <nav id="navbar" class="bar">
-          <button type="button" id="home-button" class="on"><i class="f7-icons">house</i></button>
+          <button type="button" id="map-button" class="off"><i class="f7-icons">map</i></button>
           <button type="button" id="log-button"><i class="f7-icons">bubble_right</i></button>
           <button type="button" id="trash-button" class="pane-buttons off"><i class="f7-icons">rectangle_fill_badge_xmark</i></button>
           <button type="button" id="divide-h" class="pane-buttons off"><i class="f7-icons">divide</i></button>
