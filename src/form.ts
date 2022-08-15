@@ -1,6 +1,7 @@
 import { Terminal } from "@tuzig/xterm"
 import { FitAddon } from "xterm-addon-fit"
 import XtermWebfont from 'xterm-webfont'
+import { Clipboard } from "@capacitor/clipboard"
 
 export type Fields = Array<{
     prompt:string,
@@ -201,9 +202,20 @@ export class Form {
                         }
                         break
                     default:
-                        this.field += key
-                        if (!password)
-                            t.write(key)
+                        if ((ev.domEvent.ctrlKey || ev.domEvent.metaKey) && key == 'v') {
+                            Clipboard.read().then(res => {
+                                if (res.type == 'text/plain') {
+                                    this.field += res.value
+                                    if (!password)
+                                        t.write(res.value)
+                                }
+                            })
+                        }
+                        else {
+                            this.field += key
+                            if (!password)
+                                t.write(key)
+                        }
                 }
             })
             t.focus()
