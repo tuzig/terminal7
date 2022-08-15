@@ -50,6 +50,7 @@ export class Form {
     }
 
     chooseFields(t: Terminal, title: string) {
+        Form.activeForm = true
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
@@ -89,6 +90,7 @@ export class Form {
                         disposable.dispose()
                         resolve(enabled)
                         t.write(`\x1B[${len-current}B`)
+                        Form.activeForm = false
                         break
                     case "ArrowRight":
                         enabled.fill(true)
@@ -115,6 +117,7 @@ export class Form {
     }
 
     menu(t: Terminal, title: string) {
+        Form.activeForm = true
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
@@ -154,6 +157,7 @@ export class Form {
                         disposable.dispose()
                         resolve(this.fields[current].prompt)
                         t.write(`\x1B[${len-current}B`)
+                        Form.activeForm = false
                         break
                 }
             })
@@ -162,7 +166,8 @@ export class Form {
     }
 
 
-    start(t: Terminal) : Promise<Results> { 
+    start(t: Terminal) : Promise<Results> {
+        Form.activeForm = true
         this.i = 0
         this.field = ''
         this.results = []
@@ -191,6 +196,7 @@ export class Form {
                         if (!this.next(t)) {
                             resolve(this.results)
                             disposable.dispose()
+                            Form.activeForm = false
                             return
                         }
                         break
