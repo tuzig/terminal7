@@ -157,7 +157,6 @@ export class Gate {
             if (Form.activeForm) 
                 this.t7.logTerminal.focus()
             else {
-                Form.activeForm = true
                 this.t7.logDisplay(true)
                 const f1 = new Form([
                     { prompt: "Connect" },
@@ -183,12 +182,10 @@ export class Gate {
                         switch (choice) {
                             case 'Connect':
                                 this.connect()
-                                Form.activeForm = false
                                 break
                             case 'Edit':
                                 f2.chooseFields(this.t7.logTerminal, `\x1B[4m${this.name}\x1B[0m edit`).then((enabled) => {
                                     if (!enabled) {
-                                        Form.activeForm = false
                                         this.t7.clear()
                                         return
                                     }
@@ -199,13 +196,11 @@ export class Gate {
                                         this.nameE.innerHTML = this.name || this.addr
                                         this.t7.storeGates()
                                         this.t7.clear()
-                                        Form.activeForm = false
                                     }).catch(() => this.t7.clear())
                                 }).catch(() => this.t7.clear())
                                 break
                             case "\x1B[31mDelete\x1B[0m":
                                 fDel.start(this.t7.logTerminal).then(res => {
-                                    Form.activeForm = false
                                     if (res[0] == "y")
                                         this.delete()
                                     this.t7.clear()
@@ -266,8 +261,10 @@ export class Gate {
                     Storage.set({key: "first_gate", value: "1"}) 
                 }
             })
-            if (this.onConnected)
+            if (this.onConnected) {
                 this.onConnected()
+                this.onConnected = null
+            }
         } else if (state == "disconnected") {
             // TODO: add warn class
             this.lastDisconnect = Date.now()
@@ -330,62 +327,61 @@ export class Gate {
         if (!failure)
             this.notify("Connection FAILED");
         
-            
-        (async () => {
-            const rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${this.fp}" >> ~/.config/webexec/authorized_fingerprints`
-            this.t7.logTerminal.write("  Failed to connect")
-            let ans
-            const verifyForm = new Form([{
-                prompt: `Does the address \x1B[1;37m${this.addr}\x1B[0m seem correct?`,
-                values: ["y", "n"],
-                default: "y"
-            }])
-            try {
-                ans = (await verifyForm.start(this.t7.logTerminal))[0]
-            } catch (e) {
-                this.t7.clear()
-                this.delete()
-            }
-            if (!ans) {
-                this.t7.logTerminal.writeln("ESC")
-                return
-            }
-            if (ans == "n") {
-                this.t7.logTerminal.write("\x1Bc")
-                return this.t7.connectForm(this.t7.logTerminal)
-            }
-            const webexecForm = new Form([{
-                prompt: `Make sure webexec is running on ${this.addr}:
+        if (this.name.startsWith("temp")) {
+            (async () => {
+                const rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${this.fp}" >> ~/.config/webexec/authorized_fingerprints`
+                this.t7.logTerminal.write("  Failed to connect")
+                let ans
+                const verifyForm = new Form([{
+                    prompt: `Does the address \x1B[1;37m${this.addr}\x1B[0m seem correct?`,
+                    values: ["y", "n"],
+                    default: "y"
+                }])
+                try {
+                    ans = (await verifyForm.start(this.t7.logTerminal))[0]
+                } catch (e) {
+                    this.t7.clear()
+                    this.delete()
+                }
+                if (!ans) {
+                    this.t7.logTerminal.writeln("ESC")
+                    return
+                }
+                if (ans == "n")
+                    return this.t7.connectForm(this.t7.logTerminal)
+                const webexecForm = new Form([{
+                    prompt: `Make sure webexec is running on ${this.addr}:
                         \n\x1B[1m${rc}\x1B[0m\n \n  Copy to clipboard?`,
-                default: "y"
-            }])
-            try {
-                ans = (await webexecForm.start(this.t7.logTerminal))[0]
-            } catch (e) {
-                this.t7.clear()
-                this.delete()
-            }
-            if (ans == "y")
-                Clipboard.write({ string: rc })
-            const retryForm = new Form([{
-                prompt: "Retry connection?",
-                default: "y"
-            }])
-            try {
-                ans = (await retryForm.start(this.t7.logTerminal))[0]
-            } catch (e) {
-                this.t7.clear()
-                this.delete()
-            }
-            if (ans == "y"){
-                this.t7.logTerminal.writeln("\n\n  Retrying...")
-                this.t7.webRTCForm(this.t7.logTerminal, this.addr)
-            }
-            else {
-                this.t7.clear()
-                this.delete()
-            }
-        })()
+                    default: "y"
+                }])
+                try {
+                    ans = (await webexecForm.start(this.t7.logTerminal))[0]
+                } catch (e) {
+                    this.t7.clear()
+                    this.delete()
+                }
+                if (ans == "y")
+                    Clipboard.write({ string: rc })
+                const retryForm = new Form([{
+                    prompt: "Retry connection?",
+                    default: "y"
+                }])
+                try {
+                    ans = (await retryForm.start(this.t7.logTerminal))[0]
+                } catch (e) {
+                    this.t7.clear()
+                    this.delete()
+                }
+                if (ans == "y") {
+                    this.t7.logTerminal.writeln("\n\n  Retrying...")
+                    this.t7.webRTCForm(this.t7.logTerminal, this.addr)
+                }
+                else {
+                    this.t7.clear()
+                    this.delete()
+                }
+            })()
+        }
     }
     /*
      * connect connects to the gate

@@ -163,17 +163,10 @@ export class Terminal7 {
         document.getElementById('add-gate').addEventListener(
             'click', async () => {
                 this.logDisplay(true)
-                // if (addHost.classList.contains('hidden')) {
-                    // addHost.classList.remove("hidden")
-                    // const e = document.getElementById("log")
-                    // const t = openFormsTerminal(e)
                 if (Form.activeForm)
                     this.logTerminal.focus()
-                else {
-                    Form.activeForm = true
+                else
                     this.connectForm(this.logTerminal)
-                }
-                // }
             })
         // hide the modal on xmark click
         addHost.querySelector(".close").addEventListener('click',  () =>  {

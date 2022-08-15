@@ -1,6 +1,7 @@
 import { Terminal } from "@tuzig/xterm"
 import { FitAddon } from "xterm-addon-fit"
 import XtermWebfont from 'xterm-webfont'
+import { Clipboard } from "@capacitor/clipboard"
 
 export type Fields = Array<{
     prompt:string,
@@ -50,6 +51,7 @@ export class Form {
     }
 
     chooseFields(t: Terminal, title: string) {
+        Form.activeForm = true
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
@@ -89,6 +91,7 @@ export class Form {
                         disposable.dispose()
                         resolve(enabled)
                         t.write(`\x1B[${len-current}B`)
+                        Form.activeForm = false
                         break
                     case "ArrowRight":
                         enabled.fill(true)
@@ -115,6 +118,7 @@ export class Form {
     }
 
     menu(t: Terminal, title: string) {
+        Form.activeForm = true
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
@@ -154,6 +158,7 @@ export class Form {
                         disposable.dispose()
                         resolve(this.fields[current].prompt)
                         t.write(`\x1B[${len-current}B`)
+                        Form.activeForm = false
                         break
                 }
             })
@@ -162,7 +167,8 @@ export class Form {
     }
 
 
-    start(t: Terminal) : Promise<Results> { 
+    start(t: Terminal) : Promise<Results> {
+        Form.activeForm = true
         this.i = 0
         this.field = ''
         this.results = []
@@ -191,13 +197,25 @@ export class Form {
                         if (!this.next(t)) {
                             resolve(this.results)
                             disposable.dispose()
+                            Form.activeForm = false
                             return
                         }
                         break
                     default:
-                        this.field += key
-                        if (!password)
-                            t.write(key)
+                        if ((ev.domEvent.ctrlKey || ev.domEvent.metaKey) && key == 'v') {
+                            Clipboard.read().then(res => {
+                                if (res.type == 'text/plain') {
+                                    this.field += res.value
+                                    if (!password)
+                                        t.write(res.value)
+                                }
+                            })
+                        }
+                        else {
+                            this.field += key
+                            if (!password)
+                                t.write(key)
+                        }
                 }
             })
             t.focus()
