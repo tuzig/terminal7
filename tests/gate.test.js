@@ -27,11 +27,11 @@ describe("gate", () => {
     })
     afterEach(() => {
         t.clearTimeouts()
-        t.gates = []
+        t.gates = new Map()
         t.pendingPanes = {}
     })
     it("starts with no gates", () => {
-        expect(t.gates.length).to.equal(0)
+        expect(t.gates.size).to.equal(0)
     })
     it("s state can be restored", async () => {
         let state = { windows: [

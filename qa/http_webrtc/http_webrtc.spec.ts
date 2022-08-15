@@ -10,7 +10,7 @@ test.describe('terminal7 direct WebRTC session', ()  => {
 
     const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
     const connectGate = async () => {
-        const btns = page.locator('#static-hosts button')
+        const btns = page.locator('#gates button')
         await page.screenshot({ path: `/result/zero.png` })
         await expect(btns).toHaveCount(2)
         await btns.last().dispatchEvent('pointerdown')

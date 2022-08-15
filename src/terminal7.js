@@ -65,9 +65,7 @@ export class Terminal7 {
      */
     constructor(settings) {
         settings = settings || {}
-        this.gates = []
-        // peerbook gats are a map of fingerprints to gates
-        this.PBGates = new Map()
+        this.gates = new Map()
         this.cells = []
         this.timeouts = []
         this.activeG = null
@@ -374,20 +372,11 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     reject()
                 else {
                     const state = JSON.parse(value),
-                          fp = state.fp,
+                          id = state.id,
                           name = state.name
                     let gate
 
-                    if (fp) {
-                        gate = this.PBGates.get(fp)
-                        if (!gate) {
-                            gate = new Gate({fp: fp, name: name})
-                            this.PBGates.set(fp, gate)
-                            gate.open(this.e)
-                        }
-                    } else
-                        gate = this.gates.find(gate => gate.name == name)
-
+                    gate = this.gates.get(id)
                     if (!gate) {
                         console.log("Invalid restore state. Starting fresh", state)
                         this.notify("Invalid restore state. Starting fresh")
@@ -526,11 +515,11 @@ peer_name = "${peername}"\n`
             addr = p.addr,
             nameFound = false
         // add the id
-        p.id = this.gates.length
+        p.id = addr
         p.verified = false
 
         let g = new Gate(p)
-        this.gates.push(g)
+        this.gates.set(addr, g)
         g.open(this.e)
         if (onMap) {
             const nameE = g.addToMap()
@@ -582,13 +571,13 @@ peer_name = "${peername}"\n`
     }
     async storeGates() { 
         let out = []
-        this.gates.forEach((h) => {
-            if (h.store) {
+        this.gates.forEach(g => {
+            if (g.store) {
                 let ws = []
-                h.windows.forEach((w) => ws.push(w.id))
-                out.push({id: h.id, addr: h.addr, user: h.user, secret: h.secret,
-                    name:h.name, windows: ws, store: true, verified: h.verified,
-                    username:h.username})
+                g.windows.forEach((w) => ws.push(w.id))
+                out.push({id: g.id, addr: g.addr, user: g.user, secret: g.secret,
+                    name:g.name, windows: ws, store: true, verified: g.verified,
+                    username:g.username})
             }
         })
         this.log("Storing gates:", out)
@@ -742,17 +731,8 @@ peer_name = "${peername}"\n`
     disengage() {
         return new Promise((resolve, reject) => {
             var count = 0
-            this.gates.forEach(g => {
-                if (g.boarding) {
-                    count++
-                    g.disengage().then(() => {
-                        g.boarding = false
-                        count--
-                    })
-                }
-            })
-            if (this.PBGates.size > 0)
-                this.PBGates.forEach((fp, g) => {
+            if (this.gates.size > 0)
+                this.gates.forEach(g => {
                     if (g.boarding) {
                         count++
                         g.disengage().then(() => {
@@ -940,7 +920,7 @@ peer_name = "${peername}"\n`
                 this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
             return
         }
-        var g = this.PBGates.get(m.source_fp)
+        var g = this.gates.get(m.source_fp)
         if (!g)
             return
 
@@ -1179,24 +1159,21 @@ peer_name = "${peername}"\n`
         })
     }
     syncPBPeers(peers) {
-        if (!peers)
-            this.PBGates = new Map()
-        else 
-            peers.forEach(p => {
-                if (p.kind != "webexec")
-                    return
-                var g = this.PBGates.get(p.fp)
-                if (g != undefined) {
-                    g.online = p.online
-                    g.name = p.name
-                    g.verified = p.verified
-                    g.updateNameE()
-                } else {
-                    g = new Gate(p)
-                    this.PBGates.set(p.fp, g)
-                    g.open(this.e)
-                }
-            })
+        peers.forEach(p => {
+            if (p.kind != "webexec")
+                return
+            var g = this.gates.get(p.fp)
+            if (g != undefined) {
+                g.online = p.online
+                g.name = p.name
+                g.verified = p.verified
+                g.updateNameE()
+            } else {
+                g = new Gate(p)
+                this.gates.set(p.fp, g)
+                g.open(this.e)
+            }
+        })
         this.refreshMap()
             // TODO: remove deleted peers
     }

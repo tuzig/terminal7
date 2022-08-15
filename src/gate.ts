@@ -71,10 +71,13 @@ export class Gate {
         this.session = null
     }
 
-    static validateHostName(name) {
-        if (window.terminal7.gates.find(g => g.name == name))
-            return "Name already taken"
-        return ''
+    static validateHostName(name: string) {
+        let found = false
+        if (window.terminal7.gates.size > 0)
+            window.terminal7.gates.forEach(g => {
+                found = found || (g.name == name)
+            })
+        return found?"Name already taken":""
     }
 
     /*
@@ -566,7 +569,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         var lastState = {windows: dump.windows}
 
         if (this.fp)
-            lastState.fp = this.fp
+            lastState.id = this.fp
+        else
+            lastState.id = this.addr
         lastState.name = this.name
         Storage.set({key: "last_state",
                      value: JSON.stringify(lastState)})
