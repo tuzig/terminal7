@@ -210,17 +210,17 @@ export class Form {
         const current = this.fields[this.i]
         let valid = true
         if (!this.field && !current.default) {
-            t.write("\n  Please enter a value")
+            t.write("  Please enter a value")
             valid = false
         }
         else if (this.field && current.values && current.values.indexOf(this.field) == -1) {
-            t.write(`\n  ${current.prompt} must be one of: ${current.values.join(', ')}`)
+            t.write(`  ${current.prompt} must be one of: ${current.values.join(', ')}`)
             valid = false
         }
         else if (this.field && current.validator) {
             const err = current.validator(this.field)
             if (err) {
-                t.write(`\n  ${err}`)
+                t.write(`  ${err}`)
                 valid = false
             }
         }

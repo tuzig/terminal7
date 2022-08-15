@@ -13,10 +13,12 @@ import { assert } from "chai"
 import { Storage } from '@capacitor/storage'
 import { Terminal } from '@tuzig/xterm'
 import { SSHSession } from '../src/ssh_session'
-import { expect } from 'vitest'
+import { expect, vi } from 'vitest'
+import { HTTPWebRTCSession } from '../src/webrtc_session'
 
 vi.mock('@tuzig/xterm')
 vi.mock('../src/ssh_session.ts')
+vi.mock('../src/webrtc_session.ts')
 
 describe("terminal7", function() {
     var t, e
@@ -26,9 +28,6 @@ describe("terminal7", function() {
     beforeEach(async () => {
         await Storage.clear()
         console.log("before each")
-        Gate.prototype.askPass = function () {
-            this.completeConnect("BADWOLF")
-        }
         t = new Terminal7Mock()
         e = document.getElementById("t7")
         window.terminal7=t
@@ -431,34 +430,35 @@ describe("terminal7", function() {
             expect(p4.yoff+p4.sy).to.be.closeTo(p2.yoff, 0.000001)
         })
     })
-    // describe("gate", () => {
-    //     let t0
-    //     it("can open connection form without SSH", async () => {
-    //         t0 = new Terminal()
-    //         SSHSession.fail = true
-    //         t.connectForm(t0)
-    //         t0.pressKey("1")
-    //         t0.pressKey("Enter")
-    //         await sleep(100)
-    //         expect(t0.out).toMatch("Testing SSH... Failed")
-    //     })
-    //     it("can connect to SSH through form", async () => {
-    //         t0 = new Terminal()
-    //         SSHSession.fail = false
-    //         t.connectForm(t0)
-    //         t0.pressKey("1")
-    //         t0.pressKey("Enter")
-    //         await sleep(10)
-    //         expect(t0.out).toMatch("Testing SSH... Success!")
-    //         t0.pressKey("a")
-    //         t0.pressKey("Enter")
-    //         t0.pressKey("a")
-    //         t0.pressKey("Enter")
-    //         await sleep(10)
-    //         expect(t0.out).toMatch("Username: a")
-    //         expect(t0.out).toMatch("Password:")
-    //         expect(t0.out).toMatch("Save gate?")
-    //         console.log(t0.out)
-    //     })
-    // })
+    describe("gate", () => {
+        let t0
+        it("can open connection form without SSH", async () => {
+            t0 = new Terminal()
+            t.connectForm(t0)
+            t0.pressKey("1")
+            t0.pressKey("Enter")
+            await sleep(100)
+            expect(t0.out).toMatch("Connecting over WebRTC...")
+        })
+        it("can connect to SSH through form", async () => {
+            t0 = new Terminal()
+            t.logTerminal = t0
+            HTTPWebRTCSession.fail = true
+            t.connectForm(t0)
+            t0.pressKey("2")
+            t0.pressKey("Enter")
+            await sleep(10)
+            expect(t0.out).toMatch("Connecting over WebRTC...")
+            expect(t0.out).toMatch("Timed out\n  Trying SSH...")
+            await sleep(10)
+            t0.pressKey("a")
+            t0.pressKey("Enter")
+            t0.pressKey("a")
+            t0.pressKey("Enter")
+            await sleep(10)
+            expect(t0.out).toMatch("Enter username: a")
+            expect(t0.out).toMatch("Enter password: \n")
+            expect(t0.out).toMatch("Save gate?")
+        })
+    })
 })

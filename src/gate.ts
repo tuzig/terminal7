@@ -313,7 +313,7 @@ export class Gate {
         }
         if (failure == Failure.TimedOut) {
             if ((!this.fp) && this.tryWebexec) {
-                this.t7.logTerminal.writeln(" Timed out\n  Trying SSH...")
+                this.t7.logTerminal.writeln("  Timed out\n  Trying SSH...")
                 this.tryWebexec = false
                 this.connect()
                 return
@@ -408,10 +408,11 @@ export class Gate {
             const canary = new SSHSession(this.addr)
             canary.onStateChange = (state, failure) => {
                 if (failure == Failure.NotImplemented) {
-                    this.t7.logTerminal.writeln("Unavailable")
+                    this.t7.logTerminal.writeln("  Unavailable")
                     this.completeConnect()
                 } else {
-                    this.t7.logTerminal.writeln("SSH implemented, connecting...")
+                    this.t7.logTerminal.writeln("  SSH implemented, connecting...")
+                    debugger
                     this.askPass()
                 } 
             }
@@ -713,12 +714,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
     askPass() {
         const hideModal = evt => evt.target.closest(".modal").classList.toggle("hidden")
         const e = document.getElementById("askpass")
-
-        if (!e) {
-            // for debug
-            this.completeConnect()
-            return
-        }
         
         const authForm = new Form([
             { prompt: "Enter username" },

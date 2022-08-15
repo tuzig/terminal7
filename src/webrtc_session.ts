@@ -2,7 +2,6 @@ import { Http } from '@capacitor-community/http';
 import { BaseChannel, BaseSession, CallbackType, Channel, ChannelID, Failure } from './session';
 import { PeerbookConnection } from './peerbook'
 
-const TIMEOUT = 5000
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
 
 export class WebRTCChannel extends BaseChannel {
@@ -204,7 +203,7 @@ abstract class WebRTCSession extends BaseSession {
                     args: { id: cmdorid }
                 }, Function.prototype(), Function.prototype())
             }
-            const watchdog = setTimeout(() => reject("timeout"), TIMEOUT)
+            const watchdog = setTimeout(() => reject("timeout"), terminal7.conf.net.timeout)
             this.pendingChannels[msgID] = (dc: RTCDataChannel, id: ChannelID) => {
                 clearTimeout(watchdog)
                 const channel = this.onDCOpened(dc, id)
