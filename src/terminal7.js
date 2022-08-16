@@ -26,7 +26,6 @@ import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
 import { Device } from '@capacitor/device'
 import { Form, openFormsTerminal } from './form'
-import { SSHSession } from './ssh_session'
 import { Http } from '@capacitor-community/http'
 import { Failure } from './session'
 import { PeerbookConnection } from './peerbook'
@@ -702,7 +701,7 @@ peer_name = "${peername}"\n`
         const d = new Date(),
             t = formatDate(d, "HH:mm:ss.fff")
         // TODO: add color based on level
-        this.logTerminal.writeln(` >${t}< ${message}\n`)
+        this.logTerminal.writeln(` \x1B[2m${t}\x1B[0m ${message}\n`)
         this.logDisplay(true)
     }
     run(cb, delay) {
@@ -1165,7 +1164,8 @@ peer_name = "${peername}"\n`
                 p.id = p.fp
                 g = new Gate(p)
                 this.gates.set(p.fp, g)
-                g.addToMap()
+                g.nameE = g.addToMap()
+                document.getElementById("gates").prepend(g.nameE)
                 g.open(this.e)
 
             }
@@ -1224,8 +1224,7 @@ peer_name = "${peername}"\n`
                             this.storeGates()
                             this.refreshMap()
                             this.clear()
-                            gate.session.getPayload()
-                                .then(layout => gate.setLayout(layout))
+                            gate.load()
                         }).catch(() => {
                             gate.delete()
                             this.clear()

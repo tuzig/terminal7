@@ -386,8 +386,9 @@ export class Gate {
     /*
      * connect connects to the gate
      */
-    async connect(onConnected?) {
-        this.onConnected = onConnected || this.onConnected
+    async connect(onConnected = this.load) {
+        
+        this.onConnected = onConnected
         // do nothing when the network is down
         if (!this.t7.netStatus || !this.t7.netStatus.connected)
             return
@@ -717,8 +718,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         const e = document.getElementById("askpass")
         
         const authForm = new Form([
-            { prompt: "Enter username" },
-            { prompt: "Enter password", password: true }
+            { prompt: "Username" },
+            { prompt: "Password", password: true }
         ])
         authForm.start(this.t7.logTerminal).then(res => {
             this.username = res[0]
@@ -756,4 +757,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         this.t7.log("opening session")
         this.session.connect(this.marker)
     }
+    load() {
+        this.t7.log("loading gate")
+        this.session.getPayload().then(layout => this.setLayout(layout))
+    }
+
 }

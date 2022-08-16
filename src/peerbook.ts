@@ -32,11 +32,11 @@ export class PeerbookConnection {
             this.ws.onerror = ev => window.terminal7.log("Peerbook WebSocket Error", ev)
             this.ws.onclose = ev => {
                 window.terminal7.log("peerbook connection closed")
-                terminal7.notify("\uD83D\uDCD6 Connection closed")
+                // terminal7.notify("\uD83D\uDCD6 Connection closed")
                 this.ws = null
             }
             this.ws.onopen = ev => {
-                terminal7.notify("\uD83D\uDCD6 Connection opened")
+                // terminal7.notify("\uD83D\uDCD6 Connection opened")
                 resolve()
                 if ((this.pbSendTask == null) && (this.pending.length > 0))
                     this.pbSendTask = setTimeout(() => {
