@@ -54,12 +54,6 @@ body {
 h1, h2, h3 {
   text-align: center;
 }
-#home h1 {
-    font-size: 44px;
-}
-#home h1 {
-    margin: 0;
-}
 .modal h1 {
     font-size: 22pt;
     /* margin: 0; */
@@ -351,28 +345,28 @@ button.rename-close {
 .zoomed .pane {
     height: -webkit-fill-available;
 }
-#home:target {
+#map:target {
     display: block;
 }
-#home {
-    width:100%;
+#map {
+    padding-top: 1em;
+    width: 968px;
     display: none;
-    padding-top: 3em;
     text-align: center;
     margin: 0 auto;
     height: calc(100% - 56px);
     overflow-y: auto;
     max-width: 1024px;
 }
-#home h2 {
-    text-decoration: underline;
-    font-size: 44px; 
-}
-#home p { font-size: 24pt; }
 #version {
-    position: absolute;
-    right: 10px;
-    bottom:68px;
+    position: fixed;
+    top: 4vh;
+    left: 4vw;
+    padding: 10px;
+    border: 1px dotted;
+    border-radius: 4px;
+    text-align: center;
+    line-height: 12px;
 }
 #version a {
     text-decoration: underline;
@@ -687,12 +681,6 @@ audio { display: none; }
     height: 20em;
 }
 
-#map {
-    width: 968px;
-    margin: 0 auto;
-    position: relative;
-    top: -12px;
-}
 .map-header-wide {
     display: block;
     margin: 0 auto;
@@ -704,15 +692,12 @@ audio { display: none; }
     height: 105px;
     float: left;
 }
-#map .text-button {
+#map .text-button, .empty-pad div  {
     width: 80%;
     margin: 14% 10% 0;
     height: 72%;
 }
 .empty-pad div {
-    margin: 10%;
-    width: 80%;
-    height: 80%;
     border: 1px dashed;
     opacity: 25%;
 }

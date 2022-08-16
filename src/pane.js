@@ -148,7 +148,8 @@ export class Pane extends Cell {
                 }
                 const state = this.d.readyState 
                 if (state != "open") {
-                    this.gate.notify(`Sorry, data channel is ${state}`)
+                    this.gate.notify("data channel not ready")
+                    // TODO: maybe try and reconnect?
                     return
                 }
                 this.d.send(d)

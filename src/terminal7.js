@@ -603,7 +603,7 @@ peer_name = "${peername}"\n`
         this.clear()
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.add("off"))
-        window.location.href = "#home"
+        window.location.href = "#map"
         document.title = "Terminal 7"
     }
     /* 
