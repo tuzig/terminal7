@@ -271,7 +271,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     this.pb = null
                     this.disengage().then(() => {
                         this.clearTimeouts()
-                        this.notify("&#x1F6CC;")
                     })
                 } else {
                     // We're back! ensure we have the latest network status and 
@@ -1072,7 +1071,8 @@ peer_name = "${peername}"\n`
                     // t.focus()
                 }
             }
-        }        this.pointer0 = null
+        }
+        this.pointer0 = null
         this.firstPointer = null
         this.gesture = null
     }
