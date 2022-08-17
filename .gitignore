@@ -23,6 +23,7 @@ resources/android
 # testing
 qa/webexec/config/agent.*
 qa/result
+qa/**/authorized_fingerprints
 
 # Local Netlify folder
 .netlify

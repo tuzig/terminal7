@@ -10,12 +10,12 @@ test.describe('terminal7 session', ()  => {
 
     const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
     const connectGate = async () => {
-        const btns = page.locator('#peerbook-hosts .text-button')
+        const btns = page.locator('#gates button')
         await page.screenshot({ path: `/result/zero.png` })
-        await expect(btns).toHaveCount(3)
-        await btns.last().dispatchEvent('pointerdown')
+        await expect(btns).toHaveCount(2)
+        await btns.first().dispatchEvent('pointerdown')
         await sleep(50)
-        await btns.last().dispatchEvent('pointerup')
+        await btns.first().dispatchEvent('pointerup')
     }
 
     let page: Page,
@@ -172,7 +172,7 @@ insecure = true`)
         expect(exitState).toEqual("success")
         await expect(page.locator('.pane')).toHaveCount(0)
     })
-    test('auto restore gate', async() => {
+    test.skip('auto restore gate', async() => {
         connectGate()
         await expect(page.locator('.pane')).toHaveCount(1)
         await page.screenshot({ path: `/result/6.png` })
