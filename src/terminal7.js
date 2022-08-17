@@ -629,31 +629,23 @@ peer_name = "${peername}"\n`
     /*
      * onDisconnect is called when a gate disconnects.
      */
-    onDisconnect(gate) {
+    async onDisconnect(gate) {
         if (!this.netStatus.connected || 
             ((this.activeG != null) && (gate != this.activeG)))
             return
-        let e = document.getElementById("disconnect-template")
-        e = e.content.cloneNode(true)
-        this.clear()
-        // clear pending messages to let the user start fresh
-        this.pendingCDCMsgs = []
-        e.querySelector("h1").textContent =
-            `${gate.name} communication failure`
-        e.querySelector("form").addEventListener('submit', ev => {
-            ev.target.closest(".modal").remove()
-            gate.clear()
+        
+        const reconnectForm = new Form([
+            { prompt: "Reconnect" },
+            { prompt: "Close" }
+        ])
+        const res = await reconnectForm.menu(this.logTerminal, "What do you want to do?")
+        if (res == "Reconnect") {
             gate.session = null
-            gate.connect()
-            ev.stopPropagation()
-            ev.preventDefault()
-        })
-        e.querySelector(".close").addEventListener('click', ev => {
-            ev.target.closest(".modal").remove()
+            gate.connect(gate.onConnected)
+        } else {
             gate.clear()
             this.goHome()
-        })
-        this.e.appendChild(e)
+        }
     }
     /*
      * focus restores the focus to the ative pane, if there is one

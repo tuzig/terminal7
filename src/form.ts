@@ -162,7 +162,7 @@ export class Form {
                         break
                 }
             })
-            t.focus()
+            setTimeout(() => t.focus(), 100)
         })
     }
 

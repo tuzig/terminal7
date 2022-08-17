@@ -281,7 +281,7 @@ export class Gate {
 
         if (!this.boarding)
             return
-        if (failure == Failure.WrongPassword) { // remove second check
+        if (failure == Failure.WrongPassword) {
             this.t7.logTerminal.write("  Wrong password")
             const retryForm = new Form([{
                 prompt: "Retry connection?",
@@ -324,8 +324,7 @@ export class Gate {
         if (failure == Failure.NotImplemented)
             this.notify("FAILED: not implemented yet")
         if (!failure)
-            this.notify("Connection FAILED");
-        
+            this.notify("Connection FAILED")
         if (this.name.startsWith("temp")) {
             (async () => {
                 const rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${this.fp}" >> ~/.config/webexec/authorized_fingerprints`
@@ -380,7 +379,8 @@ export class Gate {
                     this.delete()
                 }
             })()
-        }
+        } else
+            this.t7.onDisconnect(this)
     }
     /*
      * connect connects to the gate
@@ -480,10 +480,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
-            if (winLen > 0)
-                // TODO: find a way to identify state lost
-                this.t7.log("this.loseState()")
-            else
                 this.activeW = this.addWindow("", true)
         } else if (winLen > 0) {
             // TODO: validate the current layout is like the state

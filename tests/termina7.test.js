@@ -452,7 +452,7 @@ describe("terminal7", function() {
             await sleep(10)
             t0.pressKey("2")
             t0.pressKey("Enter")
-            await sleep(10)
+            await sleep(100)
             expect(t0.out).toMatch("webexec")
             expect(t0.out).toMatch("Timed out\n  Trying SSH...")
             await sleep(10)
