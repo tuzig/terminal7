@@ -728,7 +728,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
     completeConnect(): void {
         if (this.session == null)
             if (this.fp) {
-                this.notify("\uD83D\uDCD6  PeerBook")
+                this.notify("🎌  PeerBook")
                 this.session = new PeerbookSession(this.fp, this.t7.pb)
             }
             else {
