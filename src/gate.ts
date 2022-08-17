@@ -1,4 +1,4 @@
-/*! Terminal 8 Gate
+/* Terminal 8 Gate
  *  This file contains the code that makes a terminal 7 gate. The gate class
  *  represents a server and it may be boarding - aka connected - or not.
  *
@@ -40,7 +40,6 @@ export class Gate {
     username: string
     nameE: Element
     t7: Terminal7
-    t0: Terminal
     onConnected: any
     fp: string | undefined
 
@@ -71,10 +70,13 @@ export class Gate {
         this.session = null
     }
 
-    static validateHostName(name) {
-        if (window.terminal7.gates.find(g => g.name == name))
-            return "Name already taken"
-        return ''
+    static validateHostName(name: string) {
+        let found = false
+        if (window.terminal7.gates.size > 0)
+            window.terminal7.gates.forEach(g => {
+                found = found || (g.name == name)
+            })
+        return found?"Name already taken":""
     }
 
     /*
@@ -130,7 +132,7 @@ export class Gate {
         return d
     }
     delete() {
-        this.t7.gates.splice(this.id, 1)
+        this.t7.gates.delete(this.id)
         this.t7.storeGates()
         // remove the host from the home screen
         if (this.nameE)
@@ -239,7 +241,7 @@ export class Gate {
      * onSessionState(state) is called when the connection
      * state changes.
      */
-    onSessionState(state: RTState, failure: Failure) {
+    onSessionState(state: string, failure: Failure) {
         if (!this.session) {
             this.t7.log(`Ignoring ${this.name} change state to ${state} as session is closed`)
             return
@@ -258,10 +260,9 @@ export class Gate {
                     Storage.set({key: "first_gate", value: "1"}) 
                 }
             })
-            if (this.onConnected) {
+            if (this.onConnected)
                 this.onConnected()
-                this.onConnected = null
-            }
+                this.onConnected = this.load
         } else if (state == "disconnected") {
             // TODO: add warn class
             this.lastDisconnect = Date.now()
@@ -305,14 +306,14 @@ export class Gate {
         if (failure == Failure.BadMarker) {
             this.notify("Session restore failed, trying a fresh session")
             this.clear()
-            this.connect()
+            this.connect(this.onConnected)
             return
         }
         if (failure == Failure.TimedOut) {
             if ((!this.fp) && this.tryWebexec) {
                 this.t7.logTerminal.writeln("  Timed out\n  Trying SSH...")
                 this.tryWebexec = false
-                this.connect()
+                this.connect(this.onConnected)
                 return
             }
         }
@@ -383,8 +384,9 @@ export class Gate {
     /*
      * connect connects to the gate
      */
-    async connect(onConnected?) {
-        this.onConnected = onConnected || this.onConnected
+    async connect(onConnected = () => this.load()) {
+        
+        this.onConnected = onConnected
         // do nothing when the network is down
         if (!this.t7.netStatus || !this.t7.netStatus.connected)
             return
@@ -562,7 +564,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         var lastState = {windows: dump.windows}
 
         if (this.fp)
-            lastState.fp = this.fp
+            lastState.id = this.fp
+        else
+            lastState.id = this.addr
         lastState.name = this.name
         Storage.set({key: "last_state",
                      value: JSON.stringify(lastState)})
@@ -701,7 +705,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.delete()
         }
         if (ans == "y")
-            this.connect()
+            this.connect(this.onConnected)
         else {
             this.t7.clear()
             this.delete()
@@ -712,8 +716,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         const e = document.getElementById("askpass")
         
         const authForm = new Form([
-            { prompt: "Enter username" },
-            { prompt: "Enter password", password: true }
+            { prompt: "Username" },
+            { prompt: "Password", password: true }
         ])
         authForm.start(this.t7.logTerminal).then(res => {
             this.username = res[0]
@@ -737,8 +741,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                     this.session = new HTTPWebRTCSession(this.fp, this.addr)
                 } else {
                     this.notify("Starting SSH session")
-                    this.session = new SSHSession(
-                        this.addr, this.username, this.pass)
+                    this.session = new SSHSession(this.addr, this.username, this.pass)
                     // next time go back to trying webexec
                     this.tryWebexec = true
                 }
@@ -751,4 +754,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         this.t7.log("opening session")
         this.session.connect(this.marker)
     }
+    load() {
+        this.t7.log("loading gate")
+        this.session.getPayload().then(layout => this.setLayout(layout))
+    }
+
 }

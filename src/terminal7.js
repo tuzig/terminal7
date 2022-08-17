@@ -26,7 +26,6 @@ import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
 import { Device } from '@capacitor/device'
 import { Form, openFormsTerminal } from './form'
-import { SSHSession } from './ssh_session'
 import { Http } from '@capacitor-community/http'
 import { Failure } from './session'
 import { PeerbookConnection } from './peerbook'
@@ -65,9 +64,7 @@ export class Terminal7 {
      */
     constructor(settings) {
         settings = settings || {}
-        this.gates = []
-        // peerbook gats are a map of fingerprints to gates
-        this.PBGates = new Map()
+        this.gates = new Map()
         this.cells = []
         this.timeouts = []
         this.activeG = null
@@ -168,7 +165,7 @@ export class Terminal7 {
                 if (Form.activeForm)
                     this.logTerminal.focus()
                 else
-                    this.connectForm(this.logTerminal)
+                    this.connect()
             })
         // hide the modal on xmark click
         addHost.querySelector(".close").addEventListener('click',  () =>  {
@@ -274,7 +271,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     this.pb = null
                     this.disengage().then(() => {
                         this.clearTimeouts()
-                        this.notify("&#x1F6CC;")
                     })
                 } else {
                     // We're back! ensure we have the latest network status and 
@@ -367,20 +363,11 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     reject()
                 else {
                     const state = JSON.parse(value),
-                          fp = state.fp,
+                          id = state.id,
                           name = state.name
                     let gate
 
-                    if (fp) {
-                        gate = this.PBGates.get(fp)
-                        if (!gate) {
-                            gate = new Gate({fp: fp, name: name})
-                            this.PBGates.set(fp, gate)
-                            gate.open(this.e)
-                        }
-                    } else
-                        gate = this.gates.find(gate => gate.name == name)
-
+                    gate = this.gates.get(id)
                     if (!gate) {
                         console.log("Invalid restore state. Starting fresh", state)
                         this.notify("Invalid restore state. Starting fresh")
@@ -519,11 +506,11 @@ peer_name = "${peername}"\n`
             addr = p.addr,
             nameFound = false
         // add the id
-        p.id = this.gates.length
+        p.id = addr
         p.verified = false
 
         let g = new Gate(p)
-        this.gates.push(g)
+        this.gates.set(addr, g)
         g.open(this.e)
         if (onMap) {
             const nameE = g.addToMap()
@@ -575,13 +562,13 @@ peer_name = "${peername}"\n`
     }
     async storeGates() { 
         let out = []
-        this.gates.forEach((h) => {
-            if (h.store) {
+        this.gates.forEach(g => {
+            if (g.store) {
                 let ws = []
-                h.windows.forEach((w) => ws.push(w.id))
-                out.push({id: h.id, addr: h.addr, user: h.user, secret: h.secret,
-                    name:h.name, windows: ws, store: true, verified: h.verified,
-                    username:h.username})
+                g.windows.forEach((w) => ws.push(w.id))
+                out.push({id: g.id, addr: g.addr, user: g.user, secret: g.secret,
+                    name:g.name, windows: ws, store: true, verified: g.verified,
+                    username:g.username})
             }
         })
         this.log("Storing gates:", out)
@@ -615,7 +602,7 @@ peer_name = "${peername}"\n`
         this.clear()
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.add("off"))
-        window.location.href = "#home"
+        window.location.href = "#map"
         document.title = "Terminal 7"
     }
     /* 
@@ -713,7 +700,7 @@ peer_name = "${peername}"\n`
         const d = new Date(),
             t = formatDate(d, "HH:mm:ss.fff")
         // TODO: add color based on level
-        this.logTerminal.writeln(` >${t}< ${message}\n`)
+        this.logTerminal.writeln(` \x1B[2m${t}\x1B[0m ${message}\n`)
         this.logDisplay(true)
     }
     run(cb, delay) {
@@ -735,17 +722,8 @@ peer_name = "${peername}"\n`
     disengage() {
         return new Promise((resolve, reject) => {
             var count = 0
-            this.gates.forEach(g => {
-                if (g.boarding) {
-                    count++
-                    g.disengage().then(() => {
-                        g.boarding = false
-                        count--
-                    })
-                }
-            })
-            if (this.PBGates.size > 0)
-                this.PBGates.forEach((fp, g) => {
+            if (this.gates.size > 0)
+                this.gates.forEach(g => {
                     if (g.boarding) {
                         count++
                         g.disengage().then(() => {
@@ -933,7 +911,7 @@ peer_name = "${peername}"\n`
                 this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
             return
         }
-        var g = this.PBGates.get(m.source_fp)
+        var g = this.gates.get(m.source_fp)
         if (!g)
             return
 
@@ -1093,7 +1071,8 @@ peer_name = "${peername}"\n`
                     // t.focus()
                 }
             }
-        }        this.pointer0 = null
+        }
+        this.pointer0 = null
         this.firstPointer = null
         this.gesture = null
     }
@@ -1172,95 +1151,87 @@ peer_name = "${peername}"\n`
         })
     }
     syncPBPeers(peers) {
-        if (!peers)
-            this.PBGates = new Map()
-        else 
-            peers.forEach(p => {
-                if (p.kind != "webexec")
-                    return
-                var g = this.PBGates.get(p.fp)
-                if (g != undefined) {
-                    g.online = p.online
-                    g.name = p.name
-                    g.verified = p.verified
-                    g.updateNameE()
-                } else {
-                    g = new Gate(p)
-                    this.PBGates.set(p.fp, g)
-                    g.open(this.e)
-                }
-            })
+        peers.forEach(p => {
+            if (p.kind != "webexec")
+                return
+            var g = this.gates.get(p.fp)
+            if (g != undefined) {
+                g.online = p.online
+                g.name = p.name
+                g.verified = p.verified
+                g.updateNameE()
+            } else {
+                p.id = p.fp
+                g = new Gate(p)
+                this.gates.set(p.fp, g)
+                g.nameE = g.addToMap()
+                document.getElementById("gates").prepend(g.nameE)
+                g.open(this.e)
+
+            }
+        })
         this.refreshMap()
             // TODO: remove deleted peers
     }
-    async connectForm(t) {
+    async connect() {
         const f = new Form([
             { prompt: "Enter destination (ip or domain)" }
         ])
         let hostname
         try {
-            hostname = (await f.start(t))[0]
+            hostname = (await f.start(this.logTerminal))[0]
         } catch (e) {
             return this.clear()
         }
-        this.webRTCForm(t, hostname)
-    }
-    async webRTCForm(t, hostname) {
-        const fp = await this.getFingerprint(),
-            rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${fp}" >> ~/.config/webexec/authorized_fingerprints`
-            t.writeln("\n  Connecting over WebRTC...")
-            const gate = this.addGate({
-                name: "temp_" + Math.random().toString(16).slice(2), // temp random name
-                addr: hostname,
-            }, false)
-            this.refreshMap()
-            gate.t0 = t
-            gate.connect(() => {
-                t.write(" Success!")
-                const saveForm = new Form([
-                    {
-                        prompt: "Save gate?",
-                        default: "y",
-                        values: ["y", "n"]
-                    }
-                ])
-                saveForm.start(t).then(res => {
-                    if (res[0] == "y") {
-                        const validated = Gate.validateHostName(hostname)
-                        let fields = [
-                            {
-                                prompt: "Enter name",
-                                validator: Gate.validateHostName,
-                            }]
-                        if (!validated)
-                            fields[0].default = hostname
-                        const nameForm = new Form(fields)
-                        nameForm.start(t).then(res => {
-                            const name = res[0]
-                            gate.name = name
-                            const nameE = gate.addToMap()
-                            document.getElementById("gates").prepend(nameE)
-                            gate.store = true
-                            this.storeGates()
-                            this.refreshMap()
-                            this.clear()
-                            gate.session.getPayload()
-                                .then(layout => gate.setLayout(layout))
-                        }).catch(() => {
-                            gate.delete()
-                            this.clear()
-                        })
-                    } else {
+        const fp = await this.getFingerprint()
+        const gate = this.addGate({
+            name: "temp_" + Math.random().toString(16).slice(2), // temp random name
+            addr: hostname,
+            id: hostname
+        }, false)
+        this.refreshMap()
+        gate.connect(() => {
+            this.logTerminal.write(" Success!")
+            const saveForm = new Form([{
+                prompt: "Save gate?",
+                default: "y",
+                values: ["y", "n"]
+            } ])
+            saveForm.start(this.logTerminal).then(res => {
+                if (res[0] == "y") {
+                    const validated = Gate.validateHostName(hostname)
+                    let fields = [
+                        {
+                            prompt: "Enter name",
+                            validator: Gate.validateHostName,
+                        }]
+                    if (!validated)
+                        fields[0].default = hostname
+                    const nameForm = new Form(fields)
+                    nameForm.start(this.logTerminal).then(res => {
+                        const name = res[0]
+                        gate.name = name
+                        const nameE = gate.addToMap()
+                        document.getElementById("gates").prepend(nameE)
+                        gate.store = true
+                        this.storeGates()
+                        this.refreshMap()
+                        this.clear()
+                        gate.load()
+                    }).catch(() => {
                         gate.delete()
                         this.clear()
-                        gate.session.getPayload()
-                            .then(layout => gate.setLayout(layout))
-                    }
-                }).catch(() => {
+                    })
+                } else {
                     gate.delete()
                     this.clear()
-                })
+                    gate.load()
+                }
+            }).catch(() => {
+                gate.delete()
+                this.clear()
             })
+        })
     }
     clearTempGates() {
         this.gates.forEach(g => {

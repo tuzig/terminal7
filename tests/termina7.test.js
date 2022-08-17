@@ -431,24 +431,25 @@ describe("terminal7", function() {
         })
     })
     describe("gate", () => {
-        let t0
         it("can open connection form without SSH", async () => {
-            t0 = new Terminal()
-            t.connectForm(t0)
+            const t0 = new Terminal()
+            t.logTerminal = t0
+            t.connect()
             t0.pressKey("1")
             t0.pressKey("Enter")
             await sleep(100)
-            expect(t0.out).toMatch("Connecting over WebRTC...")
+            expect(t0.out).toMatch("webexec")
+            expect(t0.out).toMatch("Connected")
         })
         it("can connect to SSH through form", async () => {
-            t0 = new Terminal()
+            const t0 = new Terminal()
             t.logTerminal = t0
             HTTPWebRTCSession.fail = true
-            t.connectForm(t0)
+            t.connect()
             t0.pressKey("2")
             t0.pressKey("Enter")
             await sleep(10)
-            expect(t0.out).toMatch("Connecting over WebRTC...")
+            expect(t0.out).toMatch("webexec")
             expect(t0.out).toMatch("Timed out\n  Trying SSH...")
             await sleep(10)
             t0.pressKey("a")
@@ -456,8 +457,9 @@ describe("terminal7", function() {
             t0.pressKey("a")
             t0.pressKey("Enter")
             await sleep(10)
-            expect(t0.out).toMatch("Enter username: a")
-            expect(t0.out).toMatch("Enter password: \n")
+            console.log("t0out:", t0.out)
+            expect(t0.out).toMatch("Username: a")
+            expect(t0.out).toMatch("Password: \n")
             expect(t0.out).toMatch("Save gate?")
         })
     })

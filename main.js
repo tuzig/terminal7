@@ -17,8 +17,10 @@ if ("serviceWorker" in navigator) {
 document.addEventListener("DOMContentLoaded", async () => {
     // do nothing when running a test
     if (window.__html__ == undefined) {
-        // await StatusBar.setStyle({ style: Style.Dark });
-        // await StatusBar.show();
+        try {
+            await StatusBar.setStyle({ style: Style.Dark });
+            await StatusBar.show();
+        } catch(e) {}
         window.terminal7 = new Terminal7()
         terminal7.open()
     }
