@@ -20,6 +20,7 @@ import { openDB } from 'idb'
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
+import { Device } from '@capacitor/device'
 import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
 import { Form, openFormsTerminal } from './form'
@@ -379,14 +380,20 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
     }
     async peerbookForm() {
         var e   = document.getElementById("peerbook-modal").querySelector(".terminal-container"),
-            dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
+            dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE,
+            defaultName
 
+
+        try {
+            const info = await Device.getInfo()
+            defaultName = `${info.name}'s ${info.model}`
+        } catch (e) { defaultName = ''}
         const f = new Form([
             {
-                prompt: "email (will only be used to manage your peers)",
+                prompt: "Email",
                 validator: email => !email.match(/.+@.+\..+/) ? "Must be a valid email" : ''
             },
-            { prompt: "Peer's name" }
+            { prompt: "Peer's name", default: defaultName }
         ])
         f.start(this.logTerminal).then(results => {
             const email = results[0],
@@ -401,6 +408,7 @@ peer_name = "${peername}"\n`
             this.loadConf(TOML.parse(dotfile))
             e.classList.add("hidden")
             this.notify("Your email was added to the dotfile")
+            this.pbConnect()
             this.clear()
         }).catch(() => this.clear())
     }
@@ -764,15 +772,6 @@ peer_name = "${peername}"\n`
         this.conf.net.timeout = this.conf.net.timeout || 3000
         this.conf.net.httpTimeout = this.conf.net.http_timeout || 1000
         this.conf.net.retries = this.conf.net.retries || 3
-/*
-            Device.getInfo()
-            .then(i =>
-                this.conf.peerbook.peer_name = `${i.name}'s ${i.model}`)
-            .catch(err => {
-                console.log("Device info error", err)
-                this.conf.peerbook.peer_name = "John Doe"
-            })
-            */
     }
 
 
