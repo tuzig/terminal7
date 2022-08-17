@@ -14,7 +14,7 @@ import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
 import { Storage } from '@capacitor/storage'
-import { Form, openFormsTerminal } from './form.js'
+import { Form, openFormsTerminal, Fields } from './form.js'
 import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
 import { Window } from './window.js'
 import { Terminal } from 'xterm'
@@ -68,15 +68,6 @@ export class Gate {
         this.fp = props.fp
         this.t7 = window.terminal7
         this.session = null
-    }
-
-    static validateHostName(name: string) {
-        let found = false
-        if (window.terminal7.gates.size > 0)
-            window.terminal7.gates.forEach(g => {
-                found = found || (g.name == name)
-            })
-        return found?"Name already taken":""
     }
 
     /*
@@ -166,9 +157,13 @@ export class Gate {
                     {
                         prompt: "Name",
                         default: this.name,
-                        validator: Gate.validateHostName
+                        validator: (a) => this.t7.validateHostName(a)
                     },
-                    { prompt: "Hostname", default: this.addr },
+                    { 
+                        prompt: "Hostname",
+                        default: this.addr,
+                        validator: (a) => this.t7.validateHostAddress(a)
+                    },
                     { prompt: "Username", default: this.username }
                 ])
                 const fDel = new Form([{
@@ -192,8 +187,14 @@ export class Gate {
                                         ['name', 'addr', 'username']
                                             .filter((_, i) => enabled[i])
                                             .forEach((k, i) => this[k] = results[i])
-                                        this.nameE.innerHTML = this.name || this.addr
+                                        if (enabled[1]) {
+                                            this.t7.gates.delete(this.id)
+                                            this.id = this.addr
+                                            this.t7.gates.set(this.id, this)
+                                        }
                                         this.t7.storeGates()
+                                        this.t7.refreshMap()
+                                        this.nameE.querySelector("button").innerHTML = this.name
                                         this.t7.clear()
                                     }).catch(() => this.t7.clear())
                                 }).catch(() => this.t7.clear())
@@ -288,7 +289,7 @@ export class Gate {
             }])
             retryForm.start(this.t7.logTerminal).then(res => {
                 if (res[0] == "y") {
-                    this.t7.webRTCForm(this.t7.logTerminal, this.addr)
+                    this.CLIConnect()
                 } else {
                     this.t7.clear()
                     this.delete()
@@ -346,7 +347,7 @@ export class Gate {
                     return
                 }
                 if (ans == "n")
-                    return this.t7.connectForm(this.t7.logTerminal)
+                    return this.t7.connect()
                 const webexecForm = new Form([{
                     prompt: `Make sure webexec is running on ${this.addr}:
                         \n\x1B[1m${rc}\x1B[0m\n \n  Copy to clipboard?`,
@@ -372,7 +373,7 @@ export class Gate {
                 }
                 if (ans == "y") {
                     this.t7.logTerminal.writeln("\n\n  Retrying...")
-                    this.t7.webRTCForm(this.t7.logTerminal, this.addr)
+                    this.CLIConnect()
                 }
                 else {
                     this.t7.clear()
@@ -758,5 +759,41 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         this.t7.log("loading gate")
         this.session.getPayload().then(layout => this.setLayout(layout))
     }
-
+    CLIConnect() {
+        this.connect(() => {
+            this.t7.logTerminal.write(" Success!")
+            const saveForm = new Form([{
+                prompt: "Save gate?",
+                default: "y",
+                values: ["y", "n"]
+            } ])
+            saveForm.start(this.t7.logTerminal).then(res => {
+                if (res[0] == "y") {
+                    const validated = this.t7.validateHostName(this.addr)
+                    const fields: Fields = [{
+                        prompt: "Enter name",
+                        validator: (a) => this.t7.validateHostName(a),
+                    }]
+                    if (!validated)
+                        fields[0].default = this.addr
+                    const nameForm = new Form(fields)
+                    nameForm.start(this.t7.logTerminal).then(res => {
+                        const name = res[0]
+                        this.name = name
+                        const nameE = this.addToMap()
+                        document.getElementById("gates").prepend(nameE)
+                        this.store = true
+                        this.t7.storeGates()
+                        this.t7.refreshMap()
+                        this.t7.clear()
+                        this.load()
+                    })
+                } else {
+                    this.t7.clear()
+                    this.load()
+                    this.delete()
+                }
+            })
+        })
+    }
 }

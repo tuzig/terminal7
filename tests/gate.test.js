@@ -110,10 +110,10 @@ describe("gate", () => {
         g.edit()
     })
     it("has a unique name", () => {
-        let valid = Gate.validateHostName("foo")
+        let valid = t.validateHostName("foo")
         expect(valid).equal("")
-        t.addGate({name:"foo"})
-        valid = Gate.validateHostName("foo")
+        t.addGate({name:"foo", addr: "foo"})
+        valid = t.validateHostName("foo")
         expect(valid).equal("Name already taken")
     })
     it("can be connected", async () => {

@@ -501,16 +501,14 @@ peer_name = "${peername}"\n`
      * the `gates` property, stores and returns it.
      */
     addGate(props, onMap = true) {
-        let out = [],
-            p = props || {},
-            addr = p.addr,
-            nameFound = false
+        let p = props || {},
+            addr = p.addr
         // add the id
         p.id = addr
         p.verified = false
 
         let g = new Gate(p)
-        this.gates.set(addr, g)
+        this.gates.set(p.id, g)
         g.open(this.e)
         if (onMap) {
             const nameE = g.addToMap()
@@ -1183,60 +1181,33 @@ peer_name = "${peername}"\n`
         } catch (e) {
             return this.clear()
         }
-        const fp = await this.getFingerprint()
+        if (this.validateHostAddress(hostname)) {
+            this.logTerminal.writeln(`  ${hostname} already exists, connecting...`)
+            this.gates.get(hostname).connect()
+            return
+        }
         const gate = this.addGate({
             name: "temp_" + Math.random().toString(16).slice(2), // temp random name
             addr: hostname,
             id: hostname
         }, false)
         this.refreshMap()
-        gate.connect(() => {
-            this.logTerminal.write(" Success!")
-            const saveForm = new Form([{
-                prompt: "Save gate?",
-                default: "y",
-                values: ["y", "n"]
-            } ])
-            saveForm.start(this.logTerminal).then(res => {
-                if (res[0] == "y") {
-                    const validated = Gate.validateHostName(hostname)
-                    let fields = [
-                        {
-                            prompt: "Enter name",
-                            validator: Gate.validateHostName,
-                        }]
-                    if (!validated)
-                        fields[0].default = hostname
-                    const nameForm = new Form(fields)
-                    nameForm.start(this.logTerminal).then(res => {
-                        const name = res[0]
-                        gate.name = name
-                        const nameE = gate.addToMap()
-                        document.getElementById("gates").prepend(nameE)
-                        gate.store = true
-                        this.storeGates()
-                        this.refreshMap()
-                        this.clear()
-                        gate.load()
-                    }).catch(() => {
-                        gate.delete()
-                        this.clear()
-                    })
-                } else {
-                    gate.delete()
-                    this.clear()
-                    gate.load()
-                }
-            }).catch(() => {
-                gate.delete()
-                this.clear()
-            })
-        })
+        gate.CLIConnect()
     }
     clearTempGates() {
         this.gates.forEach(g => {
             if (g.name.startsWith("temp_"))
                 g.delete()
         })
+    }
+    validateHostAddress(addr) {
+        return this.gates.has(addr) ? "Host already exists" : ""
+    }
+    validateHostName(name) {
+        for (const [, gate] of this.gates) {
+            if (gate.name == name)
+                return "Name already taken"
+        }
+        return ""
     }
 }
