@@ -74,7 +74,7 @@ export abstract class BaseSession implements Session {
             resolve(null)
         })
     }
-    setPayload(payload: string): Promise<void> {
+    setPayload(): Promise<void> {
         return new Promise((resolve) => { 
             console.log(`ignoring payloads on ${typeof this}`)
             resolve()

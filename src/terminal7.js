@@ -7,9 +7,7 @@
  *  License: GPLv3
  */
 import { Gate } from './gate.ts'
-import { Window } from './window.js'
 import { CyclicArray } from './cyclic.js'
-import * as Hammer from 'hammerjs'
 import * as TOML from '@tuzig/toml'
 import { imageMapResizer } from './imageMapResizer.js'
 import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
@@ -24,10 +22,7 @@ import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
-import { Device } from '@capacitor/device'
 import { Form, openFormsTerminal } from './form'
-import { Http } from '@capacitor-community/http'
-import { Failure } from './session'
 import { PeerbookConnection } from './peerbook'
 
 
@@ -134,28 +129,28 @@ export class Terminal7 {
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",
-                    ev =>  {
+                    () =>  {
                         if (this.activeG)
                             this.activeG.activeW.activeP.close()})
         document.getElementById("map-button")
-                .addEventListener("click", ev => this.goHome())
+                .addEventListener("click", () => this.goHome())
         document.getElementById("log-button")
-                .addEventListener("click", ev => this.logDisplay())
+                .addEventListener("click", () => this.logDisplay())
         document.getElementById("search-button")
-                .addEventListener("click", ev => 
+                .addEventListener("click", () => 
                    this.activeG && this.activeG.activeW.activeP.toggleSearch())
         document.getElementById("help-gate")
-                .addEventListener("click", ev => this.toggleHelp())
+                .addEventListener("click", () => this.toggleHelp())
         document.getElementById("help-button")
-                .addEventListener("click", ev => this.toggleHelp())
+                .addEventListener("click", () => this.toggleHelp())
         document.querySelectorAll("#help-copymode, #keys-help").forEach(e => 
-                e.addEventListener("click", ev => this.clear()))
+                e.addEventListener("click", () => this.clear()))
         document.getElementById("divide-h")
-                .addEventListener("click", ev =>  {
+                .addEventListener("click", () =>  {
                     if (this.activeG && this.activeG.activeW.activeP.sy >= 0.04)
                         this.activeG.activeW.activeP.split("rightleft", 0.5)})
         document.getElementById("divide-v")
-                .addEventListener("click", ev =>  {
+                .addEventListener("click", () =>  {
                     if (this.activeG && this.activeG.activeW.activeP.sx >= 0.04)
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         let addHost = document.getElementById("add-host")
@@ -295,15 +290,15 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         document.getElementById("dotfile-button")
                 .addEventListener("click", ev => this.toggleSettings(ev))
         modal.querySelector(".close").addEventListener('click',
-            ev => {
+            () => {
                 document.getElementById("dotfile-button").classList.remove("on")
                 this.clear()
             }
         )
         modal.querySelector(".save").addEventListener('click',
-            ev => this.wqConf())
+            () => this.wqConf())
         modal.querySelector(".copy").addEventListener('click',
-            ev => {
+            () => {
                 var area = document.getElementById("edit-conf")
                 this.confEditor.save()
                 Clipboard.write({string: area.value})
@@ -363,8 +358,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     reject()
                 else {
                     const state = JSON.parse(value),
-                          id = state.id,
-                          name = state.name
+                          id = state.id
                     let gate
 
                     gate = this.gates.get(id)
@@ -429,7 +423,7 @@ peer_name = "${peername}"\n`
             })
         })
     }
-    async toggleSettings(ev) {
+    async toggleSettings() {
         var modal   = document.getElementById("settings-modal"),
             button  = document.getElementById("dotfile-button"),
             area    =  document.getElementById("edit-conf"),
@@ -485,10 +479,6 @@ peer_name = "${peername}"\n`
         this.pbConnect()
     }
     catchFingers() {
-        var start,
-            last,
-            firstPointer = null,
-            gesture = null
         this.e.addEventListener("pointerdown", ev => this.onPointerDown(ev))
         this.e.addEventListener("pointerup", ev => this.onPointerUp(ev))
         this.e.addEventListener("pointercancel", ev => this.onPointerCancel(ev))
@@ -517,9 +507,8 @@ peer_name = "${peername}"\n`
     }
     refreshMap() {
         const pads = document.querySelectorAll(".gate-pad")
-        var col, row
+        let col
         pads.forEach((e, i) => {
-            row = i / 4
             col = i % 4
             if (col % 2 == 0)
                 e.style.background = 'top / contain no-repeat url("/map/left_half.svg")'
@@ -588,8 +577,7 @@ peer_name = "${peername}"\n`
     }
     goHome() {
         Storage.remove({key: "last_state"}) 
-        let s = document.getElementById('map-button'),
-            h = document.getElementById('map')
+        let s = document.getElementById('map-button')
         s.classList.add('off')
         if (this.activeG) {
             this.activeG.e.classList.add("hidden")
@@ -669,14 +657,14 @@ peer_name = "${peername}"\n`
             this.clear()
             gate.edit()
         })
-        e.querySelector(".close").addEventListener('click', ev => {
+        e.querySelector(".close").addEventListener('click', () => {
             if (gate) {
                 gate.disengage()
                 gate.clear()
             }
             this.goHome()
         })
-        e.querySelector(".reconnect").addEventListener('click', ev => {
+        e.querySelector(".reconnect").addEventListener('click', () => {
             gate.reset()
         })
         e.querySelector(".server-error").innerHTML = error.message
@@ -685,10 +673,10 @@ peer_name = "${peername}"\n`
     /*
      * noitify adds a message to the teminal7 notice board
      */
-    notify(message, level, ttl) {
+    notify(message) {
         const d = new Date(),
             t = formatDate(d, "HH:mm:ss.fff")
-        // TODO: add color based on level
+        // TODO: add color based on level and ttl
         this.logTerminal.writeln(` \x1B[2m${t}\x1B[0m ${message}\n`)
         this.logDisplay(true)
     }
@@ -709,7 +697,7 @@ peer_name = "${peername}"\n`
      * disengage gets each active gate to disengae
      */
     disengage() {
-        return new Promise((resolve, reject) => {
+        return new Promise(resolve => {
             var count = 0
             if (this.gates.size > 0)
                 this.gates.forEach(g => {
@@ -930,9 +918,7 @@ peer_name = "${peername}"\n`
         this.logBuffer.push(line)
     }
     async dumpLog() {
-        var data = "",
-            suffix = new Date().toISOString().replace(/[^0-9]/g,""),
-            path = `terminal7_${suffix}.log`
+        var data = ""
         while (this.logBuffer.length > 0) {
             data += this.logBuffer.shift() + "\n"
         }
@@ -951,7 +937,7 @@ peer_name = "${peername}"\n`
         }
         */
     }
-    onPointerCancel(ev) {
+    onPointerCancel() {
         this.pointer0 = null
         this.firstPointer = null
         this.lastT = null
@@ -972,7 +958,7 @@ peer_name = "${peername}"\n`
         this.firstPointer = {pageX: ev.pageX, pageY: ev.pageY}
         if (e.gate) {
             if (!this.longPressGate)
-                this.longPressGate = this.run(ev => {
+                this.longPressGate = this.run(() => {
                     e.gate.edit()
                 }, this.conf.ui.quickest_press)
         }
@@ -1098,7 +1084,7 @@ peer_name = "${peername}"\n`
             return
         var modal = document.getElementById("onboarding")
         modal.classList.remove("hidden")
-        modal.querySelector(".onmobile").addEventListener('click', ev => {
+        modal.querySelector(".onmobile").addEventListener('click', () => {
             localStorage.setItem("onboard", "yep")
             modal = document.getElementById("mobile-instructions")
             modal.classList.remove("hidden")
@@ -1112,7 +1098,7 @@ peer_name = "${peername}"\n`
                 ev.preventDefault()
             })
         })
-        modal.querySelector(".ongpos").addEventListener('click', ev => {
+        modal.querySelector(".ongpos").addEventListener('click', () => {
             localStorage.setItem("onboard", "yep")
             var gate = this.addGate({
                 addr: "localhost",

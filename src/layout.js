@@ -124,7 +124,7 @@ export class Layout extends Cell {
      * waits a bit for the DOM to refresh and moves the dividers
      */
     refreshDividers() {
-        this.t7.run(_ => this.cells.forEach(c => {
+        this.t7.run(() => this.cells.forEach(c => {
             c.refreshDividers()
         }), ABIT)
     }
@@ -132,7 +132,6 @@ export class Layout extends Cell {
     toText() {
         // r is the text the function returns
         let r = (this.dir=="rightleft")?"[":"{"
-        let that = this
         // get the dimensions of all the cell, recurse if a layout is found
         this.cells.forEach((c, i) => {
             if (i > 0)
@@ -144,10 +143,10 @@ export class Layout extends Cell {
                 this.t7.log(i, c)
             }
             r += `,${c.xoff.toFixed(3)},${c.yoff.toFixed(3)}`
-            if (c == that)
+            if (c == this)
                 this.t7.log("ERROR: layout shouldn't have `this` in his cells")
-            // TODO: remove this workaround - `c != that`
-            if ((c != that) && (typeof c.toText == "function"))
+            // TODO: remove this workaround - `c != this`
+            if ((c != this) && (typeof c.toText == "function"))
                 r += c.toText()
             else
                 r += `,${c.id || c.d.id}`
@@ -183,7 +182,7 @@ export class Layout extends Cell {
         let oldS = this.sx,
             r = val/oldS
         this.e.style.width = String(val * 100) + "%"
-        if (r == NaN || this.cells == undefined || this.cells.length == 0)
+        if (isNaN(r) || this.cells == undefined || this.cells.length == 0)
             return
         let off = this.cells[0].xoff
         this.cells.forEach((c) => {
@@ -207,7 +206,7 @@ export class Layout extends Cell {
         let oldS = this.sy,
             r = val/oldS
         this.e.style.height = String(val * 100) + "%"
-        if (r == NaN || this.cells == undefined || this.cells.length == 0)
+        if (isNaN(r) || this.cells == undefined || this.cells.length == 0)
             return
         let off = this.cells[0].yoff
         this.cells.forEach((c) => {
@@ -271,8 +270,7 @@ export class Layout extends Cell {
      */
     moveBorder(pane, border, dest) {
         var s, off
-        let i = this.cells.indexOf(pane),
-            p0 = null,
+        let p0 = null,
             p1 = null
         // first, check if it's a horizontal or vertical border we're moving
         if (border == "top" || border == "bottom") {

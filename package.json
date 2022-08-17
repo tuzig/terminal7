@@ -95,6 +95,11 @@
     ],
     "env": {
       "browser": true
-    }
+    },
+	"globals": {
+	  "db": true,
+	  "terminal7": true
+	},
+	"ignorePatterns": ["src/imageMapResizer.js"]
   }
 }

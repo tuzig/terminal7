@@ -2,9 +2,9 @@
 
 export class PeerbookConnection {
     ws: WebSocket = null
-    host: string = "https://api.peerbook.io"
+    host = "https://api.peerbook.io"
     peerName: string
-    insecure: boolean = false
+    insecure = false
     email: string
     fp: string
     pbSendTask = null
@@ -17,7 +17,7 @@ export class PeerbookConnection {
         this.peerName = peerName
         this.host = host
         this.insecure = insecure
-        this.pending = new Array()
+        this.pending = []
     }
     connect() {
         return new Promise<void>((resolve) =>{
@@ -30,12 +30,12 @@ export class PeerbookConnection {
             this.ws = new WebSocket(url)
             this.ws.onmessage = ev => this.onUpdate(ev.data)
             this.ws.onerror = ev => window.terminal7.log("Peerbook WebSocket Error", ev)
-            this.ws.onclose = ev => {
+            this.ws.onclose = () => {
                 window.terminal7.log("peerbook connection closed")
                 // terminal7.notify("\uD83D\uDCD6 Connection closed")
                 this.ws = null
             }
-            this.ws.onopen = ev => {
+            this.ws.onopen = () => {
                 // terminal7.notify("\uD83D\uDCD6 Connection opened")
                 resolve()
                 if ((this.pbSendTask == null) && (this.pending.length > 0))

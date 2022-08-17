@@ -6,7 +6,6 @@
  *  License: GPLv3
  */
 import { Layout } from './layout.js'
-import { Cell } from './cell.js'
 import { Pane } from './pane.js'
 import * as Hammer from 'hammerjs'
 
@@ -42,8 +41,8 @@ export class Window {
         h.options.domEvents=true; // enable dom events
         h.add(new Hammer.Press({event: "rename", pointers: 1}))
         h.add(new Hammer.Tap({event: "switch", pointers: 1}))
-        h.on("rename", ev => this.rename())
-        h.on("switch", (ev) => this.focus())
+        h.on("rename", () => this.rename())
+        h.on("switch", () => this.focus())
         this.nameE = a
         this.gate.e.querySelector(".tabbar-names").appendChild(a)
     }
@@ -163,11 +162,7 @@ export class Window {
             this.rootLayout.fit()
     }
     moveFocus(where) {
-        var s, off, b,
-            un = { top: "bottom", bottom: "top",
-                   right: "left", left: "right"
-            },
-            a = this.activeP,
+        var a = this.activeP,
             b = a.t.buffer.active,
             x = a.xoff + b.cursorX * a.sx / a.t.cols,
             y = a.yoff + b.cursorY * a.sy / a.t.rows,
