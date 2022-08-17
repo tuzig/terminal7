@@ -165,7 +165,7 @@ export class Terminal7 {
                 if (Form.activeForm)
                     this.logTerminal.focus()
                 else
-                    this.connectForm(this.logTerminal)
+                    this.connect()
             })
         // hide the modal on xmark click
         addHost.querySelector(".close").addEventListener('click',  () =>  {
@@ -1173,73 +1173,65 @@ peer_name = "${peername}"\n`
         this.refreshMap()
             // TODO: remove deleted peers
     }
-    async connectForm(t) {
+    async connect() {
         const f = new Form([
             { prompt: "Enter destination (ip or domain)" }
         ])
         let hostname
         try {
-            hostname = (await f.start(t))[0]
+            hostname = (await f.start(this.logTerminal))[0]
         } catch (e) {
             return this.clear()
         }
-        this.webRTCForm(t, hostname)
-    }
-    async webRTCForm(t, hostname) {
-        const fp = await this.getFingerprint(),
-            rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${fp}" >> ~/.config/webexec/authorized_fingerprints`
-            t.writeln("\n  Connecting over WebRTC...")
-            const gate = this.addGate({
-                name: "temp_" + Math.random().toString(16).slice(2), // temp random name
-                addr: hostname,
-            }, false)
-            this.refreshMap()
-            gate.t0 = t
-            gate.connect(() => {
-                t.write(" Success!")
-                const saveForm = new Form([
-                    {
-                        prompt: "Save gate?",
-                        default: "y",
-                        values: ["y", "n"]
-                    }
-                ])
-                saveForm.start(t).then(res => {
-                    if (res[0] == "y") {
-                        const validated = Gate.validateHostName(hostname)
-                        let fields = [
-                            {
-                                prompt: "Enter name",
-                                validator: Gate.validateHostName,
-                            }]
-                        if (!validated)
-                            fields[0].default = hostname
-                        const nameForm = new Form(fields)
-                        nameForm.start(t).then(res => {
-                            const name = res[0]
-                            gate.name = name
-                            const nameE = gate.addToMap()
-                            document.getElementById("gates").prepend(nameE)
-                            gate.store = true
-                            this.storeGates()
-                            this.refreshMap()
-                            this.clear()
-                            gate.load()
-                        }).catch(() => {
-                            gate.delete()
-                            this.clear()
-                        })
-                    } else {
+        const fp = await this.getFingerprint()
+        const gate = this.addGate({
+            name: "temp_" + Math.random().toString(16).slice(2), // temp random name
+            addr: hostname,
+            id: hostname
+        }, false)
+        this.refreshMap()
+        gate.connect(() => {
+            this.logTerminal.write(" Success!")
+            const saveForm = new Form([{
+                prompt: "Save gate?",
+                default: "y",
+                values: ["y", "n"]
+            } ])
+            saveForm.start(this.logTerminal).then(res => {
+                if (res[0] == "y") {
+                    const validated = Gate.validateHostName(hostname)
+                    let fields = [
+                        {
+                            prompt: "Enter name",
+                            validator: Gate.validateHostName,
+                        }]
+                    if (!validated)
+                        fields[0].default = hostname
+                    const nameForm = new Form(fields)
+                    nameForm.start(this.logTerminal).then(res => {
+                        const name = res[0]
+                        gate.name = name
+                        const nameE = gate.addToMap()
+                        document.getElementById("gates").prepend(nameE)
+                        gate.store = true
+                        this.storeGates()
+                        this.refreshMap()
+                        this.clear()
+                        gate.load()
+                    }).catch(() => {
                         gate.delete()
                         this.clear()
-                        gate.session.getPayload()
-                            .then(layout => gate.setLayout(layout))
-                    }
-                }).catch(() => {
+                    })
+                } else {
                     gate.delete()
                     this.clear()
-                })
+                    gate.load()
+                }
+            }).catch(() => {
+                gate.delete()
+                this.clear()
             })
+        })
     }
     clearTempGates() {
         this.gates.forEach(g => {

@@ -1,4 +1,4 @@
-/*! Terminal 8 Gate
+/* Terminal 8 Gate
  *  This file contains the code that makes a terminal 7 gate. The gate class
  *  represents a server and it may be boarding - aka connected - or not.
  *
@@ -40,7 +40,6 @@ export class Gate {
     username: string
     nameE: Element
     t7: Terminal7
-    t0: Terminal
     onConnected: any
     fp: string | undefined
 
@@ -242,7 +241,7 @@ export class Gate {
      * onSessionState(state) is called when the connection
      * state changes.
      */
-    onSessionState(state: RTState, failure: Failure) {
+    onSessionState(state: string, failure: Failure) {
         if (!this.session) {
             this.t7.log(`Ignoring ${this.name} change state to ${state} as session is closed`)
             return
@@ -261,10 +260,9 @@ export class Gate {
                     Storage.set({key: "first_gate", value: "1"}) 
                 }
             })
-            if (this.onConnected) {
+            if (this.onConnected)
                 this.onConnected()
-                this.onConnected = null
-            }
+                this.onConnected = this.load
         } else if (state == "disconnected") {
             // TODO: add warn class
             this.lastDisconnect = Date.now()
@@ -308,14 +306,14 @@ export class Gate {
         if (failure == Failure.BadMarker) {
             this.notify("Session restore failed, trying a fresh session")
             this.clear()
-            this.connect()
+            this.connect(this.onConnected)
             return
         }
         if (failure == Failure.TimedOut) {
             if ((!this.fp) && this.tryWebexec) {
                 this.t7.logTerminal.writeln("  Timed out\n  Trying SSH...")
                 this.tryWebexec = false
-                this.connect()
+                this.connect(this.onConnected)
                 return
             }
         }
@@ -386,7 +384,7 @@ export class Gate {
     /*
      * connect connects to the gate
      */
-    async connect(onConnected = this.load) {
+    async connect(onConnected = () => this.load()) {
         
         this.onConnected = onConnected
         // do nothing when the network is down
@@ -707,7 +705,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.delete()
         }
         if (ans == "y")
-            this.connect()
+            this.connect(this.onConnected)
         else {
             this.t7.clear()
             this.delete()
@@ -743,8 +741,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                     this.session = new HTTPWebRTCSession(this.fp, this.addr)
                 } else {
                     this.notify("Starting SSH session")
-                    this.session = new SSHSession(
-                        this.addr, this.username, this.pass)
+                    this.session = new SSHSession(this.addr, this.username, this.pass)
                     // next time go back to trying webexec
                     this.tryWebexec = true
                 }
