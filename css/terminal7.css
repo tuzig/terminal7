@@ -360,8 +360,8 @@ button.rename-close {
 }
 #version {
     position: fixed;
-    top: 4vh;
-    left: 4vw;
+    top: 10vh;
+    left: 6vw;
     padding: 10px;
     border: 1px dotted;
     border-radius: 4px;
