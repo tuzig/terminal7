@@ -329,7 +329,7 @@ export class Gate {
         if (this.name.startsWith("temp")) {
             (async () => {
                 const rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${this.fp}" >> ~/.config/webexec/authorized_fingerprints`
-                this.t7.logTerminal.write("  Failed to connect")
+                this.t7.logTerminal.writeln("  Failed to connect")
                 let ans
                 const verifyForm = new Form([{
                     prompt: `Does the address \x1B[1;37m${this.addr}\x1B[0m seem correct?`,
@@ -372,7 +372,7 @@ export class Gate {
                     this.delete()
                 }
                 if (ans == "y") {
-                    this.t7.logTerminal.writeln("\n\n  Retrying...")
+                    this.t7.logTerminal.writeln("\n  Retrying...")
                     this.CLIConnect()
                 }
                 else {
@@ -411,7 +411,6 @@ export class Gate {
                     this.completeConnect()
                 } else {
                     this.t7.logTerminal.writeln("  SSH implemented, connecting...")
-                    debugger
                     this.askPass()
                 } 
             }

@@ -90,7 +90,7 @@ export class Form {
                         this.fields = this.fields.filter((_, i) => enabled[i])
                         disposable.dispose()
                         resolve(enabled)
-                        t.write(`\x1B[${len-current}B`)
+                        t.write(`\x1B[${len-current}B\n`)
                         Form.activeForm = false
                         break
                     case "ArrowRight":
@@ -232,13 +232,13 @@ export class Form {
             valid = false
         }
         else if (this.field && current.values && current.values.indexOf(this.field) == -1) {
-            t.write(`  ${current.prompt} must be one of: ${current.values.join(', ')}`)
+            t.writeln(`  ${current.prompt} must be one of: ${current.values.join(', ')}`)
             valid = false
         }
         else if (this.field && current.validator) {
             const err = current.validator(this.field)
             if (err) {
-                t.write(`  ${err}`)
+                t.writeln(`  ${err}`)
                 valid = false
             }
         }
@@ -264,6 +264,6 @@ export class Form {
             def = values.map(v => v == def ? v.toUpperCase() : v).join('/')
         if (def)
             def = ` [${def}]`
-        t.write(`\n  ${this.fields[this.i].prompt}${def || ''}: `)
+        t.write(`  ${this.fields[this.i].prompt}${def || ''}: `)
     }
 }
