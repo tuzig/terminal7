@@ -56,7 +56,7 @@ export class Form {
         const enabled = new Array(len).fill(false)
         let current = 0
         return new Promise<Array<boolean>>((resolve, reject) => {
-            t.writeln(`\n  ${title}, choose fields to edit:`)
+            t.writeln(`  ${title}, choose fields to edit:`)
             t.writeln("  [Use ⇅ to move, space to select, → to all, ← to none]")
             t.writeln("  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  '))
             t.write(`\x1B[4G\x1B[${len}A`) // move cursor to first field
@@ -157,7 +157,7 @@ export class Form {
                     case "Enter":
                         disposable.dispose()
                         resolve(this.fields[current].prompt)
-                        t.write(`\x1B[${len-current}B`)
+                        t.write(`\x1B[${len-current}B\n`)
                         Form.activeForm = false
                         break
                 }
@@ -228,7 +228,7 @@ export class Form {
         const current = this.fields[this.i]
         let valid = true
         if (!this.field && !current.default) {
-            t.write("  Please enter a value")
+            t.writeln("  Please enter a value")
             valid = false
         }
         else if (this.field && current.values && current.values.indexOf(this.field) == -1) {

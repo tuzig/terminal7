@@ -387,7 +387,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         var e   = document.getElementById("peerbook-modal").querySelector(".terminal-container"),
             dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
 
-        const t = openFormsTerminal(e)
         const f = new Form([
             {
                 prompt: "email (will only be used to manage your peers)",
@@ -395,7 +394,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             },
             { prompt: "Peer's name" }
         ])
-        f.start(t).then(results => {
+        f.start(this.logTerminal).then(results => {
             const email = results[0],
                 peername = results[1]
 
@@ -1172,6 +1171,17 @@ peer_name = "${peername}"\n`
             // TODO: remove deleted peers
     }
     async connect() {
+        if (!this.conf.peerbook) {
+            const pbForm = new Form([
+                { prompt: "Add static host" },
+                { prompt: "Setup peerbook" }
+            ])
+            let choice = await pbForm.menu(this.logTerminal, "What do you want to do?")
+            if (choice == "Setup peerbook") {
+                this.peerbookForm()
+                return
+            }
+        }
         const f = new Form([
             { prompt: "Enter destination (ip or domain)" }
         ])

@@ -435,6 +435,8 @@ describe("terminal7", function() {
             const t0 = new Terminal()
             t.logTerminal = t0
             t.connect()
+            t0.pressKey("Enter")
+            await sleep(10)
             t0.pressKey("1")
             t0.pressKey("Enter")
             await sleep(100)
@@ -446,6 +448,8 @@ describe("terminal7", function() {
             t.logTerminal = t0
             HTTPWebRTCSession.fail = true
             t.connect()
+            t0.pressKey("Enter")
+            await sleep(10)
             t0.pressKey("2")
             t0.pressKey("Enter")
             await sleep(10)
