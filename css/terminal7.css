@@ -66,6 +66,7 @@ h3 { margin: 0.2em; color: var(--local-border); }
     user-select: none;
     -ms-user-select: none;
     -webkit-user-select: none;
+	overflow-x: auto;
 }
 button {
     border: 0;
