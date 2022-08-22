@@ -11,6 +11,8 @@ import { Cell } from '../src/cell.js'
 import { Terminal7Mock, sleep } from './infra.ts'
 import { Storage } from '@capacitor/storage'
 import { Gate } from '../src/gate.ts'
+import { HTTPWebRTCSession } from '../src/webrtc_session'
+import { Terminal } from '@tuzig/xterm'
 
 vi.mock('@tuzig/xterm')
 vi.mock('../src/webrtc_session.ts')
@@ -134,4 +136,21 @@ describe("gate", () => {
         expect(panes[0].d).not.toBeNull()
         expect(panes[0].d.resize).toHaveBeenCalledTimes(0)
     })
+	it("remembers username", async () => {
+		let g = t.addGate({name:"foo", addr: "foo", username: "eyal"})
+		g.open(e)
+		HTTPWebRTCSession.fail = true
+		let t0 = new Terminal()
+		t.logTerminal = t0
+		g.connect()
+		await sleep(500)
+		expect(t0.out).toMatch("Username [eyal]:")
+		t0.pressKey("Enter")
+		await sleep(10)
+		expect(t0.out).toMatch("Password:")
+		t0.pressKey("a")
+		t0.pressKey("Enter")
+		await sleep(10)
+		expect(t0.out).toMatch("Starting SSH session")
+	})
 })

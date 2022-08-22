@@ -708,7 +708,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
     }
     askPass() {
         const authForm = new Form([
-            { prompt: "Username" },
+            { prompt: "Username", default: this.username },
             { prompt: "Password", password: true }
         ])
         authForm.start(this.t7.logTerminal).then(res => {
