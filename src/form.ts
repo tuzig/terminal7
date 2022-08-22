@@ -55,7 +55,7 @@ export class Form {
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
-        return new Promise<Array<boolean>>((resolve, reject) => {
+        return new Promise<Array<boolean>>(resolve => {
             t.writeln(`  ${title}, choose fields to edit:`)
             t.writeln("  [Use ⇅ to move, space to select, → to all, ← to none]")
             t.writeln("  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  '))
@@ -97,18 +97,14 @@ export class Form {
                         enabled.fill(true)
                         if (current != 0)
                             t.write(`\x1B[${current}A`) // move cursor to first field
-                        for (let i in enabled) {
-                            t.write("X\x1B[1D\x1B[1B")
-                        }
+						enabled.forEach(() => t.write("X\x1B[1D\x1B[1B"))
                         t.write(`\x1B[${len-current}A`) // restore cursor position
                         break
                     case "ArrowLeft":
                         enabled.fill(false)
                         if (current != 0)
                             t.write(`\x1B[${current}A`)
-                        for (let i in enabled) {
-                            t.write(" \x1B[1D\x1B[1B")
-                        }
+						enabled.forEach(() => t.write(" \x1B[1D\x1B[1B"))
                         t.write(`\x1B[${len-current}A`)
                         break
                 }
@@ -122,7 +118,7 @@ export class Form {
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
-        return new Promise<string>((resolve, reject) => {
+        return new Promise<string>(resolve => {
             t.writeln(`\n  ${title}:`)
             t.writeln("  [Use ⇅ to move, Enter to select]")
             t.writeln("  " + this.fields.map(f => `  ${f.prompt}`).join('\n  '))
@@ -130,7 +126,6 @@ export class Form {
             t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`)
             const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
-                const char = !enabled[current] ? 'X' : ' '
                 switch (key) {
                     case "Escape":
                         disposable.dispose()
@@ -172,7 +167,7 @@ export class Form {
         this.i = 0
         this.field = ''
         this.results = []
-        return new Promise((resolve, reject) => {
+        return new Promise(resolve => {
             this.writeCurrentField(t)
             setTimeout(() => t.focus(), 0)
             const disposable = t.onKey(ev => {

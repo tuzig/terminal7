@@ -107,7 +107,6 @@ pinch_max_y_velocity = 0.1`
         await sleep(500)
         await page.screenshot({ path: `/result/2.png` })
         page.locator('.tabbar .reset').click()
-        let notConnected = true
         let i = 0
         while (true) {
             const len = await page.evaluate(async () => window.notifications.length)

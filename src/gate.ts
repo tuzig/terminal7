@@ -14,10 +14,9 @@ import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
 import { Storage } from '@capacitor/storage'
-import { Form, openFormsTerminal, Fields } from './form.js'
+import { Form, Fields } from './form.js'
 import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
 import { Window } from './window.js'
-import { Terminal } from 'xterm'
 
 
 const FAILED_COLOR = "red"// ashort period of time, in milli
@@ -40,7 +39,7 @@ export class Gate {
     username: string
     nameE: Element
     t7: Terminal7
-    onConnected: any
+    onConnected: () => void
     fp: string | undefined
 
     constructor (props) {
@@ -87,16 +86,16 @@ export class Gate {
             t.querySelector(".reset").addEventListener('click', () => 
                 this.reset())
             t.querySelector(".add-tab").addEventListener(
-                'click', _ => this.newTab())
-            t.querySelector(".search-close").addEventListener('click', _ =>  {
+                'click', () => this.newTab())
+            t.querySelector(".search-close").addEventListener('click', () =>  {
                 this.t7.logDisplay(false)
                 this.activeW.activeP.exitSearch()
                 this.activeW.activeP.focus()
             })
-            t.querySelector(".search-up").addEventListener('click', _ =>
+            t.querySelector(".search-up").addEventListener('click', () =>
                 this.activeW.activeP.findPrev())
 
-            t.querySelector(".search-down").addEventListener('click', _ => 
+            t.querySelector(".search-down").addEventListener('click', () => 
                 this.activeW.activeP.findNext())
 
             t.querySelector(".rename-close").addEventListener('click', () => 
@@ -133,7 +132,7 @@ export class Gate {
      * edit start the edit-host user-assitance
      */
     edit() {
-        var editHost
+        let editHost
         if (typeof(this.fp) == "string") {
             if (this.verified) {
                 this.notify("Got peer from \uD83D\uDCD6, connect only")
@@ -219,7 +218,7 @@ export class Gate {
         document.getElementById("map-button").classList.remove("off")
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.remove("off"))
-        let activeG = this.t7.activeG
+        const activeG = this.t7.activeG
         if (activeG) {
             activeG.e.classList.add("hidden")
         }
@@ -251,7 +250,7 @@ export class Gate {
         if (state == "connected") {
             this.notify("Connected")
             this.setIndicatorColor("unset")
-            var m = this.t7.e.querySelector(".disconnect")
+            const m = this.t7.e.querySelector(".disconnect")
             if (m != null)
                 m.remove()
             // show help for first timer
@@ -428,7 +427,7 @@ export class Gate {
      * returns an array of panes
      */
     panes() {
-        var r = []
+        const r = []
         this.t7.cells.forEach(c => {
             if (c instanceof Pane && (c.gate == this))
                 r.push(c)
@@ -453,13 +452,13 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         e = e.content.cloneNode(true)
 
         e.querySelector("pre").innerText = rc
-        e.querySelector(".continue").addEventListener('click', evt => {
+        e.querySelector(".continue").addEventListener('click', () => {
             this.t7.e.querySelector('.lose-state').remove()
             this.clear()
             this.activeW = this.addWindow("", true)
             this.focus()
         })
-        e.querySelector(".copy").addEventListener('click', evt => {
+        e.querySelector(".copy").addEventListener('click', () => {
             this.t7.e.querySelector('.lose-state').remove()
             Clipboard.write( {string: rc })
             this.tryWebexec = true
@@ -467,7 +466,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.activeW = this.addWindow("", true)
             this.focus()
         })
-        e.querySelector(".close").addEventListener('click', evt => {
+        e.querySelector(".close").addEventListener('click', () => {
             this.t7.e.querySelector('.lose-state').remove()
             this.clear()
             this.t7.goHome()
@@ -492,7 +491,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.t7.log("Setting layout: ", state)
             this.clear()
             state.windows.forEach(w =>  {
-                let win = this.addWindow(w.name)
+                const win = this.addWindow(w.name)
                 if (w.active) 
                     this.activeW = win
                 win.restoreLayout(w.layout)
@@ -509,14 +508,14 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
      */
     addWindow(name, createPane) {
         this.t7.log(`adding Window: ${name}`)
-        let id = this.windows.length
-        let w = new Window({name:name, gate: this, id: id})
+        const id = this.windows.length,
+			w = new Window({name:name, gate: this, id: id})
         this.windows.push(w)
         if (this.windows.length >= this.t7.conf.ui.max_tabs)
             this.e.querySelector(".add-tab").classList.add("off")
         w.open(this.e.querySelector(".windows-container"))
         if (createPane) {
-            let paneProps = {sx: 1.0, sy: 1.0,
+            const paneProps = {sx: 1.0, sy: 1.0,
                              xoff: 0, yoff: 0,
                              w: w,
                              gate: this},
@@ -543,9 +542,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
      * dump dumps the host to a state object
      * */
     dump() {
-        var wins = []
-        this.windows.forEach((w, i) => {
-            let win = {
+        const wins = []
+        this.windows.forEach(w => {
+            const win = {
                 name: w.name,
                 layout: w.dump()
             }
@@ -557,7 +556,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
     }
     storeState() {
         const dump = this.dump()
-        var lastState = {windows: dump.windows}
+        const lastState = {windows: dump.windows}
 
         if (this.fp)
             lastState.id = this.fp
@@ -589,7 +588,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                })
             }, 100)
     }
-    onPaneConnected(pane) {
+    onPaneConnected() {
         // hide notifications
         this.t7.clear()
         //enable search
@@ -597,7 +596,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             e => e.classList.remove("off"))
     }
     goBack() {
-        var w = this.breadcrumbs.pop()
+        const w = this.breadcrumbs.pop()
         this.breadcrumbs = this.breadcrumbs.filter(x => x != w)
         if (this.windows.length == 0) {
             this.stopBoarding()
@@ -611,7 +610,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                 this.windows[0].focus()
     }
     showResetHost() {
-        let e = document.getElementById("reset-host"),
+        const e = document.getElementById("reset-host"),
             addr = this.addr.substr(0, this.addr.indexOf(":"))
 
         document.getElementById("rh-address").innerHTML = addr
@@ -650,7 +649,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
     }
     newTab() {
         if (this.windows.length < this.t7.conf.ui.max_tabs) {
-            let w = this.addWindow("", true)
+            const w = this.addWindow("", true)
             this.breadcrumbs.push(w)
             w.focus()
         }
@@ -708,9 +707,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         }
     }
     askPass() {
-        const hideModal = evt => evt.target.closest(".modal").classList.toggle("hidden")
-        const e = document.getElementById("askpass")
-        
         const authForm = new Form([
             { prompt: "Username" },
             { prompt: "Password", password: true }
