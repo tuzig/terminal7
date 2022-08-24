@@ -562,14 +562,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             else
                 this.windows[0].focus()
     }
-    showResetHost() {
-        const e = document.getElementById("reset-host"),
-            addr = this.addr.substr(0, this.addr.indexOf(":"))
-
-        document.getElementById("rh-address").innerHTML = addr
-        document.getElementById("rh-name").innerHTML = this.name
-        e.classList.remove("hidden")
-    }
     fit() {
         this.windows.forEach(w => w.fit())
     }

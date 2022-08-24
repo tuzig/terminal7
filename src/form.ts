@@ -41,10 +41,10 @@ export class Form {
     i: number
     e: HTMLElement
     resolve: (value) => void
-    reject: (reason?) => void
     fields: Fields
     results: Results
     static activeForm = false
+	static disposeCurrent: () => void
 
     constructor(fields: Fields) {
         this.fields = fields
@@ -60,15 +60,18 @@ export class Form {
             t.writeln("  [Use ⇅ to move, space to select, → to all, ← to none]")
             t.writeln("  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  '))
             t.write(`\x1B[4G\x1B[${len}A`) // move cursor to first field
+			Form.disposeCurrent = () => {
+				disposable.dispose()
+				t.write(`\x1B[${len-current}B\rESC\n`)
+				window.terminal7.clearTempGates()
+				Form.activeForm = false
+			}
             const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
                 const char = !enabled[current] ? 'X' : ' '
                 switch (key) {
                     case "Escape":
-                        disposable.dispose()
-                        t.write(`\x1B[${len-current}B\rESC\n`)
-                        window.terminal7.clearTempGates()
-                        Form.activeForm = false
+						Form.disposeCurrent()
                         break
                     case "ArrowUp":
                         if (current > 0) {
@@ -124,14 +127,17 @@ export class Form {
             t.writeln("  " + this.fields.map(f => `  ${f.prompt}`).join('\n  '))
             t.write(`\x1B[3G\x1B[${len}A`) // move cursor to first field
             t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`)
+			Form.disposeCurrent = () => {
+				disposable.dispose()
+				t.write(`\x1B[${len-current}B\rESC\n`)
+				window.terminal7.clearTempGates()
+				Form.activeForm = false
+			}
             const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
                 switch (key) {
                     case "Escape":
-                        disposable.dispose()
-                        t.write(`\x1B[${len-current}B\rESC\n`)
-                        window.terminal7.clearTempGates()
-                        Form.activeForm = false
+						Form.disposeCurrent()
                         break
                     case "ArrowUp":
                         if (current > 0) {
@@ -170,15 +176,18 @@ export class Form {
         return new Promise(resolve => {
             this.writeCurrentField(t)
             setTimeout(() => t.focus(), 0)
+			Form.disposeCurrent = () => {
+				disposable.dispose()
+                t.write("ESC\n")
+                window.terminal7.clearTempGates()
+                Form.activeForm = false
+			}
             const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
                 const password = this.fields[this.i].password
                 switch (key) {
                     case "Escape":
-                        disposable.dispose()
-                        t.write("ESC\n")
-                        window.terminal7.clearTempGates()
-                        Form.activeForm = false
+                        Form.disposeCurrent()
                         break
                     case "Backspace":
                         if (this.field.length > 0) {
@@ -206,7 +215,7 @@ export class Form {
                                 }
                             })
                         }
-                        else {
+                        else if (key.length == 1) {
                             this.field += key
                             if (!password)
                                 t.write(key)

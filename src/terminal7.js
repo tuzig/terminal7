@@ -117,8 +117,8 @@ export class Terminal7 {
         this.loadConf(d)
 
         setTimeout(() => {
-            const log = document.getElementById("log")
-            this.logTerminal = openFormsTerminal(log)
+            const container = document.querySelector("#log #terminal-container")
+            this.logTerminal = openFormsTerminal(container)
             this.logTerminal.onKey((ev) => {
                 const key = ev.domEvent.key
                 if (key == 'Escape')
@@ -153,7 +153,6 @@ export class Terminal7 {
                 .addEventListener("click", () =>  {
                     if (this.activeG && this.activeG.activeW.activeP.sx >= 0.04)
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
-        let addHost = document.getElementById("add-host")
         document.getElementById('add-gate').addEventListener(
             'click', async () => {
                 this.logDisplay(true)
@@ -162,10 +161,12 @@ export class Terminal7 {
                 else
                     this.connect()
             })
+		document.querySelector('#log .close').addEventListener('click', () => {
+			this.logDisplay(false)
+			if (Form.activeForm)
+				Form.disposeCurrent()
+		})
         // hide the modal on xmark click
-        addHost.querySelector(".close").addEventListener('click',  () =>  {
-            this.clear()
-        })
         // Handle network events for the indicator
         Network.addListener('networkStatusChange', s => 
             this.updateNetworkStatus(s))
@@ -173,13 +174,6 @@ export class Terminal7 {
         // setting up edit host events
         document.getElementById("edit-unverified-pbhost").addEventListener(
             "click", () => this.clear())
-        let editHost = document.getElementById("edit-host")
-        editHost.querySelector(".close").addEventListener('click',  () =>
-            terminal7.clear())
-        editHost.querySelector(".trash").addEventListener('click',  () => {
-            editHost.gate.delete()
-            terminal7.clear()
-        })
         // add webexec installation instructions
         const fp = await this.getFingerprint(),
             rc = `bash -c "$(curl -sL https://get.webexec.sh)"
@@ -197,14 +191,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             })
 
         })
-        // setting up reset host event
-        let resetHost = document.getElementById("reset-host")
-        resetHost.querySelector("form").addEventListener('submit', ev => {
-            ev.preventDefault()
-            editHost.gate.restartServer()
-        })
-        resetHost.querySelector(".close").addEventListener('click',  ev =>
-            ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
         // setting up reset cert events
         let resetCert = document.getElementById("reset-cert")
         resetCert.querySelector(".reset").addEventListener('click',  ev => {
@@ -277,6 +263,10 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             })
         }
 
+		document.getElementById("log").addEventListener("click", () => {
+			if (!Form.activeForm)
+				this.logDisplay(false)
+		})
         // settings button and modal
         var modal   = document.getElementById("settings-modal")
         modal.addEventListener('click',
@@ -367,8 +357,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         })
     }
     async peerbookForm() {
-        var e   = document.getElementById("peerbook-modal").querySelector(".terminal-container"),
-            dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
+        let dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
 
         const f = new Form([
             {
@@ -388,7 +377,6 @@ peer_name = "${peername}"\n`
 
             Storage.set({ key: "dotfile", value: dotfile })
             this.loadConf(TOML.parse(dotfile))
-            e.classList.add("hidden")
             this.notify("Your email was added to the dotfile")
             this.clear()
         })
