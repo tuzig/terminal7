@@ -13,6 +13,7 @@ import { Failure, Session } from './session'
 import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
+import { Capacitor } from '@capacitor/core'
 import { Storage } from '@capacitor/storage'
 import { Form, Fields } from './form.js'
 import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
@@ -127,6 +128,7 @@ export class Gate {
         // remove the host from the home screen
         if (this.nameE)
             this.nameE.remove()
+		this.t7.clear()
     }
     /*
      * edit start the edit-host user-assitance
@@ -195,8 +197,8 @@ export class Gate {
                                         this.t7.refreshMap()
                                         this.nameE.querySelector("button").innerHTML = this.name
                                         this.t7.clear()
-                                    }).catch(() => this.t7.clear())
-                                }).catch(() => this.t7.clear())
+                                    })
+                                })
                                 break
                             case "\x1B[31mDelete\x1B[0m":
                                 fDel.start(this.t7.logTerminal).then(res => {
@@ -209,8 +211,6 @@ export class Gate {
                     })
             }
         }
-        // editHost.gate = this
-        // editHost.classList.remove("hidden")
     }
     focus() {
         this.t7.logDisplay(false)
@@ -260,9 +260,8 @@ export class Gate {
                     Storage.set({key: "first_gate", value: "1"}) 
                 }
             })
-            if (this.onConnected)
-                this.onConnected()
-                this.onConnected = this.load
+            this.onConnected()
+            this.onConnected = this.load
         } else if (state == "disconnected") {
             // TODO: add warn class
             this.lastDisconnect = Date.now()
@@ -282,21 +281,7 @@ export class Gate {
             return
         if (failure == Failure.WrongPassword) {
             this.t7.logTerminal.write("  Wrong password")
-            const retryForm = new Form([{
-                prompt: "Retry connection?",
-                default: "y"
-            }])
-            retryForm.start(this.t7.logTerminal).then(res => {
-                if (res[0] == "y") {
-                    this.CLIConnect()
-                } else {
-                    this.t7.clear()
-                    this.delete()
-                }
-            }).catch(() => {
-                this.t7.clear()
-                this.delete()
-            })
+			this.retryForm(() => this.CLIConnect(), () => this.delete())
             return
         }
         if (failure == Failure.Unauthorized) {
@@ -334,12 +319,7 @@ export class Gate {
                     values: ["y", "n"],
                     default: "y"
                 }])
-                try {
-                    ans = (await verifyForm.start(this.t7.logTerminal))[0]
-                } catch (e) {
-                    this.t7.clear()
-                    this.delete()
-                }
+                ans = (await verifyForm.start(this.t7.logTerminal))[0]
                 if (!ans) {
                     this.t7.logTerminal.writeln("ESC")
                     return
@@ -349,34 +329,16 @@ export class Gate {
                 const webexecForm = new Form([{
                     prompt: `Make sure webexec is running on ${this.addr}:
                         \n\x1B[1m${rc}\x1B[0m\n \n  Copy to clipboard?`,
+					values: ["y", "n"],
                     default: "y"
                 }])
-                try {
-                    ans = (await webexecForm.start(this.t7.logTerminal))[0]
-                } catch (e) {
-                    this.t7.clear()
-                    this.delete()
-                }
+                ans = (await webexecForm.start(this.t7.logTerminal))[0]
                 if (ans == "y")
                     Clipboard.write({ string: rc })
-                const retryForm = new Form([{
-                    prompt: "Retry connection?",
-                    default: "y"
-                }])
-                try {
-                    ans = (await retryForm.start(this.t7.logTerminal))[0]
-                } catch (e) {
-                    this.t7.clear()
-                    this.delete()
-                }
-                if (ans == "y") {
+				this.retryForm(() => {
                     this.t7.logTerminal.writeln("\n  Retrying...")
                     this.CLIConnect()
-                }
-                else {
-                    this.t7.clear()
-                    this.delete()
-                }
+				}, () => this.delete())
             })()
         } else
             this.t7.onDisconnect(this)
@@ -402,18 +364,9 @@ export class Gate {
         }
         this.boarding = true
         // TODO add the port
-        if (!this.pass && !this.fp && !this.tryWebexec) {
-            const canary = new SSHSession(this.addr)
-            canary.onStateChange = (state, failure) => {
-                if (failure == Failure.NotImplemented) {
-                    this.t7.logTerminal.writeln("  Unavailable")
-                    this.completeConnect()
-                } else {
-                    this.t7.logTerminal.writeln("  SSH implemented, connecting...")
-                    this.askPass()
-                } 
-            }
-            canary.connect()
+        if (!this.pass && !this.fp && !this.tryWebexec && Capacitor.getPlatform() == "ios") {
+			this.t7.logTerminal.writeln("  SSH implemented, connecting...")
+            this.askPass()
         } else
             this.completeConnect()
     }
@@ -679,32 +632,13 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
   To connect copy Terminal7's fingerprint to the server and try again:
   \n\x1B[1m${cmd}\x1B[0m\n
   Copy to clipboard?`,
+  			values: ["y", "n"],
             default: "y"
         }])
-        try {
-            ans = (await fpForm.start(this.t7.logTerminal))[0]
-        } catch (e) {
-            this.t7.clear()
-            this.delete()
-        }
+        ans = (await fpForm.start(this.t7.logTerminal))[0]
         if (ans == "y")
             Clipboard.write({ string: cmd })
-        const retryForm = new Form([{
-            prompt: "Retry connection?",
-            default: "y"
-        }])
-        try {
-            ans = (await retryForm.start(this.t7.logTerminal))[0]
-        } catch (e) {
-            this.t7.clear()
-            this.delete()
-        }
-        if (ans == "y")
-            this.connect(this.onConnected)
-        else {
-            this.t7.clear()
-            this.delete()
-        }
+		this.retryForm(() => this.connect(this.onConnected), () => this.delete())
     }
     askPass() {
         const authForm = new Form([
@@ -716,9 +650,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.pass = res[1]
             this.t7.logTerminal.writeln("Connecting")
             this.completeConnect()
-        }).catch(() => {
-            this.t7.clear()
-            this.delete()
         })
     }
     completeConnect(): void {
@@ -787,4 +718,16 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             })
         })
     }
+	async retryForm(retry: () => void, cancel: () => void) {
+		const retryForm = new Form([{
+			prompt: "Retry connection?",
+			values: ["y", "n"],
+			default: "y"
+		}])
+		const ans = (await retryForm.start(this.t7.logTerminal))[0]
+		if (ans == "y")
+			retry()
+		else
+			cancel()
+	}
 }

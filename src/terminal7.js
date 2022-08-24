@@ -276,8 +276,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 }
             })
         }
-        // document.getElementById("log").addEventListener("click",
-        //     () => this.logDisplay(false))
 
         // settings button and modal
         var modal   = document.getElementById("settings-modal")
@@ -308,15 +306,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         modal = document.getElementById("peerbook-modal")
         modal.querySelector(".close").addEventListener('click',
             () => this.clear() )
-        /*
-        document.getElementById('add-peerbook').addEventListener(
-            'click', () => {
-                this.logDisplay(false)
-                // modal.querySelector("form").reset()
-                modal.classList.remove("hidden")
-                this.peerbookForm()
-            })
-            */
         Network.getStatus().then(s => {
             this.updateNetworkStatus(s)
             if (!s.connected) {
@@ -402,7 +391,7 @@ peer_name = "${peername}"\n`
             e.classList.add("hidden")
             this.notify("Your email was added to the dotfile")
             this.clear()
-        }).catch(() => this.clear())
+        })
     }
     pbConnect() {
         return new Promise((resolve) => {
@@ -475,8 +464,9 @@ peer_name = "${peername}"\n`
              || (this.pb.insecure != this.conf.peerbook.insecure)
              || (this.pb.email != this.conf.peerbook.email))
         )
-            this.pb.close()
+        this.pb.close()
         this.pbConnect()
+		this.pb = null
     }
     catchFingers() {
         this.e.addEventListener("pointerdown", ev => this.onPointerDown(ev))
@@ -1163,12 +1153,7 @@ peer_name = "${peername}"\n`
         const f = new Form([
             { prompt: "Enter destination (ip or domain)" }
         ])
-        let hostname
-        try {
-            hostname = (await f.start(this.logTerminal))[0]
-        } catch (e) {
-            return this.clear()
-        }
+        let hostname = (await f.start(this.logTerminal))[0]
         if (this.validateHostAddress(hostname)) {
             this.logTerminal.writeln(`  ${hostname} already exists, connecting...`)
             this.gates.get(hostname).connect()

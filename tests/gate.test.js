@@ -122,7 +122,6 @@ describe("gate", () => {
         let g = t.addGate()
         expect(typeof g).toEqual("object")
         g.open(e)
-        // g.tryWebexec = false
         g.connect()
         await sleep(500)
         expect(g.boarding).to.equal(true)
@@ -140,6 +139,7 @@ describe("gate", () => {
 		let g = t.addGate({name:"foo", addr: "foo", username: "eyal"})
 		g.open(e)
 		HTTPWebRTCSession.fail = true
+		globalThis.webkit = { messageHandlers: { bridge: 1 } } // mock ios
 		let t0 = new Terminal()
 		t.logTerminal = t0
 		g.connect()
