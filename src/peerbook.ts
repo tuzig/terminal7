@@ -1,3 +1,11 @@
+/* Terminal7 PeerBook connection
+ * 
+ * This file contains the code for the class used to comunicate with 
+ * PeerBook 
+ *
+ *  Copyright: (c) 2022 Tuzig LTD
+ *  License: GPLv3
+ */
 
 
 export class PeerbookConnection {

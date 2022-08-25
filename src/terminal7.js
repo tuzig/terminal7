@@ -20,7 +20,6 @@ import { openDB } from 'idb'
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
-import { Device } from '@capacitor/device'
 import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
 import { Form, openFormsTerminal } from './form'
@@ -118,8 +117,8 @@ export class Terminal7 {
         this.loadConf(d)
 
         setTimeout(() => {
-            const log = document.getElementById("log")
-            this.logTerminal = openFormsTerminal(log)
+            const container = document.querySelector("#log #terminal-container")
+            this.logTerminal = openFormsTerminal(container)
             this.logTerminal.onKey((ev) => {
                 const key = ev.domEvent.key
                 if (key == 'Escape')
@@ -154,7 +153,6 @@ export class Terminal7 {
                 .addEventListener("click", () =>  {
                     if (this.activeG && this.activeG.activeW.activeP.sx >= 0.04)
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
-        let addHost = document.getElementById("add-host")
         document.getElementById('add-gate').addEventListener(
             'click', async () => {
                 this.logDisplay(true)
@@ -163,10 +161,12 @@ export class Terminal7 {
                 else
                     this.connect()
             })
+		document.querySelector('#log .close').addEventListener('click', () => {
+			this.logDisplay(false)
+			if (Form.activeForm)
+				Form.disposeCurrent()
+		})
         // hide the modal on xmark click
-        addHost.querySelector(".close").addEventListener('click',  () =>  {
-            this.clear()
-        })
         // Handle network events for the indicator
         Network.addListener('networkStatusChange', s => 
             this.updateNetworkStatus(s))
@@ -174,13 +174,6 @@ export class Terminal7 {
         // setting up edit host events
         document.getElementById("edit-unverified-pbhost").addEventListener(
             "click", () => this.clear())
-        let editHost = document.getElementById("edit-host")
-        editHost.querySelector(".close").addEventListener('click',  () =>
-            terminal7.clear())
-        editHost.querySelector(".trash").addEventListener('click',  () => {
-            editHost.gate.delete()
-            terminal7.clear()
-        })
         // add webexec installation instructions
         const fp = await this.getFingerprint(),
             rc = `bash -c "$(curl -sL https://get.webexec.sh)"
@@ -198,14 +191,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             })
 
         })
-        // setting up reset host event
-        let resetHost = document.getElementById("reset-host")
-        resetHost.querySelector("form").addEventListener('submit', ev => {
-            ev.preventDefault()
-            editHost.gate.restartServer()
-        })
-        resetHost.querySelector(".close").addEventListener('click',  ev =>
-            ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
         // setting up reset cert events
         let resetCert = document.getElementById("reset-cert")
         resetCert.querySelector(".reset").addEventListener('click',  ev => {
@@ -277,9 +262,11 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 }
             })
         }
-        // document.getElementById("log").addEventListener("click",
-        //     () => this.logDisplay(false))
 
+		document.getElementById("log").addEventListener("click", () => {
+			if (!Form.activeForm)
+				this.logDisplay(false)
+		})
         // settings button and modal
         var modal   = document.getElementById("settings-modal")
         modal.addEventListener('click',
@@ -309,15 +296,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         modal = document.getElementById("peerbook-modal")
         modal.querySelector(".close").addEventListener('click',
             () => this.clear() )
-        /*
-        document.getElementById('add-peerbook').addEventListener(
-            'click', () => {
-                this.logDisplay(false)
-                // modal.querySelector("form").reset()
-                modal.classList.remove("hidden")
-                this.peerbookForm()
-            })
-            */
         Network.getStatus().then(s => {
             this.updateNetworkStatus(s)
             if (!s.connected) {
@@ -379,21 +357,14 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         })
     }
     async peerbookForm() {
-        var e   = document.getElementById("peerbook-modal").querySelector(".terminal-container"),
-            dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE,
-            defaultName
+        let dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
 
-
-        try {
-            const info = await Device.getInfo()
-            defaultName = `${info.name}'s ${info.model}`
-        } catch (e) { defaultName = ''}
         const f = new Form([
             {
-                prompt: "Email",
+                prompt: "email (will only be used to manage your peers)",
                 validator: email => !email.match(/.+@.+\..+/) ? "Must be a valid email" : ''
             },
-            { prompt: "Peer's name", default: defaultName }
+            { prompt: "Peer's name" }
         ])
         f.start(this.logTerminal).then(results => {
             const email = results[0],
@@ -406,11 +377,9 @@ peer_name = "${peername}"\n`
 
             Storage.set({ key: "dotfile", value: dotfile })
             this.loadConf(TOML.parse(dotfile))
-            e.classList.add("hidden")
             this.notify("Your email was added to the dotfile")
-            this.pbConnect()
             this.clear()
-        }).catch(() => this.clear())
+        })
     }
     pbConnect() {
         return new Promise((resolve) => {
@@ -483,8 +452,9 @@ peer_name = "${peername}"\n`
              || (this.pb.insecure != this.conf.peerbook.insecure)
              || (this.pb.email != this.conf.peerbook.email))
         )
-            this.pb.close()
+        this.pb.close()
         this.pbConnect()
+		this.pb = null
     }
     catchFingers() {
         this.e.addEventListener("pointerdown", ev => this.onPointerDown(ev))
@@ -772,6 +742,15 @@ peer_name = "${peername}"\n`
         this.conf.net.timeout = this.conf.net.timeout || 3000
         this.conf.net.httpTimeout = this.conf.net.http_timeout || 1000
         this.conf.net.retries = this.conf.net.retries || 3
+/*
+            Device.getInfo()
+            .then(i =>
+                this.conf.peerbook.peer_name = `${i.name}'s ${i.model}`)
+            .catch(err => {
+                console.log("Device info error", err)
+                this.conf.peerbook.peer_name = "John Doe"
+            })
+            */
     }
 
 
@@ -1162,12 +1141,7 @@ peer_name = "${peername}"\n`
         const f = new Form([
             { prompt: "Enter destination (ip or domain)" }
         ])
-        let hostname
-        try {
-            hostname = (await f.start(this.logTerminal))[0]
-        } catch (e) {
-            return this.clear()
-        }
+        let hostname = (await f.start(this.logTerminal))[0]
         if (this.validateHostAddress(hostname)) {
             this.logTerminal.writeln(`  ${hostname} already exists, connecting...`)
             this.gates.get(hostname).connect()

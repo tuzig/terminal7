@@ -447,6 +447,7 @@ describe("terminal7", function() {
             const t0 = new Terminal()
             t.logTerminal = t0
             HTTPWebRTCSession.fail = true
+			globalThis.webkit = { messageHandlers: { bridge: 1 } } // mock ios
             t.connect()
             t0.pressKey("Enter")
             await sleep(10)
