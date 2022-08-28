@@ -1,4 +1,4 @@
-/* Terminal 8 Gate
+/* Terminal 7 Gate
  *  This file contains the code that makes a terminal 7 gate. The gate class
  *  represents a server and it may be boarding - aka connected - or not.
  *
@@ -42,6 +42,7 @@ export class Gate {
     t7: Terminal7
     onConnected: () => void
     fp: string | undefined
+    store: boolean
 
     constructor (props) {
         // given properties
@@ -108,27 +109,10 @@ export class Gate {
             this.e.appendChild(t)
         }
     }
-        // Add the gates' signs to the home page
-    addToMap() {
-        const d = document.createElement('div')
-        const b = document.createElement('button')
-        d.className = "gate-pad"
-        b.className = "text-button"
-        d.gate = this
-        b.gate = this
-        b.innerHTML = this.name || this.addr
-        this.nameE = d
-        d.appendChild(b)
-        this.updateNameE()
-        return d
-    }
     delete() {
         this.t7.gates.delete(this.id)
         this.t7.storeGates()
-        // remove the host from the home screen
-        if (this.nameE)
-            this.nameE.remove()
-		this.t7.clear()
+		this.t7.map.remove(this)
     }
     /*
      * edit start the edit-host user-assitance
@@ -194,9 +178,8 @@ export class Gate {
                                             this.t7.gates.set(this.id, this)
                                         }
                                         this.t7.storeGates()
-                                        this.t7.refreshMap()
-                                        this.nameE.querySelector("button").innerHTML = this.name
-                                        this.t7.clear()
+                                        this.t7.map.update(this)
+                                        this.t7.logDisplay(false)
                                     })
                                 })
                                 break
@@ -592,22 +575,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             w.focus()
         }
     }
-    updateNameE() {
-        const button = this.nameE.children[0]
-        button.innerHTML = this.name
-        if (!this.fp) {
-            // there's nothing more to update for static hosts
-            return
-        }
-        if (this.verified)
-            button.classList.remove("unverified")
-        else
-            button.classList.add("unverified")
-        if (this.online)
-            button.classList.remove("offline")
-        else
-            button.classList.add("offline")
-    }
     async copyFingerprint() {
         const fp = await this.t7.getFingerprint(),
               cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
@@ -690,12 +657,10 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                     nameForm.start(this.t7.logTerminal).then(res => {
                         const name = res[0]
                         this.name = name
-                        const nameE = this.addToMap()
-                        document.getElementById("gates").prepend(nameE)
+                        this.nameE = this.t7.map.add(this)
                         this.store = true
                         this.t7.storeGates()
-                        this.t7.refreshMap()
-                        this.t7.clear()
+                        this.t7.logDisplay(false)
                         this.load()
                     })
                 } else {

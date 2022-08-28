@@ -7,6 +7,7 @@
  *  License: GPLv3
  */
 import { Gate } from './gate.ts'
+import { T7Map } from './map.ts'
 import { CyclicArray } from './cyclic.js'
 import * as TOML from '@tuzig/toml'
 import { imageMapResizer } from './imageMapResizer.js'
@@ -76,6 +77,7 @@ export class Terminal7 {
         this.zoomedE = null
         this.pendingPanes = {}
         this.pb = null
+        this.map = new T7Map()
     }
     showKeyHelp () {
         if (Date.now() - this.metaPressStart > 987) {
@@ -113,7 +115,7 @@ export class Terminal7 {
                 10))
 
         }
-        this.refreshMap()
+        this.map.refresh()
         this.loadConf(d)
 
         setTimeout(() => {
@@ -242,7 +244,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 g.store = true
                 this.addGate(g).e.classList.add("hidden")
             })
-            this.refreshMap()
+            this.map.refresh()
         }
         if (Capacitor.isNativePlatform())  {
             App.addListener('appStateChange', state => {
@@ -477,52 +479,9 @@ peer_name = "${peername}"\n`
         let g = new Gate(p)
         this.gates.set(p.id, g)
         g.open(this.e)
-        if (onMap) {
-            const nameE = g.addToMap()
-            document.getElementById("gates").prepend(nameE)
-        }
+        if (onMap)
+            g.nameE = this.map.add(g)
         return g
-    }
-    refreshMap() {
-        const pads = document.querySelectorAll(".gate-pad")
-        let col
-        pads.forEach((e, i) => {
-            col = i % 4
-            if (col % 2 == 0)
-                e.style.background = 'top / contain no-repeat url("/map/left_half.svg")'
-            else
-                e.style.background = 'top / contain no-repeat url("/map/right_half.svg")'
-        })
-        document.querySelectorAll(".empty-pad").forEach(e => e.remove())
-        const gates = document.getElementById("gates")
-        for (var i = col + 1; i < 4; i++) {
-            const e = document.createElement("div")
-            e.appendChild(document.createElement("div"))
-
-            e.className = "empty-pad"
-            if (i % 2 == 0)
-                e.style.background = 'top / contain no-repeat url("/map/left_half.svg")'
-            else
-                e.style.background = 'top / contain no-repeat url("/map/right_half.svg")'
-            gates.appendChild(e)
-        }
-        // add the footer line
-        for (i = 0; i < 4; i++) {
-            const e = document.createElement("div")
-            e.appendChild(document.createElement("div"))
-            e.className = "empty-pad"
-            if (i % 2 == 0)
-                e.style.background = 'top / contain no-repeat url("/map/footer_left_half.svg")'
-            else
-                e.style.background = 'top / contain no-repeat url("/map/footer_right_half.svg")'
-            gates.appendChild(e)
-        }
-        document.querySelectorAll(".map-TBD").forEach(e => e.remove())
-        const clear = document.createElement("div")
-        clear.style.clear = 'both'
-        clear.className = 'map-TBD'
-        gates.appendChild(clear)
-
     }
     async storeGates() { 
         let out = []
@@ -537,7 +496,7 @@ peer_name = "${peername}"\n`
         })
         this.log("Storing gates:", out)
         await Storage.set({key: 'gates', value: JSON.stringify(out)})
-        this.refreshMap()
+        this.map.refresh()
     }
     clear() {
         this.e.querySelectorAll('.temporal').forEach(e => e.remove())
@@ -872,7 +831,7 @@ peer_name = "${peername}"\n`
 
         if (m["peer_update"] !== undefined) {
             g.online = m.peer_update.online
-            g.updateNameE()
+            this.map.update(g)
             return
         }
         if (!g.session) {
@@ -927,17 +886,19 @@ peer_name = "${peername}"\n`
         return
     }
     onPointerDown(ev) {
-        let e = ev.target
+        const e = ev.target
+        const gatePad = e.closest(".gate-pad")
         /*
         if ((ev.pointerType == "mouse") && (ev.pressure == 0))
             return
             */
         this.pointer0 = Date.now() 
         this.firstPointer = {pageX: ev.pageX, pageY: ev.pageY}
-        if (e.gate) {
+        if (gatePad) {
+            const gate = gatePad.gate
             if (!this.longPressGate)
                 this.longPressGate = this.run(() => {
-                    e.gate.edit()
+                    gate.edit()
                 }, this.conf.ui.quickest_press)
         }
         // only dividers know their panes
@@ -975,11 +936,11 @@ peer_name = "${peername}"\n`
     }
     onPointerUp(ev) {
         let e = ev.target,
-            gateName = e.closest(".gate-pad")
+            gatePad = e.closest(".gate-pad")
 
         if (!this.pointer0)
             return
-        if (gateName) {
+        if (gatePad) {
             let deltaT = Date.now() - this.pointer0
             clearTimeout(this.longPressGate)
             this.longPressGate = null
@@ -988,12 +949,13 @@ peer_name = "${peername}"\n`
                 ev.preventDefault()
             } else {
                 // that's for the refresh and static host add
-                if (!e.gate)
+                const gate = gatePad.gate
+                if (!gate)
                     return
-                if (!e.gate.fp || e.gate.verified && e.gate.online)
-                    e.gate.connect()
+                if (!gate.fp || gate.verified && gate.online)
+                    gate.connect()
                 else
-                    e.gate.edit()
+                    gate.edit()
             }
         } else if (this.gesture) {
             this.activeG.sendState()
@@ -1112,19 +1074,17 @@ peer_name = "${peername}"\n`
                 g.online = p.online
                 g.name = p.name
                 g.verified = p.verified
-                g.updateNameE()
+                this.map.update(g)
             } else {
                 p.id = p.fp
                 g = new Gate(p)
                 this.gates.set(p.fp, g)
-                g.nameE = g.addToMap()
-                document.getElementById("gates").prepend(g.nameE)
+                g.nameE = this.map.add(g)
                 g.open(this.e)
 
             }
         })
-        this.refreshMap()
-            // TODO: remove deleted peers
+        this.map.refresh()
     }
     async connect() {
         if (!this.conf.peerbook) {
@@ -1152,7 +1112,7 @@ peer_name = "${peername}"\n`
             addr: hostname,
             id: hostname
         }, false)
-        this.refreshMap()
+        this.map.refresh()
         gate.CLIConnect()
     }
     clearTempGates() {
