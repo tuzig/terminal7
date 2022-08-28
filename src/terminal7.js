@@ -604,7 +604,7 @@ peer_name = "${peername}"\n`
             { prompt: "Reconnect" },
             { prompt: "Close" }
         ])
-        const res = await reconnectForm.menu(this.logTerminal, "What do you want to do?")
+        const res = await reconnectForm.menu(this.logTerminal, "What's next?")
         if (res == "Reconnect") {
             gate.session = null
             gate.connect(gate.onConnected)
@@ -655,7 +655,7 @@ peer_name = "${peername}"\n`
         const d = new Date(),
             t = formatDate(d, "HH:mm:ss.fff")
         // TODO: add color based on level and ttl
-        this.logTerminal.writeln(` \x1B[2m${t}\x1B[0m ${message}\n`)
+        this.logTerminal.writeln(` \x1B[2m${t}\x1B[0m ${message}`)
         this.logDisplay(true)
     }
     run(cb, delay) {
@@ -1132,7 +1132,7 @@ peer_name = "${peername}"\n`
                 { prompt: "Add static host" },
                 { prompt: "Setup peerbook" }
             ])
-            let choice = await pbForm.menu(this.logTerminal, "What do you want to do?")
+            let choice = await pbForm.menu(this.logTerminal, "What's next?")
             if (choice == "Setup peerbook") {
                 this.peerbookForm()
                 return

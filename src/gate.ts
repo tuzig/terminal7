@@ -273,42 +273,36 @@ export class Gate {
     }
     // handle connection failures
     handleFailure(failure: Failure) {
-        this.t7.log(failure)
-
+        this.notify(`FAILED: ${failure || "Server Disconnected"}`)
         this.session = null
-
         if (!this.boarding)
             return
-        if (failure == Failure.WrongPassword) {
-            this.t7.logTerminal.write("  Wrong password")
-			this.retryForm(() => this.CLIConnect(), () => this.delete())
-            return
-        }
-        if (failure == Failure.Unauthorized) {
-            this.copyFingerprint()
-            return
-        }
-        if (failure == Failure.BadMarker) {
-            this.notify("Session restore failed, trying a fresh session")
-            this.clear()
-            this.connect(this.onConnected)
-            return
-        }
-        if (failure == Failure.TimedOut) {
-            if ((!this.fp) && this.tryWebexec) {
-                this.t7.logTerminal.writeln("  Timed out\n  Trying SSH...")
+        switch ( failure ) {
+            case Failure.WrongPassword:
                 this.tryWebexec = false
+                this.pass = undefined
+                this.retryForm(() => this.CLIConnect(), () => this.delete())
+                return
+            case Failure.Unauthorized:
+                this.copyFingerprint()
+                return
+            case Failure.BadMarker:
+                this.notify("Trying a fresh session")
+                this.marker = null
                 this.connect(this.onConnected)
                 return
-            }
+            case Failure.TimedOut:
+                if (!this.fp && this.tryWebexec && (Capacitor.getPlatform() == "ios")) {
+                    this.tryWebexec = false
+                    this.connect(this.onConnected)
+                    return
+                }
+                break
+            case Failure.BadRemoteDescription:
+                this.notify("Please try again")
+                break
+                
         }
-        if (failure == Failure.BadRemoteDescription) {
-            this.notify("Session signalling failed, please try again")
-        }
-        if (failure == Failure.NotImplemented)
-            this.notify("FAILED: not implemented yet")
-        if (!failure)
-            this.notify("Connection FAILED")
         if (this.name.startsWith("temp")) {
             (async () => {
                 const rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${this.fp}" >> ~/.config/webexec/authorized_fingerprints`
@@ -364,8 +358,7 @@ export class Gate {
         }
         this.boarding = true
         // TODO add the port
-        if (!this.pass && !this.fp && !this.tryWebexec && Capacitor.getPlatform() == "ios") {
-			this.t7.logTerminal.writeln("  SSH implemented, connecting...")
+        if (!this.pass && !this.fp && !this.tryWebexec) {
             this.askPass()
         } else
             this.completeConnect()
@@ -624,7 +617,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
   To connect copy Terminal7's fingerprint to the server and try again:
   \n\x1B[1m${cmd}\x1B[0m\n
   Copy to clipboard?`,
-  			values: ["y", "n"],
+            values: ["y", "n"],
             default: "y"
         }])
         ans = (await fpForm.start(this.t7.logTerminal))[0]
@@ -633,6 +626,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
 		this.retryForm(() => this.connect(this.onConnected), () => this.delete())
     }
     askPass() {
+        this.t7.logTerminal.writeln("  Trying SSH")
         const authForm = new Form([
             { prompt: "Username", default: this.username },
             { prompt: "Password", password: true }
@@ -640,7 +634,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         authForm.start(this.t7.logTerminal).then(res => {
             this.username = res[0]
             this.pass = res[1]
-            this.t7.logTerminal.writeln("Connecting")
             this.completeConnect()
         })
     }
@@ -675,7 +668,10 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
     }
     CLIConnect() {
         this.connect(() => {
-            this.t7.logTerminal.write(" Success!")
+            if (!this.name.startsWith("temp")) {
+                this.load()
+                return
+            }
             const saveForm = new Form([{
                 prompt: "Save gate?",
                 default: "y",
