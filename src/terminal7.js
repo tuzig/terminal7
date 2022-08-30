@@ -497,7 +497,7 @@ peer_name = "${peername}"\n`
     }
     goHome() {
         Storage.remove({key: "last_state"}) 
-        let s = document.getElementById('map-button')
+        const s = document.getElementById('map-button')
         s.classList.add('off')
         if (this.activeG) {
             this.activeG.e.classList.add("hidden")
@@ -509,6 +509,7 @@ peer_name = "${peername}"\n`
             e => e.classList.add("off"))
         window.location.href = "#map"
         document.title = "Terminal 7"
+        document.getElementById('log').classList.remove('hidden')
     }
     /*
      * onDisconnect is called when a gate disconnects.

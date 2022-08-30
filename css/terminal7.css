@@ -445,7 +445,7 @@ label {
     border-radius: 6px;
     height: 410px;
 }
-#t0 {
+#log>div {
     padding: 0;
     height: 100%;
     width: 100%;
