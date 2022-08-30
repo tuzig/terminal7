@@ -4,13 +4,13 @@ export type State = "new" | "connecting" | "connected" | "reconnected" | "discon
 
 // possible reasons for a failure
 export enum Failure {
-    NotImplemented='NotImplemented',
-    WrongPassword='WrongPassword',
+    NotImplemented='Not Implemented',
+    WrongPassword='Wrong Password',
     Unauthorized='Unauthorized',
-    BadMarker='BadMarker',
-    BadRemoteDescription='BadRemoteDescription',
-    NotSupported='NotSupported',
-    TimedOut='TimedOut'
+    BadMarker='Bad Marker',
+    BadRemoteDescription='Bad Remote Description',
+    NotSupported='Not Supported',
+    TimedOut='Timeout'
 }
 
 export interface Event {

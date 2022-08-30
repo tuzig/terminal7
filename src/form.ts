@@ -1,6 +1,4 @@
 import { Terminal } from "@tuzig/xterm"
-import { FitAddon } from "xterm-addon-fit"
-import XtermWebfont from 'xterm-webfont'
 import { Clipboard } from "@capacitor/clipboard"
 
 export type Fields = Array<{
@@ -13,35 +11,12 @@ export type Fields = Array<{
 
 export type Results = Array<string>
 
-export function openFormsTerminal(e: HTMLElement) {
-    const terminal = new Terminal({
-        cursorBlink: true,
-        cursorStyle: "block",
-        theme: window.terminal7.conf.theme,
-        fontFamily: "FiraCode",
-        fontSize: 14,
-        rendererType: "canvas",
-        convertEol: true,
-    })
-    const fitAddon = new FitAddon()
-    terminal.loadAddon(fitAddon)
-    terminal.loadAddon(new XtermWebfont())
-    const resizeObserver = new window.ResizeObserver(() => fitAddon.fit())
-    resizeObserver.observe(e);
-    terminal.loadWebfontAndOpen(e).then(() => {
-        fitAddon.fit()
-        terminal.write("\n")
-    })
-    return terminal
-}
-
 export class Form {
 
     field: string
     i: number
     e: HTMLElement
     resolve: (value) => void
-    reject: (reason?) => void
     fields: Fields
     results: Results
     static activeForm = false
@@ -58,7 +33,7 @@ export class Form {
         return new Promise<Array<boolean>>(resolve => {
             t.writeln(`  ${title}, choose fields to edit:`)
             t.writeln("  [Use ⇅ to move, space to select, → to all, ← to none]")
-            t.writeln("  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  '))
+            t.writeln("  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  ') + "\x1B[s")
             t.write(`\x1B[4G\x1B[${len}A`) // move cursor to first field
             const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
@@ -66,7 +41,7 @@ export class Form {
                 switch (key) {
                     case "Escape":
                         disposable.dispose()
-                        t.write(`\x1B[${len-current}B\rESC\n`)
+                        t.write(`\x1B[u\nESC\n`)
                         window.terminal7.clearTempGates()
                         Form.activeForm = false
                         break
@@ -121,17 +96,17 @@ export class Form {
         return new Promise<string>(resolve => {
             t.writeln(`\n  ${title}:`)
             t.writeln("  [Use ⇅ to move, Enter to select]")
-            t.writeln("  " + this.fields.map(f => `  ${f.prompt}`).join('\n  '))
+            t.writeln("  " + this.fields.map(f => `  ${f.prompt}`).join('\n  ') + "\x1B[s")
             t.write(`\x1B[3G\x1B[${len}A`) // move cursor to first field
-            t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`)
+            t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`) // bold first field
             const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
                 switch (key) {
                     case "Escape":
                         disposable.dispose()
-                        t.write(`\x1B[${len-current}B\rESC\n`)
+                        t.write(`\x1B[u\nESC\n`)
                         window.terminal7.clearTempGates()
-                        Form.activeForm = false
+			            Form.activeForm = false
                         break
                     case "ArrowUp":
                         if (current > 0) {
@@ -176,7 +151,7 @@ export class Form {
                 switch (key) {
                     case "Escape":
                         disposable.dispose()
-                        t.write("ESC\n")
+                        t.write(`\x1B[u\nESC\n`)
                         window.terminal7.clearTempGates()
                         Form.activeForm = false
                         break
@@ -206,7 +181,7 @@ export class Form {
                                 }
                             })
                         }
-                        else {
+                        else if (key.length == 1) { // make sure the key is a char
                             this.field += key
                             if (!password)
                                 t.write(key)

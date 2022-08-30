@@ -7,6 +7,7 @@
  *  License: GPLv3
  */
 import { Gate } from './gate.ts'
+import { T7Map } from './map.ts'
 import { CyclicArray } from './cyclic.js'
 import * as TOML from '@tuzig/toml'
 import { imageMapResizer } from './imageMapResizer.js'
@@ -22,7 +23,7 @@ import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
-import { Form, openFormsTerminal } from './form'
+import { Form } from './form'
 import { PeerbookConnection } from './peerbook'
 
 
@@ -109,22 +110,14 @@ export class Terminal7 {
             d = TOML.parse(DEFAULT_DOTFILE)
             this.run(() =>
                 this.notify(
-                    `Using default conf as parsing the dotfile failed:<br>${err}`, 
+                    `Using default conf as parsing the dotfile failed:\n ${err}`, 
                 10))
 
         }
-        this.refreshMap()
         this.loadConf(d)
 
-        setTimeout(() => {
-            const log = document.getElementById("log")
-            this.logTerminal = openFormsTerminal(log)
-            this.logTerminal.onKey((ev) => {
-                const key = ev.domEvent.key
-                if (key == 'Escape')
-                    this.logDisplay(false)
-            })
-        }, 0)
+        this.map = new T7Map()
+        this.map.refresh()
 
         // buttons
         document.getElementById("trash-button")
@@ -135,7 +128,7 @@ export class Terminal7 {
         document.getElementById("map-button")
                 .addEventListener("click", () => this.goHome())
         document.getElementById("log-button")
-                .addEventListener("click", () => this.logDisplay())
+                .addEventListener("click", () => this.map.showLog())
         document.getElementById("search-button")
                 .addEventListener("click", () => 
                    this.activeG && this.activeG.activeW.activeP.toggleSearch())
@@ -153,19 +146,15 @@ export class Terminal7 {
                 .addEventListener("click", () =>  {
                     if (this.activeG && this.activeG.activeW.activeP.sx >= 0.04)
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
-        let addHost = document.getElementById("add-host")
         document.getElementById('add-gate').addEventListener(
             'click', async () => {
-                this.logDisplay(true)
+                this.map.showLog(true)
                 if (Form.activeForm)
-                    this.logTerminal.focus()
+                    this.map.t0.focus()
                 else
                     this.connect()
             })
         // hide the modal on xmark click
-        addHost.querySelector(".close").addEventListener('click',  () =>  {
-            this.clear()
-        })
         // Handle network events for the indicator
         Network.addListener('networkStatusChange', s => 
             this.updateNetworkStatus(s))
@@ -173,13 +162,6 @@ export class Terminal7 {
         // setting up edit host events
         document.getElementById("edit-unverified-pbhost").addEventListener(
             "click", () => this.clear())
-        let editHost = document.getElementById("edit-host")
-        editHost.querySelector(".close").addEventListener('click',  () =>
-            terminal7.clear())
-        editHost.querySelector(".trash").addEventListener('click',  () => {
-            editHost.gate.delete()
-            terminal7.clear()
-        })
         // add webexec installation instructions
         const fp = await this.getFingerprint(),
             rc = `bash -c "$(curl -sL https://get.webexec.sh)"
@@ -197,14 +179,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             })
 
         })
-        // setting up reset host event
-        let resetHost = document.getElementById("reset-host")
-        resetHost.querySelector("form").addEventListener('submit', ev => {
-            ev.preventDefault()
-            editHost.gate.restartServer()
-        })
-        resetHost.querySelector(".close").addEventListener('click',  ev =>
-            ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
         // setting up reset cert events
         let resetCert = document.getElementById("reset-cert")
         resetCert.querySelector(".reset").addEventListener('click',  ev => {
@@ -256,7 +230,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 g.store = true
                 this.addGate(g).e.classList.add("hidden")
             })
-            this.refreshMap()
+            this.map.refresh()
         }
         if (Capacitor.isNativePlatform())  {
             App.addListener('appStateChange', state => {
@@ -276,9 +250,11 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 }
             })
         }
-        // document.getElementById("log").addEventListener("click",
-        //     () => this.logDisplay(false))
 
+		document.getElementById("log").addEventListener("click", () => {
+			if (!Form.activeForm)
+				this.map.showLog(false)
+		})
         // settings button and modal
         var modal   = document.getElementById("settings-modal")
         modal.addEventListener('click',
@@ -308,15 +284,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         modal = document.getElementById("peerbook-modal")
         modal.querySelector(".close").addEventListener('click',
             () => this.clear() )
-        /*
-        document.getElementById('add-peerbook').addEventListener(
-            'click', () => {
-                this.logDisplay(false)
-                // modal.querySelector("form").reset()
-                modal.classList.remove("hidden")
-                this.peerbookForm()
-            })
-            */
         Network.getStatus().then(s => {
             this.updateNetworkStatus(s)
             if (!s.connected) {
@@ -378,8 +345,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         })
     }
     async peerbookForm() {
-        var e   = document.getElementById("peerbook-modal").querySelector(".terminal-container"),
-            dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
+        let dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
 
         const f = new Form([
             {
@@ -388,7 +354,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             },
             { prompt: "Peer's name" }
         ])
-        f.start(this.logTerminal).then(results => {
+        f.start(this.map.t0).then(results => {
             const email = results[0],
                 peername = results[1]
 
@@ -399,10 +365,9 @@ peer_name = "${peername}"\n`
 
             Storage.set({ key: "dotfile", value: dotfile })
             this.loadConf(TOML.parse(dotfile))
-            e.classList.add("hidden")
             this.notify("Your email was added to the dotfile")
             this.clear()
-        }).catch(() => this.clear())
+        })
     }
     pbConnect() {
         return new Promise((resolve) => {
@@ -475,8 +440,9 @@ peer_name = "${peername}"\n`
              || (this.pb.insecure != this.conf.peerbook.insecure)
              || (this.pb.email != this.conf.peerbook.email))
         )
-            this.pb.close()
+        this.pb.close()
         this.pbConnect()
+		this.pb = null
     }
     catchFingers() {
         this.e.addEventListener("pointerdown", ev => this.onPointerDown(ev))
@@ -499,52 +465,9 @@ peer_name = "${peername}"\n`
         let g = new Gate(p)
         this.gates.set(p.id, g)
         g.open(this.e)
-        if (onMap) {
-            const nameE = g.addToMap()
-            document.getElementById("gates").prepend(nameE)
-        }
+        if (onMap)
+            g.nameE = this.map.add(g)
         return g
-    }
-    refreshMap() {
-        const pads = document.querySelectorAll(".gate-pad")
-        let col
-        pads.forEach((e, i) => {
-            col = i % 4
-            if (col % 2 == 0)
-                e.style.background = 'top / contain no-repeat url("/map/left_half.svg")'
-            else
-                e.style.background = 'top / contain no-repeat url("/map/right_half.svg")'
-        })
-        document.querySelectorAll(".empty-pad").forEach(e => e.remove())
-        const gates = document.getElementById("gates")
-        for (var i = col + 1; i < 4; i++) {
-            const e = document.createElement("div")
-            e.appendChild(document.createElement("div"))
-
-            e.className = "empty-pad"
-            if (i % 2 == 0)
-                e.style.background = 'top / contain no-repeat url("/map/left_half.svg")'
-            else
-                e.style.background = 'top / contain no-repeat url("/map/right_half.svg")'
-            gates.appendChild(e)
-        }
-        // add the footer line
-        for (i = 0; i < 4; i++) {
-            const e = document.createElement("div")
-            e.appendChild(document.createElement("div"))
-            e.className = "empty-pad"
-            if (i % 2 == 0)
-                e.style.background = 'top / contain no-repeat url("/map/footer_left_half.svg")'
-            else
-                e.style.background = 'top / contain no-repeat url("/map/footer_right_half.svg")'
-            gates.appendChild(e)
-        }
-        document.querySelectorAll(".map-TBD").forEach(e => e.remove())
-        const clear = document.createElement("div")
-        clear.style.clear = 'both'
-        clear.className = 'map-TBD'
-        gates.appendChild(clear)
-
     }
     async storeGates() { 
         let out = []
@@ -559,18 +482,15 @@ peer_name = "${peername}"\n`
         })
         this.log("Storing gates:", out)
         await Storage.set({key: 'gates', value: JSON.stringify(out)})
-        this.refreshMap()
+        this.map.refresh()
     }
     clear() {
         this.e.querySelectorAll('.temporal').forEach(e => e.remove())
         this.e.querySelectorAll('.modal').forEach(e => {
             if (!e.classList.contains("non-clearable"))
                 e.classList.add("hidden")
-            const terminalContainer = e.querySelector(".terminal-container")
-            if (terminalContainer)
-                terminalContainer.innerHTML = ''
         })
-        this.logDisplay(false)
+        this.map.showLog(false)
         this.focus()
         this.longPressGate = null
         Form.activeForm = false
@@ -590,30 +510,6 @@ peer_name = "${peername}"\n`
         window.location.href = "#map"
         document.title = "Terminal 7"
     }
-    /* 
-     * Terminal7.logDisplay display or hides the notifications.
-     * if the parameters in udefined the function toggles the displays
-     */
-    logDisplay(show) {
-        let e = document.getElementById("log")
-        if (show === undefined)
-            // if show is undefined toggle current state
-            show = !e.classList.contains("show")
-        if (show) {
-            e.classList.add("show")
-            document.getElementById("log-button")
-            .classList.add("on")
-            e.classList.remove("hidden")
-        } else {
-            e.classList.remove("show")
-            document.getElementById("log-button")
-                .classList.remove("on")
-        }
-        if (Form.activeForm)
-            this.logTerminal.focus()
-        else
-            this.focus()
-    }
     /*
      * onDisconnect is called when a gate disconnects.
      */
@@ -626,7 +522,7 @@ peer_name = "${peername}"\n`
             { prompt: "Reconnect" },
             { prompt: "Close" }
         ])
-        const res = await reconnectForm.menu(this.logTerminal, "What do you want to do?")
+        const res = await reconnectForm.menu(this.map.t0, "What's next?")
         if (res == "Reconnect") {
             gate.session = null
             gate.connect(gate.onConnected)
@@ -677,8 +573,8 @@ peer_name = "${peername}"\n`
         const d = new Date(),
             t = formatDate(d, "HH:mm:ss.fff")
         // TODO: add color based on level and ttl
-        this.logTerminal.writeln(` \x1B[2m${t}\x1B[0m ${message}\n`)
-        this.logDisplay(true)
+        this.map.t0.writeln(` \x1B[2m${t}\x1B[0m ${message}`)
+        this.map.showLog(true)
     }
     run(cb, delay) {
         var i = this.timeouts.length,
@@ -894,7 +790,7 @@ peer_name = "${peername}"\n`
 
         if (m["peer_update"] !== undefined) {
             g.online = m.peer_update.online
-            g.updateNameE()
+            this.map.update(g)
             return
         }
         if (!g.session) {
@@ -949,17 +845,19 @@ peer_name = "${peername}"\n`
         return
     }
     onPointerDown(ev) {
-        let e = ev.target
+        const e = ev.target
+        const gatePad = e.closest(".gate-pad")
         /*
         if ((ev.pointerType == "mouse") && (ev.pressure == 0))
             return
             */
         this.pointer0 = Date.now() 
         this.firstPointer = {pageX: ev.pageX, pageY: ev.pageY}
-        if (e.gate) {
+        if (gatePad) {
+            const gate = gatePad.gate
             if (!this.longPressGate)
                 this.longPressGate = this.run(() => {
-                    e.gate.edit()
+                    gate.edit()
                 }, this.conf.ui.quickest_press)
         }
         // only dividers know their panes
@@ -997,11 +895,11 @@ peer_name = "${peername}"\n`
     }
     onPointerUp(ev) {
         let e = ev.target,
-            gateName = e.closest(".gate-pad")
+            gatePad = e.closest(".gate-pad")
 
         if (!this.pointer0)
             return
-        if (gateName) {
+        if (gatePad) {
             let deltaT = Date.now() - this.pointer0
             clearTimeout(this.longPressGate)
             this.longPressGate = null
@@ -1010,12 +908,13 @@ peer_name = "${peername}"\n`
                 ev.preventDefault()
             } else {
                 // that's for the refresh and static host add
-                if (!e.gate)
+                const gate = gatePad.gate
+                if (!gate)
                     return
-                if (!e.gate.fp || e.gate.verified && e.gate.online)
-                    e.gate.connect()
+                if (!gate.fp || gate.verified && gate.online)
+                    gate.connect()
                 else
-                    e.gate.edit()
+                    gate.edit()
             }
         } else if (this.gesture) {
             this.activeG.sendState()
@@ -1134,19 +1033,17 @@ peer_name = "${peername}"\n`
                 g.online = p.online
                 g.name = p.name
                 g.verified = p.verified
-                g.updateNameE()
+                this.map.update(g)
             } else {
                 p.id = p.fp
                 g = new Gate(p)
                 this.gates.set(p.fp, g)
-                g.nameE = g.addToMap()
-                document.getElementById("gates").prepend(g.nameE)
+                g.nameE = this.map.add(g)
                 g.open(this.e)
 
             }
         })
-        this.refreshMap()
-            // TODO: remove deleted peers
+        this.map.refresh()
     }
     async connect() {
         if (!this.conf.peerbook) {
@@ -1154,7 +1051,7 @@ peer_name = "${peername}"\n`
                 { prompt: "Add static host" },
                 { prompt: "Setup peerbook" }
             ])
-            let choice = await pbForm.menu(this.logTerminal, "What do you want to do?")
+            let choice = await pbForm.menu(this.map.t0, "What's next?")
             if (choice == "Setup peerbook") {
                 this.peerbookForm()
                 return
@@ -1163,14 +1060,9 @@ peer_name = "${peername}"\n`
         const f = new Form([
             { prompt: "Enter destination (ip or domain)" }
         ])
-        let hostname
-        try {
-            hostname = (await f.start(this.logTerminal))[0]
-        } catch (e) {
-            return this.clear()
-        }
+        let hostname = (await f.start(this.map.t0))[0]
         if (this.validateHostAddress(hostname)) {
-            this.logTerminal.writeln(`  ${hostname} already exists, connecting...`)
+            this.map.t0.writeln(`  ${hostname} already exists, connecting...`)
             this.gates.get(hostname).connect()
             return
         }
@@ -1179,7 +1071,7 @@ peer_name = "${peername}"\n`
             addr: hostname,
             id: hostname
         }, false)
-        this.refreshMap()
+        this.map.refresh()
         gate.CLIConnect()
     }
     clearTempGates() {

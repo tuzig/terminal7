@@ -1,4 +1,4 @@
-/* Terminal 8 Gate
+/* Terminal 7 Gate
  *  This file contains the code that makes a terminal 7 gate. The gate class
  *  represents a server and it may be boarding - aka connected - or not.
  *
@@ -9,10 +9,12 @@ import { Clipboard } from '@capacitor/clipboard'
 import { Storage } from '@capacitor/storage'
 
 import { Pane } from './pane.js'
+import { T7Map } from './map'
 import { Failure, Session } from './session'
 import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
+import { Capacitor } from '@capacitor/core'
 import { Storage } from '@capacitor/storage'
 import { Form, Fields } from './form.js'
 import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
@@ -41,6 +43,8 @@ export class Gate {
     t7: Terminal7
     onConnected: () => void
     fp: string | undefined
+    store: boolean
+    map: T7Map
 
     constructor (props) {
         // given properties
@@ -67,6 +71,7 @@ export class Gate {
         this.fp = props.fp
         this.t7 = window.terminal7
         this.session = null
+        this.map = this.t7.map
     }
 
     /*
@@ -88,7 +93,7 @@ export class Gate {
             t.querySelector(".add-tab").addEventListener(
                 'click', () => this.newTab())
             t.querySelector(".search-close").addEventListener('click', () =>  {
-                this.t7.logDisplay(false)
+                this.map.showLog(false)
                 this.activeW.activeP.exitSearch()
                 this.activeW.activeP.focus()
             })
@@ -107,26 +112,10 @@ export class Gate {
             this.e.appendChild(t)
         }
     }
-        // Add the gates' signs to the home page
-    addToMap() {
-        const d = document.createElement('div')
-        const b = document.createElement('button')
-        d.className = "gate-pad"
-        b.className = "text-button"
-        d.gate = this
-        b.gate = this
-        b.innerHTML = this.name || this.addr
-        this.nameE = d
-        d.appendChild(b)
-        this.updateNameE()
-        return d
-    }
     delete() {
         this.t7.gates.delete(this.id)
         this.t7.storeGates()
-        // remove the host from the home screen
-        if (this.nameE)
-            this.nameE.remove()
+		this.map.remove(this)
     }
     /*
      * edit start the edit-host user-assitance
@@ -144,9 +133,9 @@ export class Gate {
         } else {
             editHost = document.getElementById("edit-host")
             if (Form.activeForm) 
-                this.t7.logTerminal.focus()
+                this.map.t0.focus()
             else {
-                this.t7.logDisplay(true)
+                this.map.showLog(true)
                 const f1 = new Form([
                     { prompt: "Connect" },
                     { prompt: "Edit" },
@@ -170,19 +159,19 @@ export class Gate {
                     values: ["y", "n"],
                     default: "n",
                 }])
-                f1.menu(this.t7.logTerminal, `\x1B[4m${this.name}\x1B[0m`)
+                f1.menu(this.map.t0, `\x1B[4m${this.name}\x1B[0m`)
                     .then(choice => {
                         switch (choice) {
                             case 'Connect':
                                 this.connect()
                                 break
                             case 'Edit':
-                                f2.chooseFields(this.t7.logTerminal, `\x1B[4m${this.name}\x1B[0m edit`).then((enabled) => {
+                                f2.chooseFields(this.map.t0, `\x1B[4m${this.name}\x1B[0m edit`).then((enabled) => {
                                     if (!enabled) {
                                         this.t7.clear()
                                         return
                                     }
-                                    f2.start(this.t7.logTerminal).then(results => {
+                                    f2.start(this.map.t0).then(results => {
                                         ['name', 'addr', 'username']
                                             .filter((_, i) => enabled[i])
                                             .forEach((k, i) => this[k] = results[i])
@@ -192,14 +181,13 @@ export class Gate {
                                             this.t7.gates.set(this.id, this)
                                         }
                                         this.t7.storeGates()
-                                        this.t7.refreshMap()
-                                        this.nameE.querySelector("button").innerHTML = this.name
-                                        this.t7.clear()
-                                    }).catch(() => this.t7.clear())
-                                }).catch(() => this.t7.clear())
+                                        this.map.update(this)
+                                        this.map.showLog(false)
+                                    })
+                                })
                                 break
                             case "\x1B[31mDelete\x1B[0m":
-                                fDel.start(this.t7.logTerminal).then(res => {
+                                fDel.start(this.map.t0).then(res => {
                                     if (res[0] == "y")
                                         this.delete()
                                     this.t7.clear()
@@ -209,11 +197,9 @@ export class Gate {
                     })
             }
         }
-        // editHost.gate = this
-        // editHost.classList.remove("hidden")
     }
     focus() {
-        this.t7.logDisplay(false)
+        this.map.showLog(false)
         // hide the current focused gate
         document.getElementById("map-button").classList.remove("off")
         document.querySelectorAll(".pane-buttons").forEach(
@@ -260,9 +246,9 @@ export class Gate {
                     Storage.set({key: "first_gate", value: "1"}) 
                 }
             })
-            if (this.onConnected)
-                this.onConnected()
-                this.onConnected = this.load
+			// first onConnected is special if it's a new gate but once connected, we're back to load
+            this.onConnected()
+            this.onConnected = this.load
         } else if (state == "disconnected") {
             // TODO: add warn class
             this.lastDisconnect = Date.now()
@@ -274,74 +260,49 @@ export class Gate {
     }
     // handle connection failures
     handleFailure(failure: Failure) {
-        this.t7.log(failure)
-
+        this.notify(`FAILED: ${failure || "Server Disconnected"}`)
         this.session = null
-
         if (!this.boarding)
             return
-        if (failure == Failure.WrongPassword) {
-            this.t7.logTerminal.write("  Wrong password")
-            const retryForm = new Form([{
-                prompt: "Retry connection?",
-                default: "y"
-            }])
-            retryForm.start(this.t7.logTerminal).then(res => {
-                if (res[0] == "y") {
-                    this.CLIConnect()
-                } else {
-                    this.t7.clear()
-                    this.delete()
-                }
-            }).catch(() => {
-                this.t7.clear()
-                this.delete()
-            })
-            return
-        }
-        if (failure == Failure.Unauthorized) {
-            this.copyFingerprint()
-            return
-        }
-        if (failure == Failure.BadMarker) {
-            this.notify("Session restore failed, trying a fresh session")
-            this.clear()
-            this.connect(this.onConnected)
-            return
-        }
-        if (failure == Failure.TimedOut) {
-            if ((!this.fp) && this.tryWebexec) {
-                this.t7.logTerminal.writeln("  Timed out\n  Trying SSH...")
+        switch ( failure ) {
+            case Failure.WrongPassword:
                 this.tryWebexec = false
+                this.pass = undefined
+                this.retryForm(() => this.CLIConnect(), () => this.delete())
+                return
+            case Failure.Unauthorized:
+                this.copyFingerprint()
+                return
+            case Failure.BadMarker:
+                this.notify("Trying a fresh session")
+                this.marker = null
                 this.connect(this.onConnected)
                 return
-            }
+            case Failure.TimedOut:
+                if (!this.fp && this.tryWebexec && (Capacitor.getPlatform() == "ios")) {
+                    this.tryWebexec = false
+                    this.connect(this.onConnected)
+                    return
+                }
+                break
+            case Failure.BadRemoteDescription:
+                this.notify("Please try again")
+                break
+                
         }
-        if (failure == Failure.BadRemoteDescription) {
-            this.notify("Session signalling failed, please try again")
-        }
-        if (failure == Failure.NotImplemented)
-            this.notify("FAILED: not implemented yet")
-        if (!failure)
-            this.notify("Connection FAILED")
         if (this.name.startsWith("temp")) {
             (async () => {
                 const rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${this.fp}" >> ~/.config/webexec/authorized_fingerprints`
-                this.t7.logTerminal.writeln("  Failed to connect")
+                this.map.t0.writeln("  Failed to connect")
                 let ans
                 const verifyForm = new Form([{
                     prompt: `Does the address \x1B[1;37m${this.addr}\x1B[0m seem correct?`,
                     values: ["y", "n"],
                     default: "y"
                 }])
-                try {
-                    ans = (await verifyForm.start(this.t7.logTerminal))[0]
-                } catch (e) {
-                    this.t7.clear()
-                    this.delete()
-                }
+                ans = (await verifyForm.start(this.map.t0))[0]
                 if (!ans) {
-                    this.t7.logTerminal.writeln("ESC")
+                    this.map.t0.writeln("ESC")
                     return
                 }
                 if (ans == "n")
@@ -349,34 +310,16 @@ export class Gate {
                 const webexecForm = new Form([{
                     prompt: `Make sure webexec is running on ${this.addr}:
                         \n\x1B[1m${rc}\x1B[0m\n \n  Copy to clipboard?`,
+					values: ["y", "n"],
                     default: "y"
                 }])
-                try {
-                    ans = (await webexecForm.start(this.t7.logTerminal))[0]
-                } catch (e) {
-                    this.t7.clear()
-                    this.delete()
-                }
+                ans = (await webexecForm.start(this.map.t0))[0]
                 if (ans == "y")
                     Clipboard.write({ string: rc })
-                const retryForm = new Form([{
-                    prompt: "Retry connection?",
-                    default: "y"
-                }])
-                try {
-                    ans = (await retryForm.start(this.t7.logTerminal))[0]
-                } catch (e) {
-                    this.t7.clear()
-                    this.delete()
-                }
-                if (ans == "y") {
-                    this.t7.logTerminal.writeln("\n  Retrying...")
+				this.retryForm(() => {
+                    this.map.t0.writeln("\n  Retrying...")
                     this.CLIConnect()
-                }
-                else {
-                    this.t7.clear()
-                    this.delete()
-                }
+				}, () => this.delete())
             })()
         } else
             this.t7.onDisconnect(this)
@@ -403,17 +346,7 @@ export class Gate {
         this.boarding = true
         // TODO add the port
         if (!this.pass && !this.fp && !this.tryWebexec) {
-            const canary = new SSHSession(this.addr)
-            canary.onStateChange = (state, failure) => {
-                if (failure == Failure.NotImplemented) {
-                    this.t7.logTerminal.writeln("  Unavailable")
-                    this.completeConnect()
-                } else {
-                    this.t7.logTerminal.writeln("  SSH implemented, connecting...")
-                    this.askPass()
-                } 
-            }
-            canary.connect()
+            this.askPass()
         } else
             this.completeConnect()
     }
@@ -609,14 +542,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             else
                 this.windows[0].focus()
     }
-    showResetHost() {
-        const e = document.getElementById("reset-host"),
-            addr = this.addr.substr(0, this.addr.indexOf(":"))
-
-        document.getElementById("rh-address").innerHTML = addr
-        document.getElementById("rh-name").innerHTML = this.name
-        e.classList.remove("hidden")
-    }
     fit() {
         this.windows.forEach(w => w.fit())
     }
@@ -654,22 +579,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             w.focus()
         }
     }
-    updateNameE() {
-        const button = this.nameE.children[0]
-        button.innerHTML = this.name
-        if (!this.fp) {
-            // there's nothing more to update for static hosts
-            return
-        }
-        if (this.verified)
-            button.classList.remove("unverified")
-        else
-            button.classList.add("unverified")
-        if (this.online)
-            button.classList.remove("offline")
-        else
-            button.classList.add("offline")
-    }
     async copyFingerprint() {
         const fp = await this.t7.getFingerprint(),
               cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
@@ -679,52 +588,30 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
   To connect copy Terminal7's fingerprint to the server and try again:
   \n\x1B[1m${cmd}\x1B[0m\n
   Copy to clipboard?`,
+            values: ["y", "n"],
             default: "y"
         }])
-        try {
-            ans = (await fpForm.start(this.t7.logTerminal))[0]
-        } catch (e) {
-            this.t7.clear()
-            this.delete()
-        }
+        ans = (await fpForm.start(this.map.t0))[0]
         if (ans == "y")
             Clipboard.write({ string: cmd })
-        const retryForm = new Form([{
-            prompt: "Retry connection?",
-            default: "y"
-        }])
-        try {
-            ans = (await retryForm.start(this.t7.logTerminal))[0]
-        } catch (e) {
-            this.t7.clear()
-            this.delete()
-        }
-        if (ans == "y")
-            this.connect(this.onConnected)
-        else {
-            this.t7.clear()
-            this.delete()
-        }
+		this.retryForm(() => this.connect(this.onConnected), () => this.delete())
     }
     askPass() {
+        this.map.t0.writeln("  Trying SSH")
         const authForm = new Form([
-            { prompt: "Username" },
+            { prompt: "Username", default: this.username },
             { prompt: "Password", password: true }
         ])
-        authForm.start(this.t7.logTerminal).then(res => {
+        authForm.start(this.map.t0).then(res => {
             this.username = res[0]
             this.pass = res[1]
-            this.t7.logTerminal.writeln("Connecting")
             this.completeConnect()
-        }).catch(() => {
-            this.t7.clear()
-            this.delete()
         })
     }
     completeConnect(): void {
         if (this.session == null)
             if (this.fp) {
-                this.notify("\uD83D\uDCD6  PeerBook")
+                this.notify("🎌  PeerBook")
                 this.session = new PeerbookSession(this.fp, this.t7.pb)
             }
             else {
@@ -752,13 +639,16 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
     }
     CLIConnect() {
         this.connect(() => {
-            this.t7.logTerminal.write(" Success!")
+            if (!this.name.startsWith("temp")) {
+                this.load()
+                return
+            }
             const saveForm = new Form([{
                 prompt: "Save gate?",
                 default: "y",
                 values: ["y", "n"]
             } ])
-            saveForm.start(this.t7.logTerminal).then(res => {
+            saveForm.start(this.map.t0).then(res => {
                 if (res[0] == "y") {
                     const validated = this.t7.validateHostName(this.addr)
                     const fields: Fields = [{
@@ -768,15 +658,13 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                     if (!validated)
                         fields[0].default = this.addr
                     const nameForm = new Form(fields)
-                    nameForm.start(this.t7.logTerminal).then(res => {
+                    nameForm.start(this.map.t0).then(res => {
                         const name = res[0]
                         this.name = name
-                        const nameE = this.addToMap()
-                        document.getElementById("gates").prepend(nameE)
+                        this.nameE = this.map.add(this)
                         this.store = true
                         this.t7.storeGates()
-                        this.t7.refreshMap()
-                        this.t7.clear()
+                        this.map.showLog(false)
                         this.load()
                     })
                 } else {
@@ -787,4 +675,16 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             })
         })
     }
+	async retryForm(retry: () => void, cancel: () => void) {
+		const retryForm = new Form([{
+			prompt: "Retry connection?",
+			values: ["y", "n"],
+			default: "y"
+		}])
+		const ans = (await retryForm.start(this.map.t0))[0]
+		if (ans == "y")
+			retry()
+		else
+			cancel()
+	}
 }

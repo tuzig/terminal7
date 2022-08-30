@@ -433,7 +433,7 @@ describe("terminal7", function() {
     describe("gate", () => {
         it("can open connection form without SSH", async () => {
             const t0 = new Terminal()
-            t.logTerminal = t0
+            t.map.t0 = t0
             t.connect()
             t0.pressKey("Enter")
             await sleep(10)
@@ -445,23 +445,26 @@ describe("terminal7", function() {
         })
         it("can connect to SSH through form", async () => {
             const t0 = new Terminal()
-            t.logTerminal = t0
+            t.map.t0 = t0
             HTTPWebRTCSession.fail = true
+			globalThis.webkit = { messageHandlers: { bridge: 1 } } // mock ios
             t.connect()
             t0.pressKey("Enter")
             await sleep(10)
             t0.pressKey("2")
             t0.pressKey("Enter")
             await sleep(100)
+            console.log("t0.out:", t0.out)
             expect(t0.out).toMatch("webexec")
-            expect(t0.out).toMatch("Timed out\n  Trying SSH...")
+            expect(t0.out).toMatch("FAILED: Timeout")
+            expect(t0.out).toMatch("Trying SSH")
+            expect(t0.out).toMatch("Username:")
             await sleep(10)
             t0.pressKey("a")
             t0.pressKey("Enter")
             t0.pressKey("a")
             t0.pressKey("Enter")
             await sleep(10)
-            console.log("t0out:", t0.out)
             expect(t0.out).toMatch("Username: a")
             expect(t0.out).toMatch("Password: \n")
             expect(t0.out).toMatch("Save gate?")
