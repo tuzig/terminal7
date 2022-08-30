@@ -8,8 +8,50 @@
  */
 
 import { Gate } from './gate.ts'
+import { Terminal } from '@tuzig/xterm'
+import { FitAddon } from "xterm-addon-fit"
+import XtermWebfont from 'xterm-webfont'
 
 export class T7Map {
+    t0: Terminal;
+    constructor() {
+        const e = document.getElementById("t0")
+        this.t0 = new Terminal({
+            cursorBlink: true,
+            cursorStyle: "block",
+            theme: window.terminal7.conf.theme,
+            fontFamily: "FiraCode",
+            fontSize: 14,
+            rendererType: "canvas",
+            convertEol: true,
+        })
+        const fitAddon = new FitAddon()
+        this.t0.loadAddon(fitAddon)
+        this.t0.loadAddon(new XtermWebfont())
+        const resizeObserver = new window.ResizeObserver(() => {
+            console.log("fitting t0")
+            fitAddon.fit()
+        })
+        resizeObserver.observe(document.getElementById("log"));
+        this.t0.loadWebfontAndOpen(e).then(() => {
+            fitAddon.fit()
+            this.t0.write("\n")
+        })
+        this.t0.onKey((ev) => {
+            const key = ev.domEvent.key
+            if (key == 'Escape')
+                this.showLog(false)
+        })
+        document.getElementById("log").addEventListener("transitionend", () => {
+            const e = document.getElementById("log")
+            const log = document.getElementById("log")
+            fitAddon.fit()
+            if (e.classList.contains("show"))
+                this.t0.focus()
+            else
+                this.t0.blur()
+        })
+    }
     add(g: Gate): Element {
         const d = document.createElement('div')
         const b = document.createElement('button')
@@ -18,7 +60,8 @@ export class T7Map {
         d.gate = g
         d.appendChild(b)
         this.update(g, d)
-        document.getElementById("gates").prepend(d)
+        const gates = document.getElementById("gates")
+        gates.prepend(d)
         this.refresh()
         return d
     }
@@ -50,44 +93,40 @@ export class T7Map {
     }
 
     refresh() {
-        const pads = document.querySelectorAll(".gate-pad")
-        let col = 0
-        // set the background
-        pads.forEach((e, i) => {
-            col = i % 4
-            if (col % 2 == 0)
-                e.style.background = 'top / contain no-repeat url("/map/left_half.svg")'
-            else
-                e.style.background = 'top / contain no-repeat url("/map/right_half.svg")'
-        })
-        document.querySelectorAll(".empty-pad").forEach(e => e.remove())
         const gates = document.getElementById("gates")
-        for (let i = col + 1; i < 4; i++) {
+        const pads = document.querySelectorAll(".gate-pad")
+        const add = document.getElementById("add-gate")
+        
+        // fill the last line with empty pads as needed
+        // start with cleaning old fillers
+        document.querySelectorAll("#gates .empty-pad").forEach(e => e.remove())
+        for (let i = pads.length % 4; i < 4; i++) {
             const e = document.createElement("div")
             e.appendChild(document.createElement("div"))
 
             e.className = "empty-pad"
-            if (i % 2 == 0)
-                e.style.background = 'top / contain no-repeat url("/map/left_half.svg")'
-            else
-                e.style.background = 'top / contain no-repeat url("/map/right_half.svg")'
-            gates.appendChild(e)
+            add.after(e)
         }
-        // add the footer line
-        for (let i = 0; i < 4; i++) {
-            const e = document.createElement("div")
-            e.appendChild(document.createElement("div"))
-            e.className = "empty-pad"
-            if (i % 2 == 0)
-                e.style.background = 'top / contain no-repeat url("/map/footer_left_half.svg")'
-            else
-                e.style.background = 'top / contain no-repeat url("/map/footer_right_half.svg")'
-            gates.appendChild(e)
+    }
+    /* 
+     * logDisplay display or hides the notifications.
+     * if the parameters in udefined the function toggles the displays
+     */
+    showLog(show) {
+        const e = document.getElementById("log")
+        const log = document.getElementById("log")
+        if (show === undefined)
+            // if show is undefined toggle current state
+            show = !e.classList.contains("show")
+        
+        if (show) {
+            e.classList.add("show")
+            document.getElementById("log-button").classList.add("on")
+            e.classList.remove("hidden")
+
+        } else {
+            e.classList.remove("show")
+            document.getElementById("log-button").classList.remove("on")
         }
-        document.querySelectorAll(".map-TBD").forEach(e => e.remove())
-        const clear = document.createElement("div")
-        clear.style.clear = 'both'
-        clear.className = 'map-TBD'
-        gates.appendChild(clear)
     }
 }

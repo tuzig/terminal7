@@ -23,7 +23,7 @@ import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
-import { Form, openFormsTerminal } from './form'
+import { Form } from './form'
 import { PeerbookConnection } from './peerbook'
 
 
@@ -77,7 +77,6 @@ export class Terminal7 {
         this.zoomedE = null
         this.pendingPanes = {}
         this.pb = null
-        this.map = new T7Map()
     }
     showKeyHelp () {
         if (Date.now() - this.metaPressStart > 987) {
@@ -115,18 +114,10 @@ export class Terminal7 {
                 10))
 
         }
-        this.map.refresh()
         this.loadConf(d)
 
-        setTimeout(() => {
-            const container = document.querySelector("#log #terminal-container")
-            this.logTerminal = openFormsTerminal(container)
-            this.logTerminal.onKey((ev) => {
-                const key = ev.domEvent.key
-                if (key == 'Escape')
-                    this.logDisplay(false)
-            })
-        }, 0)
+        this.map = new T7Map()
+        this.map.refresh()
 
         // buttons
         document.getElementById("trash-button")
@@ -137,7 +128,7 @@ export class Terminal7 {
         document.getElementById("map-button")
                 .addEventListener("click", () => this.goHome())
         document.getElementById("log-button")
-                .addEventListener("click", () => this.logDisplay())
+                .addEventListener("click", () => this.map.showLog())
         document.getElementById("search-button")
                 .addEventListener("click", () => 
                    this.activeG && this.activeG.activeW.activeP.toggleSearch())
@@ -157,17 +148,12 @@ export class Terminal7 {
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         document.getElementById('add-gate').addEventListener(
             'click', async () => {
-                this.logDisplay(true)
+                this.map.showLog(true)
                 if (Form.activeForm)
-                    this.logTerminal.focus()
+                    this.map.t0.focus()
                 else
                     this.connect()
             })
-		document.querySelector('#log .close').addEventListener('click', () => {
-			this.logDisplay(false)
-			if (Form.activeForm)
-				Form.disposeCurrent()
-		})
         // hide the modal on xmark click
         // Handle network events for the indicator
         Network.addListener('networkStatusChange', s => 
@@ -267,7 +253,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
 
 		document.getElementById("log").addEventListener("click", () => {
 			if (!Form.activeForm)
-				this.logDisplay(false)
+				this.map.showLog(false)
 		})
         // settings button and modal
         var modal   = document.getElementById("settings-modal")
@@ -368,7 +354,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             },
             { prompt: "Peer's name" }
         ])
-        f.start(this.logTerminal).then(results => {
+        f.start(this.map.t0).then(results => {
             const email = results[0],
                 peername = results[1]
 
@@ -503,11 +489,8 @@ peer_name = "${peername}"\n`
         this.e.querySelectorAll('.modal').forEach(e => {
             if (!e.classList.contains("non-clearable"))
                 e.classList.add("hidden")
-            const terminalContainer = e.querySelector(".terminal-container")
-            if (terminalContainer)
-                terminalContainer.innerHTML = ''
         })
-        this.logDisplay(false)
+        this.map.showLog(false)
         this.focus()
         this.longPressGate = null
         Form.activeForm = false
@@ -527,30 +510,6 @@ peer_name = "${peername}"\n`
         window.location.href = "#map"
         document.title = "Terminal 7"
     }
-    /* 
-     * Terminal7.logDisplay display or hides the notifications.
-     * if the parameters in udefined the function toggles the displays
-     */
-    logDisplay(show) {
-        let e = document.getElementById("log")
-        if (show === undefined)
-            // if show is undefined toggle current state
-            show = !e.classList.contains("show")
-        if (show) {
-            e.classList.add("show")
-            document.getElementById("log-button")
-            .classList.add("on")
-            e.classList.remove("hidden")
-        } else {
-            e.classList.remove("show")
-            document.getElementById("log-button")
-                .classList.remove("on")
-        }
-        if (Form.activeForm)
-            this.logTerminal.focus()
-        else
-            this.focus()
-    }
     /*
      * onDisconnect is called when a gate disconnects.
      */
@@ -563,7 +522,7 @@ peer_name = "${peername}"\n`
             { prompt: "Reconnect" },
             { prompt: "Close" }
         ])
-        const res = await reconnectForm.menu(this.logTerminal, "What's next?")
+        const res = await reconnectForm.menu(this.map.t0, "What's next?")
         if (res == "Reconnect") {
             gate.session = null
             gate.connect(gate.onConnected)
@@ -614,8 +573,8 @@ peer_name = "${peername}"\n`
         const d = new Date(),
             t = formatDate(d, "HH:mm:ss.fff")
         // TODO: add color based on level and ttl
-        this.logTerminal.writeln(` \x1B[2m${t}\x1B[0m ${message}`)
-        this.logDisplay(true)
+        this.map.t0.writeln(` \x1B[2m${t}\x1B[0m ${message}`)
+        this.map.showLog(true)
     }
     run(cb, delay) {
         var i = this.timeouts.length,
@@ -1092,7 +1051,7 @@ peer_name = "${peername}"\n`
                 { prompt: "Add static host" },
                 { prompt: "Setup peerbook" }
             ])
-            let choice = await pbForm.menu(this.logTerminal, "What's next?")
+            let choice = await pbForm.menu(this.map.t0, "What's next?")
             if (choice == "Setup peerbook") {
                 this.peerbookForm()
                 return
@@ -1101,9 +1060,9 @@ peer_name = "${peername}"\n`
         const f = new Form([
             { prompt: "Enter destination (ip or domain)" }
         ])
-        let hostname = (await f.start(this.logTerminal))[0]
+        let hostname = (await f.start(this.map.t0))[0]
         if (this.validateHostAddress(hostname)) {
-            this.logTerminal.writeln(`  ${hostname} already exists, connecting...`)
+            this.map.t0.writeln(`  ${hostname} already exists, connecting...`)
             this.gates.get(hostname).connect()
             return
         }

@@ -9,6 +9,7 @@ import { Clipboard } from '@capacitor/clipboard'
 import { Storage } from '@capacitor/storage'
 
 import { Pane } from './pane.js'
+import { T7Map } from './map'
 import { Failure, Session } from './session'
 import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
@@ -43,6 +44,7 @@ export class Gate {
     onConnected: () => void
     fp: string | undefined
     store: boolean
+    map: T7Map
 
     constructor (props) {
         // given properties
@@ -69,6 +71,7 @@ export class Gate {
         this.fp = props.fp
         this.t7 = window.terminal7
         this.session = null
+        this.map = this.t7.map
     }
 
     /*
@@ -90,7 +93,7 @@ export class Gate {
             t.querySelector(".add-tab").addEventListener(
                 'click', () => this.newTab())
             t.querySelector(".search-close").addEventListener('click', () =>  {
-                this.t7.logDisplay(false)
+                this.map.showLog(false)
                 this.activeW.activeP.exitSearch()
                 this.activeW.activeP.focus()
             })
@@ -112,7 +115,7 @@ export class Gate {
     delete() {
         this.t7.gates.delete(this.id)
         this.t7.storeGates()
-		this.t7.map.remove(this)
+		this.map.remove(this)
     }
     /*
      * edit start the edit-host user-assitance
@@ -130,9 +133,9 @@ export class Gate {
         } else {
             editHost = document.getElementById("edit-host")
             if (Form.activeForm) 
-                this.t7.logTerminal.focus()
+                this.map.t0.focus()
             else {
-                this.t7.logDisplay(true)
+                this.map.showLog(true)
                 const f1 = new Form([
                     { prompt: "Connect" },
                     { prompt: "Edit" },
@@ -156,19 +159,19 @@ export class Gate {
                     values: ["y", "n"],
                     default: "n",
                 }])
-                f1.menu(this.t7.logTerminal, `\x1B[4m${this.name}\x1B[0m`)
+                f1.menu(this.map.t0, `\x1B[4m${this.name}\x1B[0m`)
                     .then(choice => {
                         switch (choice) {
                             case 'Connect':
                                 this.connect()
                                 break
                             case 'Edit':
-                                f2.chooseFields(this.t7.logTerminal, `\x1B[4m${this.name}\x1B[0m edit`).then((enabled) => {
+                                f2.chooseFields(this.map.t0, `\x1B[4m${this.name}\x1B[0m edit`).then((enabled) => {
                                     if (!enabled) {
                                         this.t7.clear()
                                         return
                                     }
-                                    f2.start(this.t7.logTerminal).then(results => {
+                                    f2.start(this.map.t0).then(results => {
                                         ['name', 'addr', 'username']
                                             .filter((_, i) => enabled[i])
                                             .forEach((k, i) => this[k] = results[i])
@@ -178,13 +181,13 @@ export class Gate {
                                             this.t7.gates.set(this.id, this)
                                         }
                                         this.t7.storeGates()
-                                        this.t7.map.update(this)
-                                        this.t7.logDisplay(false)
+                                        this.map.update(this)
+                                        this.map.showLog(false)
                                     })
                                 })
                                 break
                             case "\x1B[31mDelete\x1B[0m":
-                                fDel.start(this.t7.logTerminal).then(res => {
+                                fDel.start(this.map.t0).then(res => {
                                     if (res[0] == "y")
                                         this.delete()
                                     this.t7.clear()
@@ -196,7 +199,7 @@ export class Gate {
         }
     }
     focus() {
-        this.t7.logDisplay(false)
+        this.map.showLog(false)
         // hide the current focused gate
         document.getElementById("map-button").classList.remove("off")
         document.querySelectorAll(".pane-buttons").forEach(
@@ -289,16 +292,16 @@ export class Gate {
         if (this.name.startsWith("temp")) {
             (async () => {
                 const rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${this.fp}" >> ~/.config/webexec/authorized_fingerprints`
-                this.t7.logTerminal.writeln("  Failed to connect")
+                this.map.t0.writeln("  Failed to connect")
                 let ans
                 const verifyForm = new Form([{
                     prompt: `Does the address \x1B[1;37m${this.addr}\x1B[0m seem correct?`,
                     values: ["y", "n"],
                     default: "y"
                 }])
-                ans = (await verifyForm.start(this.t7.logTerminal))[0]
+                ans = (await verifyForm.start(this.map.t0))[0]
                 if (!ans) {
-                    this.t7.logTerminal.writeln("ESC")
+                    this.map.t0.writeln("ESC")
                     return
                 }
                 if (ans == "n")
@@ -309,11 +312,11 @@ export class Gate {
 					values: ["y", "n"],
                     default: "y"
                 }])
-                ans = (await webexecForm.start(this.t7.logTerminal))[0]
+                ans = (await webexecForm.start(this.map.t0))[0]
                 if (ans == "y")
                     Clipboard.write({ string: rc })
 				this.retryForm(() => {
-                    this.t7.logTerminal.writeln("\n  Retrying...")
+                    this.map.t0.writeln("\n  Retrying...")
                     this.CLIConnect()
 				}, () => this.delete())
             })()
@@ -587,18 +590,18 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             values: ["y", "n"],
             default: "y"
         }])
-        ans = (await fpForm.start(this.t7.logTerminal))[0]
+        ans = (await fpForm.start(this.map.t0))[0]
         if (ans == "y")
             Clipboard.write({ string: cmd })
 		this.retryForm(() => this.connect(this.onConnected), () => this.delete())
     }
     askPass() {
-        this.t7.logTerminal.writeln("  Trying SSH")
+        this.map.t0.writeln("  Trying SSH")
         const authForm = new Form([
             { prompt: "Username", default: this.username },
             { prompt: "Password", password: true }
         ])
-        authForm.start(this.t7.logTerminal).then(res => {
+        authForm.start(this.map.t0).then(res => {
             this.username = res[0]
             this.pass = res[1]
             this.completeConnect()
@@ -644,7 +647,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                 default: "y",
                 values: ["y", "n"]
             } ])
-            saveForm.start(this.t7.logTerminal).then(res => {
+            saveForm.start(this.map.t0).then(res => {
                 if (res[0] == "y") {
                     const validated = this.t7.validateHostName(this.addr)
                     const fields: Fields = [{
@@ -654,13 +657,13 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                     if (!validated)
                         fields[0].default = this.addr
                     const nameForm = new Form(fields)
-                    nameForm.start(this.t7.logTerminal).then(res => {
+                    nameForm.start(this.map.t0).then(res => {
                         const name = res[0]
                         this.name = name
-                        this.nameE = this.t7.map.add(this)
+                        this.nameE = this.map.add(this)
                         this.store = true
                         this.t7.storeGates()
-                        this.t7.logDisplay(false)
+                        this.map.showLog(false)
                         this.load()
                     })
                 } else {
@@ -677,7 +680,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
 			values: ["y", "n"],
 			default: "y"
 		}])
-		const ans = (await retryForm.start(this.t7.logTerminal))[0]
+		const ans = (await retryForm.start(this.map.t0))[0]
 		if (ans == "y")
 			retry()
 		else

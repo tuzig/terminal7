@@ -1,6 +1,4 @@
 import { Terminal } from "@tuzig/xterm"
-import { FitAddon } from "xterm-addon-fit"
-import XtermWebfont from 'xterm-webfont'
 import { Clipboard } from "@capacitor/clipboard"
 
 export type Fields = Array<{
@@ -12,28 +10,6 @@ export type Fields = Array<{
 }>
 
 export type Results = Array<string>
-
-export function openFormsTerminal(e: HTMLElement) {
-    const terminal = new Terminal({
-        cursorBlink: true,
-        cursorStyle: "block",
-        theme: window.terminal7.conf.theme,
-        fontFamily: "FiraCode",
-        fontSize: 14,
-        rendererType: "canvas",
-        convertEol: true,
-    })
-    const fitAddon = new FitAddon()
-    terminal.loadAddon(fitAddon)
-    terminal.loadAddon(new XtermWebfont())
-    const resizeObserver = new window.ResizeObserver(() => fitAddon.fit())
-    resizeObserver.observe(e);
-    terminal.loadWebfontAndOpen(e).then(() => {
-        fitAddon.fit()
-        terminal.write("\n")
-    })
-    return terminal
-}
 
 export class Form {
 

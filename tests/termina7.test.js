@@ -433,7 +433,7 @@ describe("terminal7", function() {
     describe("gate", () => {
         it("can open connection form without SSH", async () => {
             const t0 = new Terminal()
-            t.logTerminal = t0
+            t.map.t0 = t0
             t.connect()
             t0.pressKey("Enter")
             await sleep(10)
@@ -445,7 +445,7 @@ describe("terminal7", function() {
         })
         it("can connect to SSH through form", async () => {
             const t0 = new Terminal()
-            t.logTerminal = t0
+            t.map.t0 = t0
             HTTPWebRTCSession.fail = true
 			globalThis.webkit = { messageHandlers: { bridge: 1 } } // mock ios
             t.connect()
