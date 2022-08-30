@@ -446,7 +446,8 @@ label {
     border-radius: 6px;
 }
 #t0 {
-    padding:4px;
+    padding: 8px;
+	height: 100%;
 }
 #log.show {
     transform: translate(-80%, 110%) scale(1);
