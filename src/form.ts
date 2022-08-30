@@ -44,7 +44,6 @@ export class Form {
     fields: Fields
     results: Results
     static activeForm = false
-	static disposeCurrent: () => void
 
     constructor(fields: Fields) {
         this.fields = fields
@@ -58,20 +57,17 @@ export class Form {
         return new Promise<Array<boolean>>(resolve => {
             t.writeln(`  ${title}, choose fields to edit:`)
             t.writeln("  [Use ⇅ to move, space to select, → to all, ← to none]")
-            t.writeln("  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  '))
+            t.writeln("  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  ') + "\x1B[s")
             t.write(`\x1B[4G\x1B[${len}A`) // move cursor to first field
-			Form.disposeCurrent = () => {
-				disposable.dispose()
-				t.write(`\x1B[${len-current}B\rESC\n`)
-				window.terminal7.clearTempGates()
-				Form.activeForm = false
-			}
             const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
                 const char = !enabled[current] ? 'X' : ' '
                 switch (key) {
                     case "Escape":
-						Form.disposeCurrent()
+                        disposable.dispose()
+                        t.write(`\x1B[u\nESC\n`)
+                        window.terminal7.clearTempGates()
+                        Form.activeForm = false
                         break
                     case "ArrowUp":
                         if (current > 0) {
@@ -124,20 +120,17 @@ export class Form {
         return new Promise<string>(resolve => {
             t.writeln(`\n  ${title}:`)
             t.writeln("  [Use ⇅ to move, Enter to select]")
-            t.writeln("  " + this.fields.map(f => `  ${f.prompt}`).join('\n  '))
+            t.writeln("  " + this.fields.map(f => `  ${f.prompt}`).join('\n  ') + "\x1B[s")
             t.write(`\x1B[3G\x1B[${len}A`) // move cursor to first field
-            t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`)
-			Form.disposeCurrent = () => {
-				disposable.dispose()
-				t.write(`\x1B[${len-current}B\rESC\n`)
-				window.terminal7.clearTempGates()
-				Form.activeForm = false
-			}
+            t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`) // bold first field
             const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
                 switch (key) {
                     case "Escape":
-						Form.disposeCurrent()
+                        disposable.dispose()
+                        t.write(`\x1B[u\nESC\n`)
+                        window.terminal7.clearTempGates()
+			            Form.activeForm = false
                         break
                     case "ArrowUp":
                         if (current > 0) {
@@ -176,18 +169,15 @@ export class Form {
         return new Promise(resolve => {
             this.writeCurrentField(t)
             setTimeout(() => t.focus(), 0)
-			Form.disposeCurrent = () => {
-				disposable.dispose()
-                t.write("ESC\n")
-                window.terminal7.clearTempGates()
-                Form.activeForm = false
-			}
             const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
                 const password = this.fields[this.i].password
                 switch (key) {
                     case "Escape":
-                        Form.disposeCurrent()
+                        disposable.dispose()
+                        t.write(`\x1B[u\nESC\n`)
+                        window.terminal7.clearTempGates()
+                        Form.activeForm = false
                         break
                     case "Backspace":
                         if (this.field.length > 0) {
@@ -215,7 +205,7 @@ export class Form {
                                 }
                             })
                         }
-                        else if (key.length == 1) {
+                        else if (key.length == 1) { // make sure the key is a char
                             this.field += key
                             if (!password)
                                 t.write(key)

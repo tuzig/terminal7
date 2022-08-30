@@ -260,6 +260,7 @@ export class Gate {
                     Storage.set({key: "first_gate", value: "1"}) 
                 }
             })
+			// first onConnected is special if it's a new gate but once connected, we're back to load
             this.onConnected()
             this.onConnected = this.load
         } else if (state == "disconnected") {
