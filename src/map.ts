@@ -24,6 +24,8 @@ export class T7Map {
             fontSize: 14,
             rendererType: "canvas",
             convertEol: true,
+            rows: 22,
+            cols: 55,
         })
         const fitAddon = new FitAddon()
         this.t0.loadAddon(fitAddon)
@@ -44,12 +46,17 @@ export class T7Map {
         })
         document.getElementById("log").addEventListener("transitionend", () => {
             const e = document.getElementById("log")
-            const log = document.getElementById("log")
             fitAddon.fit()
             if (e.classList.contains("show"))
                 this.t0.focus()
-            else
+            else {
                 this.t0.blur()
+                // if we're not on the map, we're at the gate, hide the minimized version
+                if (window.location.hash != "#map") {
+                    e.classList.add("hidden")
+                    window.terminal7.focus()
+                }
+            }
         })
     }
     add(g: Gate): Element {
@@ -120,9 +127,9 @@ export class T7Map {
             show = !e.classList.contains("show")
         
         if (show) {
+            e.classList.remove("hidden")
             e.classList.add("show")
             document.getElementById("log-button").classList.add("on")
-            e.classList.remove("hidden")
 
         } else {
             e.classList.remove("show")

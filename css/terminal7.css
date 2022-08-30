@@ -429,8 +429,8 @@ label {
 }
 #log {
     position: absolute;
-    right: -25px;
-    top: -39px;
+    right: 47px;
+    top: -75px;
     margin: 0;
     padding: 0px;
     z-index: 4;
@@ -439,45 +439,20 @@ label {
     overflow: hidden;
     border: 5px solid var(--local-border);
     background-color: black;
-    transform: scale(0.20);
-    height: 33vh;
+    transform: scale(0.18);
     width: 90%;
-    max-width: 30em;
+    max-width: 500px;
     border-radius: 6px;
+    height: 410px;
 }
 #t0 {
-    padding: 8px;
-	height: 100%;
+    padding: 0;
+    height: 100%;
+    width: 100%;
 }
 #log.show {
-    transform: translate(-80%, 110%) scale(1);
+    transform: translate(-76%, 76%) scale(1);
     border: 1px solid var(--local-border);
-}
-#log-msgs {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-.log-msg {
-    font-size: 16px;
-    line-height: 28px;
-    color: #00FAFA;
-    margin: 0.5em;
-    overflow: hidden;
-}
-.log-msg h1 {
-    font-size: 16px;
-    line-height: 28px;
-    overflow: hidden;
-    font-weight: bold;
-}
-.log-msg time {
-    float: left;
-    color: var(--local-border);
-    font-family: "FiraCode";
-}
-.log-msg p {
-    margin: 0 0 0 8em;
 }
 .search-container {
     margin: 0 auto;

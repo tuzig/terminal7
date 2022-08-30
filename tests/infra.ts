@@ -29,7 +29,7 @@ export class Terminal7Mock extends Terminal7 {
     netStatus = {connected: true}
     notifications: string[] = []
     notify(message: string) {
-        this.notifications.push(message)
+        this.map.t0.out += message
     }
     constructor() {
         super({})
