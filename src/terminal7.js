@@ -251,10 +251,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             })
         }
 
-		document.getElementById("log").addEventListener("click", () => {
-			if (!Form.activeForm)
-				this.map.showLog(false)
-		})
+        document.getElementById("log").addEventListener("click", () =>
+            this.map.showLog())
         // settings button and modal
         var modal   = document.getElementById("settings-modal")
         modal.addEventListener('click',
