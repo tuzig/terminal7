@@ -35,7 +35,7 @@ export class Gate {
     name: string
     pass: string | undefined
     secret: string
-    session: Session
+    _session: Session
     tryWebexec: boolean
     user: string
     username: string
@@ -70,8 +70,8 @@ export class Gate {
         this.timeoutID = null
         this.fp = props.fp
         this.t7 = window.terminal7
-        this.session = null
         this.map = this.t7.map
+        this.session = null
     }
 
     /*
@@ -236,6 +236,7 @@ export class Gate {
         if (state == "connected") {
             this.notify("Connected")
             this.setIndicatorColor("unset")
+            this.map.update(this)
             const m = this.t7.e.querySelector(".disconnect")
             if (m != null)
                 m.remove()
@@ -687,4 +688,11 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
 		else
 			cancel()
 	}
+    get session() {
+        return this._session
+    }
+    set session(s: Session) {
+        this._session = s
+        this.t7.map.update(this)
+    }
 }

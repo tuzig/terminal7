@@ -84,9 +84,16 @@ export class T7Map {
     update(g: Gate, e?: Element) {
         if (!e)
             e = g.nameE
+        if (!e)
+            return
         const b = e.children[0]
         b.innerHTML = g.name || g.addr
         // there's nothing more to update for static hosts
+        if (g.session)
+            b.classList.add("connected")
+        else
+            b.classList.remove("connected")
+
         if (!g.fp)
             return
         if (g.verified)

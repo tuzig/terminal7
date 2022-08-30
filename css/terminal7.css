@@ -681,3 +681,7 @@ audio { display: none; }
     padding: 0;
     clear: both;
 }
+button.connected  {
+    font-weight: 600;
+    text-shadow: var(--remote-border) 1px 0 10px;
+}
