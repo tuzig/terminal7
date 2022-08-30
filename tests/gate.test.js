@@ -141,7 +141,7 @@ describe("gate", () => {
 		HTTPWebRTCSession.fail = true
 		globalThis.webkit = { messageHandlers: { bridge: 1 } } // mock ios
 		let t0 = new Terminal()
-		t.logTerminal = t0
+		t.map.t0 = t0
 		g.connect()
 		await sleep(500)
 		expect(t0.out).toMatch("Username [eyal]:")

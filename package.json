@@ -54,7 +54,7 @@
     "typescript": "<5",
     "vite": "^2.8.5",
     "vite-plugin-pwa": "^0.11.13",
-    "vitest": "^0.5.9",
+    "vitest": "^0.22.1",
     "yarn": "^1.22.17"
   },
   "scripts": {

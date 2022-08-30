@@ -5,10 +5,10 @@
     <title>Terminal 7</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no,  shrink-to-fit=no" />
     <meta name="description" content="A touchable terminal multiplexer & emulator running over WebRTC">
-    <link rel="icon" href="/public/logo.svg" type="image/svg+xml">
-    <link rel="alternate icon" href="/public/favicon.ico" type="image/png" sizes="48x48 32x32">
-    <link rel="mask-icon" href="/public/logo.svg" color="#271D30">
-    <link rel="apple-touch-icon" href="/public/logo192.png">
+    <link rel="icon" href="/logo.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="/favicon.ico" type="image/png" sizes="48x48 32x32">
+    <link rel="mask-icon" href="/logo.svg" color="#271D30">
+    <link rel="apple-touch-icon" href="/logo192.png">
     <meta name="theme-color" content="#271D30">
     <meta name="apple-touch-fullscreen" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Terminal7" />
@@ -17,23 +17,15 @@
 </head>
 <body>
   <div id="terminal7">
-      <div id="log" class="border hidden">
-		  <div id="terminal-container"></div>
-		  <nav>
-              <button type="button" class="close">
-                  <i class="f7-icons">xmark</i>
-              </button>
-          </nav>
-
-      </div>
       <div id="map">
           <div class="map-header-wide"></div>
           <div id="gates">
-              <div class="gate-pad">
-                  <button type="button" class="text-button" id="add-gate" >
+              <div class="gate-pad" id="add-gate">
+                  <button type="button" class="text-button">
                       <i class="f7-icons">plus</i>
                   </button>
              </div>
+             <div class="line-break"></div>
           </div>
           <div id="version">
               <h1>Terminal 7</h1>
@@ -41,6 +33,16 @@
                   target="_blank">
                   version 0.21.0
               </a></p>
+          </div>
+          <div id="map-footer">
+              <div class="empty-pad"><div></div></div>
+              <div class="empty-pad"><div></div></div>
+              <div class="empty-pad"><div></div></div>
+              <div class="empty-pad"><div></div></div>
+             <div class="line-break"></div>
+          </div>
+          <div id="log">
+              <div id="t0"></div>
           </div>
       </div>
       <div id="manual-install" class="hidden modal border">
@@ -61,8 +63,8 @@
           <h2 style="margin-top:0.5em"> Thanks for trying Terminal7</h2>
           <p>
                 Terminal7 is a progressive web terminal emulator and multiplexer
-                over WebRTC. Inspired by tmux, Terminal7 is a reincarnation
-                with three novelties:
+                over WebRTC. Inspired by tmux, Terminal7 introduces
+                three novelties:
         </p>
         <div>
         <ul>

@@ -81,7 +81,7 @@ button {
   font-family: Courier new;
   */
 }
-.text-button, .gates button {
+.text-button, #gates button {
     display: inline-block;
     cursor: pointer;
     padding: 0.35em 1.2em;
@@ -349,19 +349,19 @@ button.rename-close {
     display: block;
 }
 #map {
+    position: relative;
     padding-top: 1em;
-    width: 968px;
+    width: 1200px;
     display: none;
     text-align: center;
     margin: 0 auto;
     height: calc(100% - 56px);
     overflow-y: auto;
-    max-width: 1024px;
 }
 #version {
-    position: fixed;
-    top: 4vh;
-    left: 4vw;
+    position: absolute;
+    top: 128px;
+    left: 0px;
     padding: 10px;
     border: 1px dotted;
     border-radius: 4px;
@@ -371,37 +371,27 @@ button.rename-close {
 #version a {
     text-decoration: underline;
 }
-.gates {
-    flex: 1 0 auto;
-    width: 16em;
+#gates {
+    width: 100%;
+    background: top repeat-y url("/map/middle.png");
 }
 
-.gates>* {
-    cursor: pointer;
-    margin: 1em; 
-    padding: 0.8em;
-}
-.gates p {
+#gates p {
     overflow: hidden;
 }
-.gates a {
+#gates a {
     text-decoration: none;
 }
-.gates .border {
-    border-color: var(--remote-border);
-}
-.gates h3 {
+#gates h3 {
     font-size: 36px;
     padding-bottom: 0;
     margin-bottom: 0;
 }
-.gates button {
-    padding: 1em;
+#gates button {
     box-shadow: 7px 6px 28px 1px rgba(0, 0, 0, 0.24);
-    margin: 0.5em;
-    width: 80%
+    width: 100%;
 }
-.gates button:active {
+#gates button:active {
     transform: scale(0.98);
     box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
 }
@@ -437,26 +427,29 @@ label {
     background-color: inherit;
 }
 #log {
-    position: fixed;
-    left: 50%;
-    bottom: 114px;
+    position: absolute;
+    right: -25px;
+    top: -39px;
     margin: 0;
-    padding: 2px;
+    padding: 0px;
     z-index: 4;
-    background-color: var(--background);
-    border-color: var(--local-border);
-    text-align: left;
-    width: 96%;
-    max-height: 50vh;
-    max-width: 30em;
-    /* right: -100%; */
+    transition: transform .75s ease, scale .75s ease;
     opacity: 0.8;
-    transition: transform .75s ease;
-    transform: translate(-50%, 200%);
     overflow: hidden;
+    border: 5px solid var(--local-border);
+    background-color: black;
+    transform: scale(0.20);
+    height: 33vh;
+    width: 90%;
+    max-width: 30em;
+    border-radius: 6px;
+}
+#t0 {
+    padding:4px;
 }
 #log.show {
-    transform: translate(-50%, 0);
+    transform: translate(-80%, 110%) scale(1);
+    border: 1px solid var(--local-border);
 }
 #log-msgs {
     margin: 0;
@@ -677,27 +670,37 @@ audio { display: none; }
     left: 50%;
     margin-left: -25%;
 }
-.terminal-container {
-    height: 20em;
-}
-
 .map-header-wide {
     display: block;
     margin: 0 auto;
-    height: 300px;
-    background: bottom / contain no-repeat url("/map/top_wide.svg")
+    height: 370px;
+    background: right no-repeat url("/map/top.png");
+    
 }
 .gate-pad, .empty-pad {
     width: 25%;
-    height: 105px;
+    height: 110px;
     float: left;
+    padding: 38px 26px;
 }
 #map .text-button, .empty-pad div  {
-    width: 80%;
-    margin: 14% 10% 0;
-    height: 72%;
+    width: 100%;
+    height: 70px;
+}
+#map .text-button {
+    background-color: var(--text-background);
+    color: var(--text-color);
 }
 .empty-pad div {
-    border: 1px dashed;
+    border: 1px dotted var(--local-border);
     opacity: 25%;
+}
+#map-footer {
+    clear: both;
+    background: top no-repeat url("/map/bottom.png")
+}
+.line-break {
+    margin: 0;
+    padding: 0;
+    clear: both;
 }
