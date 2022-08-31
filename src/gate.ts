@@ -124,17 +124,10 @@ export class Gate {
      * edit start the edit-host user-assitance
      */
     edit() {
-        let editHost
         if (typeof(this.fp) == "string") {
-            if (this.verified) {
-                this.notify("Got peer from \uD83D\uDCD6, connect only")
-                return
-            }
-            editHost = document.getElementById("edit-unverified-pbhost")
-            editHost.querySelector("a").setAttribute("href",
-                "https://"+ this.t7.conf.net.peerbook)
+            this.notify("Got peer from \uD83D\uDCD6, connect only")
+            return
         } else {
-            editHost = document.getElementById("edit-host")
             if (Form.activeForm) 
                 this.map.t0.focus()
             else {

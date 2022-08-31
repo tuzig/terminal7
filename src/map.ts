@@ -123,7 +123,6 @@ export class T7Map {
      */
     showLog(show) {
         const e = document.getElementById("log")
-        const log = document.getElementById("log")
         if (show === undefined)
             // if show is undefined toggle current state
             show = !e.classList.contains("show")
