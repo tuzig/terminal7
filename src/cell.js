@@ -47,6 +47,8 @@ export class Cell {
         this.w.activeP = this
         this.e.style.borderColor = FOCUSED_BORDER_COLOR
         this.w.toggleDivideButtons()
+        setTimeout(() => window.location.href = `#pane-${this.id}`)
+        this.w.nameE.setAttribute("href", `#pane-${this.id}`)
     }
     /*
      * Used to grow/shrink the terminal based on containing element dimensions
