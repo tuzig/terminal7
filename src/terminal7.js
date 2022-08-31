@@ -458,8 +458,7 @@ peer_name = "${peername}"\n`
         let p = props || {},
             addr = p.addr
         // add the id
-        p.id = addr
-        p.verified = false
+        p.id = p.fp || addr
 
         let g = new Gate(p)
         this.gates.set(p.id, g)

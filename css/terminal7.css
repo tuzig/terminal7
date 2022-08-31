@@ -427,13 +427,18 @@ label {
     left: 0;
     background-color: inherit;
 }
+#log-container {
+    width: 1200px;
+    position: relative;
+    margin: 0 auto;
+}
 #log {
     position: absolute;
-    right: 47px;
-    top: -75px;
+    left: 938px;
+    top: 93px;
     margin: 0;
-    padding: 40px;
-    z-index: 2;
+    padding: 20px;
+    z-index: 4;
     transition: transform .75s ease, scale .75s ease;
     opacity: 0.8;
     overflow: hidden;
@@ -441,9 +446,10 @@ label {
     background-color: black;
     transform: scale(0.18);
     width: 90%;
-    max-width: 580px;
+    max-width: 540px;
     border-radius: 33%;
     height: 410px;
+    transform-origin: top left;
 }
 #log>div {
     padding: 0;
@@ -451,9 +457,9 @@ label {
     width: 100%;
 }
 #log.show {
-    transform: translate(-76%, 76%) scale(1);
+    transform: translate(-113%,8%) scale(1);
     border: 1px solid var(--local-border);
-    z-index: 4;
+    border-radius: 20%;
 }
 .search-container {
     margin: 0 auto;
