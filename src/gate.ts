@@ -35,7 +35,7 @@ export class Gate {
     name: string
     pass: string | undefined
     secret: string
-    _session: Session
+    session: Session
     tryWebexec: boolean
     user: string
     username: string
@@ -43,6 +43,8 @@ export class Gate {
     t7: Terminal7
     onConnected: () => void
     fp: string | undefined
+    verified: boolean
+    online: boolean
     store: boolean
     map: T7Map
 
@@ -69,6 +71,7 @@ export class Gate {
         this.sendStateTask  = null
         this.timeoutID = null
         this.fp = props.fp
+        // TODO: move t7 & map into props
         this.t7 = window.terminal7
         this.map = this.t7.map
         this.session = null
@@ -181,7 +184,7 @@ export class Gate {
                                             this.t7.gates.set(this.id, this)
                                         }
                                         this.t7.storeGates()
-                                        this.map.update(this)
+                                        this.updateNameE()
                                         this.map.showLog(false)
                                     })
                                 })
@@ -218,6 +221,7 @@ export class Gate {
     // stops all communication 
     stopBoarding() {
         this.boarding = false
+        this.updateNameE()
     }
     setIndicatorColor(color) {
             this.e.querySelector(".tabbar-names").style.setProperty(
@@ -236,7 +240,11 @@ export class Gate {
         if (state == "connected") {
             this.notify("Connected")
             this.setIndicatorColor("unset")
-            this.map.update(this)
+            if (!this.verified) {
+                this.verified = true
+                this.updateNameE()
+                this.t7.storeGates()
+            }
             const m = this.t7.e.querySelector(".disconnect")
             if (m != null)
                 m.remove()
@@ -265,6 +273,7 @@ export class Gate {
         this.session = null
         if (!this.boarding)
             return
+        this.stopBoarding()
         switch ( failure ) {
             case Failure.WrongPassword:
                 this.tryWebexec = false
@@ -345,6 +354,7 @@ export class Gate {
             return
         }
         this.boarding = true
+        this.updateNameE()
         // TODO add the port
         if (!this.pass && !this.fp && !this.tryWebexec) {
             this.askPass()
@@ -688,11 +698,17 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
 		else
 			cancel()
 	}
-    get session() {
-        return this._session
-    }
-    set session(s: Session) {
-        this._session = s
-        this.t7.map.update(this)
+    updateNameE() {
+        const e = this.nameE
+        // ignores gate with no nameE
+        if (!e || (e.children.length < 1))
+            return
+        this.map.update({
+            e: e,
+            name: this.name || this.addr,
+            boarding: this.boarding,
+            offline: this.online === false,
+            unverified: this.verified === false,
+        })
     }
 }

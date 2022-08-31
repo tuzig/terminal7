@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Updated
+
+- New main screen - a temrinal map inspired by Terminal 5 @ JFK
+- A new TUI form system used for all input
+- Gate button shines when connection is active
+
 ### Fixed
 
 - Resize the terminal when the on screen keyboard is displayed/hidden

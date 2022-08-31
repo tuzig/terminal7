@@ -432,8 +432,8 @@ label {
     right: 47px;
     top: -75px;
     margin: 0;
-    padding: 0px;
-    z-index: 4;
+    padding: 40px;
+    z-index: 2;
     transition: transform .75s ease, scale .75s ease;
     opacity: 0.8;
     overflow: hidden;
@@ -441,8 +441,8 @@ label {
     background-color: black;
     transform: scale(0.18);
     width: 90%;
-    max-width: 500px;
-    border-radius: 6px;
+    max-width: 580px;
+    border-radius: 33%;
     height: 410px;
 }
 #log>div {
@@ -453,6 +453,7 @@ label {
 #log.show {
     transform: translate(-76%, 76%) scale(1);
     border: 1px solid var(--local-border);
+    z-index: 4;
 }
 .search-container {
     margin: 0 auto;
@@ -681,7 +682,7 @@ audio { display: none; }
     padding: 0;
     clear: both;
 }
-button.connected  {
+button.boarding  {
     font-weight: 600;
     text-shadow: var(--remote-border) 1px 0 10px;
 }

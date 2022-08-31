@@ -453,6 +453,7 @@ peer_name = "${peername}"\n`
      * the function ensures the gate has a unique name adds the gate to
      * the `gates` property, stores and returns it.
      */
+    // TOFO: add onMap to props
     addGate(props, onMap = true) {
         let p = props || {},
             addr = p.addr
@@ -463,8 +464,11 @@ peer_name = "${peername}"\n`
         let g = new Gate(p)
         this.gates.set(p.id, g)
         g.open(this.e)
-        if (onMap)
+        if (onMap) {
             g.nameE = this.map.add(g)
+            g.updateNameE()
+
+        }
         return g
     }
     async storeGates() { 
@@ -789,7 +793,7 @@ peer_name = "${peername}"\n`
 
         if (m["peer_update"] !== undefined) {
             g.online = m.peer_update.online
-            this.map.update(g)
+            g.updateNameE()
             return
         }
         if (!g.session) {
@@ -854,7 +858,7 @@ peer_name = "${peername}"\n`
         this.firstPointer = {pageX: ev.pageX, pageY: ev.pageY}
         if (gatePad) {
             const gate = gatePad.gate
-            if (!this.longPressGate)
+            if (!this.longPressGate && gate)
                 this.longPressGate = this.run(() => {
                     gate.edit()
                 }, this.conf.ui.quickest_press)
@@ -1032,14 +1036,14 @@ peer_name = "${peername}"\n`
                 g.online = p.online
                 g.name = p.name
                 g.verified = p.verified
-                this.map.update(g)
+                g.updateNameE()
             } else {
                 p.id = p.fp
                 g = new Gate(p)
                 this.gates.set(p.fp, g)
                 g.nameE = this.map.add(g)
+                g.updateNameE()
                 g.open(this.e)
-
             }
         })
         this.map.refresh()

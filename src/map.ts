@@ -66,7 +66,6 @@ export class T7Map {
         b.className = "text-button"
         d.gate = g
         d.appendChild(b)
-        this.update(g, d)
         const gates = document.getElementById("gates")
         gates.prepend(d)
         this.refresh()
@@ -81,29 +80,25 @@ export class T7Map {
         this.refresh()
     }
 
-    update(g: Gate, e?: Element) {
-        if (!e)
-            e = g.nameE
-        if (!e)
-            return
-        const b = e.children[0]
-        b.innerHTML = g.name || g.addr
-        // there's nothing more to update for static hosts
-        if (g.session)
-            b.classList.add("connected")
-        else
-            b.classList.remove("connected")
+    update({ e, name, boarding, offline, unverified }): void {
 
-        if (!g.fp)
-            return
-        if (g.verified)
-            b.classList.remove("unverified")
+        const b = e.children[0]
+        b.innerHTML = name
+        // there's nothing more to update for static hosts
+        if (boarding)
+            b.classList.add("boarding")
         else
+            b.classList.remove("boarding")
+
+        if (unverified)
             b.classList.add("unverified")
-        if (g.online)
-            b.classList.remove("offline")
         else
+            b.classList.remove("unverified")
+
+        if (offline)
             b.classList.add("offline")
+        else
+            b.classList.remove("offline")
     }
 
     refresh() {
