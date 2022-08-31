@@ -1,31 +1,15 @@
 import { Terminal } from "@tuzig/xterm"
-import { FitAddon } from "xterm-addon-fit"
+import { Clipboard } from "@capacitor/clipboard"
 
 export type Fields = Array<{
     prompt:string,
     default?:string,
     values?:Array<string>,
     validator?:(field: string) => string,
+    password?: boolean,
 }>
 
 export type Results = Array<string>
-
-export function openFormsTerminal(e: HTMLElement) {
-    const terminal = new Terminal({
-        cursorBlink: true,
-        cursorStyle: "block",
-        theme: window.terminal7.conf.theme,
-        fontFamily: "FiraCode",
-        fontSize: 14,
-        rendererType: "canvas",
-        convertEol: true,
-    })
-    terminal.open(e)
-    const fitAddon = new FitAddon()
-    terminal.loadAddon(fitAddon)
-    fitAddon.fit()
-    return terminal
-}
 
 export class Form {
 
@@ -33,29 +17,33 @@ export class Form {
     i: number
     e: HTMLElement
     resolve: (value) => void
-    reject: (reason?) => void
     fields: Fields
     results: Results
+    static activeForm = false
 
     constructor(fields: Fields) {
         this.fields = fields
     }
 
-    chooseFields(t: Terminal) {
+    chooseFields(t: Terminal, title: string) {
+        Form.activeForm = true
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
-        return new Promise<Array<boolean>>((resolve, reject) => {
-            t.write("\n  Choose fields to edit:")
-            t.write("\n  [Use arrows to move, space to select, right to all, left to none]")
-            t.write("\n  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  '))
-            t.write(`\x1B[4G\x1B[${len - 1}A`) // move cursor to first field
+        return new Promise<Array<boolean>>(resolve => {
+            t.writeln(`  ${title}, choose fields to edit:`)
+            t.writeln("  [Use ⇅ to move, space to select, → to all, ← to none]")
+            t.writeln("  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  ') + "\x1B[s")
+            t.write(`\x1B[4G\x1B[${len}A`) // move cursor to first field
             const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
                 const char = !enabled[current] ? 'X' : ' '
                 switch (key) {
                     case "Escape":
-                        reject()
+                        disposable.dispose()
+                        t.write(`\x1B[u\nESC\n`)
+                        window.terminal7.clearTempGates()
+                        Form.activeForm = false
                         break
                     case "ArrowUp":
                         if (current > 0) {
@@ -75,64 +63,132 @@ export class Form {
                         break
                     case "Enter":
                         this.fields = this.fields.filter((_, i) => enabled[i])
-                        t.reset()
                         disposable.dispose()
                         resolve(enabled)
+                        t.write(`\x1B[${len-current}B\n`)
+                        Form.activeForm = false
                         break
                     case "ArrowRight":
                         enabled.fill(true)
                         if (current != 0)
                             t.write(`\x1B[${current}A`) // move cursor to first field
-                        for (let i in enabled) {
-                            t.write("X\x1B[1D\x1B[1B")
-                        }
+						enabled.forEach(() => t.write("X\x1B[1D\x1B[1B"))
                         t.write(`\x1B[${len-current}A`) // restore cursor position
                         break
                     case "ArrowLeft":
                         enabled.fill(false)
                         if (current != 0)
                             t.write(`\x1B[${current}A`)
-                        for (let i in enabled) {
-                            t.write(" \x1B[1D\x1B[1B")
-                        }
+						enabled.forEach(() => t.write(" \x1B[1D\x1B[1B"))
                         t.write(`\x1B[${len-current}A`)
                         break
                 }
             })
+            t.focus()
+        })
+    }
+
+    menu(t: Terminal, title: string) {
+        Form.activeForm = true
+        const len = this.fields.length
+        const enabled = new Array(len).fill(false)
+        let current = 0
+        return new Promise<string>(resolve => {
+            t.writeln(`\n  ${title}:`)
+            t.writeln("  [Use ⇅ to move, Enter to select]")
+            t.writeln("  " + this.fields.map(f => `  ${f.prompt}`).join('\n  ') + "\x1B[s")
+            t.write(`\x1B[3G\x1B[${len}A`) // move cursor to first field
+            t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`) // bold first field
+            const disposable = t.onKey(ev => {
+                const key = ev.domEvent.key
+                switch (key) {
+                    case "Escape":
+                        disposable.dispose()
+                        t.write(`\x1B[u\nESC\n`)
+                        window.terminal7.clearTempGates()
+			            Form.activeForm = false
+                        break
+                    case "ArrowUp":
+                        if (current > 0) {
+                            t.write(`  ${this.fields[current].prompt}\x1B[3G`)
+                            current--
+                            t.write("\x1B[A")
+                            t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`)
+                        }
+                        break
+                    case "ArrowDown":
+                        if (current < enabled.length - 1) {
+                            t.write(`  ${this.fields[current].prompt}\x1B[3G`)
+                            current++
+                            t.write("\x1B[B")
+                            t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`)
+                        }
+                        break
+                    case "Enter":
+                        disposable.dispose()
+                        resolve(this.fields[current].prompt)
+                        t.write(`\x1B[${len-current}B\n`)
+                        Form.activeForm = false
+                        break
+                }
+            })
+            setTimeout(() => t.focus(), 100)
         })
     }
 
 
-    start(t: Terminal) : Promise<Results> { 
+    start(t: Terminal) : Promise<Results> {
+        Form.activeForm = true
         this.i = 0
         this.field = ''
         this.results = []
-        return new Promise((resolve, reject) => {
+        return new Promise(resolve => {
             this.writeCurrentField(t)
             setTimeout(() => t.focus(), 0)
-            t.onKey(ev => {
+            const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
+                const password = this.fields[this.i].password
                 switch (key) {
                     case "Escape":
-                        reject()
-                        return
+                        disposable.dispose()
+                        t.write(`\x1B[u\nESC\n`)
+                        window.terminal7.clearTempGates()
+                        Form.activeForm = false
+                        break
                     case "Backspace":
                         if (this.field.length > 0) {
-                            t.write("\b \b")
                             this.field = this.field.slice(0, -1)
+                            if (!password)
+                                t.write("\b \b")
                         }
                         break
                     case "Enter":
+                        t.write("\n")
                         if (!this.next(t)) {
                             resolve(this.results)
+                            disposable.dispose()
+                            Form.activeForm = false
                             return
                         }
                         break
                     default:
-                        this.field += key
-                        t.write(key)
+                        if ((ev.domEvent.ctrlKey || ev.domEvent.metaKey) && key == 'v') {
+                            Clipboard.read().then(res => {
+                                if (res.type == 'text/plain') {
+                                    this.field += res.value
+                                    if (!password)
+                                        t.write(res.value)
+                                }
+                            })
+                        }
+                        else if (key.length == 1) { // make sure the key is a char
+                            this.field += key
+                            if (!password)
+                                t.write(key)
+                        }
                 }
             })
+            t.focus()
         })
     }
 
@@ -142,17 +198,17 @@ export class Form {
         const current = this.fields[this.i]
         let valid = true
         if (!this.field && !current.default) {
-            t.write("\n  Please enter a value")
+            t.writeln("  Please enter a value")
             valid = false
         }
         else if (this.field && current.values && current.values.indexOf(this.field) == -1) {
-            t.write(`\n  ${current.prompt} must be one of: ${current.values.join(', ')}`)
+            t.writeln(`  ${current.prompt} must be one of: ${current.values.join(', ')}`)
             valid = false
         }
         else if (this.field && current.validator) {
             const err = current.validator(this.field)
             if (err) {
-                t.write(`\n  ${err}`)
+                t.writeln(`  ${err}`)
                 valid = false
             }
         }
@@ -178,6 +234,6 @@ export class Form {
             def = values.map(v => v == def ? v.toUpperCase() : v).join('/')
         if (def)
             def = ` [${def}]`
-        t.write(`\n  ${this.fields[this.i].prompt}${def || ''}: `)
+        t.write(`  ${this.fields[this.i].prompt}${def || ''}: `)
     }
 }

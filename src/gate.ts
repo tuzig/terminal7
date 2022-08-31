@@ -1,4 +1,4 @@
-/*! Terminal 8 Gate
+/* Terminal 7 Gate
  *  This file contains the code that makes a terminal 7 gate. The gate class
  *  represents a server and it may be boarding - aka connected - or not.
  *
@@ -9,12 +9,14 @@ import { Clipboard } from '@capacitor/clipboard'
 import { Storage } from '@capacitor/storage'
 
 import { Pane } from './pane.js'
+import { T7Map } from './map'
 import { Failure, Session } from './session'
 import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
+import { Capacitor } from '@capacitor/core'
 import { Storage } from '@capacitor/storage'
-import { Form, openFormsTerminal } from './form.js'
+import { Form, Fields } from './form.js'
 import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
 import { Window } from './window.js'
 
@@ -33,12 +35,16 @@ export class Gate {
     name: string
     pass: string | undefined
     secret: string
-    session: Session
+    _session: Session
     tryWebexec: boolean
     user: string
     username: string
     nameE: Element
     t7: Terminal7
+    onConnected: () => void
+    fp: string | undefined
+    store: boolean
+    map: T7Map
 
     constructor (props) {
         // given properties
@@ -64,13 +70,8 @@ export class Gate {
         this.timeoutID = null
         this.fp = props.fp
         this.t7 = window.terminal7
+        this.map = this.t7.map
         this.session = null
-    }
-
-    static validateHostName(name) {
-        if (window.terminal7.gates.find(g => g.name == name))
-            return "Name already taken"
-        return ''
     }
 
     /*
@@ -90,16 +91,16 @@ export class Gate {
             t.querySelector(".reset").addEventListener('click', () => 
                 this.reset())
             t.querySelector(".add-tab").addEventListener(
-                'click', _ => this.newTab())
-            t.querySelector(".search-close").addEventListener('click', _ =>  {
-                this.t7.logDisplay(false)
+                'click', () => this.newTab())
+            t.querySelector(".search-close").addEventListener('click', () =>  {
+                this.map.showLog(false)
                 this.activeW.activeP.exitSearch()
                 this.activeW.activeP.focus()
             })
-            t.querySelector(".search-up").addEventListener('click', _ =>
+            t.querySelector(".search-up").addEventListener('click', () =>
                 this.activeW.activeP.findPrev())
 
-            t.querySelector(".search-down").addEventListener('click', _ => 
+            t.querySelector(".search-down").addEventListener('click', () => 
                 this.activeW.activeP.findNext())
 
             t.querySelector(".rename-close").addEventListener('click', () => 
@@ -110,28 +111,17 @@ export class Gate {
             */
             this.e.appendChild(t)
         }
-        // Add the gates' signs to the home page
-        let hostsE = document.getElementById(this.fp?"peerbook-hosts":"static-hosts")
-        let b = document.createElement('button'),
-            addr = this.addr && this.addr.substr(0, this.addr.indexOf(":"))
-        b.className = "text-button"
-        this.nameE = b
-        this.nameE.innerHTML = this.name || this.addr
-        this.updateNameE()
-        hostsE.appendChild(b)
-        b.gate = this
     }
     delete() {
-        this.t7.gates.splice(this.id, 1)
+        this.t7.gates.delete(this.id)
         this.t7.storeGates()
-        // remove the host from the home screen
-        this.nameE.remove()
+		this.map.remove(this)
     }
     /*
      * edit start the edit-host user-assitance
      */
     edit() {
-        var editHost
+        let editHost
         if (typeof(this.fp) == "string") {
             if (this.verified) {
                 this.notify("Got peer from \uD83D\uDCD6, connect only")
@@ -142,40 +132,79 @@ export class Gate {
                 "https://"+ this.t7.conf.net.peerbook)
         } else {
             editHost = document.getElementById("edit-host")
-            if (editHost.classList.contains("hidden")) {
-                const e = editHost.querySelector(".terminal-container")
-                const t = openFormsTerminal(e)
-                const f = new Form([
+            if (Form.activeForm) 
+                this.map.t0.focus()
+            else {
+                this.map.showLog(true)
+                const f1 = new Form([
+                    { prompt: "Connect" },
+                    { prompt: "Edit" },
+                    { prompt: "\x1B[31mDelete\x1B[0m" },
+                ])
+                const f2 = new Form([
                     {
                         prompt: "Name",
                         default: this.name,
-                        validator: Gate.validateHostName
+                        validator: (a) => this.t7.validateHostName(a)
                     },
-                    { prompt: "Hostname", default: this.addr },
+                    { 
+                        prompt: "Hostname",
+                        default: this.addr,
+                        validator: (a) => this.t7.validateHostAddress(a)
+                    },
                     { prompt: "Username", default: this.username }
                 ])
-                f.chooseFields(t).then((enabled) => {
-                    f.start(t).then(results => {
-                        ['name', 'addr', 'username']
-                            .filter((_, i) => enabled[i])
-                            .forEach((k, i) => this[k] = results[i])
-                        this.nameE.innerHTML = this.name || this.addr
-                        this.t7.storeGates()
-                        this.t7.clear()
-                    }).catch(() => this.t7.clear())
-                }).catch(() => this.t7.clear())
+                const fDel = new Form([{
+                    prompt: `Delete ${this.name}?`,
+                    values: ["y", "n"],
+                    default: "n",
+                }])
+                f1.menu(this.map.t0, `\x1B[4m${this.name}\x1B[0m`)
+                    .then(choice => {
+                        switch (choice) {
+                            case 'Connect':
+                                this.connect()
+                                break
+                            case 'Edit':
+                                f2.chooseFields(this.map.t0, `\x1B[4m${this.name}\x1B[0m edit`).then((enabled) => {
+                                    if (!enabled) {
+                                        this.t7.clear()
+                                        return
+                                    }
+                                    f2.start(this.map.t0).then(results => {
+                                        ['name', 'addr', 'username']
+                                            .filter((_, i) => enabled[i])
+                                            .forEach((k, i) => this[k] = results[i])
+                                        if (enabled[1]) {
+                                            this.t7.gates.delete(this.id)
+                                            this.id = this.addr
+                                            this.t7.gates.set(this.id, this)
+                                        }
+                                        this.t7.storeGates()
+                                        this.map.update(this)
+                                        this.map.showLog(false)
+                                    })
+                                })
+                                break
+                            case "\x1B[31mDelete\x1B[0m":
+                                fDel.start(this.map.t0).then(res => {
+                                    if (res[0] == "y")
+                                        this.delete()
+                                    this.t7.clear()
+                                })
+                                break
+                        }
+                    })
             }
         }
-        editHost.gate = this
-        editHost.classList.remove("hidden")
     }
     focus() {
-        this.t7.logDisplay(false)
+        this.map.showLog(false)
         // hide the current focused gate
-        document.getElementById("home-button").classList.remove("on")
+        document.getElementById("map-button").classList.remove("off")
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.remove("off"))
-        let activeG = this.t7.activeG
+        const activeG = this.t7.activeG
         if (activeG) {
             activeG.e.classList.add("hidden")
         }
@@ -198,7 +227,7 @@ export class Gate {
      * onSessionState(state) is called when the connection
      * state changes.
      */
-    onSessionState(state: RTState, failure: Failure) {
+    onSessionState(state: string, failure: Failure) {
         if (!this.session) {
             this.t7.log(`Ignoring ${this.name} change state to ${state} as session is closed`)
             return
@@ -206,9 +235,9 @@ export class Gate {
         this.t7.log(`updating ${this.name} state to ${state}`)
         if (state == "connected") {
             this.notify("Connected")
-            this.t7.logDisplay(false)
             this.setIndicatorColor("unset")
-            var m = this.t7.e.querySelector(".disconnect")
+            this.map.update(this)
+            const m = this.t7.e.querySelector(".disconnect")
             if (m != null)
                 m.remove()
             // show help for first timer
@@ -218,7 +247,9 @@ export class Gate {
                     Storage.set({key: "first_gate", value: "1"}) 
                 }
             })
-            this.session.getPayload().then(layout => this.setLayout(layout))
+			// first onConnected is special if it's a new gate but once connected, we're back to load
+            this.onConnected()
+            this.onConnected = this.load
         } else if (state == "disconnected") {
             // TODO: add warn class
             this.lastDisconnect = Date.now()
@@ -230,49 +261,76 @@ export class Gate {
     }
     // handle connection failures
     handleFailure(failure: Failure) {
-        this.t7.log(failure)
-
+        this.notify(`FAILED: ${failure || "Server Disconnected"}`)
         this.session = null
-
         if (!this.boarding)
             return
-        if (failure == Failure.WrongPassword) {
-            this.notify("Wrong password, please try again")
-            this.pass = null
-            this.connect()
-            return
-        }
-        if (failure == Failure.Unauthorized) {
-            this.copyFingerprint()
-            return
-        }
-        if (failure == Failure.BadMarker) {
-            this.notify("Session restore failed, trying a fresh session")
-            this.clear()
-            this.connect()
-            return
-        }
-        if (failure == Failure.TimedOut) {
-            if ((!this.fp) && this.tryWebexec) {
-                this.notify("Timed out, trying SSH...")
+        switch ( failure ) {
+            case Failure.WrongPassword:
                 this.tryWebexec = false
-                this.connect()
+                this.pass = undefined
+                this.retryForm(() => this.CLIConnect(), () => this.delete())
                 return
-            }
+            case Failure.Unauthorized:
+                this.copyFingerprint()
+                return
+            case Failure.BadMarker:
+                this.notify("Trying a fresh session")
+                this.marker = null
+                this.connect(this.onConnected)
+                return
+            case Failure.TimedOut:
+                if (!this.fp && this.tryWebexec && (Capacitor.getPlatform() == "ios")) {
+                    this.tryWebexec = false
+                    this.connect(this.onConnected)
+                    return
+                }
+                break
+            case Failure.BadRemoteDescription:
+                this.notify("Please try again")
+                break
+                
         }
-        if (failure == Failure.BadRemoteDescription) {
-            this.notify("Session signalling failed, please try again")
-        }
-        if (failure == Failure.NotImplemented)
-            this.notify("FAILED: not implemented yet")
-        if (!failure)
-            this.notify("Connection FAILED")
-        this.t7.onDisconnect(this)
+        if (this.name.startsWith("temp")) {
+            (async () => {
+                const rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${this.fp}" >> ~/.config/webexec/authorized_fingerprints`
+                this.map.t0.writeln("  Failed to connect")
+                let ans
+                const verifyForm = new Form([{
+                    prompt: `Does the address \x1B[1;37m${this.addr}\x1B[0m seem correct?`,
+                    values: ["y", "n"],
+                    default: "y"
+                }])
+                ans = (await verifyForm.start(this.map.t0))[0]
+                if (!ans) {
+                    this.map.t0.writeln("ESC")
+                    return
+                }
+                if (ans == "n")
+                    return this.t7.connect()
+                const webexecForm = new Form([{
+                    prompt: `Make sure webexec is running on ${this.addr}:
+                        \n\x1B[1m${rc}\x1B[0m\n \n  Copy to clipboard?`,
+					values: ["y", "n"],
+                    default: "y"
+                }])
+                ans = (await webexecForm.start(this.map.t0))[0]
+                if (ans == "y")
+                    Clipboard.write({ string: rc })
+				this.retryForm(() => {
+                    this.map.t0.writeln("\n  Retrying...")
+                    this.CLIConnect()
+				}, () => this.delete())
+            })()
+        } else
+            this.t7.onDisconnect(this)
     }
     /*
      * connect connects to the gate
      */
-    async connect(marker=-1) {
+    async connect(onConnected = () => this.load()) {
+        
+        this.onConnected = onConnected
         // do nothing when the network is down
         if (!this.t7.netStatus || !this.t7.netStatus.connected)
             return
@@ -294,14 +352,16 @@ export class Gate {
             this.completeConnect()
     }
 
-    notify(message) {    
-        this.t7.notify(`${this.name}: ${message}`)
+    notify(message) {
+        if (!this.name.startsWith("temp"))
+            message = `\x1B[4m${this.name}\x1B[0m: ${message}`
+        this.t7.notify(message)
     }
     /*
      * returns an array of panes
      */
     panes() {
-        var r = []
+        const r = []
         this.t7.cells.forEach(c => {
             if (c instanceof Pane && (c.gate == this))
                 r.push(c)
@@ -326,13 +386,13 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         e = e.content.cloneNode(true)
 
         e.querySelector("pre").innerText = rc
-        e.querySelector(".continue").addEventListener('click', evt => {
+        e.querySelector(".continue").addEventListener('click', () => {
             this.t7.e.querySelector('.lose-state').remove()
             this.clear()
             this.activeW = this.addWindow("", true)
             this.focus()
         })
-        e.querySelector(".copy").addEventListener('click', evt => {
+        e.querySelector(".copy").addEventListener('click', () => {
             this.t7.e.querySelector('.lose-state').remove()
             Clipboard.write( {string: rc })
             this.tryWebexec = true
@@ -340,7 +400,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.activeW = this.addWindow("", true)
             this.focus()
         })
-        e.querySelector(".close").addEventListener('click', evt => {
+        e.querySelector(".close").addEventListener('click', () => {
             this.t7.e.querySelector('.lose-state').remove()
             this.clear()
             this.t7.goHome()
@@ -353,10 +413,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
-            if (winLen > 0)
-                // TODO: find a way to identify state lost
-                this.t7.log("this.loseState()")
-            else
                 this.activeW = this.addWindow("", true)
         } else if (winLen > 0) {
             // TODO: validate the current layout is like the state
@@ -369,7 +425,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.t7.log("Setting layout: ", state)
             this.clear()
             state.windows.forEach(w =>  {
-                let win = this.addWindow(w.name)
+                const win = this.addWindow(w.name)
                 if (w.active) 
                     this.activeW = win
                 win.restoreLayout(w.layout)
@@ -386,14 +442,14 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
      */
     addWindow(name, createPane) {
         this.t7.log(`adding Window: ${name}`)
-        let id = this.windows.length
-        let w = new Window({name:name, gate: this, id: id})
+        const id = this.windows.length,
+			w = new Window({name:name, gate: this, id: id})
         this.windows.push(w)
         if (this.windows.length >= this.t7.conf.ui.max_tabs)
             this.e.querySelector(".add-tab").classList.add("off")
         w.open(this.e.querySelector(".windows-container"))
         if (createPane) {
-            let paneProps = {sx: 1.0, sy: 1.0,
+            const paneProps = {sx: 1.0, sy: 1.0,
                              xoff: 0, yoff: 0,
                              w: w,
                              gate: this},
@@ -420,9 +476,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
      * dump dumps the host to a state object
      * */
     dump() {
-        var wins = []
-        this.windows.forEach((w, i) => {
-            let win = {
+        const wins = []
+        this.windows.forEach(w => {
+            const win = {
                 name: w.name,
                 layout: w.dump()
             }
@@ -434,10 +490,12 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
     }
     storeState() {
         const dump = this.dump()
-        var lastState = {windows: dump.windows}
+        const lastState = {windows: dump.windows}
 
         if (this.fp)
-            lastState.fp = this.fp
+            lastState.id = this.fp
+        else
+            lastState.id = this.addr
         lastState.name = this.name
         Storage.set({key: "last_state",
                      value: JSON.stringify(lastState)})
@@ -452,18 +510,19 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         if (this.session && (this.panes().every(p => p.d != null)))
            this.sendStateTask = setTimeout(() => {
                this.sendStateTask = null
+               if (!this.session)
+                   return
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
                         this.t7.log("Closing gate after updating to empty state")
-                        this.session.close().then(() => {
-                            this.session = null
-                            this.boarding = false
-                        })
+                        this.session.close()
+                        this.session = null
+                        this.boarding = false
                     }
                })
             }, 100)
     }
-    onPaneConnected(pane) {
+    onPaneConnected() {
         // hide notifications
         this.t7.clear()
         //enable search
@@ -471,7 +530,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             e => e.classList.remove("off"))
     }
     goBack() {
-        var w = this.breadcrumbs.pop()
+        const w = this.breadcrumbs.pop()
         this.breadcrumbs = this.breadcrumbs.filter(x => x != w)
         if (this.windows.length == 0) {
             this.stopBoarding()
@@ -483,14 +542,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                 this.breadcrumbs.pop().focus()
             else
                 this.windows[0].focus()
-    }
-    showResetHost() {
-        let e = document.getElementById("reset-host"),
-            addr = this.addr.substr(0, this.addr.indexOf(":"))
-
-        document.getElementById("rh-address").innerHTML = addr
-        document.getElementById("rh-name").innerHTML = this.name
-        e.classList.remove("hidden")
     }
     fit() {
         this.windows.forEach(w => w.fit())
@@ -513,7 +564,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                 this.notify("Disconnected")
                 resolve()
             }).catch(() => {
-                reject("session does not support disconnect")
+                this.session = null
+                this.notify("Disconnected")
+                resolve()
             })
         })
     }
@@ -522,93 +575,53 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
     }
     newTab() {
         if (this.windows.length < this.t7.conf.ui.max_tabs) {
-            let w = this.addWindow("", true)
+            const w = this.addWindow("", true)
             this.breadcrumbs.push(w)
             w.focus()
         }
     }
-    updateNameE() {
-        this.nameE.innerHTML = this.name
-        if (!this.fp) {
-            // there's nothing more to update for static hosts
-            return
-        }
-        if (this.verified)
-            this.nameE.classList.remove("unverified")
-        else
-            this.nameE.classList.add("unverified")
-        if (this.online)
-            this.nameE.classList.remove("offline")
-        else
-            this.nameE.classList.add("offline")
-    }
     async copyFingerprint() {
-        const addr = this.addr.substr(0, this.addr.indexOf(":")),
-              fp = await this.t7.getFingerprint(),
-              cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`,
-              e = document.getElementById("copy-fingerprint-template")
-                          .content.cloneNode(true)
-        e.querySelector('pre').innerText = cmd
-        e.querySelector('.ct-address').innerHTML = addr
-        e.querySelector('.ct-name').innerHTML = this.name
-        e.querySelector(".copy").addEventListener('click', ev => {
-            this.t7.e.querySelector('.copy-fingerprint').remove()
-            Clipboard.write(
-                {string: cmd})
-            this.t7.notify("Command copied to the clipboard")
-            if (Capacitor.getPlatform() != "web") {
-                this.tryWebexec = false
-                this.connect()
-            }
-        })
-        e.querySelector(".close").addEventListener('click',  ev =>  {
-            this.t7.e.querySelector('.copy-fingerprint').remove()
-            this.clear()
-            this.t7.goHome()
-        })
-        this.t7.e.appendChild(e)
+        const fp = await this.t7.getFingerprint(),
+              cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
+        let ans
+        const fpForm = new Form([{ 
+            prompt: `\n  We're sorry, but the host at ${this.addr} refused our fingerprint.
+  To connect copy Terminal7's fingerprint to the server and try again:
+  \n\x1B[1m${cmd}\x1B[0m\n
+  Copy to clipboard?`,
+            values: ["y", "n"],
+            default: "y"
+        }])
+        ans = (await fpForm.start(this.map.t0))[0]
+        if (ans == "y")
+            Clipboard.write({ string: cmd })
+		this.retryForm(() => this.connect(this.onConnected), () => this.delete())
     }
     askPass() {
-        const hideModal = evt => evt.target.closest(".modal").classList.toggle("hidden")
-        const e = document.getElementById("askpass")
-
-        if (!e) {
-            // for debug
+        this.map.t0.writeln("  Trying SSH")
+        const authForm = new Form([
+            { prompt: "Username", default: this.username },
+            { prompt: "Password", password: true }
+        ])
+        authForm.start(this.map.t0).then(res => {
+            this.username = res[0]
+            this.pass = res[1]
             this.completeConnect()
-            return
-        }
-        e.querySelector("h1").innerText = `${this.username}@${this.name}`
-        e.classList.remove("hidden")
-        e.querySelector("form").onsubmit = evt => {
-            hideModal(evt)
-            this.pass = evt.target.querySelector('[name="pass"]').value
-            evt.target.querySelector('[name="pass"]').value = ""
-            this.session = null
-            this.completeConnect()
-            evt.stopPropagation()
-            evt.preventDefault()
-        }
-        e.querySelector(".close").onclick = evt => {
-            hideModal(evt)
-            this.stopBoarding()
-            this.tryWebexec = true
-        }
-        e.querySelector('[name="pass"]').focus()
+        })
     }
     completeConnect(): void {
         if (this.session == null)
             if (this.fp) {
-                this.notify("&#127884 PeerBook")
-                this.session = new PeerbookSession(this.fp)
+                this.notify("🎌  PeerBook")
+                this.session = new PeerbookSession(this.fp, this.t7.pb)
             }
             else {
                 if (this.tryWebexec) {
-                    this.notify("&#127884 webexec server")
+                    this.notify("🎌  webexec server")
                     this.session = new HTTPWebRTCSession(this.fp, this.addr)
                 } else {
                     this.notify("Starting SSH session")
-                    this.session = new SSHSession(
-                        this.addr, this.username, this.pass)
+                    this.session = new SSHSession(this.addr, this.username, this.pass)
                     // next time go back to trying webexec
                     this.tryWebexec = true
                 }
@@ -620,5 +633,66 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         }
         this.t7.log("opening session")
         this.session.connect(this.marker)
+    }
+    load() {
+        this.t7.log("loading gate")
+        this.session.getPayload().then(layout => this.setLayout(layout))
+    }
+    CLIConnect() {
+        this.connect(() => {
+            if (!this.name.startsWith("temp")) {
+                this.load()
+                return
+            }
+            const saveForm = new Form([{
+                prompt: "Save gate?",
+                default: "y",
+                values: ["y", "n"]
+            } ])
+            saveForm.start(this.map.t0).then(res => {
+                if (res[0] == "y") {
+                    const validated = this.t7.validateHostName(this.addr)
+                    const fields: Fields = [{
+                        prompt: "Enter name",
+                        validator: (a) => this.t7.validateHostName(a),
+                    }]
+                    if (!validated)
+                        fields[0].default = this.addr
+                    const nameForm = new Form(fields)
+                    nameForm.start(this.map.t0).then(res => {
+                        const name = res[0]
+                        this.name = name
+                        this.nameE = this.map.add(this)
+                        this.store = true
+                        this.t7.storeGates()
+                        this.map.showLog(false)
+                        this.load()
+                    })
+                } else {
+                    this.t7.clear()
+                    this.load()
+                    this.delete()
+                }
+            })
+        })
+    }
+	async retryForm(retry: () => void, cancel: () => void) {
+		const retryForm = new Form([{
+			prompt: "Retry connection?",
+			values: ["y", "n"],
+			default: "y"
+		}])
+		const ans = (await retryForm.start(this.map.t0))[0]
+		if (ans == "y")
+			retry()
+		else
+			cancel()
+	}
+    get session() {
+        return this._session
+    }
+    set session(s: Session) {
+        this._session = s
+        this.t7.map.update(this)
     }
 }

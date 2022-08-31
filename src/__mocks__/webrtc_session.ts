@@ -1,3 +1,4 @@
+import { Failure } from "../session"
 import { Session, Channel, State, CallbackType } from "../session.ts"
 
 const returnLater = (ret: unknown) => 
@@ -18,10 +19,13 @@ class MockChannel implements Channel {
 export class HTTPWebRTCSession implements Session {
     onStateChange: (state: State) => void
     onPayloadUpdate: (payload: string) => void
+    static fail = false
     constructor(address: string, username: string, password: string, port?=22) {
         console.log("New seesion", address, username, password, port)
     }
-    connect = vi.fn(() => setTimeout(() => this.onStateChange("connected"), 0))
+    connect = vi.fn(() => setTimeout(() =>
+        HTTPWebRTCSession.fail ? this.onStateChange("failed", Failure.TimedOut)
+            : this.onStateChange("connected"), 0))
     openChannel = vi.fn(
         (cmd: string, parent: ChannelID, sx?: number, sy?: number) => // eslint-disable-line
         new Promise(resolve => {

@@ -1,7 +1,7 @@
-import { BaseSession, BaseChannel, Channel, ChannelID, CallbackType, Failure }  from './session' 
 import { Http } from '@capacitor-community/http';
+import { BaseChannel, BaseSession, CallbackType, Channel, ChannelID, Failure } from './session';
+import { PeerbookConnection } from './peerbook'
 
-const TIMEOUT = 5000
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
 
 export class WebRTCChannel extends BaseChannel {
@@ -10,7 +10,7 @@ export class WebRTCChannel extends BaseChannel {
     id: number
     createdOn: number
     onMessage : CallbackType
-    constructor(session: PeerbookSession,
+    constructor(session: BaseSession,
                 id: number,
                 dc: RTCDataChannel) {
         super()
@@ -90,23 +90,11 @@ abstract class WebRTCSession extends BaseSession {
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
             return
     }
-    /*
-     * disengagePC silently removes all event handler from the peer connections
-     */
-    disengagePC() {
-        if (this.pc != null) {
-            this.pc.onconnectionstatechange = undefined
-            this.pc.onmessage = undefined
-            this.pc.onnegotiationneeded = undefined
-            this.pc.close()
-            this.pc = null
-        }
-    }
     async connect(marker=-1) {
         console.log("in connect")
         this.startWatchdog()
 
-        if ((!this.t7.iceServers) && (!this.t7.conf.peerbook.insecure)) {
+        if ((!this.t7.iceServers) && (!this.t7.conf.peerbook?.insecure)) {
             try {
                 this.t7.iceServers = await this.getIceServers()
             } catch(e) {
@@ -215,7 +203,7 @@ abstract class WebRTCSession extends BaseSession {
                     args: { id: cmdorid }
                 }, Function.prototype(), Function.prototype())
             }
-            const watchdog = setTimeout(() => reject("timeout"), TIMEOUT)
+            const watchdog = setTimeout(() => reject("timeout"), terminal7.conf.net.timeout)
             this.pendingChannels[msgID] = (dc: RTCDataChannel, id: ChannelID) => {
                 clearTimeout(watchdog)
                 const channel = this.onDCOpened(dc, id)
@@ -329,14 +317,27 @@ abstract class WebRTCSession extends BaseSession {
                     args: null
                 }, (payload) => {
                 this.t7.log("got a marker", this.lastMarker, payload)
-                this.disengagePC()
+                this.close()
                 resolve(payload)
             }, reject)
         })
     }
+    close(): void {
+        if (this.pc != null) {
+            this.pc.onconnectionstatechange = undefined
+            this.pc.onnegotiationneeded = undefined
+            this.pc.close()
+            this.pc = null
+        }
+    }
 }
 
 export class PeerbookSession extends WebRTCSession {
+    pb: PeerbookConnection
+    constructor(fp: string, pb: PeerbookConnection) {
+        super(fp)
+        this.pb = pb
+    }
     getIceServers() {
         return new Promise((resolve, reject) => {
             const ctrl = new AbortController(),
@@ -366,7 +367,7 @@ export class PeerbookSession extends WebRTCSession {
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate) {
-            this.t7.pbSend({target: this.fp, candidate: ev.candidate})
+            this.pb.send({target: this.fp, candidate: ev.candidate})
         }
     }
     onNegotiationNeeded(e) {
@@ -375,7 +376,7 @@ export class PeerbookSession extends WebRTCSession {
             const offer = btoa(JSON.stringify(d))
             this.pc.setLocalDescription(d)
             this.t7.log("got offer", offer)
-            this.t7.pbSend({target: this.fp, offer: offer})
+            this.pb.send({target: this.fp, offer: offer})
         })
     }
     peerAnswer(offer) {
@@ -400,10 +401,6 @@ export class HTTPWebRTCSession extends WebRTCSession {
     address: string
     fetchTimeout: number
 
-    constructor(fp: string, address?: string) {
-        super(fp, address)
-        this.fetchTimeout = 500
-    }
     onNegotiationNeeded(e) {
         this.t7.log("on negotiation needed", e)
         this.pc.createOffer().then(offer => {
@@ -444,7 +441,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
                     this.clearWatchdog()
                     console.log("POST to /connect failed", error)
                     if (error.message == 'unauthorized')  {
-                        this.disengagePC()
+                        this.close()
                         this.fail(Failure.Unauthorized)
                     // TODO: the next line is probably wrong
                     } else

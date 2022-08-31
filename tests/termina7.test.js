@@ -8,12 +8,17 @@
 import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
 import { Gate } from '../src/gate'
-import { Terminal7Mock } from './infra.ts'
+import { Terminal7Mock, sleep } from './infra'
 import { assert } from "chai"
 import { Storage } from '@capacitor/storage'
+import { Terminal } from '@tuzig/xterm'
+import { SSHSession } from '../src/ssh_session'
+import { expect, vi } from 'vitest'
+import { HTTPWebRTCSession } from '../src/webrtc_session'
 
 vi.mock('@tuzig/xterm')
 vi.mock('../src/ssh_session.ts')
+vi.mock('../src/webrtc_session.ts')
 
 describe("terminal7", function() {
     var t, e
@@ -23,9 +28,6 @@ describe("terminal7", function() {
     beforeEach(async () => {
         await Storage.clear()
         console.log("before each")
-        Gate.prototype.askPass = function () {
-            this.completeConnect("BADWOLF")
-        }
         t = new Terminal7Mock()
         e = document.getElementById("t7")
         window.terminal7=t
@@ -426,6 +428,46 @@ describe("terminal7", function() {
             expect(p3.sy).to.equal(0.2)
             expect(p4.sy).to.equal(0.2)
             expect(p4.yoff+p4.sy).to.be.closeTo(p2.yoff, 0.000001)
+        })
+    })
+    describe("gate", () => {
+        it("can open connection form without SSH", async () => {
+            const t0 = new Terminal()
+            t.map.t0 = t0
+            t.connect()
+            t0.pressKey("Enter")
+            await sleep(10)
+            t0.pressKey("1")
+            t0.pressKey("Enter")
+            await sleep(100)
+            expect(t0.out).toMatch("webexec")
+            expect(t0.out).toMatch("Connected")
+        })
+        it("can connect to SSH through form", async () => {
+            const t0 = new Terminal()
+            t.map.t0 = t0
+            HTTPWebRTCSession.fail = true
+			globalThis.webkit = { messageHandlers: { bridge: 1 } } // mock ios
+            t.connect()
+            t0.pressKey("Enter")
+            await sleep(10)
+            t0.pressKey("2")
+            t0.pressKey("Enter")
+            await sleep(100)
+            console.log("t0.out:", t0.out)
+            expect(t0.out).toMatch("webexec")
+            expect(t0.out).toMatch("FAILED: Timeout")
+            expect(t0.out).toMatch("Trying SSH")
+            expect(t0.out).toMatch("Username:")
+            await sleep(10)
+            t0.pressKey("a")
+            t0.pressKey("Enter")
+            t0.pressKey("a")
+            t0.pressKey("Enter")
+            await sleep(10)
+            expect(t0.out).toMatch("Username: a")
+            expect(t0.out).toMatch("Password: \n")
+            expect(t0.out).toMatch("Save gate?")
         })
     })
 })

@@ -7,9 +7,8 @@
  *  License: GPLv3
  */
 import { Gate } from './gate.ts'
-import { Window } from './window.js'
+import { T7Map } from './map.ts'
 import { CyclicArray } from './cyclic.js'
-import * as Hammer from 'hammerjs'
 import * as TOML from '@tuzig/toml'
 import { imageMapResizer } from './imageMapResizer.js'
 import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
@@ -24,11 +23,10 @@ import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
-import { Device } from '@capacitor/device'
-import { Form, openFormsTerminal } from './form'
+import { Form } from './form'
+import { PeerbookConnection } from './peerbook'
 
 
-var PBPending = []
 
 const DEFAULT_DOTFILE = `[theme]
 foreground = "#00FAFA"
@@ -62,9 +60,7 @@ export class Terminal7 {
      */
     constructor(settings) {
         settings = settings || {}
-        this.gates = []
-        // peerbook gats are a map of fingerprints to gates
-        this.PBGates = new Map()
+        this.gates = new Map()
         this.cells = []
         this.timeouts = []
         this.activeG = null
@@ -77,10 +73,10 @@ export class Terminal7 {
         this.flashTimer = null
         this.netStatus = null
         this.ws = null
-        this.pbSendTask = null
         this.logBuffer = CyclicArray(settings.logLines || 101)
         this.zoomedE = null
         this.pendingPanes = {}
+        this.pb = null
     }
     showKeyHelp () {
         if (Date.now() - this.metaPressStart > 987) {
@@ -114,84 +110,51 @@ export class Terminal7 {
             d = TOML.parse(DEFAULT_DOTFILE)
             this.run(() =>
                 this.notify(
-                    `Using default conf as parsing the dotfile failed:<br>${err}`, 
+                    `Using default conf as parsing the dotfile failed:\n ${err}`, 
                 10))
 
         }
         this.loadConf(d)
 
+        this.map = new T7Map()
+        this.map.refresh()
+
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",
-                    ev =>  {
+                    () =>  {
                         if (this.activeG)
                             this.activeG.activeW.activeP.close()})
-        document.getElementById("home-button")
-                .addEventListener("click", ev => this.goHome())
+        document.getElementById("map-button")
+                .addEventListener("click", () => this.goHome())
         document.getElementById("log-button")
-                .addEventListener("click", ev => this.logDisplay())
+                .addEventListener("click", () => this.map.showLog())
         document.getElementById("search-button")
-                .addEventListener("click", ev => 
+                .addEventListener("click", () => 
                    this.activeG && this.activeG.activeW.activeP.toggleSearch())
         document.getElementById("help-gate")
-                .addEventListener("click", ev => this.toggleHelp())
+                .addEventListener("click", () => this.toggleHelp())
         document.getElementById("help-button")
-                .addEventListener("click", ev => this.toggleHelp())
-        document.getElementById("refresh")
-                .addEventListener("click", ev => this.pbVerify())
+                .addEventListener("click", () => this.toggleHelp())
         document.querySelectorAll("#help-copymode, #keys-help").forEach(e => 
-                e.addEventListener("click", ev => this.clear()))
+                e.addEventListener("click", () => this.clear()))
         document.getElementById("divide-h")
-                .addEventListener("click", ev =>  {
+                .addEventListener("click", () =>  {
                     if (this.activeG && this.activeG.activeW.activeP.sy >= 0.04)
                         this.activeG.activeW.activeP.split("rightleft", 0.5)})
         document.getElementById("divide-v")
-                .addEventListener("click", ev =>  {
+                .addEventListener("click", () =>  {
                     if (this.activeG && this.activeG.activeW.activeP.sx >= 0.04)
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
-        let addHost = document.getElementById("add-host")
-        document.getElementById('add-static-host').addEventListener(
+        document.getElementById('add-gate').addEventListener(
             'click', async () => {
-                this.logDisplay(false)
-                if (addHost.classList.contains('hidden')) {
-                    const fp = await this.getFingerprint(),
-                        rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${fp}" >> ~/.config/webexec/authorized_fingerprints`
-                    addHost.classList.remove("hidden")
-                    const e = addHost.querySelector(".terminal-container")
-                    const t = openFormsTerminal(e)
-                    const f = new Form([
-                        { prompt: "Name", validator: Gate.validateHostName },
-                        { prompt: "Hostname" },
-                        { prompt: "Username" },
-                        { prompt: "Remember hostname", default: "y", values: ["y", "n"] },
-                        {
-                            prompt: `\x1Bc\n  To use WebRTC the server needs webexec:\n\n\x1B[1m${rc}\x1B[0m\n\n  Copy to clipboard?`,
-                            validator: v => {
-                                if (v == "y")
-                                    Clipboard.write({ string: rc })
-                                return ''
-                            },
-                            default: "y"
-                        }
-                    ])
-                    f.start(t).then(results => {
-                        const gate = this.addGate({
-                            name: results[0], addr: results[1],
-                            username: results[2],
-                            store: results[3] == "y"
-                        })
-                        if (results[3] == "y")
-                            this.storeGates()
-                        this.clear()
-                        if (this.netStatus && this.netStatus.connected)
-                            gate.connect()
-                    }).catch(() => this.clear())
-                }
+                this.map.showLog(true)
+                if (Form.activeForm)
+                    this.map.t0.focus()
+                else
+                    this.connect()
             })
         // hide the modal on xmark click
-        addHost.querySelector(".close").addEventListener('click',  () =>  {
-            this.clear()
-        })
         // Handle network events for the indicator
         Network.addListener('networkStatusChange', s => 
             this.updateNetworkStatus(s))
@@ -199,13 +162,6 @@ export class Terminal7 {
         // setting up edit host events
         document.getElementById("edit-unverified-pbhost").addEventListener(
             "click", () => this.clear())
-        let editHost = document.getElementById("edit-host")
-        editHost.querySelector(".close").addEventListener('click',  () =>
-            terminal7.clear())
-        editHost.querySelector(".trash").addEventListener('click',  () => {
-            editHost.gate.delete()
-            terminal7.clear()
-        })
         // add webexec installation instructions
         const fp = await this.getFingerprint(),
             rc = `bash -c "$(curl -sL https://get.webexec.sh)"
@@ -223,21 +179,19 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             })
 
         })
-        // setting up reset host event
-        let resetHost = document.getElementById("reset-host")
-        resetHost.querySelector("form").addEventListener('submit', ev => {
-            ev.preventDefault()
-            editHost.gate.restartServer()
-        })
-        resetHost.querySelector(".close").addEventListener('click',  ev =>
-            ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
         // setting up reset cert events
         let resetCert = document.getElementById("reset-cert")
         resetCert.querySelector(".reset").addEventListener('click',  ev => {
             openDB("t7", 1).then(db => {
                 let tx = db.transaction("certificates", "readwrite"),
                     store = tx.objectStore("certificates")
-                store.clear().then(() => this.pbVerify())
+                store.clear().then(() => {
+                    if (this.pb) {
+                        this.pb.close()
+                        this.pb = null
+                    }
+                    this.pbConnect()
+                })
             })
             ev.target.parentNode.parentNode.classList.add("hidden")
 
@@ -276,13 +230,17 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 g.store = true
                 this.addGate(g).e.classList.add("hidden")
             })
+            this.map.refresh()
         }
         if (Capacitor.isNativePlatform())  {
             App.addListener('appStateChange', state => {
                 if (!state.isActive) {
                     // We're getting suspended. disengage.
-                    this.notify("Benched")
-                    this.disengage().then(() => this.clearTimeouts())
+                    this.pb.close()
+                    this.pb = null
+                    this.disengage().then(() => {
+                        this.clearTimeouts()
+                    })
                 } else {
                     // We're back! ensure we have the latest network status and 
                     // reconnect to the active gate
@@ -292,9 +250,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 }
             })
         }
-        document.getElementById("log").addEventListener("click",
-            () => this.logDisplay(false))
 
+        document.getElementById("log").addEventListener("click", () =>
+            this.map.showLog())
         // settings button and modal
         var modal   = document.getElementById("settings-modal")
         modal.addEventListener('click',
@@ -306,15 +264,15 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         document.getElementById("dotfile-button")
                 .addEventListener("click", ev => this.toggleSettings(ev))
         modal.querySelector(".close").addEventListener('click',
-            ev => {
+            () => {
                 document.getElementById("dotfile-button").classList.remove("on")
                 this.clear()
             }
         )
         modal.querySelector(".save").addEventListener('click',
-            ev => this.wqConf())
+            () => this.wqConf())
         modal.querySelector(".copy").addEventListener('click',
-            ev => {
+            () => {
                 var area = document.getElementById("edit-conf")
                 this.confEditor.save()
                 Clipboard.write({string: area.value})
@@ -324,13 +282,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         modal = document.getElementById("peerbook-modal")
         modal.querySelector(".close").addEventListener('click',
             () => this.clear() )
-        document.getElementById('add-peerbook').addEventListener(
-            'click', () => {
-                this.logDisplay(false)
-                // modal.querySelector("form").reset()
-                modal.classList.remove("hidden")
-                this.peerbookForm()
-            })
         Network.getStatus().then(s => {
             this.updateNetworkStatus(s)
             if (!s.connected) {
@@ -372,20 +323,10 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     reject()
                 else {
                     const state = JSON.parse(value),
-                          fp = state.fp,
-                          name = state.name
+                          id = state.id
                     let gate
 
-                    if (fp) {
-                        gate = this.PBGates.get(fp)
-                        if (!gate) {
-                            gate = new Gate({fp: fp, name: name})
-                            this.PBGates.set(fp, gate)
-                            gate.open(this.e)
-                        }
-                    } else
-                        gate = this.gates.find(gate => gate.name == name)
-
+                    gate = this.gates.get(id)
                     if (!gate) {
                         console.log("Invalid restore state. Starting fresh", state)
                         this.notify("Invalid restore state. Starting fresh")
@@ -402,10 +343,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         })
     }
     async peerbookForm() {
-        var e   = document.getElementById("peerbook-modal").querySelector(".terminal-container"),
-            dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
+        let dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
 
-        const t = openFormsTerminal(e)
         const f = new Form([
             {
                 prompt: "email (will only be used to manage your peers)",
@@ -413,7 +352,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             },
             { prompt: "Peer's name" }
         ])
-        f.start(t).then(results => {
+        f.start(this.map.t0).then(results => {
             const email = results[0],
                 peername = results[1]
 
@@ -424,59 +363,30 @@ peer_name = "${peername}"\n`
 
             Storage.set({ key: "dotfile", value: dotfile })
             this.loadConf(TOML.parse(dotfile))
-            e.classList.add("hidden")
             this.notify("Your email was added to the dotfile")
             this.clear()
-        }).catch(() => this.clear())
+        })
     }
-    pbVerify() {
-        return new Promise((resolve, reject) => {
-           var email = this.conf.peerbook.email,
-                insecure = this.conf.peerbook.insecure,
-                host = this.conf.net.peerbook
-
-            if ((typeof host != "string") || (typeof email != "string") || (email == "")) {
+    pbConnect() {
+        return new Promise((resolve) => {
+            if (!this.conf.peerbook || !this.conf.peerbook.email || 
+               (this.pb  && this.pb.isOpen())) {
                 resolve()
                 return
             }
-            this.notify("Refreshing \uD83D\uDCD6")
-
             this.getFingerprint().then(fp => {
-                const schema = insecure?"http":"https",
-                      url = `${schema}://${host}/verify`
-                console.log("fetching from " + url)
-                fetch(url,  {
-                    headers: {"Content-Type": "application/json"},
-                    method: 'POST',
-                    body: JSON.stringify({kind: "terminal7",
-                        name: this.conf.peerbook.peer_name,
-                        email: email,
-                        fp: fp
-                    })
-                }).then(async response => {
-                    console.log("got response", response.status)
-                    if (response.ok)
-                        return response.json()
-                    if (response.status == 409) {
-                        var e = document.getElementById("reset-cert"),
-                            pbe = document.getElementById("reset-cert-error")
-                        pbe.innerHTML = response.data 
-                        e.classList.remove("hidden")
-                    }
-                    response.body.getReader().read().then(({done, value}) => {
-                        this.notify(
-                            "&#x1F4D6;&nbsp;"+String.fromCharCode(...value))
-                    })
-                    reject(new Error(`verification failed`))
-                }).then(m => {
-                    this.onPBMessage(m)
-                    resolve()
-
-                }).catch(e => { reject(e) })
-            }).catch(e => console.log("Failed to get FP" + e))
+                this.pb = new PeerbookConnection(fp,
+                    this.conf.peerbook.email,
+                    this.conf.peerbook.peer_name,
+                    this.conf.net.peerbook,
+                    this.conf.peerbook.insecure
+                )
+                this.pb.onUpdate = (m) => this.onPBMessage(m)
+                this.pb.connect().then(resolve)
+            })
         })
     }
-    async toggleSettings(ev) {
+    async toggleSettings() {
         var modal   = document.getElementById("settings-modal"),
             button  = document.getElementById("dotfile-button"),
             area    =  document.getElementById("edit-conf"),
@@ -522,14 +432,17 @@ peer_name = "${peername}"\n`
         document.getElementById("settings-modal").classList.add("hidden")
         this.confEditor.toTextArea()
         this.confEditor = null
-        this.pbVerify()
-
+        if (this.pb &&
+            ((this.pb.host != this.conf.net.peerbook) 
+             || (this.pb.peerName != this.conf.peerbook.peer_name)
+             || (this.pb.insecure != this.conf.peerbook.insecure)
+             || (this.pb.email != this.conf.peerbook.email))
+        )
+        this.pb.close()
+        this.pbConnect()
+		this.pb = null
     }
     catchFingers() {
-        var start,
-            last,
-            firstPointer = null,
-            gesture = null
         this.e.addEventListener("pointerdown", ev => this.onPointerDown(ev))
         this.e.addEventListener("pointerup", ev => this.onPointerUp(ev))
         this.e.addEventListener("pointercancel", ev => this.onPointerCancel(ev))
@@ -540,52 +453,50 @@ peer_name = "${peername}"\n`
      * the function ensures the gate has a unique name adds the gate to
      * the `gates` property, stores and returns it.
      */
-    addGate(props) {
-        let out = [],
-            p = props || {},
-            addr = p.addr,
-            nameFound = false
+    addGate(props, onMap = true) {
+        let p = props || {},
+            addr = p.addr
         // add the id
-        p.id = this.gates.length
+        p.id = addr
         p.verified = false
 
         let g = new Gate(p)
-        this.gates.push(g)
+        this.gates.set(p.id, g)
         g.open(this.e)
+        if (onMap)
+            g.nameE = this.map.add(g)
         return g
     }
     async storeGates() { 
         let out = []
-        this.gates.forEach((h) => {
-            if (h.store) {
+        this.gates.forEach(g => {
+            if (g.store) {
                 let ws = []
-                h.windows.forEach((w) => ws.push(w.id))
-                out.push({id: h.id, addr: h.addr, user: h.user, secret: h.secret,
-                    name:h.name, windows: ws, store: true, verified: h.verified,
-                    username:h.username})
+                g.windows.forEach((w) => ws.push(w.id))
+                out.push({id: g.id, addr: g.addr, user: g.user, secret: g.secret,
+                    name:g.name, windows: ws, store: true, verified: g.verified,
+                    username:g.username})
             }
         })
         this.log("Storing gates:", out)
         await Storage.set({key: 'gates', value: JSON.stringify(out)})
+        this.map.refresh()
     }
     clear() {
         this.e.querySelectorAll('.temporal').forEach(e => e.remove())
         this.e.querySelectorAll('.modal').forEach(e => {
             if (!e.classList.contains("non-clearable"))
                 e.classList.add("hidden")
-            const terminalContainer = e.querySelector(".terminal-container")
-            if (terminalContainer)
-                terminalContainer.innerHTML = ''
         })
-        this.logDisplay(false)
+        this.map.showLog(false)
         this.focus()
         this.longPressGate = null
+        Form.activeForm = false
     }
     goHome() {
         Storage.remove({key: "last_state"}) 
-        let s = document.getElementById('home-button'),
-            h = document.getElementById('home')
-        s.classList.add('on')
+        const s = document.getElementById('map-button')
+        s.classList.add('off')
         if (this.activeG) {
             this.activeG.e.classList.add("hidden")
             this.activeG = null
@@ -594,57 +505,30 @@ peer_name = "${peername}"\n`
         this.clear()
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.add("off"))
-        window.location.href = "#home"
+        window.location.href = "#map"
         document.title = "Terminal 7"
-    }
-    /* 
-     * Terminal7.logDisplay display or hides the notifications.
-     * if the parameters in udefined the function toggles the displays
-     */
-    logDisplay(show) {
-        let e = document.getElementById("log")
-        if (show === undefined)
-            // if show is undefined toggle current state
-            show = !e.classList.contains("show")
-        if (show) {
-            e.classList.add("show")
-            document.getElementById("log-button")
-                .classList.add("on")
-        } else {
-            e.classList.remove("show")
-            document.getElementById("log-button")
-                .classList.remove("on")
-        }
-        this.focus()
+        document.getElementById('log').classList.remove('hidden')
     }
     /*
      * onDisconnect is called when a gate disconnects.
      */
-    onDisconnect(gate) {
+    async onDisconnect(gate) {
         if (!this.netStatus.connected || 
             ((this.activeG != null) && (gate != this.activeG)))
             return
-        let e = document.getElementById("disconnect-template")
-        e = e.content.cloneNode(true)
-        this.clear()
-        // clear pending messages to let the user start fresh
-        this.pendingCDCMsgs = []
-        e.querySelector("h1").textContent =
-            `${gate.name} communication failure`
-        e.querySelector("form").addEventListener('submit', ev => {
-            ev.target.closest(".modal").remove()
-            gate.clear()
+        
+        const reconnectForm = new Form([
+            { prompt: "Reconnect" },
+            { prompt: "Close" }
+        ])
+        const res = await reconnectForm.menu(this.map.t0, "What's next?")
+        if (res == "Reconnect") {
             gate.session = null
-            gate.connect()
-            ev.stopPropagation()
-            ev.preventDefault()
-        })
-        e.querySelector(".close").addEventListener('click', ev => {
-            ev.target.closest(".modal").remove()
+            gate.connect(gate.onConnected)
+        } else {
             gate.clear()
             this.goHome()
-        })
-        this.e.appendChild(e)
+        }
     }
     /*
      * focus restores the focus to the ative pane, if there is one
@@ -668,14 +552,14 @@ peer_name = "${peername}"\n`
             this.clear()
             gate.edit()
         })
-        e.querySelector(".close").addEventListener('click', ev => {
+        e.querySelector(".close").addEventListener('click', () => {
             if (gate) {
                 gate.disengage()
                 gate.clear()
             }
             this.goHome()
         })
-        e.querySelector(".reconnect").addEventListener('click', ev => {
+        e.querySelector(".reconnect").addEventListener('click', () => {
             gate.reset()
         })
         e.querySelector(".server-error").innerHTML = error.message
@@ -684,17 +568,12 @@ peer_name = "${peername}"\n`
     /*
      * noitify adds a message to the teminal7 notice board
      */
-    notify(message) {    
-        let ul = document.getElementById("log-msgs"),
-            li = document.createElement("li"),
-            d = new Date(),
+    notify(message) {
+        const d = new Date(),
             t = formatDate(d, "HH:mm:ss.fff")
-
-        let lines = ul.querySelectorAll('li')
-        li.innerHTML = `<time>${t}</time><p>${message}</p>`
-        li.classList = "log-msg"
-        ul.appendChild(li)
-        this.logDisplay(true)
+        // TODO: add color based on level and ttl
+        this.map.t0.writeln(` \x1B[2m${t}\x1B[0m ${message}`)
+        this.map.showLog(true)
     }
     run(cb, delay) {
         var i = this.timeouts.length,
@@ -713,19 +592,10 @@ peer_name = "${peername}"\n`
      * disengage gets each active gate to disengae
      */
     disengage() {
-        return new Promise((resolve, reject) => {
+        return new Promise(resolve => {
             var count = 0
-            this.gates.forEach(g => {
-                if (g.boarding) {
-                    count++
-                    g.disengage().then(() => {
-                        g.boarding = false
-                        count--
-                    })
-                }
-            })
-            if (this.PBGates.size > 0)
-                this.PBGates.forEach((fp, g) => {
+            if (this.gates.size > 0)
+                this.gates.forEach(g => {
                     if (g.boarding) {
                         count++
                         g.disengage().then(() => {
@@ -757,14 +627,14 @@ peer_name = "${peername}"\n`
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
             off.add("hidden")
+            this.pbConnect()
             const gate = this.activeG
             if (gate)
                 gate.connect()
-            else 
-                this.pbVerify()
         } else {
             off.remove("hidden")
             this.gates.forEach(g => g.session = null)
+            this.pb = null
         }
     }
     loadConf(conf) {
@@ -789,18 +659,6 @@ peer_name = "${peername}"\n`
         this.conf.net.timeout = this.conf.net.timeout || 3000
         this.conf.net.httpTimeout = this.conf.net.http_timeout || 1000
         this.conf.net.retries = this.conf.net.retries || 3
-        var apb = document.getElementById("add-peerbook"),
-            rpb = document.getElementById("refresh")
-        if (!this.conf.peerbook) {
-            apb.style.removeProperty("display")
-            rpb.style.display = "none"
-            this.conf.peerbook = {}
-        } else {
-            rpb.style.removeProperty("display")
-            apb.style.display = "none"
-        }
-        if (!this.conf.peerbook.peer_name)
-            this.conf.peerbook.peer_name = "John Doe"
 /*
             Device.getInfo()
             .then(i =>
@@ -908,61 +766,12 @@ peer_name = "${peername}"\n`
             this.focus()
         // TODO: When at home remove the "on" from the home butto
     }
-    pbSend(m) {
-        // null message are used to trigger connection, ignore them
-        if (m != null) {
-            if (this.ws != null && this.ws.readyState == WebSocket.OPEN) {
-                this.log("sending to pb:", m)
-                this.ws.send(JSON.stringify(m))
-                return
-            }
-            PBPending.push(m)
-        }
-        this.wsConnect()
-    }
-    wsConnect() {
-        var email = this.conf.peerbook.email
-        if ((this.ws != null) || ( typeof email != "string")) return
-        this.getFingerprint().then(fp => {
-            const host = this.conf.net.peerbook,
-                  name = this.conf.peerbook.peer_name,
-                  insecure = this.conf.peerbook.insecure,
-                  schema = insecure?"ws":"wss",
-                  url = encodeURI(`${schema}://${host}/ws?fp=${fp}&name=${name}&kind=terminal7&email=${email}`),
-                  ws = new WebSocket(url)
-            this.ws = ws
-            ws.onmessage = ev => {
-                var m = JSON.parse(ev.data)
-                this.log("got ws message", m)
-                this.onPBMessage(m)
-            }
-            ws.onerror = ev => {
-                // TODO: Add some info avour the error
-                this.notify("\uD83D\uDCD6 WebSocket Error")
-            }
-            ws.onclose = ev => {
-                ws.onclose = undefined
-                ws.onerror = undefined
-                ws.onmessage = undefined
-                this.ws = null
-
-            }
-            ws.onopen = ev => {
-                this.log("on open ws", ev)
-                if (this.pbSendTask == null)
-                    this.pbSendTask = this.run(() => {
-                        PBPending.forEach(m => {
-                            this.log("sending ", m)
-                            this.ws.send(JSON.stringify(m))})
-                        this.pbSendTask = null
-                        PBPending = []
-                    }, 10)
-            }
-        })
-    }
-    onPBMessage(m) {
+    onPBMessage(data) {
+        this.log("got ws message", data)
+        const  m = JSON.parse(data)
+                
         if (m["code"] !== undefined) {
-            this.notify(`\uD83D\uDCD6 ${m["text"]}`)
+            this.notify(`\uD83D\uDCD6  ${m["text"]}`)
             return
         }
         if (m["peers"] !== undefined) {
@@ -974,13 +783,13 @@ peer_name = "${peername}"\n`
                 this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
             return
         }
-        var g = this.PBGates.get(m.source_fp)
-        if (typeof g != "object") {
-            this.log("received bad gate", m)
+        var g = this.gates.get(m.source_fp)
+        if (!g)
             return
-        }
-        if (m.peer_update !== undefined) {
+
+        if (m["peer_update"] !== undefined) {
             g.online = m.peer_update.online
+            this.map.update(g)
             return
         }
         if (!g.session) {
@@ -1004,9 +813,7 @@ peer_name = "${peername}"\n`
         this.logBuffer.push(line)
     }
     async dumpLog() {
-        var data = "",
-            suffix = new Date().toISOString().replace(/[^0-9]/g,""),
-            path = `terminal7_${suffix}.log`
+        var data = ""
         while (this.logBuffer.length > 0) {
             data += this.logBuffer.shift() + "\n"
         }
@@ -1025,7 +832,7 @@ peer_name = "${peername}"\n`
         }
         */
     }
-    onPointerCancel(ev) {
+    onPointerCancel() {
         this.pointer0 = null
         this.firstPointer = null
         this.lastT = null
@@ -1037,17 +844,19 @@ peer_name = "${peername}"\n`
         return
     }
     onPointerDown(ev) {
-        let e = ev.target
+        const e = ev.target
+        const gatePad = e.closest(".gate-pad")
         /*
         if ((ev.pointerType == "mouse") && (ev.pressure == 0))
             return
             */
         this.pointer0 = Date.now() 
         this.firstPointer = {pageX: ev.pageX, pageY: ev.pageY}
-        if (e.gate) {
+        if (gatePad) {
+            const gate = gatePad.gate
             if (!this.longPressGate)
-                this.longPressGate = this.run(ev => {
-                    e.gate.edit()
+                this.longPressGate = this.run(() => {
+                    gate.edit()
                 }, this.conf.ui.quickest_press)
         }
         // only dividers know their panes
@@ -1085,11 +894,11 @@ peer_name = "${peername}"\n`
     }
     onPointerUp(ev) {
         let e = ev.target,
-            hosts = e.closest(".hosts button")
+            gatePad = e.closest(".gate-pad")
 
         if (!this.pointer0)
             return
-        if (hosts) {
+        if (gatePad) {
             let deltaT = Date.now() - this.pointer0
             clearTimeout(this.longPressGate)
             this.longPressGate = null
@@ -1098,12 +907,13 @@ peer_name = "${peername}"\n`
                 ev.preventDefault()
             } else {
                 // that's for the refresh and static host add
-                if (!e.gate)
+                const gate = gatePad.gate
+                if (!gate)
                     return
-                if (!e.gate.fp || e.gate.verified && e.gate.online)
-                    e.gate.connect()
+                if (!gate.fp || gate.verified && gate.online)
+                    gate.connect()
                 else
-                    e.gate.edit()
+                    gate.edit()
             }
         } else if (this.gesture) {
             this.activeG.sendState()
@@ -1134,7 +944,8 @@ peer_name = "${peername}"\n`
                     // t.focus()
                 }
             }
-        }        this.pointer0 = null
+        }
+        this.pointer0 = null
         this.firstPointer = null
         this.gesture = null
     }
@@ -1171,7 +982,7 @@ peer_name = "${peername}"\n`
             return
         var modal = document.getElementById("onboarding")
         modal.classList.remove("hidden")
-        modal.querySelector(".onmobile").addEventListener('click', ev => {
+        modal.querySelector(".onmobile").addEventListener('click', () => {
             localStorage.setItem("onboard", "yep")
             modal = document.getElementById("mobile-instructions")
             modal.classList.remove("hidden")
@@ -1185,7 +996,7 @@ peer_name = "${peername}"\n`
                 ev.preventDefault()
             })
         })
-        modal.querySelector(".ongpos").addEventListener('click', ev => {
+        modal.querySelector(".ongpos").addEventListener('click', () => {
             localStorage.setItem("onboard", "yep")
             var gate = this.addGate({
                 addr: "localhost",
@@ -1214,17 +1025,68 @@ peer_name = "${peername}"\n`
     }
     syncPBPeers(peers) {
         peers.forEach(p => {
-            var g = this.PBGates.get(p.fp)
+            if (p.kind != "webexec")
+                return
+            var g = this.gates.get(p.fp)
             if (g != undefined) {
                 g.online = p.online
                 g.name = p.name
                 g.verified = p.verified
-                g.updateNameE()
-            } else if (p.kind == "webexec") {
-                let g = new Gate(p)
-                this.PBGates.set(p.fp, g)
+                this.map.update(g)
+            } else {
+                p.id = p.fp
+                g = new Gate(p)
+                this.gates.set(p.fp, g)
+                g.nameE = this.map.add(g)
                 g.open(this.e)
+
             }
         })
+        this.map.refresh()
+    }
+    async connect() {
+        if (!this.conf.peerbook) {
+            const pbForm = new Form([
+                { prompt: "Add static host" },
+                { prompt: "Setup peerbook" }
+            ])
+            let choice = await pbForm.menu(this.map.t0, "What's next?")
+            if (choice == "Setup peerbook") {
+                this.peerbookForm()
+                return
+            }
+        }
+        const f = new Form([
+            { prompt: "Enter destination (ip or domain)" }
+        ])
+        let hostname = (await f.start(this.map.t0))[0]
+        if (this.validateHostAddress(hostname)) {
+            this.map.t0.writeln(`  ${hostname} already exists, connecting...`)
+            this.gates.get(hostname).connect()
+            return
+        }
+        const gate = this.addGate({
+            name: "temp_" + Math.random().toString(16).slice(2), // temp random name
+            addr: hostname,
+            id: hostname
+        }, false)
+        this.map.refresh()
+        gate.CLIConnect()
+    }
+    clearTempGates() {
+        this.gates.forEach(g => {
+            if (g.name.startsWith("temp_"))
+                g.delete()
+        })
+    }
+    validateHostAddress(addr) {
+        return this.gates.has(addr) ? "Host already exists" : ""
+    }
+    validateHostName(name) {
+        for (const [, gate] of this.gates) {
+            if (gate.name == name)
+                return "Name already taken"
+        }
+        return ""
     }
 }

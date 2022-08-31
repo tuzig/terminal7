@@ -11,6 +11,8 @@ import { Cell } from '../src/cell.js'
 import { Terminal7Mock, sleep } from './infra.ts'
 import { Storage } from '@capacitor/storage'
 import { Gate } from '../src/gate.ts'
+import { HTTPWebRTCSession } from '../src/webrtc_session'
+import { Terminal } from '@tuzig/xterm'
 
 vi.mock('@tuzig/xterm')
 vi.mock('../src/webrtc_session.ts')
@@ -27,11 +29,11 @@ describe("gate", () => {
     })
     afterEach(() => {
         t.clearTimeouts()
-        t.gates = []
+        t.gates = new Map()
         t.pendingPanes = {}
     })
     it("starts with no gates", () => {
-        expect(t.gates.length).to.equal(0)
+        expect(t.gates.size).to.equal(0)
     })
     it("s state can be restored", async () => {
         let state = { windows: [
@@ -110,17 +112,16 @@ describe("gate", () => {
         g.edit()
     })
     it("has a unique name", () => {
-        let valid = Gate.validateHostName("foo")
+        let valid = t.validateHostName("foo")
         expect(valid).equal("")
-        t.addGate({name:"foo"})
-        valid = Gate.validateHostName("foo")
+        t.addGate({name:"foo", addr: "foo"})
+        valid = t.validateHostName("foo")
         expect(valid).equal("Name already taken")
     })
     it("can be connected", async () => {
         let g = t.addGate()
         expect(typeof g).toEqual("object")
         g.open(e)
-        g.tryWebexec = false
         g.connect()
         await sleep(500)
         expect(g.boarding).to.equal(true)
@@ -134,4 +135,22 @@ describe("gate", () => {
         expect(panes[0].d).not.toBeNull()
         expect(panes[0].d.resize).toHaveBeenCalledTimes(0)
     })
+	it("remembers username", async () => {
+		let g = t.addGate({name:"foo", addr: "foo", username: "eyal"})
+		g.open(e)
+		HTTPWebRTCSession.fail = true
+		globalThis.webkit = { messageHandlers: { bridge: 1 } } // mock ios
+		let t0 = new Terminal()
+		t.map.t0 = t0
+		g.connect()
+		await sleep(500)
+		expect(t0.out).toMatch("Username [eyal]:")
+		t0.pressKey("Enter")
+		await sleep(10)
+		expect(t0.out).toMatch("Password:")
+		t0.pressKey("a")
+		t0.pressKey("Enter")
+		await sleep(10)
+		expect(t0.out).toMatch("Starting SSH session")
+	})
 })

@@ -4,13 +4,13 @@ export type State = "new" | "connecting" | "connected" | "reconnected" | "discon
 
 // possible reasons for a failure
 export enum Failure {
-    NotImplemented='NotImplemented',
-    WrongPassword='WrongPassword',
+    NotImplemented='Not Implemented',
+    WrongPassword='Wrong Password',
     Unauthorized='Unauthorized',
-    BadMarker='BadMarker',
-    BadRemoteDescription='BadRemoteDescription',
-    NotSupported='NotSupported',
-    TimedOut='TimedOut'
+    BadMarker='Bad Marker',
+    BadRemoteDescription='Bad Remote Description',
+    NotSupported='Not Supported',
+    TimedOut='Timeout'
 }
 
 export interface Event {
@@ -37,7 +37,7 @@ export interface Session {
     // for new channel
     openChannel(cmd: string, parent?: ChannelID, sx?: number, sy?: number):
         Promise<Channel>
-    close(): Promise<void>
+    close(): void
     getPayload(): Promise<string>
     setPayload(payload: string): Promise<void>
     disconnect(): Promise<void>
@@ -74,7 +74,7 @@ export abstract class BaseSession implements Session {
             resolve(null)
         })
     }
-    setPayload(payload: string): Promise<void> {
+    setPayload(): Promise<void> {
         return new Promise((resolve) => { 
             console.log(`ignoring payloads on ${typeof this}`)
             resolve()
@@ -103,10 +103,12 @@ export abstract class BaseSession implements Session {
             this.watchdog = null
         }
     }
+    close() {
+        window.terminal7.log("close session not implmented yet for", typeof(this))
+    }
     // for reconnect
     abstract openChannel(id: ChannelID): Promise<Channel>
     abstract openChannel(cmd: string | ChannelID, parent?: ChannelID, sx?: number, sy?: number):
         Promise<Channel> 
-    abstract close(): Promise<void>
     abstract connect(): void
 }

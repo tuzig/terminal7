@@ -75,7 +75,7 @@ class T7ViewController: CAPBridgeViewController {
         sendMetaKey(key:"-")
     }
     @objc func biggerFont() {
-        sendMetaKey(key:"+")
+        sendMetaKey(key:"=")
     }
 
      override var keyCommands: [UIKeyCommand]? {

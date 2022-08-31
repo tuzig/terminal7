@@ -10,12 +10,12 @@ test.describe('terminal 7session', ()  => {
 
     const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
     const connectGate = async () => {
-        const btns = page.locator('#static-hosts button')
+        const btns = page.locator('#gates button')
         await page.screenshot({ path: `/result/0.png` })
         await expect(btns).toHaveCount(2)
-        await btns.last().dispatchEvent('pointerdown')
+        await btns.first().dispatchEvent('pointerdown')
         await sleep(50)
-        await btns.last().dispatchEvent('pointerup')
+        await btns.first().dispatchEvent('pointerup')
     }
 
     let page: Page,
@@ -105,8 +105,8 @@ pinch_max_y_velocity = 0.1`
         await page.locator('.play-button').click()
         connectGate()
         await sleep(500)
+        await page.screenshot({ path: `/result/2.png` })
         page.locator('.tabbar .reset').click()
-        let notConnected = true
         let i = 0
         while (true) {
             const len = await page.evaluate(async () => window.notifications.length)
@@ -118,6 +118,6 @@ pinch_max_y_velocity = 0.1`
         }
         const nots = await page.evaluate(async () => window.notifications)
         await expect(page.locator('.pane')).toHaveCount(1)
-        await expect(nots.slice(-1)[0]).toEqual("foo: Connected")
+        await expect(nots.slice(-1)[0]).toMatch(/foo.*: Connected/)
     })
 })

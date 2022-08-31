@@ -5,10 +5,10 @@
     <title>Terminal 7</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no,  shrink-to-fit=no" />
     <meta name="description" content="A touchable terminal multiplexer & emulator running over WebRTC">
-    <link rel="icon" href="/public/logo.svg" type="image/svg+xml">
-    <link rel="alternate icon" href="/public/favicon.ico" type="image/png" sizes="48x48 32x32">
-    <link rel="mask-icon" href="/public/logo.svg" color="#271D30">
-    <link rel="apple-touch-icon" href="/public/logo192.png">
+    <link rel="icon" href="/logo.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="/favicon.ico" type="image/png" sizes="48x48 32x32">
+    <link rel="mask-icon" href="/logo.svg" color="#271D30">
+    <link rel="apple-touch-icon" href="/logo192.png">
     <meta name="theme-color" content="#271D30">
     <meta name="apple-touch-fullscreen" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Terminal7" />
@@ -17,59 +17,33 @@
 </head>
 <body>
   <div id="terminal7">
-      <div id="log" class="border">
-          <ul id="log-msgs">
-          </ul>
+      <div id="log">
+          <div> <div id="t0"></div> </div>
       </div>
-      <div id="home">
+      <div id="map">
+          <div class="map-header-wide"></div>
+          <div id="gates">
+              <div class="gate-pad" id="add-gate">
+                  <button type="button" class="text-button">
+                      <i class="f7-icons">plus</i>
+                  </button>
+             </div>
+             <div class="line-break"></div>
+          </div>
           <div id="version">
-              <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md"
+              <h1>Terminal 7</h1>
+              <p><a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md"
                   target="_blank">
                   version 0.21.0
-              </a>
+              </a></p>
           </div>
-          <h2>Destinations</h2>
-          <div id="hosts-container">
-              <div class="hosts" id="static-hosts">
-                  <h3>Static</h3>
-                  <button type="button" class="text-button" id="add-static-host" >
-                      <i class="f7-icons"> plus</i>
-                  </button>
-              </div>
-              <div class="hosts" id="peerbook-hosts">
-                  <h3>PeerBook</h3>
-                  <button type="button" class="text-button" id="add-peerbook" >
-                      <i class="f7-icons"> plus</i>
-                  </button>
-                  <button type="button" class="text-button" id="refresh">
-                      <i class="f7-icons">arrow_2_circlepath</i>
-                  </button>
-              </div>
+          <div id="map-footer">
+              <div class="empty-pad"><div></div></div>
+              <div class="empty-pad"><div></div></div>
+              <div class="empty-pad"><div></div></div>
+              <div class="empty-pad"><div></div></div>
+             <div class="line-break"></div>
           </div>
-      </div>
-      <div id="add-host" class="hidden modal border" >
-          <h2>Connect to Host</h2>
-          <div class="terminal-container"></div>
-          <nav>
-              <button type="button" class="close">
-                  <i class="f7-icons close">xmark</i>
-              </button>
-          </nav>
-      </div>
-      <div id="reset-host" class="hidden modal border" >
-        <form>
-            <p>Reseting our agent on host <code id="rh-address"> </code>
-            (aka <b id="rh-name"></b>) requires your crendetials.
-            </p>
-            <label for="uname">Username</label>
-            <input type="text" placeholder="your system username" name="uname" required>
-            <label for="pass">Password</label>
-            <input type="password" placeholder="your password" name="pass" required>
-            <nav>
-                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
-                <button type="submit"><i class="f7-icons">arrow_2_circlepath</i></button>
-            </nav>
-        </form>
       </div>
       <div id="manual-install" class="hidden modal border">
           <h1 style="margin:1em;">Installation Instructions</h1>
@@ -89,8 +63,8 @@
           <h2 style="margin-top:0.5em"> Thanks for trying Terminal7</h2>
           <p>
                 Terminal7 is a progressive web terminal emulator and multiplexer
-                over WebRTC. Inspired by tmux, Terminal7 is a reincarnation
-                with three novelties:
+                over WebRTC. Inspired by tmux, Terminal7 introduces
+                three novelties:
         </p>
         <div>
         <ul>
@@ -170,7 +144,6 @@
         </p><p>
           Regsiter to get your peerbook and help us test the service: 
         </p>
-        <div class="terminal-container"></div>
           <nav>
               <button type="button" class="close"><i class="f7-icons">
                       xmark</i></button>
@@ -182,14 +155,6 @@
             <nav>
                 <button type="button" class="close"><i class="f7-icons">xmark</i></button>
             </nav>
-      </div>
-      <div id="edit-host" class="hidden modal border" >
-        <h2>Gate Edit</h2>
-          <div class="terminal-container"></div>
-          <nav style="margin: 0 auto;">
-            <button type="button" class="close"><i class="f7-icons">xmark</i></button>
-            <button type="button" class="trash"><i class="f7-icons">bin_xmark</i></button>
-          </nav>
       </div>
       <div id="offline" class="hidden modal border non-clearable" >
           <h1 class="warning">Network is down</h1>
@@ -273,20 +238,9 @@
                 <button type="button" class="reset"><i class="f7-icons">arrow_2_circlepath</i></button>
             </nav>
       </div>
-       <div id="askpass" class="hidden modal border">
-         <form>
-           <h1></h1>
-            <label for="pass">Please enter your password</label>
-            <input type="password" placeholder="your password" name="pass" required>
-            <nav>
-                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
-                <button type="submit"><i class="f7-icons">phone_arrow_up_right</i></button>
-            </nav>
-        </form>
-       </div>
   </div>
   <nav id="navbar" class="bar">
-          <button type="button" id="home-button" class="on"><i class="f7-icons">house</i></button>
+          <button type="button" id="map-button" class="off"><i class="f7-icons">map</i></button>
           <button type="button" id="log-button"><i class="f7-icons">bubble_right</i></button>
           <button type="button" id="trash-button" class="pane-buttons off"><i class="f7-icons">rectangle_fill_badge_xmark</i></button>
           <button type="button" id="divide-h" class="pane-buttons off"><i class="f7-icons">divide</i></button>
@@ -315,16 +269,6 @@
               </button>
           </nav>
        </div>
-    </template>
-    <template id="disconnect-template">
-       <div class="disconnect modal border temporal"><form>
-          <h1>Gate disconnected</h1>
-          <p style="text-align:center;">How would you like to proceed?</p>
-          <nav>
-              <button type="button" class="close"><i class="f7-icons close">xmark</i></button>
-              <button type="submit"><i class="f7-icons reconnect">arrow_2_circlepath</i></button>
-          </nav>
-       </form></div>
     </template>
     <template id="nosignal-template">
         <div class="modal border temporal">
@@ -376,26 +320,6 @@
                   arrow_2_circlepath</i></button>
     </nav>
 </template>
-    <template id="copy-fingerprint-template">
-        <div class="copy-fingerprint modal border" >
-          <h1 class="warning">Unauthorized</h1>
-        <form>
-            <p>We're sorry, but the host at <code class="ct-address"> </code>
-            (aka <b class="ct-name"></b>) refused our fingerprint.
-                To connect copy Terminal7's fingerprint to
-                <b class="ct-confile"> ~/.config/webexec/authorized_fingerprints</b> and try again:
-            </p>
-            <pre>
-            </pre>
-            <nav>
-              <button type="button" class="close"><i class="f7-icons">xmark</i></button>
-              <button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i>&nbsp;&amp;&nbsp;
-                                                 <i class="f7-icons">phone_arrow_up_right</i>
-              </button>
-            </nav>
-        </form>
-      </div>
-    </template>
       <audio autoplay="true" src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU2LjM2LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV6urq6urq6urq6urq6urq6urq6urq6urq6v////////////////////////////////8AAAAATGF2YzU2LjQxAAAAAAAAAAAAAAAAJAAAAAAAAAAAASDs90hvAAAAAAAAAAAAAAAAAAAA//MUZAAAAAGkAAAAAAAAA0gAAAAATEFN//MUZAMAAAGkAAAAAAAAA0gAAAAARTMu//MUZAYAAAGkAAAAAAAAA0gAAAAAOTku//MUZAkAAAGkAAAAAAAAA0gAAAAANVVV"></audio>
 </body>
 </html>

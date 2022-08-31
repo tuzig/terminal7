@@ -50,13 +50,6 @@ export class Cell {
         setTimeout(() => window.location.href = `#pane-${this.id}`)
         this.w.nameE.setAttribute("href", `#pane-${this.id}`)
     }
-    /*
-     * Used to grow/shrink the terminal based on containing element dimensions
-     * Should be overide
-     */
-    fit() { }
-    scale() {}
-    refreshDividers() {}
 
     /*
      * Catches gestures on an elment using hammerjs.
@@ -68,24 +61,23 @@ export class Cell {
         // h.options.domEvents=true; // enable dom events
             singleTap = new Hammer.Tap({event: "tap"}),
             doubleTap = new Hammer.Tap({event: "doubletap", taps: 2}),
-            pinch = new Hammer.Pinch({event: "pinch"}),
-            lastEventT = 0
+            pinch = new Hammer.Pinch({event: "pinch"})
 
         h.add([singleTap,
             doubleTap,
             pinch,
             new Hammer.Tap({event: "twofingerstap", pointers: 2})])
 
-        h.on('tap', e => {
+        h.on('tap', () => {
             if (this.w.activeP != this) {
                 this.focus()
                 this.gate.sendState()
             }
         })
-        h.on('twofingerstap', e => {
+        h.on('twofingerstap', () => {
             this.toggleZoom()
         })
-        h.on('doubletap', e => {
+        h.on('doubletap', () => {
             this.toggleZoom()
         })
 
@@ -164,7 +156,7 @@ export class Cell {
             // Zoom out
             if (this.resizeObserver != null) {
                 this.resizeObserver.disconnect()
-                this.resizeObserver  = null
+                this.resizeObserver = null
             }
             let te = this.t7.zoomedE.children[0].children[0]
             this.e.appendChild(te)
@@ -189,6 +181,6 @@ export class Cell {
         }
         this.zoomed = !this.zoomed
         this.gate.sendState()
-        this.t7.run(_ => this.focus(), ABIT)
+        this.t7.run(() => this.focus(), ABIT)
     }
 }

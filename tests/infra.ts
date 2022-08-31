@@ -1,6 +1,11 @@
 import { RTSession, RTChannel } from "../src//rtsession.ts"
 import { Terminal7 } from "../src/terminal7.js"
 import { Gate } from "../src/gate"
+import { T7Map } from "../src/map"
+import { vi } from "vitest";
+import { Terminal } from "@tuzig/xterm";
+
+vi.mock("@tuzig/xterm");
 
 class resizeObs {
     constructor(cb) {
@@ -22,19 +27,25 @@ export class Terminal7Mock extends Terminal7 {
              peerbook: { insecure: true },
            }
     netStatus = {connected: true}
+    notifications: string[] = []
+    notify(message: string) {
+        this.map.t0.out += message
+    }
     constructor() {
         super({})
         window.ResizeObserver = resizeObs
         
         document.body.innerHTML = `
 <div id='t7'></div>
-<div id='static-hosts'></div>
-<div id='log'></div>
+<div id='gates'>
+    <div id='add-gate'></div>
+</div>
+<div id='log'><div id="t0"></div></div>
 <div id='log-button'></div>
 <div id='log-msgs'></div>
 <div id='help-button'></div>
 <div id='help-gate'></div>
-<div id='home-button'></div>
+<div id='map-button'></div>
     <template id="gate-template">
     <div class="windows-container">
     </div>
@@ -83,7 +94,6 @@ export class Terminal7Mock extends Terminal7 {
     </template>
     <button id="add-static-host"></button>
     <div id="add-host" class="hidden"></div>
-    <div id="edit-host" class="hidden"><div class="terminal-container"></div></div>
     <div id="divide-v"></div>
     <div id="divide-h"></div>
 `
@@ -93,6 +103,7 @@ export class Terminal7Mock extends Terminal7 {
     }
     open(e) {
         this.e = e
+        this.map = new T7Map()
     }
     getFingerprint() {
         return new Promise((resolve, reject) => {

@@ -92,9 +92,4 @@ export class SSHSession extends BaseSession {
                 })
         })
     }
-    close(): Promise<void>{
-        return new Promise((resolve) => {
-            resolve()
-        })
-    }
 }

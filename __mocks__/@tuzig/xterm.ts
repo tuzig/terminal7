@@ -8,6 +8,7 @@ export class Terminal {
     notify = vi.fn()
     open = vi.fn()
     write = vi.fn(s => this.out += s)
+    writeln = vi.fn(s => this.write(s + "\n"))
     reset = vi.fn()
     select = vi.fn()
     setOption = vi.fn()

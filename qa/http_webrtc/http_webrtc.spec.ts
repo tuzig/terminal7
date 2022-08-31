@@ -10,12 +10,12 @@ test.describe('terminal7 direct WebRTC session', ()  => {
 
     const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
     const connectGate = async () => {
-        const btns = page.locator('#static-hosts button')
+        const btns = page.locator('#gates button')
         await page.screenshot({ path: `/result/zero.png` })
         await expect(btns).toHaveCount(2)
-        await btns.last().dispatchEvent('pointerdown')
+        await btns.first().dispatchEvent('pointerdown')
         await sleep(50)
-        await btns.last().dispatchEvent('pointerup')
+        await btns.first().dispatchEvent('pointerup')
     }
 
     let page: Page,
@@ -134,7 +134,7 @@ pinch_max_y_velocity = 0.1`
         await page.screenshot({ path: `/result/second.png` })
         const lines = await page.evaluate(() =>
            window.terminal7.activeG.activeW.activeP.t.buffer.active.length)
-        expect(lines).toEqual(39)
+        expect(lines).toEqual(38)
         await page.evaluate(async() => {
             const gate = window.terminal7.activeG
             gate.disengage().then(() => {

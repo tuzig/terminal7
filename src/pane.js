@@ -5,9 +5,7 @@
  *  License: GPLv3
  */
 import { Cell } from './cell.js'
-import { fileRegex, urlRegex } from './utils.js'
 import { Terminal } from '@tuzig/xterm'
-import { Capacitor } from '@capacitor/core'
 import { Clipboard } from '@capacitor/clipboard'
 import { Storage } from '@capacitor/storage'
 import { Browser } from '@capacitor/browser'
@@ -95,9 +93,9 @@ export class Pane extends Cell {
 
         this.createDividers()
         this.t.onSelectionChange(() => this.selectionChanged())
-        this.t.loadWebfontAndOpen(con).then(_ => {
+        this.t.loadWebfontAndOpen(con).then(() => {
             const webGLAddon = new WebglAddon()
-            webGLAddon.onContextLoss(e => {
+            webGLAddon.onContextLoss(() => {
                 console.log("lost context")
                   webGLAddon.dispose()
             })
@@ -107,7 +105,6 @@ export class Pane extends Cell {
             this.t.textarea.tabIndex = -1
             this.t.attachCustomKeyEventHandler(ev => {
                 var toDo = true
-                var meta = false
                 // ctrl c is a special case 
                 if (ev.ctrlKey && (ev.key == "c") && (this.d != null)) {
                     this.d.send(String.fromCharCode(3))
@@ -148,7 +145,8 @@ export class Pane extends Cell {
                 }
                 const state = this.d.readyState 
                 if (state != "open") {
-                    this.gate.notify(`Sorry, data channel is ${state}`)
+                    this.gate.notify("data channel not ready")
+                    // TODO: maybe try and reconnect?
                     return
                 }
                 this.d.send(d)
@@ -264,7 +262,7 @@ export class Pane extends Cell {
         this.gate.sendState()
         return p
     }
-    onChannelConnected(channel, id) {
+    onChannelConnected(channel) {
         const reconnect = this.d != null
         this.d = channel
         this.d.onMessage = m => this.onChannelMessage(m)
@@ -303,7 +301,7 @@ export class Pane extends Cell {
             let  flashTime = this.t7.conf.indicators && this.t7.conf.indicators.flash
                              || 88
             this.gate.setIndicatorColor("#373702")
-            this.flashTimer = this.t7.run(_ => {
+            this.flashTimer = this.t7.run(() => {
                 this.flashTimer = null
                 this.gate.setIndicatorColor("unset")
             }, flashTime) 
@@ -318,7 +316,7 @@ export class Pane extends Cell {
         super.toggleZoom()
         this.fit()
     }
-    toggleSearch(searchDown) {
+    toggleSearch() {
         const se = this.gate.e.querySelector(".search-box")
         if (!se.classList.contains("show"))
             this.showSearch()
@@ -337,20 +335,7 @@ export class Pane extends Cell {
         // TODO: restore regex search
         let i = se.querySelector("input[name='search-term']")
         this.disableSearchButtons()
-        if (REGEX_SEARCH) {
-            i.setAttribute("placeholder", "regex here")
-            u.classList.remove("hidden")
-            f.classList.remove("hidden")
-            u.onclick = ev => {
-                ev.preventDefault()
-                ev.stopPropagation()
-                this.focus()
-                i.value = this.searchTerm = urlRegex
-            }
-            // TODO: findPrevious does not work well
-            f.onclick = _ => this.searchAddon.findPrevious(fileRegex, SEARCH_OPTS)
-        } else 
-            i.setAttribute("placeholder", "search string here")
+        i.setAttribute("placeholder", "search string here")
         if (this.searchTerm)
             i.value = this.searchTerm
         if (this.zoomed)

@@ -5,6 +5,7 @@ import "./css/codemirror.css"
 import "./css/dialog.css"
 import { Terminal7 } from "./src/terminal7.js"
 import { registerSW } from "virtual:pwa-register";
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 if ("serviceWorker" in navigator) {
   // && !/localhost/.test(window.location)) {
@@ -13,9 +14,13 @@ if ("serviceWorker" in navigator) {
 /*
  * Initilization code, where terminal 7 is created and opened
  */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     // do nothing when running a test
     if (window.__html__ == undefined) {
+        try {
+            await StatusBar.setStyle({ style: Style.Dark });
+            await StatusBar.show();
+        } catch(e) {}
         window.terminal7 = new Terminal7()
         terminal7.open()
     }

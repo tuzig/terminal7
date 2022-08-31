@@ -81,8 +81,7 @@ describe("form", () => {
         const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
         setTimeout(() => t.pressKey("Enter"), 10)
         const results = await f.chooseFields(t)
-        console.log(JSON.stringify(t.out))
-        expect(t.out.split("\x1B")[0].endsWith("[ ] name: one\n  [ ] number: 1")).toBeTruthy()
+        expect(JSON.stringify(t.out)).toMatch(/\[ \] name: one\\n {2}\[ \] number: 1\S*$/)
         expect(results).toEqual([false, false])
     })
     it("can select fields", async () => {
