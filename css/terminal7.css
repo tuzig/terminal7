@@ -457,7 +457,7 @@ label {
     width: 100%;
 }
 #log.show {
-    transform: translate(-113%,8%) scale(1);
+    transform: translate(-112.5%,8%) scale(1);
     border: 1px solid var(--local-border);
     border-radius: 20%;
 }

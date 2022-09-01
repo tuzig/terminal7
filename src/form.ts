@@ -142,6 +142,7 @@ export class Form {
         this.i = 0
         this.field = ''
         this.results = []
+        t.scrollToBottom()
         return new Promise(resolve => {
             this.writeCurrentField(t)
             setTimeout(() => t.focus(), 0)

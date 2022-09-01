@@ -12,6 +12,7 @@ export class Terminal {
     reset = vi.fn()
     select = vi.fn()
     setOption = vi.fn()
+    scrollToBottom = vi.fn()
     onKey = (cb) => {
         this.pressKey = key => cb({ domEvent: { key } })
         return { dispose: vi.fn() }

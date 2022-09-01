@@ -28,7 +28,7 @@ import { PeerbookConnection } from './peerbook'
 
 
 
-const WELCOME=`🖖 Greetings & Salutations 🖖
+const WELCOME=`    🖖 Greetings & Salutations 🖖
 Thanks for trying Terminal7.
 This is t0, the local terminal used to provide input
 and to view the logs.
@@ -40,6 +40,7 @@ webexec adds support for WebRTC connections,
 resilient sessions, behind-the-NAT connections and more.
 
 Enjoy!
+(hit Escape or tap to minimize t0)
 `
 const DEFAULT_DOTFILE = `[theme]
 foreground = "#00FAFA"
@@ -304,24 +305,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             this.restoreState().catch(() => {
                 // no gate restored going home and on boarding
                 this.goHome()
-                if (!((window.matchMedia('(display-mode: standalone)').matches)
-                    || (window.matchMedia('(display-mode: fullscreen)').matches)
-                    || window.navigator.standalone
-                    || (Capacitor.getPlatform() != "web")
-                    || document.referrer.includes('android-app://')))
-                    if (navigator.getInstalledRelatedApps) 
-                        navigator.getInstalledRelatedApps().then(relatedApps => {
-                            if (relatedApps.length == 0)
-                                // case we're not in an app
-                                this.showGreetings()
-                            else
-                                this.notify("PWA installed, better use it")
-                        })
-                    else
-                       this.showGreetings()
-                else {
-                    this.onBoard()
-                }
+                // TODO: remove the next line and uncomment the commented calls
+               this.showGreetings()
             })
         })
     }
@@ -966,54 +951,21 @@ peer_name = "${peername}"\n`
         this.gesture = null
     }
     showGreetings() {
-        this.map.tty(WELCOME)
-    }
-    onBoard() {
-        var a = localStorage.getItem("onboard")
-        if ((a !== null) || (Capacitor.getPlatform() != "web"))
-            return
-        var modal = document.getElementById("onboarding")
-        modal.classList.remove("hidden")
-        modal.querySelector(".onmobile").addEventListener('click', () => {
-            localStorage.setItem("onboard", "yep")
-            modal = document.getElementById("mobile-instructions")
-            modal.classList.remove("hidden")
-            modal.querySelector(".close").addEventListener('click', () =>
-                this.clear())
-            modal.querySelector(".copy").addEventListener('click', ev => {
-                this.clear()
-                Clipboard.write({string: 'bash -c "$(curl -sL https://get.webexec.sh)"'})
-                this.notify("Command copied to the clipboard")
-                ev.stopPropagation()
-                ev.preventDefault()
-            })
-        })
-        modal.querySelector(".ongpos").addEventListener('click', () => {
-            localStorage.setItem("onboard", "yep")
-            var gate = this.addGate({
-                addr: "localhost",
-                name: "localhost",
-                online: true,
-                store: true
-            })
-            this.storeGates()
-            modal = document.getElementById("localhost-instructions")
-            modal.classList.remove("hidden")
-            modal.querySelector(".close").addEventListener('click', () =>
-                this.clear())
-            modal.querySelector(".copy").addEventListener('click', ev => {
-                this.notify("Command copied to the clipboard")
-                Clipboard.write({string: 'bash -c "$(curl -sL https://get.webexec.sh)"'})
-                ev.stopPropagation()
-                ev.preventDefault()
-            })
-            modal.querySelector(".connect").addEventListener('click', ev => {
-                this.clear()
-                gate.connect()
-                ev.stopPropagation()
-                ev.preventDefault()
-            })
-        })
+        if (localStorage.getItem("greetings") == null) {
+            localStorage.setItem("greetings", "yep")
+            this.map.tty(WELCOME)
+        } else
+            if (!((window.matchMedia('(display-mode: standalone)').matches)
+                || (window.matchMedia('(display-mode: fullscreen)').matches)
+                || window.navigator.standalone
+                || (Capacitor.getPlatform() != "web")
+                || document.referrer.includes('android-app://')))
+                if (navigator.getInstalledRelatedApps) 
+                    navigator.getInstalledRelatedApps().then(relatedApps => {
+                        if (relatedApps.length > 0)
+                            this.map.tty("PWA installed, better use it\n")
+                    })
+  
     }
     syncPBPeers(peers) {
         peers.forEach(p => {

@@ -24,7 +24,7 @@ export class T7Map {
             fontSize: 14,
             rendererType: "canvas",
             convertEol: true,
-            rows: 22,
+            rows: 20,
             cols: 55,
         })
         const fitAddon = new FitAddon()
@@ -37,7 +37,6 @@ export class T7Map {
         resizeObserver.observe(document.getElementById("log"));
         this.t0.loadWebfontAndOpen(e).then(() => {
             fitAddon.fit()
-            this.t0.write("\n")
         })
         this.t0.onKey((ev) => {
             const key = ev.domEvent.key
