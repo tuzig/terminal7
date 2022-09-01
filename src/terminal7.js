@@ -28,6 +28,19 @@ import { PeerbookConnection } from './peerbook'
 
 
 
+const WELCOME=`🖖 Greetings & Salutations 🖖
+Thanks for trying Terminal7.
+This is t0, the local terminal used to provide input
+and to view the logs.
+
+To use a real terminal you'll need a remote server.
+The server can either run an SSH server
+or have "webexec" installed and running.
+webexec adds support for WebRTC connections,
+resilient sessions, behind-the-NAT connections and more.
+
+Enjoy!
+`
 const DEFAULT_DOTFILE = `[theme]
 foreground = "#00FAFA"
 background = "#000"
@@ -953,31 +966,7 @@ peer_name = "${peername}"\n`
         this.gesture = null
     }
     showGreetings() {
-        let modal = document.getElementById("greetings-modal")
-            
-        modal.querySelector(".play-button").addEventListener('click', () => {
-            this.clear()
-            this.onBoard()
-        })
-        document.getElementById("install-button").addEventListener('click', ev => {
-            if (window.installPrompt !== undefined) {
-                window.installPrompt.prompt()
-                window.installPrompt.userChoice.then(outcome => {
-                    if (outcome) {
-                        this.clear()
-                        this.onBoard()
-                    }
-                })
-            } else {
-                let m = document.getElementById('manual-install')
-                modal.classList.add('hidden')
-                m.classList.remove('hidden')
-                m.querySelector(".close").addEventListener('click', () => this.clear())
-            }
-            ev.preventDefault()
-            ev.stopPropagation()
-        })
-        modal.classList.remove("hidden")
+        this.map.tty(WELCOME)
     }
     onBoard() {
         var a = localStorage.getItem("onboard")

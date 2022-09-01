@@ -137,4 +137,9 @@ export class T7Map {
             document.getElementById("log-button").classList.remove("on")
         }
     }
+    tty (msg: string) {
+        this.t0.write(msg[0])
+        if (msg.length > 1)
+            setTimeout(() => this.tty(msg.substring(1)), 42)
+    }
 }
