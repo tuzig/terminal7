@@ -46,7 +46,7 @@ export class Form {
             t.writeln("  [Use ⇅ to move, space to select, → to all, ← to none]")
             t.writeln("  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  ') + "\x1B[s")
             t.write(`\x1B[4G\x1B[${len}A`) // move cursor to first field
-            const disposable = t.onKey(ev => {
+            this.keyListener = t.onKey(ev => {
                 const key = ev.domEvent.key
                 const char = !enabled[current] ? 'X' : ' '
                 switch (key) {
@@ -71,7 +71,7 @@ export class Form {
                         break
                     case "Enter":
                         this.fields = this.fields.filter((_, i) => enabled[i])
-                        disposable.dispose()
+                        this.keyListener.dispose()
                         resolve(enabled)
                         t.write(`\x1B[${len-current}B\n`)
                         Form.activeForm = false
@@ -108,7 +108,7 @@ export class Form {
             t.writeln("  " + this.fields.map(f => `  ${f.prompt}`).join('\n  ') + SAVE_LOC)
             t.write(`\x1B[3G\x1B[${len}A`) // move cursor to first field
             t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`) // bold first field
-            const disposable = t.onKey(ev => {
+            this.keyListener = t.onKey(ev => {
                 const key = ev.domEvent.key
                 switch (key) {
                     case "Escape":
@@ -131,7 +131,7 @@ export class Form {
                         }
                         break
                     case "Enter":
-                        disposable.dispose()
+                        this.keyListener.dispose()
                         resolve(this.fields[current].prompt)
                         t.write(`\x1B[${len-current}B\n`)
                         Form.activeForm = false
@@ -171,7 +171,7 @@ export class Form {
                         t.write("\n")
                         if (!this.next(t)) {
                             resolve(this.results)
-                            disposable.dispose()
+                            this.keyListener.dispose()
                             Form.activeForm = false
                             return
                         }

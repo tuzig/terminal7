@@ -99,6 +99,8 @@ export class Terminal7Mock extends Terminal7 {
 `
 
     }
+    clearTempGates() {
+    }
     clearTimeouts() {
     }
     open(e) {
