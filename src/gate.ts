@@ -638,19 +638,21 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
     async copyFingerprint() {
         const fp = await this.t7.getFingerprint(),
               cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
-        let ans
         const fpForm = new Form([{ 
             prompt: `\n  ${this.addr} refused our fingerprint.
-  To connect copy Terminal7's fingerprint to the server and try again:
   \n\x1B[1m${cmd}\x1B[0m\n
-  Copy to clipboard?`,
+  Copy to clipboard and connect with SSH?`,
             values: ["y", "n"],
             default: "y"
         }])
-        ans = (await fpForm.start(this.map.t0))[0]
-        if (ans == "y")
+        const ans = (await fpForm.start(this.map.t0))[0]
+        if (ans == "y") {
             Clipboard.write({ string: cmd })
-		this.retryForm(() => this.connect(this.onConnected), () => this.delete())
+            this.tryWebexec = false
+            this.connect(this.onConnected)
+        }
+        else
+            this.map.showLog(false)
     }
     askPass() {
         this.map.t0.writeln("  Trying SSH")
