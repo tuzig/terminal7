@@ -57,6 +57,18 @@ export class T7Map {
                 }
             }
         })
+        document.getElementById("log").addEventListener("click", (ev) => {
+            const e = document.getElementById("log")
+            
+            if (e.classList.contains("show"))
+                this.t0.focus()
+            else
+                this.showLog(true)
+        
+            ev.stopPropagation()
+            ev.preventDefault()
+
+        })
     }
     add(g: Gate): Element {
         const d = document.createElement('div')
@@ -68,6 +80,10 @@ export class T7Map {
         const gates = document.getElementById("gates")
         gates.prepend(d)
         this.refresh()
+        d.addEventListener("click", (ev) => {
+            ev.stopPropagation()
+            ev.preventDefault()
+        })
         return d
     }
     remove(g: Gate) {

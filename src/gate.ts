@@ -91,8 +91,11 @@ export class Gate {
         let t = document.getElementById("gate-template")
         if (t) {
             t = t.content.cloneNode(true)
-            t.querySelector(".reset").addEventListener('click', () => 
-                this.reset())
+            t.querySelector(".reset").addEventListener('click', ev => {
+                this.reset()
+                ev.preventDefault()
+                ev.stopPropagation()
+            })
             t.querySelector(".add-tab").addEventListener(
                 'click', () => this.newTab())
             t.querySelector(".search-close").addEventListener('click', () =>  {

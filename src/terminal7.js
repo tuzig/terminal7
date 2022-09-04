@@ -245,8 +245,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             })
         }
 
-        document.getElementById("log").addEventListener("click", () =>
-            this.map.showLog())
+        e.addEventListener("click", () => this.map.showLog(false))
+
         // settings button and modal
         var modal   = document.getElementById("settings-modal")
         modal.addEventListener('click',
@@ -897,6 +897,8 @@ peer_name = "${peername}"\n`
                 else
                     gate.edit()
             }
+            ev.stopPropagation()
+            ev.preventDefault()
         } else if (this.gesture) {
             this.activeG.sendState()
         } else if (this.firstPointer) {
