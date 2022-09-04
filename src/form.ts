@@ -11,26 +11,37 @@ export type Fields = Array<{
 
 export type Results = Array<string>
 
+const SAVE_LOC = "\x1B[s"
+
 export class Form {
 
     field: string
     i: number
     e: HTMLElement
-    resolve: (value) => void
+    reject: (value) => void
     fields: Fields
     results: Results
-    static activeForm = false
+    keyListener: (ev: Event) => void
+    static activeForm = null
 
     constructor(fields: Fields) {
         this.fields = fields
+        this.keyListener = null
     }
 
+    setActive() {
+        if (Form.activeForm instanceof Form) {
+            Form.activeForm.reject()
+        }
+        Form.activeForm = this
+    }
     chooseFields(t: Terminal, title: string) {
-        Form.activeForm = true
+        this.setActive()
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
-        return new Promise<Array<boolean>>(resolve => {
+        return new Promise<Array<boolean>>((resolve, reject) => {
+            this.reject = reject
             t.writeln(`  ${title}, choose fields to edit:`)
             t.writeln("  [Use ⇅ to move, space to select, → to all, ← to none]")
             t.writeln("  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  ') + "\x1B[s")
@@ -40,10 +51,7 @@ export class Form {
                 const char = !enabled[current] ? 'X' : ' '
                 switch (key) {
                     case "Escape":
-                        disposable.dispose()
-                        t.write(`\x1B[u\nESC\n`)
-                        window.terminal7.clearTempGates()
-                        Form.activeForm = false
+                        this.escape()
                         break
                     case "ArrowUp":
                         if (current > 0) {
@@ -89,24 +97,22 @@ export class Form {
     }
 
     menu(t: Terminal, title: string) {
-        Form.activeForm = true
+        this.setActive()
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
-        return new Promise<string>(resolve => {
+        return new Promise<string>((resolve, reject) => {
+            this.reject = reject
             t.writeln(`\n  ${title}:`)
             t.writeln("  [Use ⇅ to move, Enter to select]")
-            t.writeln("  " + this.fields.map(f => `  ${f.prompt}`).join('\n  ') + "\x1B[s")
+            t.writeln("  " + this.fields.map(f => `  ${f.prompt}`).join('\n  ') + SAVE_LOC)
             t.write(`\x1B[3G\x1B[${len}A`) // move cursor to first field
             t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`) // bold first field
             const disposable = t.onKey(ev => {
                 const key = ev.domEvent.key
                 switch (key) {
                     case "Escape":
-                        disposable.dispose()
-                        t.write(`\x1B[u\nESC\n`)
-                        window.terminal7.clearTempGates()
-			            Form.activeForm = false
+                        this.escape()
                         break
                     case "ArrowUp":
                         if (current > 0) {
@@ -138,23 +144,21 @@ export class Form {
 
 
     start(t: Terminal) : Promise<Results> {
-        Form.activeForm = true
+        this.setActive()
         this.i = 0
         this.field = ''
         this.results = []
         t.scrollToBottom()
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
+            this.reject = reject
             this.writeCurrentField(t)
             setTimeout(() => t.focus(), 0)
-            const disposable = t.onKey(ev => {
+            this.keyListener = t.onKey(ev => {
                 const key = ev.domEvent.key
                 const password = this.fields[this.i].password
                 switch (key) {
                     case "Escape":
-                        disposable.dispose()
-                        t.write(`\x1B[u\nESC\n`)
-                        window.terminal7.clearTempGates()
-                        Form.activeForm = false
+                        this.escape(t)
                         break
                     case "Backspace":
                         if (this.field.length > 0) {
@@ -237,4 +241,13 @@ export class Form {
             def = ` [${def}]`
         t.write(`  ${this.fields[this.i].prompt}${def || ''}: `)
     }
+    escape(t: Terminal) {
+        this.keyListener.dispose()
+        this.keyListener = null
+        t.write("\x1B[u\nESC\n" + SAVE_LOC)
+        window.terminal7.clearTempGates()
+        Form.activeForm = false
+        this.reject()
+    }
+
 }

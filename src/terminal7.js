@@ -161,12 +161,10 @@ export class Terminal7 {
                     if (this.activeG && this.activeG.activeW.activeP.sx >= 0.04)
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         document.getElementById('add-gate').addEventListener(
-            'click', async () => {
+            'click', async (ev) => {
                 this.map.showLog(true)
-                if (Form.activeForm)
-                    this.map.t0.focus()
-                else
-                    this.connect()
+                this.connect()
+                ev.stopPropagation()
             })
         // hide the modal on xmark click
         // Handle network events for the indicator
@@ -343,6 +341,8 @@ peer_name = "${peername}"\n`
             this.loadConf(TOML.parse(dotfile))
             this.notify("Your email was added to the dotfile")
             this.clear()
+        }).catch(() => {
+            this.map.showLog(false)
         })
     }
     pbConnect() {
@@ -472,7 +472,8 @@ peer_name = "${peername}"\n`
         this.map.showLog(false)
         this.focus()
         this.longPressGate = null
-        Form.activeForm = false
+        if (Form.activeForm)
+            Form.activeForm.escape()
     }
     goHome() {
         Storage.remove({key: "last_state"}) 
@@ -502,7 +503,12 @@ peer_name = "${peername}"\n`
             { prompt: "Reconnect" },
             { prompt: "Close" }
         ])
-        const res = await reconnectForm.menu(this.map.t0, "What's next?")
+        let res
+        try {
+            res = await reconnectForm.menu(this.map.t0, "What's next?")
+        } catch(e) {
+            res = null
+        }
         if (res == "Reconnect") {
             gate.session = null
             gate.connect(gate.onConnected)
@@ -978,7 +984,13 @@ peer_name = "${peername}"\n`
                 { prompt: "Add static host" },
                 { prompt: "Setup peerbook" }
             ])
-            let choice = await pbForm.menu(this.map.t0, "What's next?")
+            let choice
+            try {
+                choice = await pbForm.menu(this.map.t0, "What's next?")
+            } catch (e) {
+                this.map.showLog(false)
+                return
+            }
             if (choice == "Setup peerbook") {
                 this.peerbookForm()
                 return
@@ -987,7 +999,14 @@ peer_name = "${peername}"\n`
         const f = new Form([
             { prompt: "Enter destination (ip or domain)" }
         ])
-        let hostname = (await f.start(this.map.t0))[0]
+        let hostname
+        try {
+            hostname = (await f.start(this.map.t0))[0]
+        } catch (e) { 
+            this.map.showLog(false)
+            return
+        }
+
         if (this.validateHostAddress(hostname)) {
             this.map.t0.writeln(`  ${hostname} already exists, connecting...`)
             this.gates.get(hostname).connect()

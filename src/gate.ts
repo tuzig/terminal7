@@ -182,7 +182,7 @@ export class Gate {
                                         this.t7.storeGates()
                                         this.updateNameE()
                                         this.map.showLog(false)
-                                    })
+                                    }).catch(() => this.map.showLog(false))
                                 })
                                 break
                             case "\x1B[31mDelete\x1B[0m":
@@ -190,10 +190,10 @@ export class Gate {
                                     if (res[0] == "y")
                                         this.delete()
                                     this.t7.clear()
-                                })
+                                }).catch(() => this.map.showLog(false))
                                 break
                         }
-                    })
+                    }).catch(e => this.map.showLog(false))
             }
         }
     }
