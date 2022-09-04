@@ -193,28 +193,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             })
 
         })
-        // setting up reset cert events
-        let resetCert = document.getElementById("reset-cert")
-        resetCert.querySelector(".reset").addEventListener('click',  ev => {
-            openDB("t7", 1).then(db => {
-                let tx = db.transaction("certificates", "readwrite"),
-                    store = tx.objectStore("certificates")
-                store.clear().then(() => {
-                    if (this.pb) {
-                        this.pb.close()
-                        this.pb = null
-                    }
-                    this.pbConnect()
-                })
-            })
-            ev.target.parentNode.parentNode.classList.add("hidden")
 
-        })
-        resetCert.querySelector(".close").addEventListener('click',  ev =>
-            ev.target.parentNode.parentNode.parentNode.classList.add("hidden"))
-
-
-
+        // keyboard
         document.addEventListener("keydown", ev => {
             if ((ev.key == "Meta") && (Capacitor.getPlatform() != "ios")) {
                 this.metaPressStart = Date.now()
@@ -508,7 +488,7 @@ peer_name = "${peername}"\n`
             e => e.classList.add("off"))
         window.location.href = "#map"
         document.title = "Terminal 7"
-        document.getElementById('log').classList.remove('hidden')
+        document.getElementById('log').classList.remove('hidden', 'show')
     }
     /*
      * onDisconnect is called when a gate disconnects.
@@ -527,6 +507,7 @@ peer_name = "${peername}"\n`
             gate.session = null
             gate.connect(gate.onConnected)
         } else {
+            this.map.showLog(false)
             gate.clear()
             this.goHome()
         }
@@ -954,7 +935,7 @@ peer_name = "${peername}"\n`
         if (localStorage.getItem("greetings") == null) {
             localStorage.setItem("greetings", "yep")
             this.map.tty(WELCOME)
-        } else
+        } else {
             if (!((window.matchMedia('(display-mode: standalone)').matches)
                 || (window.matchMedia('(display-mode: fullscreen)').matches)
                 || window.navigator.standalone
@@ -965,6 +946,7 @@ peer_name = "${peername}"\n`
                         if (relatedApps.length > 0)
                             this.map.tty("PWA installed, better use it\n")
                     })
+        }
   
     }
     syncPBPeers(peers) {
@@ -1032,5 +1014,32 @@ peer_name = "${peername}"\n`
                 return "Name already taken"
         }
         return ""
+    }
+    factoryReset() {
+        // setting up reset cert events
+        return new Promise(resolve => {
+            openDB("t7", 1).then(db => {
+                let tx = db.transaction("certificates", "readwrite"),
+                    store = tx.objectStore("certificates")
+                store.clear().then(() => {
+                    if (this.pb) {
+                        this.pb.close()
+                        this.pb = null
+                    }
+                    this.pbConnect()
+                    resolve()
+                })
+            })
+            this.gates.forEach(g => {
+                g.e.remove()
+                this.map.remove(g)
+                this.gates.delete(g.id)
+            })
+            this.gates = []
+            Storage.delete({key: 'gates'})
+            Storage.set({key: 'dotfile', value: DEFAULT_DOTFILE})
+            const d = TOML.parse(DEFAULT_DOTFILE)
+            this.loadConf(d)
+        })
     }
 }

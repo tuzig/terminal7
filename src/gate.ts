@@ -17,7 +17,7 @@ import { Terminal7 } from './terminal7'
 import { Capacitor } from '@capacitor/core'
 import { Storage } from '@capacitor/storage'
 import { Form, Fields } from './form.js'
-import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
+import { HTTPWebRTCSession, PeerbookSession, WebRTCSession  } from './webrtc_session'
 import { Window } from './window.js'
 
 
@@ -201,9 +201,8 @@ export class Gate {
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.remove("off"))
         const activeG = this.t7.activeG
-        if (activeG) {
-            activeG.e.classList.add("hidden")
-        }
+        if (activeG && (activeG != this))
+                activeG.e.classList.add("hidden")
         this.t7.activeG = this
         this.e.classList.remove("hidden")
         this.e.querySelectorAll(".window")
@@ -348,7 +347,6 @@ export class Gate {
         }
         this.boarding = true
         this.updateNameE()
-        // TODO add the port
         if (!this.pass && !this.fp && !this.tryWebexec) {
             this.askPass()
         } else
@@ -373,12 +371,66 @@ export class Gate {
     }
     // reset reset's a gate connection by disengaging and reconnecting
     reset() {
-        this.disengage().then(() => {
-            this.t7.run(() =>  {
-                this.connect()
-            }, 100)
-        }).catch(() => this.connect())
-                
+        const fields = [
+            { prompt: "Reset connection & Layout" },
+            { prompt: "Close gate" },
+            { prompt: "\x1B[31mFactory reset\x1B[0m" },
+        ]
+        const factoryResetVerify = new Form([{
+            prompt: `Factory reset will remove all gates,\n    the certificate and configuration changes.`,
+            values: ["y", "n"],
+            default: "n"
+        }])
+        if (this.session instanceof WebRTCSession)
+            // Add the connection reset option for webrtc
+            fields.splice(0,0, { prompt: "Reset connection" })
+        const resetForm = new Form(fields)
+        this.map.showLog(true)
+        resetForm.menu(this.map.t0, `\x1B[4m${this.name}\x1B[0m`).then(choice => {
+            switch (choice) {
+                case "Reset connection":
+                    this.disengage().then(() => {
+                        this.t7.run(() =>  {
+                            this.connect()
+                        }, 100)
+                    }).catch(() => this.connect())
+                    break
+                case "Reset connection & Layout":
+                    this.disengage().then(() => {
+                        this.connect(() => {
+                            this.clear()
+                            this.map.showLog(false)
+                            this.activeW = this.addWindow("", true)
+                            this.focus()
+                        })
+                    }).catch(() => this.notify("Connect failed"))
+                    break
+                case "\x1B[31mFactory reset\x1B[0m":
+                    factoryResetVerify.start(this.map.t0).then(answers => {
+                        const ans = answers[0]
+                        if (!ans) {
+                            this.map.t0.writeln("ESC")
+                            return
+                        }
+                        if (ans == "y") {
+                            this.t7.factoryReset()
+                            this.clear()
+                            this.t7.goHome()
+                        }
+                        else
+                            this.map.showLog(false)
+                    })
+                    break
+                case "Close gate":
+                    this.boarding = false
+                    this.session.close()
+                    this.session = null
+                    this.clear()
+                    this.updateNameE()
+                    this.t7.goHome()
+                    break
+            }
+        })
     }
     async loseState () {
         const fp = await this.t7.getFingerprint(),
@@ -588,7 +640,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
               cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         let ans
         const fpForm = new Form([{ 
-            prompt: `\n  We're sorry, but the host at ${this.addr} refused our fingerprint.
+            prompt: `\n  ${this.addr} refused our fingerprint.
   To connect copy Terminal7's fingerprint to the server and try again:
   \n\x1B[1m${cmd}\x1B[0m\n
   Copy to clipboard?`,

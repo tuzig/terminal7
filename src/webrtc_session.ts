@@ -64,7 +64,7 @@ export class WebRTCChannel extends BaseChannel {
 
 }
 
-abstract class WebRTCSession extends BaseSession {
+export abstract class WebRTCSession extends BaseSession {
     fp: string
     channels: Map<number, WebRTCChannel>
     pendingCDCMsgs: Array<object>
