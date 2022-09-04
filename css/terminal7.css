@@ -14,6 +14,7 @@
     --warning: #F4DB53;
     --background: #271D30;
     --text-background: #11051E;
+    --text-offline: #004444;
 }
 @font-face {
     font-family: "FiraSans";
@@ -88,7 +89,6 @@ button {
     padding: 0.35em 1.2em;
     margin: 0 0.3em 0.3em 0;
     border-color: var(--local-border);
-    color: var(--local-border);
     border-radius: 0.15em;
     font-weight: 300;
     font-size: 20px;
@@ -358,11 +358,12 @@ button.rename-close {
     margin: 0 auto;
     height: calc(100% - 56px);
     overflow-y: auto;
+    color: var(--text-color);
 }
 #version {
     position: absolute;
     top: 128px;
-    left: 0px;
+    left: 20px;
     padding: 10px;
     border: 1px dotted;
     border-radius: 4px;
@@ -449,6 +450,7 @@ label {
     max-width: 540px;
     border-radius: 33%;
     height: 410px;
+    max-height: 80vh;
     transform-origin: top left;
 }
 #log>div {
@@ -515,7 +517,7 @@ td {
 }
 
 .offline {
-    opacity: 25%;
+    color: var(--text-offline);
 }
 .unverified {
     border-style: dashed;
@@ -673,7 +675,6 @@ audio { display: none; }
 }
 #map .text-button {
     background-color: var(--text-background);
-    color: var(--text-color);
 }
 .empty-pad div {
     border: 1px dotted var(--local-border);
@@ -689,6 +690,6 @@ audio { display: none; }
     clear: both;
 }
 button.boarding  {
-    font-weight: 600;
+    font-weight: bold;
     text-shadow: var(--remote-border) 1px 0 10px;
 }
