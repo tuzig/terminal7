@@ -30,8 +30,8 @@ import { PeerbookConnection } from './peerbook'
 
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 Thanks for trying Terminal7.
-This is t0, the local terminal used to provide input
-and to view the logs.
+This is TWR, the local terminal used to provide input
+and output log messages.
 
 To use a real terminal you'll need a remote server.
 The server can either run an SSH server
@@ -40,7 +40,7 @@ webexec adds support for WebRTC connections,
 resilient sessions, behind-the-NAT connections and more.
 
 Enjoy!
-(hit Escape or tap to minimize t0)
+(hit Escape or tap to minimize TWR)
 `
 const DEFAULT_DOTFILE = `[theme]
 foreground = "#00FAFA"
