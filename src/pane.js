@@ -279,6 +279,8 @@ export class Pane extends Cell {
                 reject("Gate has no session yet")
                 return
             }
+            if (this.d && (this.d.readyState == "open"))
+                return
             this.buffer = []
             if (opts.id) {
                 this.gate.session.openChannel(opts.id)
