@@ -67,7 +67,13 @@ export class PeerbookConnection {
             this.pending.push(m)
     }
     close() {
-        this.ws.close()
+        if (this.ws) {
+            this.ws.onopen = undefined
+            this.ws.onmessage = undefined
+            this.ws.onerror = undefined
+            this.ws.onclose = undefined
+            this.ws.close()
+        }
         this.ws = null
     }
     isOpen() {

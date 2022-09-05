@@ -86,7 +86,6 @@ export class Terminal7 {
         this.confEditor = null
         this.flashTimer = null
         this.netStatus = null
-        this.ws = null
         this.logBuffer = CyclicArray(settings.logLines || 101)
         this.zoomedE = null
         this.pendingPanes = {}
@@ -228,8 +227,10 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             App.addListener('appStateChange', state => {
                 if (!state.isActive) {
                     // We're getting suspended. disengage.
-                    this.pb.close()
-                    this.pb = null
+                    if (this.pb) {
+                        this.pb.close()
+                        this.pb = null
+                    }
                     this.disengage().then(() => {
                         this.clearTimeouts()
                     })
@@ -323,7 +324,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
 
         const f = new Form([
             {
-                prompt: "email (will only be used to manage your peers)",
+                prompt: "Email: ",
                 validator: email => !email.match(/.+@.+\..+/) ? "Must be a valid email" : ''
             },
             { prompt: "Peer's name" }
@@ -340,6 +341,7 @@ peer_name = "${peername}"\n`
             Storage.set({ key: "dotfile", value: dotfile })
             this.loadConf(TOML.parse(dotfile))
             this.notify("Your email was added to the dotfile")
+            this.pbConnect()
             this.clear()
         }).catch(() => {
             this.map.showLog(false)
@@ -592,13 +594,9 @@ peer_name = "${peername}"\n`
                         })
                     }
                 })
-            if (this.ws != null) {
-                this.ws.onopen = undefined
-                this.ws.onmessage = undefined
-                this.ws.onerror = undefined
-                this.ws.onclose = undefined
-                this.ws.close()
-                this.ws = null
+            if (this.pb) {
+                this.pb.close()
+                this.pb = null
             }
             let callCB = () => terminal7.run(() => {
                 if (count == 0)
@@ -846,6 +844,9 @@ peer_name = "${peername}"\n`
                 this.longPressGate = this.run(() => {
                     gate.edit()
                 }, this.conf.ui.quickest_press)
+            ev.stopPropagation()
+            ev.preventDefault()
+            return
         }
         // only dividers know their panes
         if (e.pane === undefined)
@@ -939,9 +940,10 @@ peer_name = "${peername}"\n`
         this.firstPointer = null
         this.gesture = null
     }
-    showGreetings() {
-        if (localStorage.getItem("greetings") == null) {
-            localStorage.setItem("greetings", "yep")
+    async showGreetings() {
+        const  { greeted } = await Storage.get({key: 'greeted'})
+        if (greeted == null) {
+            Storage.set({key: "greeted", value: "yep"})
             this.map.tty(WELCOME)
         } else {
             if (!((window.matchMedia('(display-mode: standalone)').matches)
@@ -986,7 +988,7 @@ peer_name = "${peername}"\n`
             ])
             let choice
             try {
-                choice = await pbForm.menu(this.map.t0, "What's next?")
+                choice = await pbForm.menu(this.map.t0, "")
             } catch (e) {
                 this.map.showLog(false)
                 return
@@ -1039,28 +1041,27 @@ peer_name = "${peername}"\n`
     factoryReset() {
         // setting up reset cert events
         return new Promise(resolve => {
-            openDB("t7", 1).then(db => {
-                let tx = db.transaction("certificates", "readwrite"),
-                    store = tx.objectStore("certificates")
-                store.clear().then(() => {
-                    if (this.pb) {
-                        this.pb.close()
-                        this.pb = null
-                    }
-                    this.pbConnect()
-                    resolve()
-                })
-            })
             this.gates.forEach(g => {
                 g.e.remove()
                 this.map.remove(g)
                 this.gates.delete(g.id)
             })
-            this.gates = []
-            Storage.delete({key: 'gates'})
-            Storage.set({key: 'dotfile', value: DEFAULT_DOTFILE})
+            Storage.delete({key: 'gates'}).then(() => 
+                Storage.delete({key: 'greeted'}).then(() => 
+                    Storage.set({key: 'dotfile', value: DEFAULT_DOTFILE})))
             const d = TOML.parse(DEFAULT_DOTFILE)
             this.loadConf(d)
+            if (this.pb) {
+                this.pb.close()
+                this.pb = null
+            }
+            openDB("t7", 1).then(db => {
+                let tx = db.transaction("certificates", "readwrite"),
+                    store = tx.objectStore("certificates")
+                store.clear().then(() => {
+                    resolve()
+                })
+            })
         })
     }
 }
