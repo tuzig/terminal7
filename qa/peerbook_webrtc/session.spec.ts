@@ -76,12 +76,6 @@ insecure = true`)
         await page.evaluate(async () => {
             window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
         })
-        const playButton = page.locator('.play-button')
-        await expect(playButton).toBeVisible()
-        await playButton.click()
-        await page.screenshot({ path: `/result/first.png` })
-        await page.locator('.onmobile').click()
-        await page.locator('#mobile-instructions .close').click()
     })
 
     test('connect to gate see help page and hide it', async () => {
@@ -113,7 +107,6 @@ insecure = true`)
     })
     test('a gate restores after reload', async() => {
         await page.reload({waitUntil: "networkidle"})
-        await page.locator('.play-button').click()
         await page.evaluate(async () => {
             window.terminal7.notify = console.log
             window.terminal7.conf.net.peerbook = "peerbook:17777"

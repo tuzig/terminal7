@@ -5,8 +5,8 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { vi, describe, beforeAll, afterEach, it, fail, expect, beforeEach } from 'vitest'
-import { Terminal7Mock, sleep } from './infra'
+import { afterEach, vi, describe, it, expect, beforeEach } from 'vitest'
+import { sleep } from './infra'
 import { Form } from '../src/form'
 import { Terminal } from '@tuzig/xterm'
 
@@ -29,31 +29,42 @@ describe("form", () => {
     beforeEach(() => {
         t.out = ""
     })
-    it("can process a simple form", async () => {
+    it("can process a simple form", () => {
         const f = new Form([{ prompt:"name" }])
         word = "yossi"
         setTimeout(writeChar, 10)
-        const results = await expect(f.start(t)).resolves
-        results.toHaveLength(1)
-        results.toContain(["yossi"])
+        let results
+        return f.start(t).then(results => {
+            expect(results).toHaveLength(1)
+            expect(results).toContain("yossi")
+        }).catch(e => 
+            assert.isNotOk(e,'Promise error'))
     })
     it("can process a form with a default", async () => {
         const f = new Form([{ prompt:"name", default:"yossi" }])
         setTimeout(() => t.pressKey("Enter"), 10)
-        const results = await expect(f.start(t)).resolves
-        results.toHaveLength(1)
-        results.toContain(["yossi"])
+        const results = await f.start(t)
+        expect(results).toHaveLength(1)
+        expect(results).toContain("yossi")
     })
     it("can process a form with a validator", async () => {
         const f = new Form([{ prompt:"name", validator: (v) => v.length > 3 ? "" : "FAIL" }])
+        let failed = false
         word = "yossi"
         setTimeout(writeChar, 10)
-        await expect(f.start(t)).resolves.toHaveLength(1)
+        let results
+        try {
+            results = await f.start(t)
+        } catch(e) { expect(false).toBeTruthy() }
+        expect(results).toHaveLength(1)
         word = "abc"
         setTimeout(writeChar, 10)
-        f.start(t)
+        f.start(t).catch(() => failed=true)
         await sleep(100)
         expect(t.out.endsWith("FAIL\n  name: ")).toBeTruthy()
+        f.escape(t)
+        await sleep(10)
+        expect(failed).toBeTruthy()
     })
     it("can process a form with a list of values", async () => {
         const f = new Form([{ prompt:"name", values:["one", "two"] }])
@@ -76,17 +87,24 @@ describe("form", () => {
         const f = new Form([{ prompt:"name", values:["one", "two"], default:"one" }])
         word = "one"
         setTimeout(() => t.pressKey("Enter"), 10)
-        const results = await expect(f.start(t)).resolves
-        results.toHaveLength(1)
-        results.toContain(["one"])
+        let results
+        try {
+            results = await f.start(t)
+        } catch(e) { expect(false).toBeTruthy() }
+        expect(results).toHaveLength(1)
+        expect(results[0]).toEqual("one")
     })
     it("can open choose fields form", async () => {
         const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
         setTimeout(() => t.pressKey("Enter"), 10)
-        const results = await expect(f.chooseFields(t)).resolves
+        let results
+        try {
+            results = await f.chooseFields(t)
+        } catch(e) { expect(false).toBeTruthy() }
         expect(JSON.stringify(t.out)).toMatch(/\[ \] name: one\\n {2}\[ \] number: 1\S*$/)
-        results.toHaveLength(2)
-        results.toContain([false, false])
+        expect(results).toHaveLength(2)
+        expect(results[0]).toBeFalsy()
+        expect(results[1]).toBeFalsy()
     })
     it("can select fields", async () => {
         const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
@@ -94,18 +112,28 @@ describe("form", () => {
         setTimeout(() => t.pressKey("ArrowDown"), 10)
         setTimeout(() => t.pressKey(" "), 10)
         setTimeout(() => t.pressKey("Enter"), 10)
-        const results = await expect(f.chooseFields(t)).resolves
-        results.toHaveLength(2)
-        results.toContain([false, false])
+        let results
+        try {
+            results = await f.chooseFields(t, "")
+        } catch(e) { expect(false).toBeTruthy() }
+        expect(results).toHaveLength(2)
+        expect(results[0]).toBeTruthy()
+        expect(results[1]).toBeTruthy()
     })
     it("can only edit chosen fields", async () => {
         const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
         setTimeout(() => t.pressKey(" "), 10)
-        setTimeout(() => t.pressKey("Enter"), 10)
-        const results = await expect(f.chooseFields(t)).resolves
-        results.toHaveLength(2)
-        results.toContain([true, false])
-        await expect(f.start(t)).resolves
+        setTimeout(() => t.pressKey("Enter"), 20)
+        let results
+        try {
+            results = await f.chooseFields(t, "")
+        } catch(e) { console.log(e)}
+        console.log("results", results)
+        expect(results).toHaveLength(2)
+        expect(results[0]).toEqual(true)
+        expect(results[1]).toEqual(false)
+        f.start(t).then().catch()
         expect(t.out.endsWith("name [one]: ")).toBeTruthy()
+        setTimeout(() => t.pressKey("Enter"), 10)
     })
 })

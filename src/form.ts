@@ -21,7 +21,7 @@ export class Form {
     reject: (value) => void
     fields: Fields
     results: Results
-    keyListener: (ev: Event) => void
+    keyListener 
     static activeForm = null
 
     constructor(fields: Fields) {
@@ -30,12 +30,13 @@ export class Form {
     }
 
     setActive() {
-        if (Form.activeForm instanceof Form) {
-            Form.activeForm.reject()
+        if ((Form.activeForm instanceof Form) && (Form.activeForm != this)) {
+            console.trace("setting active")
+            Form.activeForm.escape()
+            Form.activeForm = this
         }
-        Form.activeForm = this
     }
-    chooseFields(t: Terminal, title: string) {
+    chooseFields(t: Terminal, title="") {
         this.setActive()
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
@@ -51,7 +52,7 @@ export class Form {
                 const char = !enabled[current] ? 'X' : ' '
                 switch (key) {
                     case "Escape":
-                        this.escape()
+                        this.escape(t)
                         break
                     case "ArrowUp":
                         if (current > 0) {
@@ -72,9 +73,9 @@ export class Form {
                     case "Enter":
                         this.fields = this.fields.filter((_, i) => enabled[i])
                         this.keyListener.dispose()
-                        resolve(enabled)
                         t.write(`\x1B[${len-current}B\n`)
-                        Form.activeForm = false
+                        Form.activeForm = null
+                        resolve(enabled)
                         break
                     case "ArrowRight":
                         enabled.fill(true)
@@ -112,7 +113,7 @@ export class Form {
                 const key = ev.domEvent.key
                 switch (key) {
                     case "Escape":
-                        this.escape()
+                        this.escape(t)
                         break
                     case "ArrowUp":
                         if (current > 0) {
@@ -134,7 +135,7 @@ export class Form {
                         this.keyListener.dispose()
                         resolve(this.fields[current].prompt)
                         t.write(`\x1B[${len-current}B\n`)
-                        Form.activeForm = false
+                        Form.activeForm = null
                         break
                 }
             })
@@ -172,7 +173,7 @@ export class Form {
                         if (!this.next(t)) {
                             resolve(this.results)
                             this.keyListener.dispose()
-                            Form.activeForm = false
+                            Form.activeForm = null
                             return
                         }
                         break
@@ -193,7 +194,7 @@ export class Form {
                         }
                 }
             })
-            t.focus()
+            setTimeout(() => t.focus(), 0)
         })
     }
 
@@ -245,9 +246,7 @@ export class Form {
         this.keyListener.dispose()
         this.keyListener = null
         t.write("\x1B[u\nESC\n" + SAVE_LOC)
-        window.terminal7.clearTempGates()
-        Form.activeForm = false
-        this.reject()
+        Form.activeForm = null
+        this.reject(new Error("aborted"))
     }
-
 }

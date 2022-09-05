@@ -71,13 +71,6 @@ pinch_max_y_velocity = 0.1`
         fs.writeFileSync('/webexec_config/authorized_fingerprints', fp + '\n')
         // add terminal7 initializtion and globblas
         await waitPort({host:'webexec', port:7777})
-
-        const playButton = page.locator('.play-button')
-        await expect(playButton).toBeVisible()
-        await playButton.click()
-        await page.screenshot({ path: `/result/first.png` })
-        await page.locator('.onmobile').click()
-        await page.locator('#mobile-instructions .close').click()
     })
 
     test('connect to gate see help page and hide it', async () => {
@@ -110,7 +103,6 @@ pinch_max_y_velocity = 0.1`
         await page.evaluate(async () => {
             window.terminal7.notify = console.log
         })
-        await page.locator('.play-button').click()
         connectGate()
         await page.screenshot({ path: `/result/2.png` })
         await expect(page.locator('.pane')).toHaveCount(2)

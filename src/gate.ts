@@ -182,7 +182,7 @@ export class Gate {
                                         this.t7.storeGates()
                                         this.updateNameE()
                                         this.map.showLog(false)
-                                    }).catch(() => this.map.showLog(false))
+                                    }).catch(e => this.onFormError(e))
                                 })
                                 break
                             case "\x1B[31mDelete\x1B[0m":
@@ -190,7 +190,7 @@ export class Gate {
                                     if (res[0] == "y")
                                         this.delete()
                                     this.t7.clear()
-                                }).catch(() => this.map.showLog(false))
+                                }).catch(e => this.onFormError(e))
                                 break
                         }
                     }).catch(e => this.map.showLog(false))
@@ -299,17 +299,16 @@ export class Gate {
             (async () => {
                 const rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${this.fp}" >> ~/.config/webexec/authorized_fingerprints`
                 this.map.t0.writeln("  Failed to connect")
-                let ans
+                let ans:string
                 const verifyForm = new Form([{
                     prompt: `Does the address \x1B[1;37m${this.addr}\x1B[0m seem correct?`,
                     values: ["y", "n"],
                     default: "y"
                 }])
-                ans = (await verifyForm.start(this.map.t0))[0]
-                if (!ans) {
-                    this.map.t0.writeln("ESC")
-                    return
-                }
+                try {
+                    ans = (await verifyForm.start(this.map.t0))[0]
+                } catch(e) {this.onFormError(e)}
+
                 if (ans == "n")
                     return this.t7.connect()
                 const webexecForm = new Form([{
@@ -318,7 +317,9 @@ export class Gate {
 					values: ["y", "n"],
                     default: "y"
                 }])
-                ans = (await webexecForm.start(this.map.t0))[0]
+                try {
+                    ans = (await webexecForm.start(this.map.t0))[0]
+                } catch(e) {this.onFormError(e)}
                 if (ans == "y")
                     Clipboard.write({ string: rc })
 				this.retryForm(() => {
@@ -422,7 +423,7 @@ export class Gate {
                         }
                         else
                             this.map.showLog(false)
-                    })
+                    }).catch(e => this.onFormError(e))
                     break
                 case "Close gate":
                     this.boarding = false
@@ -430,7 +431,8 @@ export class Gate {
                     this.session = null
                     this.clear()
                     this.updateNameE()
-                    this.t7.goHome()
+                    // we need the timeout as cell.focus is changing the href when dcs are closing
+                    setTimeout(() => this.t7.goHome(), 200)
                     break
             }
         })
@@ -648,7 +650,10 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             values: ["y", "n"],
             default: "y"
         }])
-        const ans = (await fpForm.start(this.map.t0))[0]
+        let ans: string
+        try {
+            ans = (await fpForm.start(this.map.t0))[0]
+        } catch(e) { this.onFormError(e) }
         if (ans == "y") {
             Clipboard.write({ string: cmd })
             this.tryWebexec = false
@@ -667,7 +672,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.username = res[0]
             this.pass = res[1]
             this.completeConnect()
-        })
+        }).catch(e => this.onFormError(e))
     }
     completeConnect(): void {
         if (this.session == null)
@@ -727,13 +732,13 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                         this.t7.storeGates()
                         this.map.showLog(false)
                         this.load()
-                    })
+                    }).catch(e => this.onFormError(e))
                 } else {
                     this.t7.clear()
                     this.load()
                     this.delete()
                 }
-            })
+            }).catch(e => this.onFormError(e))
         })
     }
 	async retryForm(retry: () => void, cancel: () => void) {
@@ -742,12 +747,19 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
 			values: ["y", "n"],
 			default: "y"
 		}])
-		const ans = (await retryForm.start(this.map.t0))[0]
-		if (ans == "y")
-			retry()
-		else
-			cancel()
+		retryForm.start(this.map.t0).then(results => {
+            if (results[0] == "y")
+                retry()
+            else {
+                this.map.showLog(false)
+                cancel()
+            }
+        }).catch(e => this.onFormError(e))
 	}
+    onFormError (e) {
+        this.map.showLog(false)
+        this.t7.clearTempGates()
+    }
     updateNameE() {
         const e = this.nameE
         // ignores gate with no nameE
