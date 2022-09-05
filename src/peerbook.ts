@@ -37,10 +37,11 @@ export class PeerbookConnection {
                   url = encodeURI(`${schema}://${this.host}/ws?fp=${this.fp}&name=${this.peerName}&kind=terminal7&email=${this.email}`)
             this.ws = new WebSocket(url)
             this.ws.onmessage = ev => this.onUpdate(ev.data)
-            this.ws.onerror = ev => window.terminal7.log("Peerbook WebSocket Error", ev)
-            this.ws.onclose = () => {
-                window.terminal7.log("peerbook connection closed")
-                // terminal7.notify("\uD83D\uDCD6 Connection closed")
+            this.ws.onerror = ev => 
+                window.terminal7.log("peerbook ws error", ev)
+            this.ws.onclose = (ev) => {
+                window.terminal7.log("peerbook ws closed", ev)
+                window.terminal7.notify("\uD83D\uDCD6 Connection closed")
                 this.ws = null
             }
             this.ws.onopen = () => {
