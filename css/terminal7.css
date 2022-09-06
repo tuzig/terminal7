@@ -373,6 +373,9 @@ button.rename-close {
 #version a {
     text-decoration: underline;
 }
+#version footer {
+    font-size: 10px;
+}
 #gates {
     width: 100%;
     background: top repeat-y url("/map/middle.png");
