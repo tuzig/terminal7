@@ -1,6 +1,7 @@
 import { vi } from "vitest"
 
 export class Terminal {
+    keyHandler: (a:any) => void
     loadAddon = vi.fn()
     onSelectionChange = vi.fn()
     onData = vi.fn()
@@ -14,7 +15,7 @@ export class Terminal {
     setOption = vi.fn()
     scrollToBottom = vi.fn()
     onKey = (cb) => {
-        this.pressKey = key => cb({ domEvent: { key } })
+        this.keyHandler = cb
         return { dispose: vi.fn() }
     }
     buffer = { active: { cursorX: 0, cursorY: 0, viewportY: 0, lines: [""],
@@ -26,8 +27,10 @@ export class Terminal {
     attachCustomKeyEventHandler = vi.fn()
     loadWebfontAndOpen = vi.fn(e => new Promise(resolve => {
         setTimeout(_ => {
-            this.textarea = document.createElement('textarea')
-            e.appendChild(this.textarea)
+            if (e) {
+                this.textarea = document.createElement('textarea')
+                e.appendChild(this.textarea)
+            }
             resolve()
         }, 0)
     }))
@@ -39,6 +42,9 @@ export class Terminal {
         this.out = ""
         for (const k in props)
             this[k] = props[k]
+    }
+    pressKey(key) {
+        this.keyHandler({ domEvent: { key } })
     }
 }
 

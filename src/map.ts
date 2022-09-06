@@ -15,65 +15,69 @@ import XtermWebfont from 'xterm-webfont'
 
 export class T7Map {
     t0: Terminal
-    constructor() {
-        const e = document.getElementById("t0")
-        this.t0 = new Terminal({
-            cursorBlink: true,
-            cursorStyle: "block",
-            theme: window.terminal7?.conf.theme,
-            fontFamily: "FiraCode",
-            fontSize: 14,
-            rendererType: "canvas",
-            convertEol: true,
-            rows: 20,
-            cols: 55,
-        })
-        const fitAddon = new FitAddon()
-        this.t0.loadAddon(fitAddon)
-        this.t0.loadAddon(new XtermWebfont())
-        if (window?.ResizeObserver) {
+    ttyWait: number
+    open() {
+        return new Promise(resolve => {
+            this.t0 = new Terminal({
+                cursorBlink: true,
+                cursorStyle: "block",
+                theme: window.terminal7?.conf.theme,
+                fontFamily: "FiraCode",
+                fontSize: 14,
+                rendererType: "canvas",
+                convertEol: true,
+                rows: 20,
+                cols: 55,
+            })
+            const e = document.getElementById("t0")
+            const fitAddon = new FitAddon()
+            this.t0.loadAddon(fitAddon)
+            this.t0.loadAddon(new XtermWebfont())
+            this.t0.onKey((ev) => {
+                const key = ev.domEvent.key
+                if (key == 'Escape') {
+                    if (Form.activeForm)
+                        Form.activeForm.escape(this.t0)
+                    this.showLog(false)
+                } else
+                    Form.activeForm.onKey(ev)
+            })
+            this.t0.loadWebfontAndOpen(e).then(() => {
+                fitAddon.fit()
+                resolve()
+            })
+            this.refresh()
+            // handle the tower
+            const log = document.getElementById("log")
+            if (!log)
+                return
             const resizeObserver = new window.ResizeObserver(() => {
                 fitAddon.fit()
             })
-            resizeObserver.observe(document.getElementById("log"));
-        }
-        this.t0.loadWebfontAndOpen(e).then(() => {
-            fitAddon.fit()
-        })
-        this.t0.onKey((ev) => {
-            const key = ev.domEvent.key
-            if (key == 'Escape') {
-                if (Form.activeForm)
-                    Form.activeForm.escape(this.t0)
-                this.showLog(false)
-            } else
-                Form.activeForm.onKey(ev)
-        })
-        const log = document.getElementById("log")
-        if (!log)
-            return
-        log.addEventListener("transitionend", () => {
-            fitAddon.fit()
-            if (log.classList.contains("show"))
-                this.t0.focus()
-            else {
-                this.t0.blur()
-                // if we're not on the map, we're at the gate, hide the minimized version
-                if (window.location.hash != "#map") {
-                    log.classList.add("hidden")
-                    window.terminal7.focus()
+            resizeObserver.observe(log)
+            log.addEventListener("transitionend", () => {
+                fitAddon.fit()
+                if (log.classList.contains("show"))
+                    this.t0.focus()
+                else {
+                    this.t0.blur()
+                    // if we're not on the map, we're at the gate, hide the minimized version
+                    if (window.location.hash != "#map") {
+                        log.classList.add("hidden")
+                        window.terminal7.focus()
+                    }
                 }
-            }
-        })
-        log.addEventListener("click", (ev) => {
-            const e = document.getElementById("log")
-            if (e.classList.contains("show"))
-                this.t0.focus()
-            else
-                this.showLog(true)
-        
-            ev.stopPropagation()
-            ev.preventDefault()
+            })
+            log.addEventListener("click", (ev) => {
+                const e = document.getElementById("log")
+                if (e.classList.contains("show"))
+                    this.t0.focus()
+                else
+                    this.showLog(true)
+            
+                ev.stopPropagation()
+                ev.preventDefault()
+            })
         })
     }
     add(g: Gate): Element {
@@ -127,6 +131,8 @@ export class T7Map {
         const pads = document.querySelectorAll(".gate-pad")
         const add = document.getElementById("add-gate")
         
+        if (!add)
+            return
         // fill the last line with empty pads as needed
         // start with cleaning old fillers
         document.querySelectorAll("#gates .empty-pad").forEach(e => e.remove())
@@ -159,8 +165,17 @@ export class T7Map {
         }
     }
     tty (msg: string) {
-        this.t0.write(msg[0])
-        if (msg.length > 1)
-            setTimeout(() => this.tty(msg.substring(1)), 42)
+        const map = this
+        function out1 (m) {
+            if (map.ttyWait != 0) {
+                map.t0.write(m[0])
+                if (m.length > 1) 
+                    setTimeout(() => out1(m.substring(1)), map.ttyWait)
+            }
+            else
+                map.t0.writeln(m)
+        }
+        this.ttyWait = 42
+        out1(msg)
     }
 }

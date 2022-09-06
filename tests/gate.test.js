@@ -142,6 +142,7 @@ describe("gate", () => {
 		HTTPWebRTCSession.fail = true
 		globalThis.webkit = { messageHandlers: { bridge: 1 } } // mock ios
         const map = new T7Map()
+        map.open()
 		const t0 = map.t0
 		t.map.t0 = t0
 		g.connect()

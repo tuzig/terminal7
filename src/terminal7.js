@@ -129,9 +129,6 @@ export class Terminal7 {
         }
         this.loadConf(d)
 
-        this.map = new T7Map()
-        this.map.refresh()
-
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",
@@ -161,8 +158,9 @@ export class Terminal7 {
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         document.getElementById('add-gate').addEventListener(
             'click', async (ev) => {
+                this.map.ttyWait = 0
                 this.map.showLog(true)
-                this.connect()
+                setTimeout(() => this.connect(), 50)
                 ev.stopPropagation()
             })
         // hide the modal on xmark click
@@ -207,6 +205,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             }
             this.metaPressStart = Number.MAX_VALUE
         })
+        this.map = new T7Map()
         // Load gates from local storage
         let gates
         value = (await Storage.get({key: 'gates'})).value
@@ -271,22 +270,16 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 Clipboard.write({string: area.value})
                 this.clear()
             })
-        // peerbook button and modal
-        modal = document.getElementById("peerbook-modal")
-        modal.querySelector(".close").addEventListener('click',
-            () => this.clear() )
+        this.map.open().then(() => {
+           this.goHome()
+           setTimeout(() => this.showGreetings(), 100)
+        })
         Network.getStatus().then(s => {
             this.updateNetworkStatus(s)
             if (!s.connected) {
                 this.goHome()
                 return
             }
-            this.restoreState().catch(() => {
-                // no gate restored going home and on boarding
-                this.goHome()
-                // TODO: remove the next line and uncomment the commented calls
-               this.showGreetings()
-            })
         })
     }
     restoreState() {
@@ -507,7 +500,7 @@ peer_name = "${peername}"\n`
         ])
         let res
         try {
-            res = await reconnectForm.menu(this.map.t0, "What's next?")
+            res = await reconnectForm.menu(this.map.t0)
         } catch(e) {
             res = null
         }
@@ -562,6 +555,8 @@ peer_name = "${peername}"\n`
         const d = new Date(),
             t = formatDate(d, "HH:mm:ss.fff")
         // TODO: add color based on level and ttl
+        this.map.ttyWait = 0
+        this.map.t0.scrollToBottom()
         this.map.t0.writeln(` \x1B[2m${t}\x1B[0m ${message}`)
         this.map.showLog(true)
     }
@@ -881,13 +876,14 @@ peer_name = "${peername}"\n`
             ev.preventDefault()
         }
     }
-    onPointerUp(ev) {
+    async onPointerUp(ev) {
         let e = ev.target,
             gatePad = e.closest(".gate-pad")
 
         if (!this.pointer0)
             return
         if (gatePad) {
+            this.map.ttyWait = 0
             let deltaT = Date.now() - this.pointer0
             clearTimeout(this.longPressGate)
             this.longPressGate = null
@@ -900,7 +896,7 @@ peer_name = "${peername}"\n`
                 if (!gate)
                     return
                 if (!gate.fp || gate.verified && gate.online)
-                    gate.connect()
+                    await gate.connect()
                 else
                     gate.edit()
             }
@@ -988,7 +984,7 @@ peer_name = "${peername}"\n`
             ])
             let choice
             try {
-                choice = await pbForm.menu(this.map.t0, "")
+                choice = await pbForm.menu(this.map.t0)
             } catch (e) {
                 this.map.showLog(false)
                 return

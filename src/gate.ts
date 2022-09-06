@@ -158,7 +158,8 @@ export class Gate {
                     values: ["y", "n"],
                     default: "n",
                 }])
-                f1.menu(this.map.t0, `\x1B[4m${this.name}\x1B[0m`)
+                this.map.t0.writeln(`\x1B[4m${this.name}\x1B[0m`)
+                f1.menu(this.map.t0)
                     .then(choice => {
                         switch (choice) {
                             case 'Connect':
@@ -183,7 +184,7 @@ export class Gate {
                                         this.updateNameE()
                                         this.map.showLog(false)
                                     }).catch(e => this.onFormError(e))
-                                })
+                                }).catch(e => this.onFormError(e))
                                 break
                             case "\x1B[31mDelete\x1B[0m":
                                 fDel.start(this.map.t0).then(res => {
@@ -336,9 +337,6 @@ export class Gate {
     async connect(onConnected = () => this.load()) {
         
         this.onConnected = onConnected
-        // do nothing when the network is down
-        if (!this.t7.netStatus || !this.t7.netStatus.connected)
-            return
         document.title = `Terminal 7: ${this.name}`
         // if we're already boarding, just focus
         if (this.session) {
@@ -346,6 +344,11 @@ export class Gate {
             this.t7.log("already connected")
             if (!this.windows || (this.windows.length == 0))
                 this.activeW = this.addWindow("", true)
+            // hide the tower if needed
+            const log = document.getElementById("log")
+            if (!log.classList.contains("show"))
+                log.classList.add("hidden")
+            log.classList.add("hidden")
             this.focus()
             return
         }
@@ -390,7 +393,8 @@ export class Gate {
             fields.splice(0,0, { prompt: "Reset connection" })
         const resetForm = new Form(fields)
         this.map.showLog(true)
-        resetForm.menu(this.map.t0, `\x1B[4m${this.name}\x1B[0m`).then(choice => {
+        this.map.t0.writeln(`\x1B[4m${this.name}\x1B[0m`)
+        resetForm.menu(this.map.t0).then(choice => {
             switch (choice) {
                 case "Reset connection":
                     this.disengage().then(() => {
@@ -435,7 +439,7 @@ export class Gate {
                     setTimeout(() => this.t7.goHome(), 200)
                     break
             }
-        })
+        }).catch(ev => this.onFormError(ev))
     }
     async loseState () {
         const fp = await this.t7.getFingerprint(),

@@ -7,7 +7,7 @@ import { Terminal } from "@tuzig/xterm";
 
 vi.mock("@tuzig/xterm");
 
-class resizeObs {
+export class resizeObs {
     constructor(cb) {
         cb();
     }
@@ -106,6 +106,7 @@ export class Terminal7Mock extends Terminal7 {
     open(e) {
         this.e = e
         this.map = new T7Map()
+        this.map.open()
     }
     getFingerprint() {
         return new Promise((resolve, reject) => {

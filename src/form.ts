@@ -12,8 +12,6 @@ export type Fields = Array<{
 
 export type Results = Array<string>
 
-const SAVE_LOC = "\x1B[s"
-
 export class Form {
 
     field: string
@@ -100,16 +98,15 @@ export class Form {
         })
     }
 
-    menu(t: Terminal, title: string) {
+    menu(t: Terminal) {
         this.setActive(t)
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
         return new Promise<string>((resolve, reject) => {
             this.reject = reject
-            t.writeln(`\n  ${title}:`)
             t.writeln("  [Use ⇅ to move, Enter to select]")
-            t.writeln("  " + this.fields.map(f => `  ${f.prompt}`).join('\n  ') + SAVE_LOC)
+            t.writeln("  " + this.fields.map(f => `  ${f.prompt}`).join('\n  '))
             t.write(`\x1B[3G\x1B[${len}A`) // move cursor to first field
             t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`) // bold first field
             this.onKey = ev => {
@@ -238,7 +235,8 @@ export class Form {
         t.write(`  ${this.fields[this.i].prompt}${def || ''}: `)
     }
     escape(t: Terminal) {
-        t.write("\x1B[u\nESC\n" + SAVE_LOC)
+        t.scrollToBottom()
+        t.writeln("\n\nESC")
         Form.activeForm = null
         this.reject(new Error("aborted"))
     }

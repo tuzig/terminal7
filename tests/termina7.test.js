@@ -445,6 +445,7 @@ describe("terminal7", function() {
         })
         it("can connect to SSH through form", async () => {
             const map = new T7Map()
+            map.open()
             const t0 = t.map.t0
             t.map.t0 = t0
             HTTPWebRTCSession.fail = true

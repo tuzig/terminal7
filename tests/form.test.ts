@@ -5,8 +5,8 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { afterEach, vi, describe, it, expect, beforeEach } from 'vitest'
-import { sleep } from './infra'
+import { afterEach, vi, describe, it, expect, beforeEach,beforeAll } from 'vitest'
+import { sleep, resizeObs } from './infra'
 import { Form } from '../src/form'
 import { T7Map } from '../src/map'
 import { Terminal } from '@tuzig/xterm'
@@ -28,8 +28,13 @@ describe("form", () => {
         t.pressKey(c)
         setTimeout(writeChar, 10)
     }
+        
+    beforeAll(() => {
+        window.ResizeObserver = resizeObs
+    })
     beforeEach(() => {
         map = new T7Map()
+        map.open()
         t = map.t0
         t.out = ""
     })
