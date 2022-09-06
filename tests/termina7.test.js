@@ -440,7 +440,6 @@ describe("terminal7", function() {
             t0.pressKey("1")
             t0.pressKey("Enter")
             await sleep(100)
-            console.log("t0out:", t0.out)
             expect(t0.out).toMatch("webexec")
             expect(t0.out).toMatch("Connected")
         })
