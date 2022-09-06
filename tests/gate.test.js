@@ -8,6 +8,7 @@
 import { vi, describe, beforeAll, afterEach, it, expect } from 'vitest'
 import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
+import { T7Map } from '../src/map'
 import { Terminal7Mock, sleep } from './infra.ts'
 import { Storage } from '@capacitor/storage'
 import { Gate } from '../src/gate.ts'
@@ -140,7 +141,8 @@ describe("gate", () => {
 		g.open(e)
 		HTTPWebRTCSession.fail = true
 		globalThis.webkit = { messageHandlers: { bridge: 1 } } // mock ios
-		let t0 = new Terminal()
+        const map = new T7Map()
+		const t0 = map.t0
 		t.map.t0 = t0
 		g.connect()
 		await sleep(500)

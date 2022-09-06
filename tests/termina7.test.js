@@ -8,6 +8,7 @@
 import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
 import { Gate } from '../src/gate'
+import { T7Map } from '../src/map'
 import { Terminal7Mock, sleep } from './infra'
 import { assert } from "chai"
 import { Storage } from '@capacitor/storage'
@@ -432,19 +433,20 @@ describe("terminal7", function() {
     })
     describe("gate", () => {
         it("can open connection form without SSH", async () => {
-            const t0 = new Terminal()
-            t.map.t0 = t0
+            const t0 = t.map.t0
             t.connect()
             t0.pressKey("Enter")
             await sleep(10)
             t0.pressKey("1")
             t0.pressKey("Enter")
             await sleep(100)
+            console.log("t0out:", t0.out)
             expect(t0.out).toMatch("webexec")
             expect(t0.out).toMatch("Connected")
         })
         it("can connect to SSH through form", async () => {
-            const t0 = new Terminal()
+            const map = new T7Map()
+            const t0 = t.map.t0
             t.map.t0 = t0
             HTTPWebRTCSession.fail = true
 			globalThis.webkit = { messageHandlers: { bridge: 1 } } // mock ios

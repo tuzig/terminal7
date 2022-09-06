@@ -8,13 +8,15 @@
 import { afterEach, vi, describe, it, expect, beforeEach } from 'vitest'
 import { sleep } from './infra'
 import { Form } from '../src/form'
+import { T7Map } from '../src/map'
 import { Terminal } from '@tuzig/xterm'
 
 vi.mock('@tuzig/xterm')
 
 describe("form", () => {
     let word
-    const t = new Terminal()
+    let map
+    let t
     // simulates a key press with the next char in the word
     function writeChar() {
         if (!word) {
@@ -27,6 +29,8 @@ describe("form", () => {
         setTimeout(writeChar, 10)
     }
     beforeEach(() => {
+        map = new T7Map()
+        t = map.t0
         t.out = ""
     })
     it("can process a simple form", () => {

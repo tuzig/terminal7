@@ -1,4 +1,5 @@
-import { Terminal } from "@tuzig/xterm"
+import { IEvent, Terminal } from "@tuzig/xterm"
+
 import { Clipboard } from "@capacitor/clipboard"
 
 export type Fields = Array<{
@@ -18,26 +19,32 @@ export class Form {
     field: string
     i: number
     e: HTMLElement
-    reject: (value) => void
+    reject: (value: Error) => void
     fields: Fields
     results: Results
-    keyListener 
+    onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>
     static activeForm = null
 
     constructor(fields: Fields) {
         this.fields = fields
-        this.keyListener = null
+        this.onKey = null
     }
 
-    setActive() {
+    static keyHandler(ev: Event) {
+        if (Form.activeForm?.onKey)
+            Form.activeForm.onKey(ev)
+        else
+            window.terminal7.map.t0.writeln("Nothing to do here... for now")
+    }
+
+    setActive(t) {
         if ((Form.activeForm instanceof Form) && (Form.activeForm != this)) {
-            console.trace("setting active")
-            Form.activeForm.escape()
-            Form.activeForm = this
+            Form.activeForm.escape(t)
         }
+        Form.activeForm = this
     }
     chooseFields(t: Terminal, title="") {
-        this.setActive()
+        this.setActive(t)
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
@@ -47,13 +54,10 @@ export class Form {
             t.writeln("  [Use ⇅ to move, space to select, → to all, ← to none]")
             t.writeln("  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  ') + "\x1B[s")
             t.write(`\x1B[4G\x1B[${len}A`) // move cursor to first field
-            this.keyListener = t.onKey(ev => {
+            this.onKey = ev => {
                 const key = ev.domEvent.key
                 const char = !enabled[current] ? 'X' : ' '
                 switch (key) {
-                    case "Escape":
-                        this.escape(t)
-                        break
                     case "ArrowUp":
                         if (current > 0) {
                             current--
@@ -72,7 +76,6 @@ export class Form {
                         break
                     case "Enter":
                         this.fields = this.fields.filter((_, i) => enabled[i])
-                        this.keyListener.dispose()
                         t.write(`\x1B[${len-current}B\n`)
                         Form.activeForm = null
                         resolve(enabled)
@@ -92,13 +95,13 @@ export class Form {
                         t.write(`\x1B[${len-current}A`)
                         break
                 }
-            })
+            }
             t.focus()
         })
     }
 
     menu(t: Terminal, title: string) {
-        this.setActive()
+        this.setActive(t)
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
@@ -109,12 +112,9 @@ export class Form {
             t.writeln("  " + this.fields.map(f => `  ${f.prompt}`).join('\n  ') + SAVE_LOC)
             t.write(`\x1B[3G\x1B[${len}A`) // move cursor to first field
             t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`) // bold first field
-            this.keyListener = t.onKey(ev => {
+            this.onKey = ev => {
                 const key = ev.domEvent.key
                 switch (key) {
-                    case "Escape":
-                        this.escape(t)
-                        break
                     case "ArrowUp":
                         if (current > 0) {
                             t.write(`  ${this.fields[current].prompt}\x1B[3G`)
@@ -132,20 +132,19 @@ export class Form {
                         }
                         break
                     case "Enter":
-                        this.keyListener.dispose()
                         resolve(this.fields[current].prompt)
                         t.write(`\x1B[${len-current}B\n`)
                         Form.activeForm = null
                         break
                 }
-            })
+            }
             setTimeout(() => t.focus(), 100)
         })
     }
 
 
     start(t: Terminal) : Promise<Results> {
-        this.setActive()
+        this.setActive(t)
         this.i = 0
         this.field = ''
         this.results = []
@@ -154,13 +153,10 @@ export class Form {
             this.reject = reject
             this.writeCurrentField(t)
             setTimeout(() => t.focus(), 0)
-            this.keyListener = t.onKey(ev => {
+            this.onKey  = ev => {
                 const key = ev.domEvent.key
                 const password = this.fields[this.i].password
                 switch (key) {
-                    case "Escape":
-                        this.escape(t)
-                        break
                     case "Backspace":
                         if (this.field.length > 0) {
                             this.field = this.field.slice(0, -1)
@@ -172,7 +168,6 @@ export class Form {
                         t.write("\n")
                         if (!this.next(t)) {
                             resolve(this.results)
-                            this.keyListener.dispose()
                             Form.activeForm = null
                             return
                         }
@@ -193,7 +188,7 @@ export class Form {
                                 t.write(key)
                         }
                 }
-            })
+            }
             setTimeout(() => t.focus(), 0)
         })
     }
@@ -243,8 +238,6 @@ export class Form {
         t.write(`  ${this.fields[this.i].prompt}${def || ''}: `)
     }
     escape(t: Terminal) {
-        this.keyListener.dispose()
-        this.keyListener = null
         t.write("\x1B[u\nESC\n" + SAVE_LOC)
         Form.activeForm = null
         this.reject(new Error("aborted"))

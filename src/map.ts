@@ -7,19 +7,20 @@
  *  License: GPLv3
  */
 
-import { Gate } from './gate.ts'
+import { Form } from './form'
+import { Gate } from './gate'
 import { Terminal } from '@tuzig/xterm'
 import { FitAddon } from "xterm-addon-fit"
 import XtermWebfont from 'xterm-webfont'
 
 export class T7Map {
-    t0: Terminal;
+    t0: Terminal
     constructor() {
         const e = document.getElementById("t0")
         this.t0 = new Terminal({
             cursorBlink: true,
             cursorStyle: "block",
-            theme: window.terminal7.conf.theme,
+            theme: window.terminal7?.conf.theme,
             fontFamily: "FiraCode",
             fontSize: 14,
             rendererType: "canvas",
@@ -30,36 +31,42 @@ export class T7Map {
         const fitAddon = new FitAddon()
         this.t0.loadAddon(fitAddon)
         this.t0.loadAddon(new XtermWebfont())
-        const resizeObserver = new window.ResizeObserver(() => {
-            console.log("fitting t0")
-            fitAddon.fit()
-        })
-        resizeObserver.observe(document.getElementById("log"));
+        if (window?.ResizeObserver) {
+            const resizeObserver = new window.ResizeObserver(() => {
+                fitAddon.fit()
+            })
+            resizeObserver.observe(document.getElementById("log"));
+        }
         this.t0.loadWebfontAndOpen(e).then(() => {
             fitAddon.fit()
         })
         this.t0.onKey((ev) => {
             const key = ev.domEvent.key
-            if (key == 'Escape')
+            if (key == 'Escape') {
+                if (Form.activeForm)
+                    Form.activeForm.escape(this.t0)
                 this.showLog(false)
+            } else
+                Form.activeForm.onKey(ev)
         })
-        document.getElementById("log").addEventListener("transitionend", () => {
-            const e = document.getElementById("log")
+        const log = document.getElementById("log")
+        if (!log)
+            return
+        log.addEventListener("transitionend", () => {
             fitAddon.fit()
-            if (e.classList.contains("show"))
+            if (log.classList.contains("show"))
                 this.t0.focus()
             else {
                 this.t0.blur()
                 // if we're not on the map, we're at the gate, hide the minimized version
                 if (window.location.hash != "#map") {
-                    e.classList.add("hidden")
+                    log.classList.add("hidden")
                     window.terminal7.focus()
                 }
             }
         })
-        document.getElementById("log").addEventListener("click", (ev) => {
+        log.addEventListener("click", (ev) => {
             const e = document.getElementById("log")
-            
             if (e.classList.contains("show"))
                 this.t0.focus()
             else
@@ -67,7 +74,6 @@ export class T7Map {
         
             ev.stopPropagation()
             ev.preventDefault()
-
         })
     }
     add(g: Gate): Element {
