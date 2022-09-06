@@ -317,7 +317,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
 
         const f = new Form([
             {
-                prompt: "Email: ",
+                prompt: "Email",
                 validator: email => !email.match(/.+@.+\..+/) ? "Must be a valid email" : ''
             },
             { prompt: "Peer's name" }
