@@ -378,6 +378,7 @@ export class Gate {
     }
     // reset reset's a gate connection by disengaging and reconnecting
     reset() {
+        this.map.showLog(true)
         const fields = [
             { prompt: "Reset connection & Layout" },
             { prompt: "Close gate" },
@@ -746,6 +747,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         })
     }
 	async retryForm(retry: () => void, cancel: () => void) {
+        this.map.showLog(true)
 		const retryForm = new Form([{
 			prompt: "Retry connection?",
 			values: ["y", "n"],

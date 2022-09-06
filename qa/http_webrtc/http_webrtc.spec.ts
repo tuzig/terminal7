@@ -168,7 +168,7 @@ pinch_max_y_velocity = 0.1`
         expect(exitState).toEqual("success")
         await expect(page.locator('.pane')).toHaveCount(0)
     })
-    test('auto restore gate', async() => {
+    test.skip('auto restore gate', async() => {
         connectGate()
         await expect(page.locator('.pane')).toHaveCount(1)
         await page.evaluate(async () => {

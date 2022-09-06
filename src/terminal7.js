@@ -468,7 +468,7 @@ peer_name = "${peername}"\n`
         this.focus()
         this.longPressGate = null
         if (Form.activeForm)
-            Form.activeForm.escape()
+            Form.activeForm.escape(this.map.t0)
     }
     goHome() {
         Storage.remove({key: "last_state"}) 

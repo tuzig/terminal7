@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- map credit to Eero Saarinen's TWA World Center AKA Terminal5 AKA T5
+
 ### Fixed
 
 - User gets notification if peerbook closes
