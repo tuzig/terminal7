@@ -43,7 +43,7 @@ Enjoy!
 (hit Escape or tap to minimize TWR)
 `
 const DEFAULT_DOTFILE = `# Terminal7's configurations file
-# [theme]
+[theme]
 # foreground = "#00FAFA"
 # background = "#000"
 # selection = "#D9F505"
@@ -640,6 +640,10 @@ peer_name = "${peername}"\n`
                               Please click <i class="f7-icons">gear</i> and change net.peerbook to "api.peerbook.io"`)
         this.conf.net.timeout = this.conf.net.timeout || 3000
         this.conf.net.retries = this.conf.net.retries || 3
+        this.conf.theme = this.conf.theme || {}
+        this.conf.theme.foreground = this.conf.theme.foreground || "#00FAFA"
+        this.conf.theme.background = this.conf.theme.background || "#000"
+        this.conf.theme.selection = this.conf.theme.selection || "#D9F505"
 /*
             Device.getInfo()
             .then(i =>

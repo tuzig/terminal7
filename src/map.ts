@@ -195,6 +195,7 @@ export class T7Map {
     }
     interruptTTY() {
         this.ttyWait = 0
+        this.t0.scrollToBottom()
         this.t0.writeln("...INTERRUPTED")
     }
 }
