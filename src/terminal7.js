@@ -42,30 +42,30 @@ resilient sessions, behind-the-NAT connections and more.
 Enjoy!
 (hit Escape or tap to minimize TWR)
 `
-const DEFAULT_DOTFILE = `[theme]
-foreground = "#00FAFA"
-background = "#000"
-selection = "#D9F505"
-
-[indicators]
-flash = 100
+const DEFAULT_DOTFILE = `# Terminal7's configurations file
+# [theme]
+# foreground = "#00FAFA"
+# background = "#000"
+# selection = "#D9F505"
 
 [exec]
-shell = "*"
+# shell = "*"
 
 [net]
-timeout = 3000
-retries = 3
-ice_server = "stun:stun2.l.google.com:19302"
+# timeout = 3000
+# retries = 3
+# ice_server = "stun:stun2.l.google.com:19302"
 
 [ui]
-quickest_press = 1000
-max_tabs = 10
-cut_min_distance = 80
-cut_min_speed = 2.5
+# leader = "a"
+# quickest_press = 1000
+# max_tabs = 10
+# cut_min_distance = 80
+# cut_min_speed = 2.5
 # no pinch when scrolling -> y velocity higher than XTZ px/ms
 pinch_max_y_velocity = 0.1
 # auto_restore = false
+# flash = 100
 `
 
 export class Terminal7 {
@@ -620,13 +620,14 @@ peer_name = "${peername}"\n`
     }
     loadConf(conf) {
         this.conf = conf
+        this.conf.exec = this.conf.exec || {}
         this.conf.exec.shell = this.conf.exec.shell || "*"
         this.conf.ui = this.conf.ui || {}
         this.conf.ui.quickest_press = this.conf.ui.quickest_press || 1000
-        this.conf.ui.max_tabs = this.conf.ui.max_tabs || 3
+        this.conf.ui.max_tabs = this.conf.ui.max_tabs || 10
         this.conf.ui.leader = this.conf.ui.leader || "a"
-        this.conf.ui.cutMinSpeed = this.conf.ui.cut_min_speed || 2.2
-        this.conf.ui.cutMinDistance = this.conf.ui.cut_min_distance || 50
+        this.conf.ui.cutMinSpeed = this.conf.ui.cut_min_speed || 2.5
+        this.conf.ui.cutMinDistance = this.conf.ui.cut_min_distance || 80
         this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1
         this.conf.ui.autoRestore = this.conf.ui.auto_restore || false
         this.conf.net = this.conf.net || {}
@@ -638,7 +639,6 @@ peer_name = "${peername}"\n`
             terminal7.notify(`\uD83D\uDCD6 Your setting include an old peerbook addres.<br/>
                               Please click <i class="f7-icons">gear</i> and change net.peerbook to "api.peerbook.io"`)
         this.conf.net.timeout = this.conf.net.timeout || 3000
-        this.conf.net.httpTimeout = this.conf.net.http_timeout || 1000
         this.conf.net.retries = this.conf.net.retries || 3
 /*
             Device.getInfo()

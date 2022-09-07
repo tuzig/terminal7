@@ -298,13 +298,11 @@ export class Pane extends Cell {
     }
     flashIndicator () {
         if (this.flashTimer == null) {
-            let  flashTime = this.t7.conf.indicators && this.t7.conf.indicators.flash
-                             || 88
             this.gate.setIndicatorColor("#373702")
             this.flashTimer = this.t7.run(() => {
                 this.flashTimer = null
                 this.gate.setIndicatorColor("unset")
-            }, flashTime) 
+            }, this.t7.conf.ui.flash) 
         }
     }
     // called when a message is received from the server

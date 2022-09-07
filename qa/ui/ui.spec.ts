@@ -45,27 +45,7 @@ test.describe('terminal 7session', ()  => {
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
         await page.evaluate(async () => {
             window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
-            localStorage.setItem("CapacitorStorage.dotfile",`
-[theme]
-foreground = "#00FAFA"
-background = "#000"
-selection = "#D9F505"
-[indicators]
-flash = 100
-[exec]
-shell = "bash"
-[net]
-timeout = 3000
-retries = 3
-ice_server = "stun:stun2.l.google.com:19302"
-[ui]
-quickest_press = 1000
-max_tabs = 10
-cut_min_distance = 80
-cut_min_speed = 2.5
-# no pinch when scrolling -> y velocity higher than XTZ px/ms
-pinch_max_y_velocity = 0.1`
-)
+            localStorage.setItem("CapacitorStorage.dotfile","")
             localStorage.setItem("CapacitorStorage.gates", JSON.stringify(
                 [{"id":0,
                   "addr":"webexec",
