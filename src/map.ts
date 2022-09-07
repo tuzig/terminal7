@@ -11,6 +11,7 @@ import { Form } from './form'
 import { Gate } from './gate'
 import { Terminal } from '@tuzig/xterm'
 import { FitAddon } from "xterm-addon-fit"
+import { Clipboard } from "@capacitor/clipboard"
 import XtermWebfont from 'xterm-webfont'
 
 export class T7Map {
@@ -33,14 +34,30 @@ export class T7Map {
             const fitAddon = new FitAddon()
             this.t0.loadAddon(fitAddon)
             this.t0.loadAddon(new XtermWebfont())
-            this.t0.onKey((ev) => {
-                const key = ev.domEvent.key
+            // this.t0.attachCustomKeyEventHandler(ev => {
+            this.t0.onKey(iev => {
+                const ev = iev.domEvent
+                if (ev.type != "keydown")
+                    return
+                const key = ev.key
                 if (key == 'Escape') {
                     if (Form.activeForm)
                         Form.activeForm.escape(this.t0)
                     this.showLog(false)
-                } else
+                } else if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
+                    Clipboard.read().then(res => {
+                        if (res.type == 'text/plain') {
+                            const form = Form.activeForm
+                            form.field += res.value
+                            if (!form.hidden)
+                                this.t0.write(res.value)
+                        }
+                    })
+                } else if (Form.activeForm)
                     Form.activeForm.onKey(ev)
+                else 
+                    this.t0.writeln("🚧 Under Construction 🚧")
+                ev.preventDefault()
             })
             this.t0.loadWebfontAndOpen(e).then(() => {
                 fitAddon.fit()
@@ -172,10 +189,12 @@ export class T7Map {
                 if (m.length > 1) 
                     setTimeout(() => out1(m.substring(1)), map.ttyWait)
             }
-            else
-                map.t0.writeln(m)
         }
         this.ttyWait = 42
         out1(msg)
+    }
+    interruptTTY() {
+        this.ttyWait = 0
+        this.t0.writeln("...INTERRUPTED")
     }
 }
