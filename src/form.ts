@@ -1,6 +1,4 @@
-import { IEvent, Terminal } from "@tuzig/xterm"
-
-import { Clipboard } from "@capacitor/clipboard"
+import { Terminal } from "@tuzig/xterm"
 
 export type Fields = Array<{
     prompt:string,
@@ -20,7 +18,7 @@ export class Form {
     reject: (value: Error) => void
     fields: Fields
     results: Results
-    onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>
+    onKey: (ev: KeyboardEvent) => void
     static activeForm = null
 
     constructor(fields: Fields) {
@@ -53,7 +51,7 @@ export class Form {
             t.writeln("  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  ') + "\x1B[s")
             t.write(`\x1B[4G\x1B[${len}A`) // move cursor to first field
             this.onKey = ev => {
-                const key = ev.domEvent.key
+                const key = ev.key
                 const char = !enabled[current] ? 'X' : ' '
                 switch (key) {
                     case "ArrowUp":
@@ -110,7 +108,7 @@ export class Form {
             t.write(`\x1B[3G\x1B[${len}A`) // move cursor to first field
             t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`) // bold first field
             this.onKey = ev => {
-                const key = ev.domEvent.key
+                const key = ev.key
                 switch (key) {
                     case "ArrowUp":
                         if (current > 0) {
@@ -151,13 +149,14 @@ export class Form {
             this.writeCurrentField(t)
             setTimeout(() => t.focus(), 0)
             this.onKey  = ev => {
-                const key = ev.domEvent.key
-                const password = this.fields[this.i].password
+                console.trace("got key event", ev)
+                const key = ev.key
+                this.hidden = this.fields[this.i].password
                 switch (key) {
                     case "Backspace":
                         if (this.field.length > 0) {
                             this.field = this.field.slice(0, -1)
-                            if (!password)
+                            if (!this.hidden)
                                 t.write("\b \b")
                         }
                         break
@@ -170,18 +169,9 @@ export class Form {
                         }
                         break
                     default:
-                        if ((ev.domEvent.ctrlKey || ev.domEvent.metaKey) && key == 'v') {
-                            Clipboard.read().then(res => {
-                                if (res.type == 'text/plain') {
-                                    this.field += res.value
-                                    if (!password)
-                                        t.write(res.value)
-                                }
-                            })
-                        }
-                        else if (key.length == 1) { // make sure the key is a char
+                        if (key.length == 1) { // make sure the key is a char
                             this.field += key
-                            if (!password)
+                            if (!this.hidden)
                                 t.write(key)
                         }
                 }

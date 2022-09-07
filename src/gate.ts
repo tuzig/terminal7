@@ -158,7 +158,8 @@ export class Gate {
                     values: ["y", "n"],
                     default: "n",
                 }])
-                this.map.t0.writeln(`\x1B[4m${this.name}\x1B[0m`)
+                this.map.interruptTTY()
+                this.map.t0.writeln(`\nMenu for \x1B[4m${this.name}\x1B[0m:`)
                 f1.menu(this.map.t0)
                     .then(choice => {
                         switch (choice) {

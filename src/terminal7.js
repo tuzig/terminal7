@@ -158,7 +158,7 @@ export class Terminal7 {
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         document.getElementById('add-gate').addEventListener(
             'click', async (ev) => {
-                this.map.ttyWait = 0
+                this.map.interruptTTY()
                 this.map.showLog(true)
                 setTimeout(() => this.connect(), 50)
                 ev.stopPropagation()

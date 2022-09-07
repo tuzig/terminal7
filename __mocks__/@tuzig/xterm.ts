@@ -44,7 +44,8 @@ export class Terminal {
             this[k] = props[k]
     }
     pressKey(key) {
-        this.keyHandler({ domEvent: { key } })
+        const ev = new KeyboardEvent("keydown", { key })
+        this.keyHandler( { domEvent: ev } )
     }
 }
 
