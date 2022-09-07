@@ -37,8 +37,6 @@ export class T7Map {
             // this.t0.attachCustomKeyEventHandler(ev => {
             this.t0.onKey(iev => {
                 const ev = iev.domEvent
-                if (ev.type != "keydown")
-                    return
                 const key = ev.key
                 if (key == 'Escape') {
                     if (Form.activeForm)
