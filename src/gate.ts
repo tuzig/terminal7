@@ -403,6 +403,7 @@ export class Gate {
             switch (choice) {
                 case "Reset connection":
                     this.disengage().then(() => {
+                        this.session = null
                         this.t7.run(() =>  {
                             this.connect()
                         }, 100)
@@ -410,6 +411,7 @@ export class Gate {
                     break
                 case "Reset connection & Layout":
                     this.disengage().then(() => {
+                        this.session = null
                         this.connect(() => {
                             this.clear()
                             this.map.showLog(false)
@@ -436,12 +438,14 @@ export class Gate {
                     break
                 case "Close gate":
                     this.boarding = false
-                    this.session.close()
-                    this.session = null
                     this.clear()
                     this.updateNameE()
+                    if (this.session) {
+                        this.session.close()
+                        this.session = null
+                    }
                     // we need the timeout as cell.focus is changing the href when dcs are closing
-                    setTimeout(() => this.t7.goHome(), 200)
+                    setTimeout(() => this.t7.goHome(), 100)
                     break
             }
         }).catch(ev => this.onFormError(ev))
@@ -628,12 +632,10 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                 return
             }
             return this.session.disconnect().then(marker => {
-                this.session = null
                 this.marker = marker
                 this.notify("Disconnected")
                 resolve()
             }).catch(() => {
-                this.session = null
                 this.notify("Disconnected")
                 resolve()
             })

@@ -444,7 +444,7 @@ export class Pane extends Cell {
             f = () => this.gate.newTab()
             break
         case "r":
-            f = () => this.gate.disengage().then(() => this.gate.connect())
+            f = () => this.gate.reset()
             break
         // this key is at terminal level
         case "l":
