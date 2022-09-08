@@ -530,8 +530,7 @@ peer_name = "${peername}"\n`
         const d = new Date(),
             t = formatDate(d, "HH:mm:ss.fff")
         // TODO: add color based on level and ttl
-        this.map.ttyWait = 0
-        this.map.t0.scrollToBottom()
+        this.map.interruptTTY()
         this.map.t0.writeln(` \x1B[2m${t}\x1B[0m ${message}`)
         this.map.showLog(true)
     }
@@ -863,7 +862,6 @@ peer_name = "${peername}"\n`
         if (!this.pointer0)
             return
         if (gatePad) {
-            this.map.ttyWait = 0
             let deltaT = Date.now() - this.pointer0
             clearTimeout(this.longPressGate)
             this.longPressGate = null

@@ -186,14 +186,18 @@ export class T7Map {
                 map.t0.write(m[0])
                 if (m.length > 1) 
                     setTimeout(() => out1(m.substring(1)), map.ttyWait)
+                else
+                    this.ttyWait = 0
             }
         }
         this.ttyWait = 42
         out1(msg)
     }
     interruptTTY() {
-        this.ttyWait = 0
-        this.t0.scrollToBottom()
-        this.t0.writeln("...INTERRUPTED")
+        if (this.ttyWait != 0) {
+            this.ttyWait = 0
+            this.t0.scrollToBottom()
+            this.t0.writeln("...INTERRUPTED")
+        }
     }
 }
