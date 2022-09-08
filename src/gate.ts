@@ -337,6 +337,9 @@ export class Gate {
      */
     async connect(onConnected = () => this.load()) {
         
+        // do nothing when the network is down
+        if (!this.t7.netStatus || !this.t7.netStatus.connected)
+            return
         this.onConnected = onConnected
         document.title = `Terminal 7: ${this.name}`
         // if we're already boarding, just focus
