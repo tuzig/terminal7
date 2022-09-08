@@ -236,7 +236,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 } else {
                     // We're back! ensure we have the latest network status and 
                     // reconnect to the active gate
-                    terminal7.log("☀️")
+                    this.notify("☀️")
                     this.clearTimeouts()
                     Network.getStatus().then(s => this.updateNetworkStatus(s))
                 }
@@ -523,31 +523,6 @@ peer_name = "${peername}"\n`
         else
             this.e.focus()
     }
-    onNoSignal(gate, error) {
-        let e = document.getElementById("nosignal-template")
-        e = e.content.cloneNode(true)
-        this.clear()
-        // clear pending messages to let the user start fresh
-        this.pendingCDCMsgs = []
-        e.querySelectorAll(".name").forEach(e => e.textContent = gate.name)
-        e.querySelectorAll(".address").forEach(e => e.textContent = gate.addr)
-        e.querySelector(".edit-link").addEventListener('click', () => {
-            this.clear()
-            gate.edit()
-        })
-        e.querySelector(".close").addEventListener('click', () => {
-            if (gate) {
-                gate.disengage()
-                gate.clear()
-            }
-            this.goHome()
-        })
-        e.querySelector(".reconnect").addEventListener('click', () => {
-            gate.reset()
-        })
-        e.querySelector(".server-error").innerHTML = error.message
-        this.e.appendChild(e)
-    }
     /*
      * noitify adds a message to the teminal7 notice board
      */
@@ -610,11 +585,12 @@ peer_name = "${peername}"\n`
             off.add("hidden")
             this.pbConnect()
             const gate = this.activeG
-            if (gate)
-                gate.connect()
+            if (gate) {
+                gate.reset()
+            }
         } else {
             off.remove("hidden")
-            this.gates.forEach(g => g.session = null)
+            // this.gates.forEach(g => g.session = null)
             this.pb = null
         }
     }
@@ -899,8 +875,10 @@ peer_name = "${peername}"\n`
                 const gate = gatePad.gate
                 if (!gate)
                     return
-                if (!gate.fp || gate.verified && gate.online)
+                if (!gate.fp || gate.verified && gate.online) {
+                    this.map.interruptTTY()
                     await gate.connect()
+                }
                 else
                     gate.edit()
             }
