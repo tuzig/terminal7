@@ -734,6 +734,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                         const name = res[0]
                         this.name = name
                         this.nameE = this.map.add(this)
+                        this.updateNameE()
                         this.store = true
                         this.t7.storeGates()
                         this.map.showLog(false)
