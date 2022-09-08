@@ -149,7 +149,6 @@ export class Form {
             this.writeCurrentField(t)
             setTimeout(() => t.focus(), 0)
             this.onKey  = ev => {
-                console.trace("got key event", ev)
                 const key = ev.key
                 this.hidden = this.fields[this.i].password
                 switch (key) {
