@@ -130,7 +130,8 @@ pinch_max_y_velocity = 0.1`
         await page.evaluate(async() => {
             const gate = window.terminal7.activeG
             gate.disengage().then(() => {
-                    window.terminal7.clearTimeouts()
+                window.terminal7.clearTimeouts()
+                window.terminal7.activeG.session = null
             })
             console.log(">>> after disengage:", window.terminal7.activeG, gate.name)
         })

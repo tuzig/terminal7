@@ -136,7 +136,10 @@ insecure = true`)
         await page.screenshot({ path: `/result/second.png` })
         const lines1 = await page.evaluate(async() => {
             const gate = window.terminal7.activeG
-            await gate.disengage()
+            await gate.disengage().then(() => {
+                window.terminal7.clearTimeouts()
+                window.terminal7.activeG.session = null
+            })
             return gate.activeW.activeP.t.buffer.active.length
         })
         await sleep(1000)
