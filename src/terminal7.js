@@ -236,7 +236,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 } else {
                     // We're back! ensure we have the latest network status and 
                     // reconnect to the active gate
-                    this.notify("☀️")
+                    this.notify("☀️", true)
                     this.clearTimeouts()
                     Network.getStatus().then(s => this.updateNetworkStatus(s))
                 }
@@ -524,15 +524,16 @@ peer_name = "${peername}"\n`
             this.e.focus()
     }
     /*
-     * noitify adds a message to the teminal7 notice board
+     * notify adds a message to the teminal7 notice board
      */
-    notify(message) {
+    notify(message, dontShow = false) {
         const d = new Date(),
             t = formatDate(d, "HH:mm:ss.fff")
         // TODO: add color based on level and ttl
         this.map.interruptTTY()
         this.map.t0.writeln(` \x1B[2m${t}\x1B[0m ${message}`)
-        this.map.showLog(true)
+        if (!dontShow)
+            this.map.showLog(true)
     }
     run(cb, delay) {
         var i = this.timeouts.length,
