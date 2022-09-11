@@ -6,16 +6,23 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [1.0-rc.3] - 2022/9/11
 
 ### Added
 
-- map credit to Eero Saarinen's TWA World Center AKA Terminal5 AKA T5
+- map credit to Eero Saarinen's TWA World Center AKA Terminal5
+- "Under Construction" message where our shell will be
 
 ### Fixed
 
 - User gets notification if peerbook closes
 - Double and tripple echo in t0 is gone
+- Default conf is now all comments
+- Interrupting the welcome message in a nice way
+
+## [1.0-rc.2] - 2022/9/11
+
+Lost in a release naming vortex
 
 ## [1.0-rc.1] - 2022/9/5
 

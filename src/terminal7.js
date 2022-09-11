@@ -29,18 +29,20 @@ import { PeerbookConnection } from './peerbook'
 
 
 const WELCOME=`    🖖 Greetings & Salutations 🖖
-Thanks for trying Terminal7.
-This is TWR, the local terminal used to provide input
-and output log messages.
+
+Thanks for trying Terminal7. This is TWR, a local terminal
+used to print log messages and get input.
 
 To use a real terminal you'll need a remote server.
-The server can either run an SSH server
-or have "webexec" installed and running.
-webexec adds support for WebRTC connections,
+T7 can connect to a server using SSH or WebRTC data channels.
+Our WebRTC server, webexec, is an open source terminal server
+based on pion and written in go.
+In addition to WebRTC, webexec adds
 resilient sessions, behind-the-NAT connections and more.
 
 Enjoy!
-(hit Escape or tap to minimize TWR)
+
+(hit Escape or tap outside to minimize TWR)
 `
 const DEFAULT_DOTFILE = `# Terminal7's configurations file
 [theme]
