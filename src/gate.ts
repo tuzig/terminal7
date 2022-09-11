@@ -347,8 +347,6 @@ export class Gate {
         if (this.session) {
             // TODO: check session's status
             this.t7.log("already connected")
-            if (!this.windows || (this.windows.length == 0))
-                this.activeW = this.addWindow("", true)
             // hide the tower if needed
             const log = document.getElementById("log")
             if (!log.classList.contains("show"))
