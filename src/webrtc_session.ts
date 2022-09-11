@@ -443,11 +443,10 @@ export class HTTPWebRTCSession extends WebRTCSession {
                 }).catch(error => {
                     this.clearWatchdog()
                     console.log("POST to /connect failed", error)
-                    if (error.message == 'unauthorized')  {
-                        this.close()
+                    if (error.message == 'unauthorized')
                         this.fail(Failure.Unauthorized)
                     // TODO: the next line is probably wrong
-                    } else
+                    else
                         this.fail(Failure.NotSupported)
                 })
             })
