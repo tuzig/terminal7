@@ -180,18 +180,17 @@ export class T7Map {
         }
     }
     tty (msg: string) {
-        const map = this
-        function out1 (m) {
-            if (map.ttyWait != 0) {
-                map.t0.write(m[0])
+        const _tty = (m: string) =>  {
+            if (this.ttyWait != 0) {
+                this.t0.write(m[0])
                 if (m.length > 1) 
-                    setTimeout(() => out1(m.substring(1)), map.ttyWait)
+                    setTimeout(() => _tty(m.substring(1)), this.ttyWait)
                 else
                     this.ttyWait = 0
             }
         }
         this.ttyWait = 42
-        out1(msg)
+        _tty(msg)
     }
     interruptTTY() {
         if (this.ttyWait != 0) {
