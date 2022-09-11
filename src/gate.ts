@@ -1,5 +1,5 @@
-/* Terminal 7 Gate
- *  This file contains the code that makes a terminal 7 gate. The gate class
+/* Terminal 7Gate
+  This file contains the code that makes a terminal 7 gate. The gate class
  *  represents a server and it may be boarding - aka connected - or not.
  *
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
@@ -246,12 +246,6 @@ export class Gate {
             if (m != null)
                 m.remove()
             // show help for first timer
-            Storage.get({key: "first_gate"}).then(v => {
-                if (v.value != "1") {
-                    this.t7.run(this.t7.toggleHelp, 1000)
-                    Storage.set({key: "first_gate", value: "1"}) 
-                }
-            })
 			// first onConnected is special if it's a new gate but once connected, we're back to load
             this.onConnected()
             this.onConnected = this.load
@@ -751,6 +745,12 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                     this.load()
                     this.delete()
                 }
+                Storage.get({key: "first_gate"}).then(v => {
+                    if (v.value != "1") {
+                        this.t7.run(this.t7.toggleHelp, 1000)
+                        Storage.set({key: "first_gate", value: "1"}) 
+                    }
+                })
             }).catch(e => this.onFormError(e))
         })
     }
