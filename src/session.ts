@@ -88,7 +88,8 @@ export abstract class BaseSession implements Session {
     }
     // fail function emulates a WebRTC connection failure flow
     fail(failure?: Failure) {
-        this.onStateChange("failed", failure)
+        if (this.onStateChange)
+            this.onStateChange("failed", failure)
     }
     startWatchdog(){
         this.clearWatchdog()
@@ -105,6 +106,7 @@ export abstract class BaseSession implements Session {
     }
     close() {
         window.terminal7.log("close session not implmented yet for", typeof(this))
+        this.onStateChange = undefined
     }
     // for reconnect
     abstract openChannel(id: ChannelID): Promise<Channel>

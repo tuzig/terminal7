@@ -267,6 +267,7 @@ export class Gate {
     // handle connection failures
     handleFailure(failure: Failure) {
         this.notify(`FAILED: ${failure || "Server Disconnected"}`)
+        this.session.close()
         this.session = null
         if (!this.boarding)
             return
@@ -403,6 +404,7 @@ export class Gate {
             switch (choice) {
                 case "Reset connection":
                     this.disengage().then(() => {
+                        this.session.close()
                         this.session = null
                         this.t7.run(() =>  {
                             this.connect()
@@ -411,6 +413,7 @@ export class Gate {
                     break
                 case "Reset connection & Layout":
                     this.disengage().then(() => {
+                        this.session.close()
                         this.session = null
                         this.connect(() => {
                             this.clear()
