@@ -300,7 +300,6 @@ export abstract class WebRTCSession extends BaseSession {
         )
     }
     closeChannels(): void {
-        this.cdc.close()
         this.channels.forEach(c => c.close())
         this.t7.log("channels after deletes:", this.channels)
     }
@@ -328,6 +327,7 @@ export abstract class WebRTCSession extends BaseSession {
         if (this.pc != null) {
             this.pc.onconnectionstatechange = undefined
             this.pc.onnegotiationneeded = undefined
+            this.cdc.close()
             this.closeChannels()
             this.pc.close()
             this.pc = null
