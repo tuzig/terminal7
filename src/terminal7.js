@@ -17,6 +17,7 @@ import { tomlMode} from '@tuzig/codemirror/mode/toml/toml.js'
 import { dialogAddOn } from '@tuzig/codemirror/addon/dialog/dialog.js'
 import { formatDate } from './utils.js'
 import { openDB } from 'idb'
+import { marked } from 'marked'
 
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
@@ -165,6 +166,8 @@ export class Terminal7 {
                 setTimeout(() => this.connect(), 50)
                 ev.stopPropagation()
             })
+		document.getElementById('toggle-changelog')
+				.addEventListener('click', () => this.toggleChangelog())
         // hide the modal on xmark click
         // Handle network events for the indicator
         Network.addListener('networkStatusChange', s => 
@@ -1043,4 +1046,17 @@ peer_name = "${peername}"\n`
             })
         })
     }
+	async loadChangelog() {
+		const resp = await fetch("CHANGELOG.md")
+		const changelog = await resp.text()
+		const e = document.getElementById("changelog")
+		e.innerHTML = marked.parse(changelog)
+		e.querySelectorAll("a").forEach(a => a.target = "_blank")
+	}
+	toggleChangelog() {
+		const e = document.getElementById("changelog")
+		if (!e.innerHTML)
+			this.loadChangelog()
+		e.classList.toggle("show")
+	}
 }

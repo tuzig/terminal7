@@ -372,6 +372,7 @@ button.rename-close {
 }
 #version a {
     text-decoration: underline;
+	cursor: pointer;
 }
 #version footer {
     font-size: 10px;
@@ -695,4 +696,32 @@ audio { display: none; }
 button.boarding  {
     font-weight: bold;
     text-shadow: var(--remote-border) 1px 0 10px;
+}
+#changelog {
+	visibility: hidden;
+	max-width: 0;
+	max-height: 0;
+	padding: 0 1em;
+	line-height: 1.5em;
+	overflow-x: hidden;
+	overflow-y: scroll;
+	transition: all 0.5s ease;
+	background-color: var(--text-background);
+	border-radius: 5px;
+}
+#changelog.show {
+	visibility: visible;
+	max-width: 30vw;
+	max-height: 60vh;
+}
+#changelog::-webkit-scrollbar-thumb {
+    background: var(--text-color);
+    border-radius: 5px;
+}
+#changelog::-webkit-scrollbar-track {
+    background: var(--text-background);
+    border-radius: 5px;
+}
+#changelog::-webkit-scrollbar {
+    height: 14px;
 }

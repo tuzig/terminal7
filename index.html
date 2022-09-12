@@ -32,20 +32,18 @@
              </div>
              <div class="line-break"></div>
           </div>
-          <div id="version">
-              <h1>Terminal 7</h1>
-              <p><a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md"
-                  target="_blank">
-                  version 1.0-rc.3
-              </a></p>
-              <footer>map inspired by Eero Saarinen's T5</footer>
-          </div>
           <div id="map-footer">
               <div class="empty-pad"><div></div></div>
               <div class="empty-pad"><div></div></div>
               <div class="empty-pad"><div></div></div>
               <div class="empty-pad"><div></div></div>
              <div class="line-break"></div>
+          </div>
+          <div id="version">
+              <h1>Terminal 7</h1>
+              <p><a id="toggle-changelog">version 1.0-rc.3</a></p>
+			  <div id="changelog"></div>
+              <footer>map inspired by Eero Saarinen's T5</footer>
           </div>
       </div>
       <div id="manual-install" class="hidden modal border">
@@ -169,7 +167,7 @@
               With copy mode you can search, mark and copy text from
               the active pane's buffer.
           </p>
-          <div class="keys-help">
+   <div class="keys-help">
           <table><tbody>
         <tr> <td>Move</td> <td>hjkl &larr;&uarr;&darr;&rarr;</td> </tr>
         <tr> <td>Mark</td> <td>Space</td> </tr>
