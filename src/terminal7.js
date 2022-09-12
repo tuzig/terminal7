@@ -877,6 +877,7 @@ peer_name = "${peername}"\n`
                 if (!gate)
                     return
                 if (!gate.fp || gate.verified && gate.online) {
+                    this.activeG = gate
                     this.map.interruptTTY()
                     await gate.connect()
                 }

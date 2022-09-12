@@ -205,10 +205,6 @@ export class Gate {
         document.getElementById("map-button").classList.remove("off")
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.remove("off"))
-        const activeG = this.t7.activeG
-        if (activeG && (activeG != this))
-                activeG.e.classList.add("hidden")
-        this.t7.activeG = this
         this.e.classList.remove("hidden")
         this.e.querySelectorAll(".window")
               .forEach(w => w.classList.add("hidden"))
