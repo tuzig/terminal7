@@ -532,6 +532,7 @@ peer_name = "${peername}"\n`
             t = formatDate(d, "HH:mm:ss.fff")
         // TODO: add color based on level and ttl
         this.map.interruptTTY()
+        this.map.t0.scrollToBottom()
         this.map.t0.writeln(` \x1B[2m${t}\x1B[0m ${message}`)
         if (!dontShow)
             this.map.showLog(true)
