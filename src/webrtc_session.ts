@@ -87,9 +87,7 @@ export abstract class WebRTCSession extends BaseSession {
         this.lastMsgId = 0
         this.marker = -1
     }
-    onIceCandidate(ev: RTCPeerConnectionIceEvent) {
-            return
-    }
+    abstract onIceCandidate(ev: RTCPeerConnectionIceEvent): void
     async connect(marker=-1) {
         console.log("in connect")
         this.startWatchdog()

@@ -197,7 +197,7 @@ export class Gate {
                                 }).catch(e => this.onFormError(e))
                                 break
                         }
-                    }).catch(e => this.map.showLog(false))
+                    }).catch(() => this.map.showLog(false))
             }
         }
     }
@@ -771,7 +771,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             }
         }).catch(e => this.onFormError(e))
 	}
-    onFormError (e) {
+    onFormError () {
         this.map.showLog(false)
         this.t7.clearTempGates()
     }

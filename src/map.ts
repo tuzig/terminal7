@@ -142,7 +142,6 @@ export class T7Map {
     }
 
     refresh() {
-        const gates = document.getElementById("gates")
         const pads = document.querySelectorAll(".gate-pad")
         const add = document.getElementById("add-gate")
         
