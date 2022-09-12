@@ -334,6 +334,9 @@ export class Gate {
         this.onConnected = onConnected
         document.title = `Terminal 7: ${this.name}`
         // if we're already boarding, just focus
+        console.log("in connect", this.session?.watchdog)
+        if (this.session && this.session.watchdog)
+            this.session = null
         if (this.session) {
             // TODO: check session's status
             this.t7.log("already connected")
@@ -704,6 +707,12 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
     load() {
         this.t7.log("loading gate")
         this.session.getPayload().then(layout => this.setLayout(layout))
+        Storage.get({key: "first_gate"}).then(v => {
+            if (v.value != "nope") {
+                this.t7.toggleHelp()
+                Storage.set({key: "first_gate", value: "nope"}) 
+            }
+        })
     }
     CLIConnect() {
         this.connect(() => {
@@ -741,12 +750,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                     this.load()
                     this.delete()
                 }
-                Storage.get({key: "first_gate"}).then(v => {
-                    if (v.value != "1") {
-                        this.t7.run(this.t7.toggleHelp, 1000)
-                        Storage.set({key: "first_gate", value: "1"}) 
-                    }
-                })
             }).catch(e => this.onFormError(e))
         })
     }
