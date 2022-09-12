@@ -238,7 +238,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 } else {
                     // We're back! ensure we have the latest network status and 
                     // reconnect to the active gate
-                    this.notify("☀️", true)
                     this.clearTimeouts()
                     Network.getStatus().then(s => this.updateNetworkStatus(s))
                 }
