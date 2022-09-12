@@ -11,7 +11,6 @@ import { Form } from './form'
 import { Gate } from './gate'
 import { Terminal } from '@tuzig/xterm'
 import { FitAddon } from "xterm-addon-fit"
-import { Clipboard } from "@capacitor/clipboard"
 import XtermWebfont from 'xterm-webfont'
 
 export class T7Map {
@@ -42,16 +41,7 @@ export class T7Map {
                     if (Form.activeForm)
                         Form.activeForm.escape(this.t0)
                     this.showLog(false)
-                } else if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
-                    Clipboard.read().then(res => {
-                        if (res.type == 'text/plain') {
-                            const form = Form.activeForm
-                            form.field += res.value
-                            if (!form.hidden)
-                                this.t0.write(res.value)
-                        }
-                    })
-                } else if (Form.activeForm)
+				} else if (Form.activeForm)
                     Form.activeForm.onKey(ev)
                 else 
                     this.t0.writeln("🚧 Under Construction 🚧")

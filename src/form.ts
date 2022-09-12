@@ -1,4 +1,5 @@
 import { Terminal } from "@tuzig/xterm"
+import { Clipboard } from "@capacitor/clipboard"
 
 export type Fields = Array<{
     prompt:string,
@@ -19,6 +20,7 @@ export class Form {
     fields: Fields
     results: Results
     onKey: (ev: KeyboardEvent) => void
+	hidden: boolean
     static activeForm = null
 
     constructor(fields: Fields) {
@@ -168,6 +170,16 @@ export class Form {
                         }
                         break
                     default:
+						if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
+							Clipboard.read().then(res => {
+								if (res.type == 'text/plain') {
+									const form = Form.activeForm
+									form.field += res.value
+									if (!form.hidden)
+										t.write(res.value)
+								}
+							})
+						}
                         if (key.length == 1) { // make sure the key is a char
                             this.field += key
                             if (!this.hidden)
