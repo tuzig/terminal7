@@ -334,9 +334,11 @@ export class Gate {
         this.onConnected = onConnected
         document.title = `Terminal 7: ${this.name}`
         // if we're already boarding, just focus
-        console.log("in connect", this.session?.watchdog)
-        if (this.session && this.session.watchdog)
-            this.session = null
+        if (this.session && this.session.watchdog) {
+            this.completeConnect()
+            return
+        }
+        
         if (this.session) {
             // TODO: check session's status
             this.t7.log("already connected")
@@ -680,7 +682,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         }).catch(e => this.onFormError(e))
     }
     completeConnect(): void {
-        if (this.session == null)
             if (this.fp) {
                 this.notify("🎌  PeerBook")
                 this.session = new PeerbookSession(this.fp, this.t7.pb)

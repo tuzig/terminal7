@@ -587,7 +587,7 @@ peer_name = "${peername}"\n`
             this.pbConnect()
             const gate = this.activeG
             if (gate) {
-                gate.reset()
+                gate.connect()
             }
         } else {
             off.remove("hidden")
@@ -993,13 +993,13 @@ peer_name = "${peername}"\n`
             this.gates.get(hostname).connect()
             return
         }
-        const gate = this.addGate({
+        this.activeG = this.addGate({
             name: "temp_" + Math.random().toString(16).slice(2), // temp random name
             addr: hostname,
             id: hostname
         }, false)
         this.map.refresh()
-        gate.CLIConnect()
+        this.activeG.CLIConnect()
     }
     clearTempGates() {
         this.gates.forEach(g => {
