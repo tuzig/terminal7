@@ -455,5 +455,8 @@ export class HTTPWebRTCSession extends WebRTCSession {
         return new Promise((resolve) =>
             resolve([{ urls: this.t7.conf.net.iceServer}]))
     }
+    onIceCandidate() {
+        return
+    }
 }
 
