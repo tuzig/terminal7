@@ -132,6 +132,8 @@ export class Terminal7 {
         }
         this.loadConf(d)
 
+		this.loadChangelog()
+
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",
@@ -1050,14 +1052,13 @@ peer_name = "${peername}"\n`
 	async loadChangelog() {
 		const resp = await fetch("CHANGELOG.md")
 		const changelog = await resp.text()
-		const e = document.getElementById("changelog")
+		const e = document.getElementById("changelog-content")
 		e.innerHTML = marked.parse(changelog)
+		e.querySelectorAll("[id]").forEach(e => e.id = "changelog-" + e.id) // add prefix to all ids to avoid conflicts
 		e.querySelectorAll("a").forEach(a => a.target = "_blank")
 	}
 	toggleChangelog() {
 		const e = document.getElementById("changelog")
-		if (!e.innerHTML)
-			this.loadChangelog()
 		e.classList.toggle("show")
 	}
 }
