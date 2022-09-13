@@ -53,8 +53,6 @@ export class T7Map {
                     })
                 } else if (Form.activeForm)
                     Form.activeForm.onKey(ev)
-                else 
-                    this.t0.writeln("🚧 Under Construction 🚧")
                 ev.preventDefault()
             })
             this.t0.loadWebfontAndOpen(e).then(() => {
@@ -67,7 +65,7 @@ export class T7Map {
             if (!log)
                 return
             const resizeObserver = new window.ResizeObserver(() => {
-                fitAddon.fit()
+                setTimeout(() => fitAddon.fit(), 750)
             })
             resizeObserver.observe(log)
             log.addEventListener("transitionend", () => {
