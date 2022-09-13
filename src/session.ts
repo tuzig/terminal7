@@ -41,6 +41,7 @@ export interface Session {
     close(): void
     getPayload(): Promise<string>
     setPayload(payload: string): Promise<void>
+    reconnect(marker?: number): Promise<void>
     disconnect(): Promise<void>
     connect(marker?: number): void
 }
@@ -80,6 +81,11 @@ export abstract class BaseSession implements Session {
             resolve()
         })
     }
+    reconnect(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            reject()
+        })
+    }
     // base disconnect is rejected as it's not supported
     disconnect(): Promise<void>{
         return new Promise((resolve, reject) => {
@@ -105,8 +111,7 @@ export abstract class BaseSession implements Session {
         }
     }
     close() {
-        window.terminal7.log("close session not implmented yet for", typeof(this))
-        this.onStateChange = undefined
+        // this.onStateChange = undefined
     }
     // for reconnect
     abstract openChannel(id: ChannelID): Promise<Channel>

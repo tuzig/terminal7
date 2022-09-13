@@ -24,7 +24,12 @@ test.describe('terminal7 direct WebRTC session', ()  => {
     test.beforeAll(async ({ browser }) => {
         context = await browser.newContext()
         page = await context.newPage()
-        page.on('console', (msg) => console.log('console log:', msg.text()))
+        page.on('console', (msg) => {
+            if (msg.type() == 'trace')
+                console.trace('console trace:', msg.text())
+            else 
+                console.log('console log:', msg.text())
+        })
         page.on('pageerror', (err: Error) => console.log('PAGEERROR', err.message))
         await waitPort({host:'terminal7', port:80})
         const response = await page.goto(url)
@@ -131,14 +136,13 @@ pinch_max_y_velocity = 0.1`
             const gate = window.terminal7.activeG
             gate.disengage().then(() => {
                 window.terminal7.clearTimeouts()
-                window.terminal7.activeG.session = null
             })
             console.log(">>> after disengage:", window.terminal7.activeG, gate.name)
         })
         await sleep(1000)
         await page.screenshot({ path: `/result/third.png` })
         await page.evaluate(async() => {
-            window.terminal7.activeG.connect()
+            await window.terminal7.activeG.reconnect()
         })
         // connectGate()
         await expect(page.locator('.pane')).toHaveCount(1)

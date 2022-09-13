@@ -588,7 +588,7 @@ peer_name = "${peername}"\n`
             this.pbConnect()
             const gate = this.activeG
             if (gate) {
-                gate.connect()
+                gate.reconnect().catch(() => gate.connect())
             }
         } else {
             off.remove("hidden")

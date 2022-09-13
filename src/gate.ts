@@ -233,6 +233,7 @@ export class Gate {
         }
         this.t7.log(`updating ${this.name} state to ${state}`)
         if (state == "connected") {
+            this.marker = null
             this.notify("Connected")
             this.setIndicatorColor("unset")
             if (!this.verified) {
@@ -258,9 +259,10 @@ export class Gate {
     }
     // handle connection failures
     handleFailure(failure: Failure) {
-        this.notify(`FAILED: ${failure || "Server Disconnected"}`)
+        this.notify(`FAILED: ${failure || "Peer connection"}`)
         this.session.close()
         this.session = null
+        this.marker = null
         if (!this.boarding)
             return
         this.stopBoarding()
@@ -288,7 +290,9 @@ export class Gate {
             case Failure.BadRemoteDescription:
                 this.notify("Please try again")
                 break
-                
+            default:
+                this.reset()
+                return
         }
         if (this.name.startsWith("temp")) {
             (async () => {
@@ -325,6 +329,16 @@ export class Gate {
         } else
             this.t7.onDisconnect(this)
     }
+    reconnect(): Promise<void> {
+        this.notify("Reconnecting")
+        return new Promise((resolve, reject) => {
+            if (!this.session)
+                reject()
+            else 
+                this.session.reconnect(this.marker).then(resolve)
+                .catch(() => this.connect().then(resolve).catch(reject))
+        })
+    }
     /*
      * connect connects to the gate
      */
@@ -343,7 +357,6 @@ export class Gate {
         
         if (this.session) {
             // TODO: check session's status
-            this.t7.log("already connected")
             // hide the tower if needed
             const log = document.getElementById("log")
             if (!log.classList.contains("show"))
