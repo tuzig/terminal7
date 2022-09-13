@@ -138,18 +138,11 @@ export class Pane extends Cell {
                 return toDo
             })
             this.t.onData(d =>  {
-
-                if (!this.d) {
-                    this.gate.notify("Gate is disconnected")
-                    return
-                }
-                const state = this.d.readyState 
-                if (state != "open") {
-                    this.gate.notify("data channel not ready")
-                    // TODO: maybe try and reconnect?
-                    return
-                }
-                this.d.send(d)
+                if (!this.d || this.d.readyState != "open" ) {
+                    this.gate.notify("Disconnected")
+                    this.gate.reset()
+                } else
+                    this.d.send(d)
             })
             this.resizeObserver.observe(this.e);
             this.fit(pane => { 
