@@ -20,7 +20,7 @@ export class Form {
     fields: Fields
     results: Results
     onKey: (ev: KeyboardEvent) => void
-	hidden: boolean
+    hidden: boolean
     static activeForm = null
 
     constructor(fields: Fields) {
@@ -45,8 +45,8 @@ export class Form {
         this.setActive(t)
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
-		let current = 0
-		this.currentField = current
+        let current = 0
+        this.currentField = current
         return new Promise<Array<boolean>>((resolve, reject) => {
             this.reject = reject
             t.writeln(`  ${title}, choose fields to edit:`)
@@ -83,18 +83,18 @@ export class Form {
                         enabled.fill(true)
                         if (current != 0)
                             t.write(`\x1B[${current}A`) // move cursor to first field
-						enabled.forEach(() => t.write("X\x1B[1D\x1B[1B"))
+                        enabled.forEach(() => t.write("X\x1B[1D\x1B[1B"))
                         t.write(`\x1B[${len-current}A`) // restore cursor position
                         break
                     case "ArrowLeft":
                         enabled.fill(false)
                         if (current != 0)
                             t.write(`\x1B[${current}A`)
-						enabled.forEach(() => t.write(" \x1B[1D\x1B[1B"))
+                        enabled.forEach(() => t.write(" \x1B[1D\x1B[1B"))
                         t.write(`\x1B[${len-current}A`)
                         break
                 }
-				this.currentField = current
+                this.currentField = current
             }
             t.focus()
         })
@@ -104,8 +104,8 @@ export class Form {
         this.setActive(t)
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
-		let current = 0
-		this.currentField = current
+        let current = 0
+        this.currentField = current
         return new Promise<string>((resolve, reject) => {
             this.reject = reject
             t.writeln("  [Use ⇅ to move, Enter to select]")
@@ -137,7 +137,7 @@ export class Form {
                         Form.activeForm = null
                         break
                 }
-				this.currentField = current
+                this.currentField = current
             }
             setTimeout(() => t.focus(), 100)
         })
@@ -174,15 +174,15 @@ export class Form {
                         }
                         break
                     default:
-						if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
-							Clipboard.read().then(res => {
-								if (res.type == 'text/plain') {
-									this.field += res.value
-									if (!this.hidden)
-										t.write(res.value)
-								}
-							})
-						}
+                        if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
+                            Clipboard.read().then(res => {
+                                if (res.type == 'text/plain') {
+                                    this.field += res.value
+                                    if (!this.hidden)
+                                        t.write(res.value)
+                                }
+                            })
+                        }
                         if (key.length == 1) { // make sure the key is a char
                             this.field += key
                             if (!this.hidden)
