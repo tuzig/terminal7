@@ -52,7 +52,6 @@ export class WebRTCChannel extends BaseChannel {
             this.disconnect()
             dc.close()
         }
-        console.log(">>> finished close")
     }
     disconnect() {
         if (this.dataChannel) {
@@ -87,9 +86,7 @@ export abstract class WebRTCSession extends BaseSession {
         this.lastMsgId = 0
         this.marker = -1
     }
-    onIceCandidate(ev: RTCPeerConnectionIceEvent) {
-            return
-    }
+    abstract onIceCandidate(ev: RTCPeerConnectionIceEvent): void
     async connect(marker=-1) {
         console.log("in connect")
         this.startWatchdog()
@@ -211,53 +208,60 @@ export abstract class WebRTCSession extends BaseSession {
             }
         })
     }
-    openCDC() {
-        console.log(">>> opening cdc")
-        const cdc = this.pc.createDataChannel('%')
-        this.cdc = cdc
-        cdc.onopen = () => {
-            this.t7.log(">>> cdc opened")
-            if (this.pendingCDCMsgs.length > 0)
-                // TODO: why the time out? why 100mili?
-                this.t7.run(() => {
-                    this.t7.log("sending pending messages:", this.pendingCDCMsgs)
-                    this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m[0], m[1], m[2]))
-                    this.pendingCDCMsgs = []
-                }, 100)
-        }
-        cdc.onmessage = m => {
-            const d = new TextDecoder("utf-8"),
-                  msg = JSON.parse(d.decode(m.data))
-            // handle Ack
-            if ((msg.type == "ack") || (msg.type == "nack")) {
-                const i = msg.args.ref
-                const handlers = this.msgHandlers[i]
-                this.msgHandlers.delete(msg.args.ref)
-                this.t7.log("got cdc message:",  msg)
-                /* TODO: What do we do with a nack?
-                if (msg.type == "nack") {
-                    this.setIndicatorColor(FAILED_COLOR)
-                    this.nameE.classList.add("failed")
-                }
-                else {
-                    this.setIndicatorColor("unset")
-                    this.nameE.classList.remove("failed")
-                }
-                */
-                if (msg.type == "nack") {
-                    if (handlers && (typeof handlers[1] == "function"))
-                        handlers[1](msg.args.body)
-                    else
-                        console.log("A nack is unhandled", msg)
-                } else {
-                    if (handlers && (typeof handlers[0] == "function"))
-                        handlers[0](msg.args.body)
-                    else
-                        console.log("an ack is unhandled", msg)
+    async reconnect(marker: number): Promise<void> {
+        console.log("in reconnect", this.cdc, this.cdc.readyState)
+        if (!this.pc)
+            this.connect(marker)
+        else
+            if (!this.cdc || this.cdc.readyState != "open")
+                return this.openCDC()
+    }
+    openCDC(): Promise<void> {
+        // stop listening for messages
+       this.startWatchdog()
+       if (this.cdc)
+           this.cdc.onmessage = undefined
+       return new Promise((resolve, reject) => {
+           console.log(">>> opening cdc")
+            const cdc = this.pc.createDataChannel('%')
+            this.cdc = cdc
+            cdc.onopen = () => {
+                this.t7.log(">>> cdc opened")
+                this.clearWatchdog()
+                if (this.pendingCDCMsgs.length > 0)
+                    // TODO: why the time out? why 100mili?
+                    this.t7.run(() => {
+                        this.t7.log("sending pending messages:", this.pendingCDCMsgs)
+                        this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m[0], m[1], m[2]))
+                        this.pendingCDCMsgs = []
+                        resolve()
+                    }, 100)
+                else
+                    resolve()
+            }
+            cdc.onmessage = m => {
+                const d = new TextDecoder("utf-8"),
+                      msg = JSON.parse(d.decode(m.data))
+                // handle Ack
+                if ((msg.type == "ack") || (msg.type == "nack")) {
+                    const i = msg.args.ref
+                    const handlers = this.msgHandlers[i]
+                    this.msgHandlers.delete(msg.args.ref)
+                    this.t7.log("got cdc message:",  msg)
+                    if (msg.type == "nack") {
+                        if (handlers && (typeof handlers[1] == "function"))
+                            handlers[1](msg.args.body)
+                        else
+                            console.log("A nack is unhandled", msg)
+                    } else {
+                        if (handlers && (typeof handlers[0] == "function"))
+                            handlers[0](msg.args.body)
+                        else
+                            console.log("an ack is unhandled", msg)
+                    }
                 }
             }
-        }
-        return cdc
+       })
     }
     sendCTRLMsg(msg, resolve, reject) {
         // helps us ensure every message gets only one Id
@@ -301,7 +305,6 @@ export abstract class WebRTCSession extends BaseSession {
     }
     closeChannels(): void {
         this.channels.forEach(c => c.close())
-        this.t7.log("channels after deletes:", this.channels)
     }
     // disconnect disconnects from all channels, requests a mark and resolve with
     // the new marker
@@ -456,6 +459,9 @@ export class HTTPWebRTCSession extends WebRTCSession {
     getIceServers() {
         return new Promise((resolve) =>
             resolve([{ urls: this.t7.conf.net.iceServer}]))
+    }
+    onIceCandidate() {
+        return
     }
 }
 

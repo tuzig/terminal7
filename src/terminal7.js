@@ -535,6 +535,7 @@ peer_name = "${peername}"\n`
             t = formatDate(d, "HH:mm:ss.fff")
         // TODO: add color based on level and ttl
         this.map.interruptTTY()
+        this.map.t0.scrollToBottom()
         this.map.t0.writeln(` \x1B[2m${t}\x1B[0m ${message}`)
         if (!dontShow)
             this.map.showLog(true)
@@ -590,7 +591,7 @@ peer_name = "${peername}"\n`
             this.pbConnect()
             const gate = this.activeG
             if (gate) {
-                gate.reset()
+                gate.reconnect().catch(() => gate.connect())
             }
         } else {
             off.remove("hidden")
@@ -996,13 +997,13 @@ peer_name = "${peername}"\n`
             this.gates.get(hostname).connect()
             return
         }
-        const gate = this.addGate({
+        this.activeG = this.addGate({
             name: "temp_" + Math.random().toString(16).slice(2), // temp random name
             addr: hostname,
             id: hostname
         }, false)
         this.map.refresh()
-        gate.CLIConnect()
+        this.activeG.CLIConnect()
     }
     clearTempGates() {
         this.gates.forEach(g => {

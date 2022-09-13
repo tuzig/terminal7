@@ -131,10 +131,12 @@ export class Gate {
             this.notify("Got peer from \uD83D\uDCD6, connect only")
             return
         } else {
+            // TODO: check if we need this
             if (Form.activeForm) 
                 this.map.t0.focus()
             else {
                 this.map.showLog(true)
+                // TODO: move this to the top of the function
                 const f1 = new Form([
                     { prompt: "Connect" },
                     { prompt: "Edit" },
@@ -195,7 +197,7 @@ export class Gate {
                                 }).catch(e => this.onFormError(e))
                                 break
                         }
-                    }).catch(e => this.map.showLog(false))
+                    }).catch(() => this.map.showLog(false))
             }
         }
     }
@@ -231,6 +233,7 @@ export class Gate {
         }
         this.t7.log(`updating ${this.name} state to ${state}`)
         if (state == "connected") {
+            this.marker = null
             this.notify("Connected")
             this.setIndicatorColor("unset")
             if (!this.verified) {
@@ -256,9 +259,10 @@ export class Gate {
     }
     // handle connection failures
     handleFailure(failure: Failure) {
-        this.notify(`FAILED: ${failure || "Server Disconnected"}`)
+        this.notify(`FAILED: ${failure || "Peer connection"}`)
         this.session.close()
         this.session = null
+        this.marker = null
         if (!this.boarding)
             return
         this.stopBoarding()
@@ -286,7 +290,9 @@ export class Gate {
             case Failure.BadRemoteDescription:
                 this.notify("Please try again")
                 break
-                
+            default:
+                this.reset()
+                return
         }
         if (this.name.startsWith("temp")) {
             (async () => {
@@ -323,6 +329,16 @@ export class Gate {
         } else
             this.t7.onDisconnect(this)
     }
+    reconnect(): Promise<void> {
+        this.notify("Reconnecting")
+        return new Promise((resolve, reject) => {
+            if (!this.session)
+                reject()
+            else 
+                this.session.reconnect(this.marker).then(resolve)
+                .catch(() => this.connect().then(resolve).catch(reject))
+        })
+    }
     /*
      * connect connects to the gate
      */
@@ -334,12 +350,13 @@ export class Gate {
         this.onConnected = onConnected
         document.title = `Terminal 7: ${this.name}`
         // if we're already boarding, just focus
-        console.log("in connect", this.session?.watchdog)
-        if (this.session && this.session.watchdog)
-            this.session = null
+        if (this.session && this.session.watchdog) {
+            this.completeConnect()
+            return
+        }
+        
         if (this.session) {
             // TODO: check session's status
-            this.t7.log("already connected")
             // hide the tower if needed
             const log = document.getElementById("log")
             if (!log.classList.contains("show"))
@@ -680,7 +697,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         }).catch(e => this.onFormError(e))
     }
     completeConnect(): void {
-        if (this.session == null)
             if (this.fp) {
                 this.notify("🎌  PeerBook")
                 this.session = new PeerbookSession(this.fp, this.t7.pb)
@@ -769,7 +785,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             }
         }).catch(e => this.onFormError(e))
 	}
-    onFormError (e) {
+    onFormError () {
         this.map.showLog(false)
         this.t7.clearTempGates()
     }

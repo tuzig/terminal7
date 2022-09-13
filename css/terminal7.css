@@ -443,7 +443,7 @@ label {
     top: 93px;
     margin: 0;
     padding: 20px;
-    z-index: 4;
+    z-index: 5;
     transition: transform .75s ease, scale .75s ease;
     opacity: 0.8;
     overflow: hidden;
