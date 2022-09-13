@@ -441,7 +441,7 @@ export class Pane extends Cell {
             break
         // this key is at terminal level
         case "l":
-            f = () => this.t7.logDisplay()
+            f = () => this.t7.map.showLog()
             break
         case "ArrowLeft":
             f = () => this.w.moveFocus("left")
