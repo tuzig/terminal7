@@ -131,10 +131,12 @@ export class Gate {
             this.notify("Got peer from \uD83D\uDCD6, connect only")
             return
         } else {
+            // TODO: check if we need this
             if (Form.activeForm) 
                 this.map.t0.focus()
             else {
                 this.map.showLog(true)
+                // TODO: move this to the top of the function
                 const f1 = new Form([
                     { prompt: "Connect" },
                     { prompt: "Edit" },
@@ -195,7 +197,7 @@ export class Gate {
                                 }).catch(e => this.onFormError(e))
                                 break
                         }
-                    }).catch(e => this.map.showLog(false))
+                    }).catch(() => this.map.showLog(false))
             }
         }
     }
@@ -770,7 +772,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             }
         }).catch(e => this.onFormError(e))
 	}
-    onFormError (e) {
+    onFormError () {
         this.map.showLog(false)
         this.t7.clearTempGates()
     }
