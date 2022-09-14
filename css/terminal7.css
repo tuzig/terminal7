@@ -52,7 +52,7 @@ body {
 * {box-sizing: border-box; }
 *:focus { outline: none; } 
 
-h1, h2, h3 {
+.modal h1, .modal h2, .modal h3 {
   text-align: center;
 }
 .modal h1 {
@@ -712,8 +712,10 @@ button.boarding  {
 }
 #changelog.show {
 	visibility: visible;
-	max-width: 30vw;
+	width: 30em;
+	max-width: 96vw;
 	max-height: 60vh;
+    text-align: left;
 }
 #changelog::-webkit-scrollbar-thumb {
     background: var(--text-color);
