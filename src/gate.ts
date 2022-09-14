@@ -555,6 +555,10 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         this.windows = []
         this.breadcrumbs = []
         this.msgs = {}
+        this.t7.cells.forEach((c, i, cells) => {
+            if (c instanceof Pane && (c.gate == this))
+                cells.splice(i, 1)
+        })
     }
     /*
      * dump dumps the host to a state object
