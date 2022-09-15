@@ -241,11 +241,8 @@ export class Gate {
                 this.updateNameE()
                 this.t7.storeGates()
             }
-            const m = this.t7.e.querySelector(".disconnect")
-            if (m != null)
-                m.remove()
-            // show help for first timer
-			// first onConnected is special if it's a new gate but once connected, we're back to load
+            // first onConnected is special if it's a new gate but once
+            // connected, we're back to loading the gate
             this.onConnected()
             this.onConnected = this.load
         } else if (state == "disconnected") {
@@ -461,43 +458,13 @@ export class Gate {
             }
         }).catch(ev => this.onFormError(ev))
     }
-    async loseState () {
-        const fp = await this.t7.getFingerprint(),
-              rc = `bash -c "$(curl -sL https://get.webexec.sh)"
-echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
-`
-        let e = document.getElementById("lose-state-template")
-        e = e.content.cloneNode(true)
-
-        e.querySelector("pre").innerText = rc
-        e.querySelector(".continue").addEventListener('click', () => {
-            this.t7.e.querySelector('.lose-state').remove()
-            this.clear()
-            this.activeW = this.addWindow("", true)
-            this.focus()
-        })
-        e.querySelector(".copy").addEventListener('click', () => {
-            this.t7.e.querySelector('.lose-state').remove()
-            Clipboard.write( {string: rc })
-            this.tryWebexec = true
-            this.clear()
-            this.activeW = this.addWindow("", true)
-            this.focus()
-        })
-        e.querySelector(".close").addEventListener('click', () => {
-            this.t7.e.querySelector('.lose-state').remove()
-            this.clear()
-            this.t7.goHome()
-        })
-        this.t7.e.appendChild(e)
-    }
     setLayout(state: object) {
         const winLen = this.windows.length
         // got an empty state
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
-                this.activeW = this.addWindow("", true)
+            this.activeW = this.addWindow("", true)
         } else if (winLen > 0) {
             // TODO: validate the current layout is like the state
             this.t7.log("Restoring with marker, opening channel")
