@@ -11,6 +11,7 @@ import { Form } from './form'
 import { Gate } from './gate'
 import { Terminal } from '@tuzig/xterm'
 import { Clipboard } from "@capacitor/clipboard"
+import { WebglAddon } from 'xterm-addon-webgl'
 import XtermWebfont from 'xterm-webfont'
 
 export class T7Map {
@@ -55,6 +56,14 @@ export class T7Map {
                 ev.preventDefault()
             })
             this.t0.loadWebfontAndOpen(e).then(() => {
+                const webGLAddon = new WebglAddon()
+                webGLAddon.onContextLoss(() => {
+                    console.log("lost context")
+                      webGLAddon.dispose()
+                })
+                try {
+                    this.t0.loadAddon(webGLAddon)
+                } catch (e) { console.log("no webgl: " +e.toString()) }
                 resolve()
             })
             this.refresh()
@@ -62,7 +71,9 @@ export class T7Map {
             const log = document.getElementById("log")
             if (!log)
                 return
-            log.addEventListener("transitionend", () => {
+            log.addEventListener("transitionend", ev => {
+                // setting the font size is causing the rendered to clear
+                setTimeout(() => this.t0.setAttribute("fontSize", 14), 0)
                 if (log.classList.contains("show"))
                     this.t0.focus()
                 else {
