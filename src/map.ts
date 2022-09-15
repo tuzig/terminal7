@@ -69,7 +69,7 @@ export class T7Map {
             const resizeObserver = new window.ResizeObserver(() => {
                 fitAddon.fit()
             })
-            resizeObserver.observe(log)
+            resizeObserver.observe(this.t0)
             log.addEventListener("transitionend", () => {
                 fitAddon.fit()
                 if (log.classList.contains("show"))
