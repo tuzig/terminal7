@@ -426,7 +426,10 @@ export class Gate {
                             this.activeW = this.addWindow("", true)
                             this.focus()
                         })
-                    }).catch(() => this.notify("Connect failed"))
+                    }).catch(() => {
+                        this.notify("Connect failed")
+                        this.reset()
+                    })
                     break
                 case "\x1B[31mFactory reset\x1B[0m":
                     factoryResetVerify.start(this.map.t0).then(answers => {
@@ -615,10 +618,8 @@ export class Gate {
             }
             return this.session.disconnect().then(marker => {
                 this.marker = marker
-                this.notify("Disconnected")
                 resolve()
             }).catch(() => {
-                this.notify("Disconnected")
                 resolve()
             })
         })

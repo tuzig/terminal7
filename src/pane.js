@@ -139,7 +139,7 @@ export class Pane extends Cell {
             })
             this.t.onData(d =>  {
                 if (!this.d || this.d.readyState != "open" ) {
-                    this.gate.notify("Disconnected")
+                    this.gate.notify("Data channel lost")
                     this.gate.reset()
                 } else
                     this.d.send(d)
