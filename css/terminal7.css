@@ -702,7 +702,7 @@ button.boarding  {
 	position: relative;
 	max-width: 10vw;
 	max-height: 0;
-	padding: 0 1em;
+	padding: 1em;
 	line-height: 1.5em;
 	overflow-x: hidden;
 	overflow-y: scroll;
