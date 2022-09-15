@@ -10,7 +10,6 @@
 import { Form } from './form'
 import { Gate } from './gate'
 import { Terminal } from '@tuzig/xterm'
-import { FitAddon } from "xterm-addon-fit"
 import { Clipboard } from "@capacitor/clipboard"
 import XtermWebfont from 'xterm-webfont'
 
@@ -31,8 +30,6 @@ export class T7Map {
                 cols: 55,
             })
             const e = document.getElementById("t0")
-            const fitAddon = new FitAddon()
-            this.t0.loadAddon(fitAddon)
             this.t0.loadAddon(new XtermWebfont())
             // this.t0.attachCustomKeyEventHandler(ev => {
             this.t0.onKey(iev => {
@@ -58,7 +55,6 @@ export class T7Map {
                 ev.preventDefault()
             })
             this.t0.loadWebfontAndOpen(e).then(() => {
-                fitAddon.fit()
                 resolve()
             })
             this.refresh()
@@ -67,7 +63,6 @@ export class T7Map {
             if (!log)
                 return
             log.addEventListener("transitionend", () => {
-                fitAddon.fit()
                 if (log.classList.contains("show"))
                     this.t0.focus()
                 else {
