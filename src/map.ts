@@ -73,7 +73,7 @@ export class T7Map {
                 return
             log.addEventListener("transitionend", ev => {
                 // setting the font size is causing the rendered to clear
-                setTimeout(() => this.t0.setAttribute("fontSize", 14), 0)
+                setTimeout(() => this.t0.setOption("fontSize", 14), 0)
                 if (log.classList.contains("show"))
                     this.t0.focus()
                 else {
@@ -161,7 +161,7 @@ export class T7Map {
         }
     }
     /* 
-     * logDisplay display or hides the notifications.
+     * showLog display or hides the notifications.
      * if the parameters in udefined the function toggles the displays
      */
     showLog(show) {
