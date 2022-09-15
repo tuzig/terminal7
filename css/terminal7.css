@@ -698,11 +698,11 @@ button.boarding  {
     text-shadow: var(--remote-border) 1px 0 10px;
 }
 #changelog {
-	visibility: hidden;
+	display: none;
 	position: relative;
 	max-width: 10vw;
 	max-height: 0;
-	padding: 0 1em;
+	padding: 1em;
 	line-height: 1.5em;
 	overflow-x: hidden;
 	overflow-y: scroll;
@@ -711,7 +711,7 @@ button.boarding  {
 	border-radius: 5px;
 }
 #changelog.show {
-	visibility: visible;
+	display: block;
 	width: 30em;
 	max-width: 96vw;
 	max-height: 60vh;
