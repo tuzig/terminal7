@@ -287,7 +287,7 @@ export class Gate {
             case Failure.BadRemoteDescription:
                 this.notify("Please try again")
                 break
-            default:
+            case undefined:
                 this.reset()
                 return
         }
@@ -657,11 +657,12 @@ export class Gate {
             this.map.showLog(false)
     }
     askPass() {
-        this.map.t0.writeln("  Trying SSH")
+        this.map.t0.writeln("  Using SSH")
         const authForm = new Form([
             { prompt: "Username", default: this.username },
             { prompt: "Password", password: true }
         ])
+        this.map.showLog(true)
         authForm.start(this.map.t0).then(res => {
             this.username = res[0]
             this.pass = res[1]
@@ -757,8 +758,8 @@ export class Gate {
             }
         }).catch(e => this.onFormError(e))
 	}
-    onFormError () {
-        this.map.showLog(false)
+    onFormError(err) {
+        this.t7.log("Form error:", err)
         this.t7.clearTempGates()
     }
     updateNameE() {

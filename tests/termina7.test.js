@@ -459,7 +459,7 @@ describe("terminal7", function() {
             console.log("t0.out:", t0.out)
             expect(t0.out).toMatch("webexec")
             expect(t0.out).toMatch("FAILED: Timeout")
-            expect(t0.out).toMatch("Trying SSH")
+            expect(t0.out).toMatch("Using SSH")
             expect(t0.out).toMatch("Username:")
             await sleep(10)
             t0.pressKey("a")
