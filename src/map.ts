@@ -10,6 +10,7 @@
 import { Form } from './form'
 import { Gate } from './gate'
 import { Terminal } from '@tuzig/xterm'
+import { FitAddon } from "xterm-addon-fit"
 import { Clipboard } from "@capacitor/clipboard"
 import { WebglAddon } from 'xterm-addon-webgl'
 import XtermWebfont from 'xterm-webfont'
@@ -31,6 +32,8 @@ export class T7Map {
                 cols: 55,
             })
             const e = document.getElementById("t0")
+            const fitAddon = new FitAddon()
+            this.t0.loadAddon(fitAddon)
             this.t0.loadAddon(new XtermWebfont())
             // this.t0.attachCustomKeyEventHandler(ev => {
             this.t0.onKey(iev => {
@@ -72,11 +75,11 @@ export class T7Map {
             if (!log)
                 return
             log.addEventListener("transitionend", ev => {
-                // setting the font size is causing the rendered to clear
-                setTimeout(() => this.t0.setOption("fontSize", 14), 0)
-                if (log.classList.contains("show"))
+                console.log(ev)
+                if (log.classList.contains("show")) {
+                    fitAddon.fit()
                     this.t0.focus()
-                else {
+                } else {
                     this.t0.blur()
                     // if we're not on the map, we're at the gate, hide the minimized version
                     if (window.location.hash != "#map") {
