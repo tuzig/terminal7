@@ -237,11 +237,13 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         if (Capacitor.isNativePlatform())  {
             App.addListener('appStateChange', state => {
                 if (!state.isActive) {
-                    // We're getting suspended. disengage.
+                    // this prevents a resizing bug that keeps the font tiny
+                    this.showLog(true)
                     if (this.pb) {
                         this.pb.close()
                         this.pb = null
                     }
+                    // We're getting suspended. disengage.
                     this.disengage().then(() => {
                         this.clearTimeouts()
                     })
