@@ -289,9 +289,6 @@ export class Gate {
             case Failure.BadRemoteDescription:
                 this.notify("Please try again")
                 break
-            case undefined:
-                this.reset()
-                return
         }
         if (this.name.startsWith("temp")) {
             (async () => {
