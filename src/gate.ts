@@ -408,8 +408,10 @@ export class Gate {
             switch (choice) {
                 case "Reset connection":
                     this.disengage().then(() => {
-                        this.session.close()
-                        this.session = null
+                        if (this.session) {
+                            this.session.close()
+                            this.session = null
+                        }
                         this.t7.run(() =>  {
                             this.connect()
                         }, 100)
@@ -417,8 +419,10 @@ export class Gate {
                     break
                 case "Reset connection & Layout":
                     this.disengage().then(() => {
-                        this.session.close()
-                        this.session = null
+                        if (this.session) {
+                            this.session.close()
+                            this.session = null
+                        }
                         this.connect(() => {
                             this.clear()
                             this.map.showLog(false)
@@ -572,8 +576,10 @@ export class Gate {
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
                         this.t7.log("Closing gate after updating to empty state")
-                        this.session.close()
-                        this.session = null
+                        if (this.session) {
+                            this.session.close()
+                            this.session = null
+                        }
                         this.boarding = false
                     }
                })
