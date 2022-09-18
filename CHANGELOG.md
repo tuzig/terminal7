@@ -6,11 +6,18 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Undefined
+## [1.0-rc.4] - 2022/9/15
 
 ### Added
 
-- reset menu of closed data channel
+- reset menu for closed data channel
+
+### Fixed
+
+- Recovering interrupted connections
+- First help page is displayed when it should
+- Handling of hosts that refuse the fingerprint
+- t0 was hidden when in zoom
 
 ## [1.0-rc.3] - 2022/9/11
 

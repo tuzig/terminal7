@@ -441,8 +441,12 @@ export class HTTPWebRTCSession extends WebRTCSession {
                     // TODO move this to the last line of the last then
                     const answer = JSON.parse(atob(data))
                     const sd = new RTCSessionDescription(answer)
-                    this.pc.setRemoteDescription(sd)
-                    .catch (() => { this.fail(Failure.BadRemoteDescription) })
+                    if (this.pc)
+                        this.pc.setRemoteDescription(sd)
+                    .catch (() => { 
+                        if (this.pc)
+                            this.fail(Failure.BadRemoteDescription)
+                    })
                 }).catch(error => {
                     this.clearWatchdog()
                     console.log("POST to /connect failed", error)

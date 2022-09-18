@@ -12,6 +12,7 @@ import { Gate } from './gate'
 import { Terminal } from '@tuzig/xterm'
 import { FitAddon } from "xterm-addon-fit"
 import { Clipboard } from "@capacitor/clipboard"
+import { WebglAddon } from 'xterm-addon-webgl'
 import XtermWebfont from 'xterm-webfont'
 
 export class T7Map {
@@ -58,7 +59,14 @@ export class T7Map {
                 ev.preventDefault()
             })
             this.t0.loadWebfontAndOpen(e).then(() => {
-                fitAddon.fit()
+                const webGLAddon = new WebglAddon()
+                webGLAddon.onContextLoss(() => {
+                    console.log("lost context")
+                      webGLAddon.dispose()
+                })
+                try {
+                    this.t0.loadAddon(webGLAddon)
+                } catch (e) { console.log("no webgl: " +e.toString()) }
                 resolve()
             })
             this.refresh()
@@ -66,15 +74,12 @@ export class T7Map {
             const log = document.getElementById("log")
             if (!log)
                 return
-            const resizeObserver = new window.ResizeObserver(() => {
-                fitAddon.fit()
-            })
-            resizeObserver.observe(log)
-            log.addEventListener("transitionend", () => {
-                fitAddon.fit()
-                if (log.classList.contains("show"))
+            log.addEventListener("transitionend", ev => {
+                console.log(ev)
+                if (log.classList.contains("show")) {
+                    fitAddon.fit()
                     this.t0.focus()
-                else {
+                } else {
                     this.t0.blur()
                     // if we're not on the map, we're at the gate, hide the minimized version
                     if (window.location.hash != "#map") {
@@ -159,7 +164,7 @@ export class T7Map {
         }
     }
     /* 
-     * logDisplay display or hides the notifications.
+     * showLog display or hides the notifications.
      * if the parameters in udefined the function toggles the displays
      */
     showLog(show) {
