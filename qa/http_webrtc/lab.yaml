@@ -8,6 +8,8 @@ services:
       - ./qa/http_webrtc:/runner
       - ./qa/result:/result
       - ./qa/http_webrtc/webexec_conf:/webexec_config
+    environment:
+      PWARGS: ${PWARGS}
     depends_on:
       - terminal7
       - webexec
