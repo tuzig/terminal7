@@ -227,10 +227,12 @@ export class Gate {
      * state changes.
      */
     onSessionState(state: string, failure: Failure) {
+        /*
         if (!this.session) {
             this.t7.log(`Ignoring ${this.name} change state to ${state} as session is closed`)
             return
         }
+        */
         this.t7.log(`updating ${this.name} state to ${state}`)
         if (state == "connected") {
             this.marker = null

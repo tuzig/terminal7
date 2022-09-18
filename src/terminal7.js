@@ -65,7 +65,7 @@ const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # cut_min_distance = 80
 # cut_min_speed = 2.5
 # no pinch when scrolling -> y velocity higher than XTZ px/ms
-pinch_max_y_velocity = 0.1
+# pinch_max_y_velocity = 0.1
 # auto_restore = false
 # flash = 100
 `
