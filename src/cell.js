@@ -75,10 +75,10 @@ export class Cell {
             }
         })
         h.on('twofingerstap', () => {
-            this.toggleZoom()
+            this.toggleZoom(true)
         })
         h.on('doubletap', () => {
-            this.toggleZoom()
+            this.toggleZoom(true)
         })
 
         h.on('pinch', e => {
@@ -151,7 +151,7 @@ export class Cell {
         e.style.width = "100%"
         this.fit()
     }
-    toggleZoom() {
+    toggleZoom(focus = false) {
         if (this.zoomed) {
             // Zoom out
             if (this.resizeObserver != null) {
@@ -181,6 +181,7 @@ export class Cell {
         }
         this.zoomed = !this.zoomed
         this.gate.sendState()
-        this.t7.run(() => this.focus(), ABIT)
+        if (focus)
+            this.t7.run(() => this.focus(), ABIT)
     }
 }

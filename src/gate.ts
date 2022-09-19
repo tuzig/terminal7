@@ -697,6 +697,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         }).catch(e => this.onFormError(e))
     }
     completeConnect(): void {
+        if (Form.activeForm)
+            Form.activeForm.escape(this.map.t0)
             if (this.fp) {
                 this.notify("🎌  PeerBook")
                 this.session = new PeerbookSession(this.fp, this.t7.pb)
@@ -723,6 +725,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
     load() {
         this.t7.log("loading gate")
         this.session.getPayload().then(layout => this.setLayout(layout))
+        document.getElementById("map").classList.add("hidden")
         Storage.get({key: "first_gate"}).then(v => {
             if (v.value != "nope") {
                 this.t7.toggleHelp()
