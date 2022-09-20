@@ -18,6 +18,7 @@ import XtermWebfont from 'xterm-webfont'
 export class T7Map {
     t0: Terminal
     ttyWait: number
+    shellForm: Form
     open() {
         return new Promise(resolve => {
             this.t0 = new Terminal({
@@ -37,6 +38,7 @@ export class T7Map {
             this.t0.loadAddon(new XtermWebfont())
             // this.t0.attachCustomKeyEventHandler(ev => {
             this.t0.onKey(iev => {
+                this.interruptTTY()
                 const ev = iev.domEvent
                 const key = ev.key
                 if (key == 'Escape') {
@@ -54,8 +56,6 @@ export class T7Map {
                     })
                 } else if (Form.activeForm)
                     Form.activeForm.onKey(ev)
-                else 
-                    this.t0.writeln("🚧 Under Construction 🚧")
                 ev.preventDefault()
             })
             this.t0.loadWebfontAndOpen(e).then(() => {
@@ -177,7 +177,8 @@ export class T7Map {
             e.classList.remove("hidden")
             e.classList.add("show")
             document.getElementById("log-button").classList.add("on")
-
+            if (!this.shellForm)
+                this.startShell()
         } else {
             e.classList.remove("show")
             document.getElementById("log-button").classList.remove("on")
@@ -202,5 +203,19 @@ export class T7Map {
             this.t0.scrollToBottom()
             this.t0.writeln("...INTERRUPTED")
         }
+    }
+    async startShell() {
+        this.shellForm = new Form([])
+        this.shellForm.escape = () => {
+            this.shellForm = null
+            Form.activeForm = null
+        }
+        const res = await this.shellForm.shell(this.t0)
+        switch (res) {
+            default:
+                this.t0.writeln("unknown command")
+        }
+        this.shellForm.escape()
+        this.startShell()
     }
 }

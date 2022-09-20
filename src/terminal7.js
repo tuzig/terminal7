@@ -978,6 +978,7 @@ peer_name = "${peername}"\n`
         this.map.refresh()
     }
     async connect() {
+        this.map.t0.writeln("")
         if (!this.conf.peerbook) {
             const pbForm = new Form([
                 { prompt: "Add static host" },
