@@ -53,6 +53,8 @@ export class T7Map {
                     })
                 } else if (Form.activeForm)
                     Form.activeForm.onKey(ev)
+                else 
+                    this.t0.writeln("🚧 Under Construction 🚧")
                 ev.preventDefault()
             })
             this.t0.loadWebfontAndOpen(e).then(() => {
