@@ -408,7 +408,7 @@ export class Gate {
         const resetForm = new Form(fields)
         this.map.showLog(true)
         this.map.t0.writeln(`\x1B[4m${this.name}\x1B[0m`)
-        resetForm.menu(this.map.t0).then(choice => {
+        resetForm.menu(this.map.t0).then(async choice => {
             switch (choice) {
                 case "Reset connection":
                     this.disengage().then(() => {
@@ -420,16 +420,21 @@ export class Gate {
                     }).catch(() => this.connect())
                     break
                 case "Reset connection & Layout":
-                    this.disengage().then(() => {
-                        this.session.close()
-                        this.session = null
+                    try {
+                        if (this.session) {
+                            await this.disengage()
+                            this.session.close()
+                            this.session = null
+                        }
                         this.connect(() => {
                             this.clear()
                             this.map.showLog(false)
                             this.activeW = this.addWindow("", true)
                             this.focus()
                         })
-                    }).catch(() => this.notify("Connect failed"))
+                    } catch(e) {
+                        this.notify("Connect failed")
+                    }
                     break
                 case "\x1B[31mFactory reset\x1B[0m":
                     factoryResetVerify.start(this.map.t0).then(answers => {
