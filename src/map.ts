@@ -14,11 +14,12 @@ import { FitAddon } from "xterm-addon-fit"
 import { Clipboard } from "@capacitor/clipboard"
 import { WebglAddon } from 'xterm-addon-webgl'
 import XtermWebfont from 'xterm-webfont'
+import { Shell } from './shell'
 
 export class T7Map {
     t0: Terminal
     ttyWait: number
-    shellForm: Form
+    shell: Shell
     open() {
         return new Promise(resolve => {
             this.t0 = new Terminal({
@@ -32,6 +33,7 @@ export class T7Map {
                 rows: 20,
                 cols: 55,
             })
+            this.shell = new Shell(this.t0)
             const e = document.getElementById("t0")
             const fitAddon = new FitAddon()
             this.t0.loadAddon(fitAddon)
@@ -56,6 +58,8 @@ export class T7Map {
                     })
                 } else if (Form.activeForm)
                     Form.activeForm.onKey(ev)
+                else if (this.shell.active)
+                    this.shell.onKey(ev)
                 ev.preventDefault()
             })
             this.t0.loadWebfontAndOpen(e).then(() => {
@@ -177,8 +181,8 @@ export class T7Map {
             e.classList.remove("hidden")
             e.classList.add("show")
             document.getElementById("log-button").classList.add("on")
-            if (!this.shellForm)
-                this.startShell()
+            if (!Form.activeForm)
+                this.shell.start()
         } else {
             e.classList.remove("show")
             document.getElementById("log-button").classList.remove("on")
@@ -203,19 +207,5 @@ export class T7Map {
             this.t0.scrollToBottom()
             this.t0.writeln("...INTERRUPTED")
         }
-    }
-    async startShell() {
-        this.shellForm = new Form([])
-        this.shellForm.escape = () => {
-            this.shellForm = null
-            Form.activeForm = null
-        }
-        const res = await this.shellForm.shell(this.t0)
-        switch (res) {
-            default:
-                this.t0.writeln("unknown command")
-        }
-        this.shellForm.escape()
-        this.startShell()
     }
 }
