@@ -131,10 +131,12 @@ export class Gate {
             this.notify("Got peer from \uD83D\uDCD6, connect only")
             return
         } else {
+            // TODO: check if we need this
             if (Form.activeForm) 
                 this.map.t0.focus()
             else {
                 this.map.showLog(true)
+                // TODO: move this to the top of the function
                 const f1 = new Form([
                     { prompt: "Connect" },
                     { prompt: "Edit" },
@@ -195,7 +197,7 @@ export class Gate {
                                 }).catch(e => this.onFormError(e))
                                 break
                         }
-                    }).catch(e => this.map.showLog(false))
+                    }).catch(() => this.map.showLog(false))
             }
         }
     }
@@ -225,12 +227,15 @@ export class Gate {
      * state changes.
      */
     onSessionState(state: string, failure: Failure) {
+        /*
         if (!this.session) {
             this.t7.log(`Ignoring ${this.name} change state to ${state} as session is closed`)
             return
         }
+        */
         this.t7.log(`updating ${this.name} state to ${state}`)
         if (state == "connected") {
+            this.marker = null
             this.notify("Connected")
             this.setIndicatorColor("unset")
             if (!this.verified) {
@@ -238,11 +243,8 @@ export class Gate {
                 this.updateNameE()
                 this.t7.storeGates()
             }
-            const m = this.t7.e.querySelector(".disconnect")
-            if (m != null)
-                m.remove()
-            // show help for first timer
-			// first onConnected is special if it's a new gate but once connected, we're back to load
+            // first onConnected is special if it's a new gate but once
+            // connected, we're back to loading the gate
             this.onConnected()
             this.onConnected = this.load
         } else if (state == "disconnected") {
@@ -256,9 +258,10 @@ export class Gate {
     }
     // handle connection failures
     handleFailure(failure: Failure) {
-        this.notify(`FAILED: ${failure || "Server Disconnected"}`)
+        this.notify(`FAILED: ${failure || "Peer connection"}`)
         this.session.close()
         this.session = null
+        this.marker = null
         if (!this.boarding)
             return
         this.stopBoarding()
@@ -286,7 +289,6 @@ export class Gate {
             case Failure.BadRemoteDescription:
                 this.notify("Please try again")
                 break
-                
         }
         if (this.name.startsWith("temp")) {
             (async () => {
@@ -323,6 +325,16 @@ export class Gate {
         } else
             this.t7.onDisconnect(this)
     }
+    reconnect(): Promise<void> {
+        this.notify("Reconnecting")
+        return new Promise((resolve, reject) => {
+            if (!this.session)
+                reject()
+            else 
+                this.session.reconnect(this.marker).then(resolve)
+                .catch(() => this.connect().then(resolve).catch(reject))
+        })
+    }
     /*
      * connect connects to the gate
      */
@@ -334,12 +346,13 @@ export class Gate {
         this.onConnected = onConnected
         document.title = `Terminal 7: ${this.name}`
         // if we're already boarding, just focus
-        console.log("in connect", this.session?.watchdog)
-        if (this.session && this.session.watchdog)
-            this.session = null
+        if (this.session && this.session.watchdog) {
+            this.completeConnect()
+            return
+        }
+        
         if (this.session) {
             // TODO: check session's status
-            this.t7.log("already connected")
             // hide the tower if needed
             const log = document.getElementById("log")
             if (!log.classList.contains("show"))
@@ -395,8 +408,10 @@ export class Gate {
             switch (choice) {
                 case "Reset connection":
                     this.disengage().then(() => {
-                        this.session.close()
-                        this.session = null
+                        if (this.session) {
+                            this.session.close()
+                            this.session = null
+                        }
                         this.t7.run(() =>  {
                             this.connect()
                         }, 100)
@@ -404,15 +419,20 @@ export class Gate {
                     break
                 case "Reset connection & Layout":
                     this.disengage().then(() => {
-                        this.session.close()
-                        this.session = null
+                        if (this.session) {
+                            this.session.close()
+                            this.session = null
+                        }
                         this.connect(() => {
                             this.clear()
                             this.map.showLog(false)
                             this.activeW = this.addWindow("", true)
                             this.focus()
                         })
-                    }).catch(() => this.notify("Connect failed"))
+                    }).catch(() => {
+                        this.notify("Connect failed")
+                        this.reset()
+                    })
                     break
                 case "\x1B[31mFactory reset\x1B[0m":
                     factoryResetVerify.start(this.map.t0).then(answers => {
@@ -444,43 +464,13 @@ export class Gate {
             }
         }).catch(ev => this.onFormError(ev))
     }
-    async loseState () {
-        const fp = await this.t7.getFingerprint(),
-              rc = `bash -c "$(curl -sL https://get.webexec.sh)"
-echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
-`
-        let e = document.getElementById("lose-state-template")
-        e = e.content.cloneNode(true)
-
-        e.querySelector("pre").innerText = rc
-        e.querySelector(".continue").addEventListener('click', () => {
-            this.t7.e.querySelector('.lose-state').remove()
-            this.clear()
-            this.activeW = this.addWindow("", true)
-            this.focus()
-        })
-        e.querySelector(".copy").addEventListener('click', () => {
-            this.t7.e.querySelector('.lose-state').remove()
-            Clipboard.write( {string: rc })
-            this.tryWebexec = true
-            this.clear()
-            this.activeW = this.addWindow("", true)
-            this.focus()
-        })
-        e.querySelector(".close").addEventListener('click', () => {
-            this.t7.e.querySelector('.lose-state').remove()
-            this.clear()
-            this.t7.goHome()
-        })
-        this.t7.e.appendChild(e)
-    }
     setLayout(state: object) {
         const winLen = this.windows.length
         // got an empty state
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
-                this.activeW = this.addWindow("", true)
+            this.activeW = this.addWindow("", true)
         } else if (winLen > 0) {
             // TODO: validate the current layout is like the state
             this.t7.log("Restoring with marker, opening channel")
@@ -538,6 +528,10 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         this.windows = []
         this.breadcrumbs = []
         this.msgs = {}
+        this.t7.cells.forEach((c, i, cells) => {
+            if (c instanceof Pane && (c.gate == this))
+                cells.splice(i, 1)
+        })
     }
     /*
      * dump dumps the host to a state object
@@ -582,8 +576,10 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
                         this.t7.log("Closing gate after updating to empty state")
-                        this.session.close()
-                        this.session = null
+                        if (this.session) {
+                            this.session.close()
+                            this.session = null
+                        }
                         this.boarding = false
                     }
                })
@@ -627,10 +623,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             }
             return this.session.disconnect().then(marker => {
                 this.marker = marker
-                this.notify("Disconnected")
                 resolve()
             }).catch(() => {
-                this.notify("Disconnected")
                 resolve()
             })
         })
@@ -668,11 +662,12 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             this.map.showLog(false)
     }
     askPass() {
-        this.map.t0.writeln("  Trying SSH")
+        this.map.t0.writeln("  Using SSH")
         const authForm = new Form([
             { prompt: "Username", default: this.username },
             { prompt: "Password", password: true }
         ])
+        this.map.showLog(true)
         authForm.start(this.map.t0).then(res => {
             this.username = res[0]
             this.pass = res[1]
@@ -680,7 +675,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         }).catch(e => this.onFormError(e))
     }
     completeConnect(): void {
-        if (this.session == null)
             if (this.fp) {
                 this.notify("🎌  PeerBook")
                 this.session = new PeerbookSession(this.fp, this.t7.pb)
@@ -769,8 +763,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
             }
         }).catch(e => this.onFormError(e))
 	}
-    onFormError (e) {
-        this.map.showLog(false)
+    onFormError(err) {
+        this.t7.log("Form error:", err)
         this.t7.clearTempGates()
     }
     updateNameE() {

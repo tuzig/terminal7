@@ -17,6 +17,8 @@ import { tomlMode} from '@tuzig/codemirror/mode/toml/toml.js'
 import { dialogAddOn } from '@tuzig/codemirror/addon/dialog/dialog.js'
 import { formatDate } from './utils.js'
 import { openDB } from 'idb'
+import { marked } from 'marked'
+import changelogURL  from '../CHANGELOG.md?url'
 
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
@@ -30,15 +32,15 @@ import { PeerbookConnection } from './peerbook'
 
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
-Thanks for trying Terminal7. This is TWR, a local terminal
-used to print log messages and get input.
+Thanks for trying Terminal7. This is TWR, a local
+terminal used to print log messages and get your input.
 
 To use a real terminal you'll need a remote server.
-T7 can connect to a server using SSH or WebRTC data channels.
-Our WebRTC server, webexec, is an open source terminal server
-based on pion and written in go.
-In addition to WebRTC, webexec adds
-resilient sessions, behind-the-NAT connections and more.
+T7 can connect to a server using SSH or WebRTC.
+Our WebRTC server, webexec, is an open 
+source terminal server based on pion and written in go.
+In addition to WebRTC, webexec adds resilient sessions,
+behind-the-NAT connections and more.
 
 Enjoy!
 
@@ -65,7 +67,7 @@ const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # cut_min_distance = 80
 # cut_min_speed = 2.5
 # no pinch when scrolling -> y velocity higher than XTZ px/ms
-pinch_max_y_velocity = 0.1
+# pinch_max_y_velocity = 0.1
 # auto_restore = false
 # flash = 100
 `
@@ -131,6 +133,8 @@ export class Terminal7 {
         }
         this.loadConf(d)
 
+		this.loadChangelog()
+
         // buttons
         document.getElementById("trash-button")
                 .addEventListener("click",
@@ -165,6 +169,12 @@ export class Terminal7 {
                 setTimeout(() => this.connect(), 50)
                 ev.stopPropagation()
             })
+		document.getElementById('toggle-changelog')
+				.addEventListener('click', ev => {
+                    this.showChangelog()
+                    ev.stopPropagation()
+                    ev.preventDefault()
+                })
         // hide the modal on xmark click
         // Handle network events for the indicator
         Network.addListener('networkStatusChange', s => 
@@ -227,11 +237,13 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         if (Capacitor.isNativePlatform())  {
             App.addListener('appStateChange', state => {
                 if (!state.isActive) {
-                    // We're getting suspended. disengage.
+                    // this prevents a resizing bug that keeps the font tiny
+                    this.showLog(true)
                     if (this.pb) {
                         this.pb.close()
                         this.pb = null
                     }
+                    // We're getting suspended. disengage.
                     this.disengage().then(() => {
                         this.clearTimeouts()
                     })
@@ -244,7 +256,12 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             })
         }
 
-        e.addEventListener("click", () => this.map.showLog(false))
+        e.addEventListener("click", e => { 
+            this.map.showLog(false)
+            this.showChangelog(false)
+            e.stopPropagation()
+            e.preventDefault()
+        })
 
         // settings button and modal
         var modal   = document.getElementById("settings-modal")
@@ -532,6 +549,7 @@ peer_name = "${peername}"\n`
             t = formatDate(d, "HH:mm:ss.fff")
         // TODO: add color based on level and ttl
         this.map.interruptTTY()
+        this.map.t0.scrollToBottom()
         this.map.t0.writeln(` \x1B[2m${t}\x1B[0m ${message}`)
         if (!dontShow)
             this.map.showLog(true)
@@ -587,7 +605,7 @@ peer_name = "${peername}"\n`
             this.pbConnect()
             const gate = this.activeG
             if (gate) {
-                gate.reset()
+                gate.reconnect().catch(() => gate.connect())
             }
         } else {
             off.remove("hidden")
@@ -993,13 +1011,13 @@ peer_name = "${peername}"\n`
             this.gates.get(hostname).connect()
             return
         }
-        const gate = this.addGate({
+        this.activeG = this.addGate({
             name: "temp_" + Math.random().toString(16).slice(2), // temp random name
             addr: hostname,
             id: hostname
         }, false)
         this.map.refresh()
-        gate.CLIConnect()
+        this.activeG.CLIConnect()
     }
     clearTempGates() {
         this.gates.forEach(g => {
@@ -1042,5 +1060,26 @@ peer_name = "${peername}"\n`
                 })
             })
         })
+    }
+	async loadChangelog() {
+		const resp = await fetch(changelogURL)
+		const changelog = await resp.text()
+		const e = document.getElementById("changelog-content")
+		e.innerHTML = marked.parse(changelog)
+		// add prefix to all ids to avoid conflicts
+        e.querySelectorAll("[id]").forEach(e => e.id = "changelog-" + e.id)
+		e.querySelectorAll("a").forEach(a => a.target = "_blank")
+	}
+    // if show is undefined the change log view state is toggled
+	showChangelog(show) {
+		const e = document.getElementById("changelog")
+        if (show === undefined)
+            // if show is undefined toggle current state
+            show = !e.classList.contains("show")
+        
+        if (show)
+            e.classList.add("show")
+        else
+            e.classList.remove("show")
     }
 }

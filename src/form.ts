@@ -42,6 +42,7 @@ export class Form {
         Form.activeForm = this
     }
     chooseFields(t: Terminal, title="") {
+        t.scrollToBottom()
         this.setActive(t)
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
@@ -101,6 +102,7 @@ export class Form {
     }
 
     menu(t: Terminal) {
+        t.scrollToBottom()
         this.setActive(t)
         const len = this.fields.length
         const enabled = new Array(len).fill(false)

@@ -4,23 +4,22 @@
 
 ![Test](https://github.com/tuzig/terminal7/workflows/Terminal7-Tests/badge.svg) ![License](https://img.shields.io/badge/license-GPL-green) ![Platform](https://img.shields.io/badge/platform-web-blue) ![Languages](https://img.shields.io/github/languages/top/tuzig/terminal7) ![Closed Issue](https://img.shields.io/github/issues-closed/tuzig/terminal7?color=A0A0A0) ![Open Issues](https://img.shields.io/github/issues/tuzig/terminal7)
 
-Terminal7 is a terminal multiplexer designed for remote server and 
-touch screens. A reincaranation of tmux and screen, Terminal7 supports
-a smart client, a simple server with WebRTC data channels conencting them.
-Thanks to WebRTC Terminal7 can connect to behind-the-NAT servers
-letting you work on your desktop from anywhere.
+Terminal7 is a terminal multiplexer re-designed for remote servers and 
+hi-res touch screens. A reincaranation of tmux and screen, Terminal7 is a hybrid
+app that works best on the iPad.
 
 The code here is mainly ES6 with no framworks. We do use the following projects:
 
-- capacitorjs for app packaging
+- capacitorjs for app packaging & plugins
 - xterm.js for terminal emulation
 - yarn for package management
 - vite for packaging
 - vitest for testing
 
-For networking we use SSH or WebRTC, the web standard protocol for real time
-communications. It's a UDP based web-era protocol with wide support and a great
-implmentation in go - [pion/webrtc](https://github.com/pion/webrtc) - that we use as a base for our server's daemon.
+For networking we use SSH or WebRTC, the web standard for real time
+communications. WebRTC is UDP based with wide support and a great
+implmentation in go - [pion/webrtc](https://github.com/pion/webrtc) -
+that we use as a base for our server's agent.
 
 ## Installing
 
@@ -52,7 +51,7 @@ Our open source WebRTC server is written in go and is based on the pion server.
 You can install it using the one line installer or from the [source](https://github.com/tuzig/webexec)
 
 ```console
-$(curl -sL https://get.webexec.sh)
+  bash -c $(curl -sL https://get.webexec.sh)
 ```
 ## Contribuiting
 
