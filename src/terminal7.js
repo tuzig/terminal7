@@ -238,7 +238,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             App.addListener('appStateChange', state => {
                 if (!state.isActive) {
                     // this prevents a resizing bug that keeps the font tiny
-                    this.showLog(true)
+                    this.map.showLog(true)
                     if (this.pb) {
                         this.pb.close()
                         this.pb = null
