@@ -8,6 +8,7 @@
 import { Layout } from './layout.js'
 import { Pane } from './pane.js'
 import * as Hammer from 'hammerjs'
+import { Form } from './form'
 
 const ABIT = 10
 
@@ -116,35 +117,17 @@ export class Window {
      * name when the field is changed. 
      */
     rename() {
-        const e = this.nameE,
-              se = this.gate.e.querySelector(".rename-box"),
-              textbox = this.gate.e.querySelector("#name-input")
-
-        se.classList.remove("hidden")
-        textbox.value = e.innerHTML
-        textbox.focus()
-
-        const handler = (event) => {
-            if (event.keyCode == 13 || event.type != "keyup") {
-                console.log(event)
-                textbox.removeEventListener('keyup', handler)
-                textbox.removeEventListener('change', handler)
-                textbox.removeEventListener('blur', handler)
-                se.classList.add("hidden")
-                this.t7.run(() => {
-                    this.name = event.target.value
-                    this.nameE.innerHTML = event.target.value
-                    this.activeP.focus()
-                }, ABIT)
-                this.gate.sendState()
-                event.preventDefault()
-                event.stopPropagation()
-            }
-        }
-
-        textbox.addEventListener('keyup', handler)
-        textbox.addEventListener('change', handler)
-        textbox.addEventListener('blur', handler)
+        const renameForm = new Form([{
+            prompt: "Enter new name",
+            default: this.nameE.innerHTML,
+        }])
+        this.t7.run(() => this.t7.map.showLog(true), 500)
+        renameForm.start(this.t7.map.t0).then(res => {
+            this.name = res[0]
+            this.nameE.innerHTML = res[0]
+            this.activeP.focus()
+            this.t7.map.showLog(false)
+        })
     }
     close() {
         // remove the window name
