@@ -556,7 +556,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
         this.e.querySelectorAll(".window").forEach(e => e.remove())
         this.e.querySelectorAll(".modal").forEach(e => e.classList.add("hidden"))
         if (this.activeW && this.activeW.activeP.zoomed)
-            this.activeW.activeP.toggleZoom()
+            this.activeW.activeP.unzoom()
         this.windows = []
         this.breadcrumbs = []
         this.msgs = {}

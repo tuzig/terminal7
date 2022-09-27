@@ -303,8 +303,8 @@ export class Pane extends Cell {
         this.flashIndicator()
         this.write(m)
     }
-    toggleZoom(focus = false) {
-        super.toggleZoom(focus)
+    toggleZoom() {
+        super.toggleZoom()
         this.fit()
     }
     toggleSearch() {
@@ -402,7 +402,7 @@ export class Pane extends Cell {
                 this.copySelection()
             break
         case "z":
-            f = () => this.toggleZoom(true)
+            f = () => this.toggleZoom()
             break
         case ",":
             f = () => this.w.rename()
