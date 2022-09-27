@@ -2,7 +2,7 @@ type Command = {
     name: string
     help: string
     usage: string
-    execute(args: string[]): Promise<string>
+    execute(args: string[]): Promise<string | null>
 }
 
 export const commands: Map<string, Command> = new Map()
@@ -61,7 +61,7 @@ commands.set('clear', {
 
 commands.set('connect', {
     name: "connect",
-    help: "Connect to a host",
+    help: "Connect to an existing host",
     usage: "connect <hostname>",
     execute: async (args: string[]) => {
         const hostname = args[0]
@@ -71,7 +71,19 @@ commands.set('connect', {
         const gate = gates.get(hostname)
         if (!gate)
             return `Host not found: ${hostname}`
-        gate.connect(gate)
-        return ""
+        gate.connect()
     }
 })
+
+commands.set('reset', {
+    name: "reset",
+    help: "Reset the current connection",
+    usage: "reset",
+    execute: async () => {
+        const gate = terminal7.activeG
+        if (!gate)
+            return "No active connection"
+        await gate.reset()
+    }
+})
+

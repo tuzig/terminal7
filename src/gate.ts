@@ -344,6 +344,7 @@ export class Gate {
         if (!this.t7.netStatus || !this.t7.netStatus.connected)
             return
         this.onConnected = onConnected
+        this.t7.activeG = this
         document.title = `Terminal 7: ${this.name}`
         // if we're already boarding, just focus
         if (this.session && this.session.watchdog) {

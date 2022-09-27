@@ -46,7 +46,7 @@ export class Shell {
         const command = commands.get(cmd)
         if (!command)
             return this.t.writeln(`Command not found: ${cmd}`)
-        command.execute(args).then(res => this.t.writeln(res))
+        command.execute(args).then(res => res && this.t.writeln(res))
         .catch(err => this.t.writeln(`Error: ${err}`))
     }
 
@@ -55,3 +55,4 @@ export class Shell {
         this.onKey = null
     }
 }
+
