@@ -34,6 +34,7 @@ const WELCOME=`    🖖 Greetings & Salutations 🖖
 
 Thanks for trying Terminal7. This is TWR, a local
 terminal used to print log messages and get your input.
+Try typing 'help' to see what you can do.
 
 To use a real terminal you'll need a remote server.
 T7 can connect to a server using SSH or WebRTC.
