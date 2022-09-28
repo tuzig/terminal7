@@ -1,11 +1,13 @@
 import { Terminal } from '@tuzig/xterm'
 import { commands } from './commands'
+import { Form } from './form'
 
 export class Shell {
 
     t: Terminal
     onKey: (ev: KeyboardEvent) => void
     active = false
+    activeForm: Form
 
     constructor(t: Terminal) {
         this.t = t
@@ -43,6 +45,12 @@ export class Shell {
 
     handleInput(input: string) {
         const [cmd, ...args] = input.trim().split(/\s+/)
+        this.execute(cmd, args)
+    }
+
+    execute(cmd: string, args: string[]) {
+        if (this.activeForm) 
+            this.escapeActiveForm()
         const command = commands.get(cmd)
         if (!command)
             return this.t.writeln(`Command not found: ${cmd}`)
@@ -53,6 +61,14 @@ export class Shell {
     stop() {
         this.active = false
         this.onKey = null
+    }
+
+    escapeActiveForm() {
+        if (!this.activeForm) return
+        this.t.scrollToBottom()
+        this.t.writeln("\n\nESC")
+        this.activeForm.reject(new Error("aborted"))
+        this.activeForm = null
     }
 }
 

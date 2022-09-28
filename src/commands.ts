@@ -2,7 +2,7 @@ type Command = {
     name: string
     help: string
     usage: string
-    execute(args: string[]): Promise<string | null>
+    execute(args: string[]): Promise<string | void>
 }
 
 export const commands: Map<string, Command> = new Map()
@@ -61,17 +61,18 @@ commands.set('clear', {
 
 commands.set('connect', {
     name: "connect",
-    help: "Connect to an existing host",
-    usage: "connect <hostname>",
+    help: "Connect to a new or existing host",
+    usage: "connect [hostname] (leave blank to add a new host)",
     execute: async (args: string[]) => {
         const hostname = args[0]
-        if (!hostname)
-            return "Missing hostname"
-        const gates = terminal7.gates
-        const gate = gates.get(hostname)
-        if (!gate)
-            return `Host not found: ${hostname}`
-        gate.connect()
+        if (hostname) {
+            const gates = terminal7.gates
+            const gate = gates.get(hostname)
+            if (!gate)
+                return `Host not found: ${hostname}`
+            gate.connect()
+        } else 
+            terminal7.connect()
     }
 })
 
@@ -84,6 +85,44 @@ commands.set('reset', {
         if (!gate)
             return "No active connection"
         await gate.reset()
+    }
+})
+
+commands.set('edit', {
+    name: "edit",
+    help: "Edit a host",
+    usage: "edit <hostname>",
+    execute: async (args: string[]) => {
+        const hostname = args[0]
+        if (!hostname)
+            return "Missing hostname"
+        const gates = terminal7.gates
+        const gate = gates.get(hostname)
+        if (!gate)
+            return `Host not found: ${hostname}`
+        gate.edit()
+    }
+})
+
+commands.set('hosts', {
+    name: "hosts",
+    help: "List all hosts",
+    usage: "hosts",
+    execute: async () => {
+        let res = ""
+        for (const [name, gate] of terminal7.gates) {
+            res += `\x1B[1m${name}:\x1B[0m ${gate.addr}\n`
+        }
+        return res
+    }
+})
+
+commands.set('home', {
+    name: "home",
+    help: "Go to the home page",
+    usage: "home",
+    execute: async () => {
+        terminal7.goHome()
     }
 })
 

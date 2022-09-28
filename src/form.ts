@@ -226,37 +226,6 @@ export class Form {
         t.write(`  ${this.fields[this.i].prompt}${def || ''}: `)
     }
 
-    shell(t: Terminal) {
-        this.setActive(t)
-        this.field = ''
-        t.scrollToBottom()
-        return new Promise((resolve, reject) => {
-            this.reject = reject
-            this.onKey  = ev => {
-                const key = ev.key
-                switch (key) {
-                    case "Enter":
-                        t.write("\n")
-                        resolve(this.field)
-                        Form.activeForm = null
-                        break
-                    case "Backspace":
-                        if (this.field.length > 0) {
-                            this.field = this.field.slice(0, -1)
-                            t.write("\b \b")
-                        }
-                        break
-                    default:
-                        if (key.length == 1) { // make sure the key is a char
-                            this.field += key
-                            t.write(key)
-                        }
-                }
-            }
-            setTimeout(() => t.focus(), 0)
-        })
-    }
-
     escape(t: Terminal) {
         t.scrollToBottom()
         t.writeln("\n\nESC")
