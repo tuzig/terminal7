@@ -203,6 +203,7 @@ export class Gate {
     }
     focus() {
         this.map.showLog(false)
+        document.getElementById("map").classList.add("hidden")
         // hide the current focused gate
         document.getElementById("map-button").classList.remove("off")
         document.querySelectorAll(".pane-buttons").forEach(
@@ -730,7 +731,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints
     load() {
         this.t7.log("loading gate")
         this.session.getPayload().then(layout => this.setLayout(layout))
-        document.getElementById("map").classList.add("hidden")
         Storage.get({key: "first_gate"}).then(v => {
             if (v.value != "nope") {
                 this.t7.toggleHelp()
