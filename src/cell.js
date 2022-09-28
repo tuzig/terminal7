@@ -132,7 +132,7 @@ export class Cell {
             canvas.width = 0;
         })
         if (this.zoomed)
-            this.toggleZoom()
+            this.unzoom()
         this.e.remove()
         if (this.layout)
             this.layout.onClose(this)
@@ -152,35 +152,40 @@ export class Cell {
         this.fit()
     }
     toggleZoom() {
-        if (this.zoomed) {
-            // Zoom out
-            if (this.resizeObserver != null) {
-                this.resizeObserver.disconnect()
-                this.resizeObserver = null
-            }
-            let te = this.t7.zoomedE.children[0].children[0]
-            this.e.appendChild(te)
-            document.body.removeChild(this.t7.zoomedE)
-            this.t7.zoomedE = null
-            this.w.e.classList.remove("hidden")
-        } else {
-            let c = document.createElement('div'),
-                e = document.createElement('div'),
-                te = this.e.removeChild(this.e.children[0])
-            c.classList.add("zoomed")
-            e.classList.add("pane", "focused")
-            e.style.borderColor = FOCUSED_BORDER_COLOR
-            e.appendChild(te)
-            c.appendChild(e)
-            this.catchFingers(e)
-            document.body.appendChild(c)
-            this.t7.zoomedE = c
-            this.w.e.classList.add("hidden")
-            this.resizeObserver = new window.ResizeObserver(() => this.styleZoomed(e))
-            this.resizeObserver.observe(e);
-        }
-        this.zoomed = !this.zoomed
+        if (this.zoomed)
+            this.unzoom()
+        else
+            this.zoom()
         this.gate.sendState()
         this.t7.run(() => this.focus(), ABIT)
+    }
+    zoom() {
+        let c = document.createElement('div'),
+            e = document.createElement('div'),
+            te = this.e.removeChild(this.e.children[0])
+        c.classList.add("zoomed")
+        e.classList.add("pane", "focused")
+        e.style.borderColor = FOCUSED_BORDER_COLOR
+        e.appendChild(te)
+        c.appendChild(e)
+        this.catchFingers(e)
+        document.body.appendChild(c)
+        this.t7.zoomedE = c
+        this.w.e.classList.add("hidden")
+        this.resizeObserver = new window.ResizeObserver(() => this.styleZoomed(e))
+        this.resizeObserver.observe(e)
+        this.zoomed = true
+    }
+    unzoom() {
+        if (this.resizeObserver != null) {
+            this.resizeObserver.disconnect()
+            this.resizeObserver = null
+        }
+        let te = this.t7.zoomedE.children[0].children[0]
+        this.e.appendChild(te)
+        document.body.removeChild(this.t7.zoomedE)
+        this.t7.zoomedE = null
+        this.w.e.classList.remove("hidden")
+        this.zoomed = false
     }
 }

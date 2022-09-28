@@ -346,14 +346,11 @@ button.rename-close {
 .zoomed .pane {
     height: -webkit-fill-available;
 }
-#map:target {
-    display: block;
-}
 #map {
     position: relative;
     padding-top: 1em;
     width: 1200px;
-    display: none;
+    display: block;
     text-align: center;
     margin: 0 auto;
     height: calc(100% - 56px);

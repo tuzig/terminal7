@@ -501,6 +501,7 @@ peer_name = "${peername}"\n`
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.add("off"))
         window.location.href = "#map"
+        document.getElementById("map").classList.remove("hidden")
         document.title = "Terminal 7"
         document.getElementById('log').classList.remove('hidden', 'show')
     }

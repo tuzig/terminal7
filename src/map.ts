@@ -64,10 +64,22 @@ export class T7Map {
             const log = document.getElementById("log")
             if (!log)
                 return
+// <<<<<<< HEAD
             log.addEventListener("transitionend", ev => {
                 console.log(ev)
                 if (log.classList.contains("show")) {
                     fitAddon.fit()
+                    /*
+=======
+            const resizeObserver = new window.ResizeObserver(() => {
+                setTimeout(() => fitAddon.fit(), 750)
+            })
+            resizeObserver.observe(log)
+            log.addEventListener("transitionend", () => {
+                fitAddon.fit()
+                if (log.classList.contains("show"))
+>>>>>>> bug-fix
+*/
                     this.t0.focus()
                 } else {
                     this.t0.blur()
@@ -158,6 +170,7 @@ export class T7Map {
      * if the parameters in udefined the function toggles the displays
      */
     showLog(show) {
+        if (Form.activeForm) return
         const e = document.getElementById("log")
         if (show === undefined)
             // if show is undefined toggle current state
