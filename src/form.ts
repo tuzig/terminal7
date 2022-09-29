@@ -18,6 +18,7 @@ export class Form {
     reject: (value: Error) => void
     fields: Fields
     results: Results
+    hidden: boolean
     onKey: (ev: KeyboardEvent) => void
     static activeForm = null
 
@@ -26,22 +27,7 @@ export class Form {
         this.onKey = null
     }
 
-    static keyHandler(ev: Event) {
-        if (Form.activeForm?.onKey)
-            Form.activeForm.onKey(ev)
-        else
-            window.terminal7.map.t0.writeln("Nothing to do here... for now")
-    }
-
-    setActive(t) {
-        if ((Form.activeForm instanceof Form) && (Form.activeForm != this)) {
-            Form.activeForm.escape(t)
-        }
-        Form.activeForm = this
-    }
     chooseFields(t: Terminal, title="") {
-        t.scrollToBottom()
-        this.setActive(t)
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
@@ -98,8 +84,6 @@ export class Form {
     }
 
     menu(t: Terminal) {
-        t.scrollToBottom()
-        this.setActive(t)
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
@@ -141,11 +125,9 @@ export class Form {
 
 
     start(t: Terminal) : Promise<Results> {
-        this.setActive(t)
         this.i = 0
         this.field = ''
         this.results = []
-        t.scrollToBottom()
         return new Promise((resolve, reject) => {
             this.reject = reject
             this.writeCurrentField(t)

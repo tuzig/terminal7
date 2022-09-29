@@ -33,7 +33,7 @@ export class T7Map {
                 rows: 20,
                 cols: 55,
             })
-            this.shell = new Shell(this.t0)
+            this.shell = new Shell(this)
             const e = document.getElementById("t0")
             const fitAddon = new FitAddon()
             this.t0.loadAddon(fitAddon)
@@ -42,25 +42,7 @@ export class T7Map {
             this.t0.onKey(iev => {
                 this.interruptTTY()
                 const ev = iev.domEvent
-                const key = ev.key
-                if (key == 'Escape') {
-                    if (Form.activeForm)
-                        Form.activeForm.escape(this.t0)
-                    this.showLog(false)
-                } else if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
-                    Clipboard.read().then(res => {
-                        if (res.type == 'text/plain') {
-                            const form = Form.activeForm
-                            form.field += res.value
-                            if (!form.hidden)
-                                this.t0.write(res.value)
-                        }
-                    })
-                } else if (Form.activeForm)
-                    Form.activeForm.onKey(ev)
-                else if (this.shell.active)
-                    this.shell.onKey(ev)
-                ev.preventDefault()
+                this.shell.keyHandler(ev)
             })
             this.t0.loadWebfontAndOpen(e).then(() => {
                 const webGLAddon = new WebglAddon()
