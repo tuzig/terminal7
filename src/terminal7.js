@@ -606,7 +606,9 @@ peer_name = "${peername}"\n`
             this.pbConnect()
             const gate = this.activeG
             if (gate) {
-                gate.reconnect().catch(() => gate.reset())
+                gate.reconnect()
+                .then(() => this.map.showLog(false))
+                .catch(() => gate.reset())
             }
         } else {
             off.remove("hidden")
