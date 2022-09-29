@@ -305,6 +305,7 @@ export abstract class WebRTCSession extends BaseSession {
     }
     closeChannels(): void {
         this.channels.forEach(c => c.close())
+        this.channels = new Map()
     }
     // disconnect disconnects from all channels, requests a mark and resolve with
     // the new marker
@@ -319,7 +320,7 @@ export abstract class WebRTCSession extends BaseSession {
                     type: "mark",
                     args: null
                 }, (payload) => {
-                this.t7.log("got a marker", this.lastMarker, payload)
+                this.t7.log("got a marker", payload)
                 this.close()
                 resolve(payload)
             }, reject)
@@ -331,7 +332,6 @@ export abstract class WebRTCSession extends BaseSession {
             this.pc.onconnectionstatechange = undefined
             this.pc.onnegotiationneeded = undefined
             this.cdc.close()
-            this.closeChannels()
             this.pc.close()
             this.pc = null
         }
