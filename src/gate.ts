@@ -404,7 +404,7 @@ export class Gate {
         const resetForm = new Form(fields)
         this.map.showLog(true)
         this.map.t0.writeln(`\x1B[4m${this.name}\x1B[0m`)
-        resetForm.menu(this.map.t0).then(choice => {
+        resetForm.menu(this.map.t0).then(async choice => {
             switch (choice) {
                 case "Reset connection":
                     this.disengage().then(() => {
@@ -418,8 +418,9 @@ export class Gate {
                     }).catch(() => this.connect())
                     break
                 case "Reset connection & Layout":
-                    this.disengage().then(() => {
+                    try {
                         if (this.session) {
+                            await this.disengage()
                             this.session.close()
                             this.session = null
                         }
@@ -429,10 +430,9 @@ export class Gate {
                             this.activeW = this.addWindow("", true)
                             this.focus()
                         })
-                    }).catch(() => {
+                    } catch(e) {
                         this.notify("Connect failed")
-                        this.reset()
-                    })
+                    }
                     break
                 case "\x1B[31mFactory reset\x1B[0m":
                     factoryResetVerify.start(this.map.t0).then(answers => {
@@ -524,7 +524,7 @@ export class Gate {
         this.e.querySelectorAll(".window").forEach(e => e.remove())
         this.e.querySelectorAll(".modal").forEach(e => e.classList.add("hidden"))
         if (this.activeW && this.activeW.activeP.zoomed)
-            this.activeW.activeP.toggleZoom()
+            this.activeW.activeP.unzoom()
         this.windows = []
         this.breadcrumbs = []
         this.msgs = {}
@@ -675,6 +675,8 @@ export class Gate {
         }).catch(e => this.onFormError(e))
     }
     completeConnect(): void {
+        if (Form.activeForm)
+            Form.activeForm.escape(this.map.t0)
             if (this.fp) {
                 this.notify("🎌  PeerBook")
                 this.session = new PeerbookSession(this.fp, this.t7.pb)
@@ -701,6 +703,7 @@ export class Gate {
     load() {
         this.t7.log("loading gate")
         this.session.getPayload().then(layout => this.setLayout(layout))
+        document.getElementById("map").classList.add("hidden")
         Storage.get({key: "first_gate"}).then(v => {
             if (v.value != "nope") {
                 this.t7.toggleHelp()

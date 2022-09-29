@@ -101,7 +101,7 @@ export class Window {
                 if (cell.active)
                     this.activeP = p
                 if (cell.zoomed)
-                    p.toggleZoom()
+                    p.unzoom()
             }
         })
         return l
@@ -136,7 +136,7 @@ export class Window {
         this.e.remove()
         // if we're zoomed in, the pane is a child of body
         if (this.activeP && this.activeP.zoomed)
-            this.activeP.toggleZoom()
+            this.activeP.unzoom()
         this.gate.windows.splice(this.gate.windows.indexOf(this), 1)
         this.gate.goBack()
     }

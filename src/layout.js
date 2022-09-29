@@ -48,9 +48,8 @@ export class Layout extends Cell {
      * On a cell going away, resize the other elements
      */
     onClose(c) {
-        if (c.zoomed) {
-            c.toggleZoom()
-        }
+        if (c.zoomed)
+            c.unzoom()
         this.t7.cells.splice(this.t7.cells.indexOf(c), 1)
         // if this is the only pane in the layout, close the layout
         if (this.cells.length == 1) {

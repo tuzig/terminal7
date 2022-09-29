@@ -37,8 +37,10 @@ export class Terminal7Mock extends Terminal7 {
         
         document.body.innerHTML = `
 <div id='t7'></div>
-<div id='gates'>
-    <div id='add-gate'></div>
+<div id='map'>
+    <div id='gates'>
+        <div id='add-gate'></div>
+    </div>
 </div>
 <div id='log'><div id="t0"></div></div>
 <div id='log-button'></div>

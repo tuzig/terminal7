@@ -501,6 +501,7 @@ peer_name = "${peername}"\n`
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.add("off"))
         window.location.href = "#map"
+        document.getElementById("map").classList.remove("hidden")
         document.title = "Terminal 7"
         document.getElementById('log').classList.remove('hidden', 'show')
     }
@@ -605,7 +606,9 @@ peer_name = "${peername}"\n`
             this.pbConnect()
             const gate = this.activeG
             if (gate) {
-                gate.reconnect().catch(() => gate.reset())
+                gate.reconnect()
+                .then(() => this.map.showLog(false))
+                .catch(() => gate.reset())
             }
         } else {
             off.remove("hidden")

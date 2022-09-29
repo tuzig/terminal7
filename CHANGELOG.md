@@ -6,6 +6,18 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased 
+
+### Fixed 
+
+- TWR used to get stuck with tiny font
+- TWR used to have to many columns
+- Clicking "+" when another form is active use to minimize TWR forever
+
+### Added
+
+- Under Construction message in TWR
+
 ## [1.0-rc.4] - 2022/9/15
 
 ### Added
