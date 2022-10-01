@@ -111,6 +111,7 @@ export abstract class BaseSession implements Session {
         }
     }
     close() {
+        this.clearWatchdog()
         // this.onStateChange = undefined
     }
     // for reconnect
