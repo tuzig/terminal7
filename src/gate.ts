@@ -451,15 +451,7 @@ export class Gate {
                     }).catch(e => this.onFormError(e))
                     break
                 case "Close gate":
-                    this.boarding = false
-                    this.clear()
-                    this.updateNameE()
-                    if (this.session) {
-                        this.session.close()
-                        this.session = null
-                    }
-                    // we need the timeout as cell.focus is changing the href when dcs are closing
-                    setTimeout(() => this.t7.goHome(), 100)
+                    this.close()
                     break
             }
         }).catch(ev => this.onFormError(ev))
@@ -576,11 +568,7 @@ export class Gate {
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
                         this.t7.log("Closing gate after updating to empty state")
-                        if (this.session) {
-                            this.session.close()
-                            this.session = null
-                        }
-                        this.boarding = false
+                        this.close()
                     }
                })
             }, 100)
@@ -782,5 +770,16 @@ export class Gate {
             offline: this.online === false,
             unverified: this.verified === false,
         })
+    }
+    close(){
+        this.boarding = false
+        this.clear()
+        this.updateNameE()
+        if (this.session) {
+            this.session.close()
+            this.session = null
+        }
+        // we need the timeout as cell.focus is changing the href when dcs are closing
+        setTimeout(() => this.t7.goHome(), 100)
     }
 }
