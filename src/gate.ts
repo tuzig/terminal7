@@ -362,6 +362,7 @@ export class Gate {
         this.boarding = true
         this.updateNameE()
         if (!this.pass && !this.fp && !this.tryWebexec) {
+            this.clear()
             this.askPass()
         } else
             this.completeConnect()
@@ -582,9 +583,7 @@ export class Gate {
         const w = this.breadcrumbs.pop()
         this.breadcrumbs = this.breadcrumbs.filter(x => x != w)
         if (this.windows.length == 0) {
-            this.stopBoarding()
-            this.clear()
-            this.t7.goHome()
+            this.close()
         }
         else
             if (this.breadcrumbs.length > 0)
