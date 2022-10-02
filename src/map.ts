@@ -64,13 +64,6 @@ export class T7Map {
             const log = document.getElementById("log")
             if (!log)
                 return
-// <<<<<<< HEAD
-            log.addEventListener("transitionend", ev => {
-                console.log(ev)
-                if (log.classList.contains("show")) {
-                    fitAddon.fit()
-                    /*
-=======
             const resizeObserver = new window.ResizeObserver(() => {
                 setTimeout(() => fitAddon.fit(), 750)
             })
@@ -78,10 +71,8 @@ export class T7Map {
             log.addEventListener("transitionend", () => {
                 fitAddon.fit()
                 if (log.classList.contains("show"))
->>>>>>> bug-fix
-*/
                     this.t0.focus()
-                } else {
+                else {
                     this.t0.blur()
                     // if we're not on the map, we're at the gate, hide the minimized version
                     if (window.location.hash != "#map") {
