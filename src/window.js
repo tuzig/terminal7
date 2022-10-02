@@ -100,7 +100,7 @@ export class Window {
                 if (cell.active)
                     this.activeP = p
                 if (cell.zoomed)
-                    p.unzoom()
+                    p.zoom()
             }
         })
         return l
