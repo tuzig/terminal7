@@ -1,6 +1,6 @@
 {
   "name": "terminal7",
-  "version": "1.0-rc.5",
+  "version": "1.0",
   "description": "A touchable terminal emulator & multiplexer tablet app",
   "main": "src/index.js",
   "homepage": "https://terminal7.dev",
