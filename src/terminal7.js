@@ -636,7 +636,7 @@ peer_name = "${peername}"\n`
         if (this.conf.net.peerbook == "pb.terminal7.dev")
             terminal7.notify(`\uD83D\uDCD6 Your setting include an old peerbook addres.<br/>
                               Please click <i class="f7-icons">gear</i> and change net.peerbook to "api.peerbook.io"`)
-        this.conf.net.timeout = this.conf.net.timeout || 3000
+        this.conf.net.timeout = this.conf.net.timeout || 5000
         this.conf.net.retries = this.conf.net.retries || 3
         this.conf.theme = this.conf.theme || {}
         this.conf.theme.foreground = this.conf.theme.foreground || "#00FAFA"
