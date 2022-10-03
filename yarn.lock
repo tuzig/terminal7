@@ -1726,10 +1726,10 @@ caniuse-lite@^1.0.30001370:
   resolved "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001373.tgz"
   integrity sha512-pJYArGHrPp3TUqQzFYRmP/lwJlj8RCbVe3Gd3eJQkAV8SAC6b19XS9BjMvRdvaS8RMkaTN8ZhoHP6S1y8zzwEQ==
 
-capacitor-ssh-plugin@<2:
-  version "0.1.2"
-  resolved "https://registry.npmjs.org/capacitor-ssh-plugin/-/capacitor-ssh-plugin-0.1.2.tgz"
-  integrity sha512-cnMh4opNzkujlNDyQVqQVI0dZONVM49keVkhK8YYFgkTNLgULsf5jb1VRm58CZmNnYG29Un59/oNRO0NCDIa8g==
+capacitor-ssh-plugin@^0.2:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/capacitor-ssh-plugin/-/capacitor-ssh-plugin-0.2.0.tgz#041e66ebde1b9febfda5ade1c7180b99ec9df7bd"
+  integrity sha512-Bq7wypkPz5hyxuLGPxVu3Iq9Bz8WwjV+EwRpvVTm55lC052azbMc05EOSvKTR0JiaXniOvPqo/NMaOaA9KMF4w==
   dependencies:
     wd "^1.14.0"
 

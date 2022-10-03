@@ -67,7 +67,7 @@ export class SSHSession extends BaseSession {
                .then(({ id }) => {
                    console.log("got new channel with id ", id)
                 channel.id = id
-                SSH.startShell({channel: id},
+                SSH.startShell({channel: id, command: cmd},
                     m => {
                         if ('data' in m)
                             channel.onMessage(m.data)
