@@ -3,11 +3,11 @@ services:
   runner:
     build: 
       context: .
-      dockerfile: ./qa/runner/Dockerfile
+      dockerfile: ./aatp/infra/runner/Dockerfile
     volumes:
-      - ./qa/ui:/runner
-      - ./qa/result:/result
-      - ./qa/ui/webexec_conf:/webexec_config
+      - ./aatp/ui:/runner
+      - ./aatp/result:/result
+      - ./aatp/ui/webexec_conf:/webexec_config
     depends_on:
       - terminal7
       - webexec
@@ -20,6 +20,6 @@ services:
   webexec:
     build:
       context: .
-      dockerfile: ./qa/webexec/Dockerfile
+      dockerfile: ./aatp/infra/webexec/Dockerfile
     volumes:
-      - ./qa/ui/webexec_conf:/home/webexec/.config/webexec
+      - ./aatp/ui/webexec_conf:/conf

@@ -3,10 +3,10 @@ services:
   runner:
     build: 
       context: .
-      dockerfile: ./qa/runner/Dockerfile
+      dockerfile: ./aatp/runner/Dockerfile
     volumes:
-      - ./qa/peerbook_webrtc:/runner
-      - ./qa/result:/result
+      - ./aatp/peerbook_webrtc:/runner
+      - ./aatp/result:/result
     depends_on:
       - peerbook
       - terminal7
@@ -20,15 +20,15 @@ services:
   webexec:
     build:
       context: .
-      dockerfile: ./qa/webexec/Dockerfile
+      dockerfile: ./aatp/webexec/Dockerfile
     depends_on:
       - peerbook
     volumes:
-      - ./qa/webexec/config:/home/webexec/.config/webexec
+      - ./aatp/webexec/config:/home/webexec/.config/webexec
   peerbook:
     build:
       context: .
-      dockerfile: ./qa/peerbook/Dockerfile
+      dockerfile: ./aatp/peerbook/Dockerfile
     expose:
       - "17777"
     depends_on:

@@ -14,6 +14,7 @@
     "playwright-firefox": "^1.22.2",
     "playwright-webkit": "^1.22.2",
     "redis": "<5",
-    "wait-port": "^0.2.9"
+    "wait-port": "^0.2.9",
+    "ssh2": "~1.11.0"
   }
 }

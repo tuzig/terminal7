@@ -5,7 +5,7 @@ build_n_run() {
 }
 if [ $# -eq 0 ]
 then
-    echo ">>> Starting full QA testing <<<"
+    echo ">>> Starting full AATP <<<"
     
     npm run lint
 
@@ -22,7 +22,7 @@ then
         echo ">>> unit tests FAILED"
         exit 3
     fi
-    for compose in `find qa -name "lab.yaml"`
+    for compose in `find aatp -name "lab.yaml"`
     do
         dir=$(dirname $compose)
         echo ">>> bringing up a lab from $dir"

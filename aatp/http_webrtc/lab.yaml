@@ -3,11 +3,11 @@ services:
   runner:
     build: 
       context: .
-      dockerfile: ./qa/runner/Dockerfile
+      dockerfile: ./aatp/runner/Dockerfile
     volumes:
-      - ./qa/http_webrtc:/runner
-      - ./qa/result:/result
-      - ./qa/http_webrtc/webexec_conf:/webexec_config
+      - ./aatp/http_webrtc:/runner
+      - ./aatp/result:/result
+      - ./aatp/http_webrtc/webexec_conf:/webexec_config
     environment:
       PWARGS: ${PWARGS}
     depends_on:
@@ -22,6 +22,6 @@ services:
   webexec:
     build:
       context: .
-      dockerfile: ./qa/webexec/Dockerfile
+      dockerfile: ./aatp/webexec/Dockerfile
     volumes:
-      - ./qa/http_webrtc/webexec_conf:/home/webexec/.config/webexec
+      - ./aatp/http_webrtc/webexec_conf:/home/webexec/.config/webexec

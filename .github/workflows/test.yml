@@ -12,4 +12,4 @@ jobs:
           node-version: 16
       - run: npm install --global yarn
       - run: yarn install --frozen-lockfile
-      - run: bash qa/qa.bash
+      - run: bash aatp/run

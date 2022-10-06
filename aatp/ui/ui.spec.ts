@@ -1,4 +1,5 @@
 import { test, expect, Page, BrowserContext } from '@playwright/test'
+import { Client } from 'ssh2'
 import * as fs from 'fs'
 import waitPort from 'wait-port'
 
@@ -98,5 +99,47 @@ test.describe('terminal 7session', ()  => {
         await expect(page.locator('.pane')).toHaveCount(1)
         // TODO: fix getTWRBuffer
         // expect(getTWRBuffer()).toMatch(/foo.*: Connected/)
+    })
+    test('how a gate handles disconnect', async() => {
+        let sshC
+        try {
+            sshC = await new Promise((resolve, reject) => {
+                const conn = new Client()
+                conn.on('error', e => reject(e))
+                conn.on('ready', () => resolve(conn))
+                conn.connect({
+                  host: 'webexec',
+                  port: 22,
+                  username: 'runner',
+                  password: 'webexec'
+                })
+            })
+        } catch(e) { expect(e).toBeNull() }
+        // log key SSH events
+        sshC.on('error', e => console.log("ssh error", e))
+        sshC.on('close', e => {
+            cmdClosed = true
+            console.log("ssh closed", e)
+        })
+        sshC.on('end', e => console.log("ssh ended", e))
+        sshC.on('keyboard-interactive', e => console.log("ssh interaction", e))
+        try {
+            stream = await new Promise((resolve, reject) => {
+                sshC.exec("webexec stop", { }, async (err, s) => {
+                    if (err)
+                        reject(err)
+                    else 
+                        resolve(s)
+                })
+            })
+        } catch(e) { expect(e).toBeNull() }
+        stream.on('close', (code, signal) => {
+            console.log(`closed with ${signal}`)
+            sshC.end()
+        }).on('data', async (data) => {
+            let b = new Buffer.from(data)
+            let s = b.toString()
+            expect(s).toMatch("stopped")
+        })
     })
 })
