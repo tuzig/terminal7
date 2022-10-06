@@ -17,16 +17,15 @@ describe("form", () => {
     let word
     let map
     let t
+    let f: Form
     // simulates a key press with the next char in the word
     function writeChar() {
-        if (!word) {
-            t.pressKey("Enter")
-            return
-        }
-        const c = word[0]
-        word = word.slice(1)
+        const c = word[0] || "Enter"
         t.pressKey(c)
-        setTimeout(writeChar, 10)
+        if (word) {
+            word = word.slice(1)
+            setTimeout(writeChar, 10)
+        }
     }
         
     beforeAll(() => {
@@ -37,27 +36,26 @@ describe("form", () => {
         map.open()
         t = map.t0
         t.out = ""
+        t.onKey(ev => f.onKey(ev.domEvent))
+        f = null
     })
-    it("can process a simple form", () => {
-        const f = new Form([{ prompt:"name" }])
+    it("can process a simple form", async () => {
+        f = new Form([{ prompt:"name" }])
         word = "yossi"
         setTimeout(writeChar, 10)
-        let results
-        return f.start(t).then(results => {
-            expect(results).toHaveLength(1)
-            expect(results).toContain("yossi")
-        }).catch(e => 
-            assert.isNotOk(e,'Promise error'))
+        const results = await f.start(t)
+        expect(results).toHaveLength(1)
+        expect(results).toContain("yossi")
     })
     it("can process a form with a default", async () => {
-        const f = new Form([{ prompt:"name", default:"yossi" }])
+        f = new Form([{ prompt:"name", default:"yossi" }])
         setTimeout(() => t.pressKey("Enter"), 10)
         const results = await f.start(t)
         expect(results).toHaveLength(1)
         expect(results).toContain("yossi")
     })
     it("can process a form with a validator", async () => {
-        const f = new Form([{ prompt:"name", validator: (v) => v.length > 3 ? "" : "FAIL" }])
+        f = new Form([{ prompt:"name", validator: (v) => v.length > 3 ? "" : "FAIL" }])
         let failed = false
         word = "yossi"
         setTimeout(writeChar, 10)
@@ -76,7 +74,7 @@ describe("form", () => {
         expect(failed).toBeTruthy()
     })
     it("can process a form with a list of values", async () => {
-        const f = new Form([{ prompt:"name", values:["one", "two"] }])
+        f = new Form([{ prompt:"name", values:["one", "two"] }])
         let finish = false
         word = "three"
         setTimeout(writeChar, 10)
@@ -93,7 +91,7 @@ describe("form", () => {
         expect(finish).toBeTruthy()
     })
     it("can process a form with a list of values and a default", async () => {
-        const f = new Form([{ prompt:"name", values:["one", "two"], default:"one" }])
+        f = new Form([{ prompt:"name", values:["one", "two"], default:"one" }])
         word = "one"
         setTimeout(() => t.pressKey("Enter"), 10)
         let results
@@ -104,7 +102,7 @@ describe("form", () => {
         expect(results[0]).toEqual("one")
     })
     it("can open choose fields form", async () => {
-        const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
+        f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
         setTimeout(() => t.pressKey("Enter"), 10)
         let results
         try {
@@ -116,7 +114,7 @@ describe("form", () => {
         expect(results[1]).toBeFalsy()
     })
     it("can select fields", async () => {
-        const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
+        f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
         setTimeout(() => t.pressKey(" "), 10)
         setTimeout(() => t.pressKey("ArrowDown"), 10)
         setTimeout(() => t.pressKey(" "), 10)
@@ -130,7 +128,7 @@ describe("form", () => {
         expect(results[1]).toBeTruthy()
     })
     it("can only edit chosen fields", async () => {
-        const f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
+        f = new Form([{ prompt:"name", default:"one" }, { prompt:"number", default:"1" }])
         setTimeout(() => t.pressKey(" "), 10)
         setTimeout(() => t.pressKey("Enter"), 20)
         let results
