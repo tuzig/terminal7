@@ -69,7 +69,7 @@ export class Shell {
         this.onKey = null
     }
 
-    async newForm(fields: Fields, type: "menu" | "choice" | "text") {
+    async newForm(fields: Fields, type: "menu" | "choice" | "text", title="") {
         this.escapeActiveForm()
         this.map.showLog(true)
         this.t.writeln("\n")
@@ -82,7 +82,7 @@ export class Shell {
                 promise = this.activeForm.menu(this.t)
                 break
             case "choice":
-                promise = this.activeForm.chooseFields(this.t)
+                promise = this.activeForm.chooseFields(this.t, title)
                 break
             case "text":
                 promise = this.activeForm.start(this.t)
@@ -96,7 +96,7 @@ export class Shell {
             return res
         } catch (err) {
             this.onFormError(err)
-            return null
+            return
         }
     }
 
@@ -205,6 +205,75 @@ export class Shell {
                 setTimeout(() => gate.t7.goHome(), 100)
                 break
         }
+    }
+
+    editGate(gate: Gate) {
+        const f1 = [
+            { prompt: "Connect" },
+            { prompt: "Edit" },
+            { prompt: "\x1B[31mDelete\x1B[0m" },
+        ]
+        let f2 = [
+            {
+                prompt: "Name",
+                default: gate.name,
+                validator: a => gate.t7.validateHostName(a)
+            },
+            { 
+                prompt: "Hostname",
+                default: gate.addr,
+                validator: a => gate.t7.validateHostAddress(a)
+            },
+            { prompt: "Username", default: gate.username }
+        ]
+        const fDel = [{
+            prompt: `Delete ${gate.name}?`,
+            values: ["y", "n"],
+            default: "n",
+        }]
+        if (typeof(gate.fp) == "string") {
+            gate.notify("Got peer from \uD83D\uDCD6, connect only")
+            return
+        }
+        this.map.showLog(true)
+        this.map.interruptTTY()
+        this.map.t0.write(`\nMenu for \x1B[4m${gate.name}\x1B[0m:`)
+        this.newForm(f1, "menu").then(choice => {
+            switch (choice) {
+                case 'Connect':
+                    gate.connect()
+                    break
+                case 'Edit':
+                    this.newForm(f2, "choice", `\x1B[4m${gate.name}\x1B[0m edit`).then(enabled => {
+                        if (!enabled) {
+                            gate.t7.clear()
+                            return
+                        }
+                        f2 = f2.filter((_, i) => enabled[i])
+                        this.newForm(f2, "text").then(results => {
+                            ['name', 'addr', 'username']
+                                .filter((_, i) => enabled[i])
+                                .forEach((k, i) => gate[k] = results[i])
+                            if (enabled[1]) {
+                                gate.t7.gates.delete(gate.id)
+                                gate.id = gate.addr
+                                gate.t7.gates.set(gate.id, gate)
+                            }
+                            gate.t7.storeGates()
+                            gate.updateNameE()
+                            this.map.showLog(false)
+                        })
+                    })
+                    break
+                case "\x1B[31mDelete\x1B[0m":
+                    this.newForm(fDel, "text").then(res => {
+                        if (res[0] == "y")
+                            gate.delete()
+                        gate.t7.clear()
+                    })
+                    break
+            }
+        })
     }
 }
 
