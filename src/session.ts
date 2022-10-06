@@ -30,6 +30,7 @@ export interface Channel {
 }
 
 export interface Session {
+    isSSH: boolean
     onStateChange : (state: string, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
     // for reconnect

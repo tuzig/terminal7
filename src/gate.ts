@@ -11,7 +11,7 @@ import { Storage } from '@capacitor/storage'
 import { Pane } from './pane.js'
 import { T7Map } from './map'
 import { Failure, Session } from './session'
-import { SSHSession } from './ssh_session'
+import { SSHSession, HybridSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
 import { Capacitor } from '@capacitor/core'
@@ -667,6 +667,14 @@ export class Gate {
                 this.session = new PeerbookSession(this.fp, this.t7.pb)
             }
             else {
+                if (!this.pass) {
+                    this.askPass()
+                    return
+                }
+
+
+                this.session = new HybridSession(this.addr, this.username, this.pass)
+                /*
                 if (this.tryWebexec) {
                     this.notify("🎌  webexec server")
                     this.session = new HTTPWebRTCSession(this.fp, this.addr)
@@ -676,6 +684,7 @@ export class Gate {
                     // next time go back to trying webexec
                     this.tryWebexec = true
                 }
+                */
             }
         this.session.onStateChange = (state, failure?) => this.onSessionState(state, failure)
         this.session.onPayloadUpdate = layout => {

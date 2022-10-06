@@ -63,8 +63,7 @@ export class WebRTCChannel extends BaseChannel {
 
 }
 
-export abstract class WebRTCSession extends BaseSession {
-    fp: string
+export class WebRTCSession extends BaseSession {
     channels: Map<number, WebRTCChannel>
     pendingCDCMsgs: Array<object>
     pendingChannels: Map<ChannelID, ChannelOpenedCB>
@@ -74,11 +73,8 @@ export abstract class WebRTCSession extends BaseSession {
     lastMsgId: number
     t7: object
     marker: number
-    address: string | undefined
-    constructor(fp: string, address?: string) {
+    constructor() {
         super()
-        this.fp = fp
-        this.address = address
         this.channels = new Map()
         this.pendingCDCMsgs = []
         this.pendingChannels = new Map()
@@ -86,7 +82,8 @@ export abstract class WebRTCSession extends BaseSession {
         this.lastMsgId = 0
         this.marker = -1
     }
-    abstract onIceCandidate(ev: RTCPeerConnectionIceEvent): void
+    onIceCandidate(e: RTCPeerConnectionIceEvent): void
+    onNegotiationNeeded(ev: Event): void
     async connect(marker=-1) {
         console.log("in connect")
         this.startWatchdog()
@@ -339,10 +336,12 @@ export abstract class WebRTCSession extends BaseSession {
 }
 
 export class PeerbookSession extends WebRTCSession {
+    fp: string
     pb: PeerbookConnection
     constructor(fp: string, pb: PeerbookConnection) {
-        super(fp)
+        this.fp = fp
         this.pb = pb
+        super()
     }
     getIceServers() {
         return new Promise((resolve, reject) => {
@@ -406,6 +405,10 @@ export class PeerbookSession extends WebRTCSession {
 export class HTTPWebRTCSession extends WebRTCSession {
     address: string
     fetchTimeout: number
+    constructor(address) {
+        super()
+        this.address = address
+    }
 
     onNegotiationNeeded(e) {
         this.t7.log("on negotiation needed", e)
