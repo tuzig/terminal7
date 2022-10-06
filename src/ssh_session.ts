@@ -175,10 +175,10 @@ export class HybridSession extends SSHSession {
         }
         console.log("got from webexec ID: ", callbackID)
         if (callbackID != "") {
-            let this.webrtcSession = new WebRTCSession()
+            const webrtcSession = new WebRTCSession()
             try {
-                await new Promise<void>((resolve, reject) => {
-                    this.webrtcSession.onStateChange = (state, failure?: Failure) => {
+                return await new Promise<WebRTCSession?>((resolve, reject) => {
+                    webrtcSession.onStateChange = (state, failure?: Failure) => {
                         console.log("State changed", state)
                         if (state == "connected") {
                             resolve()
@@ -187,62 +187,55 @@ export class HybridSession extends SSHSession {
                             terminal7.log("Failed to open session")
                             reject()
                     }
-                    this.webrtcSession.onIceCandidate = e => {
+                    webrtcSession.onIceCandidate = e => {
                         const candidate = JSON.stringify(e.candidate)
                         SSH.writeToChannel({channel: id, s: candidate})
                     }
-                    this.webrtcSession.onNegotiationNeeded = () => {
+                    webrtcSession.onNegotiationNeeded = () => {
                         terminal7.log("on negotiation needed")
-                        this.webrtcSession.pc.createOffer().then(d => {
+                        webrtcSession.pc.createOffer().then(d => {
                             const offer = JSON.stringify(d)
-                            this.webrtcSession.pc.setLocalDescription(d)
+                            webrtcSession.pc.setLocalDescription(d)
                             terminal7.log("got offer", offer)
                             SSH.writeToChannel({channel: id, s: offer})
                         })
                     }
+                    return webrtcSession
                 })
             } catch (e) {
-                terminalt.log("signaling over ssh failed", e)
+                terminal7.log("signaling over ssh failed", e)
             }
         }
     }
     async openChannel(cmd: string, parent?: ChannelID, sx?: number, sy?: number) {
+        if (this.webrtcSession) 
+            return this.webrtcSession.openChannel(cmd, parent, sx, sy)
+
         const channel = new SSHChannel()
-        if (!this.webrtcSession) {
-            let callbackID = ""
+        let callbackID = ""
+        const { id } = await SSH.newChannel({session: this.id})
+        console.log("got new channel with id ", id)
+        channel.id = id
+        if (!this.isSSH) {
+            // try opening a WebRTC connection
+            this.webrtcSession = this.newWebRTC(id)
             if (this.webrtcSession) {
                 return this.webrtcSession.openChannel(cmd, parent, sx, sy)
-            } 
-            const z = await SSH.newChannel({session: this.id})
-            const id = z.id
-            console.log("got new channel with id ", id)
-            channel.id = id
-            if (!this.isSSH) {
-                // try opening a WebRTC connection
-                this.webrtcSession = this.newWebRTC(id)
-                if (this.webrtcSession) {
-                    return this.wSession.openChannel(cmd, parent, sx, sy)
-                }
-            } 
-            try {
-                callbackID = await SSH.startShell({channel: id, command: cmd},
-                    m => {
-                        if ('data' in m)
-                            channel.onMessage(m.data)
-                        else {
-                            console.log("ssh read got error ", m.error)
-                            channel.onClose(m.error)
-                        }
+            }
+        } 
+        try {
+            callbackID = await SSH.startShell({channel: id, command: cmd},
+                m => {
+                    if ('data' in m)
+                        this.onAcceptData(m.data)
+                    else {
+                        console.log("ssh read got error ", m.error)
                     }
-                )
-            } catch (e) { reject(e) }
-            console.log("got from startShell: ", callbackID)
-            await SSH.setPtySize({channel: id, width: sx, height: sy})
-            return channel, id
-
-        } else {
-            // start webrtc data channel
-            return this.webrtcSession.openChannel(cmd, parent?, sx?, sy?)
-        }
+                }
+            )
+        } catch (e) { reject(e) }
+        console.log("got from startShell: ", callbackID)
+        await SSH.setPtySize({channel: id, width: sx, height: sy})
+        return channel, id
     }
 } 
