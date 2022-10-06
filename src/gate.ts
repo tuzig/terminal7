@@ -47,6 +47,7 @@ export class Gate {
     online: boolean
     store: boolean
     map: T7Map
+    useSSH: boolean
 
     constructor (props) {
         // given properties
@@ -656,7 +657,34 @@ export class Gate {
         authForm.start(this.map.t0).then(res => {
             this.username = res[0]
             this.pass = res[1]
-            this.completeConnect()
+            if (this.useSSH) 
+                this.completeConnect()
+            else {
+                const webexecForm = new Form([
+                    { prompt: "Copy it to clipboard & connect" },
+                    { prompt: "Just let me in" },
+                    { prompt: "Always use SSH for this host" },
+                ])
+                const cmd = "bash -c $(curl -sL https://get.webexec.sh)"
+                this.map.t0.writeln("  You are connecting with SSH. While it works, with WebRTC you get much more.")
+                this.map.t0.writeln("  To install webexec, our open source WebRTC server, run:")
+                this.map.t0.writeln(`  \x1B[1m${cmd}\x1B[0m`)
+                webexecForm.menu(this.map.t0).then(res => {
+                    switch(res) {
+                        case "Copy it to clipboard & connect":
+                            Clipboard.write({ string: cmd })
+                            this.completeConnect()
+                            break
+                        case "Just let me in":
+                            this.completeConnect()
+                            break
+                        case "Always use SSH for this host":
+                            this.useSSH = true
+                            this.completeConnect()
+                            break
+                    }
+                }).catch(e => this.onFormError(e))
+            }
         }).catch(e => this.onFormError(e))
     }
     completeConnect(): void {

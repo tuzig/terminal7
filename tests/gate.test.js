@@ -140,6 +140,7 @@ describe("gate", () => {
 		let g = t.addGate({name:"foo", addr: "foo", username: "eyal"})
 		g.open(e)
 		HTTPWebRTCSession.fail = true
+        g.useSSH = true
 		globalThis.webkit = { messageHandlers: { bridge: 1 } } // mock ios
         const map = new T7Map()
         map.open()
