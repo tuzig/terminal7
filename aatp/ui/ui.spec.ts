@@ -95,13 +95,18 @@ test.describe('terminal 7session', ()  => {
         await sleep(500)
         await page.screenshot({ path: `/result/2.png` })
         await page.locator('.tabbar .reset').click()
-        await page.keyboard.press('Enter');
+        await sleep(100)
+        await page.keyboard.press('Enter')
+        await expect(page.locator('#t0')).toBeHidden()
+        await sleep(100)
         await expect(page.locator('.pane')).toHaveCount(1)
+        await expect(page.locator('.windows-container')).toBeVisible()
+
         // TODO: fix getTWRBuffer
         // expect(getTWRBuffer()).toMatch(/foo.*: Connected/)
     })
     test('how a gate handles disconnect', async() => {
-        let sshC
+        let sshC, stream
         try {
             sshC = await new Promise((resolve, reject) => {
                 const conn = new Client()
@@ -118,11 +123,12 @@ test.describe('terminal 7session', ()  => {
         // log key SSH events
         sshC.on('error', e => console.log("ssh error", e))
         sshC.on('close', e => {
-            cmdClosed = true
             console.log("ssh closed", e)
         })
         sshC.on('end', e => console.log("ssh ended", e))
         sshC.on('keyboard-interactive', e => console.log("ssh interaction", e))
+        // shorten the net timeout for a shorter run time
+        await page.evaluate(async () => window.terminal7.conf.net.timeout = 1000)
         try {
             stream = await new Promise((resolve, reject) => {
                 sshC.exec("webexec stop", { }, async (err, s) => {
@@ -133,13 +139,21 @@ test.describe('terminal 7session', ()  => {
                 })
             })
         } catch(e) { expect(e).toBeNull() }
-        stream.on('close', (code, signal) => {
-            console.log(`closed with ${signal}`)
-            sshC.end()
-        }).on('data', async (data) => {
-            let b = new Buffer.from(data)
-            let s = b.toString()
-            expect(s).toMatch("stopped")
-        })
+        try {
+            await new Promise<void>((resolve, reject) => {
+                stream.on('close', (code, signal) => {
+                    console.log(`closed with ${signal}`)
+                    sshC.end()
+                    reject()
+                }).on('data', async (data) => {
+                    let b = new Buffer.from(data)
+                    let s = b.toString()
+                    expect(s).toMatch("SIGINT")
+                    resolve()
+                })
+            })
+        } catch(e) { expect(e).toBeNull() }
+        // TODO: sleep and verify TWR came up while the windows-container
+        // remained visible
     })
 })

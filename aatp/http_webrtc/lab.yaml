@@ -3,11 +3,11 @@ services:
   runner:
     build: 
       context: .
-      dockerfile: ./aatp/runner/Dockerfile
+      dockerfile: ./aatp/infra/runner/Dockerfile
     volumes:
       - ./aatp/http_webrtc:/runner
       - ./aatp/result:/result
-      - ./aatp/http_webrtc/webexec_conf:/webexec_config
+      - webexec_auth:/webexec_config
     environment:
       PWARGS: ${PWARGS}
     depends_on:
@@ -24,4 +24,7 @@ services:
       context: .
       dockerfile: ./aatp/webexec/Dockerfile
     volumes:
-      - ./aatp/http_webrtc/webexec_conf:/home/webexec/.config/webexec
+      - ./aatp/http_webrtc/webexec_conf:/conf
+      - webexec_auth:/auth
+volumes:
+  webexec_auth:

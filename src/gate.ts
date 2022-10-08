@@ -456,6 +456,7 @@ export class Gate {
         }).catch(ev => this.onFormError(ev))
     }
     setLayout(state: object) {
+        console.log("in setLayout", state)
         const winLen = this.windows.length
         // got an empty state
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
@@ -687,7 +688,10 @@ export class Gate {
     }
     load() {
         this.t7.log("loading gate")
-        this.session.getPayload().then(layout => this.setLayout(layout))
+        this.session.getPayload().then(layout => {
+            console.log("got payload", layout)
+            this.setLayout(layout)
+        })
         document.getElementById("map").classList.add("hidden")
         Storage.get({key: "first_gate"}).then(v => {
             if (v.value != "nope") {
@@ -752,7 +756,7 @@ export class Gate {
         }).catch(e => this.onFormError(e))
 	}
     onFormError(err) {
-        this.t7.log("Form error:", err)
+        this.t7.log("Form error:", err.message)
         this.t7.clearTempGates()
     }
     updateNameE() {

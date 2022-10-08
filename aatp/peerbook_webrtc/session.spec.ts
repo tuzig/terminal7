@@ -107,15 +107,19 @@ insecure = true`)
     })
     test('a gate restores after reload', async() => {
         await page.reload({waitUntil: "networkidle"})
+        await sleep(500)
         await page.evaluate(async () => {
             window.terminal7.notify = console.log
             window.terminal7.conf.net.peerbook = "peerbook:17777"
             window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
             await window.terminal7.pbConnect()
         })
+        await sleep(500)
         connectGate()
+        await sleep(500)
         await page.screenshot({ path: `/result/second.png` })
         await expect(page.locator('.pane')).toHaveCount(2)
+        await expect(page.locator('.windows-container')).toBeVisible()
     })
     test('a pane can be close', async() => {
         const exitState = await page.evaluate(() => {
