@@ -362,7 +362,6 @@ export class Gate {
         this.boarding = true
         this.updateNameE()
         if (!this.pass && !this.fp && !this.tryWebexec) {
-            this.clear()
             this.askPass()
         } else
             this.completeConnect()
@@ -671,6 +670,7 @@ export class Gate {
                     this.notify("🎌  webexec server")
                     this.session = new HTTPWebRTCSession(this.fp, this.addr)
                 } else {
+                    this.clear()
                     this.notify("Starting SSH session")
                     this.session = new SSHSession(this.addr, this.username, this.pass)
                     // next time go back to trying webexec
