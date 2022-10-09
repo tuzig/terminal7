@@ -28,12 +28,10 @@ test.describe('terminal 7session', ()  => {
             const b = t.buffer.active
             let ret = ""
             for (let i = 0; i < b.length; i++) {
-                const str = b.getLine(i).translateToString()
-                console.log("adding:", str)
-                ret = ret + str
+                const line = b.getLine(i).translateToString()
+                ret += line
             }
             return ret
-
         })
     }
     test.beforeAll(async ({ browser }) => {
@@ -102,8 +100,7 @@ test.describe('terminal 7session', ()  => {
         await expect(page.locator('.pane')).toHaveCount(1)
         await expect(page.locator('.windows-container')).toBeVisible()
 
-        // TODO: fix getTWRBuffer
-        // expect(getTWRBuffer()).toMatch(/foo.*: Connected/)
+        expect(await getTWRBuffer()).toMatch(/foo.*: Connected\s+$/)
     })
     test('how a gate handles disconnect', async() => {
         let sshC, stream
@@ -155,5 +152,11 @@ test.describe('terminal 7session', ()  => {
         } catch(e) { expect(e).toBeNull() }
         // TODO: sleep and verify TWR came up while the windows-container
         // remained visible
+        await page.screenshot({ path: `/result/3.png` })
+        await sleep(12000)
+        await expect(page.locator('#t0')).toBeVisible()
+        const twr = await getTWRBuffer()
+        expect(twr).toMatch(/Reconnect\s+Close\s*$/)
+        await page.screenshot({ path: `/result/5.png` })
     })
 })
