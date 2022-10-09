@@ -116,8 +116,11 @@ export abstract class WebRTCSession extends BaseSession {
                 () => {
                     this.onStateChange("failed", Failure.BadMarker)
                 })
-            } else 
+            } else  {
+                if (state == 'failed')
+                    this.closeChannels()
                 this.onStateChange(state)
+            }
         }
         this.pc.onicecandidateerror = (ev: RTCPeerConnectionIceErrorEvent) => {
             this.clearWatchdog()
