@@ -582,14 +582,12 @@ export class Gate {
     goBack() {
         const w = this.breadcrumbs.pop()
         this.breadcrumbs = this.breadcrumbs.filter(x => x != w)
-        if (this.windows.length == 0) {
-            this.close()
-        }
-        else
+        if (this.windows.length > 0 ) {
             if (this.breadcrumbs.length > 0)
                 this.breadcrumbs.pop().focus()
             else
                 this.windows[0].focus()
+        }
     }
     fit() {
         this.windows.forEach(w => w.fit())

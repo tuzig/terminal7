@@ -177,7 +177,6 @@ export abstract class WebRTCSession extends BaseSession {
         }
         dc.onclose = m => {
             this.channels.delete(id)
-            console.log("triggering channle close event as", m)
             channel.onClose(m)
         }
         return channel
