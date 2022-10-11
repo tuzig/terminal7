@@ -9,7 +9,7 @@ services:
       - ./aatp/result:/result
       - webexec_auth:/webexec_config
     environment:
-      PWARGS: ${PWARGS}
+      PWARGS: ${PWARGS--x}
     depends_on:
       - terminal7
       - webexec

@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: ./aatp/infra/runner/Dockerfile
     environment:
-      PWARGS: ${PWARGS}
+      PWARGS: ${PWARGS--x}
     volumes:
       - ./aatp/ui:/runner
       - ./aatp/result:/result
