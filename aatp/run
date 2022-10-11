@@ -33,7 +33,12 @@ exit_error() {
     usage
     exit 1
 }
-
+npx vite build
+if [ $? -ne 0 ]
+then
+     echo ">>> Terminal7 build FAILED"
+     exit 4
+fi
 while getopts ":hnz" option; do
     echo "option " $option
    case $option in
