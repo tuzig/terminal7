@@ -22,7 +22,7 @@ services:
   webexec:
     build:
       context: .
-      dockerfile: ./aatp/webexec/Dockerfile
+      dockerfile: ./aatp/infra/webexec/Dockerfile
     volumes:
       - ./aatp/http_webrtc/webexec_conf:/conf
       - webexec_auth:/auth
