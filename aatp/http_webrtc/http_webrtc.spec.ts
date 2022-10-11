@@ -34,6 +34,8 @@ test.describe('terminal7 direct WebRTC session', ()  => {
         await waitPort({host:'terminal7', port:80})
         const response = await page.goto(url)
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
+        // waiting for the browser to load the app
+        await sleep(100)
         await page.evaluate(async () => {
             window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
             localStorage.setItem("CapacitorStorage.dotfile",`
