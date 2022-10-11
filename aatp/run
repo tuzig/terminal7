@@ -33,12 +33,6 @@ exit_error() {
     usage
     exit 1
 }
-npx vite build
-if [ $? -ne 0 ]
-then
-     echo ">>> Terminal7 build FAILED"
-     exit 4
-fi
 while getopts ":hnz" option; do
     echo "option " $option
    case $option in
@@ -57,6 +51,12 @@ while getopts ":hnz" option; do
    esac
 done
 shift $((OPTIND-1))
+npx vite build
+if [ $? -ne 0 ]
+then
+     echo ">>> Terminal7 build FAILED"
+     exit 4
+fi
 if [ $# -eq 0 ]
 then
     for compose in `find aatp -name "lab.yaml"`
