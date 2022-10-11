@@ -143,8 +143,8 @@ test.describe('terminal 7session', ()  => {
                     sshC.end()
                     reject()
                 }).on('data', async (data) => {
-                    let b = new Buffer.from(data)
-                    let s = b.toString()
+                    const b = new Buffer.from(data)
+                    const s = b.toString()
                     expect(s).toMatch("SIGINT")
                     resolve()
                 })

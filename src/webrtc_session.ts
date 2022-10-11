@@ -223,7 +223,8 @@ export abstract class WebRTCSession extends BaseSession {
        this.startWatchdog()
        if (this.cdc)
            this.cdc.onmessage = undefined
-       return new Promise((resolve, reject) => {
+       // TODO: improve error handling and add areject
+       return new Promise((resolve) => {
            console.log(">>> opening cdc")
             const cdc = this.pc.createDataChannel('%')
             this.cdc = cdc
