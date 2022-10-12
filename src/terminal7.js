@@ -239,7 +239,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             App.addListener('appStateChange', state => {
                 if (!state.isActive) {
                     // this prevents a resizing bug that keeps the font tiny
-                    this.showLog(true)
+                    this.map.showLog(true)
                     if (this.pb) {
                         this.pb.close()
                         this.pb = null
@@ -502,6 +502,7 @@ peer_name = "${peername}"\n`
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.add("off"))
         window.location.href = "#map"
+        document.getElementById("map").classList.remove("hidden")
         document.title = "Terminal 7"
         document.getElementById('log').classList.remove('hidden', 'show')
     }
@@ -606,7 +607,9 @@ peer_name = "${peername}"\n`
             this.pbConnect()
             const gate = this.activeG
             if (gate) {
-                gate.reconnect().catch(() => gate.connect())
+                gate.reconnect()
+                .then(() => this.map.showLog(false))
+                .catch(() => gate.reset())
             }
         } else {
             off.remove("hidden")
@@ -634,7 +637,7 @@ peer_name = "${peername}"\n`
         if (this.conf.net.peerbook == "pb.terminal7.dev")
             terminal7.notify(`\uD83D\uDCD6 Your setting include an old peerbook addres.<br/>
                               Please click <i class="f7-icons">gear</i> and change net.peerbook to "api.peerbook.io"`)
-        this.conf.net.timeout = this.conf.net.timeout || 3000
+        this.conf.net.timeout = this.conf.net.timeout || 5000
         this.conf.net.retries = this.conf.net.retries || 3
         this.conf.theme = this.conf.theme || {}
         this.conf.theme.foreground = this.conf.theme.foreground || "#00FAFA"

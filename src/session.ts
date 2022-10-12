@@ -30,7 +30,6 @@ export interface Channel {
 }
 
 export interface Session {
-    watchdog: number
     onStateChange : (state: string, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
     // for reconnect
@@ -64,6 +63,7 @@ export abstract class BaseChannel implements Channel {
     }
 }
 export abstract class BaseSession implements Session {
+    watchdog: number
     onStateChange : (state: string, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
     constructor(fp: string, address?: string)
@@ -111,6 +111,7 @@ export abstract class BaseSession implements Session {
         }
     }
     close() {
+        this.clearWatchdog()
         // this.onStateChange = undefined
     }
     // for reconnect

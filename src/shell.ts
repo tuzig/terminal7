@@ -156,7 +156,7 @@ export class Shell {
         let ans
         switch (choice) {
             case "Reset connection":
-                gate.disengage().then(() => {
+                gate.disengage().then(async () => {
                     if (gate.session) {
                         gate.session.close()
                         gate.session = null
@@ -167,21 +167,21 @@ export class Shell {
                 }).catch(() => gate.connect())
                 break
             case "Reset connection & Layout":
-                gate.disengage().then(() => {
+                try {
                     if (gate.session) {
+                        await gate.disengage()
                         gate.session.close()
                         gate.session = null
                     }
                     gate.connect(() => {
                         gate.clear()
-                        this.map.showLog(false)
+                        gate.map.showLog(false)
                         gate.activeW = gate.addWindow("", true)
                         gate.focus()
                     })
-                }).catch(() => {
+                } catch(e) {
                     gate.notify("Connect failed")
-                    gate.reset()
-                })
+                }
                 break
             case "\x1B[31mFactory reset\x1B[0m":
                 ans = (await this.newForm(factoryResetVerify, "text"))[0]

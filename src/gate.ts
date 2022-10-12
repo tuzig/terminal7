@@ -155,12 +155,10 @@ export class Gate {
      * state changes.
      */
     onSessionState(state: string, failure: Failure) {
-        /*
         if (!this.session) {
             this.t7.log(`Ignoring ${this.name} change state to ${state} as session is closed`)
             return
         }
-        */
         this.t7.log(`updating ${this.name} state to ${state}`)
         if (state == "connected") {
             this.marker = null
@@ -319,6 +317,7 @@ export class Gate {
         this.map.shell.resetGate(this)
     }
     setLayout(state: object) {
+        console.log("in setLayout", state)
         const winLen = this.windows.length
         // got an empty state
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
@@ -378,7 +377,7 @@ export class Gate {
         this.e.querySelectorAll(".window").forEach(e => e.remove())
         this.e.querySelectorAll(".modal").forEach(e => e.classList.add("hidden"))
         if (this.activeW && this.activeW.activeP.zoomed)
-            this.activeW.activeP.toggleZoom()
+            this.activeW.activeP.unzoom()
         this.windows = []
         this.breadcrumbs = []
         this.msgs = {}
@@ -430,11 +429,7 @@ export class Gate {
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
                         this.t7.log("Closing gate after updating to empty state")
-                        if (this.session) {
-                            this.session.close()
-                            this.session = null
-                        }
-                        this.boarding = false
+                        this.close()
                     }
                })
             }, 100)
@@ -449,16 +444,12 @@ export class Gate {
     goBack() {
         const w = this.breadcrumbs.pop()
         this.breadcrumbs = this.breadcrumbs.filter(x => x != w)
-        if (this.windows.length == 0) {
-            this.stopBoarding()
-            this.clear()
-            this.t7.goHome()
-        }
-        else
+        if (this.windows.length > 0 ) {
             if (this.breadcrumbs.length > 0)
                 this.breadcrumbs.pop().focus()
             else
                 this.windows[0].focus()
+        }
     }
     fit() {
         this.windows.forEach(w => w.fit())
@@ -529,6 +520,8 @@ export class Gate {
         }).catch(e => this.onFormError(e))
     }
     completeConnect(): void {
+        if (Form.activeForm)
+            Form.activeForm.escape(this.map.t0)
             if (this.fp) {
                 this.notify("🎌  PeerBook")
                 this.session = new PeerbookSession(this.fp, this.t7.pb)
@@ -538,6 +531,7 @@ export class Gate {
                     this.notify("🎌  webexec server")
                     this.session = new HTTPWebRTCSession(this.fp, this.addr)
                 } else {
+                    this.clear()
                     this.notify("Starting SSH session")
                     this.session = new SSHSession(this.addr, this.username, this.pass)
                     // next time go back to trying webexec
@@ -554,7 +548,11 @@ export class Gate {
     }
     load() {
         this.t7.log("loading gate")
-        this.session.getPayload().then(layout => this.setLayout(layout))
+        this.session.getPayload().then(layout => {
+            console.log("got payload", layout)
+            this.setLayout(layout)
+        })
+        document.getElementById("map").classList.add("hidden")
         Storage.get({key: "first_gate"}).then(v => {
             if (v.value != "nope") {
                 this.t7.toggleHelp()
@@ -618,7 +616,7 @@ export class Gate {
         }).catch(e => this.onFormError(e))
 	}
     onFormError(err) {
-        this.t7.log("Form error:", err)
+        this.t7.log("Form error:", err.message)
         this.t7.clearTempGates()
     }
     updateNameE() {
@@ -633,5 +631,16 @@ export class Gate {
             offline: this.online === false,
             unverified: this.verified === false,
         })
+    }
+    close(){
+        this.boarding = false
+        this.clear()
+        this.updateNameE()
+        if (this.session) {
+            this.session.close()
+            this.session = null
+        }
+        // we need the timeout as cell.focus is changing the href when dcs are closing
+        setTimeout(() => this.t7.goHome(), 100)
     }
 }

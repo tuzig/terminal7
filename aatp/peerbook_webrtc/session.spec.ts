@@ -1,12 +1,12 @@
 import { test, expect, Page, BrowserContext } from '@playwright/test'
-import * as fs from 'fs'
 import waitPort from 'wait-port'
+import * as redis from 'redis'
 
 
-const local = process.env.LOCALDEV !== undefined,
-      url = local?"http://localhost:3000":"http://terminal7"
+    const local = process.env.LOCALDEV !== undefined,
+          url = local?"http://localhost:3000":"http://terminal7"
 
-test.describe('terminal7 direct WebRTC session', ()  => {
+test.describe('terminal7 session', ()  => {
 
     const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
     const connectGate = async () => {
@@ -24,13 +24,9 @@ test.describe('terminal7 direct WebRTC session', ()  => {
     test.beforeAll(async ({ browser }) => {
         context = await browser.newContext()
         page = await context.newPage()
-        page.on('console', (msg) => {
-            if (msg.type() == 'trace')
-                console.trace('console trace:', msg.text())
-            else 
-                console.log('console log:', msg.text())
-        })
+        page.on('console', (msg) => console.log('console log:', msg.text()))
         page.on('pageerror', (err: Error) => console.log('PAGEERROR', err.message))
+        await waitPort({host:'peerbook', port:17777})
         await waitPort({host:'terminal7', port:80})
         const response = await page.goto(url)
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
@@ -49,38 +45,44 @@ shell = "bash"
 timeout = 3000
 retries = 3
 ice_server = "stun:stun2.l.google.com:19302"
+peerbook = "peerbook:17777"
 [ui]
 quickest_press = 1000
 max_tabs = 10
 cut_min_distance = 80
 cut_min_speed = 2.5
-# no pinch when scrolling -> y velocity higher than XTZ px/ms
-pinch_max_y_velocity = 0.1`
-)
-            localStorage.setItem("CapacitorStorage.gates", JSON.stringify(
-                [{"id":0,
-                  "addr":"webexec",
-                  "name":"foo",
-                  "windows":[],
-                  "store":true,
-                  "tryWebexec": true,
-                }]
-            ))
+pinch_max_y_velocity = 0.1
+[peerbook]
+email = "joe@example.com"
+insecure = true`)
         })
         // first page session for just for storing the dotfiles
         await page.reload({waitUntil: "networkidle"})
-        const fp = await page.evaluate(async () => {
+        await page.evaluate(async () => {
             window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
-            return await window.terminal7.getFingerprint()
         })
-        fs.writeFileSync('/webexec_config/authorized_fingerprints', fp + '\n')
         // add terminal7 initializtion and globblas
         await waitPort({host:'webexec', port:7777})
+
+        const redisClient = redis.createClient({url: 'redis://redis'})
+        redisClient.on('error', err => console.log('Redis client error', err))
+        await redisClient.connect()
+        const keys = await redisClient.keys('peer*')
+        keys.forEach(async key => {
+            console.log("verifying: " +key)
+            await redisClient.hSet(key, 'verified', "1")
+        })
+        await page.reload({waitUntil: "networkidle"})
+        await page.evaluate(async () => {
+            window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
+        })
     })
 
     test('connect to gate see help page and hide it', async () => {
+        await sleep(1000)
         connectGate()
         await page.screenshot({ path: `/result/second.png` })
+        // await expect(page.locator('.pane')).toHaveCount(1)
         const help  = page.locator('#help-gate')
         await expect(help).toBeVisible()
         await help.click()
@@ -105,12 +107,19 @@ pinch_max_y_velocity = 0.1`
     })
     test('a gate restores after reload', async() => {
         await page.reload({waitUntil: "networkidle"})
+        await sleep(500)
         await page.evaluate(async () => {
             window.terminal7.notify = console.log
+            window.terminal7.conf.net.peerbook = "peerbook:17777"
+            window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
+            await window.terminal7.pbConnect()
         })
+        await sleep(500)
         connectGate()
-        await page.screenshot({ path: `/result/2.png` })
+        await sleep(500)
+        await page.screenshot({ path: `/result/second.png` })
         await expect(page.locator('.pane')).toHaveCount(2)
+        await expect(page.locator('.windows-container')).toBeVisible()
     })
     test('a pane can be close', async() => {
         const exitState = await page.evaluate(() => {
@@ -125,41 +134,31 @@ pinch_max_y_velocity = 0.1`
     test('disengage and reconnect', async() => {
         await page.evaluate(async() => {
             const gate = window.terminal7.activeG
-            gate.activeW.activeP.d.send("seq 10; sleep 1; seq 10 100\n")
+            gate.activeW.activeP.d.send("seq 10; sleep 1; seq 10 20\n")
         })
-        await sleep(500)
+        await sleep(100)
         await page.screenshot({ path: `/result/second.png` })
-        const lines = await page.evaluate(() =>
-           window.terminal7.activeG.activeW.activeP.t.buffer.active.length)
-        expect(lines).toEqual(38)
-        await page.evaluate(async() => {
+        const lines1 = await page.evaluate(async() => {
             const gate = window.terminal7.activeG
-            gate.disengage().then(() => {
+            await gate.disengage().then(() => {
                 window.terminal7.clearTimeouts()
+                window.terminal7.activeG.session = null
             })
-            console.log(">>> after disengage:", window.terminal7.activeG, gate.name)
+            return gate.activeW.activeP.t.buffer.active.length
         })
         await sleep(1000)
         await page.screenshot({ path: `/result/third.png` })
         await page.evaluate(async() => {
-            await window.terminal7.activeG.reconnect()
+            window.terminal7.activeG.connect()
         })
         // connectGate()
         await expect(page.locator('.pane')).toHaveCount(1)
         await sleep(500)
-        const lines2 = await page.evaluate(() => {
-           const buffer = window.terminal7.activeG.activeW.activeP.t.buffer.active,
-                 ret = buffer.length
-            console.log(">>> -------  start of buffeer --------")
-           for (let i=0; i<ret; i++)
-               console.log(buffer.getLine(i).translateToString
-())
-            console.log(">>> -------  end of buffeer --------")
-            return (ret)
-        })
+        const lines2 = await page.evaluate(() =>
+           window.terminal7.activeG.activeW.activeP.t.buffer.active.length)
         await page.screenshot({ path: `/result/fourth.png` })
-        // TODO: expect(lines2).toEqual(103)
-        expect(lines2).toBeGreaterThan(100)
+        console.log(lines1, lines2)
+        expect(lines2-lines1).toEqual(11)
     })
     test('after disengage & reconnect, a a pane can be close', async() => {
         await page.screenshot({ path: `/result/fifth.png` })
@@ -176,20 +175,30 @@ pinch_max_y_velocity = 0.1`
     test.skip('auto restore gate', async() => {
         connectGate()
         await expect(page.locator('.pane')).toHaveCount(1)
+        await page.screenshot({ path: `/result/6.png` })
+        // set auto restore to true
         await page.evaluate(async () => {
             const value = localStorage.getItem("CapacitorStorage.dotfile")
-            const lines = value + "\nauto_restore = true"
-            console.log(lines)
-            await localStorage.setItem("CapacitorStorage.dotfile", lines)
+            const lines = value.split("\n").map((l: string) => {
+                if (l == "[peerbook]")
+                    return "auto_restore = true\n" + l
+                else 
+                    return l
+            })
+            await localStorage.setItem("CapacitorStorage.dotfile", lines.join("\n"))
         })
         await page.reload({waitUntil: "networkidle"})
+
         await page.evaluate(async () => {
             window.terminal7.notify = console.log
+            window.terminal7.conf.net.peerbook = "peerbook:17777"
+            window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
+            await window.terminal7.pbConnect()
         })
         await sleep(1000)
         await page.screenshot({ path: `/result/7.png` })
-        await expect(page.locator('.pane')).toHaveCount(1)
         const inGate = await page.evaluate(() => window.terminal7.activeG != null)
         expect(inGate).toBeTruthy()
+        await expect(page.locator('.pane')).toHaveCount(1)
     })
 })

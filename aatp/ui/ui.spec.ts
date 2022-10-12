@@ -1,4 +1,5 @@
 import { test, expect, Page, BrowserContext } from '@playwright/test'
+import { Client } from 'ssh2'
 import * as fs from 'fs'
 import waitPort from 'wait-port'
 
@@ -27,12 +28,10 @@ test.describe('terminal 7session', ()  => {
             const b = t.buffer.active
             let ret = ""
             for (let i = 0; i < b.length; i++) {
-                const str = b.getLine(i).translateToString()
-                console.log("adding:", str)
-                ret = ret + str
+                const line = b.getLine(i).translateToString()
+                ret += line
             }
             return ret
-
         })
     }
     test.beforeAll(async ({ browser }) => {
@@ -94,9 +93,70 @@ test.describe('terminal 7session', ()  => {
         await sleep(500)
         await page.screenshot({ path: `/result/2.png` })
         await page.locator('.tabbar .reset').click()
-        await page.keyboard.press('Enter');
+        await sleep(100)
+        await page.keyboard.press('Enter')
+        await expect(page.locator('#t0')).toBeHidden()
+        await sleep(100)
         await expect(page.locator('.pane')).toHaveCount(1)
-        // TODO: fix getTWRBuffer
-        // expect(getTWRBuffer()).toMatch(/foo.*: Connected/)
+        await expect(page.locator('.windows-container')).toBeVisible()
+
+        expect(await getTWRBuffer()).toMatch(/foo.*: Connected\s+$/)
+    })
+    test('how a gate handles disconnect', async() => {
+        let sshC, stream
+        try {
+            sshC = await new Promise((resolve, reject) => {
+                const conn = new Client()
+                conn.on('error', e => reject(e))
+                conn.on('ready', () => resolve(conn))
+                conn.connect({
+                  host: 'webexec',
+                  port: 22,
+                  username: 'runner',
+                  password: 'webexec'
+                })
+            })
+        } catch(e) { expect(e).toBeNull() }
+        // log key SSH events
+        sshC.on('error', e => console.log("ssh error", e))
+        sshC.on('close', e => {
+            console.log("ssh closed", e)
+        })
+        sshC.on('end', e => console.log("ssh ended", e))
+        sshC.on('keyboard-interactive', e => console.log("ssh interaction", e))
+        // shorten the net timeout for a shorter run time
+        await page.evaluate(async () => window.terminal7.conf.net.timeout = 1000)
+        try {
+            stream = await new Promise((resolve, reject) => {
+                sshC.exec("webexec stop", { }, async (err, s) => {
+                    if (err)
+                        reject(err)
+                    else 
+                        resolve(s)
+                })
+            })
+        } catch(e) { expect(e).toBeNull() }
+        try {
+            await new Promise<void>((resolve, reject) => {
+                stream.on('close', (code, signal) => {
+                    console.log(`closed with ${signal}`)
+                    sshC.end()
+                    reject()
+                }).on('data', async (data) => {
+                    const b = new Buffer.from(data)
+                    const s = b.toString()
+                    expect(s).toMatch("SIGINT")
+                    resolve()
+                })
+            })
+        } catch(e) { expect(e).toBeNull() }
+        // TODO: sleep and verify TWR came up while the windows-container
+        // remained visible
+        await page.screenshot({ path: `/result/3.png` })
+        await sleep(12000)
+        await expect(page.locator('#t0')).toBeVisible()
+        const twr = await getTWRBuffer()
+        expect(twr).toMatch(/Reconnect\s+Close\s*$/)
+        await page.screenshot({ path: `/result/5.png` })
     })
 })

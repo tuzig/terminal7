@@ -116,8 +116,11 @@ export abstract class WebRTCSession extends BaseSession {
                 () => {
                     this.onStateChange("failed", Failure.BadMarker)
                 })
-            } else 
+            } else  {
+                if (state == 'failed')
+                    this.closeChannels()
                 this.onStateChange(state)
+            }
         }
         this.pc.onicecandidateerror = (ev: RTCPeerConnectionIceErrorEvent) => {
             this.clearWatchdog()
@@ -174,7 +177,6 @@ export abstract class WebRTCSession extends BaseSession {
         }
         dc.onclose = m => {
             this.channels.delete(id)
-            console.log("triggering channle close event as", m)
             channel.onClose(m)
         }
         return channel
@@ -221,7 +223,8 @@ export abstract class WebRTCSession extends BaseSession {
        this.startWatchdog()
        if (this.cdc)
            this.cdc.onmessage = undefined
-       return new Promise((resolve, reject) => {
+       // TODO: improve error handling and add areject
+       return new Promise((resolve) => {
            console.log(">>> opening cdc")
             const cdc = this.pc.createDataChannel('%')
             this.cdc = cdc
@@ -305,6 +308,7 @@ export abstract class WebRTCSession extends BaseSession {
     }
     closeChannels(): void {
         this.channels.forEach(c => c.close())
+        this.channels = new Map()
     }
     // disconnect disconnects from all channels, requests a mark and resolve with
     // the new marker
@@ -319,7 +323,7 @@ export abstract class WebRTCSession extends BaseSession {
                     type: "mark",
                     args: null
                 }, (payload) => {
-                this.t7.log("got a marker", this.lastMarker, payload)
+                this.t7.log("got a marker", payload)
                 this.close()
                 resolve(payload)
             }, reject)
@@ -331,7 +335,6 @@ export abstract class WebRTCSession extends BaseSession {
             this.pc.onconnectionstatechange = undefined
             this.pc.onnegotiationneeded = undefined
             this.cdc.close()
-            this.closeChannels()
             this.pc.close()
             this.pc = null
         }

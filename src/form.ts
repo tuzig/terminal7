@@ -1,4 +1,5 @@
 import { Terminal } from "@tuzig/xterm"
+import { Clipboard } from "@capacitor/clipboard"
 
 export type Fields = Array<{
     prompt:string,
@@ -13,7 +14,7 @@ export type Results = Array<string>
 export class Form {
 
     field: string
-    i: number
+    currentField: number
     e: HTMLElement
     reject: (value: Error) => void
     fields: Fields
@@ -31,6 +32,7 @@ export class Form {
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
+        this.currentField = current
         return new Promise<Array<boolean>>((resolve, reject) => {
             this.reject = reject
             t.writeln(`  ${title}, choose fields to edit:`)
@@ -67,17 +69,18 @@ export class Form {
                         enabled.fill(true)
                         if (current != 0)
                             t.write(`\x1B[${current}A`) // move cursor to first field
-						enabled.forEach(() => t.write("X\x1B[1D\x1B[1B"))
+                        enabled.forEach(() => t.write("X\x1B[1D\x1B[1B"))
                         t.write(`\x1B[${len-current}A`) // restore cursor position
                         break
                     case "ArrowLeft":
                         enabled.fill(false)
                         if (current != 0)
                             t.write(`\x1B[${current}A`)
-						enabled.forEach(() => t.write(" \x1B[1D\x1B[1B"))
+                        enabled.forEach(() => t.write(" \x1B[1D\x1B[1B"))
                         t.write(`\x1B[${len-current}A`)
                         break
                 }
+                this.currentField = current
             }
             t.focus()
         })
@@ -87,6 +90,7 @@ export class Form {
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
+        this.currentField = current
         return new Promise<string>((resolve, reject) => {
             this.reject = reject
             t.writeln("  [Use ⇅ to move, Enter to select]")
@@ -118,6 +122,7 @@ export class Form {
                         Form.activeForm = null
                         break
                 }
+                this.currentField = current
             }
             setTimeout(() => t.focus(), 100)
         })
@@ -125,7 +130,8 @@ export class Form {
 
 
     start(t: Terminal) : Promise<Results> {
-        this.i = 0
+        this.setActive(t)
+        this.currentField = 0
         this.field = ''
         this.results = []
         return new Promise((resolve, reject) => {
@@ -134,7 +140,7 @@ export class Form {
             setTimeout(() => t.focus(), 0)
             this.onKey  = ev => {
                 const key = ev.key
-                this.hidden = this.fields[this.i].password
+                this.hidden = this.fields[this.currentField].password
                 switch (key) {
                     case "Backspace":
                         if (this.field.length > 0) {
@@ -152,6 +158,15 @@ export class Form {
                         }
                         break
                     default:
+                        if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
+                            Clipboard.read().then(res => {
+                                if (res.type == 'text/plain') {
+                                    this.field += res.value
+                                    if (!this.hidden)
+                                        t.write(res.value)
+                                }
+                            })
+                        }
                         if (key.length == 1) { // make sure the key is a char
                             this.field += key
                             if (!this.hidden)
@@ -166,7 +181,7 @@ export class Form {
     // saves the current field and prints the next one
     // returns true if there are more fields to edit, false if done
     next(t: Terminal) {
-        const current = this.fields[this.i]
+        const current = this.fields[this.currentField]
         let valid = true
         if (!this.field && !current.default) {
             t.writeln("  Please enter a value")
@@ -190,8 +205,8 @@ export class Form {
         }
         this.results.push(this.field || current.default || '')
         this.field = ''
-        if (this.i < this.fields.length - 1) {
-            this.i++
+        if (this.currentField < this.fields.length - 1) {
+            this.currentField++
             this.writeCurrentField(t)
             return true
         }
@@ -199,18 +214,18 @@ export class Form {
     }
 
     writeCurrentField(t: Terminal) {
-        const values = this.fields[this.i].values
-        let def = this.fields[this.i].default
+        const values = this.fields[this.currentField].values
+        let def = this.fields[this.currentField].default
         if (values)
             def = values.map(v => v == def ? v.toUpperCase() : v).join('/')
         if (def)
             def = ` [${def}]`
-        t.write(`  ${this.fields[this.i].prompt}${def || ''}: `)
+        t.write(`  ${this.fields[this.currentField].prompt}${def || ''}: `)
     }
 
     escape(t: Terminal) {
         t.scrollToBottom()
-        t.writeln("\n\nESC")
+        t.writeln(`\x1B[${this.fields.length-this.currentField}B\nESC`)
         Form.activeForm = null
         this.reject(new Error("aborted"))
     }

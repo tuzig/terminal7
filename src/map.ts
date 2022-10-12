@@ -11,7 +11,6 @@ import { Form } from './form'
 import { Gate } from './gate'
 import { Terminal } from '@tuzig/xterm'
 import { FitAddon } from "xterm-addon-fit"
-import { Clipboard } from "@capacitor/clipboard"
 import { WebglAddon } from 'xterm-addon-webgl'
 import XtermWebfont from 'xterm-webfont'
 import { Shell } from './shell'
@@ -60,12 +59,10 @@ export class T7Map {
             const log = document.getElementById("log")
             if (!log)
                 return
-            log.addEventListener("transitionend", ev => {
-                console.log(ev)
-                if (log.classList.contains("show")) {
-                    fitAddon.fit()
+            log.addEventListener("transitionend", () => {
+                if (log.classList.contains("show"))
                     this.t0.focus()
-                } else {
+                else {
                     this.t0.blur()
                     // if we're not on the map, we're at the gate, hide the minimized version
                     if (window.location.hash != "#map") {
@@ -154,6 +151,7 @@ export class T7Map {
      * if the parameters in udefined the function toggles the displays
      */
     showLog(show) {
+        if (Form.activeForm) return
         const e = document.getElementById("log")
         if (show === undefined)
             // if show is undefined toggle current state
