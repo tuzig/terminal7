@@ -222,11 +222,4 @@ export class Form {
             def = ` [${def}]`
         t.write(`  ${this.fields[this.currentField].prompt}${def || ''}: `)
     }
-
-    escape(t: Terminal) {
-        t.scrollToBottom()
-        t.writeln(`\x1B[${this.fields.length-this.currentField}B\nESC`)
-        Form.activeForm = null
-        this.reject(new Error("aborted"))
-    }
 }

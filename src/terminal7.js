@@ -552,7 +552,9 @@ peer_name = "${peername}"\n`
         // TODO: add color based on level and ttl
         this.map.interruptTTY()
         this.map.t0.scrollToBottom()
+        this.map.t0.write("\x1B[s\x1B[L") // save cursor, insert line
         this.map.t0.writeln(` \x1B[2m${t}\x1B[0m ${message}`)
+        this.map.t0.write("\x1B[u\x1B[B") // restore cursor
         if (!dontShow)
             this.map.showLog(true)
     }

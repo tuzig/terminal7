@@ -1,6 +1,6 @@
 import { T7Map } from './map'
 import { Terminal } from '@tuzig/xterm'
-import { commands } from './commands'
+import { loadCommands, Command } from './commands'
 import { Fields, Form } from './form'
 import { Clipboard } from "@capacitor/clipboard"
 import { Gate } from './gate'
@@ -8,11 +8,14 @@ import { WebRTCSession } from './webrtc_session'
 
 export class Shell {
 
+    prompt = "T7> "
+
     map: T7Map
     t: Terminal
     onKey: (ev: KeyboardEvent) => void
     active = false
-    activeForm: Form
+    activeForm: Form | null
+    commands: Map<string, Command>
 
     constructor(map: T7Map) {
         this.map = map
@@ -23,14 +26,15 @@ export class Shell {
         if (this.active)
             return
         this.active = true
+        this.commands = loadCommands(this)
         let field = ''
         this.t.scrollToBottom()
-        this.onKey = ev => {
+        this.onKey = async ev => {
             const key = ev.key
             switch (key) {
                 case "Enter":
                     this.t.write("\n")
-                    this.handleInput(field)
+                    await this.handleLine(field)
                     field = ''
                     break
                 case "Backspace":
@@ -49,24 +53,24 @@ export class Shell {
         setTimeout(() => this.t.focus(), 0)
     }
 
-    handleInput(input: string) {
+    async handleLine(input: string) {
         const [cmd, ...args] = input.trim().split(/\s+/)
-        this.execute(cmd, args)
+        await this.execute(cmd, args)
+        this.t.write(this.prompt)
     }
 
-    execute(cmd: string, args: string[]) {
+    async execute(cmd: string, args: string[]) {
         if (this.activeForm) 
             this.escapeActiveForm()
-        const command = commands.get(cmd)
+        const command = this.commands.get(cmd)
         if (!command)
             return this.t.writeln(`Command not found: ${cmd}`)
-        command.execute(args).then(res => res && this.t.writeln(res))
-        .catch(err => this.t.writeln(`Error: ${err}`))
+        await command.execute(args)
     }
 
-    stop() {
-        this.active = false
-        this.onKey = null
+    async runCommand(cmd: string, args: string[]) {
+        this.t.writeln(`${this.prompt}${cmd} ${args.join(' ')}`)
+        await this.execute(cmd, args)
     }
 
     async newForm(fields: Fields, type: "menu" | "choice" | "text", title="") {
@@ -74,7 +78,6 @@ export class Shell {
         this.map.showLog(true)
         this.t.writeln("\n")
         this.t.scrollToBottom()
-        this.stop()
         this.activeForm = new Form(fields)
         let promise
         switch (type) {
@@ -103,7 +106,7 @@ export class Shell {
     escapeActiveForm() {
         if (!this.activeForm) return
         this.t.scrollToBottom()
-        this.t.writeln("\n\nESC")
+        this.t.writeln(`\x1B[${this.activeForm.fields.length-this.activeForm.currentField}B\nESC`)
         this.activeForm.reject(new Error("aborted"))
         this.activeForm = null
     }
@@ -123,7 +126,7 @@ export class Shell {
                 }
             })
         } else if (form?.onKey)
-                form.onKey(ev)
+            form.onKey(ev)
         else {
             this.start()
             this.onKey(ev)
@@ -207,7 +210,7 @@ export class Shell {
         }
     }
 
-    editGate(gate: Gate) {
+    async editGate(gate: Gate) {
         const f1 = [
             { prompt: "Connect" },
             { prompt: "Edit" },
@@ -238,42 +241,44 @@ export class Shell {
         this.map.showLog(true)
         this.map.interruptTTY()
         this.map.t0.write(`\nMenu for \x1B[4m${gate.name}\x1B[0m:`)
-        this.newForm(f1, "menu").then(choice => {
-            switch (choice) {
-                case 'Connect':
-                    gate.connect()
-                    break
-                case 'Edit':
-                    this.newForm(f2, "choice", `\x1B[4m${gate.name}\x1B[0m edit`).then(enabled => {
-                        if (!enabled) {
-                            gate.t7.clear()
-                            return
-                        }
-                        f2 = f2.filter((_, i) => enabled[i])
-                        this.newForm(f2, "text").then(results => {
-                            ['name', 'addr', 'username']
-                                .filter((_, i) => enabled[i])
-                                .forEach((k, i) => gate[k] = results[i])
-                            if (enabled[1]) {
-                                gate.t7.gates.delete(gate.id)
-                                gate.id = gate.addr
-                                gate.t7.gates.set(gate.id, gate)
-                            }
-                            gate.t7.storeGates()
-                            gate.updateNameE()
-                            this.map.showLog(false)
-                        })
+        const choice = await this.newForm(f1, "menu")
+        let enabled, res
+        const gateAttrs = ["name", "addr", "username"]
+        switch (choice) {
+            case 'Connect':
+                await new Promise<void>((resolve) => {
+                    gate.connect(() => {
+                        gate.load()
+                        resolve()
                     })
-                    break
-                case "\x1B[31mDelete\x1B[0m":
-                    this.newForm(fDel, "text").then(res => {
-                        if (res[0] == "y")
-                            gate.delete()
-                        gate.t7.clear()
-                    })
-                    break
-            }
-        })
+                })
+                break
+            case 'Edit':
+                enabled = await this.newForm(f2, "choice", `\x1B[4m${gate.name}\x1B[0m edit`)
+                if (!enabled) {
+                    gate.t7.clear()
+                    return
+                }
+                f2 = f2.filter((_, i) => enabled[i])
+                res = await this.newForm(f2, "text")
+                gateAttrs.filter((_, i) => enabled[i])
+                    .forEach((k, i) => gate[k] = res[i])
+                if (enabled[1]) {
+                    gate.t7.gates.delete(gate.id)
+                    gate.id = gate.addr
+                    gate.t7.gates.set(gate.id, gate)
+                }
+                gate.t7.storeGates()
+                gate.updateNameE()
+                this.map.showLog(false)
+                break
+            case "\x1B[31mDelete\x1B[0m":
+                res = await this.newForm(fDel, "text")
+                if (res[0] == "y")
+                    gate.delete()
+                gate.t7.clear()
+                break
+        }
     }
 }
 

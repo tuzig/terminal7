@@ -92,7 +92,7 @@ export class Gate {
         if (t) {
             t = t.content.cloneNode(true)
             t.querySelector(".reset").addEventListener('click', ev => {
-                this.reset()
+                this.t7.map.shell.runCommand("reset", [this.name])
                 ev.preventDefault()
                 ev.stopPropagation()
             })
@@ -126,8 +126,8 @@ export class Gate {
     /*
      * edit start the edit-host user-assitance
      */
-    edit() {
-        this.map.shell.editGate(this)
+    async edit() {
+        await this.map.shell.editGate(this)
     }
     focus() {
         this.map.showLog(false)
