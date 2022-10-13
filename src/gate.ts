@@ -257,6 +257,7 @@ export class Gate {
     // handle connection failures
     handleFailure(failure: Failure) {
         this.notify(`FAILED: ${failure || "Peer connection"}`)
+        this.map.showLog(true)
         this.session.close()
         this.session = null
         this.marker = null

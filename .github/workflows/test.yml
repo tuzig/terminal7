@@ -15,3 +15,9 @@ jobs:
       - run: yarn lint
       - run: yarn test
       - run: bash -x aatp/run
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: aatp-result
+          path: aatp/result
