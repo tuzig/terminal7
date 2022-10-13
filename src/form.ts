@@ -130,7 +130,6 @@ export class Form {
 
 
     start(t: Terminal) : Promise<Results> {
-        this.setActive(t)
         this.currentField = 0
         this.field = ''
         this.results = []

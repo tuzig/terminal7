@@ -1,4 +1,5 @@
 import { Shell } from "./shell"
+import { WebRTCSession } from "./webrtc_session"
 
 export type Command = {
     name: string
@@ -35,14 +36,20 @@ export function loadCommands(shell: Shell): Map<string, Command> {
         },
         connect: {
             name: "connect",
-            help: "Connect to a new or existing host",
-            usage: "connect [hostname] (leave blank to add a new host)",
+            help: "Connect to an existing host",
+            usage: "connect <hostname>",
             execute: async args => connectCMD(shell, args)
+        },
+        'add-host': {
+            name: "add-host",
+            help: "Add a new host",
+            usage: "add-host",
+            execute: async () => addHostCMD(shell)
         },
         reset: {
             name: "reset",
-            help: "Reset the current connection",
-            usage: "reset",
+            help: "Reset a running or the active host",
+            usage: "reset [hostname]",
             execute: async args => resetCMD(shell, args)
         },
         edit: {
@@ -98,14 +105,54 @@ async function echoCMD(shell: Shell, args: string[]) {
 
 async function connectCMD(shell:Shell, args: string[]) {
     const hostname = args[0]
-    if (hostname) {
-        const gates = terminal7.gates
-        const gate = gates.get(hostname)
-        if (!gate)
-            shell.t.writeln(`Host not found: ${hostname}`)
-        gate.connect()
-    } else 
-        terminal7.connect()
+    if (!hostname)
+        return shell.t.writeln("Missing hostname")
+    const gates = terminal7.gates
+    const gate = gates.get(hostname)
+    if (!gate)
+        return shell.t.writeln(`Host not found: ${hostname}`)
+    gate.connect()
+}
+
+async function addHostCMD(shell: Shell) {
+    if (!terminal7.conf.peerbook) {
+        const pbForm = [
+            { prompt: "Add static host" },
+            { prompt: "Setup peerbook" }
+        ]
+        let choice
+        try {
+            choice = await shell.newForm(pbForm, "menu")
+        } catch (e) {
+            return
+        }
+        if (choice == "Setup peerbook") {
+            terminal7.peerbookForm()
+            return
+        }
+    }
+    const f = [
+        { prompt: "Enter destination (ip or domain)" }
+    ]
+    let hostname
+    try {
+        hostname = (await shell.newForm(f, "text"))[0]
+    } catch (e) { 
+        return
+    }
+
+    if (terminal7.validateHostAddress(hostname)) {
+        shell.t.writeln(`  ${hostname} already exists, connecting...`)
+        terminal7.gates.get(hostname).connect()
+        return
+    }
+    terminal7.activeG = terminal7.addGate({
+        name: "temp_" + Math.random().toString(16).slice(2), // temp random name
+        addr: hostname,
+        id: hostname
+    }, false)
+    shell.map.refresh()
+    await terminal7.activeG.CLIConnect()
 }
 
 async function resetCMD(shell: Shell, args: string[]) {
@@ -119,18 +166,172 @@ async function resetCMD(shell: Shell, args: string[]) {
         if (!gate)
             return shell.t.writeln("No active connection")
     }
-    await terminal7.map.shell.resetGate(gate)
+    const fields = [
+        { prompt: "Reset connection & Layout" },
+        { prompt: "Close gate" },
+        { prompt: "\x1B[31mFactory reset\x1B[0m" },
+    ]
+    const factoryResetVerify = [{
+        prompt: `Factory reset will remove all gates,\n    the certificate and configuration changes.`,
+        values: ["y", "n"],
+        default: "n"
+    }]
+    if (gate.session instanceof WebRTCSession)
+        // Add the connection reset option for webrtc
+        fields.splice(0,0, { prompt: "Reset connection" })
+    shell.t.writeln(`\x1B[4m${gate.name}\x1B[0m`)
+    let choice
+    try {
+        choice = await shell.newForm(fields, "menu")
+    } catch (e) {
+        return
+    }
+    let ans
+    switch (choice) {
+        case "Reset connection":
+            gate.disengage().then(async () => {
+                if (gate.session) {
+                    gate.session.close()
+                    gate.session = null
+                }
+                gate.t7.run(() =>  {
+                    gate.connect()
+                }, 100)
+            }).catch(() => gate.connect())
+            break
+        case "Reset connection & Layout":
+            try {
+                if (gate.session) {
+                    await gate.disengage()
+                    gate.session.close()
+                    gate.session = null
+                }
+                gate.connect(() => {
+                    gate.clear()
+                    gate.map.showLog(false)
+                    gate.activeW = gate.addWindow("", true)
+                    gate.focus()
+                })
+            } catch(e) {
+                gate.notify("Connect failed")
+            }
+            break
+        case "\x1B[31mFactory reset\x1B[0m":
+            try {
+                ans = (await shell.newForm(factoryResetVerify, "text"))[0]
+            } catch (e) {
+                return
+            }
+            if (ans == "y") {
+                gate.t7.factoryReset()
+                gate.clear()
+                gate.t7.goHome()
+            }
+            else
+                shell.map.showLog(false)
+            break
+        case "Close gate":
+            gate.boarding = false
+            gate.clear()
+            gate.updateNameE()
+            if (gate.session) {
+                gate.session.close()
+                gate.session = null
+            }
+            // we need the timeout as cell.focus is changing the href when dcs are closing
+            setTimeout(() => gate.t7.goHome(), 100)
+            break
+    }
 }
 
 async function editCMD (shell:Shell, args: string[]) {
     const hostname = args[0]
     if (!hostname)
-        shell.t.writeln("Missing hostname")
+        return shell.t.writeln("Missing hostname")
     const gates = terminal7.gates
     const gate = gates.get(hostname)
     if (!gate)
-        shell.t.writeln(`Host not found: ${hostname}`)
-    await terminal7.map.shell.editGate(gate)
+        return shell.t.writeln(`Host not found: ${hostname}`)
+    const f1 = [
+        { prompt: "Connect" },
+        { prompt: "Edit" },
+        { prompt: "\x1B[31mDelete\x1B[0m" },
+    ]
+    let f2 = [
+        {
+            prompt: "Name",
+            default: gate.name,
+            validator: a => gate.t7.validateHostName(a)
+        },
+        { 
+            prompt: "Hostname",
+            default: gate.addr,
+            validator: a => gate.t7.validateHostAddress(a)
+        },
+        { prompt: "Username", default: gate.username }
+    ]
+    const fDel = [{
+        prompt: `Delete ${gate.name}?`,
+        values: ["y", "n"],
+        default: "n",
+    }]
+    if (typeof(gate.fp) == "string") {
+        gate.notify("Got peer from \uD83D\uDCD6, connect only")
+        return
+    }
+    shell.map.showLog(true)
+    shell.map.interruptTTY()
+    shell.t.write(`\nMenu for \x1B[4m${gate.name}\x1B[0m:`)
+    let choice, enabled, res
+    try {
+        choice = await shell.newForm(f1, "menu")
+    } catch (e) {
+        return
+    }
+    const gateAttrs = ["name", "addr", "username"]
+    switch (choice) {
+        case 'Connect':
+            await new Promise<void>((resolve) => {
+                gate.connect(() => {
+                    gate.load()
+                    resolve()
+                })
+            })
+            break
+        case 'Edit':
+            try {
+                enabled = await shell.newForm(f2, "choice", `\x1B[4m${gate.name}\x1B[0m edit`)
+            } catch (e) {
+                return
+            }
+            if (!enabled) {
+                gate.t7.clear()
+                return
+            }
+            f2 = f2.filter((_, i) => enabled[i])
+            try {
+                res = await shell.newForm(f2, "text")
+            } catch (e) {
+                return
+            }
+            gateAttrs.filter((_, i) => enabled[i])
+                .forEach((k, i) => gate[k] = res[i])
+            if (enabled[1]) {
+                gate.t7.gates.delete(gate.id)
+                gate.id = gate.addr
+                gate.t7.gates.set(gate.id, gate)
+            }
+            gate.t7.storeGates()
+            gate.updateNameE()
+            shell.map.showLog(false)
+            break
+        case "\x1B[31mDelete\x1B[0m":
+            res = await shell.newForm(fDel, "text")
+            if (res[0] == "y")
+                gate.delete()
+            gate.t7.clear()
+            break
+    }
 }
 
 async function hostsCMD(shell: Shell) {
@@ -140,3 +341,4 @@ async function hostsCMD(shell: Shell) {
     }
     shell.t.writeln(res)
 }
+

@@ -174,8 +174,10 @@ export class T7Map {
                 this.t0.write(m[0])
                 if (m.length > 1) 
                     setTimeout(() => _tty(m.substring(1)), this.ttyWait)
-                else
+                else {
                     this.ttyWait = 0
+                    this.t0.write("\n" + this.shell.prompt)
+                }
             }
         }
         this.ttyWait = 42
@@ -185,7 +187,7 @@ export class T7Map {
         if (this.ttyWait) {
             this.ttyWait = 0
             this.t0.scrollToBottom()
-            this.t0.write("...INTERRUPTED\n" + this.shell.prompt)
+            this.t0.write("...INTERRUPTED\n\n" + this.shell.prompt)
         }
     }
 }

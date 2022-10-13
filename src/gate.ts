@@ -126,9 +126,6 @@ export class Gate {
     /*
      * edit start the edit-host user-assitance
      */
-    async edit() {
-        await this.map.shell.editGate(this)
-    }
     focus() {
         this.map.showLog(false)
         // hide the current focused gate
@@ -218,29 +215,30 @@ export class Gate {
         }
         if (this.name.startsWith("temp")) {
             (async () => {
-                const rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${this.fp}" >> ~/.config/webexec/authorized_fingerprints`
+                const fp = await this.t7.getFingerprint(),
+                    rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 this.map.t0.writeln("  Failed to connect")
                 let ans:string
-                const verifyForm = new Form([{
+                const verifyForm = [{
                     prompt: `Does the address \x1B[1;37m${this.addr}\x1B[0m seem correct?`,
                     values: ["y", "n"],
                     default: "y"
-                }])
+                }]
                 try {
-                    ans = (await verifyForm.start(this.map.t0))[0]
-                } catch(e) {this.onFormError(e)}
+                    ans = (await this.map.shell.newForm(verifyForm, "text"))[0]
+                } catch(e) { return }
 
                 if (ans == "n")
-                    return this.t7.connect()
-                const webexecForm = new Form([{
+                    return this.map.shell.handleLine("add-host")
+                const webexecForm = [{
                     prompt: `Make sure webexec is running on ${this.addr}:
                         \n\x1B[1m${rc}\x1B[0m\n \n  Copy to clipboard?`,
 					values: ["y", "n"],
                     default: "y"
-                }])
+                }]
                 try {
-                    ans = (await webexecForm.start(this.map.t0))[0]
-                } catch(e) {this.onFormError(e)}
+                    ans = (await this.map.shell.newForm(webexecForm, "text"))[0]
+                } catch(e) { return }
                 if (ans == "y")
                     Clipboard.write({ string: rc })
 				this.retryForm(() => {
@@ -487,16 +485,16 @@ export class Gate {
     async copyFingerprint() {
         const fp = await this.t7.getFingerprint(),
               cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
-        const fpForm = new Form([{ 
+        const fpForm = [{ 
             prompt: `\n  ${this.addr} refused our fingerprint.
   \n\x1B[1m${cmd}\x1B[0m\n
   Copy to clipboard and connect with SSH?`,
             values: ["y", "n"],
             default: "y"
-        }])
+        }]
         let ans: string
         try {
-            ans = (await fpForm.start(this.map.t0))[0]
+            ans = (await this.map.shell.newForm(fpForm, "text"))[0]
         } catch(e) { this.onFormError(e) }
         if (ans == "y") {
             Clipboard.write({ string: cmd })
@@ -508,12 +506,12 @@ export class Gate {
     }
     askPass() {
         this.map.t0.writeln("  Using SSH")
-        const authForm = new Form([
+        const authForm = [
             { prompt: "Username", default: this.username },
             { prompt: "Password", password: true }
-        ])
+        ]
         this.map.showLog(true)
-        authForm.start(this.map.t0).then(res => {
+        this.map.shell.newForm(authForm, "text").then(res => {
             this.username = res[0]
             this.pass = res[1]
             this.completeConnect()
@@ -561,59 +559,63 @@ export class Gate {
         })
     }
     CLIConnect() {
-        this.connect(() => {
-            if (!this.name.startsWith("temp")) {
-                this.load()
-                return
-            }
-            const saveForm = new Form([{
-                prompt: "Save gate?",
-                default: "y",
-                values: ["y", "n"]
-            } ])
-            saveForm.start(this.map.t0).then(res => {
-                if (res[0] == "y") {
-                    const validated = this.t7.validateHostName(this.addr)
-                    const fields: Fields = [{
-                        prompt: "Enter name",
-                        validator: (a) => this.t7.validateHostName(a),
-                    }]
-                    if (!validated)
-                        fields[0].default = this.addr
-                    const nameForm = new Form(fields)
-                    nameForm.start(this.map.t0).then(res => {
-                        const name = res[0]
-                        this.name = name
-                        this.nameE = this.map.add(this)
-                        this.updateNameE()
-                        this.store = true
-                        this.t7.storeGates()
-                        this.map.showLog(false)
-                        this.load()
-                    }).catch(e => this.onFormError(e))
-                } else {
-                    this.t7.clear()
+        return new Promise<void>(resolve => {
+            this.connect(() => {
+                if (!this.name.startsWith("temp")) {
                     this.load()
-                    this.delete()
+                    resolve()
+                    return
                 }
-            }).catch(e => this.onFormError(e))
+                const saveForm = [{
+                    prompt: "Save gate?",
+                    default: "y",
+                    values: ["y", "n"]
+                }]
+                this.map.shell.newForm(saveForm, "text").then(res => {
+                    if (res[0] == "y") {
+                        const validated = this.t7.validateHostName(this.addr)
+                        const fields: Fields = [{
+                            prompt: "Enter name",
+                            validator: (a) => this.t7.validateHostName(a),
+                        }]
+                        if (!validated)
+                            fields[0].default = this.addr
+                        this.map.shell.newForm(fields, "text").then(res => {
+                            const name = res[0]
+                            this.name = name
+                            this.nameE = this.map.add(this)
+                            this.updateNameE()
+                            this.store = true
+                            this.t7.storeGates()
+                            this.map.showLog(false)
+                            this.load()
+                            resolve()
+                        }).catch()
+                    } else {
+                        this.t7.clear()
+                        this.load()
+                        this.delete()
+                        resolve()
+                    }
+                }).catch()
+            })
         })
     }
 	async retryForm(retry: () => void, cancel: () => void) {
         this.map.showLog(true)
-		const retryForm = new Form([{
+		const retryForm = [{
 			prompt: "Retry connection?",
 			values: ["y", "n"],
 			default: "y"
-		}])
-		retryForm.start(this.map.t0).then(results => {
+		}]
+		this.map.shell.newForm(retryForm, "text").then(results => {
             if (results[0] == "y")
                 retry()
             else {
                 this.map.showLog(false)
                 cancel()
             }
-        }).catch(e => this.onFormError(e))
+        }).catch(() => cancel())
 	}
     onFormError(err) {
         this.t7.log("Form error:", err.message)

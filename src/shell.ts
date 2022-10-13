@@ -62,6 +62,8 @@ export class Shell {
     async execute(cmd: string, args: string[]) {
         if (this.activeForm) 
             this.escapeActiveForm()
+        if (!cmd)
+            return
         const command = this.commands.get(cmd)
         if (!command)
             return this.t.writeln(`Command not found: ${cmd}`)
@@ -69,14 +71,15 @@ export class Shell {
     }
 
     async runCommand(cmd: string, args: string[]) {
-        this.t.writeln(`${this.prompt}${cmd} ${args.join(' ')}`)
+        this.t.writeln(`${cmd} ${args.join(' ')}`)
         await this.execute(cmd, args)
+        this.t.write(this.prompt)
     }
 
     async newForm(fields: Fields, type: "menu" | "choice" | "text", title="") {
         this.escapeActiveForm()
         this.map.showLog(true)
-        this.t.writeln("\n")
+        this.t.write("\n")
         this.t.scrollToBottom()
         this.activeForm = new Form(fields)
         let promise
@@ -99,7 +102,7 @@ export class Shell {
             return res
         } catch (err) {
             this.onFormError(err)
-            return
+            throw err
         }
     }
 
@@ -135,150 +138,9 @@ export class Shell {
     }
 
     onFormError(err: Error) {
-        window.terminal7.log("Form error: " + err)
-        window.terminal7.clearTempGates()
+        terminal7.log("Form error: " + err)
+        terminal7.clearTempGates()
         this.map.showLog(false)
-    }
-
-    async resetGate(gate: Gate) {
-        const fields = [
-            { prompt: "Reset connection & Layout" },
-            { prompt: "Close gate" },
-            { prompt: "\x1B[31mFactory reset\x1B[0m" },
-        ]
-        const factoryResetVerify = [{
-            prompt: `Factory reset will remove all gates,\n    the certificate and configuration changes.`,
-            values: ["y", "n"],
-            default: "n"
-        }]
-        if (gate.session instanceof WebRTCSession)
-            // Add the connection reset option for webrtc
-            fields.splice(0,0, { prompt: "Reset connection" })
-        this.t.writeln(`\x1B[4m${gate.name}\x1B[0m`)
-        const choice = await this.newForm(fields, "menu")
-        let ans
-        switch (choice) {
-            case "Reset connection":
-                gate.disengage().then(async () => {
-                    if (gate.session) {
-                        gate.session.close()
-                        gate.session = null
-                    }
-                    gate.t7.run(() =>  {
-                        gate.connect()
-                    }, 100)
-                }).catch(() => gate.connect())
-                break
-            case "Reset connection & Layout":
-                try {
-                    if (gate.session) {
-                        await gate.disengage()
-                        gate.session.close()
-                        gate.session = null
-                    }
-                    gate.connect(() => {
-                        gate.clear()
-                        gate.map.showLog(false)
-                        gate.activeW = gate.addWindow("", true)
-                        gate.focus()
-                    })
-                } catch(e) {
-                    gate.notify("Connect failed")
-                }
-                break
-            case "\x1B[31mFactory reset\x1B[0m":
-                ans = (await this.newForm(factoryResetVerify, "text"))[0]
-                if (ans == "y") {
-                    gate.t7.factoryReset()
-                    gate.clear()
-                    gate.t7.goHome()
-                }
-                else
-                    this.map.showLog(false)
-                break
-            case "Close gate":
-                gate.boarding = false
-                gate.clear()
-                gate.updateNameE()
-                if (gate.session) {
-                    gate.session.close()
-                    gate.session = null
-                }
-                // we need the timeout as cell.focus is changing the href when dcs are closing
-                setTimeout(() => gate.t7.goHome(), 100)
-                break
-        }
-    }
-
-    async editGate(gate: Gate) {
-        const f1 = [
-            { prompt: "Connect" },
-            { prompt: "Edit" },
-            { prompt: "\x1B[31mDelete\x1B[0m" },
-        ]
-        let f2 = [
-            {
-                prompt: "Name",
-                default: gate.name,
-                validator: a => gate.t7.validateHostName(a)
-            },
-            { 
-                prompt: "Hostname",
-                default: gate.addr,
-                validator: a => gate.t7.validateHostAddress(a)
-            },
-            { prompt: "Username", default: gate.username }
-        ]
-        const fDel = [{
-            prompt: `Delete ${gate.name}?`,
-            values: ["y", "n"],
-            default: "n",
-        }]
-        if (typeof(gate.fp) == "string") {
-            gate.notify("Got peer from \uD83D\uDCD6, connect only")
-            return
-        }
-        this.map.showLog(true)
-        this.map.interruptTTY()
-        this.map.t0.write(`\nMenu for \x1B[4m${gate.name}\x1B[0m:`)
-        const choice = await this.newForm(f1, "menu")
-        let enabled, res
-        const gateAttrs = ["name", "addr", "username"]
-        switch (choice) {
-            case 'Connect':
-                await new Promise<void>((resolve) => {
-                    gate.connect(() => {
-                        gate.load()
-                        resolve()
-                    })
-                })
-                break
-            case 'Edit':
-                enabled = await this.newForm(f2, "choice", `\x1B[4m${gate.name}\x1B[0m edit`)
-                if (!enabled) {
-                    gate.t7.clear()
-                    return
-                }
-                f2 = f2.filter((_, i) => enabled[i])
-                res = await this.newForm(f2, "text")
-                gateAttrs.filter((_, i) => enabled[i])
-                    .forEach((k, i) => gate[k] = res[i])
-                if (enabled[1]) {
-                    gate.t7.gates.delete(gate.id)
-                    gate.id = gate.addr
-                    gate.t7.gates.set(gate.id, gate)
-                }
-                gate.t7.storeGates()
-                gate.updateNameE()
-                this.map.showLog(false)
-                break
-            case "\x1B[31mDelete\x1B[0m":
-                res = await this.newForm(fDel, "text")
-                if (res[0] == "y")
-                    gate.delete()
-                gate.t7.clear()
-                break
-        }
     }
 }
 

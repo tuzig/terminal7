@@ -167,7 +167,7 @@ export class Terminal7 {
             'click', async (ev) => {
                 this.map.interruptTTY()
                 this.map.showLog(true)
-                setTimeout(() => this.connect(), 50)
+                setTimeout(() => this.map.shell.runCommand('add-host', []), 50)
                 ev.stopPropagation()
             })
 		document.getElementById('toggle-changelog')
@@ -334,14 +334,14 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
     async peerbookForm() {
         let dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
 
-        const f = new Form([
+        const f = [
             {
                 prompt: "Email",
                 validator: email => !email.match(/.+@.+\..+/) ? "Must be a valid email" : ''
             },
             { prompt: "Peer's name" }
-        ])
-        f.start(this.map.t0).then(results => {
+        ]
+        this.map.shell.newForm(f, "text").then(results => {
             const email = results[0],
                 peername = results[1]
 
@@ -514,13 +514,13 @@ peer_name = "${peername}"\n`
             ((this.activeG != null) && (gate != this.activeG)))
             return
         
-        const reconnectForm = new Form([
+        const reconnectForm = [
             { prompt: "Reconnect" },
             { prompt: "Close" }
-        ])
+        ]
         let res
         try {
-            res = await reconnectForm.menu(this.map.t0)
+            res = await this.map.shell.newForm(reconnectForm, "menu")
         } catch(e) {
             res = null
         }
@@ -842,7 +842,7 @@ peer_name = "${peername}"\n`
             const gate = gatePad.gate
             if (!this.longPressGate && gate)
                 this.longPressGate = this.run(() => {
-                    gate.edit()
+                    this.map.shell.runCommand("edit", [gate.name])
                 }, this.conf.ui.quickest_press)
             ev.stopPropagation()
             ev.preventDefault()
@@ -905,7 +905,7 @@ peer_name = "${peername}"\n`
                     await gate.connect()
                 }
                 else
-                    gate.edit()
+                    this.map.shell.runCommand("edit", [gate.name])
             }
             ev.stopPropagation()
             ev.preventDefault()
@@ -982,49 +982,6 @@ peer_name = "${peername}"\n`
             }
         })
         this.map.refresh()
-    }
-    async connect() {
-        this.map.t0.writeln("")
-        if (!this.conf.peerbook) {
-            const pbForm = new Form([
-                { prompt: "Add static host" },
-                { prompt: "Setup peerbook" }
-            ])
-            let choice
-            try {
-                choice = await pbForm.menu(this.map.t0)
-            } catch (e) {
-                this.map.showLog(false)
-                return
-            }
-            if (choice == "Setup peerbook") {
-                this.peerbookForm()
-                return
-            }
-        }
-        const f = new Form([
-            { prompt: "Enter destination (ip or domain)" }
-        ])
-        let hostname
-        try {
-            hostname = (await f.start(this.map.t0))[0]
-        } catch (e) { 
-            this.map.showLog(false)
-            return
-        }
-
-        if (this.validateHostAddress(hostname)) {
-            this.map.t0.writeln(`  ${hostname} already exists, connecting...`)
-            this.gates.get(hostname).connect()
-            return
-        }
-        this.activeG = this.addGate({
-            name: "temp_" + Math.random().toString(16).slice(2), // temp random name
-            addr: hostname,
-            id: hostname
-        }, false)
-        this.map.refresh()
-        this.activeG.CLIConnect()
     }
     clearTempGates() {
         this.gates.forEach(g => {
