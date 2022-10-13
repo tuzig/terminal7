@@ -1,0 +1,30 @@
+version: "3.9"
+services:
+  runner:
+    build: 
+      context: .
+      dockerfile: ./aatp/infra/runner/Dockerfile
+    environment:
+      PWARGS: ${PWARGS--x}
+    volumes:
+      - ./aatp/ui:/runner
+      - ./aatp/result:/result
+      - webexec_auth:/webexec_config
+    depends_on:
+      - terminal7
+      - webexec
+  terminal7:
+    image: halverneus/static-file-server:latest
+    environment:
+      PORT: 80
+    volumes:
+      - ./dist:/web
+  webexec:
+    build:
+      context: .
+      dockerfile: ./aatp/infra/webexec/Dockerfile
+    volumes:
+      - ./aatp/ui/webexec_conf:/conf
+      - webexec_auth:/auth
+volumes:
+  webexec_auth:

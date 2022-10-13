@@ -260,8 +260,8 @@ export class Pane extends Cell {
         this.d = channel
         this.d.onMessage = m => this.onChannelMessage(m)
         this.d.onClose = () => {
-            this.d = null
             this.close()
+            this.d = null
         }
         if (!reconnect)
             this.gate.sendState()

@@ -21,6 +21,7 @@ test.describe('terminal7 direct WebRTC session', ()  => {
     let page: Page,
         context: BrowserContext
 
+    test.afterAll(async () => await context.close())
     test.beforeAll(async ({ browser }) => {
         context = await browser.newContext()
         page = await context.newPage()
@@ -172,6 +173,13 @@ pinch_max_y_velocity = 0.1`
         })
         expect(exitState).toEqual("success")
         await expect(page.locator('.pane')).toHaveCount(0)
+        await expect(page.locator('.windows-container')).toBeHidden()
+    })
+    test('after exit, the gate can be re-opened', async() => {
+        connectGate()
+        await page.screenshot({ path: `/result/6.png` })
+        await expect(page.locator('.windows-container')).toBeVisible()
+        await expect(page.locator('.pane')).toHaveCount(1)
     })
     test.skip('auto restore gate', async() => {
         connectGate()

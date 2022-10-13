@@ -67,8 +67,8 @@
     "test": "vitest",
     "build": "vite build -c vite.dev.config.js",
     "clean": "rm -rf dist ios/App/App/public/*",
-    "qa": "bash ./qa/qa.bash",
-    "lint": "npx eslint qa src --ext .js,.jsx,.ts,.tsx",
+    "aatp": "bash ./aatp/run",
+    "lint": "npx eslint aatp src --ext .js,.jsx,.ts,.tsx",
     "capacitor:copy:before": "npm run build"
   },
   "repository": {

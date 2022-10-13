@@ -113,8 +113,11 @@ export class WebRTCSession extends BaseSession {
                 () => {
                     this.onStateChange("failed", Failure.BadMarker)
                 })
-            } else 
+            } else  {
+                if (state == 'failed')
+                    this.closeChannels()
                 this.onStateChange(state)
+            }
         }
         this.pc.onicecandidateerror = (ev: RTCPeerConnectionIceErrorEvent) => {
             this.clearWatchdog()
@@ -171,7 +174,6 @@ export class WebRTCSession extends BaseSession {
         }
         dc.onclose = m => {
             this.channels.delete(id)
-            console.log("triggering channle close event as", m)
             channel.onClose(m)
         }
         return channel
@@ -218,7 +220,8 @@ export class WebRTCSession extends BaseSession {
        this.startWatchdog()
        if (this.cdc)
            this.cdc.onmessage = undefined
-       return new Promise((resolve, reject) => {
+       // TODO: improve error handling and add areject
+       return new Promise((resolve) => {
            console.log(">>> opening cdc")
             const cdc = this.pc.createDataChannel('%')
             this.cdc = cdc

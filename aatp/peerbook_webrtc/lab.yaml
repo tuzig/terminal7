@@ -3,14 +3,12 @@ services:
   runner:
     build: 
       context: .
-      dockerfile: ./qa/runner/Dockerfile
+      dockerfile: ./aatp/infra/runner/Dockerfile
     volumes:
-      - ./qa/peerbook_webrtc:/runner
-      - ./qa/result:/result
-    depends_on:
-      - peerbook
-      - terminal7
-      - webexec
+      - ./aatp/peerbook_webrtc:/runner
+      - ./aatp/result:/result
+    environment:
+      PWARGS: ${PWARGS--x}
   terminal7:
     image: halverneus/static-file-server:latest
     environment:
@@ -20,15 +18,15 @@ services:
   webexec:
     build:
       context: .
-      dockerfile: ./qa/webexec/Dockerfile
-    depends_on:
-      - peerbook
+      dockerfile: ./aatp/infra/webexec/Dockerfile
+    environment:
+      PEERBOOK: 1
     volumes:
-      - ./qa/webexec/config:/home/webexec/.config/webexec
+      - ./aatp/peerbook_webrtc/webexec_conf:/conf
   peerbook:
     build:
       context: .
-      dockerfile: ./qa/peerbook/Dockerfile
+      dockerfile: ./aatp/infra/peerbook/Dockerfile
     expose:
       - "17777"
     depends_on:
@@ -38,4 +36,3 @@ services:
   redis:
     image: "redis:alpine"
     command: [sh, -c, "rm -f /data/dump.rdb && redis-server"]  # disable persistence
-

@@ -257,6 +257,7 @@ export class Gate {
     // handle connection failures
     handleFailure(failure: Failure) {
         this.notify(`FAILED: ${failure || "Peer connection"}`)
+        this.map.showLog(true)
         this.session.close()
         this.session = null
         this.marker = null
@@ -362,7 +363,6 @@ export class Gate {
         this.boarding = true
         this.updateNameE()
         if (!this.pass && !this.fp && !this.tryWebexec) {
-            this.clear()
             this.askPass()
         } else
             this.completeConnect()
@@ -456,6 +456,7 @@ export class Gate {
         }).catch(ev => this.onFormError(ev))
     }
     setLayout(state: object) {
+        console.log("in setLayout", state)
         const winLen = this.windows.length
         // got an empty state
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
@@ -582,14 +583,12 @@ export class Gate {
     goBack() {
         const w = this.breadcrumbs.pop()
         this.breadcrumbs = this.breadcrumbs.filter(x => x != w)
-        if (this.windows.length == 0) {
-            this.close()
-        }
-        else
+        if (this.windows.length > 0 ) {
             if (this.breadcrumbs.length > 0)
                 this.breadcrumbs.pop().focus()
             else
                 this.windows[0].focus()
+        }
     }
     fit() {
         this.windows.forEach(w => w.fit())
@@ -679,6 +678,7 @@ export class Gate {
                     this.notify("🎌  webexec server")
                     this.session = new HTTPWebRTCSession(this.fp, this.addr)
                 } else {
+                    this.clear()
                     this.notify("Starting SSH session")
                     this.session = new SSHSession(this.addr, this.username, this.pass)
                     // next time go back to trying webexec
@@ -696,7 +696,10 @@ export class Gate {
     }
     load() {
         this.t7.log("loading gate")
-        this.session.getPayload().then(layout => this.setLayout(layout))
+        this.session.getPayload().then(layout => {
+            console.log("got payload", layout)
+            this.setLayout(layout)
+        })
         document.getElementById("map").classList.add("hidden")
         Storage.get({key: "first_gate"}).then(v => {
             if (v.value != "nope") {
@@ -761,7 +764,7 @@ export class Gate {
         }).catch(e => this.onFormError(e))
 	}
     onFormError(err) {
-        this.t7.log("Form error:", err)
+        this.t7.log("Form error:", err.message)
         this.t7.clearTempGates()
     }
     updateNameE() {

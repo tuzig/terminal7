@@ -21,6 +21,7 @@ test.describe('terminal7 session', ()  => {
     let page: Page,
         context: BrowserContext
 
+    test.afterAll(async () => await context.close() )
     test.beforeAll(async ({ browser }) => {
         context = await browser.newContext()
         page = await context.newPage()
@@ -67,7 +68,12 @@ insecure = true`)
         const redisClient = redis.createClient({url: 'redis://redis'})
         redisClient.on('error', err => console.log('Redis client error', err))
         await redisClient.connect()
-        const keys = await redisClient.keys('peer*')
+        let keys = []
+        while (keys.length < 2) {
+            keys = await redisClient.keys('peer*')
+            sleep(200)
+        }
+
         keys.forEach(async key => {
             console.log("verifying: " +key)
             await redisClient.hSet(key, 'verified', "1")
@@ -107,15 +113,19 @@ insecure = true`)
     })
     test('a gate restores after reload', async() => {
         await page.reload({waitUntil: "networkidle"})
+        await sleep(500)
         await page.evaluate(async () => {
             window.terminal7.notify = console.log
             window.terminal7.conf.net.peerbook = "peerbook:17777"
             window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
             await window.terminal7.pbConnect()
         })
+        await sleep(500)
         connectGate()
+        await sleep(500)
         await page.screenshot({ path: `/result/second.png` })
         await expect(page.locator('.pane')).toHaveCount(2)
+        await expect(page.locator('.windows-container')).toBeVisible()
     })
     test('a pane can be close', async() => {
         const exitState = await page.evaluate(() => {
