@@ -21,7 +21,6 @@ export class Form {
     results: Results
     hidden: boolean
     onKey: (ev: KeyboardEvent) => void
-    static activeForm = null
 
     constructor(fields: Fields) {
         this.fields = fields
@@ -62,7 +61,6 @@ export class Form {
                     case "Enter":
                         this.fields = this.fields.filter((_, i) => enabled[i])
                         t.write(`\x1B[${len-current}B\n`)
-                        Form.activeForm = null
                         resolve(enabled)
                         break
                     case "ArrowRight":
@@ -119,7 +117,6 @@ export class Form {
                     case "Enter":
                         resolve(this.fields[current].prompt)
                         t.write(`\x1B[${len-current}B\n`)
-                        Form.activeForm = null
                         break
                 }
                 this.currentField = current
@@ -152,7 +149,6 @@ export class Form {
                         t.write("\n")
                         if (!this.next(t)) {
                             resolve(this.results)
-                            Form.activeForm = null
                             return
                         }
                         break

@@ -518,8 +518,8 @@ export class Gate {
         }).catch(e => this.onFormError(e))
     }
     completeConnect(): void {
-        if (Form.activeForm)
-            Form.activeForm.escape(this.map.t0)
+        if (this.map.shell.activeForm)
+            this.map.shell.escapeActiveForm()
             if (this.fp) {
                 this.notify("🎌  PeerBook")
                 this.session = new PeerbookSession(this.fp, this.t7.pb)
