@@ -336,6 +336,10 @@ export class WebRTCSession extends BaseSession {
             this.pc = null
         }
     }
+    getIceServers() {
+        return new Promise((resolve) =>
+            resolve([{ urls: this.t7.conf.net.iceServer}]))
+    }
 }
 
 export class PeerbookSession extends WebRTCSession {
@@ -465,10 +469,6 @@ export class HTTPWebRTCSession extends WebRTCSession {
             })
 
         })
-    }
-    getIceServers() {
-        return new Promise((resolve) =>
-            resolve([{ urls: this.t7.conf.net.iceServer}]))
     }
     onIceCandidate() {
         return
