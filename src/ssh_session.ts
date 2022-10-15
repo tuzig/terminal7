@@ -141,6 +141,8 @@ export class HybridSession extends SSHSession {
         try {
             c = JSON.parse(this.candidate)
         } catch(e) { return }
+        if (c == null) 
+            return
         this.candidate = ""
         if (c.candidate)
             try {
@@ -160,7 +162,7 @@ export class HybridSession extends SSHSession {
         try {
             callbackID = await SSH.startShell({channel: id, command: "$HOME/go/bin/webexec accept"},
                 m => {
-                    if (m.data)
+                    if (m && m.data)
                         this.onAcceptData(m.data)
                 })
         } catch (e) { 
@@ -175,10 +177,12 @@ export class HybridSession extends SSHSession {
                     this.webrtcSession.onStateChange = (state, failure?: Failure) => {
                         console.log("State changed", state)
                         if (state == "connected") {
+                            SSH.closeChannel({channel: id})
                             this.webrtcSession.onStateChange = this.onStateChange
                             resolve()
                         }
                         if (state == "failed") {
+                            SSH.closeChannel({channel: id})
                             terminal7.log("Failed to open session")
                             reject()
                         }
