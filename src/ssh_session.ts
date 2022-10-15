@@ -61,6 +61,14 @@ export class SSHSession extends BaseSession {
            })
     }
 
+    handleData(channel, m) {
+        if ('data' in m)
+            channel.onMessage(m.data)
+        else {
+            terminal7.log("ssh read got error ", m.error)
+            channel.onClose(m.error)
+        }
+    }
     openChannel(cmd: string, parent?: ChannelID, sx?: number, sy?: number):
          Promise<Channel> {
         return new Promise((resolve, reject) => {
@@ -69,15 +77,7 @@ export class SSHSession extends BaseSession {
                .then(({ id }) => {
                    console.log("got new channel with id ", id)
                 channel.id = id
-                SSH.startShell({channel: id, command: cmd},
-                    m => {
-                        if ('data' in m)
-                            channel.onMessage(m.data)
-                        else {
-                            console.log("ssh read got error ", m.error)
-                            channel.onClose(m.error)
-                        }
-                    })
+                SSH.startShell({channel: id, command: cmd}, m => this.handleData(channel, m))
                    .then(callbackID => {
                         console.log("got from startShell: ", callbackID)
                         resolve(channel, id)
@@ -98,17 +98,15 @@ export class SSHSession extends BaseSession {
 // SSHSession is an implmentation of a real time session over ssh
 export class HybridSession extends SSHSession {
     candidate: string
-    webrtcSession: WebRTCSession
-    pc: RTCPeerConnection
+    webrtcSession: Session
     id: SSHSessionID
     byPass: SSHSessionByPass;
     onStateChange : (state: State, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
-    wSession: Session
     constructor(address: string, username: string, password: string, port=22) {
         super(address, username, password, port)
         this.candidate = ""
-        this.wSession = null
+        this.webrtcSession = null
         this.byPass = {address: address,
                        username: username,
                        password: password,
@@ -134,8 +132,8 @@ export class HybridSession extends SSHSession {
            })
     }
     async onAcceptData(data: string) {
-        let c
-        console.log("accepted: ", data)
+        let c = {}
+        terminal7.log("from webexec accept: ", data)
         this.candidate += data
         // remove the CR & LF in the end
         if (this.candidate.slice(-1) == "\n")
@@ -148,101 +146,87 @@ export class HybridSession extends SSHSession {
             try {
                 await this.webrtcSession.pc.addIceCandidate(c)
             } catch(e) { 
-                terminal7.log("failed the add ice candidate", c)
+                terminal7.log("failed the add ice candidate", e.message, c)
                 return
             }
         else
             try {
                 await this.webrtcSession.pc.setRemoteDescription(c)
-            } catch(e) { expect(e).toBeNull() }
+            } catch(e) { terminal7.log("got error setting remote desc:", e.message, c) }
     }
 
-    async newWebRTC(id: number): WebRTCSession | null {
-        let callbackID
+    async newWebRTCSession(id: number): Promise<void> {
+        let callbackID: string
         try {
-            callbackID = await SSH.startShell({channel: id, command: "/Users/daonb/go/bin/webexec accept"},
+            callbackID = await SSH.startShell({channel: id, command: "$HOME/go/bin/webexec accept"},
                 m => {
-                    if ('data' in m)
+                    if (m.data)
                         this.onAcceptData(m.data)
-                    else {
-                        console.log("got somwthing weird from accept", m)
-                    }
-                }
-            )
+                })
         } catch (e) { 
             console.log("Failed starting webexec", e)
-            this.isSSH = true
         }
         console.log("got from webexec ID: ", callbackID)
         if (callbackID != "") {
-            let this.webrtcSession = new WebRTCSession()
+            this.webrtcSession = new WebRTCSession()
             try {
                 await new Promise<void>((resolve, reject) => {
+                    // TODO: create a new override 
                     this.webrtcSession.onStateChange = (state, failure?: Failure) => {
                         console.log("State changed", state)
                         if (state == "connected") {
+                            this.webrtcSession.onStateChange = this.onStateChange
                             resolve()
                         }
-                        if (state == "failed")
+                        if (state == "failed") {
                             terminal7.log("Failed to open session")
                             reject()
+                        }
                     }
                     this.webrtcSession.onIceCandidate = e => {
                         const candidate = JSON.stringify(e.candidate)
-                        SSH.writeToChannel({channel: id, s: candidate})
+                        SSH.writeToChannel({channel: id, message: candidate + "\n"})
                     }
                     this.webrtcSession.onNegotiationNeeded = () => {
                         terminal7.log("on negotiation needed")
                         this.webrtcSession.pc.createOffer().then(d => {
                             const offer = JSON.stringify(d)
                             this.webrtcSession.pc.setLocalDescription(d)
-                            terminal7.log("got offer", offer)
-                            SSH.writeToChannel({channel: id, s: offer})
+                            SSH.writeToChannel({channel: id, message: offer + "\n"})
                         })
                     }
+                    this.webrtcSession.connect()
                 })
             } catch (e) {
-                terminalt.log("signaling over ssh failed", e)
+                this.webrtcSession = null
+                terminal7.log("signaling over ssh failed", e.message)
             }
         }
     }
     async openChannel(cmd: string, parent?: ChannelID, sx?: number, sy?: number) {
-        const channel = new SSHChannel()
+
         if (!this.webrtcSession) {
-            let callbackID = ""
-            if (this.webrtcSession) {
-                return this.webrtcSession.openChannel(cmd, parent, sx, sy)
-            } 
-            const z = await SSH.newChannel({session: this.id})
-            const id = z.id
-            console.log("got new channel with id ", id)
-            channel.id = id
             if (!this.isSSH) {
+                const channel = new SSHChannel()
+                let callbackID = ""
+                const z = await SSH.newChannel({session: this.id})
+                const id = z.id
+                console.log("got new channel with id ", id)
+                channel.id = id
+                channel.onClose = () => terminal7.log("webexec accept session closed")
                 // try opening a WebRTC connection
-                this.webrtcSession = this.newWebRTC(id)
+                try {
+                    await this.newWebRTCSession(id)
+                } catch(e) { } //TODO: add some code in the catch block
                 if (this.webrtcSession) {
-                    return this.wSession.openChannel(cmd, parent, sx, sy)
+                    return this.webrtcSession.openChannel(cmd, parent, sx, sy)
                 }
             } 
-            try {
-                callbackID = await SSH.startShell({channel: id, command: cmd},
-                    m => {
-                        if ('data' in m)
-                            channel.onMessage(m.data)
-                        else {
-                            console.log("ssh read got error ", m.error)
-                            channel.onClose(m.error)
-                        }
-                    }
-                )
-            } catch (e) { reject(e) }
-            console.log("got from startShell: ", callbackID)
-            await SSH.setPtySize({channel: id, width: sx, height: sy})
-            return channel, id
-
-        } else {
+            this.isSSH = true
+            return super.openChannel(cmd, parent, sx, sy)
+        } else
             // start webrtc data channel
-            return this.webrtcSession.openChannel(cmd, parent?, sx?, sy?)
-        }
+            // */
+            return this.webrtcSession.openChannel(cmd, parent, sx, sy)
     }
 } 
