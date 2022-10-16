@@ -1,5 +1,10 @@
 import { Shell } from "./shell"
 import { WebRTCSession } from "./webrtc_session"
+import * as TOML from '@tuzig/toml'
+import { Storage } from "@capacitor/storage"
+import { Terminal7, DEFAULT_DOTFILE } from "./terminal7"
+
+declare const terminal7 : Terminal7
 
 export type Command = {
     name: string
@@ -96,7 +101,7 @@ async function helpCMD(shell: Shell, args: string[]) {
 
 async function fortuneCMD(shell: Shell) {
     const res = await fetch("https://raw.githubusercontent.com/ruanyf/fortunes/master/data/fortunes")
-    shell.t.write((await res.text()).split("%\n")[Math.floor(Math.random() * 100)].trim())
+    shell.t.writeln((await res.text()).split("%\n")[Math.floor(Math.random() * 100)].trim())
 }
 
 async function echoCMD(shell: Shell, args: string[]) {
@@ -127,7 +132,7 @@ async function addHostCMD(shell: Shell) {
             return
         }
         if (choice == "Setup peerbook") {
-            terminal7.peerbookForm()
+            await peerbookForm(shell)
             return
         }
     }
@@ -153,6 +158,37 @@ async function addHostCMD(shell: Shell) {
     }, false)
     shell.map.refresh()
     await terminal7.activeG.CLIConnect()
+}
+
+async function peerbookForm(shell: Shell) {
+    let dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
+
+    const f = [
+        {
+            prompt: "Email",
+            validator: email => !email.match(/.+@.+\..+/) ? "Must be a valid email" : ''
+        },
+        { prompt: "Peer's name" }
+    ]
+    let results
+    try {
+        results = await shell.newForm(f, "text")
+    } catch (e) {
+        return
+    }
+    const email = results[0],
+        peername = results[1]
+
+    dotfile += `
+[peerbook]
+email = "${email}"
+peer_name = "${peername}"\n`
+
+    Storage.set({ key: "dotfile", value: dotfile })
+    terminal7.loadConf(TOML.parse(dotfile))
+    terminal7.notify("Your email was added to the dotfile")
+    terminal7.pbConnect()
+    terminal7.clear()
 }
 
 async function resetCMD(shell: Shell, args: string[]) {

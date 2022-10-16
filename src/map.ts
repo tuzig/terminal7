@@ -7,7 +7,6 @@
  *  License: GPLv3
  */
 
-import { Form } from './form'
 import { Gate } from './gate'
 import { Terminal } from '@tuzig/xterm'
 import { FitAddon } from "xterm-addon-fit"

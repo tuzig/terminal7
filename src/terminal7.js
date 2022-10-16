@@ -25,7 +25,6 @@ import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
-import { Form } from './form'
 import { PeerbookConnection } from './peerbook'
 
 
@@ -47,7 +46,7 @@ Enjoy!
 
 (hit Escape or tap outside to minimize TWR)
 `
-const DEFAULT_DOTFILE = `# Terminal7's configurations file
+export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 [theme]
 # foreground = "#00FAFA"
 # background = "#000"
@@ -331,34 +330,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             })
         })
     }
-    async peerbookForm() {
-        let dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
-
-        const f = [
-            {
-                prompt: "Email",
-                validator: email => !email.match(/.+@.+\..+/) ? "Must be a valid email" : ''
-            },
-            { prompt: "Peer's name" }
-        ]
-        this.map.shell.newForm(f, "text").then(results => {
-            const email = results[0],
-                peername = results[1]
-
-            dotfile += `
-[peerbook]
-email = "${email}"
-peer_name = "${peername}"\n`
-
-            Storage.set({ key: "dotfile", value: dotfile })
-            this.loadConf(TOML.parse(dotfile))
-            this.notify("Your email was added to the dotfile")
-            this.pbConnect()
-            this.clear()
-        }).catch(() => {
-            this.map.showLog(false)
-        })
-    }
     pbConnect() {
         return new Promise((resolve) => {
             if (!this.conf.peerbook || !this.conf.peerbook.email || 
@@ -552,7 +523,7 @@ peer_name = "${peername}"\n`
         // TODO: add color based on level and ttl
         this.map.interruptTTY()
         this.map.t0.scrollToBottom()
-        this.map.t0.write("\x1B[s\x1B[L") // save cursor, insert line
+        this.map.t0.write("\x1B[s\n\x1B[A\x1B[L") // save cursor, insert line
         this.map.t0.writeln(` \x1B[2m${t}\x1B[0m ${message}`)
         this.map.t0.write("\x1B[u\x1B[B") // restore cursor
         if (!dontShow)

@@ -3,8 +3,6 @@ import { Terminal } from '@tuzig/xterm'
 import { loadCommands, Command } from './commands'
 import { Fields, Form } from './form'
 import { Clipboard } from "@capacitor/clipboard"
-import { Gate } from './gate'
-import { WebRTCSession } from './webrtc_session'
 
 export class Shell {
 
@@ -16,6 +14,7 @@ export class Shell {
     active = false
     activeForm: Form | null
     commands: Map<string, Command>
+    field = ''
 
     constructor(map: T7Map) {
         this.map = map
@@ -49,6 +48,7 @@ export class Shell {
                         this.t.write(key)
                     }
             }
+            this.field = field
         }
         setTimeout(() => this.t.focus(), 0)
     }
@@ -71,9 +71,10 @@ export class Shell {
     }
 
     async runCommand(cmd: string, args: string[]) {
-        this.t.writeln(`${cmd} ${args.join(' ')}`)
+        await this.escapeActiveForm()
+        this.t.writeln(`\r${this.prompt}${cmd} ${args.join(' ')}`)
         await this.execute(cmd, args)
-        this.t.write(this.prompt)
+        this.t.write(this.prompt + this.field)
     }
 
     async newForm(fields: Fields, type: "menu" | "choice" | "text", title="") {
@@ -102,14 +103,15 @@ export class Shell {
             return res
         } catch (err) {
             this.onFormError(err)
+            this.activeForm = null
             throw err
         }
     }
 
-    escapeActiveForm() {
+    async escapeActiveForm() {
         if (!this.activeForm) return
         this.t.scrollToBottom()
-        this.t.writeln(`\x1B[${this.activeForm.fields.length-this.activeForm.currentField}B\nESC`)
+        this.printBelowForm("ESC\n")
         this.activeForm.reject(new Error("aborted"))
         this.activeForm = null
     }
@@ -118,8 +120,10 @@ export class Shell {
         const form = this.activeForm,
             key = ev.key
         if (key == 'Escape') {
-            this.escapeActiveForm()
-            this.map.showLog(false)
+            if (form)
+                this.escapeActiveForm()
+            else
+                this.map.showLog(false)
         } else if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
             Clipboard.read().then(res => {
                 if (res.type == 'text/plain') {
@@ -140,7 +144,14 @@ export class Shell {
     onFormError(err: Error) {
         terminal7.log("Form error: " + err)
         terminal7.clearTempGates()
-        this.map.showLog(false)
+    }
+
+    printBelowForm(text: string, returnToForm = false) {
+        if (!this.activeForm) return
+        this.t.scrollToBottom()
+        this.t.write(`\x1B[s\x1B[${this.activeForm.fields.length-this.activeForm.currentField}B\n\x1B[K${text}`)
+        if (returnToForm)
+            this.t.write(`\x1B[u`)
     }
 }
 
