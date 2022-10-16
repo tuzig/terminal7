@@ -9,10 +9,6 @@ services:
       - ./aatp/result:/result
     environment:
       PWARGS: ${PWARGS--x}
-    depends_on:
-      - peerbook
-      - terminal7
-      - webexec
   terminal7:
     image: halverneus/static-file-server:latest
     environment:
@@ -23,8 +19,8 @@ services:
     build:
       context: .
       dockerfile: ./aatp/infra/webexec/Dockerfile
-    depends_on:
-      - peerbook
+    environment:
+      PEERBOOK: 1
     volumes:
       - ./aatp/peerbook_webrtc/webexec_conf:/conf
   peerbook:
@@ -40,4 +36,3 @@ services:
   redis:
     image: "redis:alpine"
     command: [sh, -c, "rm -f /data/dump.rdb && redis-server"]  # disable persistence
-

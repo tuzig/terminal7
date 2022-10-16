@@ -21,6 +21,7 @@ test.describe('terminal7 direct WebRTC session', ()  => {
     let page: Page,
         context: BrowserContext
 
+    test.afterAll(async () => await context.close())
     test.beforeAll(async ({ browser }) => {
         context = await browser.newContext()
         page = await context.newPage()

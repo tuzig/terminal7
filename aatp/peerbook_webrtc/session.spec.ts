@@ -21,6 +21,7 @@ test.describe('terminal7 session', ()  => {
     let page: Page,
         context: BrowserContext
 
+    test.afterAll(async () => await context.close() )
     test.beforeAll(async ({ browser }) => {
         context = await browser.newContext()
         page = await context.newPage()
@@ -67,7 +68,12 @@ insecure = true`)
         const redisClient = redis.createClient({url: 'redis://redis'})
         redisClient.on('error', err => console.log('Redis client error', err))
         await redisClient.connect()
-        const keys = await redisClient.keys('peer*')
+        let keys = []
+        while (keys.length < 2) {
+            keys = await redisClient.keys('peer*')
+            sleep(200)
+        }
+
         keys.forEach(async key => {
             console.log("verifying: " +key)
             await redisClient.hSet(key, 'verified', "1")
