@@ -164,8 +164,6 @@ export class Terminal7 {
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         document.getElementById('add-gate').addEventListener(
             'click', async (ev) => {
-                this.map.interruptTTY()
-                this.map.showLog(true)
                 setTimeout(() => this.map.shell.runCommand('add-host', []), 50)
                 ev.stopPropagation()
             })
@@ -523,9 +521,14 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         // TODO: add color based on level and ttl
         this.map.interruptTTY()
         this.map.t0.scrollToBottom()
-        this.map.t0.write("\x1B[s\n\x1B[A\x1B[L") // save cursor, insert line
-        this.map.t0.writeln(` \x1B[2m${t}\x1B[0m ${message}`)
-        this.map.t0.write("\x1B[u\x1B[B") // restore cursor
+        const formatted = `\x1B[2m${t}\x1B[0m ${message}`
+        if (this.map.shell.activeForm)
+            this.map.shell.printAboveForm(formatted)
+        else {
+            this.map.t0.write("\x1B[s\n\x1B[A\x1B[L") // save cursor, insert line
+            this.map.t0.writeln(formatted)
+            this.map.t0.write("\x1B[u\x1B[B") // restore cursor
+        }
         if (!dontShow)
             this.map.showLog(true)
     }
@@ -872,8 +875,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     return
                 if (!gate.fp || gate.verified && gate.online) {
                     this.activeG = gate
-                    this.map.interruptTTY()
-                    await gate.connect()
+                    await this.map.shell.runCommand("connect", [gate.name])
                 }
                 else
                     this.map.shell.runCommand("edit", [gate.name])

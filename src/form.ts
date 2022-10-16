@@ -27,17 +27,17 @@ export class Form {
         this.onKey = null
     }
 
-    chooseFields(t: Terminal, title="") {
+    chooseFields(t: Terminal) {
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
         let current = 0
         this.currentField = current
         return new Promise<Array<boolean>>((resolve, reject) => {
             this.reject = reject
-            t.writeln(`  ${title}, choose fields to edit:`)
-            t.writeln("  [Use ⇅ to move, space to select, → to all, ← to none]")
-            t.writeln("  " + this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n  ') + "\x1B[s")
-            t.write(`\x1B[4G\x1B[${len}A`) // move cursor to first field
+            t.writeln(`Choose fields to edit:`)
+            t.writeln("[Use ⇅ to move, space to select, → to all, ← to none]")
+            t.writeln(this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n'))
+            t.write(`\x1B[2G\x1B[${len}A`) // move cursor to first field
             this.onKey = ev => {
                 const key = ev.key
                 const char = !enabled[current] ? 'X' : ' '
@@ -91,27 +91,27 @@ export class Form {
         this.currentField = current
         return new Promise<string>((resolve, reject) => {
             this.reject = reject
-            t.writeln("  [Use ⇅ to move, Enter to select]")
-            t.writeln("  " + this.fields.map(f => `  ${f.prompt}`).join('\n  '))
-            t.write(`\x1B[3G\x1B[${len}A`) // move cursor to first field
-            t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`) // bold first field
+            t.writeln("[Use ⇅ to move, Enter to select]")
+            t.writeln(this.fields.map(f => `  ${f.prompt}`).join('\n'))
+            t.write(`\x1B[G\x1B[${len}A`) // move cursor to first field
+            t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[G`) // bold first field
             this.onKey = ev => {
                 const key = ev.key
                 switch (key) {
                     case "ArrowUp":
                         if (current > 0) {
-                            t.write(`  ${this.fields[current].prompt}\x1B[3G`)
+                            t.write(`  ${this.fields[current].prompt}\x1B[G`)
                             current--
                             t.write("\x1B[A")
-                            t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`)
+                            t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[G`)
                         }
                         break
                     case "ArrowDown":
                         if (current < enabled.length - 1) {
-                            t.write(`  ${this.fields[current].prompt}\x1B[3G`)
+                            t.write(`  ${this.fields[current].prompt}\x1B[G`)
                             current++
                             t.write("\x1B[B")
-                            t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[3G`)
+                            t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[G`)
                         }
                         break
                     case "Enter":
@@ -215,6 +215,6 @@ export class Form {
             def = values.map(v => v == def ? v.toUpperCase() : v).join('/')
         if (def)
             def = ` [${def}]`
-        t.write(`  ${this.fields[this.currentField].prompt}${def || ''}: `)
+        t.write(`${this.fields[this.currentField].prompt}${def || ''}: `)
     }
 }

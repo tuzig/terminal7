@@ -51,6 +51,7 @@ export class T7Map {
                 try {
                     this.t0.loadAddon(webGLAddon)
                 } catch (e) { console.log("no webgl: " +e.toString()) }
+                this.shell.start()
                 resolve()
             })
             this.refresh()
@@ -160,8 +161,6 @@ export class T7Map {
             e.classList.remove("hidden")
             e.classList.add("show")
             document.getElementById("log-button").classList.add("on")
-            if (!this.shell.activeForm)
-                this.shell.start()
         } else {
             e.classList.remove("show")
             document.getElementById("log-button").classList.remove("on")
@@ -175,7 +174,7 @@ export class T7Map {
                     setTimeout(() => _tty(m.substring(1)), this.ttyWait)
                 else {
                     this.ttyWait = 0
-                    this.t0.write("\n" + this.shell.prompt)
+                    this.shell.printPrompt()
                 }
             }
         }
@@ -186,7 +185,8 @@ export class T7Map {
         if (this.ttyWait) {
             this.ttyWait = 0
             this.t0.scrollToBottom()
-            this.t0.write("...INTERRUPTED\n\n" + this.shell.prompt)
+            this.t0.write("...INTERRUPTED\n\n")
+            this.shell.printPrompt()
         }
     }
 }

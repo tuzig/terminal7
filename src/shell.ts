@@ -50,13 +50,13 @@ export class Shell {
             }
             this.field = field
         }
-        setTimeout(() => this.t.focus(), 0)
     }
 
     async handleLine(input: string) {
         const [cmd, ...args] = input.trim().split(/\s+/)
         await this.execute(cmd, args)
-        this.t.write(this.prompt)
+        this.field = ''
+        this.printPrompt()
     }
 
     async execute(cmd: string, args: string[]) {
@@ -71,17 +71,23 @@ export class Shell {
     }
 
     async runCommand(cmd: string, args: string[]) {
-        await this.escapeActiveForm()
-        this.t.writeln(`\r${this.prompt}${cmd} ${args.join(' ')}`)
+        this.escapeActiveForm()
+        this.map.interruptTTY()
+        this.field = [cmd, ...args].join(' ')
+        this.printPrompt()
+        this.t.write("\n")
         await this.execute(cmd, args)
-        this.t.write(this.prompt + this.field)
+        this.field = ''
+        this.printPrompt()
     }
 
     async newForm(fields: Fields, type: "menu" | "choice" | "text", title="") {
         this.escapeActiveForm()
         this.map.showLog(true)
-        this.t.write("\n")
+        this.t.write("\r\x1B[K\n")
         this.t.scrollToBottom()
+        if (title)
+            this.t.writeln(title)
         this.activeForm = new Form(fields)
         let promise
         switch (type) {
@@ -89,7 +95,7 @@ export class Shell {
                 promise = this.activeForm.menu(this.t)
                 break
             case "choice":
-                promise = this.activeForm.chooseFields(this.t, title)
+                promise = this.activeForm.chooseFields(this.t)
                 break
             case "text":
                 promise = this.activeForm.start(this.t)
@@ -99,16 +105,17 @@ export class Shell {
         }
         try {
             const res = await promise
-            this.activeForm = null
             return res
         } catch (err) {
             this.onFormError(err)
-            this.activeForm = null
             throw err
+        } finally {
+            this.activeForm = null
+            this.printPrompt()
         }
     }
 
-    async escapeActiveForm() {
+    escapeActiveForm() {
         if (!this.activeForm) return
         this.t.scrollToBottom()
         this.printBelowForm("ESC\n")
@@ -119,6 +126,7 @@ export class Shell {
     keyHandler(ev: KeyboardEvent) {
         const form = this.activeForm,
             key = ev.key
+        this.printPrompt()
         if (key == 'Escape') {
             if (form)
                 this.escapeActiveForm()
@@ -152,6 +160,17 @@ export class Shell {
         this.t.write(`\x1B[s\x1B[${this.activeForm.fields.length-this.activeForm.currentField}B\n\x1B[K${text}`)
         if (returnToForm)
             this.t.write(`\x1B[u`)
+    }
+
+    printAboveForm(text: string) {
+        if (!this.activeForm) return
+        this.printBelowForm("\n", true)
+        this.t.write(`\x1B[s\x1B[${this.activeForm.currentField}A\x1B[L${text}\x1B[u\x1B[B`)
+    }
+
+    printPrompt() {
+        if (this.activeForm) return
+        this.t.write(`\r\x1B[K${this.prompt}${this.field}`)
     }
 }
 

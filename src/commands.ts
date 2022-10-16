@@ -315,12 +315,9 @@ async function editCMD (shell:Shell, args: string[]) {
         gate.notify("Got peer from \uD83D\uDCD6, connect only")
         return
     }
-    shell.map.showLog(true)
-    shell.map.interruptTTY()
-    shell.t.write(`\nMenu for \x1B[4m${gate.name}\x1B[0m:`)
     let choice, enabled, res
     try {
-        choice = await shell.newForm(f1, "menu")
+        choice = await shell.newForm(f1, "menu", `Menu for \x1B[4m${gate.name}\x1B[0m:`)
     } catch (e) {
         return
     }
