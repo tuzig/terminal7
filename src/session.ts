@@ -82,7 +82,7 @@ export abstract class BaseSession implements Session {
             resolve()
         })
     }
-    reconnect(): Promise<void> {
+    reconnect(marker?: string): Promise<void> {
         return new Promise((resolve, reject) => {
             reject()
         })
