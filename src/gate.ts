@@ -16,7 +16,7 @@ import { Terminal7 } from './terminal7'
 
 import { Capacitor } from '@capacitor/core'
 import { Storage } from '@capacitor/storage'
-import { Form, Fields } from './form.js'
+import { Fields } from './form.js'
 import { HTTPWebRTCSession, PeerbookSession, WebRTCSession  } from './webrtc_session'
 import { Window } from './window.js'
 
@@ -42,6 +42,7 @@ export class Gate {
     nameE: Element
     t7: Terminal7
     onConnected: () => void
+    onClosed: () => void
     fp: string | undefined
     verified: boolean
     online: boolean
@@ -122,6 +123,8 @@ export class Gate {
         this.t7.gates.delete(this.id)
         this.t7.storeGates()
 		this.map.remove(this)
+        if (this.onClosed)
+            this.onClosed()
     }
     /*
      * edit start the edit-host user-assitance
@@ -218,7 +221,7 @@ export class Gate {
             (async () => {
                 const fp = await this.t7.getFingerprint(),
                     rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${fp}" >> ~/.config/webexec/authorized_fingerprints`
-                this.map.t0.writeln("  Failed to connect")
+                this.map.t0.writeln("Failed to connect")
                 let ans:string
                 const verifyForm = [{
                     prompt: `Does the address \x1B[1;37m${this.addr}\x1B[0m seem correct?`,
@@ -233,7 +236,7 @@ export class Gate {
                     return this.map.shell.handleLine("add-host")
                 const webexecForm = [{
                     prompt: `Make sure webexec is running on ${this.addr}:
-                        \n\x1B[1m${rc}\x1B[0m\n \n  Copy to clipboard?`,
+                        \n\x1B[1m${rc}\x1B[0m\n\nCopy to clipboard?`,
 					values: ["y", "n"],
                     default: "y"
                 }]
@@ -243,7 +246,7 @@ export class Gate {
                 if (ans == "y")
                     Clipboard.write({ string: rc })
 				this.retryForm(() => {
-                    this.map.t0.writeln("\n  Retrying...")
+                    this.map.t0.writeln("Retrying...")
                     this.CLIConnect()
 				}, () => this.delete())
             })()
@@ -263,12 +266,14 @@ export class Gate {
     /*
      * connect connects to the gate
      */
-    async connect(onConnected = () => this.load()) {
+    async connect(onConnected = () => this.load(), onClosed?: () => void) {
         
         // do nothing when the network is down
         if (!this.t7.netStatus || !this.t7.netStatus.connected)
             return
         this.onConnected = onConnected
+        if (onClosed)
+            this.onClosed = onClosed
         this.t7.activeG = this
         document.title = `Terminal 7: ${this.name}`
         // if we're already boarding, just focus
@@ -384,6 +389,8 @@ export class Gate {
             if (c instanceof Pane && (c.gate == this))
                 cells.splice(i, 1)
         })
+        if (this.onClosed)
+            this.onClosed()
     }
     /*
      * dump dumps the host to a state object
@@ -559,7 +566,7 @@ export class Gate {
             }
         })
     }
-    CLIConnect() {
+    CLIConnect(onClosed?: () => void) {
         return new Promise<void>(resolve => {
             this.connect(() => {
                 if (!this.name.startsWith("temp")) {
@@ -599,6 +606,10 @@ export class Gate {
                         resolve()
                     }
                 }).catch()
+            }, () => {
+                if (onClosed)
+                    onClosed()
+                resolve()
             })
         })
     }

@@ -523,7 +523,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         this.map.t0.scrollToBottom()
         const formatted = `\x1B[2m${t}\x1B[0m ${message}`
         if (this.map.shell.activeForm)
-            this.map.shell.printAboveForm(formatted)
+            this.map.shell.printBelowForm(formatted)
         else {
             this.map.t0.write("\x1B[s\n\x1B[A\x1B[L") // save cursor, insert line
             this.map.t0.writeln(formatted)

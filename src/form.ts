@@ -30,11 +30,12 @@ export class Form {
     chooseFields(t: Terminal) {
         const len = this.fields.length
         const enabled = new Array(len).fill(false)
+        const title = "Choose fields to edit:"
         let current = 0
         this.currentField = current
         return new Promise<Array<boolean>>((resolve, reject) => {
             this.reject = reject
-            t.writeln(`Choose fields to edit:`)
+            t.writeln(title)
             t.writeln("[Use ⇅ to move, space to select, → to all, ← to none]")
             t.writeln(this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n'))
             t.write(`\x1B[2G\x1B[${len}A`) // move cursor to first field
@@ -60,7 +61,9 @@ export class Form {
                         break
                     case "Enter":
                         this.fields = this.fields.filter((_, i) => enabled[i])
-                        t.write(`\x1B[${len-current}B\n`)
+                        t.write(`\x1B[${current+2}A`) // move cursor to title
+                        t.write(`\x1B[${title.length}C\x1B[J`) // clear after title
+                        t.writeln(this.fields.map(f => `\x1B[1m${f.prompt}\x1B[0m`).join(', ')) // print selected fields
                         resolve(enabled)
                         break
                     case "ArrowRight":
@@ -115,8 +118,10 @@ export class Form {
                         }
                         break
                     case "Enter":
+                        t.write(`\x1B[${current+1}A\x1B[${current+1}M`) // clear above
+                        t.write("\r\x1B[2P") // untab
+                        t.write("\n\x1B[J") // clear below
                         resolve(this.fields[current].prompt)
-                        t.write(`\x1B[${len-current}B\n`)
                         break
                 }
                 this.currentField = current
@@ -179,17 +184,17 @@ export class Form {
         const current = this.fields[this.currentField]
         let valid = true
         if (!this.field && !current.default) {
-            t.writeln("  Please enter a value")
+            t.writeln("Please enter a value")
             valid = false
         }
         else if (this.field && current.values && current.values.indexOf(this.field) == -1) {
-            t.writeln(`  ${current.prompt} must be one of: ${current.values.join(', ')}`)
+            t.writeln(`${current.prompt} must be one of: ${current.values.join(', ')}`)
             valid = false
         }
         else if (this.field && current.validator) {
             const err = current.validator(this.field)
             if (err) {
-                t.writeln(`  ${err}`)
+                t.writeln(`${err}`)
                 valid = false
             }
         }

@@ -67,7 +67,9 @@ export class Shell {
         const command = this.commands.get(cmd)
         if (!command)
             return this.t.writeln(`Command not found: ${cmd}`)
+        this.active = false
         await command.execute(args)
+        this.active = true
     }
 
     async runCommand(cmd: string, args: string[]) {
@@ -84,7 +86,7 @@ export class Shell {
     async newForm(fields: Fields, type: "menu" | "choice" | "text", title="") {
         this.escapeActiveForm()
         this.map.showLog(true)
-        this.t.write("\r\x1B[K\n")
+        this.t.write("\r\x1B[K")
         this.t.scrollToBottom()
         if (title)
             this.t.writeln(title)
@@ -142,10 +144,8 @@ export class Shell {
             })
         } else if (form?.onKey)
             form.onKey(ev)
-        else {
-            this.start()
+        else if (this.active)
             this.onKey(ev)
-        }
         ev.preventDefault()
     }
 
@@ -162,14 +162,8 @@ export class Shell {
             this.t.write(`\x1B[u`)
     }
 
-    printAboveForm(text: string) {
-        if (!this.activeForm) return
-        this.printBelowForm("\n", true)
-        this.t.write(`\x1B[s\x1B[${this.activeForm.currentField}A\x1B[L${text}\x1B[u\x1B[B`)
-    }
-
     printPrompt() {
-        if (this.activeForm) return
+        if (this.activeForm || !this.active) return
         this.t.write(`\r\x1B[K${this.prompt}${this.field}`)
     }
 }

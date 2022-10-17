@@ -116,7 +116,15 @@ async function connectCMD(shell:Shell, args: string[]) {
     const gate = gates.get(hostname)
     if (!gate)
         return shell.t.writeln(`Host not found: ${hostname}`)
-    gate.connect()
+    await new Promise<void>((resolve) => {
+        gate.connect(() => {
+            gate.load()
+            resolve()
+        }, () => {
+            shell.t.writeln(`Failed to connect to ${hostname}`)
+            resolve()
+        })
+    })
 }
 
 async function addHostCMD(shell: Shell) {
@@ -157,7 +165,9 @@ async function addHostCMD(shell: Shell) {
         id: hostname
     }, false)
     shell.map.refresh()
-    await terminal7.activeG.CLIConnect()
+    await terminal7.activeG.CLIConnect(() => {
+        shell.t.writeln(`Failed to connect to ${hostname}`)
+    })
 }
 
 async function peerbookForm(shell: Shell) {
@@ -324,12 +334,7 @@ async function editCMD (shell:Shell, args: string[]) {
     const gateAttrs = ["name", "addr", "username"]
     switch (choice) {
         case 'Connect':
-            await new Promise<void>((resolve) => {
-                gate.connect(() => {
-                    gate.load()
-                    resolve()
-                })
-            })
+            await connectCMD(shell, [hostname])
             break
         case 'Edit':
             try {
@@ -359,7 +364,11 @@ async function editCMD (shell:Shell, args: string[]) {
             shell.map.showLog(false)
             break
         case "\x1B[31mDelete\x1B[0m":
-            res = await shell.newForm(fDel, "text")
+            try {
+                res = await shell.newForm(fDel, "text")
+            } catch (e) {
+                return
+            }
             if (res[0] == "y")
                 gate.delete()
             gate.t7.clear()
