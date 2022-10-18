@@ -232,8 +232,11 @@ export class Gate {
                     ans = (await this.map.shell.newForm(verifyForm, "text"))[0]
                 } catch(e) { return }
 
-                if (ans == "n")
-                    return this.map.shell.handleLine("add-host")
+                if (ans == "n") {
+                    this.delete()
+                    this.map.shell.handleLine("add-host")
+                    return
+                }
                 const webexecForm = [{
                     prompt: `Make sure webexec is running on ${this.addr}:
                         \n\x1B[1m${rc}\x1B[0m\n\nCopy to clipboard?`,
@@ -566,7 +569,7 @@ export class Gate {
             }
         })
     }
-    CLIConnect(onClosed?: () => void) {
+    CLIConnect(onClosed = this.onClosed) {
         return new Promise<void>(resolve => {
             this.connect(() => {
                 if (!this.name.startsWith("temp")) {
@@ -607,8 +610,7 @@ export class Gate {
                     }
                 }).catch()
             }, () => {
-                if (onClosed)
-                    onClosed()
+                onClosed()
                 resolve()
             })
         })

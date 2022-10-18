@@ -73,7 +73,7 @@ export class Shell {
     }
 
     async runCommand(cmd: string, args: string[]) {
-        this.escapeActiveForm()
+        await this.escapeActiveForm()
         this.map.interruptTTY()
         this.field = [cmd, ...args].join(' ')
         this.printPrompt()
@@ -117,12 +117,13 @@ export class Shell {
         }
     }
 
-    escapeActiveForm() {
+    async escapeActiveForm() {
         if (!this.activeForm) return
         this.t.scrollToBottom()
         this.printBelowForm("ESC\n")
         this.activeForm.reject(new Error("aborted"))
         this.activeForm = null
+        await new Promise(r => setTimeout(r, 100))
     }
     
     keyHandler(ev: KeyboardEvent) {
