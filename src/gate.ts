@@ -328,7 +328,7 @@ export class Gate {
         this.notify("Reconnecting")
         return new Promise((resolve, reject) => {
             if (!this.session)
-                reject()
+                return this.connect()
             else 
                 this.session.reconnect(this.marker).then(resolve)
                 .catch(() => this.connect().then(resolve).catch(reject))
