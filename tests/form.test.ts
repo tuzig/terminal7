@@ -68,8 +68,8 @@ describe("form", () => {
         setTimeout(writeChar, 10)
         f.start(t).catch(() => failed=true)
         await sleep(100)
-        expect(t.out.endsWith("FAIL\n  name: ")).toBeTruthy()
-        f.escape(t)
+        expect(t.out.endsWith("FAIL\nname: ")).toBeTruthy()
+        f.reject(new Error("test"))
         await sleep(10)
         expect(failed).toBeTruthy()
     })
@@ -84,7 +84,7 @@ describe("form", () => {
             finish = true
         })
         await sleep(100)
-        expect(t.out.endsWith("  name [one/two]: three\n  name must be one of: one, two\n  name [one/two]: ")).toBeTruthy()
+        expect(t.out.endsWith("name [one/two]: three\nname must be one of: one, two\nname [one/two]: ")).toBeTruthy()
         word = "one"
         setTimeout(writeChar, 10)
         await sleep(100)
@@ -108,7 +108,7 @@ describe("form", () => {
         try {
             results = await f.chooseFields(t)
         } catch(e) { expect(false).toBeTruthy() }
-        expect(JSON.stringify(t.out)).toMatch(/\[ \] name: one\\n {2}\[ \] number: 1\S*$/)
+        expect(JSON.stringify(t.out)).toMatch(/\[ \] name: one\\n\[ \] number: 1\S*$/)
         expect(results).toHaveLength(2)
         expect(results[0]).toBeFalsy()
         expect(results[1]).toBeFalsy()

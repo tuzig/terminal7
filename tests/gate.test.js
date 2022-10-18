@@ -110,7 +110,7 @@ describe("gate", () => {
     })
     it("can edit gate", async () => {
         let g = t.addGate({name:"foo"})
-        g.edit()
+        // TODO: add checks here
     })
     it("has a unique name", () => {
         let valid = t.validateHostName("foo")
@@ -143,9 +143,12 @@ describe("gate", () => {
 		globalThis.webkit = { messageHandlers: { bridge: 1 } } // mock ios
         const map = new T7Map()
         map.open()
+        map.shell.start()
+        g.map = map
 		const t0 = map.t0
 		t.map.t0 = t0
-		g.connect()
+        map.shell.t = t0
+        map.shell.runCommand("connect", ["foo"])
 		await sleep(500)
 		expect(t0.out).toMatch("Username [eyal]:")
 		t0.pressKey("Enter")
