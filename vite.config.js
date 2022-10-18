@@ -2,7 +2,10 @@ import { configDefaults, defineConfig } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  assetsInclude: ['./CHANGELOG.md'],
+  assetsInclude: [
+      './CHANGELOG.md',
+      'resources/fortune.txt'
+  ],
   test: {
       environment: "jsdom",
       reporters: "verbose",

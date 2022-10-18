@@ -10,11 +10,10 @@ export class Shell {
 
     map: T7Map
     t: Terminal
-    onKey: (ev: KeyboardEvent) => void
     active = false
     activeForm: Form | null
     commands: Map<string, Command>
-    field = ''
+    currentLine = ''
 
     constructor(map: T7Map) {
         this.map = map
@@ -26,42 +25,40 @@ export class Shell {
             return
         this.active = true
         this.commands = loadCommands(this)
-        let field = ''
+        this.currentLine = ''
         this.t.scrollToBottom()
-        this.onKey = async ev => {
-            const key = ev.key
-            switch (key) {
-                case "Enter":
-                    this.t.write("\n")
-                    await this.handleLine(field)
-                    field = ''
-                    break
-                case "Backspace":
-                    if (field.length > 0) {
-                        field = field.slice(0, -1)
-                        this.t.write("\b \b")
-                    }
-                    break
-                default:
-                    if (key.length == 1) { // make sure the key is a char
-                        field += key
-                        this.t.write(key)
-                    }
+    }
+    
+    async onKey(ev: KeyboardEvent) {
+        const key = ev.key
+        switch (key) {
+            case "Enter":
+                this.t.write("\n")
+            await this.handleLine(this.currentLine)
+            this.currentLine = ''
+            break
+            case "Backspace":
+                if (this.currentLine.length > 0) {
+                this.currentLine = this.currentLine.slice(0, -1)
+                this.t.write("\b \b")
             }
-            this.field = field
+            break
+            default:
+                if (key.length == 1) { // make sure the key is a char
+                this.currentLine += key
+                this.t.write(key)
+            }
         }
     }
 
     async handleLine(input: string) {
         const [cmd, ...args] = input.trim().split(/\s+/)
         await this.execute(cmd, args)
-        this.field = ''
+        this.currentLine = ''
         this.printPrompt()
     }
 
     async execute(cmd: string, args: string[]) {
-        if (this.activeForm) 
-            this.escapeActiveForm()
         if (!cmd)
             return
         const command = this.commands.get(cmd)
@@ -75,15 +72,15 @@ export class Shell {
     async runCommand(cmd: string, args: string[]) {
         await this.escapeActiveForm()
         this.map.interruptTTY()
-        this.field = [cmd, ...args].join(' ')
+        this.currentLine = [cmd, ...args].join(' ')
         this.printPrompt()
         this.t.write("\n")
         await this.execute(cmd, args)
-        this.field = ''
+        this.currentLine = ''
         this.printPrompt()
     }
 
-    async newForm(fields: Fields, type: "menu" | "choice" | "text", title="") {
+    async runForm(fields: Fields, type: "menu" | "choice" | "text", title="") {
         this.escapeActiveForm()
         this.map.showLog(true)
         this.t.write("\r\x1B[K")
@@ -91,22 +88,22 @@ export class Shell {
         if (title)
             this.t.writeln(title)
         this.activeForm = new Form(fields)
-        let promise
+        let run
         switch (type) {
             case "menu":
-                promise = this.activeForm.menu(this.t)
+                run = this.activeForm.menu.bind(this.activeForm)
                 break
             case "choice":
-                promise = this.activeForm.chooseFields(this.t)
+                run = this.activeForm.chooseFields.bind(this.activeForm)
                 break
             case "text":
-                promise = this.activeForm.start(this.t)
+                run = this.activeForm.start.bind(this.activeForm)
                 break
             default:
                 throw new Error("Unknown form type: " + type)
         }
         try {
-            const res = await promise
+            const res = await run(this.t)
             return res
         } catch (err) {
             this.onFormError(err)
@@ -152,7 +149,6 @@ export class Shell {
 
     onFormError(err: Error) {
         terminal7.log("Form error: " + err)
-        terminal7.clearTempGates()
     }
 
     printBelowForm(text: string, returnToForm = false) {
@@ -165,7 +161,11 @@ export class Shell {
 
     printPrompt() {
         if (this.activeForm || !this.active) return
-        this.t.write(`\r\x1B[K${this.prompt}${this.field}`)
+        this.t.write(`\r\x1B[K${this.prompt}${this.currentLine}`)
+    }
+    
+    getGate(name: string) {
+        return terminal7.gates.get(name)
     }
 }
 

@@ -3,6 +3,8 @@ import { WebRTCSession } from "./webrtc_session"
 import * as TOML from '@tuzig/toml'
 import { Storage } from "@capacitor/storage"
 import { Terminal7, DEFAULT_DOTFILE } from "./terminal7"
+import { Gate } from "./gate"
+import { Fields } from "./form"
 
 declare const terminal7 : Terminal7
 
@@ -15,23 +17,11 @@ export type Command = {
 
 export function loadCommands(shell: Shell): Map<string, Command> {
     return new Map<string, Command>(Object.entries({
-        help: {
-            name: "help",
-            help: "This help",
-            usage: "help [command]",
-            execute: async args => helpCMD(shell, args)
-        },
-        fortune: {
-            name: "fortune",
-            help: "Get a fortune",
-            usage: "fortune",
-            execute: async () => fortuneCMD(shell)
-        },
-        echo: {
-            name: "echo",
-            help: "Echo a message",
-            usage: "echo <message>",
-            execute: async args => echoCMD(shell, args)
+        'add-host': {
+            name: "add-host",
+            help: "Add a new host",
+            usage: "add-host",
+            execute: async () => addHostCMD(shell)
         },
         clear: {
             name: "clear",
@@ -45,17 +35,11 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             usage: "connect <hostname>",
             execute: async args => connectCMD(shell, args)
         },
-        'add-host': {
-            name: "add-host",
-            help: "Add a new host",
-            usage: "add-host",
-            execute: async () => addHostCMD(shell)
-        },
-        reset: {
-            name: "reset",
-            help: "Reset a running or the active host",
-            usage: "reset [hostname]",
-            execute: async args => resetCMD(shell, args)
+        echo: {
+            name: "echo",
+            help: "Echo a message",
+            usage: "echo <message>",
+            execute: async args => echoCMD(shell, args)
         },
         edit: {
             name: "edit",
@@ -63,18 +47,36 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             usage: "edit <hostname>",
             execute: async args => editCMD(shell, args)
         },
+        fortune: {
+            name: "fortune",
+            help: "Get a fortune",
+            usage: "fortune",
+            execute: async () => fortuneCMD(shell)
+        },
+        help: {
+            name: "help",
+            help: "This help",
+            usage: "help [command]",
+            execute: async args => helpCMD(shell, args)
+        },
+        home: {
+            name: "home",
+            help: "Go to the home page",
+            usage: "home",
+            execute: async () => homeCMD()
+        },
         hosts: {
             name: "hosts",
             help: "List all hosts",
             usage: "hosts",
             execute: async () => hostsCMD(shell)
         },
-        home: {
-            name: "home",
-            help: "Go to the home page",
-            usage: "home",
-            execute: async () => terminal7.goHome()
-        }
+        reset: {
+            name: "reset",
+            help: "Reset a running or the active host",
+            usage: "reset [hostname]",
+            execute: async args => resetCMD(shell, args)
+        },
     }))
 }
 
@@ -100,7 +102,7 @@ async function helpCMD(shell: Shell, args: string[]) {
 }
 
 async function fortuneCMD(shell: Shell) {
-    const res = await fetch("https://raw.githubusercontent.com/ruanyf/fortunes/master/data/fortunes")
+    const res = await fetch("../resources/fortune.txt")
     shell.t.writeln((await res.text()).split("%\n")[Math.floor(Math.random() * 100)].trim())
 }
 
@@ -112,8 +114,7 @@ async function connectCMD(shell:Shell, args: string[]) {
     const hostname = args[0]
     if (!hostname)
         return shell.t.writeln("Missing hostname")
-    const gates = terminal7.gates
-    const gate = gates.get(hostname)
+    const gate = shell.getGate(hostname)
     if (!gate)
         return shell.t.writeln(`Host not found: ${hostname}`)
     await new Promise<void>((resolve) => {
@@ -135,7 +136,7 @@ async function addHostCMD(shell: Shell) {
         ]
         let choice
         try {
-            choice = await shell.newForm(pbForm, "menu")
+            choice = await shell.runForm(pbForm, "menu")
         } catch (e) {
             return
         }
@@ -149,14 +150,14 @@ async function addHostCMD(shell: Shell) {
     ]
     let hostname
     try {
-        hostname = (await shell.newForm(f, "text"))[0]
+        hostname = (await shell.runForm(f, "text"))[0]
     } catch (e) { 
         return
     }
 
     if (terminal7.validateHostAddress(hostname)) {
         shell.t.writeln(`  ${hostname} already exists, connecting...`)
-        terminal7.gates.get(hostname).connect()
+        shell.getGate(hostname).connect()
         return
     }
     terminal7.activeG = terminal7.addGate({
@@ -165,9 +166,8 @@ async function addHostCMD(shell: Shell) {
         id: hostname
     }, false)
     shell.map.refresh()
-    await terminal7.activeG.CLIConnect(() => {
-        shell.t.writeln(`Failed to connect to ${hostname}`)
-    })
+    await CLIConnect(shell, terminal7.activeG)
+    shell.t.writeln(`Failed to connect to ${hostname}`)
 }
 
 async function peerbookForm(shell: Shell) {
@@ -182,7 +182,7 @@ async function peerbookForm(shell: Shell) {
     ]
     let results
     try {
-        results = await shell.newForm(f, "text")
+        results = await shell.runForm(f, "text")
     } catch (e) {
         return
     }
@@ -204,7 +204,7 @@ peer_name = "${peername}"\n`
 async function resetCMD(shell: Shell, args: string[]) {
     let gate
     if (args[0]) {
-        gate = terminal7.gates.get(args[0])
+        gate = shell.getGate(args[0])
         if (!gate)
             return shell.t.writeln(`Host not found: ${args[0]}`)
     } else {
@@ -228,7 +228,7 @@ async function resetCMD(shell: Shell, args: string[]) {
     shell.t.writeln(`\x1B[4m${gate.name}\x1B[0m`)
     let choice
     try {
-        choice = await shell.newForm(fields, "menu")
+        choice = await shell.runForm(fields, "menu")
     } catch (e) {
         return
     }
@@ -264,7 +264,7 @@ async function resetCMD(shell: Shell, args: string[]) {
             break
         case "\x1B[31mFactory reset\x1B[0m":
             try {
-                ans = (await shell.newForm(factoryResetVerify, "text"))[0]
+                ans = (await shell.runForm(factoryResetVerify, "text"))[0]
             } catch (e) {
                 return
             }
@@ -294,16 +294,15 @@ async function editCMD (shell:Shell, args: string[]) {
     const hostname = args[0]
     if (!hostname)
         return shell.t.writeln("Missing hostname")
-    const gates = terminal7.gates
-    const gate = gates.get(hostname)
+    const gate = shell.getGate(hostname)
     if (!gate)
         return shell.t.writeln(`Host not found: ${hostname}`)
-    const f1 = [
+    const fMain = [
         { prompt: "Connect" },
         { prompt: "Edit" },
         { prompt: "\x1B[31mDelete\x1B[0m" },
     ]
-    let f2 = [
+    let fFields = [
         {
             prompt: "Name",
             default: gate.name,
@@ -327,7 +326,7 @@ async function editCMD (shell:Shell, args: string[]) {
     }
     let choice, enabled, res
     try {
-        choice = await shell.newForm(f1, "menu", `Menu for \x1B[4m${gate.name}\x1B[0m:`)
+        choice = await shell.runForm(fMain, "menu", `Menu for \x1B[4m${gate.name}\x1B[0m:`)
     } catch (e) {
         return
     }
@@ -338,7 +337,7 @@ async function editCMD (shell:Shell, args: string[]) {
             break
         case 'Edit':
             try {
-                enabled = await shell.newForm(f2, "choice", `\x1B[4m${gate.name}\x1B[0m edit`)
+                enabled = await shell.runForm(fFields, "choice", `\x1B[4m${gate.name}\x1B[0m edit`)
             } catch (e) {
                 return
             }
@@ -346,9 +345,9 @@ async function editCMD (shell:Shell, args: string[]) {
                 gate.t7.clear()
                 return
             }
-            f2 = f2.filter((_, i) => enabled[i])
+            fFields = fFields.filter((_, i) => enabled[i])
             try {
-                res = await shell.newForm(f2, "text")
+                res = await shell.runForm(fFields, "text")
             } catch (e) {
                 return
             }
@@ -365,7 +364,7 @@ async function editCMD (shell:Shell, args: string[]) {
             break
         case "\x1B[31mDelete\x1B[0m":
             try {
-                res = await shell.newForm(fDel, "text")
+                res = await shell.runForm(fDel, "text")
             } catch (e) {
                 return
             }
@@ -384,3 +383,52 @@ async function hostsCMD(shell: Shell) {
     shell.t.writeln(res)
 }
 
+async function homeCMD() {
+    terminal7.goHome()
+}
+
+export async function CLIConnect(shell: Shell, gate: Gate) {
+    return new Promise<void>(resolve => {
+        gate.connect(() => {
+            if (!gate.name.startsWith("temp")) {
+                gate.load()
+                resolve()
+                return
+            }
+            const saveForm = [{
+                prompt: "Save gate?",
+                default: "y",
+                values: ["y", "n"]
+            }]
+            shell.runForm(saveForm, "text").then(res => {
+                if (res[0] == "y") {
+                    const validated = terminal7.validateHostName(gate.addr)
+                    const fields: Fields = [{
+                        prompt: "Enter name",
+                        validator: (a) => gate.t7.validateHostName(a),
+                    }]
+                    if (!validated)
+                        fields[0].default = gate.addr
+                    shell.runForm(fields, "text").then(res => {
+                        const name = res[0]
+                        gate.name = name
+                        gate.nameE = gate.map.add(gate)
+                        gate.updateNameE()
+                        gate.store = true
+                        terminal7.storeGates()
+                        shell.map.showLog(false)
+                        gate.load()
+                        resolve()
+                    }).catch()
+                } else {
+                    terminal7.clear()
+                    gate.load()
+                    gate.delete()
+                    resolve()
+                }
+            }).catch()
+        }, () => {
+            resolve()
+        })
+    })
+}

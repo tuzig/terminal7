@@ -455,8 +455,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         this.map.showLog(false)
         this.focus()
         this.longPressGate = null
-        if (this.map.shell.activeForm)
-            this.map.shell.escapeActiveForm()
+        this.map.shell.escapeActiveForm()
     }
     goHome() {
         Storage.remove({key: "last_state"}) 
@@ -489,7 +488,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         ]
         let res
         try {
-            res = await this.map.shell.newForm(reconnectForm, "menu")
+            res = await this.map.shell.runForm(reconnectForm, "menu")
         } catch(e) {
             res = null
         }

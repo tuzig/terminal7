@@ -19,6 +19,7 @@ import { Storage } from '@capacitor/storage'
 import { Fields } from './form.js'
 import { HTTPWebRTCSession, PeerbookSession, WebRTCSession  } from './webrtc_session'
 import { Window } from './window.js'
+import { CLIConnect } from './commands.js'
 
 
 const FAILED_COLOR = "red"// ashort period of time, in milli
@@ -196,7 +197,7 @@ export class Gate {
             case Failure.WrongPassword:
                 this.tryWebexec = false
                 this.pass = undefined
-                this.retryForm(() => this.CLIConnect(), () => this.delete())
+                this.retryForm(() => CLIConnect(this.map.shell, this), () => this.delete())
                 return
             case Failure.Unauthorized:
                 this.copyFingerprint()
@@ -229,12 +230,15 @@ export class Gate {
                     default: "y"
                 }]
                 try {
-                    ans = (await this.map.shell.newForm(verifyForm, "text"))[0]
-                } catch(e) { return }
+                    ans = (await this.map.shell.runForm(verifyForm, "text"))[0]
+                } catch(e) {
+                    this.delete()
+                    return
+                }
 
                 if (ans == "n") {
                     this.delete()
-                    this.map.shell.handleLine("add-host")
+                    setTimeout(() => this.map.shell.handleLine("add-host"), 100)
                     return
                 }
                 const webexecForm = [{
@@ -244,13 +248,17 @@ export class Gate {
                     default: "y"
                 }]
                 try {
-                    ans = (await this.map.shell.newForm(webexecForm, "text"))[0]
-                } catch(e) { return }
+                    ans = (await this.map.shell.runForm(webexecForm, "text"))[0]
+                } catch(e) {
+                    this.delete()
+                    return
+                }
                 if (ans == "y")
                     Clipboard.write({ string: rc })
 				this.retryForm(() => {
                     this.map.t0.writeln("Retrying...")
-                    this.CLIConnect()
+                    const onClosed = this.onClosed // save onClosed
+                    CLIConnect(this.map.shell, this).then(() => onClosed())
 				}, () => this.delete())
             })()
         } else
@@ -505,7 +513,7 @@ export class Gate {
         }]
         let ans: string
         try {
-            ans = (await this.map.shell.newForm(fpForm, "text"))[0]
+            ans = (await this.map.shell.runForm(fpForm, "text"))[0]
         } catch(e) { this.onFormError(e) }
         if (ans == "y") {
             Clipboard.write({ string: cmd })
@@ -522,7 +530,7 @@ export class Gate {
             { prompt: "Password", password: true }
         ]
         this.map.showLog(true)
-        this.map.shell.newForm(authForm, "text").then(res => {
+        this.map.shell.runForm(authForm, "text").then(res => {
             this.username = res[0]
             this.pass = res[1]
             this.completeConnect()
@@ -569,52 +577,6 @@ export class Gate {
             }
         })
     }
-    CLIConnect(onClosed = this.onClosed) {
-        return new Promise<void>(resolve => {
-            this.connect(() => {
-                if (!this.name.startsWith("temp")) {
-                    this.load()
-                    resolve()
-                    return
-                }
-                const saveForm = [{
-                    prompt: "Save gate?",
-                    default: "y",
-                    values: ["y", "n"]
-                }]
-                this.map.shell.newForm(saveForm, "text").then(res => {
-                    if (res[0] == "y") {
-                        const validated = this.t7.validateHostName(this.addr)
-                        const fields: Fields = [{
-                            prompt: "Enter name",
-                            validator: (a) => this.t7.validateHostName(a),
-                        }]
-                        if (!validated)
-                            fields[0].default = this.addr
-                        this.map.shell.newForm(fields, "text").then(res => {
-                            const name = res[0]
-                            this.name = name
-                            this.nameE = this.map.add(this)
-                            this.updateNameE()
-                            this.store = true
-                            this.t7.storeGates()
-                            this.map.showLog(false)
-                            this.load()
-                            resolve()
-                        }).catch()
-                    } else {
-                        this.t7.clear()
-                        this.load()
-                        this.delete()
-                        resolve()
-                    }
-                }).catch()
-            }, () => {
-                onClosed()
-                resolve()
-            })
-        })
-    }
 	async retryForm(retry: () => void, cancel: () => void) {
         this.map.showLog(true)
 		const retryForm = [{
@@ -622,7 +584,7 @@ export class Gate {
 			values: ["y", "n"],
 			default: "y"
 		}]
-		this.map.shell.newForm(retryForm, "text").then(results => {
+		this.map.shell.runForm(retryForm, "text").then(results => {
             if (results[0] == "y")
                 retry()
             else {
