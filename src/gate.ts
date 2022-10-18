@@ -153,7 +153,8 @@ export class Gate {
                         default: this.addr,
                         validator: (a) => this.t7.validateHostAddress(a)
                     },
-                    { prompt: "Username", default: this.username }
+                    { prompt: "Username", default: this.username },
+                    { prompt: "SSH only", values: ["y", "n"], default: this.onlySSH?"y":"n" },
                 ])
                 const fDel = new Form([{
                     prompt: `Delete ${this.name}?`,
@@ -175,9 +176,10 @@ export class Gate {
                                         return
                                     }
                                     f2.start(this.map.t0).then(results => {
-                                        ['name', 'addr', 'username']
+                                        ['name', 'addr', 'username', 'onlySSH']
                                             .filter((_, i) => enabled[i])
                                             .forEach((k, i) => this[k] = results[i])
+                                        this.onlySSH = this.onlySSH == 'y'
                                         if (enabled[1]) {
                                             this.t7.gates.delete(this.id)
                                             this.id = this.addr

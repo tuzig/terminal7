@@ -469,7 +469,7 @@ peer_name = "${peername}"\n`
                 g.windows.forEach((w) => ws.push(w.id))
                 out.push({id: g.id, addr: g.addr, user: g.user, secret: g.secret,
                     name:g.name, windows: ws, store: true, verified: g.verified,
-                    username:g.username})
+                    username:g.username, onlySSH: g.onlySSH })
             }
         })
         this.log("Storing gates:", out)
