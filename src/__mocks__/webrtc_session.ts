@@ -39,4 +39,7 @@ export class HTTPWebRTCSession implements Session {
     getPayload = returnLater(null)
     setPayload = returnLater(null)
     disconnect = returnLater(null)
+    public get isSSH() {
+        return false
+    }
 }

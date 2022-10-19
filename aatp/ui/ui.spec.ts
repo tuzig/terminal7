@@ -7,7 +7,7 @@ import waitPort from 'wait-port'
 const local = process.env.LOCALDEV !== undefined,
       url = local?"http://localhost:3000":"http://terminal7"
 
-test.describe('terminal 7session', ()  => {
+test.describe('terminal7 UI', ()  => {
 
     const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
     const connectGate = async () => {
@@ -52,7 +52,6 @@ test.describe('terminal 7session', ()  => {
                   "name":"foo",
                   "windows":[],
                   "store":true,
-                  "tryWebexec": true,
                 }]
             ))
         })

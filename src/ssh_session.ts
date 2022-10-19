@@ -93,6 +93,9 @@ export class SSHSession extends BaseSession {
                 })
         })
     }
+    public get isSSH() {
+        return true
+    }
 }
 // HybridSession can run either as SSH or WebRTC bby signalling
 // over SSH
@@ -128,7 +131,7 @@ export class HybridSession extends SSHSession {
            }).catch(e => {
                 this.clearWatchdog()
                 console.log("SSH startSession failed", e)
-                if (e.toString().startsWith("Error: Not imp"))
+                if (e.code === "UNIMPLEMENTED")
                     this.onStateChange("failed", Failure.NotImplemented)
                 else
                     this.onStateChange("failed", Failure.WrongPassword)
@@ -193,7 +196,7 @@ export class HybridSession extends SSHSession {
                         }
                         if (state == "failed") {
                             SSH.closeChannel({channel: id})
-                            terminal7.log("Failed to open session")
+                            terminal7.log("Failed to open session", failure)
                             reject()
                         }
                     }
@@ -240,4 +243,7 @@ export class HybridSession extends SSHSession {
         this.setPayload =  (payload: string) =>  this.webrtcSession.setPayload(payload)
         this.disconnect = () => this.webrtcSession.disconnect()
     }
-} 
+    public get isSSH() {
+        return !this.webrtcSession 
+    }
+}

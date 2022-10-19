@@ -39,6 +39,9 @@ export class SSHSession implements Session {
     getPayload = returnLater(null)
     setPayload = returnLater(null)
     disconnect = returnLater(null)
+    public get isSSH() {
+        return true
+    }
 }
 
 export class HybridSession implements Session {
@@ -65,4 +68,7 @@ export class HybridSession implements Session {
     getPayload = returnLater(null)
     setPayload = returnLater(null)
     disconnect = returnLater(null)
+    public get isSSH() {
+        return false
+    }
 }

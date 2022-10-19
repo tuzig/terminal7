@@ -64,7 +64,6 @@ pinch_max_y_velocity = 0.1`
                   "name":"foo",
                   "windows":[],
                   "store":true,
-                  "tryWebexec": true,
                 }]
             ))
         })

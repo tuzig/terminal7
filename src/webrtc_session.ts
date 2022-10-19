@@ -60,7 +60,9 @@ export class WebRTCChannel extends BaseChannel {
             this.dataChannel = null
         }
     }
-
+    public get isSSH() {
+        return false
+    }
 }
 
 export class WebRTCSession extends BaseSession {
@@ -346,9 +348,9 @@ export class PeerbookSession extends WebRTCSession {
     fp: string
     pb: PeerbookConnection
     constructor(fp: string, pb: PeerbookConnection) {
+        super()
         this.fp = fp
         this.pb = pb
-        super()
     }
     getIceServers() {
         return new Promise((resolve, reject) => {

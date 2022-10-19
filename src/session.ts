@@ -30,7 +30,7 @@ export interface Channel {
 }
 
 export interface Session {
-    isSSH: boolean
+    readonly isSSH: boolean
     onStateChange : (state: string, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
     // for reconnect
@@ -82,7 +82,7 @@ export abstract class BaseSession implements Session {
             resolve()
         })
     }
-    reconnect(marker?: string): Promise<void> {
+    reconnect(): Promise<void> {
         return new Promise((resolve, reject) => {
             reject()
         })

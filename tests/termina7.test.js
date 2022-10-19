@@ -441,7 +441,7 @@ describe("terminal7", function() {
             t0.pressKey("Enter")
             await sleep(100)
             expect(t0.out).toMatch("webexec")
-            expect(t0.out).toMatch("Connected")
+            expect(t0.out).toMatch(/over WebRTC\s+Save gate\? \[Y\/n\]:\s*$/)
         })
         it("can connect to SSH through form", async () => {
             const map = new T7Map()
@@ -457,8 +457,6 @@ describe("terminal7", function() {
             t0.pressKey("Enter")
             await sleep(100)
             console.log("t0.out:", t0.out)
-            expect(t0.out).toMatch("webexec")
-            expect(t0.out).toMatch("FAILED: Timeout")
             expect(t0.out).toMatch("Using SSH")
             expect(t0.out).toMatch("Username:")
             await sleep(10)

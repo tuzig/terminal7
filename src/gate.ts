@@ -17,7 +17,7 @@ import { Terminal7 } from './terminal7'
 import { Capacitor } from '@capacitor/core'
 import { Storage } from '@capacitor/storage'
 import { Form, Fields } from './form.js'
-import { HTTPWebRTCSession, PeerbookSession, WebRTCSession  } from './webrtc_session'
+import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
 import { Window } from './window.js'
 
 
@@ -36,7 +36,6 @@ export class Gate {
     pass: string | undefined
     secret: string
     session: Session
-    tryWebexec: boolean
     user: string
     username: string
     nameE: Element
@@ -47,6 +46,7 @@ export class Gate {
     online: boolean
     store: boolean
     map: T7Map
+    onlySSH: boolean
 
     constructor (props) {
         // given properties
@@ -59,7 +59,6 @@ export class Gate {
         this.name = (!props.name)?`${this.user}@${this.addr}`:props.name
         this.username = props.username
         this.pass = props.pass
-        this.tryWebexec = props.tryWebexec || true
         this.online = props.online
         this.verified = props.verified || false
         // 
@@ -75,6 +74,7 @@ export class Gate {
         this.t7 = window.terminal7
         this.map = this.t7.map
         this.session = null
+        this.onlySSH = props.onlySSH || false
     }
 
     /*
@@ -234,13 +234,15 @@ export class Gate {
         this.t7.log(`updating ${this.name} state to ${state}`)
         if (state == "connected") {
             this.marker = null
-            this.notify("Connected")
+            this.notify(`🥂  over ${this.session.isSSH?"SSH":"WebRTC"}`)
             this.setIndicatorColor("unset")
             if (!this.verified) {
                 this.verified = true
                 this.updateNameE()
                 this.t7.storeGates()
             }
+            if (this.session.isSSH)
+                this.clear()
             // first onConnected is special if it's a new gate but once
             // connected, we're back to loading the gate
             this.onConnected()
@@ -266,10 +268,12 @@ export class Gate {
         this.stopBoarding()
         switch ( failure ) {
             case Failure.WrongPassword:
-                this.tryWebexec = false
                 this.pass = undefined
                 this.retryForm(() => this.CLIConnect(), () => this.delete())
                 return
+            case Failure.NotImplemented:
+                this.notify("Please try again")
+                break
             case Failure.Unauthorized:
                 this.copyFingerprint()
                 return
@@ -279,8 +283,8 @@ export class Gate {
                 this.connect(this.onConnected)
                 return
             case Failure.TimedOut:
-                if (!this.fp && this.tryWebexec && (Capacitor.getPlatform() == "ios")) {
-                    this.tryWebexec = false
+                // TODO: probably should ask if to reconnect
+                if (!this.fp && (Capacitor.getPlatform() == "ios")) {
                     this.connect(this.onConnected)
                     return
                 }
@@ -338,17 +342,14 @@ export class Gate {
      * connect connects to the gate
      */
     async connect(onConnected = () => this.load()) {
-        
         // do nothing when the network is down
         if (!this.t7.netStatus || !this.t7.netStatus.connected)
             return
         this.onConnected = onConnected
         document.title = `Terminal 7: ${this.name}`
         // if we're already boarding, just focus
-        if (this.session && this.session.watchdog) {
-            this.completeConnect()
-            return
-        }
+        if (this.session && this.session.watchdog)
+            return this.completeConnect()
         
         if (this.session) {
             // TODO: check session's status
@@ -362,10 +363,8 @@ export class Gate {
         }
         this.boarding = true
         this.updateNameE()
-        if (!this.pass && !this.fp && !this.tryWebexec) {
-            this.askPass()
-        } else
-            this.completeConnect()
+        return this.completeConnect()
+
     }
 
     notify(message) {
@@ -397,7 +396,7 @@ export class Gate {
             values: ["y", "n"],
             default: "n"
         }])
-        if (this.session instanceof WebRTCSession)
+        if (!this.onlySSH)
             // Add the connection reset option for webrtc
             fields.splice(0,0, { prompt: "Reset connection" })
         const resetForm = new Form(fields)
@@ -639,53 +638,43 @@ export class Gate {
         } catch(e) { this.onFormError(e) }
         if (ans == "y") {
             Clipboard.write({ string: cmd })
-            this.tryWebexec = false
             this.connect(this.onConnected)
         }
         else
             this.map.showLog(false)
     }
-    askPass() {
+    async askPass() {
+        let res
         this.map.t0.writeln("  Using SSH")
         const authForm = new Form([
             { prompt: "Username", default: this.username },
             { prompt: "Password", password: true }
         ])
         this.map.showLog(true)
-        authForm.start(this.map.t0).then(res => {
-            this.username = res[0]
-            this.pass = res[1]
-            this.completeConnect()
-        }).catch(e => this.onFormError(e))
+        res = await authForm.start(this.map.t0)
+        this.username = res[0]
+        this.pass = res[1]
     }
-    completeConnect(): void {
+    async completeConnect(): void {
         if (Form.activeForm)
             Form.activeForm.escape(this.map.t0)
-            if (this.fp) {
-                this.notify("🎌  PeerBook")
-                this.session = new PeerbookSession(this.fp, this.t7.pb)
-            }
-            else {
+
+        if (this.fp) {
+            this.notify("🎌  PeerBook")
+            this.session = new PeerbookSession(this.fp, this.t7.pb)
+        }
+        else {
+            if (Capacitor.getPlatform() == "ios") {
                 if (!this.pass) {
-                    this.askPass()
-                    return
+                    await this.askPass()
                 }
-
-
-                this.session = new HybridSession(this.addr, this.username, this.pass)
-                /*
-                if (this.tryWebexec) {
-                    this.notify("🎌  webexec server")
-                    this.session = new HTTPWebRTCSession(this.fp, this.addr)
-                } else {
-                    this.clear()
-                    this.notify("Starting SSH session")
-                    this.session = new SSHSession(this.addr, this.username, this.pass)
-                    // next time go back to trying webexec
-                    this.tryWebexec = true
-                }
-                */
+                this.session = (this.onlySSH)?new SSHSession(this.addr, this.username, this.pass):
+                   new HybridSession(this.addr, this.username, this.pass)
+            } else {
+                this.notify("🎌  webexec server")
+                this.session = new HTTPWebRTCSession(this.fp, this.addr)
             }
+        }
         this.session.onStateChange = (state, failure?) => this.onSessionState(state, failure)
         this.session.onPayloadUpdate = layout => {
             this.notify("TBD: update new layout")
