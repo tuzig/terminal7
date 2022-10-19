@@ -241,8 +241,6 @@ export class Gate {
                 this.updateNameE()
                 this.t7.storeGates()
             }
-            if (this.session.isSSH)
-                this.clear()
             // first onConnected is special if it's a new gate but once
             // connected, we're back to loading the gate
             this.onConnected()
@@ -461,6 +459,7 @@ export class Gate {
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
+            this.clear()
             this.activeW = this.addWindow("", true)
         } else if (winLen > 0) {
             // TODO: validate the current layout is like the state
@@ -672,7 +671,7 @@ export class Gate {
                    new HybridSession(this.addr, this.username, this.pass)
             } else {
                 this.notify("🎌  webexec server")
-                this.session = new HTTPWebRTCSession(this.fp, this.addr)
+                this.session = new HTTPWebRTCSession(this.addr)
             }
         }
         this.session.onStateChange = (state, failure?) => this.onSessionState(state, failure)
