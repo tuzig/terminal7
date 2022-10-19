@@ -94,6 +94,7 @@ test.describe('terminal7 UI', ()  => {
         await page.screenshot({ path: `/result/2.png` })
         await page.locator('.tabbar .reset').click()
         await expect(page.locator('#t0')).toBeVisible()
+        sleep(20)
         await page.keyboard.press('Enter')
         await expect(page.locator('#t0')).toBeHidden()
         await expect(page.locator('.pane')).toHaveCount(1)

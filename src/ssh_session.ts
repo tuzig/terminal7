@@ -115,7 +115,6 @@ export class HybridSession extends SSHSession {
         this.startWatchdog()
         SSH.startSessionByPasswd(this.byPass)
            .then(async ({ session }) => {
-                this.clearWatchdog()
                 terminal7.log("Got ssh session", session)
                 this.id = session
                 const channel = new SSHChannel()
@@ -128,13 +127,14 @@ export class HybridSession extends SSHSession {
                     await this.newWebRTCSession(id, marker)
                 } catch(e) { }
                 this.onStateChange("connected")
-           }).catch(e => {
                 this.clearWatchdog()
+           }).catch(e => {
                 console.log("SSH startSession failed", e)
                 if (e.code === "UNIMPLEMENTED")
                     this.onStateChange("failed", Failure.NotImplemented)
                 else
                     this.onStateChange("failed", Failure.WrongPassword)
+                this.clearWatchdog()
 
            })
     }
@@ -142,6 +142,10 @@ export class HybridSession extends SSHSession {
         let c = {}
         data.split("\r\n").filter(line => line.length > 0).forEach(async line => {
             terminal7.log("line webexec accept: ", line)
+            if (line.includes("no such file")) {
+                this.webrtcSession.onStateChange("failed", Failure.WebexecNotFound)
+                return
+            }
             this.candidate += line
             // ignore echo
             if (this.sentMessages.indexOf(this.candidate) != -1) {
@@ -195,10 +199,11 @@ export class HybridSession extends SSHSession {
                             resolve()
                         }
                         if (state == "failed") {
-                            SSH.closeChannel({channel: id})
                             terminal7.log("Failed to open session", failure)
                             reject()
+                            SSH.closeChannel({channel: id})
                         }
+                        this.clearWatchdog()
                     }
                     this.webrtcSession.onIceCandidate = e => {
                         const candidate = JSON.stringify(e.candidate)

@@ -10,6 +10,7 @@ export enum Failure {
     BadMarker='Bad Marker',
     BadRemoteDescription='Bad Remote Description',
     NotSupported='Not Supported',
+    WebexecNotFound='Webexec Not Found',
     TimedOut='Timeout'
 }
 
@@ -71,14 +72,12 @@ export abstract class BaseSession implements Session {
     constructor() {
         this.t7 = window.terminal7
     }
-    getPayload(): Promise<string | null>{
-        return new Promise(resolve=> {
-            resolve(null)
-        })
+    async getPayload(): Promise<string | null> {
+        return null
     }
-    setPayload(): Promise<void> {
+    setPayload(payload): Promise<void> {
         return new Promise((resolve) => { 
-            console.log(`ignoring payloads on ${typeof this}`)
+            console.log(`ignoring set payload: ${payload}`)
             resolve()
         })
     }
