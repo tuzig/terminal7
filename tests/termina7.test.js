@@ -457,7 +457,7 @@ describe("terminal7", function() {
             t0.pressKey("Enter")
             await sleep(100)
             console.log("t0.out:", t0.out)
-            expect(t0.out).toMatch("Using SSH")
+            expect(t0.out).toMatch("Login to")
             expect(t0.out).toMatch("Username:")
             await sleep(10)
             t0.pressKey("a")

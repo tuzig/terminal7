@@ -9,7 +9,6 @@ export class SSHChannel extends BaseChannel {
         return new Promise((resolve, reject) => {
             SSH.closeChannel({channel: this.id})
                .then(() => {
-                   this.onClose("Shell closed")
                    resolve()
                 })
                 .catch(e => {
@@ -25,6 +24,14 @@ export class SSHChannel extends BaseChannel {
     resize(sx: number, sy: number): Promise<void> {
         return SSH.setPtySize({channel: this.id, width: sx, height: sy})
            .catch(e => console.log("error from setPtySize", e))
+    }
+    handleData(m) {
+        if ('data' in m)
+            this.onMessage(m.data)
+        else {
+            terminal7.log("ssh read got error ", m.error)
+            this.onClose(m.error)
+        }
     }
 }
 // SSHSession is an implmentation of a real time session over ssh
@@ -60,14 +67,6 @@ export class SSHSession extends BaseSession {
            })
     }
 
-    handleData(channel, m) {
-        if ('data' in m)
-            channel.onMessage(m.data)
-        else {
-            terminal7.log("ssh read got error ", m.error)
-            channel.onClose(m.error)
-        }
-    }
     openChannel(cmd: string, parent?: ChannelID, sx?: number, sy?: number):
          Promise<Channel> {
         return new Promise((resolve, reject) => {
@@ -76,7 +75,7 @@ export class SSHSession extends BaseSession {
                .then(({ id }) => {
                    console.log("got new channel with id ", id)
                 channel.id = id
-                SSH.startShell({channel: id, command: cmd}, m => this.handleData(channel, m))
+                SSH.startShell({channel: id, command: cmd}, m => channel.handleData(m))
                    .then(callbackID => {
                         console.log("got from startShell: ", callbackID)
                         resolve(channel, id)
@@ -116,24 +115,17 @@ export class HybridSession extends SSHSession {
         SSH.startSessionByPasswd(this.byPass)
            .then(async ({ session }) => {
                 terminal7.log("Got ssh session", session)
-                this.id = session
-                const channel = new SSHChannel()
-                const z = await SSH.newChannel({session: this.id})
-                const id = z.id
-                terminal7.log("got new channel with id ", id)
-                channel.id = id
-                channel.onClose = () => terminal7.log("webexec accept session closed")
                 try {
-                    await this.newWebRTCSession(id, marker)
+                    await this.newWebRTCSession(session, marker)
                 } catch(e) { }
                 this.onStateChange("connected")
                 this.clearWatchdog()
            }).catch(e => {
                 console.log("SSH startSession failed", e)
                 if (e.code === "UNIMPLEMENTED")
-                    this.onStateChange("failed", Failure.NotImplemented)
+                    this.fail(Failure.NotImplemented)
                 else
-                    this.onStateChange("failed", Failure.WrongPassword)
+                    this.fail(Failure.WrongPassword)
                 this.clearWatchdog()
 
            })
@@ -143,7 +135,7 @@ export class HybridSession extends SSHSession {
         data.split("\r\n").filter(line => line.length > 0).forEach(async line => {
             terminal7.log("line webexec accept: ", line)
             if (line.includes("no such file")) {
-                this.webrtcSession.onStateChange("failed", Failure.WebexecNotFound)
+                this.webrtcSession.fail(Failure.WebexecNotFound)
                 return
             }
             this.candidate += line
@@ -174,10 +166,15 @@ export class HybridSession extends SSHSession {
         })
     }
 
-    async newWebRTCSession(id: number, marker: number): Promise<void> {
+    async newWebRTCSession(session: string, marker: number): Promise<void> {
         let callbackID=""
+        const channel = new SSHChannel()
+        const cid = (await SSH.newChannel({session: session})).id
+        terminal7.log("got new channel with id ", cid)
+        channel.id = cid
+        channel.onClose = () => terminal7.log("webexec accept session closed")
         try {
-            callbackID = await SSH.startShell({channel: id, command: "$HOME/go/bin/webexec accept"},
+            callbackID = await SSH.startShell({channel: cid, command: "$HOME/go/bin/webexec accept"},
                 m => {
                     if (m && m.data)
                         this.onAcceptData(m.data)
@@ -194,21 +191,23 @@ export class HybridSession extends SSHSession {
                     this.webrtcSession.onStateChange = (state, failure?: Failure) => {
                         console.log("State changed", state)
                         if (state == "connected") {
-                            SSH.closeChannel({channel: id})
+                            SSH.closeChannel({channel: cid})
                             this.webrtcSession.onStateChange = this.onStateChange
                             resolve()
                         }
                         if (state == "failed") {
                             terminal7.log("Failed to open session", failure)
+                            if (this.webrtcSession.pc)
+                                this.webrtcSession.pc.onicecandidate = undefined
                             reject()
-                            SSH.closeChannel({channel: id})
+                            SSH.closeChannel({channel: cid})
                         }
                         this.clearWatchdog()
                     }
                     this.webrtcSession.onIceCandidate = e => {
                         const candidate = JSON.stringify(e.candidate)
                         this.sentMessages.push(candidate)
-                        SSH.writeToChannel({channel: id, message: candidate + "\n"})
+                        SSH.writeToChannel({channel: cid, message: candidate + "\n"})
                     }
                     this.webrtcSession.onNegotiationNeeded = () => {
                         terminal7.log("on negotiation needed")
@@ -216,7 +215,7 @@ export class HybridSession extends SSHSession {
                             const offer = JSON.stringify(d)
                             this.webrtcSession.pc.setLocalDescription(d)
                             this.sentMessages.push(offer)
-                            SSH.writeToChannel({channel: id, message: offer + "\n"})
+                            SSH.writeToChannel({channel: cid, message: offer + "\n"})
                         })
                     }
                     this.webrtcSession.connect(marker)

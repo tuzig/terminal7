@@ -75,16 +75,12 @@ export abstract class BaseSession implements Session {
     async getPayload(): Promise<string | null> {
         return null
     }
-    setPayload(payload): Promise<void> {
-        return new Promise((resolve) => { 
-            console.log(`ignoring set payload: ${payload}`)
-            resolve()
-        })
+    // TODO: get it to throw "Not Implemented"
+    async setPayload(payload) {
+        console.log(`ignoring set payload: ${JSON.stringify(payload)}`)
     }
-    reconnect(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            reject()
-        })
+    async reconnect(): Promise<void> {
+        throw "Not Implemented"
     }
     // base disconnect is rejected as it's not supported
     disconnect(): Promise<void>{
