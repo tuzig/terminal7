@@ -645,14 +645,13 @@ export class Gate {
             this.map.showLog(false)
     }
     async askPass() {
-        let res
-        this.map.t0.writeln("  Using SSH")
+        this.map.t0.writeln(`  Login to ${this.name}`)
         const authForm = new Form([
             { prompt: "Username", default: this.username },
             { prompt: "Password", password: true }
         ])
         this.map.showLog(true)
-        res = await authForm.start(this.map.t0)
+        const res = await authForm.start(this.map.t0)
         this.username = res[0]
         this.pass = res[1]
     }
