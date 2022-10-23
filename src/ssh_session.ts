@@ -115,6 +115,7 @@ export class HybridSession extends SSHSession {
         SSH.startSessionByPasswd(this.byPass)
            .then(async ({ session }) => {
                 terminal7.log("Got ssh session", session)
+                this.id = session
                 try {
                     await this.newWebRTCSession(session, marker)
                 } catch(e) { }
