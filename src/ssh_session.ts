@@ -217,7 +217,6 @@ export class HybridSession extends SSHSession {
         })
     } 
     async newWebRTCSession(session: string, marker: number): Promise<void> {
-        let callbackID=""
         const channel = new SSHChannel()
         const cid = (await SSH.newChannel({session: session})).id
         terminal7.log("got new channel with id ", cid)
