@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - support for different shell under SSH - just set the conf
 
+#### Fixed
+
+- when ask not to reconnect, the app closes the gate instead of deleting it
+
 ## 1.0 - 2022/10/2
 
 ### Fixed 

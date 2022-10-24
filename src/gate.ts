@@ -270,7 +270,7 @@ export class Gate {
         switch ( failure ) {
             case Failure.WrongPassword:
                 this.pass = undefined
-                this.retryForm(() => this.CLIConnect(), () => this.delete())
+                this.retryForm(() => this.CLIConnect(), () => this.close())
                 return
             case Failure.NotImplemented:
                 this.notify("Please try again")
