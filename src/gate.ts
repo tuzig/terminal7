@@ -237,7 +237,6 @@ export class Gate {
         if (state == "connected") {
             this.marker = null
             this.notify(`🥂  over ${this.session.isSSH?"SSH":"WebRTC"}`)
-            setTimeout(() => this.map.showLog(false), 1000)
             this.setIndicatorColor("unset")
             if (!this.verified) {
                 this.verified = true
