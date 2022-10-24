@@ -161,12 +161,14 @@ export class T7Map {
      * if the parameters in udefined the function toggles the displays
      */
     showLog(show) {
-        if (Form.activeForm) return
         const e = document.getElementById("log")
         if (show === undefined)
             // if show is undefined toggle current state
             show = !e.classList.contains("show")
-        
+        /* should we?
+        if (!show && Form.activeForm)
+            Form.activeForm.escape(this.t0)
+        */
         if (show) {
             e.classList.remove("hidden")
             e.classList.add("show")
