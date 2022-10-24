@@ -187,17 +187,18 @@ export class HybridSession extends SSHSession {
                 console.log("State changed", state)
                 this.clearWatchdog()
                 if (state == "connected") {
+                    SSH.closeChannel({channel: cid})
                     this.onStateChange(state)
                     this.webrtcSession.onStateChange = this.onStateChange
                     resolve(this.webrtcSession)
                 }
                 if (state == "failed") {
+                    SSH.closeChannel({channel: cid})
                     terminal7.log("Failed to open this.webrtcSession", failure)
                     if (this.webrtcSession.pc)
                         this.webrtcSession.pc.onicecandidate = undefined
                     reject()
                 }
-                SSH.closeChannel({channel: cid})
             }
             this.webrtcSession.onIceCandidate = e => {
                 const candidate = JSON.stringify(e.candidate)
