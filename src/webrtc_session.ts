@@ -60,9 +60,6 @@ export class WebRTCChannel extends BaseChannel {
             this.dataChannel = null
         }
     }
-    public get isSSH() {
-        return false
-    }
 }
 
 export class WebRTCSession extends BaseSession {
@@ -86,6 +83,9 @@ export class WebRTCSession extends BaseSession {
     }
     onIceCandidate(e: RTCPeerConnectionIceEvent): void
     onNegotiationNeeded(ev: Event): void
+    public get isSSH() {
+        return false
+    }
     async connect(marker=-1) {
         console.log("in connect")
         this.startWatchdog()
