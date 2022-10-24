@@ -144,7 +144,6 @@ export class HybridSession extends SSHSession {
                     terminal7.log("signaling over ssh failed", e.message)
                     return
                 }
-                this.routeMethods()
                 return
             }
             if (line.includes("no such file")) {
@@ -244,15 +243,34 @@ export class HybridSession extends SSHSession {
             return this.webrtcSession.openChannel(cmd, parent, sx, sy)
     }
 
-    async reconnect(marker?: string) {
+    async reconnect(marker?: number) {
         this.webrtcSession = null
         return this.connect(marker)
     }
-    routeMethods() {
-        this.close = () =>  this.webrtcSession.close() 
-        this.getPayload = () =>  this.webrtcSession.getPayload()
-        this.setPayload =  (payload: string) =>  this.webrtcSession.setPayload(payload)
-        this.disconnect = () => this.webrtcSession.disconnect()
+    close() {
+        if (this.webrtcSession)
+            return this.webrtcSession.close() 
+        else
+            return super.close()
+    }
+
+    getPayload(): Promise<string> {
+        if (this.webrtcSession)
+            return this.webrtcSession.getPayload() 
+        else
+            return super.getPayload()
+    }
+    setPayload(payload: string): Promise<void>{
+        if (this.webrtcSession)
+            return this.webrtcSession.setPayload(payload) 
+        else
+            return super.setPayload(payload)
+    }
+    disconnect(): Promise<void> {
+        if (this.webrtcSession)
+            return this.webrtcSession.disconnect() 
+        else
+            return super.disconnect()
     }
     public get isSSH() {
         return !this.webrtcSession 
