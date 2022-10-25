@@ -44,7 +44,6 @@ behind-the-NAT connections and more.
 
 Enjoy!
 
-(hit Escape or tap outside to minimize TWR)
 `
 export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 [theme]

@@ -18,64 +18,58 @@ export type Command = {
 
 export function loadCommands(shell: Shell): Map<string, Command> {
     return new Map<string, Command>(Object.entries({
-        'add-host': {
-            name: "add-host",
+        'add': {
+            name: "add",
             help: "Add a new host",
-            usage: "add-host",
+            usage: "a[dd]",
             execute: async () => addHostCMD(shell)
         },
         clear: {
             name: "clear",
             help: "Clear the screen",
-            usage: "clear",
+            usage: "cl[ear]",
             execute: async () => shell.t.clear()
         },
         connect: {
             name: "connect",
             help: "Connect to an existing host",
-            usage: "connect <hostname>",
+            usage: "co[nnect] <gatename>",
             execute: async args => connectCMD(shell, args)
-        },
-        echo: {
-            name: "echo",
-            help: "Echo a message",
-            usage: "echo <message>",
-            execute: async args => echoCMD(shell, args)
         },
         edit: {
             name: "edit",
             help: "Edit a host",
-            usage: "edit <hostname>",
+            usage: "e[dit] <gatename>",
             execute: async args => editCMD(shell, args)
         },
         fortune: {
             name: "fortune",
             help: "Get a fortune",
-            usage: "fortune",
+            usage: "f[ortune]",
             execute: async () => fortuneCMD(shell)
         },
         help: {
             name: "help",
             help: "This help",
-            usage: "help [command]",
+            usage: "h[elp] [command]",
             execute: async args => helpCMD(shell, args)
         },
-        home: {
-            name: "home",
-            help: "Go to the home page",
-            usage: "home",
-            execute: async () => homeCMD()
+        map: {
+            name: "map",
+            help: "Back to the map",
+            usage: "m[ap]",
+            execute: async () => terminal7.goHome()
         },
-        hosts: {
-            name: "hosts",
-            help: "List all hosts",
-            usage: "hosts",
+        gates: {
+            name: "gates",
+            help: "List all gates",
+            usage: "g[ates]",
             execute: async () => hostsCMD(shell)
         },
         reset: {
             name: "reset",
-            help: "Reset a running or the active host",
-            usage: "reset [hostname]",
+            help: "Reset a connected gate",
+            usage: "r[eset] [gatename]",
             execute: async args => resetCMD(shell, args)
         },
     }))
@@ -84,15 +78,18 @@ export function loadCommands(shell: Shell): Map<string, Command> {
 async function helpCMD(shell: Shell, args: string[]) {
     let help = ""
     if (!args[0]) {
-        help += "\x1B[1mAvailable commands:\x1B[0m\n"
-        for (const [name, command] of shell.commands) {
-            help += `  ${name}: ${command.help}\n`
+        help += `This CLI provides full control over Terminal7.
+
+\x1B[1mAvailable commands:\x1B[0m\n
+`
+        for (const [, command] of shell.commands) {
+            help += `  ${command.usage}: ${command.help}\n`
         }
         help += "\nType 'help <command>' for more information."
     } else {
         const command = shell.commands.get(args[0])
         if (!command)
-            help = `Command not found: ${args[0]}`
+            help = `Command not found: "${args[0]}" (hint: \`help\`)`
         else {
             help += `\x1B[1m${command.name}\x1B[0m\n`
             help += `  ${command.help}\n`
@@ -106,10 +103,6 @@ async function fortuneCMD(shell: Shell) {
     const res = await fetch(fortuneURL)
     const abages = (await res.text()).split("%\n")
     shell.t.writeln(abages[Math.floor(Math.random() * abages.length)].trim())
-}
-
-async function echoCMD(shell: Shell, args: string[]) {
-    shell.t.writeln(args.join(" "))
 }
 
 async function connectCMD(shell:Shell, args: string[]) {
@@ -384,11 +377,6 @@ async function hostsCMD(shell: Shell) {
     }
     shell.t.writeln(res)
 }
-
-async function homeCMD() {
-    terminal7.goHome()
-}
-
 export async function CLIConnect(shell: Shell, gate: Gate) {
     return new Promise<void>(resolve => {
         gate.connect(() => {

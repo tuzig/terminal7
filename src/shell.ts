@@ -34,9 +34,9 @@ export class Shell {
         switch (key) {
             case "Enter":
                 this.t.write("\n")
-            await this.handleLine(this.currentLine)
-            this.currentLine = ''
-            break
+                await this.handleLine(this.currentLine)
+                this.currentLine = ''
+                break
             case "Backspace":
                 if (this.currentLine.length > 0) {
                 this.currentLine = this.currentLine.slice(0, -1)
@@ -61,11 +61,19 @@ export class Shell {
     async execute(cmd: string, args: string[]) {
         if (!cmd)
             return
-        const command = this.commands.get(cmd)
-        if (!command)
-            return this.t.writeln(`Command not found: ${cmd}`)
+        let exec = null
+        for (const c of this.commands) {
+            if (c[0].startsWith(cmd))
+                if (exec == null)
+                    exec = c[1].execute
+                else
+                    return this.t.writeln(`Ambiguous command: ${cmd}`)
+        }
+
+        if (exec == null)
+            return this.t.writeln(`Command not found: "${args[0]}" (hint: \`help\`)`)
         this.active = false
-        await command.execute(args)
+        exec(args)
         this.active = true
     }
 

@@ -435,7 +435,7 @@ describe("terminal7", function() {
         it("can open connection form without SSH", async () => {
             const t0 = t.map.t0
             t.map.shell.start()
-            t.map.shell.runCommand('add-host', [])
+            t.map.shell.runCommand('add', [])
             t0.pressKey("Enter")
             await sleep(10)
             t0.pressKey("1")
@@ -450,7 +450,7 @@ describe("terminal7", function() {
             t.map.t0 = t0
             HTTPWebRTCSession.fail = true
 			globalThis.webkit = { messageHandlers: { bridge: 1 } } // mock ios
-            t.map.shell.runCommand('add-host', [])
+            t.map.shell.runCommand('add', [])
             await sleep(10)
             t0.pressKey("Enter")
             await sleep(10)

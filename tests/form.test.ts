@@ -9,7 +9,7 @@ import { afterEach, vi, describe, it, expect, beforeEach,beforeAll } from 'vites
 import { sleep, resizeObs } from './infra'
 import { Form } from '../src/form'
 import { T7Map } from '../src/map'
-import { Terminal } from '@tuzig/xterm'
+import { IDisposable } from '@tuzig/xterm'
 
 vi.mock('@tuzig/xterm')
 
@@ -18,6 +18,7 @@ describe("form", () => {
     let map
     let t
     let f: Form
+    let keyListener: IDisposable
     // simulates a key press with the next char in the word
     function writeChar() {
         const c = word[0] || "Enter"
@@ -36,9 +37,10 @@ describe("form", () => {
         map.open()
         t = map.t0
         t.out = ""
-        t.onKey(ev => f.onKey(ev.domEvent))
+        keyListener = t.onKey(ev => f.onKey(ev.domEvent))
         f = null
     })
+    afterEach(() => keyListener.dispose())
     it("can process a simple form", async () => {
         f = new Form([{ prompt:"name" }])
         word = "yossi"
