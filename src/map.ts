@@ -59,12 +59,14 @@ export class T7Map {
             const log = document.getElementById("log")
             if (!log)
                 return
+            /* TODO: on the iPad things are probably better without this code
             const resizeObserver = new window.ResizeObserver(() => {
                 setTimeout(() => fitAddon.fit(), 750)
             })
             resizeObserver.observe(log)
+            */
             log.addEventListener("transitionend", () => {
-                fitAddon.fit()
+                // fitAddon.fit()
                 if (log.classList.contains("show"))
                     this.t0.focus()
                 else {
