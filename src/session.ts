@@ -45,6 +45,7 @@ export interface Session {
     reconnect(marker?: number): Promise<void>
     disconnect(): Promise<void>
     connect(marker?: number): void
+    fail(failure?: Failure): void
 }
 
 export abstract class BaseChannel implements Channel {

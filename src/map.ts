@@ -7,16 +7,17 @@
  *  License: GPLv3
  */
 
-import { Form } from './form'
 import { Gate } from './gate'
 import { Terminal } from '@tuzig/xterm'
 import { FitAddon } from "xterm-addon-fit"
 import { WebglAddon } from 'xterm-addon-webgl'
 import XtermWebfont from 'xterm-webfont'
+import { Shell } from './shell'
 
 export class T7Map {
     t0: Terminal
     ttyWait: number
+    shell: Shell
     open() {
         return new Promise(resolve => {
             this.t0 = new Terminal({
@@ -30,23 +31,16 @@ export class T7Map {
                 rows: 20,
                 cols: 55,
             })
+            this.shell = new Shell(this)
             const e = document.getElementById("t0")
             const fitAddon = new FitAddon()
             this.t0.loadAddon(fitAddon)
             this.t0.loadAddon(new XtermWebfont())
             // this.t0.attachCustomKeyEventHandler(ev => {
             this.t0.onKey(iev => {
+                this.interruptTTY()
                 const ev = iev.domEvent
-                const key = ev.key
-                if (key == 'Escape') {
-                    if (Form.activeForm)
-                        Form.activeForm.escape(this.t0)
-                    this.showLog(false)
-				} else if (Form.activeForm)
-                    Form.activeForm.onKey(ev)
-                else 
-                    this.t0.writeln("🚧 Under Construction 🚧")
-                ev.preventDefault()
+                this.shell.keyHandler(ev)
             })
             this.t0.loadWebfontAndOpen(e).then(() => {
                 const webGLAddon = new WebglAddon()
@@ -57,6 +51,7 @@ export class T7Map {
                 try {
                     this.t0.loadAddon(webGLAddon)
                 } catch (e) { console.log("no webgl: " +e.toString()) }
+                this.shell.start()
                 resolve()
             })
             this.refresh()
@@ -64,12 +59,14 @@ export class T7Map {
             const log = document.getElementById("log")
             if (!log)
                 return
+            /* TODO: on the iPad things are probably better without this code
             const resizeObserver = new window.ResizeObserver(() => {
                 setTimeout(() => fitAddon.fit(), 750)
             })
             resizeObserver.observe(log)
+            */
             log.addEventListener("transitionend", () => {
-                fitAddon.fit()
+                // fitAddon.fit()
                 if (log.classList.contains("show"))
                     this.t0.focus()
                 else {
@@ -173,7 +170,6 @@ export class T7Map {
             e.classList.remove("hidden")
             e.classList.add("show")
             document.getElementById("log-button").classList.add("on")
-
         } else {
             e.classList.remove("show")
             document.getElementById("log-button").classList.remove("on")
@@ -185,18 +181,21 @@ export class T7Map {
                 this.t0.write(m[0])
                 if (m.length > 1) 
                     setTimeout(() => _tty(m.substring(1)), this.ttyWait)
-                else
+                else {
                     this.ttyWait = 0
+                    this.shell.printPrompt()
+                }
             }
         }
         this.ttyWait = 42
         _tty(msg)
     }
     interruptTTY() {
-        if (this.ttyWait != 0) {
+        if (this.ttyWait) {
             this.ttyWait = 0
             this.t0.scrollToBottom()
-            this.t0.writeln("...INTERRUPTED")
+            this.t0.write("...INTERRUPTED\n\n")
+            this.shell.printPrompt()
         }
     }
 }

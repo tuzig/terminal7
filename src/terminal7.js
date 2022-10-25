@@ -25,7 +25,6 @@ import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Storage } from '@capacitor/storage'
-import { Form } from './form'
 import { PeerbookConnection } from './peerbook'
 
 
@@ -34,6 +33,7 @@ const WELCOME=`    🖖 Greetings & Salutations 🖖
 
 Thanks for trying Terminal7. This is TWR, a local
 terminal used to print log messages and get your input.
+Try typing 'help' to see what you can do.
 
 To use a real terminal you'll need a remote server.
 T7 can connect to a server using SSH or WebRTC.
@@ -44,9 +44,8 @@ behind-the-NAT connections and more.
 
 Enjoy!
 
-(hit Escape or tap outside to minimize TWR)
 `
-const DEFAULT_DOTFILE = `# Terminal7's configurations file
+export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 [theme]
 # foreground = "#00FAFA"
 # background = "#000"
@@ -164,9 +163,7 @@ export class Terminal7 {
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         document.getElementById('add-gate').addEventListener(
             'click', async (ev) => {
-                this.map.interruptTTY()
-                this.map.showLog(true)
-                setTimeout(() => this.connect(), 50)
+                setTimeout(() => this.map.shell.runCommand('add', []), 50)
                 ev.stopPropagation()
             })
 		document.getElementById('toggle-changelog')
@@ -330,34 +327,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             })
         })
     }
-    async peerbookForm() {
-        let dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
-
-        const f = new Form([
-            {
-                prompt: "Email",
-                validator: email => !email.match(/.+@.+\..+/) ? "Must be a valid email" : ''
-            },
-            { prompt: "Peer's name" }
-        ])
-        f.start(this.map.t0).then(results => {
-            const email = results[0],
-                peername = results[1]
-
-            dotfile += `
-[peerbook]
-email = "${email}"
-peer_name = "${peername}"\n`
-
-            Storage.set({ key: "dotfile", value: dotfile })
-            this.loadConf(TOML.parse(dotfile))
-            this.notify("Your email was added to the dotfile")
-            this.pbConnect()
-            this.clear()
-        }).catch(() => {
-            this.map.showLog(false)
-        })
-    }
     pbConnect() {
         return new Promise((resolve) => {
             if (!this.conf.peerbook || !this.conf.peerbook.email || 
@@ -485,8 +454,7 @@ peer_name = "${peername}"\n`
         this.map.showLog(false)
         this.focus()
         this.longPressGate = null
-        if (Form.activeForm)
-            Form.activeForm.escape(this.map.t0)
+        this.map.shell.escapeActiveForm()
     }
     goHome() {
         Storage.remove({key: "last_state"}) 
@@ -513,13 +481,13 @@ peer_name = "${peername}"\n`
             ((this.activeG != null) && (gate != this.activeG)))
             return
         
-        const reconnectForm = new Form([
+        const reconnectForm = [
             { prompt: "Reconnect" },
             { prompt: "Close" }
-        ])
+        ]
         let res
         try {
-            res = await reconnectForm.menu(this.map.t0)
+            res = await this.map.shell.runForm(reconnectForm, "menu")
         } catch(e) {
             res = null
         }
@@ -551,7 +519,14 @@ peer_name = "${peername}"\n`
         // TODO: add color based on level and ttl
         this.map.interruptTTY()
         this.map.t0.scrollToBottom()
-        this.map.t0.writeln(` \x1B[2m${t}\x1B[0m ${message}`)
+        const formatted = `\x1B[2m${t}\x1B[0m ${message}`
+        if (this.map.shell.activeForm)
+            this.map.shell.printBelowForm(formatted)
+        else {
+            this.map.t0.write("\x1B[s\n\x1B[A\x1B[L") // save cursor, insert line
+            this.map.t0.writeln(formatted)
+            this.map.t0.write("\x1B[u\x1B[B") // restore cursor
+        }
         if (!dontShow)
             this.map.showLog(true)
     }
@@ -839,7 +814,7 @@ peer_name = "${peername}"\n`
             const gate = gatePad.gate
             if (!this.longPressGate && gate)
                 this.longPressGate = this.run(() => {
-                    gate.edit()
+                    this.map.shell.runCommand("edit", [gate.name])
                 }, this.conf.ui.quickest_press)
             ev.stopPropagation()
             ev.preventDefault()
@@ -898,11 +873,10 @@ peer_name = "${peername}"\n`
                     return
                 if (!gate.fp || gate.verified && gate.online) {
                     this.activeG = gate
-                    this.map.interruptTTY()
-                    await gate.connect()
+                    await this.map.shell.runCommand("connect", [gate.name])
                 }
                 else
-                    gate.edit()
+                    this.map.shell.runCommand("edit", [gate.name])
             }
             ev.stopPropagation()
             ev.preventDefault()
@@ -979,48 +953,6 @@ peer_name = "${peername}"\n`
             }
         })
         this.map.refresh()
-    }
-    async connect() {
-        if (!this.conf.peerbook) {
-            const pbForm = new Form([
-                { prompt: "Add static host" },
-                { prompt: "Setup peerbook" }
-            ])
-            let choice
-            try {
-                choice = await pbForm.menu(this.map.t0)
-            } catch (e) {
-                this.map.showLog(false)
-                return
-            }
-            if (choice == "Setup peerbook") {
-                this.peerbookForm()
-                return
-            }
-        }
-        const f = new Form([
-            { prompt: "Enter destination (ip or domain)" }
-        ])
-        let hostname
-        try {
-            hostname = (await f.start(this.map.t0))[0]
-        } catch (e) { 
-            this.map.showLog(false)
-            return
-        }
-
-        if (this.validateHostAddress(hostname)) {
-            this.map.t0.writeln(`  ${hostname} already exists, connecting...`)
-            this.gates.get(hostname).connect()
-            return
-        }
-        this.activeG = this.addGate({
-            name: "temp_" + Math.random().toString(16).slice(2), // temp random name
-            addr: hostname,
-            id: hostname
-        }, false)
-        this.map.refresh()
-        this.activeG.CLIConnect()
     }
     clearTempGates() {
         this.gates.forEach(g => {

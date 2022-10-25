@@ -15,10 +15,9 @@ import { SSHSession, HybridSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
 import { Capacitor } from '@capacitor/core'
-import { Storage } from '@capacitor/storage'
-import { Form, Fields } from './form.js'
 import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
 import { Window } from './window.js'
+import { CLIConnect } from './commands.js'
 
 
 const FAILED_COLOR = "red"// ashort period of time, in milli
@@ -92,7 +91,7 @@ export class Gate {
         if (t) {
             t = t.content.cloneNode(true)
             t.querySelector(".reset").addEventListener('click', ev => {
-                this.reset()
+                this.t7.map.shell.runCommand("reset", [this.name])
                 ev.preventDefault()
                 ev.stopPropagation()
             })
@@ -123,9 +122,8 @@ export class Gate {
         this.t7.storeGates()
 		this.map.remove(this)
     }
-    /*
+    /* TODO: updae edit in commands
      * edit start the edit-host user-assitance
-     */
     edit() {
         if (typeof(this.fp) == "string") {
             this.notify("Got peer from \uD83D\uDCD6, connect only")
@@ -203,6 +201,7 @@ export class Gate {
             }
         }
     }
+     */
     focus() {
         this.map.showLog(false)
         // hide the current focused gate
@@ -269,7 +268,7 @@ export class Gate {
         switch ( failure ) {
             case Failure.WrongPassword:
                 this.pass = undefined
-                this.retryForm(() => this.CLIConnect(), () => this.close())
+                this.retryForm(() => CLIConnect(this.map.shell, this), () => this.close())
                 return
             case Failure.NotImplemented:
                 this.notify("Please try again")
@@ -295,34 +294,44 @@ export class Gate {
         }
         if (this.name.startsWith("temp")) {
             (async () => {
-                const rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${this.fp}" >> ~/.config/webexec/authorized_fingerprints`
-                this.map.t0.writeln("  Failed to connect")
+                const fp = await this.t7.getFingerprint(),
+                    rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${fp}" >> ~/.config/webexec/authorized_fingerprints`
+                this.map.t0.writeln("Failed to connect")
                 let ans:string
-                const verifyForm = new Form([{
+                const verifyForm = [{
                     prompt: `Does the address \x1B[1;37m${this.addr}\x1B[0m seem correct?`,
                     values: ["y", "n"],
                     default: "y"
-                }])
+                }]
                 try {
-                    ans = (await verifyForm.start(this.map.t0))[0]
-                } catch(e) {this.onFormError(e)}
+                    ans = (await this.map.shell.runForm(verifyForm, "text"))[0]
+                } catch(e) {
+                    this.delete()
+                    return
+                }
 
-                if (ans == "n")
-                    return this.t7.connect()
-                const webexecForm = new Form([{
+                if (ans == "n") {
+                    this.delete()
+                    setTimeout(() => this.map.shell.handleLine("add-host"), 100)
+                    return
+                }
+                const webexecForm = [{
                     prompt: `Make sure webexec is running on ${this.addr}:
-                        \n\x1B[1m${rc}\x1B[0m\n \n  Copy to clipboard?`,
+                        \n\x1B[1m${rc}\x1B[0m\n\nCopy to clipboard?`,
 					values: ["y", "n"],
                     default: "y"
-                }])
+                }]
                 try {
-                    ans = (await webexecForm.start(this.map.t0))[0]
-                } catch(e) {this.onFormError(e)}
+                    ans = (await this.map.shell.runForm(webexecForm, "text"))[0]
+                } catch(e) {
+                    this.delete()
+                    return
+                }
                 if (ans == "y")
                     Clipboard.write({ string: rc })
-				this.retryForm(() => {
-                    this.map.t0.writeln("\n  Retrying...")
-                    this.CLIConnect()
+				this.retryForm(async () => {
+                    this.map.t0.writeln("Retrying...")
+                    await CLIConnect(this.map.shell, this)
 				}, () => this.delete())
             })()
         } else
@@ -342,10 +351,12 @@ export class Gate {
      * connect connects to the gate
      */
     async connect(onConnected = () => this.load()) {
+        
         // do nothing when the network is down
         if (!this.t7.netStatus || !this.t7.netStatus.connected)
             return
         this.onConnected = onConnected
+        this.t7.activeG = this
         document.title = `Terminal 7: ${this.name}`
         // if we're already boarding, just focus
         if (this.session && this.session.watchdog)
@@ -385,6 +396,9 @@ export class Gate {
     }
     // reset reset's a gate connection by disengaging and reconnecting
     reset() {
+        this.map.shell.resetGate(this)
+        /* TODO: delete after reset works
+<<<<<<< HEAD
         this.map.showLog(true)
         const fields = [
             { prompt: "Reset connection & Layout" },
@@ -453,6 +467,7 @@ export class Gate {
                     break
             }
         }).catch(ev => this.onFormError(ev))
+        */
     }
     setLayout(state: object) {
         console.log("in setLayout", state)
@@ -626,16 +641,16 @@ export class Gate {
     async copyFingerprint() {
         const fp = await this.t7.getFingerprint(),
               cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
-        const fpForm = new Form([{ 
+        const fpForm = [{ 
             prompt: `\n  ${this.addr} refused our fingerprint.
   \n\x1B[1m${cmd}\x1B[0m\n
   Copy to clipboard and connect with SSH?`,
             values: ["y", "n"],
             default: "y"
-        }])
+        }]
         let ans: string
         try {
-            ans = (await fpForm.start(this.map.t0))[0]
+            ans = (await this.map.shell.runForm(fpForm, "text"))[0]
         } catch(e) { this.onFormError(e) }
         if (ans == "y") {
             Clipboard.write({ string: cmd })
@@ -645,19 +660,19 @@ export class Gate {
             this.map.showLog(false)
     }
     async askPass() {
-        this.map.t0.writeln(`  Login to ${this.name}`)
-        const authForm = new Form([
+        const name = this.name.startsWith("temp_")?this.addr:this.name
+        this.map.t0.writeln(`  Login to ${name}`)
+        const authForm = [
             { prompt: "Username", default: this.username },
             { prompt: "Password", password: true }
-        ])
-        this.map.showLog(true)
-        const res = await authForm.start(this.map.t0)
+        ]
+        const res = await this.map.shell.runForm(authForm, "text")
         this.username = res[0]
         this.pass = res[1]
     }
     async completeConnect(): void {
-        if (Form.activeForm)
-            Form.activeForm.escape(this.map.t0)
+        if (this.map.shell.activeForm)
+            this.map.shell.escapeActiveForm()
 
         if (this.fp) {
             this.notify("🎌  PeerBook")
@@ -697,60 +712,21 @@ export class Gate {
             }
         })
     }
-    CLIConnect() {
-        this.connect(() => {
-            if (!this.name.startsWith("temp")) {
-                this.load()
-                return
-            }
-            const saveForm = new Form([{
-                prompt: "Save gate?",
-                default: "y",
-                values: ["y", "n"]
-            } ])
-            saveForm.start(this.map.t0).then(res => {
-                if (res[0] == "y") {
-                    const validated = this.t7.validateHostName(this.addr)
-                    const fields: Fields = [{
-                        prompt: "Enter name",
-                        validator: (a) => this.t7.validateHostName(a),
-                    }]
-                    if (!validated)
-                        fields[0].default = this.addr
-                    const nameForm = new Form(fields)
-                    nameForm.start(this.map.t0).then(res => {
-                        const name = res[0]
-                        this.name = name
-                        this.nameE = this.map.add(this)
-                        this.updateNameE()
-                        this.store = true
-                        this.t7.storeGates()
-                        this.map.showLog(false)
-                        this.load()
-                    }).catch(e => this.onFormError(e))
-                } else {
-                    this.t7.clear()
-                    this.load()
-                    this.delete()
-                }
-            }).catch(e => this.onFormError(e))
-        })
-    }
 	async retryForm(retry: () => void, cancel: () => void) {
         this.map.showLog(true)
-		const retryForm = new Form([{
+		const retryForm = [{
 			prompt: "Retry connection?",
 			values: ["y", "n"],
 			default: "y"
-		}])
-		retryForm.start(this.map.t0).then(results => {
+		}]
+		this.map.shell.runForm(retryForm, "text").then(results => {
             if (results[0] == "y")
                 retry()
             else {
                 this.map.showLog(false)
                 cancel()
             }
-        }).catch(e => this.onFormError(e))
+        }).catch(() => cancel())
 	}
     onFormError(err) {
         this.t7.log("Form error:", err.message)

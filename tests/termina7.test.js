@@ -434,29 +434,31 @@ describe("terminal7", function() {
     describe("gate", () => {
         it("can open connection form without SSH", async () => {
             const t0 = t.map.t0
-            t.connect()
+            t.map.shell.start()
+            t.map.shell.runCommand('add', [])
             t0.pressKey("Enter")
             await sleep(10)
             t0.pressKey("1")
             t0.pressKey("Enter")
+            t0.pressKey("n")
+            t0.pressKey("Enter")
             await sleep(100)
-            expect(t0.out).toMatch("webexec")
-            expect(t0.out).toMatch(/over WebRTC\s+Save gate\? \[Y\/n\]:\s*$/)
+            console.log("t0.out:", t0.out)
+            expect(t0.out).toMatch(/webexec.+over WebRTC/)
         })
         it("can connect to SSH through form", async () => {
-            const map = new T7Map()
-            map.open()
             const t0 = t.map.t0
+            t.map.shell.start()
             t.map.t0 = t0
             HTTPWebRTCSession.fail = true
 			globalThis.webkit = { messageHandlers: { bridge: 1 } } // mock ios
-            t.connect()
+            t.map.shell.runCommand('add', [])
+            await sleep(10)
             t0.pressKey("Enter")
             await sleep(10)
             t0.pressKey("2")
             t0.pressKey("Enter")
             await sleep(100)
-            console.log("t0.out:", t0.out)
             expect(t0.out).toMatch("Login to")
             expect(t0.out).toMatch("Username:")
             await sleep(10)
