@@ -5,6 +5,7 @@ import { Storage } from "@capacitor/storage"
 import { Terminal7, DEFAULT_DOTFILE } from "./terminal7"
 import { Gate } from "./gate"
 import { Fields } from "./form"
+import fortuneURL from "../resources/fortune.txt"
 
 declare const terminal7 : Terminal7
 
@@ -102,8 +103,9 @@ async function helpCMD(shell: Shell, args: string[]) {
 }
 
 async function fortuneCMD(shell: Shell) {
-    const res = await fetch("../resources/fortune.txt")
-    shell.t.writeln((await res.text()).split("%\n")[Math.floor(Math.random() * 100)].trim())
+    const res = await fetch(fortuneURL)
+    const abages = (await res.text()).split("%\n")
+    shell.t.writeln(abages[Math.floor(Math.random() * abages.length)].trim())
 }
 
 async function echoCMD(shell: Shell, args: string[]) {
