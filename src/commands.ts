@@ -310,7 +310,8 @@ async function editCMD (shell:Shell, args: string[]) {
             default: gate.addr,
             validator: a => gate.t7.validateHostAddress(a)
         },
-        { prompt: "Username", default: gate.username }
+        { prompt: "Username", default: gate.username },
+        { prompt: "SSH only", values: ["y", "n"], default: gate.onlySSH?"y":"n" },
     ]
     const fDel = [{
         prompt: `Delete ${gate.name}?`,
@@ -327,7 +328,7 @@ async function editCMD (shell:Shell, args: string[]) {
     } catch (e) {
         return
     }
-    const gateAttrs = ["name", "addr", "username"]
+    const gateAttrs = ["name", "addr", "username", "onlySSH"]
     switch (choice) {
         case 'Connect':
             await connectCMD(shell, [hostname])
@@ -349,7 +350,8 @@ async function editCMD (shell:Shell, args: string[]) {
                 return
             }
             gateAttrs.filter((_, i) => enabled[i])
-                .forEach((k, i) => gate[k] = res[i])
+                     .forEach((k, i) => 
+                        gate[k] = (k == 'onlySSH')?res[i] == 'y':res[i])
             if (enabled[1]) {
                 gate.t7.gates.delete(gate.id)
                 gate.t7.gates.set(gate.id, gate)
