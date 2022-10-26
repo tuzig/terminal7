@@ -1,5 +1,4 @@
 import { Shell } from "./shell"
-import { WebRTCSession } from "./webrtc_session"
 import * as TOML from '@tuzig/toml'
 import { Storage } from "@capacitor/storage"
 import { Terminal7, DEFAULT_DOTFILE } from "./terminal7"
@@ -224,7 +223,7 @@ async function resetCMD(shell: Shell, args: string[]) {
         { prompt: "\x1B[31mFactory reset\x1B[0m" },
     ]
     const factoryResetVerify = [{
-        prompt: `Factory reset will remove all gates,\n    the certificate and configuration changes.`,
+        prompt: `Factory reset will remove the certificate,\n     all gates and configuration`,
         values: ["y", "n"],
         default: "n"
     }]
@@ -241,6 +240,7 @@ async function resetCMD(shell: Shell, args: string[]) {
     let ans
     switch (choice) {
         case "Reset connection":
+            // TODO: simplify
             gate.disengage().then(async () => {
                 if (gate.session) {
                     gate.session.close()
@@ -276,22 +276,13 @@ async function resetCMD(shell: Shell, args: string[]) {
             }
             if (ans == "y") {
                 gate.t7.factoryReset()
-                gate.clear()
-                gate.t7.goHome()
+                gate.close()
             }
             else
                 shell.map.showLog(false)
             break
         case "Close gate":
-            gate.boarding = false
-            gate.clear()
-            gate.updateNameE()
-            if (gate.session) {
-                gate.session.close()
-                gate.session = null
-            }
-            // we need the timeout as cell.focus is changing the href when dcs are closing
-            setTimeout(() => gate.t7.goHome(), 100)
+            gate.close()
             break
     }
 }
