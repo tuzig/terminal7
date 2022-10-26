@@ -222,7 +222,7 @@ async function resetCMD(shell: Shell, args: string[]) {
         values: ["y", "n"],
         default: "n"
     }]
-    if (gate.session instanceof WebRTCSession)
+    if (!gate.session.onlySSH)
         // Add the connection reset option for webrtc
         fields.splice(0,0, { prompt: "Reset connection" })
     shell.t.writeln(`\x1B[4m${gate.name}\x1B[0m`)
