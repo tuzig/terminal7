@@ -107,6 +107,7 @@ async function fortuneCMD(shell: Shell) {
 
 async function connectCMD(shell:Shell, args: string[]) {
     const hostname = args[0]
+    shell.map.showLog(true)
     if (!hostname)
         return shell.t.writeln("Missing hostname")
     const gate = shell.getGate(hostname)
@@ -115,6 +116,12 @@ async function connectCMD(shell:Shell, args: string[]) {
     await new Promise<void>((resolve) => {
         gate.connect(() => {
             gate.load()
+            Storage.get({key: "first_gate"}).then(v => {
+                if (v.value != "nope") {
+                    terminal7.toggleHelp()
+                    Storage.set({key: "first_gate", value: "nope"}) 
+                }
+            })
             resolve()
         }, () => {
             shell.t.writeln(`Failed to connect to ${hostname}`)
@@ -136,10 +143,8 @@ async function addCMD(shell: Shell) {
             terminal7.log("add cmd menu got error: ", e)
             return
         }
-        if (choice == "Setup peerbook") {
-            await peerbookForm(shell)
-            return
-        }
+        if (choice == "Setup peerbook")
+            return peerbookForm(shell)
     }
     const f = [
         { prompt: "Enter destination (ip or domain)" }
@@ -192,7 +197,8 @@ async function peerbookForm(shell: Shell) {
     dotfile += `
 [peerbook]
 email = "${email}"
-peer_name = "${peername}"\n`
+peer_name = "${peername}"
+`
 
     Storage.set({ key: "dotfile", value: dotfile })
     terminal7.loadConf(TOML.parse(dotfile))
@@ -222,7 +228,8 @@ async function resetCMD(shell: Shell, args: string[]) {
         values: ["y", "n"],
         default: "n"
     }]
-    if (!gate.session.onlySSH)
+    // TODO: use isSSH
+    if (gate.session instanceof WebRTCSession)
         // Add the connection reset option for webrtc
         fields.splice(0,0, { prompt: "Reset connection" })
     shell.t.writeln(`\x1B[4m${gate.name}\x1B[0m`)
