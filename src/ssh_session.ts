@@ -141,7 +141,7 @@ export class HybridSession extends SSHSession {
                     await this.openWebRTCSession(cid, marker)
                 } catch (e) {
                     this.webrtcSession = null
-                    terminal7.log("signaling over ssh failed", e.message)
+                    terminal7.log("signaling over ssh failed", e)
                     return
                 }
                 return

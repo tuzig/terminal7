@@ -355,7 +355,6 @@ async function editCMD (shell:Shell, args: string[]) {
                 .forEach((k, i) => gate[k] = res[i])
             if (enabled[1]) {
                 gate.t7.gates.delete(gate.id)
-                gate.id = gate.addr
                 gate.t7.gates.set(gate.id, gate)
             }
             gate.t7.storeGates()

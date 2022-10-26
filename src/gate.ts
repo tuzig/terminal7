@@ -180,7 +180,6 @@ export class Gate {
                                         this.onlySSH = this.onlySSH == 'y'
                                         if (enabled[1]) {
                                             this.t7.gates.delete(this.id)
-                                            this.id = this.addr
                                             this.t7.gates.set(this.id, this)
                                         }
                                         this.t7.storeGates()
@@ -705,12 +704,6 @@ export class Gate {
             this.setLayout(layout)
         })
         document.getElementById("map").classList.add("hidden")
-        Storage.get({key: "first_gate"}).then(v => {
-            if (v.value != "nope") {
-                this.t7.toggleHelp()
-                Storage.set({key: "first_gate", value: "nope"}) 
-            }
-        })
     }
 	async retryForm(retry: () => void, cancel: () => void) {
         this.map.showLog(true)

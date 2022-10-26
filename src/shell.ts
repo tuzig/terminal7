@@ -173,7 +173,16 @@ export class Shell {
     }
     
     getGate(name: string) {
-        return terminal7.gates.get(name)
+        let ret = terminal7.gates.get(name)
+        if (!ret) {
+            for (const entry of terminal7.gates) {
+                if (entry[1].name == name) {
+                    ret = entry[1]
+                    break
+                }
+            }
+        }
+        return ret
     }
 }
 

@@ -2,9 +2,7 @@ import { test, expect, Page, BrowserContext } from '@playwright/test'
 import waitPort from 'wait-port'
 import * as redis from 'redis'
 
-
-    const local = process.env.LOCALDEV !== undefined,
-          url = local?"http://localhost:3000":"http://terminal7"
+const url = process.env.LOCALDEV?"http://localhost:3000":"http://terminal7"
 
 test.describe('terminal7 session', ()  => {
 
@@ -55,6 +53,7 @@ cut_min_speed = 2.5
 pinch_max_y_velocity = 0.1
 [peerbook]
 email = "joe@example.com"
+name = "client"
 insecure = true`)
         })
         // first page session for just for storing the dotfiles
@@ -90,6 +89,7 @@ insecure = true`)
         await page.screenshot({ path: `/result/second.png` })
         // await expect(page.locator('.pane')).toHaveCount(1)
         const help  = page.locator('#help-gate')
+        await page.screenshot({ path: '/result/3.png' })
         await expect(help).toBeVisible()
         await help.click()
         await expect(help).toBeHidden()

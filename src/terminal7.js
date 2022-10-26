@@ -225,7 +225,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                  terminal7.log("failed to parse gates", value, e)
                 gates = []
             }
-            gates.forEach((g) => {
+            gates.forEach(g => {
                 g.store = true
                 this.addGate(g).e.classList.add("hidden")
             })
@@ -297,6 +297,10 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             }
         })
     }
+    /*
+     * restoreState is a future feature that uses local storage to restore
+     * terminal7 to it's last state
+     */
     restoreState() {
         return new Promise((resolve, reject) => {
             if (!this.conf.ui.autoRestore) {
@@ -307,11 +311,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 if (!value)
                     reject()
                 else {
-                    const state = JSON.parse(value),
-                          id = state.id
-                    let gate
-
-                    gate = this.gates.get(id)
+                    const state = JSON.parse(value)
+                    let gate = this.gates.get(state.gateId)
                     if (!gate) {
                         console.log("Invalid restore state. Starting fresh", state)
                         this.notify("Invalid restore state. Starting fresh")
@@ -415,12 +416,11 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
      */
     // TOFO: add onMap to props
     addGate(props, onMap = true) {
-        let p = props || {},
-            addr = p.addr
+        let p = props || {}
         // add the id
-        p.id = p.fp || addr
-
+        p.id = p.fp || p.name
         let g = new Gate(p)
+        g.onlySSH = props.onlySSH == 'y'
         this.gates.set(p.id, g)
         g.open(this.e)
         if (onMap) {
@@ -741,9 +741,12 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
             return
         }
-        var g = this.gates.get(m.source_fp)
-        if (!g)
+        const id = m.source_fp
+        var g = this.gates.get(id)
+        if (!g) {
+            terminal7.log("Got a pb message with unknown peer: " + id)
             return
+        }
 
         if (m["peer_update"] !== undefined) {
             g.online = m.peer_update.online
@@ -946,7 +949,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             } else {
                 p.id = p.fp
                 g = new Gate(p)
-                this.gates.set(p.fp, g)
+                this.gates.set(p.id, g)
                 g.nameE = this.map.add(g)
                 g.updateNameE()
                 g.open(this.e)
