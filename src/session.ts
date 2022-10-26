@@ -50,6 +50,7 @@ export interface Session {
 
 export abstract class BaseChannel implements Channel {
     id?: ChannelID
+    t7: object
     onClose : CallbackType
     onMessage : CallbackType
     abstract close(): Promise<void> 
@@ -59,6 +60,7 @@ export abstract class BaseChannel implements Channel {
     constructor() {
         this.onMessage = () => void 0
         this.onClose = () => void 0
+        this.t7 = window.terminal7
     }
 
     get readyState(): string {
@@ -66,6 +68,7 @@ export abstract class BaseChannel implements Channel {
     }
 }
 export abstract class BaseSession implements Session {
+    t7: object
     watchdog: number
     onStateChange : (state: string, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void

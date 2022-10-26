@@ -201,7 +201,7 @@ export class WebRTCSession extends BaseSession {
                     args: { id: cmdorid }
                 }, Function.prototype(), Function.prototype())
             }
-            const watchdog = setTimeout(() => reject("timeout"), terminal7.conf.net.timeout)
+            const watchdog = setTimeout(() => reject("timeout"), this.t7.conf.net.timeout)
             this.pendingChannels[msgID] = (dc: RTCDataChannel, id: ChannelID) => {
                 clearTimeout(watchdog)
                 const channel = this.onDCOpened(dc, id)

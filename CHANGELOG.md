@@ -10,11 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- support for different shell under SSH - just set the conf
+- WebRTC signaling over SSH. By default connection start with ssh and then try to 
+upgrade the connection to WebRTC.
+- TWR has a tiny shell and some basic command. Type `help` to get going.
+- Support for different shells under SSH - just set the conf
 
 #### Fixed
 
-- when ask not to reconnect, the app closes the gate instead of deleting it
+- When ask not to reconnect, T7 closes the gate instead of deleting it
 
 ## 1.0 - 2022/10/2
 

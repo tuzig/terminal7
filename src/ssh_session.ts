@@ -2,6 +2,8 @@ import { SSH, SSHSessionID, SSHSessionByPass} from 'capacitor-ssh-plugin'
 import { Channel, BaseChannel, BaseSession, Failure, Session, State }  from './session' 
 import { WebRTCSession }  from './webrtc_session'
 
+const ACCEPT_CMD = "$HOME/go/bin/webexec accept"
+
 export class SSHChannel extends BaseChannel {
     id: number
     close(): Promise<void> {
@@ -29,7 +31,7 @@ export class SSHChannel extends BaseChannel {
         if ('data' in m)
             this.onMessage(m.data)
         else {
-            terminal7.log("ssh read got error ", m.error)
+            this.t7.log("ssh read got error ", m.error)
             this.onClose(m.error)
         }
     }
@@ -114,7 +116,7 @@ export class HybridSession extends SSHSession {
         this.startWatchdog()
         SSH.startSessionByPasswd(this.byPass)
            .then(async ({ session }) => {
-                terminal7.log("Got ssh session", session)
+                this.t7.log("Got ssh session", session)
                 this.id = session
                 try {
                     await this.newWebRTCSession(session, marker)
@@ -135,25 +137,30 @@ export class HybridSession extends SSHSession {
     async onAcceptData(cid, marker: number, data: string) {
         data.split("\r\n").filter(line => line.length > 0).forEach(async line => {
             let c = {}
-            terminal7.log("line webexec accept: ", line)
+            this.t7.log("line webexec accept: ", line)
             if (line.startsWith("READY")) {
                 try {
                     await this.openWebRTCSession(cid, marker)
                 } catch (e) {
                     this.webrtcSession = null
-                    terminal7.log("signaling over ssh failed", e)
+                    this.t7.log("signaling over ssh failed", e)
                     return
                 }
                 return
             }
             if (line.includes("no such file")) {
-                this.webrtcSession.fail(Failure.WebexecNotFound)
+                this.clearWatchdog()
+                const exec = ACCEPT_CMD.split(" ")[0]
+                SSH.closeChannel({channel: cid})
+                this.t7.notify(`| ${exec} not found`)
+                this.startWatchdog()
+                super.connect()
                 return
             }
             this.candidate += line
             // ignore echo
             if (this.sentMessages.indexOf(this.candidate) != -1) {
-                terminal7.log("igonring message: "+this.candidate)
+                this.t7.log("igonring message: "+this.candidate)
                 this.candidate = ""
                 return
             }
@@ -168,21 +175,22 @@ export class HybridSession extends SSHSession {
                 try {
                     await this.webrtcSession.pc.addIceCandidate(c)
                 } catch(e) { 
-                    terminal7.log("failed the add ice candidate", e.message, c)
+                    this.t7.log("failed the add ice candidate", e.message, c)
                     return
                 }
             else
                 try {
                     await this.webrtcSession.pc.setRemoteDescription(c)
-                } catch(e) { terminal7.log("got error setting remote desc:", e.message, c) }
+                } catch(e) { this.t7.log("got error setting remote desc:", e.message, c) }
         })
     }
 
     openWebRTCSession(cid, marker): Promise<Session> {
         this.webrtcSession = new WebRTCSession()
-        return new Promise<Session>((resolve, reject) => {
+        // TODO: better to return the session and reject when failing
+        return new Promise<Session>((resolve) => {
                 // TODO: create a new override 
-            this.webrtcSession.onStateChange = (state, failure?: Failure) => {
+            this.webrtcSession.onStateChange = (state) => {
                 console.log("State changed", state)
                 this.clearWatchdog()
                 if (state == "connected") {
@@ -191,13 +199,6 @@ export class HybridSession extends SSHSession {
                     this.webrtcSession.onStateChange = this.onStateChange
                     resolve(this.webrtcSession)
                 }
-                if (state == "failed") {
-                    SSH.closeChannel({channel: cid})
-                    terminal7.log("Failed to open this.webrtcSession", failure)
-                    if (this.webrtcSession.pc)
-                        this.webrtcSession.pc.onicecandidate = undefined
-                    reject()
-                }
             }
             this.webrtcSession.onIceCandidate = e => {
                 const candidate = JSON.stringify(e.candidate)
@@ -205,7 +206,7 @@ export class HybridSession extends SSHSession {
                 SSH.writeToChannel({channel: cid, message: candidate + "\n"})
             }
             this.webrtcSession.onNegotiationNeeded = () => {
-                terminal7.log("on negotiation needed")
+                this.t7.log("on negotiation needed")
                 this.webrtcSession.pc.createOffer().then(d => {
                     const offer = JSON.stringify(d)
                     this.webrtcSession.pc.setLocalDescription(d)
@@ -219,17 +220,17 @@ export class HybridSession extends SSHSession {
     async newWebRTCSession(session: string, marker: number): Promise<void> {
         const channel = new SSHChannel()
         const cid = (await SSH.newChannel({session: session})).id
-        terminal7.log("got new channel with id ", cid)
+        this.t7.log("got new channel with id ", cid)
         channel.id = cid
-        channel.onClose = () => terminal7.log("webexec accept session closed")
+        channel.onClose = () => this.t7.log("webexec accept session closed")
         try {
-            await SSH.startShell({channel: cid, command: "$HOME/go/bin/webexec accept"},
+            await SSH.startShell({channel: cid, command: ACCEPT_CMD },
                 m => {
                     if (m && m.data)
                         this.onAcceptData(cid, marker, m.data)
                 })
         } catch (e) { 
-            console.log("Failed starting webexec", e)
+            this.t7.log("Failed starting webexec", e)
             this.clearWatchdog()
             throw e
         }
