@@ -395,78 +395,7 @@ export class Gate {
     }
     // reset reset's a gate connection by disengaging and reconnecting
     reset() {
-        this.map.shell.resetGate(this)
-        /* TODO: delete after reset works
-<<<<<<< HEAD
-        this.map.showLog(true)
-        const fields = [
-            { prompt: "Reset connection & Layout" },
-            { prompt: "Close gate" },
-            { prompt: "\x1B[31mFactory reset\x1B[0m" },
-        ]
-        const factoryResetVerify = new Form([{
-            prompt: `Factory reset will remove all gates,\n    the certificate and configuration changes.`,
-            values: ["y", "n"],
-            default: "n"
-        }])
-        if (!this.onlySSH)
-            // Add the connection reset option for webrtc
-            fields.splice(0,0, { prompt: "Reset connection" })
-        const resetForm = new Form(fields)
-        this.map.showLog(true)
-        this.map.t0.writeln(`\x1B[4m${this.name}\x1B[0m`)
-        resetForm.menu(this.map.t0).then(async choice => {
-            switch (choice) {
-                case "Reset connection":
-                    this.disengage().then(() => {
-                        if (this.session) {
-                            this.session.close()
-                            this.session = null
-                        }
-                        this.t7.run(() =>  {
-                            this.connect()
-                        }, 100)
-                    }).catch(() => this.connect())
-                    break
-                case "Reset connection & Layout":
-                    try {
-                        if (this.session) {
-                            await this.disengage()
-                            this.session.close()
-                            this.session = null
-                        }
-                        this.connect(() => {
-                            this.clear()
-                            this.map.showLog(false)
-                            this.activeW = this.addWindow("", true)
-                            this.focus()
-                        })
-                    } catch(e) {
-                        this.notify("Connect failed")
-                    }
-                    break
-                case "\x1B[31mFactory reset\x1B[0m":
-                    factoryResetVerify.start(this.map.t0).then(answers => {
-                        const ans = answers[0]
-                        if (!ans) {
-                            this.map.t0.writeln("ESC")
-                            return
-                        }
-                        if (ans == "y") {
-                            this.t7.factoryReset()
-                            this.clear()
-                            this.t7.goHome()
-                        }
-                        else
-                            this.map.showLog(false)
-                    }).catch(e => this.onFormError(e))
-                    break
-                case "Close gate":
-                    this.close()
-                    break
-            }
-        }).catch(ev => this.onFormError(ev))
-        */
+        this.t7.map.shell.runCommand("reset", [this.name])
     }
     setLayout(state: object) {
         console.log("in setLayout", state)
