@@ -735,3 +735,8 @@ button.boarding  {
 	right: 2%;
 	text-decoration: none;
 }
+.expand-gate {
+    display: block;
+    float:right;
+    text-shadow: none;
+}

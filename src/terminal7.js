@@ -863,6 +863,13 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         if (!this.pointer0)
             return
         if (gatePad) {
+            const gate = gatePad.gate
+            if (e.classList.contains("expand-gate")) {
+                this.map.shell.runCommand("edit", [gate.name])
+                ev.stopPropagation()
+                ev.preventDefault()
+                return
+            }
             let deltaT = Date.now() - this.pointer0
             clearTimeout(this.longPressGate)
             this.longPressGate = null
@@ -871,7 +878,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 ev.preventDefault()
             } else {
                 // that's for the refresh and static host add
-                const gate = gatePad.gate
                 if (!gate)
                     return
                 if (!gate.fp || gate.verified && gate.online) {

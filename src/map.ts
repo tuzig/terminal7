@@ -124,7 +124,7 @@ export class T7Map {
     update({ e, name, boarding, offline, unverified }): void {
 
         const b = e.children[0]
-        b.innerHTML = name
+        b.innerHTML = `<i class="f7-icons expand-gate">expand</i>${name}`
         // there's nothing more to update for static hosts
         if (boarding)
             b.classList.add("boarding")
