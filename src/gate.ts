@@ -258,13 +258,18 @@ export class Gate {
             this.t7.onDisconnect(this)
     }
     reconnect(): Promise<void> {
-        this.notify("Reconnecting")
         return new Promise((resolve, reject) => {
             if (!this.session)
                 return this.connect()
-            else 
+            else if (!this.session.isSSH) {
+                this.notify("Reconnecting")
                 this.session.reconnect(this.marker).then(resolve)
                 .catch(() => this.connect().then(resolve).catch(reject))
+            }
+            else {
+                this.notify("Using old SSH session")
+                this.map.showLog(false)
+            }
         })
     }
     /*
