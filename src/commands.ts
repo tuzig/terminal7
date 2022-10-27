@@ -50,8 +50,14 @@ export function loadCommands(shell: Shell): Map<string, Command> {
         help: {
             name: "help",
             help: "This help",
-            usage: "h[elp] [command]",
+            usage: "he[lp] [command]",
             execute: async args => helpCMD(shell, args)
+        },
+        hide: {
+            name: "hide",
+            help: "Hide this window",
+            usage: "hi[de]",
+            execute: async () => shell.map.showLog(false)
         },
         map: {
             name: "map",
