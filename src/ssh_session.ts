@@ -2,7 +2,7 @@ import { SSH, SSHSessionID, SSHSessionByPass} from 'capacitor-ssh-plugin'
 import { Channel, BaseChannel, BaseSession, Failure, Session, State }  from './session' 
 import { WebRTCSession }  from './webrtc_session'
 
-const ACCEPT_CMD = "$HOME/go/bin/webexec accept"
+const ACCEPT_CMD = "/usr/local/bin/webexec accept"
 
 export class SSHChannel extends BaseChannel {
     id: number
