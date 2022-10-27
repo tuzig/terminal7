@@ -513,6 +513,7 @@ export class Gate {
         else
             this.map.showLog(false)
     }
+    //TODO: the next two functions belong in shell & commands
     async askPass() {
         const name = this.name.startsWith("temp_")?this.addr:this.name
         this.map.t0.writeln(`  Login to ${name}`)

@@ -1,8 +1,8 @@
-import { T7Map } from './map'
-import { Terminal } from '@tuzig/xterm'
-import { loadCommands, Command } from './commands'
-import { Fields, Form } from './form'
 import { Clipboard } from "@capacitor/clipboard"
+import { Terminal } from '@tuzig/xterm'
+import { Command, loadCommands } from './commands'
+import { Fields, Form } from './form'
+import { T7Map } from './map'
 
 export class Shell {
 
@@ -73,19 +73,18 @@ export class Shell {
         if (exec == null)
             return this.t.writeln(`Command not found: "${args[0]}" (hint: \`help\`)`)
         this.active = false
-        exec(args)
+        await exec(args)
         this.active = true
     }
 
     async runCommand(cmd: string, args: string[]) {
+        this.map.showLog(true)
         await this.escapeActiveForm()
         this.map.interruptTTY()
         this.currentLine = [cmd, ...args].join(' ')
         this.printPrompt()
         this.t.write("\n")
-        await this.execute(cmd, args)
-        this.currentLine = ''
-        this.printPrompt()
+        await this.handleLine(this.currentLine)
     }
 
     async runForm(fields: Fields, type: "menu" | "choice" | "text", title="") {
@@ -118,7 +117,6 @@ export class Shell {
             throw err
         } finally {
             this.activeForm = null
-            this.printPrompt()
         }
     }
 
@@ -129,6 +127,7 @@ export class Shell {
         this.activeForm.reject(new Error("aborted"))
         this.activeForm = null
         await new Promise(r => setTimeout(r, 100))
+        this.printPrompt()
     }
     
     keyHandler(ev: KeyboardEvent) {

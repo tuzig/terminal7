@@ -7,8 +7,10 @@
  *  License: GPLv3
  */
 
-import { Gate } from './gate'
 import { Terminal } from '@tuzig/xterm'
+import { Browser } from '@capacitor/browser'
+import { Gate } from './gate'
+import { WebLinksAddon } from 'xterm-addon-web-links'
 import { FitAddon } from "xterm-addon-fit"
 import { WebglAddon } from 'xterm-addon-webgl'
 import XtermWebfont from 'xterm-webfont'
@@ -34,6 +36,10 @@ export class T7Map {
             this.shell = new Shell(this)
             const e = document.getElementById("t0")
             const fitAddon = new FitAddon()
+            const webLinksAddon = new WebLinksAddon((MouseEvent, url) => {
+                Browser.open({ url })
+            })
+            this.t0.loadAddon(webLinksAddon)
             this.t0.loadAddon(fitAddon)
             this.t0.loadAddon(new XtermWebfont())
             // this.t0.attachCustomKeyEventHandler(ev => {

@@ -1,3 +1,4 @@
+import { Clipboard } from '@capacitor/clipboard'
 import { Shell } from "./shell"
 import * as TOML from '@tuzig/toml'
 import { Storage } from "@capacitor/storage"
@@ -8,6 +9,13 @@ import fortuneURL from "../resources/fortune.txt"
 
 declare const terminal7 : Terminal7
 
+const installMessage = `
+  To get the most of T7 you need our agent - webexec.
+  It's open source and you can download the binary
+  for your system from: https://download.webexec.sh
+  and copy it to /usr/local/bin
+  Or you can use the web installer: 
+`
 export type Command = {
     name: string
     help: string
@@ -112,14 +120,34 @@ async function fortuneCMD(shell: Shell) {
 
 async function connectCMD(shell:Shell, args: string[]) {
     const hostname = args[0]
-    shell.map.showLog(true)
     if (!hostname)
         return shell.t.writeln("Missing hostname")
     const gate = shell.getGate(hostname)
     if (!gate)
         return shell.t.writeln(`Host not found: ${hostname}`)
     await new Promise<void>((resolve) => {
-        gate.connect(() => {
+        gate.connect(async () => {
+            if (gate.session.isSSH && !gate.onlySSH) {
+                const webexecForm = [
+                    { prompt: "Just let me in" },
+                    { prompt: "Copy it to clipboard & connect" },
+                    { prompt: "Always use SSH for this host" },
+                ]
+                const cmd = "bash -c $(curl -sL https://get.webexec.sh)"
+                shell.t.writeln(installMessage)
+                shell.t.writeln(`  \x1B[1m${cmd}\x1B[0m\n`)
+                const res = await await shell.runForm(webexecForm, "menu")
+                switch(res) {
+                    case "Copy it to clipboard & connect":
+                        Clipboard.write({ string: cmd })
+                        break
+
+                    case "Always use SSH for this host":
+                        gate.onlySSH = true
+                        gate.t7.storeGates()
+                        break
+                }
+            }
             gate.load()
             Storage.get({key: "first_gate"}).then(v => {
                 if (v.value != "nope") {
