@@ -206,13 +206,6 @@ export class Gate {
                 this.marker = null
                 this.connect(this.onConnected)
                 return
-            case Failure.TimedOut:
-                // TODO: probably should ask if to reconnect
-                if (!this.fp && (Capacitor.getPlatform() == "ios")) {
-                    this.connect(this.onConnected)
-                    return
-                }
-                break
             case Failure.BadRemoteDescription:
                 this.notify("Please try again")
                 break
