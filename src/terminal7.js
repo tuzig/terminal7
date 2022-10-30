@@ -864,28 +864,22 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             return
         if (gatePad) {
             const gate = gatePad.gate
-            if (e.classList.contains("expand-gate")) {
-                this.map.shell.runCommand("edit", [gate.name])
-                ev.stopPropagation()
-                ev.preventDefault()
+            const isExpand = e.classList.contains("expand-gate")
+            if (!gate)
                 return
-            }
-            let deltaT = Date.now() - this.pointer0
-            clearTimeout(this.longPressGate)
-            this.longPressGate = null
-            if (deltaT > this.conf.ui.quickest_press) {
-                ev.stopPropagation()
-                ev.preventDefault()
-            } else {
-                // that's for the refresh and static host add
-                if (!gate)
-                    return
-                if (!gate.fp || gate.verified && gate.online) {
-                    this.activeG = gate
-                    await this.map.shell.runCommand("connect", [gate.name])
+            else {
+                let deltaT = Date.now() - this.pointer0
+                clearTimeout(this.longPressGate)
+                this.longPressGate = null
+                if (deltaT < this.conf.ui.quickest_press) {
+                    // that's for the refresh and static host add
+                    if (isExpand) {
+                        this.map.shell.runCommand("edit", [gate.name])
+                    } else if (!gate.fp || gate.verified && gate.online) {
+                        this.activeG = gate
+                        await this.map.shell.runCommand("connect", [gate.name])
+                    }
                 }
-                else
-                    this.map.shell.runCommand("edit", [gate.name])
             }
             ev.stopPropagation()
             ev.preventDefault()
