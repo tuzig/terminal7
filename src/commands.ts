@@ -1,5 +1,4 @@
 import { Clipboard } from '@capacitor/clipboard'
-import { Failure } from './session'
 import { Shell } from "./shell"
 import * as TOML from '@tuzig/toml'
 import { Storage } from "@capacitor/storage"
@@ -158,9 +157,7 @@ async function connectCMD(shell:Shell, args: string[]) {
             })
             resolve()
         })
-        gate.onFailure = (failure) => {
-            if (failure !== Failure.Aborted)
-                shell.t.writeln(`Failed to connect to ${hostname}`)
+        gate.onFailure = () => {
             resolve()
         }
     })
@@ -275,35 +272,40 @@ async function resetCMD(shell: Shell, args: string[]) {
         return
     }
     let ans
+
     switch (choice) {
         case "Reset connection":
             // TODO: simplify
-            gate.disengage().then(async () => {
-                if (gate.session) {
-                    gate.session.close()
-                    gate.session = null
-                }
-                gate.t7.run(() =>  {
-                    gate.connect()
-                }, 100)
-            }).catch(() => gate.connect())
+            if (gate.session) {
+                gate.session.close()
+                gate.session = null
+            }
+            await new Promise<void>(resolve => {
+                //setTimeout(() => {
+                    gate.connect(() => {
+                        gate.load()
+                        resolve()
+                    })
+                    gate.onFailure(() => {
+                        resolve()
+                    })
+                // }, 100)
+            })
             break
         case "Reset connection & Layout":
-            try {
-                if (gate.session) {
-                    await gate.disengage()
-                    gate.session.close()
-                    gate.session = null
-                }
+            if (gate.session) {
+                gate.session.close()
+                gate.session = null
+            }
+            await new Promise<void>(resolve => {
                 gate.connect(() => {
                     gate.clear()
                     gate.map.showLog(false)
                     gate.activeW = gate.addWindow("", true)
                     gate.focus()
+                    resolve()
                 })
-            } catch(e) {
-                gate.notify("Connect failed")
-            }
+            })
             break
         case "\x1B[31mFactory reset\x1B[0m":
             try {

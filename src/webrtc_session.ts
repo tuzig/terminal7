@@ -330,6 +330,7 @@ export class WebRTCSession extends BaseSession {
     }
     close(): void {
         super.close()
+        this.closeChannels()
         if (this.pc != null) {
             this.pc.onconnectionstatechange = undefined
             this.pc.onnegotiationneeded = undefined
