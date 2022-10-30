@@ -73,7 +73,9 @@ export class Shell {
         if (exec == null)
             return this.t.writeln(`Command not found: "${args[0]}" (hint: \`help\`)`)
         this.active = false
-        await exec(args)
+        try {
+            await exec(args)
+        } catch (e) {}
         this.active = true
     }
 
@@ -111,12 +113,11 @@ export class Shell {
         }
         try {
             const res = await run(this.t)
+            this.activeForm = null
             return res
         } catch (err) {
-            this.onFormError(err)
+            await this.escapeActiveForm()
             throw err
-        } finally {
-            this.activeForm = null
         }
     }
 

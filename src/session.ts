@@ -11,7 +11,8 @@ export enum Failure {
     BadRemoteDescription='Bad Remote Description',
     NotSupported='Not Supported',
     WebexecNotFound='Webexec Not Found',
-    TimedOut='Timeout'
+    TimedOut='Timeout',
+    Aborted='Aborted',
 }
 
 export interface Event {

@@ -40,6 +40,7 @@ export class Gate {
     nameE: Element
     t7: Terminal7
     onConnected: () => void
+    onFailure: (failure: Failure) => void
     fp: string | undefined
     verified: boolean
     online: boolean
@@ -74,6 +75,7 @@ export class Gate {
         this.map = this.t7.map
         this.session = null
         this.onlySSH = props.onlySSH || false
+        this.onFailure = Function.prototype()
     }
 
     /*
@@ -185,6 +187,9 @@ export class Gate {
         if (!this.boarding)
             return
         this.stopBoarding()
+        // onFailure should be set to `Shell.onGateFailure()` and the switch code
+        // should move there
+        // this.onFailure(failure)
         switch ( failure ) {
             case Failure.WrongPassword:
                 this.pass = undefined
@@ -513,7 +518,7 @@ export class Gate {
         else
             this.map.showLog(false)
     }
-    //TODO: the next two functions belong in shell & commands
+    //TODO: the next function belongs in commands
     async askPass() {
         const name = this.name.startsWith("temp_")?this.addr:this.name
         this.map.t0.writeln(`  Login to ${name}`)
@@ -521,10 +526,12 @@ export class Gate {
             { prompt: "Username", default: this.username },
             { prompt: "Password", password: true }
         ]
+        // Form errors/abort are handled by the caller
         const res = await this.map.shell.runForm(authForm, "text")
         this.username = res[0]
         this.pass = res[1]
     }
+    //TODO: the next function belongs in commands
     async completeConnect(): void {
         if (this.map.shell.activeForm)
             this.map.shell.escapeActiveForm()
@@ -536,7 +543,12 @@ export class Gate {
         else {
             if (Capacitor.getPlatform() == "ios") {
                 if (!this.pass) {
-                    await this.askPass()
+                    try {
+                        await this.askPass()
+                    } catch (e) { 
+                        this.onFailure(Failure.Aborted)
+                        return 
+                    }
                 }
                 this.session = (this.onlySSH)?new SSHSession(this.addr, this.username, this.pass):
                    new HybridSession(this.addr, this.username, this.pass)

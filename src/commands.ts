@@ -1,4 +1,5 @@
 import { Clipboard } from '@capacitor/clipboard'
+import { Failure } from './session'
 import { Shell } from "./shell"
 import * as TOML from '@tuzig/toml'
 import { Storage } from "@capacitor/storage"
@@ -156,10 +157,12 @@ async function connectCMD(shell:Shell, args: string[]) {
                 }
             })
             resolve()
-        }, () => {
-            shell.t.writeln(`Failed to connect to ${hostname}`)
-            resolve()
         })
+        gate.onFailure = (failure) => {
+            if (failure !== Failure.Aborted)
+                shell.t.writeln(`Failed to connect to ${hostname}`)
+            resolve()
+        }
     })
 }
 
