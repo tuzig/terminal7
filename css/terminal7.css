@@ -740,3 +740,6 @@ button.boarding  {
     float:right;
     text-shadow: none;
 }
+video {
+    object-fit: cover;
+}

@@ -927,4 +927,25 @@ export class Pane extends Cell {
         })
         return match
     }
+    // showVideo replace the terminal with a video and vice versa
+    // if `show` is undefined the video is toggled
+    showVideo(show) {
+        const video = this.e.querySelector("video")
+        if (show === undefined)
+            show = video === null
+        if (show && (video == null)) {
+            const video = document.createElement("video");
+            this.e.querySelector("div").classList.add("hidden")
+            this.e.prepend(video)
+            navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+			.then((stream) => {
+                video.srcObject = stream
+                video.addEventListener("loadedmetadata", () => video.play())
+			})
+			.catch(e => this.t7.log("mediaDevices error", e))
+		} else {
+            video.remove()
+            this.e.querySelector("div").classList.remove("hidden")
+        }
+    }   
 }
