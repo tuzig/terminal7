@@ -68,11 +68,10 @@ insecure = true`)
         redisClient.on('error', err => console.log('Redis client error', err))
         await redisClient.connect()
         let keys = []
-        while (keys.length < 2) {
+        while (keys.length < 3) {
             keys = await redisClient.keys('peer*')
             sleep(200)
         }
-
         keys.forEach(async key => {
             console.log("verifying: " +key)
             await redisClient.hSet(key, 'verified', "1")
