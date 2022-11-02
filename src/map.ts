@@ -20,6 +20,7 @@ export class T7Map {
     t0: Terminal
     ttyWait: number
     shell: Shell
+    fitAddon: FitAddon
     open() {
         return new Promise(resolve => {
             this.t0 = new Terminal({
@@ -35,12 +36,12 @@ export class T7Map {
             })
             this.shell = new Shell(this)
             const e = document.getElementById("t0")
-            const fitAddon = new FitAddon()
+            this.fitAddon = new FitAddon()
             const webLinksAddon = new WebLinksAddon((MouseEvent, url) => {
                 Browser.open({ url })
             })
             this.t0.loadAddon(webLinksAddon)
-            this.t0.loadAddon(fitAddon)
+            this.t0.loadAddon(this.fitAddon)
             this.t0.loadAddon(new XtermWebfont())
             // this.t0.attachCustomKeyEventHandler(ev => {
             this.t0.onKey(iev => {
@@ -176,6 +177,7 @@ export class T7Map {
             e.classList.remove("hidden")
             e.classList.add("show")
             document.getElementById("log-button").classList.add("on")
+            setTimeout(() => this.fitAddon.fit(), 1000)
         } else {
             e.classList.remove("show")
             document.getElementById("log-button").classList.remove("on")
