@@ -937,8 +937,8 @@ export class Pane extends Cell {
             const video = document.createElement("video");
             this.e.querySelector("div").classList.add("hidden")
             this.e.prepend(video)
-            navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-			.then((stream) => {
+            navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+		.then((stream) => {
                 video.srcObject = stream
                 video.addEventListener("loadedmetadata", () => video.play())
 			})
