@@ -6,7 +6,7 @@ import { T7Map } from './map'
 
 export class Shell {
 
-    prompt = "T7> "
+    prompt = "TWR> "
 
     map: T7Map
     t: Terminal
