@@ -10,7 +10,6 @@ import { Gate } from './gate.ts'
 import { T7Map } from './map.ts'
 import { CyclicArray } from './cyclic.js'
 import * as TOML from '@tuzig/toml'
-import { imageMapResizer } from './imageMapResizer.js'
 import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
 import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
 import { tomlMode} from '@tuzig/codemirror/mode/toml/toml.js'
@@ -31,7 +30,7 @@ import { PeerbookConnection } from './peerbook'
 
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
-Thanks for trying Terminal7. This is TWR, a local
+Thanks for choosing Terminal7. This is TWR, a local
 terminal used to log messages and get your input.
 Try typing 'help' to see what it can do.
 
@@ -720,9 +719,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             
         ecl.toggle("show")
         bcl.toggle("on")
-        if (ecl.contains("show"))
-            imageMapResizer()
-        else
+        if (!ecl.contains("show"))
             this.focus()
         // TODO: When at home remove the "on" from the home butto
     }

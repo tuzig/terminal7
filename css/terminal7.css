@@ -550,7 +550,7 @@ td {
     transition: all .75s ease;
 }
 #help-home.show, #help-gate.show {
-    opacity: 0.95;
+    opacity: 0.65;
     visibility: visible;
     transition: all .75s ease;
 }
