@@ -164,7 +164,10 @@ async function connectCMD(shell:Shell, args: string[]) {
 }
 
 async function addCMD(shell: Shell) {
-    if (!terminal7.conf.peerbook) {
+    // TODO: add peerbook registration
+    // if (!terminal7.conf.peerbook) {
+    // eslint-disable-next-line no-constant-condition
+    if (false) {
         const pbForm = [
             { prompt: "Add static host" },
             { prompt: "Setup peerbook" }
