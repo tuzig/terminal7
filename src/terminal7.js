@@ -64,7 +64,9 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # quickest_press = 1000
 # max_tabs = 10
 # cut_min_distance = 80
-# cut_min_speed = 2.5
+# cut_min_speed_x = 2.5
+# by default cut_min_speed_y is set at 10 to avoid confusion with scroll
+# cut_min_speed_y = 2.5
 # no pinch when scrolling -> y velocity higher than XTZ px/ms
 # pinch_max_y_velocity = 0.1
 # auto_restore = false
@@ -598,7 +600,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         this.conf.ui.quickest_press = this.conf.ui.quickest_press || 1000
         this.conf.ui.max_tabs = this.conf.ui.max_tabs || 10
         this.conf.ui.leader = this.conf.ui.leader || "a"
-        this.conf.ui.cutMinSpeed = this.conf.ui.cut_min_speed || 2.5
+        this.conf.ui.cutMinSpeedX = this.conf.ui.cut_min_speed_x || 2.5
+        this.conf.ui.cutMinSpeedY = this.conf.ui.cut_min_speed_y || 10
         this.conf.ui.cutMinDistance = this.conf.ui.cut_min_distance || 80
         this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1
         this.conf.ui.autoRestore = this.conf.ui.auto_restore || false
@@ -894,21 +897,23 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     s  = d/deltaT,
                     r = Math.abs(dx / dy)
 
-            if ((d > this.conf.ui.cutMinDistance)
-                && (s > this.conf.ui.cutMinSpeed)) {
-                // it's a cut!!
-                let cell = ev.target.closest(".cell"),
-                    pane = (cell != null)?cell.cell:undefined
-                if (pane && !pane.zoomed)  {
-                    if (r < 1.0)
-                        pane.split("topbottom",
-                            (x / document.body.offsetWidth - pane.xoff) / pane.sx)
-                    else
-                        pane.split("rightleft",
-                            (y / document.body.offsetHeight - pane.yoff) / pane.sy)
-                    ev.stopPropagation()
-                    ev.preventDefault()
-                    // t.focus()
+            if (d > this.conf.ui.cutMinDistance) {
+                const minS = (dx > dy)?this.conf.ui.cutMinSpeedY:this.conf.ui.cutMinSpeedX
+                if  (s > minS) {
+                    // it's a cut!!
+                    let cell = ev.target.closest(".cell"),
+                        pane = (cell != null)?cell.cell:undefined
+                    if (pane && !pane.zoomed)  {
+                        if (r < 1.0)
+                            pane.split("topbottom",
+                                (x / document.body.offsetWidth - pane.xoff) / pane.sx)
+                        else
+                            pane.split("rightleft",
+                                (y / document.body.offsetHeight - pane.yoff) / pane.sy)
+                        ev.stopPropagation()
+                        ev.preventDefault()
+                        // t.focus()
+                    }
                 }
             }
         }
