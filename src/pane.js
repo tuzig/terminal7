@@ -362,8 +362,7 @@ export class Pane extends Cell {
                 this.e.style.borderColor = COPYMODE_BORDER_COLOR
             Storage.get({key: "first_copymode"}).then(v => {
                 if (v.value != "1") {
-                    var e = document.getElementById("help-copymode")
-                    e.classList.remove("hidden")
+                    this.gate.map.shell.runCommand('help', ['copymode'])
                     Storage.set({key: "first_copymode", value: "1"})
                 }
             })

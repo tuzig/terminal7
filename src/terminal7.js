@@ -96,12 +96,10 @@ export class Terminal7 {
     }
     showKeyHelp () {
         if (Date.now() - this.metaPressStart > 987) {
-            var e
             if (this.activeG && this.activeG.activeW.activeP.copyMode )
-                e = document.getElementById('help-copymode')
+                this.map.shell.runCommand('help', ['copymode'])
             else
-                e = document.getElementById('keys-help')
-            e.classList.remove('hidden')
+                document.getElementById('keys-help').classList.remove('hidden')
         }
     }
     /*
@@ -154,8 +152,6 @@ export class Terminal7 {
                 .addEventListener("click", () => this.toggleHelp())
         document.getElementById("help-button")
                 .addEventListener("click", () => this.toggleHelp())
-        document.querySelectorAll("#help-copymode, #keys-help").forEach(e => 
-                e.addEventListener("click", () => this.clear()))
         document.getElementById("divide-h")
                 .addEventListener("click", () =>  {
                     if (this.activeG && this.activeG.activeW.activeP.sy >= 0.04)

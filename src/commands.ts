@@ -102,7 +102,31 @@ async function helpCMD(shell: Shell, args: string[]) {
     } else {
         const command = shell.commands.get(args[0])
         if (!command)
-            help = `Command not found: "${args[0]}" (hint: \`help\`)`
+            if (args[0] == "copymode") {
+                help +=`
+Copy mode let's you navigate, search mark & copy
+the active pane's buffer. Here's are the supported keys:
+  hjkl & arrows:  Move
+  w: word forward
+  b: word backward
+  e: end of word
+  $: end of line
+  f<Char>: forward find <char> inclusive
+  F<Char>: backward find <char> inclusive
+  t<Char>: forward until before <char>
+  T<Char>: backward exclusive <char> 
+  0: beginning of line
+  Space:  Mark
+  Enter:   Copy & Exit
+  ?:  Search Backward
+  /:  Search Forward
+  q:  Quit
+
+All navigation commands support a repetition factor.
+For example, "5k" moves the cursor 5 lines up (type hi to hide).
+`
+            
+        }
         else {
             help += `\x1B[1m${command.name}\x1B[0m\n`
             help += `  ${command.help}\n`
