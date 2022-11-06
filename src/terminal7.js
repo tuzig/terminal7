@@ -144,6 +144,9 @@ export class Terminal7 {
                 .addEventListener("click", () => this.goHome())
         document.getElementById("log-button")
                 .addEventListener("click", () => this.map.showLog())
+        document.getElementById("video-button")
+                .addEventListener("click", () => 
+                   this.activeG && this.activeG.activeW.activeP.showVideo())
         document.getElementById("search-button")
                 .addEventListener("click", () => 
                    this.activeG && this.activeG.activeW.activeP.toggleSearch())

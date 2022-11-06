@@ -599,7 +599,7 @@ export class Gate {
             unverified: this.verified === false,
         })
     }
-    close(){
+    close() {
         this.boarding = false
         this.clear()
         this.updateNameE()
@@ -610,4 +610,5 @@ export class Gate {
         // we need the timeout as cell.focus is changing the href when dcs are closing
         setTimeout(() => this.t7.goHome(), 100)
     }
+	
 }
