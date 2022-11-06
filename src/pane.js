@@ -930,22 +930,30 @@ export class Pane extends Cell {
     // showVideo replace the terminal with a video and vice versa
     // if `show` is undefined the video is toggled
     showVideo(show) {
-        const video = this.e.querySelector("video")
+        const video = document.querySelector("video")
         if (show === undefined)
             show = video === null
-        if (show && (video == null)) {
-            const video = document.createElement("video");
+        if (video) {
+            video.parentElement.querySelector("div").classList.remove("hidden")
+            video.remove()
+        }
+        const button = document.getElementById("video-button")
+        if (show) {
+            // first remove all videos
+            button.classList.add("on")
+            const v = document.createElement("video");
             this.e.querySelector("div").classList.add("hidden")
-            this.e.prepend(video)
+            this.e.prepend(v)
             navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-		.then((stream) => {
-                video.srcObject = stream
-                video.addEventListener("loadedmetadata", () => video.play())
+            .then((stream) => {
+                v.srcObject = stream
+                v.addEventListener("loadedmetadata", () => v.play())
 			})
 			.catch(e => this.t7.log("mediaDevices error", e))
 		} else {
-            video.remove()
+            button.classList.remove("on")
             this.e.querySelector("div").classList.remove("hidden")
+            this.focus()
         }
     }   
 }
