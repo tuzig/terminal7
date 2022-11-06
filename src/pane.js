@@ -467,6 +467,7 @@ export class Pane extends Cell {
         return true
     }
     findNext(searchTerm) {
+        const notFound = this.gate.e.querySelector(".not-found")
         if (searchTerm) {
             this.cmAtEnd = null
             this.t.setOption("selectionStyle", "plain")
@@ -475,12 +476,15 @@ export class Pane extends Cell {
 
         if (this.searchTerm) {
             if (!this.searchAddon.findNext(this.searchTerm, SEARCH_OPTS))
-                this.gate.notify(`Couldn't find "${this.searchTerm}"`)
-            else 
+                notFound.classList.remove("hidden")
+            else {
+                notFound.classList.add("hidden")
                 this.enterCopyMode(true)
+            }
         }
     }
     findPrev(searchTerm) {
+        const notFound = this.gate.e.querySelector(".not-found")
         if (searchTerm) {
             this.cmAtEnd = null
             this.t.setOption("selectionStyle", "plain")
@@ -489,9 +493,11 @@ export class Pane extends Cell {
 
         if (this.searchTerm) {
             if (!this.searchAddon.findPrevious(this.searchTerm, SEARCH_OPTS))
-                this.gate.notify(`Couldn't find "${this.searchTerm}"`)
-            else 
+                notFound.classList.remove("hidden")
+            else {
+                notFound.classList.add("hidden")
                 this.enterCopyMode(true)
+            }
         }
     }
     /*

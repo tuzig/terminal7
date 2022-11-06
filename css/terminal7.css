@@ -740,3 +740,10 @@ button.boarding  {
     float:right;
     text-shadow: none;
 }
+.tabbar-search .not-found {
+    position: relative;
+    left: -76px;
+    width: 0;
+    overflow: visible;
+    white-space: nowrap;
+}
