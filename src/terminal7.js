@@ -182,7 +182,7 @@ export class Terminal7 {
             "click", () => this.clear())
         // add webexec installation instructions
         const fp = await this.getFingerprint(),
-            rc = `bash -c "$(curl -sL https://get.webexec.sh)"
+            rc = `bash <(curl -sL https://get.webexec.sh)"
 echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         e.querySelectorAll('.webexec-install').forEach(e => {
             e.innerHTML = `<p>To use WebRTC the server needs webexec:</p>

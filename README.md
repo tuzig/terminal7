@@ -51,7 +51,7 @@ Our open source WebRTC server is written in go and is based on the pion server.
 You can install it using the one line installer or from the [source](https://github.com/tuzig/webexec)
 
 ```console
-  bash -c $(curl -sL https://get.webexec.sh)
+  bash <(curl -sL https://get.webexec.sh)
 ```
 ## Contribuiting
 

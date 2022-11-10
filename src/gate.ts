@@ -213,8 +213,7 @@ export class Gate {
         }
         if (this.name.startsWith("temp")) {
             (async () => {
-                const fp = await this.t7.getFingerprint(),
-                    rc = `bash -c "$(curl -sL https://get.webexec.sh)"\necho "${fp}" >> ~/.config/webexec/authorized_fingerprints`
+                const rc = `bash <(curl -sL https://get.webexec.sh)"`
                 this.map.t0.writeln("Failed to connect")
                 let ans:string
                 const verifyForm = [{

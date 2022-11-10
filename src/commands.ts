@@ -3,7 +3,6 @@ import { Shell } from "./shell"
 import * as TOML from '@tuzig/toml'
 import { Storage } from "@capacitor/storage"
 import { Terminal7, DEFAULT_DOTFILE } from "./terminal7"
-import { Gate } from "./gate"
 import { Fields } from "./form"
 import fortuneURL from "../resources/fortune.txt"
 
@@ -173,7 +172,7 @@ async function connectCMD(shell:Shell, args: string[]) {
                     { prompt: "Copy it to clipboard & connect" },
                     { prompt: "Always use SSH for this host" },
                 ]
-                const cmd = "bash -c $(curl -sL https://get.webexec.sh)"
+                const cmd = "bash <(curl -sL https://get.webexec.sh)"
                 shell.t.writeln(installMessage)
                 shell.t.writeln(`  \x1B[1m${cmd}\x1B[0m\n`)
                 const res = await shell.runForm(webexecForm, "menu")
@@ -187,8 +186,6 @@ async function connectCMD(shell:Shell, args: string[]) {
                         await gate.t7.storeGates()
                         break
                 }
-            } else {
-                debugger
             }
             gate.load()
             Storage.get({key: "first_gate"}).then(v => {
