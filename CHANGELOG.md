@@ -6,11 +6,18 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.1 - 2022/11/1
+## 1.2 - 2022/11/6
+
+### Added
+
+- Video button, replacing a pane with a live feed of the camera
 
 ### Fixed
 
 - Search not found does not opens TWR
+- To avoid accidential splits, vertical spilt has by default a very fast minimum speed to.
+- Copy mode help is now displayed in the TWR
+- Help mode was updated with the latest keys
 
 ## 1.1.1 - 2022/11/3
 
