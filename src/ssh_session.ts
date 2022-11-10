@@ -128,8 +128,10 @@ export class HybridSession extends SSHSession {
                 console.log("SSH startSession failed", e)
                 if (e.code === "UNIMPLEMENTED")
                     this.fail(Failure.NotImplemented)
-                else
+                else {
+                    this.t7.log("failed startsession", e.code)
                     this.fail(Failure.WrongPassword)
+                }
                 this.clearWatchdog()
 
            })
