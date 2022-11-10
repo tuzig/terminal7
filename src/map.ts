@@ -181,6 +181,7 @@ export class T7Map {
         } else {
             e.classList.remove("show")
             document.getElementById("log-button").classList.remove("on")
+            terminal7.focus()
         }
     }
     tty (msg: string) {
