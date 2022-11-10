@@ -129,7 +129,7 @@ export class HybridSession extends SSHSession {
                 if (e.code === "UNIMPLEMENTED")
                     this.fail(Failure.NotImplemented)
                 else {
-                    this.t7.log("failed startsession", e.code)
+                    this.t7.log("failed startsession", e.toString())
                     this.fail(Failure.WrongPassword)
                 }
                 this.clearWatchdog()
