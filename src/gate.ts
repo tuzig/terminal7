@@ -17,7 +17,6 @@ import { Terminal7 } from './terminal7'
 import { Capacitor } from '@capacitor/core'
 import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
 import { Window } from './window.js'
-import { CLIConnect } from './commands.js'
 
 
 const FAILED_COLOR = "red"// ashort period of time, in milli
@@ -193,7 +192,9 @@ export class Gate {
         switch ( failure ) {
             case Failure.WrongPassword:
                 this.pass = undefined
-                this.retryForm(() => CLIConnect(this.map.shell, this), () => this.close())
+                this.retryForm(async () => 
+                    await this.map.shell.runCommand("connect", [this.name]),
+                    () => this.close())
                 return
             case Failure.NotImplemented:
                 this.notify("Please try again")
@@ -249,7 +250,7 @@ export class Gate {
                     Clipboard.write({ string: rc })
 				this.retryForm(async () => {
                     this.map.t0.writeln("Retrying...")
-                    await CLIConnect(this.map.shell, this)
+                    await this.map.shell.runCommand("connect", [this.name])
 				}, () => this.delete())
             })()
         } else
@@ -265,7 +266,6 @@ export class Gate {
                 .catch(() => this.connect().then(resolve).catch(reject))
             }
             else {
-                this.notify("Using old SSH session")
                 this.map.showLog(false)
             }
         })
@@ -516,7 +516,6 @@ export class Gate {
         const name = this.name.startsWith("temp_")?this.addr:this.name
         const authForm = []
 
-        this.map.t0.writeln(`  Login to ${name}`)
         let withUsername = false
         if (!this.username) {
             this.map.t0.writeln(`  Login to ${name}`)
