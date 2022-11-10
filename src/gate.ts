@@ -514,15 +514,24 @@ export class Gate {
     //TODO: the next function belongs in commands
     async askPass() {
         const name = this.name.startsWith("temp_")?this.addr:this.name
+        const authForm = []
+
         this.map.t0.writeln(`  Login to ${name}`)
-        const authForm = [
-            { prompt: "Username", default: this.username },
-            { prompt: "Password", password: true }
-        ]
+        let withUsername = false
+        if (!this.username) {
+            this.map.t0.writeln(`  Login to ${name}`)
+            authForm.push({ prompt: "Username", default: this.username })
+            withUsername = true
+        } else
+            this.map.t0.writeln(`  Login to ${this.username}@${name}`)
+        authForm.push({ prompt: "Password", password: true })
         // Form errors/abort are handled by the caller
         const res = await this.map.shell.runForm(authForm, "text")
-        this.username = res[0]
-        this.pass = res[1]
+        if (withUsername) {
+            this.username = res[0]
+            this.pass = res[1]
+        } else
+            this.pass = res[0]
     }
     //TODO: the next function belongs in commands
     async completeConnect(): void {

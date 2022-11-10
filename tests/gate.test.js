@@ -150,6 +150,7 @@ describe("gate", () => {
         map.shell.t = t0
         map.shell.runCommand("connect", ["foo"])
 		await sleep(500)
-		expect(t0.out).toMatch("Username [eyal]:")
+		expect(t0.out).not.toMatch("Username")
+
 	})
 })
