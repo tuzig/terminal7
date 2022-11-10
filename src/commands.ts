@@ -151,6 +151,22 @@ async function connectCMD(shell:Shell, args: string[]) {
         return shell.t.writeln(`Host not found: ${hostname}`)
     await new Promise<void>((resolve) => {
         gate.connect(async () => {
+            if (gate.name.startsWith("temp")) {
+                const validated = terminal7.validateHostName(gate.addr)
+                const fields: Fields = [{
+                    prompt: "Gate's name",
+                    validator: (a) => gate.t7.validateHostName(a),
+                }]
+                if (!validated)
+                    fields[0].default = gate.addr
+                const res = await shell.runForm(fields, "text")
+                const name = res[0]
+                gate.name = name
+                gate.nameE = gate.map.add(gate)
+                gate.updateNameE()
+                gate.store = true
+                await terminal7.storeGates()
+            }
             if (gate.session.isSSH && !gate.onlySSH) {
                 const webexecForm = [
                     { prompt: "Just let me in" },
@@ -160,7 +176,7 @@ async function connectCMD(shell:Shell, args: string[]) {
                 const cmd = "bash -c $(curl -sL https://get.webexec.sh)"
                 shell.t.writeln(installMessage)
                 shell.t.writeln(`  \x1B[1m${cmd}\x1B[0m\n`)
-                const res = await await shell.runForm(webexecForm, "menu")
+                const res = await shell.runForm(webexecForm, "menu")
                 switch(res) {
                     case "Copy it to clipboard & connect":
                         Clipboard.write({ string: cmd })
@@ -168,16 +184,19 @@ async function connectCMD(shell:Shell, args: string[]) {
 
                     case "Always use SSH for this host":
                         gate.onlySSH = true
-                        gate.t7.storeGates()
+                        await gate.t7.storeGates()
                         break
                 }
+            } else {
+                debugger
             }
             gate.load()
             Storage.get({key: "first_gate"}).then(v => {
-                if (v.value != "nope") {
-                    terminal7.toggleHelp()
-                    Storage.set({key: "first_gate", value: "nope"}) 
-                }
+                if (v.value != "nope")
+                    setTimeout(() => {
+                        Storage.set({key: "first_gate", value: "nope"})
+                        terminal7.toggleHelp()
+                    }, 1000)
             })
             resolve()
         })
@@ -231,8 +250,7 @@ async function addCMD(shell: Shell) {
         id: hostname
     }, false)
     shell.map.refresh()
-    await CLIConnect(shell, terminal7.activeG)
-    shell.t.writeln(`Failed to connect to ${hostname}`)
+    await connectCMD(shell, [terminal7.activeG.name])
 }
 
 async function peerbookForm(shell: Shell) {
@@ -445,49 +463,4 @@ async function hostsCMD(shell: Shell) {
         res += `\x1B[1m${name}:\x1B[0m ${gate.addr}\n`
     }
     shell.t.writeln(res)
-}
-export async function CLIConnect(shell: Shell, gate: Gate) {
-    return new Promise<void>(resolve => {
-        gate.connect(() => {
-            if (!gate.name.startsWith("temp")) {
-                gate.load()
-                resolve()
-                return
-            }
-            const saveForm = [{
-                prompt: "Save gate?",
-                default: "y",
-                values: ["y", "n"]
-            }]
-            shell.runForm(saveForm, "text").then(res => {
-                if (res[0] == "y") {
-                    const validated = terminal7.validateHostName(gate.addr)
-                    const fields: Fields = [{
-                        prompt: "Enter name",
-                        validator: (a) => gate.t7.validateHostName(a),
-                    }]
-                    if (!validated)
-                        fields[0].default = gate.addr
-                    shell.runForm(fields, "text").then(res => {
-                        const name = res[0]
-                        gate.name = name
-                        gate.nameE = gate.map.add(gate)
-                        gate.updateNameE()
-                        gate.store = true
-                        terminal7.storeGates()
-                        shell.map.showLog(false)
-                        gate.load()
-                        resolve()
-                    }).catch()
-                } else {
-                    terminal7.clear()
-                    gate.load()
-                    gate.delete()
-                    resolve()
-                }
-            }).catch()
-        }, () => {
-            resolve()
-        })
-    })
 }

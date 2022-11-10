@@ -471,7 +471,7 @@ describe("terminal7", function() {
             expect(t0.out).toMatch("Password: \n")
             t0.pressKey("Enter")
             await sleep(10)
-            expect(t0.out).toMatch("Save gate?")
+            expect(t0.out).toMatch("Gate's name")
         })
     })
 })
