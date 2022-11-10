@@ -241,13 +241,14 @@ async function addCMD(shell: Shell) {
             })
         })
     }
-    terminal7.activeG = terminal7.addGate({
+    const gate = terminal7.addGate({
         name: "temp_" + Math.random().toString(16).slice(2), // temp random name
         addr: hostname,
         id: hostname
     }, false)
+    return connectCMD(shell, [gate.name])
+    terminal7.activeG = gate
     shell.map.refresh()
-    await connectCMD(shell, [terminal7.activeG.name])
 }
 
 async function peerbookForm(shell: Shell) {
