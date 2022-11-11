@@ -152,7 +152,6 @@ export class HybridSession extends SSHSession {
             }
             if (line.includes("no such file")) {
                 this.clearWatchdog()
-                const exec = ACCEPT_CMD.split(" ")[0]
                 SSH.closeChannel({channel: cid})
                 this.startWatchdog()
                 super.connect()
