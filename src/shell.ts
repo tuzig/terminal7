@@ -32,25 +32,46 @@ export class Shell {
     }
     
     async onKey(ev: KeyboardEvent) {
-        this.updateCapsLock(ev)
         const key = ev.key
         switch (key) {
             case "Enter":
-                this.t.write("\n")
+                this.t.write("\n\x1B[K")
                 await this.handleLine(this.currentLine)
                 this.currentLine = ''
                 break
             case "Backspace":
                 if (this.currentLine.length > 0) {
-                this.currentLine = this.currentLine.slice(0, -1)
-                this.t.write("\b \b")
-            }
-            break
+                    this.currentLine = this.currentLine.slice(0, -1)
+                    this.t.write("\b \b")
+                }
+                break
+            case "Tab":
+                this.handleTab()
+                break
             default:
                 if (key.length == 1) { // make sure the key is a char
-                this.currentLine += key
-                this.t.write(key)
-            }
+                    this.currentLine += key
+                    this.t.write(key)
+                }
+        }
+    }
+
+    handleTab() {
+        const [cmd, ...args] = this.currentLine.trim().split(/\s+/)
+        if (!cmd || args.length > 0)
+            return
+        const matches = []
+        for (const c of this.commands) {
+            if (c[0].startsWith(cmd))
+                matches.push(c[0])
+        }
+        if (matches.length == 1) {
+            this.currentLine = matches[0] + ' '
+            this.printPrompt()
+        } else if (matches.length > 1) {
+            this.t.write("\x1B[s\n")
+            this.t.write(matches.join(' '))
+            this.t.write("\x1B[u")
         }
     }
 
@@ -137,6 +158,7 @@ export class Shell {
     keyHandler(ev: KeyboardEvent) {
         const form = this.activeForm,
             key = ev.key
+        this.updateCapsLock(ev)
         this.printPrompt()
         if (key == 'Escape') {
             if (form)
