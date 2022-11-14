@@ -230,7 +230,7 @@ export class Gate {
 
                 if (ans == "n") {
                     this.delete()
-                    setTimeout(() => this.map.shell.handleLine("add-host"), 100)
+                    setTimeout(() => this.map.shell.handleLine("add"), 100)
                     return
                 }
                 const webexecForm = [{
