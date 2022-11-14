@@ -253,7 +253,7 @@ export class Gate {
 				}, () => this.delete())
             })()
         } else
-            this.t7.onDisconnect(this)
+            this.map.shell.onDisconnect(this)
     }
     reconnect(): Promise<void> {
         return new Promise((resolve, reject) => {

@@ -474,33 +474,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         document.getElementById('log').classList.remove('hidden', 'show')
     }
     /*
-     * onDisconnect is called when a gate disconnects.
-     */
-    async onDisconnect(gate) {
-        if (!this.netStatus.connected || 
-            ((this.activeG != null) && (gate != this.activeG)))
-            return
-        
-        const reconnectForm = [
-            { prompt: "Reconnect" },
-            { prompt: "Close" }
-        ]
-        let res
-        try {
-            res = await this.map.shell.runForm(reconnectForm, "menu")
-        } catch(e) {
-            res = null
-        }
-        if (res == "Reconnect") {
-            gate.session = null
-            gate.connect(gate.onConnected)
-        } else {
-            this.map.showLog(false)
-            gate.clear()
-            this.goHome()
-        }
-    }
-    /*
      * focus restores the focus to the ative pane, if there is one
      */
     focus() {

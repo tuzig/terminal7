@@ -2,6 +2,7 @@ import { Clipboard } from "@capacitor/clipboard"
 import { Terminal } from '@tuzig/xterm'
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
+import { Gate } from "./gate"
 import { T7Map } from './map'
 
 export class Shell {
@@ -183,6 +184,34 @@ export class Shell {
             }
         }
         return ret
+    }
+
+    /*
+     * onDisconnect is called when a gate disconnects.
+     */
+    async onDisconnect(gate: Gate) {
+        if (!terminal7.netStatus.connected || 
+            ((terminal7.activeG != null) && (gate != terminal7.activeG)))
+            return
+        
+        const reconnectForm = [
+            { prompt: "Reconnect" },
+            { prompt: "Close" }
+        ]
+        let res
+        try {
+            res = await this.runForm(reconnectForm, "menu")
+        } catch(e) {
+            res = null
+        }
+        if (res == "Reconnect") {
+            gate.session = null
+            gate.connect(gate.onConnected)
+        } else {
+            this.map.showLog(false)
+            gate.clear()
+            terminal7.goHome()
+        }
     }
 }
 
