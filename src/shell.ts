@@ -28,9 +28,11 @@ export class Shell {
         this.commands = loadCommands(this)
         this.currentLine = ''
         this.t.scrollToBottom()
+        document.addEventListener('keydown', ev => this.updateCapsLock(ev))
     }
     
     async onKey(ev: KeyboardEvent) {
+        this.updateCapsLock(ev)
         const key = ev.key
         switch (key) {
             case "Enter":
@@ -171,6 +173,11 @@ export class Shell {
     printPrompt() {
         if (this.activeForm || !this.active) return
         this.t.write(`\r\x1B[K${this.prompt}${this.currentLine}`)
+    }
+
+    updateCapsLock(ev: KeyboardEvent) {
+        document.getElementById("capslock-indicator")
+            .classList.toggle("hidden", !ev.getModifierState("CapsLock"))
     }
     
     getGate(name: string) {

@@ -753,3 +753,14 @@ video {
     width: 100%;
     height: 100%;
 }
+#capslock-indicator {
+    position: absolute;
+    top: 2%;
+    right: 15%;
+    color: var(--warning);
+    z-index: 4;
+}
+#capslock-indicator > i {
+    font-size: 1em;
+}
+
