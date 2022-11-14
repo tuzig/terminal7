@@ -36,6 +36,12 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             usage: "cl[ear]",
             execute: async () => shell.t.clear()
         },
+        close: {
+            name: "close",
+            help: "Close the current host",
+            usage: "cl[ose]",
+            execute: async () => closeCMD(shell)
+        },
         connect: {
             name: "connect",
             help: "Connect to an existing host",
@@ -462,3 +468,11 @@ async function hostsCMD(shell: Shell) {
     }
     shell.t.writeln(res)
 }
+
+async function closeCMD(shell: Shell) {
+    const gate = terminal7.activeG
+    if (!gate)
+        return shell.t.writeln("No active connection")
+    gate.close()
+}
+
