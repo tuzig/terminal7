@@ -42,7 +42,7 @@ export class Terminal7Mock extends Terminal7 {
         <div id='add-gate'></div>
     </div>
 </div>
-<div id='log'><div id="t0"></div></div>
+<div id='log'><div id="t0"><div id="capslock-indicator"></div></div></div>
 <div id='log-button'></div>
 <div id='log-msgs'></div>
 <div id='help-button'></div>
