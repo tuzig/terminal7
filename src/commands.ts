@@ -399,7 +399,7 @@ async function editCMD (shell:Shell, args: string[]) {
             default: gate.addr,
             validator: a => gate.t7.validateHostAddress(a)
         },
-        { prompt: "Username", default: gate.username },
+        { prompt: "Username", default: gate.username || ""},
         { prompt: "SSH only", values: ["y", "n"], default: gate.onlySSH?"y":"n" },
     ]
     const fDel = [{
