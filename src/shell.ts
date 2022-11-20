@@ -198,8 +198,11 @@ export class Shell {
     }
 
     updateCapsLock(ev: KeyboardEvent) {
-        document.getElementById("capslock-indicator")
-            .classList.toggle("hidden", !ev.getModifierState("CapsLock"))
+        const e = document.getElementById("capslock-indicator")
+        if (ev.getModifierState("CapsLock"))
+            e.classList.remove("hidden")
+        else
+            e.classList.add("hidden")
     }
     
     getGate(name: string) {
@@ -233,6 +236,7 @@ export class Shell {
         } catch(e) {
             res = null
         }
+        // TODO: needs refactoring
         if (res == "Reconnect") {
             gate.session = null
             gate.connect(gate.onConnected)

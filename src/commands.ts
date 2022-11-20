@@ -5,6 +5,7 @@ import { Storage } from "@capacitor/storage"
 import { Terminal7, DEFAULT_DOTFILE } from "./terminal7"
 import { Fields } from "./form"
 import fortuneURL from "../resources/fortune.txt"
+import { Gate } from './gate'
 
 declare const terminal7 : Terminal7
 
@@ -26,7 +27,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
     return new Map<string, Command>(Object.entries({
         'add': {
             name: "add",
-            help: "Add a new host",
+            help: "Add a new gate",
             usage: "a[dd]",
             execute: async () => addCMD(shell)
         },
@@ -38,19 +39,19 @@ export function loadCommands(shell: Shell): Map<string, Command> {
         },
         close: {
             name: "close",
-            help: "Close the current host",
+            help: "Close the current gate",
             usage: "cl[ose]",
-            execute: async () => closeCMD(shell)
+            execute: async args => closeCMD(shell, args)
         },
         connect: {
             name: "connect",
-            help: "Connect to an existing host",
+            help: "Connect to an existing gate",
             usage: "co[nnect] <gatename>",
             execute: async args => connectCMD(shell, args)
         },
         edit: {
             name: "edit",
-            help: "Edit a host",
+            help: "Edit a gate",
             usage: "e[dit] <gatename>",
             execute: async args => editCMD(shell, args)
         },
@@ -469,10 +470,17 @@ async function hostsCMD(shell: Shell) {
     shell.t.writeln(res)
 }
 
-async function closeCMD(shell: Shell) {
-    const gate = terminal7.activeG
-    if (!gate)
-        return shell.t.writeln("No active connection")
+async function closeCMD(shell: Shell, args: string[]) {
+    let gate: Gate
+    if (args[0]) {
+        gate = shell.getGate(args[0])
+        if (!gate)
+            return shell.t.writeln(`Host not found: ${args[0]}`)
+    } else {
+        gate = terminal7.activeG
+        if (!gate)
+            return shell.t.writeln("No active connection")
+    }
     gate.close()
 }
 
