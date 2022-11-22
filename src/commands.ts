@@ -19,7 +19,7 @@ const installMessage = `
 export type Command = {
     name: string
     help: string
-    usage: string
+    usage?: string
     execute(args: string[]): Promise<void>
 }
 
@@ -28,67 +28,60 @@ export function loadCommands(shell: Shell): Map<string, Command> {
         'add': {
             name: "add",
             help: "Add a new gate",
-            usage: "a[dd]",
             execute: async () => addCMD(shell)
         },
         clear: {
             name: "clear",
             help: "Clear the screen",
-            usage: "cl[ear]",
             execute: async () => shell.t.clear()
         },
         close: {
             name: "close",
             help: "Close the current gate",
-            usage: "cl[ose]",
             execute: async args => closeCMD(shell, args)
         },
         connect: {
             name: "connect",
             help: "Connect to an existing gate",
-            usage: "co[nnect] <gatename>",
+            usage: "<gatename>",
             execute: async args => connectCMD(shell, args)
         },
         edit: {
             name: "edit",
             help: "Edit a gate",
-            usage: "e[dit] <gatename>",
+            usage: "<gatename>",
             execute: async args => editCMD(shell, args)
         },
         fortune: {
             name: "fortune",
             help: "Get a fortune",
-            usage: "f[ortune]",
             execute: async () => fortuneCMD(shell)
         },
         help: {
             name: "help",
             help: "This help",
-            usage: "he[lp] [command]",
+            usage: "[command]",
             execute: async args => helpCMD(shell, args)
         },
         hide: {
             name: "hide",
             help: "Hide this window",
-            usage: "hi[de]",
             execute: async () => shell.map.showLog(false)
         },
         map: {
             name: "map",
             help: "Back to the map",
-            usage: "m[ap]",
             execute: async () => terminal7.goHome()
         },
         gates: {
             name: "gates",
             help: "List all gates",
-            usage: "g[ates]",
             execute: async () => hostsCMD(shell)
         },
         reset: {
             name: "reset",
             help: "Reset a connected gate",
-            usage: "r[eset] [gatename]",
+            usage: "[gatename]",
             execute: async args => resetCMD(shell, args)
         },
     }))
@@ -102,12 +95,12 @@ async function helpCMD(shell: Shell, args: string[]) {
 \x1B[1mAvailable commands:\x1B[0m\n
 `
         for (const [, command] of shell.commands) {
-            help += `  ${command.usage}: ${command.help}\n`
+            help += `  ${getUsage(shell.commands, command)}: ${command.help}\n`
         }
         help += "\nType 'help <command>' for more information."
     } else {
         const command = shell.commands.get(args[0])
-        if (!command)
+        if (!command) {
             if (args[0] == "copymode") {
                 help +=`
 Copy mode let's you navigate, search mark & copy
@@ -131,15 +124,33 @@ the active pane's buffer. Here's are the supported keys:
 All navigation commands support a repetition factor.
 For example, "5k" moves the cursor 5 lines up (type hi to hide).
 `
-            
-        }
-        else {
+            } else
+                help += "No help for " + args[0]
+        } else {
             help += `\x1B[1m${command.name}\x1B[0m\n`
-            help += `  ${command.help}\n`
-            help += `  Usage: ${command.usage}`
+                help += `  ${command.help}\n`
+                help += `  Usage: ${getUsage(shell.commands, command)}`
         }
     }
     shell.t.writeln(help)
+}
+
+function getUsage(commands: Map<string, Command>, command: Command) {
+    if (!command) return ""
+    let alias = command.name[0]
+    let distict = false
+    while (!distict) {
+        distict = true
+        for (const [, c] of commands) {
+            if (c.name != command.name && c.name.startsWith(alias)) {
+                distict = false
+                alias += command.name[alias.length]
+                break
+            }
+        }
+    }
+    const usage = command.usage ? " " + command.usage : ""
+    return `${alias}[${command.name.slice(alias.length)}]${usage}`
 }
 
 async function fortuneCMD(shell: Shell) {

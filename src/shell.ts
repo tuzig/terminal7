@@ -242,8 +242,7 @@ export class Shell {
             gate.connect(gate.onConnected)
         } else {
             this.map.showLog(false)
-            gate.clear()
-            terminal7.goHome()
+            gate.close()
         }
     }
 }
