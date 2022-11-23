@@ -78,7 +78,7 @@ export class Pane extends Cell {
         this.fitAddon = new FitAddon()
         this.searchAddon = new SearchAddon()
         this.WebLinksAddon = new WebLinksAddon((MouseEvent, url) => {
-            Browser.open({ url })
+            window.open(url, "_blank", "noopener")
         })
 
         // there's a container div we need to get xtermjs to fit properly
