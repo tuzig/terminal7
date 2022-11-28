@@ -150,7 +150,8 @@ export class HybridSession extends SSHSession {
                 }
                 return
             }
-            if (line.includes("no such file")) {
+            //TODO: find a cleaner way to identify when the session closes without READY
+            if (line.includes("such file or")) {
                 this.clearWatchdog()
                 SSH.closeChannel({channel: cid})
                 this.startWatchdog()

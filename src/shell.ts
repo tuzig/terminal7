@@ -2,6 +2,7 @@ import { Clipboard } from "@capacitor/clipboard"
 import { Terminal } from '@tuzig/xterm'
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
+import { Gate } from "./gate"
 import { T7Map } from './map'
 
 export class Shell {
@@ -27,27 +28,50 @@ export class Shell {
         this.commands = loadCommands(this)
         this.currentLine = ''
         this.t.scrollToBottom()
+        document.addEventListener('keydown', ev => this.updateCapsLock(ev))
     }
     
     async onKey(ev: KeyboardEvent) {
         const key = ev.key
         switch (key) {
             case "Enter":
-                this.t.write("\n")
+                this.t.write("\n\x1B[K")
                 await this.handleLine(this.currentLine)
                 this.currentLine = ''
                 break
             case "Backspace":
                 if (this.currentLine.length > 0) {
-                this.currentLine = this.currentLine.slice(0, -1)
-                this.t.write("\b \b")
-            }
-            break
+                    this.currentLine = this.currentLine.slice(0, -1)
+                    this.t.write("\b \b")
+                }
+                break
+            case "Tab":
+                this.handleTab()
+                break
             default:
                 if (key.length == 1) { // make sure the key is a char
-                this.currentLine += key
-                this.t.write(key)
-            }
+                    this.currentLine += key
+                    this.t.write(key)
+                }
+        }
+    }
+
+    handleTab() {
+        const [cmd, ...args] = this.currentLine.trim().split(/\s+/)
+        if (!cmd || args.length > 0)
+            return
+        const matches = []
+        for (const c of this.commands) {
+            if (c[0].startsWith(cmd))
+                matches.push(c[0])
+        }
+        if (matches.length == 1) {
+            this.currentLine = matches[0] + ' '
+            this.printPrompt()
+        } else if (matches.length > 1) {
+            this.t.write("\x1B[s\n")
+            this.t.write(matches.join(' '))
+            this.t.write("\x1B[u")
         }
     }
 
@@ -134,6 +158,7 @@ export class Shell {
     keyHandler(ev: KeyboardEvent) {
         const form = this.activeForm,
             key = ev.key
+        this.updateCapsLock(ev)
         this.printPrompt()
         if (key == 'Escape') {
             if (form)
@@ -171,6 +196,14 @@ export class Shell {
         if (this.activeForm || !this.active) return
         this.t.write(`\r\x1B[K${this.prompt}${this.currentLine}`)
     }
+
+    updateCapsLock(ev: KeyboardEvent) {
+        const e = document.getElementById("capslock-indicator")
+        if (ev.getModifierState("CapsLock"))
+            e.classList.remove("hidden")
+        else
+            e.classList.add("hidden")
+    }
     
     getGate(name: string) {
         let ret = terminal7.gates.get(name)
@@ -183,6 +216,34 @@ export class Shell {
             }
         }
         return ret
+    }
+
+    /*
+     * onDisconnect is called when a gate disconnects.
+     */
+    async onDisconnect(gate: Gate) {
+        if (!terminal7.netStatus.connected || 
+            ((terminal7.activeG != null) && (gate != terminal7.activeG)))
+            return
+        
+        const reconnectForm = [
+            { prompt: "Reconnect" },
+            { prompt: "Close" }
+        ]
+        let res
+        try {
+            res = await this.runForm(reconnectForm, "menu")
+        } catch(e) {
+            res = null
+        }
+        // TODO: needs refactoring
+        if (res == "Reconnect") {
+            gate.session = null
+            gate.connect(gate.onConnected)
+        } else {
+            this.map.showLog(false)
+            gate.close()
+        }
     }
 }
 

@@ -27,25 +27,31 @@ export function loadCommands(shell: Shell): Map<string, Command> {
     return new Map<string, Command>(Object.entries({
         'add': {
             name: "add",
-            help: "Add a new host",
+            help: "Add a new gate",
             usage: "a[dd]",
             execute: async () => addCMD(shell)
         },
         clear: {
             name: "clear",
             help: "Clear the screen",
-            usage: "cl[ear]",
+            usage: "cle[ar]",
             execute: async () => shell.t.clear()
+        },
+        close: {
+            name: "close",
+            help: "Close the current gate",
+            usage: "clo[se]",
+            execute: async args => closeCMD(shell, args)
         },
         connect: {
             name: "connect",
-            help: "Connect to an existing host",
+            help: "Connect to an existing gate",
             usage: "co[nnect] <gatename>",
             execute: async args => connectCMD(shell, args)
         },
         edit: {
             name: "edit",
-            help: "Edit a host",
+            help: "Edit a gate",
             usage: "e[dit] <gatename>",
             execute: async args => editCMD(shell, args)
         },
@@ -101,7 +107,7 @@ async function helpCMD(shell: Shell, args: string[]) {
         help += "\nType 'help <command>' for more information."
     } else {
         const command = shell.commands.get(args[0])
-        if (!command)
+        if (!command) {
             if (args[0] == "copymode") {
                 help +=`
 Copy mode let's you navigate, search mark & copy
@@ -125,9 +131,9 @@ the active pane's buffer. Here's are the supported keys:
 All navigation commands support a repetition factor.
 For example, "5k" moves the cursor 5 lines up (type hi to hide).
 `
-            
-        }
-        else {
+            } else
+                help += "No help for " + args[0]
+        } else {
             help += `\x1B[1m${command.name}\x1B[0m\n`
             help += `  ${command.help}\n`
             help += `  Usage: ${command.usage}`
@@ -394,7 +400,7 @@ async function editCMD (shell:Shell, args: string[]) {
             default: gate.addr,
             validator: a => gate.t7.validateHostAddress(a)
         },
-        { prompt: "Username", default: gate.username },
+        { prompt: "Username", default: gate.username || ""},
         { prompt: "SSH only", values: ["y", "n"], default: gate.onlySSH?"y":"n" },
     ]
     const fDel = [{
@@ -464,3 +470,18 @@ async function hostsCMD(shell: Shell) {
     }
     shell.t.writeln(res)
 }
+
+async function closeCMD(shell: Shell, args: string[]) {
+    let gate: Gate
+    if (args[0]) {
+        gate = shell.getGate(args[0])
+        if (!gate)
+            return shell.t.writeln(`Host not found: ${args[0]}`)
+    } else {
+        gate = terminal7.activeG
+        if (!gate)
+            return shell.t.writeln("No active connection")
+    }
+    gate.close()
+}
+

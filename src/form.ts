@@ -183,7 +183,7 @@ export class Form {
     next(t: Terminal) {
         const current = this.fields[this.currentField]
         let valid = true
-        if (!this.field && !current.default) {
+        if (!this.field && current.default == undefined) {
             t.writeln("Please enter a value")
             valid = false
         }
