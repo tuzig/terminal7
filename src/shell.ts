@@ -71,7 +71,7 @@ export class Shell {
         }
 
         if (exec == null)
-            return this.t.writeln(`Command not found: "${args[0]}" (hint: \`help\`)`)
+            return this.t.writeln(`Command not found: "${cmd}" (hint: \`help\`)`)
         this.active = false
         try {
             await exec(args)
