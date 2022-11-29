@@ -61,8 +61,10 @@ Please feel free to open an issue or if you are ready to code yourself, follow t
 1. Fork it
 2. Clone it
 3. `yarn install`
-4. Create your feature branch (git branch my-new-feature)
-5. `yarn test` to test your changes
-6. Commit your changes (git commit -am 'Add some feature')
-7. Push to the branch (git push origin my-new-feature)
-8. Open a new pull request
+4. `git remote add up git@github.com:tuzig/terminal7`
+5. `git switch -c my-new-feature`
+6. `git pull --rebase up master` daily
+7. `yarn test` to test your changes
+8. Commit your changes (git commit -am 'Add some feature')
+9. Push to the branch (git push origin my-new-feature)
+10. Open a new pull request
