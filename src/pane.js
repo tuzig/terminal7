@@ -579,13 +579,10 @@ export class Pane extends Cell {
         }
     }
     copySelection() {
-        let i,
-            ret = "",
-            lines = this.t.getSelection().split('\n')
-        for (i = 0; i < lines.length; i++)
-            ret += lines[i].trimEnd()+'\n'
+        const lines = this.t.getSelection().split('\n'),
+            linesFormatted = lines.map(l => l.trimEnd())
     
-        return Clipboard.write({string: ret})
+        return Clipboard.write({string: linesFormatted.join('\n')})
     }
     handleCMKey(key) {
         var x, y, newX, newY,
