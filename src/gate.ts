@@ -226,13 +226,13 @@ export class Gate {
                 try {
                     ans = (await this.map.shell.runForm(verifyForm, "text"))[0]
                 } catch(e) {
-                    return this.onFailure(Failure.NotImplemented)
+                    return this.onFailure(Failure.WrongAddress)
                 }
 
                 if (ans == "n") {
                     this.delete()
                     setTimeout(() => this.map.shell.handleLine("add"), 100)
-                    return this.onFailure(Failure.NotImplemented)
+                    return this.onFailure(Failure.WrongAddress)
                 }
                 const webexecForm = [{
                     prompt: `Make sure webexec is running on ${this.addr}:
@@ -243,7 +243,7 @@ export class Gate {
                 try {
                     ans = (await this.map.shell.runForm(webexecForm, "text"))[0]
                 } catch(e) {
-                    return this.onFailure(Failure.NotImplemented)
+                    return this.onFailure(Failure.WrongAddress)
                 }
                 if (ans == "y")
                     Clipboard.write({ string: rc })
