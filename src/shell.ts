@@ -230,20 +230,25 @@ export class Shell {
             { prompt: "Reconnect" },
             { prompt: "Close" }
         ]
-        let res
-        try {
-            res = await this.runForm(reconnectForm, "menu")
-        } catch(e) {
-            res = null
+
+        // Don't show a menu when recovering, just clear the session and connect
+        if (!terminal7.recovering) {
+            let res
+            try {
+                res = await this.runForm(reconnectForm, "menu")
+            } catch(e) {
+                // try connection
+                res = null
+            }
+            // TODO: needs refactoring
+            if (res == "Close") {
+                this.map.showLog(false)
+                gate.close()
+                return
+            }
         }
-        // TODO: needs refactoring
-        if (res == "Reconnect") {
-            gate.session = null
-            gate.connect(gate.onConnected)
-        } else {
-            this.map.showLog(false)
-            gate.close()
-        }
+        gate.session = null
+        gate.connect(gate.onConnected)
     }
 }
 

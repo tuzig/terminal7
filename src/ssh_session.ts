@@ -112,7 +112,7 @@ export class HybridSession extends SSHSession {
         this.webrtcSession = null
         this.sentMessages = []
     }
-    connect(marker=-1) {
+    connect(marker=null) {
         this.startWatchdog()
         SSH.startSessionByPasswd(this.byPass)
            .then(async ({ session }) => {
@@ -246,8 +246,10 @@ export class HybridSession extends SSHSession {
     }
 
     async reconnect(marker?: number) {
-        this.webrtcSession = null
-        return this.connect(marker)
+        if (this.webrtcSession)
+            return this.webrtcSession.reconnect(marker)
+        else
+            return this.connect(marker)
     }
     close() {
         if (this.webrtcSession)

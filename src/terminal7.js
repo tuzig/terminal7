@@ -57,6 +57,7 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # timeout = 3000
 # retries = 3
 # ice_server = "stun:stun2.l.google.com:19302"
+# recovery_time = 7000
 
 [ui]
 # leader = "a"
@@ -234,20 +235,19 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         if (Capacitor.isNativePlatform())  {
             App.addListener('appStateChange', state => {
                 if (!state.isActive) {
-                    // this prevents a resizing bug that keeps the font tiny
-                    this.map.showLog(true)
                     if (this.pb) {
                         this.pb.close()
                         this.pb = null
                     }
                     // We're getting suspended. disengage.
-                    this.disengage().then(() => {
-                        this.clearTimeouts()
-                    })
+                    this.notify("🛋️ Disengaging")
+                    this.disengage()
                 } else {
-                    // We're back! ensure we have the latest network status and 
-                    // reconnect to the active gate
+                    // We're back! puts us in recovery mode so that it'll
+                    // quietly reconnect to the active gate on failure
                     this.clearTimeouts()
+                    this.recovering = true
+                    this.run(() => this.recovering = false, this.conf.net.recoveryTime)
                     Network.getStatus().then(s => this.updateNetworkStatus(s))
                 }
             })
@@ -554,9 +554,11 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             this.pbConnect()
             const gate = this.activeG
             if (gate) {
+                this.notify("🌞 Reconnecting")
                 gate.reconnect()
-                .then(() => this.map.showLog(false))
-                .catch(() => gate.reset())
+                    .then(() => this.map.showLog(false))
+                    .catch(() =>
+                        this.map.shell.runCommand("reset", [gate.name]))
             }
         } else {
             off.remove("hidden")
@@ -587,6 +589,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                               Please click <i class="f7-icons">gear</i> and change net.peerbook to "api.peerbook.io"`)
         this.conf.net.timeout = this.conf.net.timeout || 5000
         this.conf.net.retries = this.conf.net.retries || 3
+        this.conf.net.recoveryTime = this.conf.net.recovery_time || 7000
         this.conf.theme = this.conf.theme || {}
         this.conf.theme.foreground = this.conf.theme.foreground || "#00FAFA"
         this.conf.theme.background = this.conf.theme.background || "#000"

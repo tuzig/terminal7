@@ -178,11 +178,11 @@ export class Gate {
     }
     // handle connection failures
     handleFailure(failure: Failure) {
-        this.notify(`FAILED: ${failure || "Peer connection"}`)
+        if (!this.t7.recovering)
+            this.notify(`FAILED: ${failure || "WebRTC connection"}`)
         this.map.showLog(true)
         this.session.close()
         this.session = null
-        this.marker = null
         if (!this.boarding)
             return
         this.stopBoarding()
@@ -259,14 +259,10 @@ export class Gate {
         return new Promise((resolve, reject) => {
             if (!this.session)
                 return this.connect()
-            else if (!this.session.isSSH) {
-                this.notify("Reconnecting")
-                this.session.reconnect(this.marker).then(resolve)
-                .catch(() => this.connect().then(resolve).catch(reject))
-            }
-            else {
-                this.map.showLog(false)
-            }
+            this.session.reconnect(this.marker).then(layout => {
+                this.setLayout(layout)
+                resolve()
+            }).catch(() => this.connect().then(resolve).catch(reject))
         })
     }
     /*

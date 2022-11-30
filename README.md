@@ -2,7 +2,13 @@
 
 <img width="1559" alt="Screen Shot 2022-01-06 at 22 31 04" src="https://user-images.githubusercontent.com/36852/148447779-959c7c92-d542-4737-9161-bfe009dc746a.png">  
 
-![Test](https://github.com/tuzig/terminal7/workflows/Terminal7-Tests/badge.svg) ![License](https://img.shields.io/badge/license-GPL-green) ![Platform](https://img.shields.io/badge/platform-web-blue) ![Languages](https://img.shields.io/github/languages/top/tuzig/terminal7) ![Closed Issue](https://img.shields.io/github/issues-closed/tuzig/terminal7?color=A0A0A0) ![Open Issues](https://img.shields.io/github/issues/tuzig/terminal7)
+![Test](https://github.com/tuzig/terminal7/workflows/Terminal7-Tests/badge.svg)
+![License](https://img.shields.io/badge/license-GPL-green)
+![Platform](https://img.shields.io/badge/platform-web-blue)
+![Languages](https://img.shields.io/github/languages/top/tuzig/terminal7)
+![Closed
+Issue](https://img.shields.io/github/issues-closed/tuzig/terminal7?color=A0A0A0)
+![Open Issues](https://img.shields.io/github/issues/tuzig/terminal7)
 
 Terminal7 is a terminal multiplexer re-designed for remote servers and 
 hi-res touch screens. A reincaranation of tmux and screen, Terminal7 is a hybrid

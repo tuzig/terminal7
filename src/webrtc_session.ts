@@ -71,7 +71,6 @@ export class WebRTCSession extends BaseSession {
     pc: RTCPeerConnection
     lastMsgId: number
     t7: object
-    marker: number
     constructor() {
         super()
         this.channels = new Map()
@@ -79,14 +78,13 @@ export class WebRTCSession extends BaseSession {
         this.pendingChannels = new Map()
         this.msgHandlers = new Map()
         this.lastMsgId = 0
-        this.marker = -1
     }
     onIceCandidate(e: RTCPeerConnectionIceEvent): void
     onNegotiationNeeded(ev: Event): void
     public get isSSH() {
         return false
     }
-    async connect(marker=-1) {
+    async connect(marker=null) {
         console.log("in connect")
         this.startWatchdog()
 
@@ -107,7 +105,7 @@ export class WebRTCSession extends BaseSession {
             this.clearWatchdog()
             const state = this.pc.connectionState
             console.log("new connection state", state, marker)
-            if ((state == "connected") && (marker != -1)) {
+            if ((state == "connected") && (marker != null)) {
                 this.sendCTRLMsg({
                     type: "restore",
                     args: { marker }},
@@ -209,13 +207,26 @@ export class WebRTCSession extends BaseSession {
             }
         })
     }
-    async reconnect(marker: number): Promise<void> {
-        console.log("in reconnect", this.cdc, this.cdc.readyState)
-        if (!this.pc)
-            return this.connect(marker)
-        else
+    async reconnect(marker: number|null): Promise<void> {
+        return new Promise((resolve, reject) => { 
+            console.log("in reconnect", this.cdc, this.cdc.readyState)
+            if (!this.pc)
+                return this.connect(marker)
+            
+            this.startWatchdog()
             if (!this.cdc || this.cdc.readyState != "open")
-                return this.openCDC()
+                this.openCDC()
+            if (marker != null)
+                this.sendCTRLMsg({ type: "restore", args: { marker }}, payload => {
+                    this.clearWatchdog()
+                    resolve(payload)
+                }, reject)
+            else
+                this.getPayload().then(payload => {
+                   this.clearWatchdog()
+                   resolve(payload)
+                }).catch(reject)
+        })
     }
     openCDC(): Promise<void> {
         // stop listening for messages
@@ -323,7 +334,7 @@ export class WebRTCSession extends BaseSession {
                     args: null
                 }, (payload) => {
                 this.t7.log("got a marker", payload)
-                this.close()
+                this.closeChannels()
                 resolve(payload)
             }, reject)
         })
