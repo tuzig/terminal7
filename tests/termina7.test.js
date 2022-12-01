@@ -444,7 +444,8 @@ describe("terminal7", function() {
             t0.pressKey("Enter")
             await sleep(100)
             console.log("t0.out:", t0.out)
-            expect(t0.out).toMatch(/webexec.+over WebRTC/)
+            expect(t0.out).toMatch(/webexec/)
+            expect(t0.out).toMatch(/over WebRTC/)
         })
         it("can connect to SSH through form", async () => {
             const t0 = t.map.t0
