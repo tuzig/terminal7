@@ -15,6 +15,8 @@ export class Shell {
     activeForm: Form | null
     commands: Map<string, Command>
     currentLine = ''
+    timer: NodeJS.Timer
+
     constructor(map: T7Map) {
         this.map = map
         this.t = map.t0
@@ -203,7 +205,26 @@ export class Shell {
         else
             e.classList.add("hidden")
     }
-    
+
+    startHourglass(timeout: number) {
+        if (this.timer) return
+        const len = 20,
+            interval = timeout / len
+        let i = 0
+        this.timer = setInterval(() => {
+            this.t.write(`\r\x1B[KTWR ${" ".repeat(i)}ᗧ${"·".repeat(len-i-1)}🍒\x1B[?25l`)
+            i++
+        }, interval)
+        setTimeout(() => this.stopHourglass(), timeout)
+    }
+
+    stopHourglass() {
+        if (!this.timer) return
+        clearInterval(this.timer)
+        this.timer = null
+        this.t.write(`\r\x1B[K\x1B[?25h`)
+    }
+
     getGate(name: string) {
         let ret = terminal7.gates.get(name)
         if (!ret) {

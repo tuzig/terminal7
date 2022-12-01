@@ -154,6 +154,7 @@ export class Gate {
             return
         }
         this.t7.log(`updating ${this.name} state to ${state} ${failure}`)
+        this.map.shell.stopHourglass()
         if (state == "connected") {
             this.marker = null
             this.notify(`🥂  over ${this.session.isSSH?"SSH":"WebRTC"}`)
@@ -601,6 +602,7 @@ export class Gate {
             this.t7.log("TBD: update layout", layout)
         }
         this.t7.log("opening session")
+        this.map.shell.startHourglass(this.t7.conf.net.timeout)
         if (this.noIds)
             this.session.connect(this.marker)
         else {
