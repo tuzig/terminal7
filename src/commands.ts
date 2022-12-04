@@ -1,7 +1,7 @@
 import { Clipboard } from '@capacitor/clipboard'
 import { Shell } from "./shell"
 import * as TOML from '@tuzig/toml'
-import { Storage } from "@capacitor/storage"
+import { Preferences } from "@capacitor/preferences"
 import { Terminal7, DEFAULT_DOTFILE } from "./terminal7"
 import { Fields } from "./form"
 import fortuneURL from "../resources/fortune.txt"
@@ -195,10 +195,10 @@ async function connectCMD(shell:Shell, args: string[]) {
                 }
             }
             gate.load()
-            Storage.get({key: "first_gate"}).then(v => {
+            Preferences.get({key: "first_gate"}).then(v => {
                 if (v.value != "nope")
                     setTimeout(() => {
-                        Storage.set({key: "first_gate", value: "nope"})
+                        Preferences.set({key: "first_gate", value: "nope"})
                         terminal7.toggleHelp()
                     }, 1000)
             })
@@ -259,7 +259,7 @@ async function addCMD(shell: Shell) {
 }
 
 async function peerbookForm(shell: Shell) {
-    let dotfile = (await Storage.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
+    let dotfile = (await Preferences.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
 
     const f = [
         {
@@ -283,7 +283,7 @@ email = "${email}"
 peer_name = "${peername}"
 `
 
-    Storage.set({ key: "dotfile", value: dotfile })
+    Preferences.set({ key: "dotfile", value: dotfile })
     terminal7.loadConf(TOML.parse(dotfile))
     terminal7.notify("Your email was added to the dotfile")
     terminal7.pbConnect()

@@ -6,7 +6,7 @@
  *  License: GPLv3
  */
 import { Clipboard } from '@capacitor/clipboard'
-import { Storage } from '@capacitor/storage'
+import { Preferences } from '@capacitor/preferences'
 
 import { Pane } from './pane.js'
 import { T7Map } from './map'
@@ -153,7 +153,7 @@ export class Gate {
             this.t7.log(`Ignoring ${this.name} change state to ${state} as session is closed`)
             return
         }
-        this.t7.log(`updating ${this.name} state to ${state}`)
+        this.t7.log(`updating ${this.name} state to ${state} ${failure}`)
         if (state == "connected") {
             this.marker = null
             this.notify(`🥂  over ${this.session.isSSH?"SSH":"WebRTC"}`)
@@ -180,6 +180,8 @@ export class Gate {
     handleFailure(failure: Failure) {
         if (!this.t7.recovering)
             this.notify(`FAILED: ${failure || "WebRTC connection"}`)
+        else
+            this.notify(`Retrying after ${failure}`)
         this.map.showLog(true)
         this.session.close()
         this.session = null
@@ -412,7 +414,7 @@ export class Gate {
         else
             lastState.id = this.addr
         lastState.name = this.name
-        Storage.set({key: "last_state",
+        Preferences.set({key: "last_state",
                      value: JSON.stringify(lastState)})
     }
 

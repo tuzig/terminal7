@@ -11,7 +11,7 @@ import { Gate } from '../src/gate'
 import { T7Map } from '../src/map'
 import { Terminal7Mock, sleep } from './infra'
 import { assert } from "chai"
-import { Storage } from '@capacitor/storage'
+import { Preferences } from '@capacitor/preferences'
 import { Terminal } from '@tuzig/xterm'
 import { SSHSession } from '../src/ssh_session'
 import { expect, vi } from 'vitest'
@@ -27,7 +27,7 @@ describe("terminal7", function() {
      * Every tests gets a fresh copy of terminal7 and a fresh dom element
      */
     beforeEach(async () => {
-        await Storage.clear()
+        await Preferences.clear()
         console.log("before each")
         t = new Terminal7Mock()
         e = document.getElementById("t7")

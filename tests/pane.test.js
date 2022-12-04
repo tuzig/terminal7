@@ -10,7 +10,7 @@ import { Cell } from '../src/cell.js'
 import { Gate } from '../src/gate'
 import { Terminal7Mock } from './infra.ts'
 import { assert } from "chai"
-import { Storage } from '@capacitor/storage'
+import { Preferences } from '@capacitor/preferences'
 import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest'
 
 vi.mock('@tuzig/xterm')
@@ -18,7 +18,7 @@ vi.mock('@tuzig/xterm')
 describe("pane", () => {
     var t, e, h, w, p0
     beforeEach(async () => {
-        await Storage.clear()
+        await Preferences.clear()
         console.log("before each")
         Gate.prototype.askPass = function () {
             this.completeConnect("BADWOLF")
@@ -36,7 +36,7 @@ describe("pane", () => {
         w.activeP.yoff = 0.2
         p0 = w.activeP
         await p0.fit()
-        Storage.set({ key: 'first_copymode', value: 1 })
+        Preferences.set({ key: 'first_copymode', value: 1 })
     })
     afterEach(() => t && t.clearTimeouts())
     it("can forward jump words in copy mode", () => {

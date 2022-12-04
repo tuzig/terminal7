@@ -23,7 +23,7 @@ import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
-import { Storage } from '@capacitor/storage'
+import { Preferences } from '@capacitor/preferences'
 import { PeerbookConnection } from './peerbook'
 
 
@@ -112,13 +112,13 @@ export class Terminal7 {
         let e = document.getElementById('terminal7')
         this.log("in open")
         this.e = e
-        await Storage.migrate()
+        await Preferences.migrate()
         // reading conf
         let d = {},
-            { value } = await Storage.get({key: 'dotfile'})
+            { value } = await Preferences.get({key: 'dotfile'})
         if (value == null) {
             value = DEFAULT_DOTFILE
-            Storage.set({key: 'dotfile', value: value})
+            Preferences.set({key: 'dotfile', value: value})
         }
         try {
             d = TOML.parse(value)
@@ -218,7 +218,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         this.map = new T7Map()
         // Load gates from local storage
         let gates
-        value = (await Storage.get({key: 'gates'})).value
+        value = (await Preferences.get({key: 'gates'})).value
         if (value) {
             try {
                 gates = JSON.parse(value)
@@ -307,7 +307,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 reject()
                 return
             }
-            Storage.get({key: "last_state"}).then(({ value }) => {
+            Preferences.get({key: "last_state"}).then(({ value }) => {
                 if (!value)
                     reject()
                 else {
@@ -351,7 +351,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         var modal   = document.getElementById("settings-modal"),
             button  = document.getElementById("dotfile-button"),
             area    =  document.getElementById("edit-conf"),
-            conf    =  (await Storage.get({key: "dotfile"})).value || DEFAULT_DOTFILE
+            conf    =  (await Preferences.get({key: "dotfile"})).value || DEFAULT_DOTFILE
 
         area.value = conf
 
@@ -385,7 +385,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         document.getElementById("dotfile-button").classList.remove("on")
         this.confEditor.save()
         this.loadConf(TOML.parse(area.value))
-        Storage.set({key: "dotfile", value: area.value})
+        Preferences.set({key: "dotfile", value: area.value})
         this.cells.forEach(c => {
             if (typeof(c.setTheme) == "function")
                 c.setTheme(this.conf.theme)
@@ -442,7 +442,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             }
         })
         this.log("Storing gates:", out)
-        await Storage.set({key: 'gates', value: JSON.stringify(out)})
+        await Preferences.set({key: 'gates', value: JSON.stringify(out)})
         this.map.refresh()
     }
     clear() {
@@ -457,7 +457,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         this.map.shell.escapeActiveForm()
     }
     goHome() {
-        Storage.remove({key: "last_state"}) 
+        Preferences.remove({key: "last_state"}) 
         const s = document.getElementById('map-button')
         s.classList.add('off')
         if (this.activeG) {
@@ -756,7 +756,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         Clipboard.write({string: data})
         this.notify("Log copied to clipboard")
         /* TODO: wwould be nice to store log to file, problme is 
-         * Storage pluging failes
+         * Preferences pluging failes
         try { 
             await Filesystem.writeFile({
                 path: path,
@@ -895,9 +895,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         this.gesture = null
     }
     async showGreetings() {
-        const  { greeted } = await Storage.get({key: 'greeted'})
+        const  { greeted } = await Preferences.get({key: 'greeted'})
         if (greeted == null) {
-            Storage.set({key: "greeted", value: "yep"})
+            Preferences.set({key: "greeted", value: "yep"})
             this.map.tty(WELCOME)
         } else {
             if (!((window.matchMedia('(display-mode: standalone)').matches)
@@ -958,9 +958,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 this.map.remove(g)
                 this.gates.delete(g.id)
             })
-            Storage.delete({key: 'gates'}).then(() => 
-                Storage.delete({key: 'greeted'}).then(() => 
-                    Storage.set({key: 'dotfile', value: DEFAULT_DOTFILE})))
+            Preferences.delete({key: 'gates'}).then(() => 
+                Preferences.delete({key: 'greeted'}).then(() => 
+                    Preferences.set({key: 'dotfile', value: DEFAULT_DOTFILE})))
             const d = TOML.parse(DEFAULT_DOTFILE)
             this.loadConf(d)
             if (this.pb) {

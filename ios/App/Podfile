@@ -1,3 +1,4 @@
+require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
 platform :ios, '15.4'
 use_frameworks!
 
@@ -17,7 +18,7 @@ def capacitor_pods
   pod 'CapacitorKeyboard', :path => '../../node_modules/@capacitor/keyboard'
   pod 'CapacitorNetwork', :path => '../../node_modules/@capacitor/network'
   pod 'CapacitorStatusBar', :path => '../../node_modules/@capacitor/status-bar'
-  pod 'CapacitorStorage', :path => '../../node_modules/@capacitor/storage'
+  pod 'CapacitorPreferences', :path => '../../node_modules/@capacitor/preferences'
   pod 'RobingenzCapacitorBackgroundTask', :path => '../../node_modules/@robingenz/capacitor-background-task'
   pod 'CapacitorSshPlugin', :path => '../../node_modules/capacitor-ssh-plugin'
 end
@@ -25,4 +26,7 @@ end
 target 'App' do
   capacitor_pods
   # Add your Pods here
+end
+post_install do |installer|
+  assertDeploymentTarget(installer)
 end

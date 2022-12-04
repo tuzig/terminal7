@@ -7,7 +7,7 @@
 import { Cell } from './cell.js'
 import { Terminal } from '@tuzig/xterm'
 import { Clipboard } from '@capacitor/clipboard'
-import { Storage } from '@capacitor/storage'
+import { Preferences } from '@capacitor/preferences'
 import { Browser } from '@capacitor/browser'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
@@ -360,10 +360,10 @@ export class Pane extends Cell {
                 this.t7.zoomedE.children[0].style.borderColor = COPYMODE_BORDER_COLOR
             else
                 this.e.style.borderColor = COPYMODE_BORDER_COLOR
-            Storage.get({key: "first_copymode"}).then(v => {
+            Preferences.get({key: "first_copymode"}).then(v => {
                 if (v.value != "1") {
                     this.gate.map.shell.runCommand('help', ['copymode'])
-                    Storage.set({key: "first_copymode", value: "1"})
+                    Preferences.set({key: "first_copymode", value: "1"})
                 }
             })
         }
