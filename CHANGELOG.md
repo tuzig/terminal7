@@ -6,6 +6,22 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## UNRELEASED
+
+### Added
+
+- The close command
+- Caps lock indication
+- TWR command completion
+
+### Fixed
+
+- Error output
+- AWS garviton support
+- Reconnect is a much lighter affair
+- Links open in external browser
+- copy-mode copy was adding a new line at the end
+
 ## 1.2.1 - 2022/11/10
 
 ### Fixed
