@@ -443,7 +443,6 @@ describe("terminal7", function() {
             t0.pressKey("n")
             t0.pressKey("Enter")
             await sleep(100)
-            console.log("t0.out:", t0.out)
             expect(t0.out).toMatch(/webexec.+over WebRTC/)
         })
         it("can connect to SSH through form", async () => {
@@ -459,6 +458,7 @@ describe("terminal7", function() {
             t0.pressKey("2")
             t0.pressKey("Enter")
             await sleep(100)
+            /* TODO: test the user/pass path
             expect(t0.out).toMatch("Login to")
             expect(t0.out).toMatch("Username:")
             await sleep(10)
@@ -471,6 +471,7 @@ describe("terminal7", function() {
             expect(t0.out).toMatch("Password: \n")
             t0.pressKey("Enter")
             await sleep(10)
+            */
             expect(t0.out).toMatch("Gate's name")
         })
     })

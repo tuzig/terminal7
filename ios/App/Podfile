@@ -20,7 +20,7 @@ def capacitor_pods
   pod 'CapacitorStatusBar', :path => '../../node_modules/@capacitor/status-bar'
   pod 'CapacitorPreferences', :path => '../../node_modules/@capacitor/preferences'
   pod 'RobingenzCapacitorBackgroundTask', :path => '../../node_modules/@robingenz/capacitor-background-task'
-  pod 'CapacitorSshPlugin', :path => '../../node_modules/capacitor-ssh-plugin'
+  pod 'CapacitorSshPlugin', :path => '../../../capacitor-ssh-plugin'
 end
 
 target 'App' do

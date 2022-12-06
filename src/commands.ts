@@ -49,6 +49,12 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             usage: "co[nnect] <gatename>",
             execute: async args => connectCMD(shell, args)
         },
+        copy: {
+            name: "copy-key",
+            help: "Copy the public key",
+            usage: "copy-key",
+            execute: async args => copyKeyCMD(shell, args)
+        },
         edit: {
             name: "edit",
             help: "Edit a gate",
@@ -483,4 +489,5 @@ async function closeCMD(shell: Shell, args: string[]) {
     }
     gate.close()
 }
-
+async function copyKeyCMD(shell: Shell) {
+}

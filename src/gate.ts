@@ -20,6 +20,7 @@ import { Window } from './window.js'
 
 
 const FAILED_COLOR = "red"// ashort period of time, in milli
+const DEFUALT_KEY_TAG = "dev.terminal7.keys.default"
 /*
  * The gate class abstracts a host connection
  */
@@ -31,7 +32,6 @@ export class Gate {
     id: string
     marker: number
     name: string
-    pass: string | undefined
     secret: string
     session: Session
     user: string
@@ -57,7 +57,6 @@ export class Gate {
         this.store = props.store
         this.name = (!props.name)?`${this.user}@${this.addr}`:props.name
         this.username = props.username
-        this.pass = props.pass
         this.online = props.online
         this.verified = props.verified || false
         // 
@@ -177,23 +176,26 @@ export class Gate {
         }
     }
     // handle connection failures
-    handleFailure(failure: Failure) {
-        if (!this.t7.recovering)
-            this.notify(`FAILED: ${failure || "WebRTC connection"}`)
-        else
-            this.notify(`Retrying after ${failure}`)
+    async handleFailure(failure: Failure) {
         this.map.showLog(true)
-        this.session.close()
-        this.session = null
-        if (!this.boarding)
-            return
-        this.stopBoarding()
+        // KeyRejected is a "light failure"
+        if (failure != Failure.KeyRejected) {
+            if (!this.t7.recovering)
+                this.notify(`FAILED: ${failure || "WebRTC connection"}`)
+            else
+                this.notify(`Retrying after ${failure}`)
+            this.session.close()
+            this.session = null
+            if (!this.boarding)
+                return
+            this.stopBoarding()
+        }
         // onFailure should be set to `Shell.onGateFailure()` and the switch code
         // should move there
         // this.onFailure(failure)
+        let pass: string
         switch ( failure ) {
             case Failure.WrongPassword:
-                this.pass = undefined
                 this.retryForm(async () => 
                     await this.map.shell.runCommand("connect", [this.name]),
                     () => this.close())
@@ -212,6 +214,18 @@ export class Gate {
             case Failure.BadRemoteDescription:
                 this.notify("Please try again")
                 break
+            case Failure.KeyRejected:
+                this.notify("Identity key rejected")
+                try {
+                    const {username, password} = await this.getCreds()
+                    this.username = username
+                    pass = password
+                } catch (e) { 
+                    this.onFailure(Failure.Aborted)
+                    return 
+                }
+                this.session.passConnect(this.marker, pass)
+                return
         }
         if (this.name.startsWith("temp")) {
             (async () => {
@@ -509,25 +523,27 @@ export class Gate {
             this.map.showLog(false)
     }
     //TODO: the next function belongs in commands
-    async askPass() {
+    async getCreds(): Promise<{username: string, password: string}> {
         const name = this.name.startsWith("temp_")?this.addr:this.name
         const authForm = []
 
-        let withUsername = false
-        if (!this.username) {
-            this.map.t0.writeln(`  Login to ${name}`)
+        let password: string
+        let username = this.username
+
+        if (!username) {
+            this.map.t0.writeln(`  SSH to ${name}`)
             authForm.push({ prompt: "Username", default: this.username })
-            withUsername = true
         } else
-            this.map.t0.writeln(`  Login to ${this.username}@${name}`)
+            this.map.t0.writeln(`  SSH to ${this.username}@${name}`)
         authForm.push({ prompt: "Password", password: true })
         // Form errors/abort are handled by the caller
         const res = await this.map.shell.runForm(authForm, "text")
-        if (withUsername) {
-            this.username = res[0]
-            this.pass = res[1]
+        if (!username) {
+            username = res[0]
+            password = res[1]
         } else
-            this.pass = res[0]
+            password = res[0]
+        return {username, password}
     }
     //TODO: the next function belongs in commands
     async completeConnect(): void {
@@ -540,16 +556,8 @@ export class Gate {
         }
         else {
             if (Capacitor.getPlatform() == "ios") {
-                if (!this.pass) {
-                    try {
-                        await this.askPass()
-                    } catch (e) { 
-                        this.onFailure(Failure.Aborted)
-                        return 
-                    }
-                }
-                this.session = (this.onlySSH)?new SSHSession(this.addr, this.username, this.pass):
-                   new HybridSession(this.addr, this.username, this.pass)
+                this.session = (this.onlySSH)?new SSHSession(this.addr, this.username):
+                   new HybridSession(this.addr, this.username)
             } else {
                 this.notify("🎌  webexec server")
                 this.session = new HTTPWebRTCSession(this.addr)
@@ -561,7 +569,7 @@ export class Gate {
             this.t7.log("TBD: update layout", layout)
         }
         this.t7.log("opening session")
-        this.session.connect(this.marker)
+        this.session.connect(this.marker, DEFUALT_KEY_TAG)
     }
     load() {
         this.t7.log("loading gate")

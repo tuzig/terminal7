@@ -13,6 +13,7 @@ export enum Failure {
     WebexecNotFound='Webexec Not Found',
     TimedOut='Timeout',
     Aborted='Aborted',
+    KeyRejected='Key Rejected',
 }
 
 export interface Event {
@@ -45,7 +46,7 @@ export interface Session {
     setPayload(payload: string): Promise<void>
     reconnect(marker?: number): Promise<void>
     disconnect(): Promise<void>
-    connect(marker?: number): void
+    connect(marker?:number, password?: string, tag?: string): void
     fail(failure?: Failure): void
 }
 
@@ -73,7 +74,6 @@ export abstract class BaseSession implements Session {
     watchdog: number
     onStateChange : (state: string, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
-    constructor(fp: string, address?: string)
     constructor() {
         this.t7 = window.terminal7
     }

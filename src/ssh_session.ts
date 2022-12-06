@@ -1,4 +1,4 @@
-import { SSH, SSHSessionID, SSHSessionByPass} from 'capacitor-ssh-plugin'
+import { SSH, SSHSessionID, StartByPasswd, StartByKey} from 'capacitor-ssh-plugin'
 import { Channel, BaseChannel, BaseSession, Failure, Session, State }  from './session' 
 import { WebRTCSession }  from './webrtc_session'
 
@@ -39,20 +39,28 @@ export class SSHChannel extends BaseChannel {
 // SSHSession is an implmentation of a real time session over ssh
 export class SSHSession extends BaseSession {
     id: SSHSessionID
-    byPass: SSHSessionByPass;
+    address: string
+    username: string
+    port: number
     onStateChange : (state: State, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
-    constructor(address: string, username: string, password: string, port=22) {
+    constructor(address: string, username: string, port=22) {
         super()
-        this.byPass = {address: address,
-                       username: username,
-                       password: password,
-                       port: port,
-                      }
+        this.username = username
+        this.address = address
+        this.port = port
     }
-    connect() {
+    connect(marker?:number, tag?: string) {
+    }
+    passConnect(marker?:number, password?: string) {
         this.startWatchdog()
-        SSH.startSessionByPasswd(this.byPass)
+        const args: StartByPasswd = {
+            address: this.address,
+            port: this.port,
+            username: this.username,
+            password: password,
+        }
+        SSH.startSessionByPasswd(args)
            .then(({ session }) => {
                 this.clearWatchdog()
                 console.log("Got ssh session", session)
@@ -106,15 +114,54 @@ export class HybridSession extends SSHSession {
     sentMessages: Array<string>
     onStateChange : (state: State, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
-    constructor(address: string, username: string, password: string, port=22) {
-        super(address, username, password, port)
+    constructor(address: string, username: string, port=22) {
+        super(address, username, port)
         this.candidate = ""
         this.webrtcSession = null
         this.sentMessages = []
     }
-    connect(marker=null) {
+    /*
+     * connect must recieve either password or tag to choose
+     * whether to use password or identity key based authentication 
+     */
+    connect(marker?:number, tag?: string) {
+        const args: StartByKey = {
+            address: this.address,
+            port: this.port,
+            username: this.username,
+            tag: tag,
+        }
         this.startWatchdog()
-        SSH.startSessionByPasswd(this.byPass)
+        SSH.startSessionByKey(args)
+           .then(async ({ session }) => {
+                this.t7.log("Got ssh session", session)
+                this.id = session
+                try {
+                    await this.newWebRTCSession(session, marker)
+                } catch(e) { 
+                    this.clearWatchdog()
+                    this.onStateChange("connected")
+                }
+           }).catch(e => {
+                this.clearWatchdog()
+                console.log("SSH startSession failed", e)
+                if (e.code === "UNIMPLEMENTED")
+                    this.fail(Failure.NotImplemented)
+                else {
+                    this.t7.log("failed startsession", e.toString())
+                    this.fail(Failure.KeyRejected)
+                }
+           })
+    }
+    passConnect(marker?:number, password?: string) {
+        this.startWatchdog()
+        const args: StartByPasswd = {
+            address: this.address,
+            port: this.port,
+            username: this.username,
+            password: password,
+        }
+        SSH.startSessionByPasswd(args)
            .then(async ({ session }) => {
                 this.t7.log("Got ssh session", session)
                 this.id = session

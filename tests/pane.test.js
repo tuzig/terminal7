@@ -20,7 +20,7 @@ describe("pane", () => {
     beforeEach(async () => {
         await Preferences.clear()
         console.log("before each")
-        Gate.prototype.askPass = function () {
+        Gate.prototype.getCreds = function () {
             this.completeConnect("BADWOLF")
         }
         t = new Terminal7Mock()
