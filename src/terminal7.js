@@ -24,9 +24,8 @@ import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Preferences } from '@capacitor/preferences'
+import { SSH } from 'capacitor-ssh-plugin'
 import { PeerbookConnection } from './peerbook'
-
-
 
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
@@ -74,6 +73,7 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 `
 
 export class Terminal7 {
+    DEFAULT_KEY_TAG = "dev.terminal7.keys.default"
     /*
      * Terminal7 constructor, all properties should be initiated here
      */
@@ -974,6 +974,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     resolve()
                 })
             })
+            SSH.deleteKey({tag: this.DEFAULT_KEY_TAG})
         })
     }
 	async loadChangelog() {
