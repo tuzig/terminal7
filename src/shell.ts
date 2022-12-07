@@ -250,5 +250,15 @@ export class Shell {
         gate.session = null
         gate.connect(gate.onConnected)
     }
+    async askPass(): Promise<string> {
+        const res = await this.map.shell.runForm(
+            [{ prompt: "Password", password: true }], "text")
+        return res[0]
+    }
+    async askValue(prompt: string, def?): Promise<string> {
+        const res = await this.map.shell.runForm(
+            [{ prompt: prompt, default: def }], "text")
+        return res[0]
+    }
 }
 

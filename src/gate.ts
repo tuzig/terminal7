@@ -20,7 +20,6 @@ import { Window } from './window.js'
 
 
 const FAILED_COLOR = "red"// ashort period of time, in milli
-const DEFUALT_KEY_TAG = "dev.terminal7.keys.default"
 /*
  * The gate class abstracts a host connection
  */
@@ -193,7 +192,7 @@ export class Gate {
         // onFailure should be set to `Shell.onGateFailure()` and the switch code
         // should move there
         // this.onFailure(failure)
-        let pass: string
+        let password: string
         switch ( failure ) {
             case Failure.WrongPassword:
                 this.retryForm(async () => 
@@ -217,14 +216,12 @@ export class Gate {
             case Failure.KeyRejected:
                 this.notify("Identity key rejected")
                 try {
-                    const {username, password} = await this.getCreds()
-                    this.username = username
-                    pass = password
+                    password = await this.map.shell.askPass()
                 } catch (e) { 
                     this.onFailure(Failure.Aborted)
                     return 
                 }
-                this.session.passConnect(this.marker, pass)
+                this.session.passConnect(this.marker, password)
                 return
         }
         if (this.name.startsWith("temp")) {
@@ -523,29 +520,6 @@ export class Gate {
             this.map.showLog(false)
     }
     //TODO: the next function belongs in commands
-    async getCreds(): Promise<{username: string, password: string}> {
-        const name = this.name.startsWith("temp_")?this.addr:this.name
-        const authForm = []
-
-        let password: string
-        let username = this.username
-
-        if (!username) {
-            this.map.t0.writeln(`  SSH to ${name}`)
-            authForm.push({ prompt: "Username", default: this.username })
-        } else
-            this.map.t0.writeln(`  SSH to ${this.username}@${name}`)
-        authForm.push({ prompt: "Password", password: true })
-        // Form errors/abort are handled by the caller
-        const res = await this.map.shell.runForm(authForm, "text")
-        if (!username) {
-            username = res[0]
-            password = res[1]
-        } else
-            password = res[0]
-        return {username, password}
-    }
-    //TODO: the next function belongs in commands
     async completeConnect(): void {
         if (this.map.shell.activeForm)
             this.map.shell.escapeActiveForm()
@@ -556,6 +530,14 @@ export class Gate {
         }
         else {
             if (Capacitor.getPlatform() == "ios") {
+                if (!this.username) {
+                    try {
+                        this.username = await this.map.shell.askValue("Username")
+                    } catch (e) {
+                        this.notify("Failed to get username")
+                        this.map.shell.escapeActiveForm()
+                    }
+                }
                 this.session = (this.onlySSH)?new SSHSession(this.addr, this.username):
                    new HybridSession(this.addr, this.username)
             } else {
@@ -569,7 +551,7 @@ export class Gate {
             this.t7.log("TBD: update layout", layout)
         }
         this.t7.log("opening session")
-        this.session.connect(this.marker, DEFUALT_KEY_TAG)
+        this.session.connect(this.marker, this.t7.DEFAULT_KEY_TAG)
     }
     load() {
         this.t7.log("loading gate")
