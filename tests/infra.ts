@@ -26,6 +26,7 @@ export class Terminal7Mock extends Terminal7 {
              exec: {shell: "bash" },
              peerbook: { insecure: true },
            }
+    keys = {default: { public: "TBD", private: "TBD" }}
     netStatus = {connected: true}
     notifications: string[] = []
     notify(message: string) {

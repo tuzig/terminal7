@@ -26,7 +26,14 @@ end
 target 'App' do
   capacitor_pods
   # Add your Pods here
+  pod 'openssl-iosx', '= 1.1.1q.1'
+  pod 'NMSSHT7', :path => '../../../NMSSH'
 end
+
 post_install do |installer|
   assertDeploymentTarget(installer)
+end
+
+pre_install do |installer|
+    Pod::Installer::Xcode::TargetValidator.send(:define_method, :verify_no_static_framework_transitive_dependencies) {}
 end

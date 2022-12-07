@@ -519,7 +519,6 @@ export class Gate {
         else
             this.map.showLog(false)
     }
-    //TODO: the next function belongs in commands
     async completeConnect(): void {
         if (this.map.shell.activeForm)
             this.map.shell.escapeActiveForm()
@@ -551,7 +550,8 @@ export class Gate {
             this.t7.log("TBD: update layout", layout)
         }
         this.t7.log("opening session")
-        this.session.connect(this.marker, this.t7.DEFAULT_KEY_TAG)
+        this.t7.readKeys()
+        this.session.connect(this.marker, this.t7.keys.default.public, this.t7.keys.default.private)
     }
     load() {
         this.t7.log("loading gate")

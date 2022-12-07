@@ -24,7 +24,6 @@ import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Preferences } from '@capacitor/preferences'
-import { SSH } from 'capacitor-ssh-plugin'
 import { PeerbookConnection } from './peerbook'
 
 const WELCOME=`    🖖 Greetings & Salutations 🖖
@@ -974,7 +973,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     resolve()
                 })
             })
-            SSH.deleteKey({tag: this.DEFAULT_KEY_TAG})
+            Preferences.delete({key: 'ids'})
         })
     }
 	async loadChangelog() {
@@ -997,5 +996,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             e.classList.add("show")
         else
             e.classList.remove("show")
+    }
+    async readKeys() {
+        const keysV = (await Preferences.get({ key: 'ids' })).value
+        this.keys = (keysV)?JSON.parse(keysV):{default:{public:'TBD', private:'TBD'}}
     }
 }

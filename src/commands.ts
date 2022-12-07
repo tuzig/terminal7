@@ -491,7 +491,11 @@ async function closeCMD(shell: Shell, args: string[]) {
     gate.close()
 }
 async function copyKeyCMD(shell: Shell) {
-    const { publickey } = await SSH.getPublicKey({tag: terminal7.DEFAULT_KEY_TAG})
-    Clipboard.write({ string: publickey })
-    return shell.t.writeln("Public key copied to the clipboard")
+    const keysV = (await Preferences.get({ key: "ids" })).value
+    if (keysV) {
+        const keys = JSON.parse(keysV)
+        Clipboard.write({ string: keys.default.public })
+        return shell.t.writeln(`$(publicKey)\n-> Clipboard`)
+    } else
+        return shell.t.writeln("No key yet. Please connect to generate one.")
 }

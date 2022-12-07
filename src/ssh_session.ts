@@ -1,6 +1,7 @@
 import { SSH, SSHSessionID, StartByPasswd, StartByKey} from 'capacitor-ssh-plugin'
 import { Channel, BaseChannel, BaseSession, Failure, Session, State }  from './session' 
 import { WebRTCSession }  from './webrtc_session'
+import { Preferences } from "@capacitor/preferences"
 
 const ACCEPT_CMD = "/usr/local/bin/webexec accept"
 
@@ -50,7 +51,34 @@ export class SSHSession extends BaseSession {
         this.address = address
         this.port = port
     }
+    onSSHSession(session) {
+        console.log("Got ssh session", session)
+        this.id = session
+        this.onStateChange("connected")
+    }
     connect(marker?:number, tag?: string) {
+        const args: StartByKey = {
+            address: this.address,
+            port: this.port,
+            username: this.username,
+            tag: tag,
+        }
+        this.startWatchdog()
+        SSH.startSessionByKey(args)
+           .then(args => {
+                this.clearWatchdog()
+                const publicKey = args.publicKey
+                if (publicKey) {
+                    const keys = {default: {public: args.publicKey, private: args.privateKey}}
+                    Preferences.set({ key: "keys", value: JSON.stringify(keys) })
+                } else
+                    this.onSSHSession(args.session)
+           }) .catch(e => {
+                this.clearWatchdog()
+                console.log("SSH startSession failed", e)
+                if (e.toString().startsWith("Error: Not imp"))
+                this.onStateChange("failed", Failure.KeyRejected)
+           })
     }
     passConnect(marker?:number, password?: string) {
         this.startWatchdog()
@@ -61,12 +89,8 @@ export class SSHSession extends BaseSession {
             password: password,
         }
         SSH.startSessionByPasswd(args)
-           .then(({ session }) => {
-                this.clearWatchdog()
-                console.log("Got ssh session", session)
-                this.id = session
-                this.onStateChange("connected")
-           }).catch(e => {
+           .then(this.onSSHSession)
+           .catch(e => {
                 this.clearWatchdog()
                 console.log("SSH startSession failed", e)
                 if (e.toString().startsWith("Error: Not imp"))
@@ -124,33 +148,39 @@ export class HybridSession extends SSHSession {
      * connect must recieve either password or tag to choose
      * whether to use password or identity key based authentication 
      */
-    connect(marker?:number, tag?: string) {
+    async connect(marker?:number, publicKey: string, privateKey:string) {
+        this.startWatchdog()
         const args: StartByKey = {
             address: this.address,
             port: this.port,
             username: this.username,
-            tag: tag,
+            publicKey: publicKey,
+            privateKey: privateKey
         }
-        this.startWatchdog()
+
         SSH.startSessionByKey(args)
-           .then(async ({ session }) => {
-                this.t7.log("Got ssh session", session)
-                this.id = session
-                try {
-                    await this.newWebRTCSession(session, marker)
-                } catch(e) { 
-                    this.clearWatchdog()
-                    this.onStateChange("connected")
+           .then(async (args) => {
+                this.clearWatchdog()
+                const publicKey = args.publicKey
+                if (publicKey) {
+                    const keys = {default: {public: args.publicKey, private: args.privateKey}}
+                    Preferences.set({ key: "ids", value: JSON.stringify(keys) })
+                } else {
+                    session = args.session
+                    this.t7.log("Got ssh session", session)
+                    this.id = session
+                    try {
+                        await this.newWebRTCSession(session, marker)
+                    } catch(e) { 
+                        this.clearWatchdog()
+                        this.onStateChange("connected")
+                    }
                 }
            }).catch(e => {
                 this.clearWatchdog()
                 console.log("SSH startSession failed", e)
-                if (e.code === "UNIMPLEMENTED")
-                    this.fail(Failure.NotImplemented)
-                else {
-                    this.t7.log("failed startsession", e.toString())
-                    this.fail(Failure.KeyRejected)
-                }
+                this.t7.log("startSession failed", e.toString())
+                this.fail(Failure.KeyRejected)
            })
     }
     passConnect(marker?:number, password?: string) {

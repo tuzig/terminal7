@@ -457,7 +457,11 @@ describe("terminal7", function() {
             await sleep(10)
             t0.pressKey("2")
             t0.pressKey("Enter")
+            await sleep(10)
+            t0.pressKey("2")
+            t0.pressKey("Enter")
             await sleep(100)
+            console.log(t0.out)
             /* TODO: test the user/pass path
             expect(t0.out).toMatch("Login to")
             expect(t0.out).toMatch("Username:")
