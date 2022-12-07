@@ -1,3 +1,4 @@
+import { SSH } from 'capacitor-ssh-plugin'
 import { Clipboard } from '@capacitor/clipboard'
 import { Shell } from "./shell"
 import * as TOML from '@tuzig/toml'
@@ -490,4 +491,7 @@ async function closeCMD(shell: Shell, args: string[]) {
     gate.close()
 }
 async function copyKeyCMD(shell: Shell) {
+    const { publickey } = await SSH.getPublicKey({tag: terminal7.DEFAULT_KEY_TAG})
+    Clipboard.write({ string: publickey })
+    return shell.t.writeln("Public key copied to the clipboard")
 }
