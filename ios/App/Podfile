@@ -17,23 +17,16 @@ def capacitor_pods
   pod 'CapacitorDevice', :path => '../../node_modules/@capacitor/device'
   pod 'CapacitorKeyboard', :path => '../../node_modules/@capacitor/keyboard'
   pod 'CapacitorNetwork', :path => '../../node_modules/@capacitor/network'
-  pod 'CapacitorStatusBar', :path => '../../node_modules/@capacitor/status-bar'
   pod 'CapacitorPreferences', :path => '../../node_modules/@capacitor/preferences'
+  pod 'CapacitorStatusBar', :path => '../../node_modules/@capacitor/status-bar'
   pod 'RobingenzCapacitorBackgroundTask', :path => '../../node_modules/@robingenz/capacitor-background-task'
-  pod 'CapacitorSshPlugin', :path => '../../../capacitor-ssh-plugin'
+  pod 'CapacitorSshPlugin', :path => '../../node_modules/capacitor-ssh-plugin'
 end
 
 target 'App' do
   capacitor_pods
   # Add your Pods here
-  pod 'openssl-iosx', '= 1.1.1q.1'
-  pod 'NMSSHT7', :path => '../../../NMSSH'
 end
-
 post_install do |installer|
   assertDeploymentTarget(installer)
-end
-
-pre_install do |installer|
-    Pod::Installer::Xcode::TargetValidator.send(:define_method, :verify_no_static_framework_transitive_dependencies) {}
 end

@@ -159,22 +159,14 @@ export class HybridSession extends SSHSession {
         }
 
         SSH.startSessionByKey(args)
-           .then(async (args) => {
+           .then(res => {
                 this.clearWatchdog()
-                const publicKey = args.publicKey
-                if (publicKey) {
-                    const keys = {default: {public: args.publicKey, private: args.privateKey}}
-                    Preferences.set({ key: "ids", value: JSON.stringify(keys) })
-                } else {
-                    session = args.session
-                    this.t7.log("Got ssh session", session)
-                    this.id = session
-                    try {
-                        await this.newWebRTCSession(session, marker)
-                    } catch(e) { 
-                        this.clearWatchdog()
-                        this.onStateChange("connected")
-                    }
+                this.id = res.session
+                try {
+                    this.newWebRTCSession(res.session, marker)
+                } catch(e) { 
+                    this.clearWatchdog()
+                    this.onStateChange("connected")
                 }
            }).catch(e => {
                 this.clearWatchdog()

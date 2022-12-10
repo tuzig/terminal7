@@ -550,7 +550,6 @@ export class Gate {
             this.t7.log("TBD: update layout", layout)
         }
         this.t7.log("opening session")
-        this.t7.readKeys()
         this.session.connect(this.marker, this.t7.keys.default.public, this.t7.keys.default.private)
     }
     load() {

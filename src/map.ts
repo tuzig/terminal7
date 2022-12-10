@@ -8,7 +8,6 @@
  */
 
 import { Terminal } from '@tuzig/xterm'
-import { Browser } from '@capacitor/browser'
 import { Gate } from './gate'
 import { WebLinksAddon } from 'xterm-addon-web-links'
 import { FitAddon } from "xterm-addon-fit"

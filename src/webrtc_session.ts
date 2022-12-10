@@ -70,7 +70,6 @@ export class WebRTCSession extends BaseSession {
     cdc: RTCDataChannel
     pc: RTCPeerConnection
     lastMsgId: number
-    t7: object
     constructor() {
         super()
         this.channels = new Map()

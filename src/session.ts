@@ -100,7 +100,7 @@ export abstract class BaseSession implements Session {
     }
     startWatchdog(){
         this.clearWatchdog()
-        this.watchdog = this.t7.run(() => {
+        this.watchdog = window.terminal7.run(() => {
             console.log("WATCHDOG stops the gate connecting")
             this.fail(Failure.TimedOut)
         }, this.t7.conf.net.timeout)

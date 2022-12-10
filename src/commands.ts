@@ -1,4 +1,3 @@
-import { SSH } from 'capacitor-ssh-plugin'
 import { Clipboard } from '@capacitor/clipboard'
 import { Shell } from "./shell"
 import * as TOML from '@tuzig/toml'
@@ -47,13 +46,13 @@ export function loadCommands(shell: Shell): Map<string, Command> {
         connect: {
             name: "connect",
             help: "Connect to an existing gate",
-            usage: "co[nnect] <gatename>",
+            usage: "con[nect] <gatename>",
             execute: async args => connectCMD(shell, args)
         },
-        copy: {
-            name: "copy-key",
+        copykey: {
+            name: "copykey",
             help: "Copy the public key",
-            usage: "copy-key",
+            usage: "copy[key]",
             execute: async args => copyKeyCMD(shell, args)
         },
         edit: {
@@ -494,8 +493,9 @@ async function copyKeyCMD(shell: Shell) {
     const keysV = (await Preferences.get({ key: "ids" })).value
     if (keysV) {
         const keys = JSON.parse(keysV)
-        Clipboard.write({ string: keys.default.public })
-        return shell.t.writeln(`$(publicKey)\n-> Clipboard`)
+        const publicKey = keys.default.public
+        Clipboard.write({ string: publicKey })
+        return shell.t.writeln(`${publicKey}\n☝️ copied to the Clipboard`)
     } else
         return shell.t.writeln("No key yet. Please connect to generate one.")
 }

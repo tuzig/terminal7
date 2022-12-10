@@ -18,12 +18,16 @@ import { formatDate } from './utils.js'
 import { openDB } from 'idb'
 import { marked } from 'marked'
 import changelogURL  from '../CHANGELOG.md?url'
+import ssh from 'ed25519-keygen/ssh';
+import { randomBytes } from 'ed25519-keygen/utils';
 
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Preferences } from '@capacitor/preferences'
+import { Device } from '@capacitor/device';
+
 import { PeerbookConnection } from './peerbook'
 
 const WELCOME=`    🖖 Greetings & Salutations 🖖
@@ -284,6 +288,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 Clipboard.write({string: area.value})
                 this.clear()
             })
+        this.readIds()
         this.map.open().then(() => {
            this.goHome()
            setTimeout(() => this.showGreetings(), 100)
@@ -957,8 +962,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 this.map.remove(g)
                 this.gates.delete(g.id)
             })
-            Preferences.delete({key: 'gates'}).then(() => 
-                Preferences.delete({key: 'greeted'}).then(() => 
+            Preferences.remove({key: 'gates'}).then(() => 
+                Preferences.remove({key: 'greeted'}).then(() => 
                     Preferences.set({key: 'dotfile', value: DEFAULT_DOTFILE})))
             const d = TOML.parse(DEFAULT_DOTFILE)
             this.loadConf(d)
@@ -973,7 +978,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     resolve()
                 })
             })
-            Preferences.delete({key: 'ids'})
+            Preferences.remove({key: 'ids'}).then(this.readIds)
         })
     }
 	async loadChangelog() {
@@ -997,8 +1002,17 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         else
             e.classList.remove("show")
     }
-    async readKeys() {
-        const keysV = (await Preferences.get({ key: 'ids' })).value
-        this.keys = (keysV)?JSON.parse(keysV):{default:{public:'TBD', private:'TBD'}}
+    async readIds() {
+        let keysV
+        keysV = (await Preferences.get({ key: 'ids' })).value
+        if (!keysV) {
+            const sseed = randomBytes(32);
+            const i = await Device.getInfo()
+            const skeys = await ssh(sseed, `${i.name}@${i.model}`);
+
+            this.keys = {default:{public:skeys.publicKey, private:skeys.privateKey}}
+            Preferences.set({ key: 'ids', value: JSON.stringify(this.keys)})
+        } else
+            this.keys = JSON.parse(keysV)
     }
 }
