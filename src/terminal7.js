@@ -1010,7 +1010,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         else
             e.classList.remove("show")
     }
-    // collects the default id and returns a { publicKet, privateKey
+    /*
+     * collects the default id and returns a { publicKet, privateKey
+     */
     async readId() {
         this.ignoreNextAppEvent = true
         try {
