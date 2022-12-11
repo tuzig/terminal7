@@ -46,6 +46,7 @@ export class Gate {
     store: boolean
     map: T7Map
     onlySSH: boolean
+    firstConnection: boolean
 
     constructor (props) {
         // given properties
@@ -75,6 +76,7 @@ export class Gate {
         this.session = null
         this.onlySSH = props.onlySSH || false
         this.onFailure = Function.prototype()
+        this.firstConnection = props.firstConnection || false
     }
 
     /*
@@ -211,7 +213,7 @@ export class Gate {
                 this.notify("Please try again")
                 break
         }
-        if (this.name.startsWith("temp")) {
+        if (this.firstConnection) {
             (async () => {
                 const rc = `bash <(curl -sL https://get.webexec.sh)"`
                 this.map.t0.writeln("Failed to connect")
@@ -224,14 +226,13 @@ export class Gate {
                 try {
                     ans = (await this.map.shell.runForm(verifyForm, "text"))[0]
                 } catch(e) {
-                    this.delete()
-                    return
+                    return this.onFailure(Failure.WrongAddress)
                 }
 
                 if (ans == "n") {
                     this.delete()
                     setTimeout(() => this.map.shell.handleLine("add"), 100)
-                    return
+                    return this.onFailure(Failure.WrongAddress)
                 }
                 const webexecForm = [{
                     prompt: `Make sure webexec is running on ${this.addr}:
@@ -242,15 +243,14 @@ export class Gate {
                 try {
                     ans = (await this.map.shell.runForm(webexecForm, "text"))[0]
                 } catch(e) {
-                    this.delete()
-                    return
+                    return this.onFailure(Failure.WrongAddress)
                 }
                 if (ans == "y")
                     Clipboard.write({ string: rc })
 				this.retryForm(async () => {
                     this.map.t0.writeln("Retrying...")
                     await this.map.shell.runCommand("connect", [this.name])
-				}, () => this.delete())
+				})
             })()
         } else
             this.map.shell.onDisconnect(this)
@@ -297,7 +297,7 @@ export class Gate {
     }
 
     notify(message) {
-        if (!this.name.startsWith("temp"))
+        if (!this.firstConnection)
             message = `\x1B[4m${this.name}\x1B[0m: ${message}`
         this.t7.notify(message)
     }
@@ -569,7 +569,7 @@ export class Gate {
         })
         document.getElementById("map").classList.add("hidden")
     }
-	async retryForm(retry: () => void, cancel: () => void) {
+	async retryForm(retry: () => void, cancel?: () => void) {
         this.map.showLog(true)
 		const retryForm = [{
 			prompt: "Retry connection?",
@@ -581,9 +581,9 @@ export class Gate {
                 retry()
             else {
                 this.map.showLog(false)
-                cancel()
+                cancel?.()
             }
-        }).catch(() => cancel())
+        }).catch(() => cancel?.())
 	}
     onFormError(err) {
         this.t7.log("Form error:", err.message)

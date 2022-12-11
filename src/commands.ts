@@ -152,25 +152,24 @@ async function connectCMD(shell:Shell, args: string[]) {
     const hostname = args[0]
     if (!hostname)
         return shell.t.writeln("Missing hostname")
-    const gate = shell.getGate(hostname)
+    const gate: Gate = shell.getGate(hostname)
     if (!gate)
         return shell.t.writeln(`Host not found: ${hostname}`)
     await new Promise<void>((resolve) => {
         gate.connect(async () => {
-            if (gate.name.startsWith("temp")) {
-                const validated = terminal7.validateHostName(gate.addr)
+            if (gate.firstConnection) {
                 const fields: Fields = [{
                     prompt: "Gate's name",
                     validator: (a) => gate.t7.validateHostName(a),
                 }]
-                if (!validated)
-                    fields[0].default = gate.addr
+                fields[0].default = gate.addr
                 const res = await shell.runForm(fields, "text")
                 const name = res[0]
                 gate.name = name
                 gate.nameE = gate.map.add(gate)
                 gate.updateNameE()
                 gate.store = true
+                gate.firstConnection = false
                 await terminal7.storeGates()
             }
             if (gate.session.isSSH && !gate.onlySSH) {
@@ -205,6 +204,7 @@ async function connectCMD(shell:Shell, args: string[]) {
             resolve()
         })
         gate.onFailure = () => {
+            terminal7.storeGates()
             resolve()
         }
     })
@@ -242,20 +242,21 @@ async function addCMD(shell: Shell) {
     if (terminal7.validateHostAddress(hostname)) {
         shell.t.writeln(`  ${hostname} already exists, connecting...`)
         await new Promise(resolve => {
-            const gate = shell.getGate(hostname).connect(() => {
+            const gate = shell.getGate(hostname)
+            gate.connect(() => {
                 gate.load()
                 resolve()
             })
         })
     }
     const gate = terminal7.addGate({
-        name: "temp_" + Math.random().toString(16).slice(2), // temp random name
+        name: hostname, // temp name
         addr: hostname,
-        id: hostname
-    }, false)
+        id: hostname,
+        firstConnection: true,
+        store: true,
+    })
     return connectCMD(shell, [gate.name])
-    terminal7.activeG = gate
-    shell.map.refresh()
 }
 
 async function peerbookForm(shell: Shell) {
