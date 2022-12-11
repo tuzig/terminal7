@@ -185,24 +185,6 @@ export class Terminal7 {
         // setting up edit host events
         document.getElementById("edit-unverified-pbhost").addEventListener(
             "click", () => this.clear())
-        // add webexec installation instructions
-        const fp = await this.getFingerprint(),
-            rc = `bash <(curl -sL https://get.webexec.sh)"
-echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
-        e.querySelectorAll('.webexec-install').forEach(e => {
-            e.innerHTML = `<p>To use WebRTC the server needs webexec:</p>
-<div>
-<pre>${rc}</pre>
-<button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i></button>
-</div>
-`
-            e.querySelector('button').addEventListener('click', () => {
-                this.notify("Copied commands to the clipboard")
-                Clipboard.write( {string: rc })
-            })
-
-        })
-
         // keyboard
         document.addEventListener("keydown", ev => {
             if ((ev.key == "Meta") && (Capacitor.getPlatform() != "ios")) {
