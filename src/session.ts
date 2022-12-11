@@ -14,6 +14,7 @@ export enum Failure {
     TimedOut='Timeout',
     Aborted='Aborted',
     KeyRejected='Key Rejected',
+    WrongAddress='Wrong Address',
 }
 
 export interface Event {

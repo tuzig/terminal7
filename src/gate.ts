@@ -46,6 +46,7 @@ export class Gate {
     map: T7Map
     onlySSH: boolean
     noIds: boolean
+    firstConnection: boolean
     constructor (props) {
         // given properties
         this.id = props.id
@@ -73,6 +74,7 @@ export class Gate {
         this.session = null
         this.onlySSH = props.onlySSH || false
         this.onFailure = Function.prototype()
+        this.firstConnection = props.firstConnection || false
     }
 
     /*
@@ -178,27 +180,34 @@ export class Gate {
     async handleFailure(failure: Failure) {
         this.map.showLog(true)
         // KeyRejected is a "light failure"
-        if (failure != Failure.KeyRejected) {
+        if ((failure != Failure.KeyRejected) && (failure != Failure.WrongPassword)) {
             if (!this.t7.recovering)
                 this.notify(`FAILED: ${failure || "WebRTC connection"}`)
             else
                 this.notify(`Retrying after ${failure}`)
             this.session.close()
             this.session = null
-            if (!this.boarding)
+            if (this != this.t7.activeG)
                 return
             this.stopBoarding()
         }
+        this.boarding = false
         // onFailure should be set to `Shell.onGateFailure()` and the switch code
         // should move there
         // this.onFailure(failure)
         let password: string
         switch ( failure ) {
             case Failure.WrongPassword:
-                this.retryForm(async () => 
-                    await this.map.shell.runCommand("connect", [this.name]),
-                    () => this.close())
+                this.notify("Sorry, wrong password")
+                try {
+                    password = await this.map.shell.askPass()
+                } catch (e) { 
+                    this.onFailure(failure)
+                    return 
+                }
+                this.session.passConnect(this.marker, password)
                 return
+
             case Failure.NotImplemented:
                 this.notify("Please try again")
                 break
@@ -213,6 +222,7 @@ export class Gate {
             case Failure.BadRemoteDescription:
                 this.notify("Please try again")
                 break
+
             case Failure.KeyRejected:
                 this.notify("🔑 Rejected")
                 try {
@@ -224,7 +234,7 @@ export class Gate {
                 this.session.passConnect(this.marker, password)
                 return
         }
-        if (this.name.startsWith("temp")) {
+        if (this.firstConnection) {
             (async () => {
                 const rc = `bash <(curl -sL https://get.webexec.sh)"`
                 this.map.t0.writeln("Failed to connect")
@@ -237,15 +247,15 @@ export class Gate {
                 try {
                     ans = (await this.map.shell.runForm(verifyForm, "text"))[0]
                 } catch(e) {
-                    this.delete()
-                    return
+                    return this.onFailure(Failure.WrongAddress)
                 }
 
                 if (ans == "n") {
                     this.delete()
                     setTimeout(() => this.map.shell.handleLine("add"), 100)
-                    return
+                    return this.onFailure(Failure.WrongAddress)
                 }
+                /* TODO: separate the native from the in-browser:
                 const webexecForm = [{
                     prompt: `Make sure webexec is running on ${this.addr}:
                         \n\x1B[1m${rc}\x1B[0m\n\nCopy to clipboard?`,
@@ -255,15 +265,15 @@ export class Gate {
                 try {
                     ans = (await this.map.shell.runForm(webexecForm, "text"))[0]
                 } catch(e) {
-                    this.delete()
-                    return
+                    return this.onFailure(Failure.WrongAddress)
                 }
                 if (ans == "y")
                     Clipboard.write({ string: rc })
+                */
 				this.retryForm(async () => {
                     this.map.t0.writeln("Retrying...")
                     await this.map.shell.runCommand("connect", [this.name])
-				}, () => this.delete())
+				})
             })()
         } else
             this.map.shell.onDisconnect(this)
@@ -310,7 +320,7 @@ export class Gate {
     }
 
     notify(message) {
-        if (!this.name.startsWith("temp"))
+        if (!this.firstConnection)
             message = `\x1B[4m${this.name}\x1B[0m: ${message}`
         this.t7.notify(message)
     }
@@ -565,7 +575,7 @@ export class Gate {
         })
         document.getElementById("map").classList.add("hidden")
     }
-	async retryForm(retry: () => void, cancel: () => void) {
+	async retryForm(retry: () => void, cancel?: () => void) {
         this.map.showLog(true)
 		const retryForm = [{
 			prompt: "Retry connection?",
@@ -577,9 +587,9 @@ export class Gate {
                 retry()
             else {
                 this.map.showLog(false)
-                cancel()
+                cancel?.()
             }
-        }).catch(() => cancel())
+        }).catch(() => cancel?.())
 	}
     onFormError(err) {
         this.t7.log("Form error:", err.message)
