@@ -236,7 +236,6 @@ export class Gate {
         }
         if (this.firstConnection) {
             (async () => {
-                const rc = `bash <(curl -sL https://get.webexec.sh)"`
                 this.map.t0.writeln("Failed to connect")
                 let ans:string
                 const verifyForm = [{
