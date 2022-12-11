@@ -45,7 +45,7 @@ export class Gate {
     store: boolean
     map: T7Map
     onlySSH: boolean
-
+    noIds: boolean
     constructor (props) {
         // given properties
         this.id = props.id
@@ -214,7 +214,7 @@ export class Gate {
                 this.notify("Please try again")
                 break
             case Failure.KeyRejected:
-                this.notify("Identity key rejected")
+                this.notify("🔑 Rejected")
                 try {
                     password = await this.map.shell.askPass()
                 } catch (e) { 
@@ -550,7 +550,12 @@ export class Gate {
             this.t7.log("TBD: update layout", layout)
         }
         this.t7.log("opening session")
-        this.session.connect(this.marker, this.t7.keys.default.public, this.t7.keys.default.private)
+        if (this.noIds)
+            this.session.connect(this.marker)
+        else {
+            const {publicKey, privateKey} = await this.t7.readId()
+            this.session.connect(this.marker, publicKey, privateKey)
+        }
     }
     load() {
         this.t7.log("loading gate")

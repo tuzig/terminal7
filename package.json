@@ -35,6 +35,7 @@
     "@tuzig/toml": "^3.0.0-browser",
     "@tuzig/xterm": "4.18.0-decoration",
     "@types/marked": "^4.0.7",
+    "capacitor-native-biometric": "^4.1.3",
     "capacitor-ssh-plugin": "^0.3.0",
     "ed25519-keygen": "^0.2.4",
     "glob": "<8",

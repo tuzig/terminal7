@@ -26,7 +26,8 @@ import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Preferences } from '@capacitor/preferences'
-import { Device } from '@capacitor/device';
+import { Device } from '@capacitor/device'
+import { NativeBiometric } from "capacitor-native-biometric"
 
 import { PeerbookConnection } from './peerbook'
 
@@ -246,6 +247,13 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     this.notify("🛋️ Disengaging")
                     this.disengage()
                 } else {
+                    // this is a hack as some operation, like bio verification
+                    // fire an event
+                    if (this.ignoreNextAppEvent) {
+                        this.ignoreNextAppEvent = false
+                        return
+                    }
+
                     // We're back! puts us in recovery mode so that it'll
                     // quietly reconnect to the active gate on failure
                     this.clearTimeouts()
@@ -288,7 +296,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 Clipboard.write({string: area.value})
                 this.clear()
             })
-        this.readIds()
         this.map.open().then(() => {
            this.goHome()
            setTimeout(() => this.showGreetings(), 100)
@@ -978,7 +985,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     resolve()
                 })
             })
-            Preferences.remove({key: 'ids'}).then(this.readIds)
+            Preferences.remove({key: 'pubs'})
+            NativeBiometric.deleteCredentials({ server: "dev.terminal7.default" })
         })
     }
 	async loadChangelog() {
@@ -1002,17 +1010,44 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         else
             e.classList.remove("show")
     }
-    async readIds() {
-        let keysV
-        keysV = (await Preferences.get({ key: 'ids' })).value
-        if (!keysV) {
-            const sseed = randomBytes(32);
-            const i = await Device.getInfo()
-            const skeys = await ssh(sseed, `${i.name}@${i.model}`);
+    // collects the default id and returns a { publicKet, privateKey
+    async readId() {
+        this.ignoreNextAppEvent = true
+        try {
+            await NativeBiometric.verifyIdentity({
+                reason: "Use private key to connect",
+                title: "Access Private Key",
+            })
+        } catch(e) {
+            return {public:"UNVERIFIED", private:"UNVERIFIED"}
+        }
 
-            this.keys = {default:{public:skeys.publicKey, private:skeys.privateKey}}
-            Preferences.set({ key: 'ids', value: JSON.stringify(this.keys)})
-        } else
-            this.keys = JSON.parse(keysV)
+        let publicKey
+        let privateKey
+        try {
+            const def = await NativeBiometric.getCredentials({
+                server: "dev.terminal7.default"})
+            privateKey = def.password
+        } catch {
+            this.notify("Forging 🔑")
+            const sseed = randomBytes(32)
+            const i = await Device.getInfo()
+            const skeys = await ssh(sseed, `${i.name}@${i.model}`)
+            privateKey = skeys.privateKey
+            publicKey = skeys.publicKey
+            NativeBiometric.setCredentials({
+                username: "TBD",
+                password: privateKey,
+                server: "dev.terminal7.default",
+            })
+        }
+        if (publicKey) {
+            const pubDB = { default: publicKey }
+            Preferences.set({key: "pubs", value: JSON.stringify(pubDB)})
+        } else {
+            const pksRaw = (await Preferences.get({key: "pubs"})).value
+            publicKey = JSON.parse(pksRaw).default
+        }
+        return {publicKey: publicKey, privateKey: privateKey}
     }
 }

@@ -490,12 +490,12 @@ async function closeCMD(shell: Shell, args: string[]) {
     gate.close()
 }
 async function copyKeyCMD(shell: Shell) {
-    const keysV = (await Preferences.get({ key: "ids" })).value
-    if (keysV) {
-        const keys = JSON.parse(keysV)
-        const publicKey = keys.default.public
+    const pksRaw = (await Preferences.get({key: "pubs"})).value
+    if (pksRaw) {
+        const keys = JSON.parse(pksRaw)
+        const publicKey = keys.default
         Clipboard.write({ string: publicKey })
-        return shell.t.writeln(`${publicKey}\n☝️ copied to the Clipboard`)
+        return shell.t.writeln(`${publicKey}\n☝️ copied to 📋`)
     } else
-        return shell.t.writeln("No key yet. Please connect to generate one.")
+        return shell.t.writeln("No key yet. Please connect to generate one.\n(try connect or add)")
 }
