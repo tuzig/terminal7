@@ -15,7 +15,7 @@ export class Shell {
     activeForm: Form | null
     commands: Map<string, Command>
     currentLine = ''
-    timer: NodeJS.Timer
+    timer: number | null = null
 
     constructor(map: T7Map) {
         this.map = map
@@ -211,7 +211,7 @@ export class Shell {
         const len = 20,
             interval = timeout / len
         let i = 0
-        this.timer = setInterval(() => {
+        this.timer = window.setInterval(() => {
             this.t.write(`\r\x1B[KTWR ${" ".repeat(i)}ᗧ${"·".repeat(len-i-1)}🍒\x1B[?25l`)
             i++
         }, interval)
