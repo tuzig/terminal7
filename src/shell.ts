@@ -1,4 +1,5 @@
 import { Clipboard } from "@capacitor/clipboard"
+import { Preferences } from "@capacitor/preferences"
 import { Terminal } from '@tuzig/xterm'
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
@@ -259,6 +260,14 @@ export class Shell {
         const res = await this.map.shell.runForm(
             [{ prompt: prompt, default: def }], "text")
         return res[0]
+    }
+    async getPublicKey() {
+        const pksRaw = (await Preferences.get({key: "pubs"})).value
+        if (pksRaw) {
+            const keys = JSON.parse(pksRaw)
+            return keys.default
+        }
+        return undefined
     }
 }
 

@@ -99,6 +99,7 @@ export class Terminal7 {
         this.zoomedE = null
         this.pendingPanes = {}
         this.pb = null
+        this.ignoreNextAppEvents = 0
     }
     showKeyHelp () {
         if (Date.now() - this.metaPressStart > 987) {
@@ -219,8 +220,11 @@ export class Terminal7 {
             this.map.refresh()
         }
         if (Capacitor.isNativePlatform())  {
+            // this is a hack as some operation, like bio verification
+            // fire two events
             App.addListener('appStateChange', state => {
                 if (!state.isActive) {
+                    if (this.ignoreNextAppEvents-- > 0) return
                     if (this.pb) {
                         this.pb.close()
                         this.pb = null
@@ -229,12 +233,7 @@ export class Terminal7 {
                     this.notify("🛋️ Disengaging")
                     this.disengage()
                 } else {
-                    // this is a hack as some operation, like bio verification
-                    // fire an event
-                    if (this.ignoreNextAppEvent) {
-                        this.ignoreNextAppEvent = false
-                        return
-                    }
+                    if (this.ignoreNextAppEvents-- > 0) return
 
                     // We're back! puts us in recovery mode so that it'll
                     // quietly reconnect to the active gate on failure
@@ -996,7 +995,7 @@ export class Terminal7 {
      * collects the default id and returns a { publicKet, privateKey
      */
     async readId() {
-        this.ignoreNextAppEvent = true
+        this.ignoreNextAppEvents = 2
         try {
             await NativeBiometric.verifyIdentity({
                 reason: "Use private key to connect",
@@ -1029,8 +1028,7 @@ export class Terminal7 {
             const pubDB = { default: publicKey }
             Preferences.set({key: "pubs", value: JSON.stringify(pubDB)})
         } else {
-            const pksRaw = (await Preferences.get({key: "pubs"})).value
-            publicKey = JSON.parse(pksRaw).default
+            publicKey = await this.map.shell.getPublicKey()
         }
         return {publicKey: publicKey, privateKey: privateKey}
     }

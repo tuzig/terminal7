@@ -56,24 +56,21 @@ export class SSHSession extends BaseSession {
         this.id = session
         this.onStateChange("connected")
     }
-    connect(marker?:number, tag?: string) {
+    async connect(marker?:number, publicKey: string, privateKey:string) {
+        this.startWatchdog()
         const args: StartByKey = {
             address: this.address,
             port: this.port,
             username: this.username,
-            tag: tag,
+            publicKey: publicKey,
+            privateKey: privateKey
         }
-        this.startWatchdog()
+
         SSH.startSessionByKey(args)
            .then(args => {
                 this.clearWatchdog()
-                const publicKey = args.publicKey
-                if (publicKey) {
-                    const keys = {default: {public: args.publicKey, private: args.privateKey}}
-                    Preferences.set({ key: "keys", value: JSON.stringify(keys) })
-                } else
-                    this.onSSHSession(args.session)
-           }) .catch(e => {
+                this.onSSHSession(args.session)
+           }).catch(e => {
                 this.clearWatchdog()
                 console.log("SSH startSession failed", e)
                 if (e.toString().startsWith("Error: Not imp"))
@@ -129,6 +126,29 @@ export class SSHSession extends BaseSession {
     public get isSSH() {
         return true
     }
+    async startCommand(cmd: string, onData) {
+        const channel = new SSHChannel()
+        const channelId = (await SSH.newChannel({session: this.id})).id
+        this.t7.log("got new channel with id ", channelId)
+        channel.id = channelId
+        channel.onClose = () => this.t7.log("webexec accept session closed")
+        try {
+            await SSH.startShell({channel: channelId, command: cmd },
+                m => {
+                    if (m && m.data && onData)
+                        onData(channelId, m.data)
+                    else {
+                        terminal7.log("Got from startShelll", m)
+                        // this.clearWatchdog()
+                    }
+                })
+        } catch (e) { 
+            this.t7.log("Failed starting webexec", e)
+            this.clearWatchdog()
+            throw e
+        }
+    return channel
+    }
 }
 // HybridSession can run either as SSH or WebRTC bby signalling
 // over SSH
@@ -159,11 +179,12 @@ export class HybridSession extends SSHSession {
         }
 
         SSH.startSessionByKey(args)
-           .then(res => {
+           .then(async res => {
                 this.clearWatchdog()
                 this.id = res.session
                 try {
-                    this.newWebRTCSession(res.session, marker)
+                    await this.startCommand(ACCEPT_CMD, (channelId, data) =>
+                        this.onAcceptData(channelId, marker, data))
                 } catch(e) { 
                     this.clearWatchdog()
                     this.onStateChange("connected")
@@ -188,7 +209,8 @@ export class HybridSession extends SSHSession {
                 this.t7.log("Got ssh session", session)
                 this.id = session
                 try {
-                    await this.newWebRTCSession(session, marker)
+                    await this.startCommand(ACCEPT_CMD, (channelId, data) =>
+                        this.onAcceptData(channelId, marker, data))
                 } catch(e) { 
                     this.clearWatchdog()
                     this.onStateChange("connected")
@@ -205,13 +227,13 @@ export class HybridSession extends SSHSession {
 
            })
     }
-    async onAcceptData(cid, marker: number, data: string) {
+    async onAcceptData(channelId, marker: number, data: string) {
         data.split("\r\n").filter(line => line.length > 0).forEach(async line => {
             let c = {}
             this.t7.log("line webexec accept: ", line)
             if (line.startsWith("READY")) {
                 try {
-                    await this.openWebRTCSession(cid, marker)
+                    await this.openWebRTCSession(channelId, marker)
                 } catch (e) {
                     this.webrtcSession = null
                     this.t7.log("signaling over ssh failed", e)
@@ -222,7 +244,7 @@ export class HybridSession extends SSHSession {
             //TODO: find a cleaner way to identify when the session closes without READY
             if (line.includes("such file or")) {
                 this.clearWatchdog()
-                SSH.closeChannel({channel: cid})
+                SSH.closeChannel({channel: channelId})
                 this.startWatchdog()
                 super.connect()
                 return
@@ -255,7 +277,7 @@ export class HybridSession extends SSHSession {
         })
     }
 
-    openWebRTCSession(cid, marker): Promise<Session> {
+    openWebRTCSession(channelId, marker): Promise<Session> {
         this.webrtcSession = new WebRTCSession()
         // TODO: better to return the session and reject when failing
         return new Promise<Session>((resolve) => {
@@ -264,7 +286,7 @@ export class HybridSession extends SSHSession {
                 console.log("State changed", state)
                 this.clearWatchdog()
                 if (state == "connected") {
-                    SSH.closeChannel({channel: cid})
+                    SSH.closeChannel({channel: channelId})
                     this.onStateChange(state)
                     this.webrtcSession.onStateChange = this.onStateChange
                     resolve(this.webrtcSession)
@@ -273,7 +295,7 @@ export class HybridSession extends SSHSession {
             this.webrtcSession.onIceCandidate = e => {
                 const candidate = JSON.stringify(e.candidate)
                 this.sentMessages.push(candidate)
-                SSH.writeToChannel({channel: cid, message: candidate + "\n"})
+                SSH.writeToChannel({channel: channelId, message: candidate + "\n"})
             }
             this.webrtcSession.onNegotiationNeeded = () => {
                 this.t7.log("on negotiation needed")
@@ -281,30 +303,12 @@ export class HybridSession extends SSHSession {
                     const offer = JSON.stringify(d)
                     this.webrtcSession.pc.setLocalDescription(d)
                     this.sentMessages.push(offer)
-                    SSH.writeToChannel({channel: cid, message: offer + "\n"})
+                    SSH.writeToChannel({channel: channelId, message: offer + "\n"})
                 })
             }
             this.webrtcSession.connect(marker)
         })
     } 
-    async newWebRTCSession(session: string, marker: number): Promise<void> {
-        const channel = new SSHChannel()
-        const cid = (await SSH.newChannel({session: session})).id
-        this.t7.log("got new channel with id ", cid)
-        channel.id = cid
-        channel.onClose = () => this.t7.log("webexec accept session closed")
-        try {
-            await SSH.startShell({channel: cid, command: ACCEPT_CMD },
-                m => {
-                    if (m && m.data)
-                        this.onAcceptData(cid, marker, m.data)
-                })
-        } catch (e) { 
-            this.t7.log("Failed starting webexec", e)
-            this.clearWatchdog()
-            throw e
-        }
-    }
     async openChannel(cmd: string, parent?: ChannelID, sx?: number, sy?: number) {
 
         if (!this.webrtcSession) {

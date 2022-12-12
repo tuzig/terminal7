@@ -173,15 +173,30 @@ async function connectCMD(shell:Shell, args: string[]) {
                 const name = res[0]
                 gate.name = name
                 gate.nameE = gate.map.add(gate)
+                gate.verified = true
                 gate.updateNameE()
                 gate.store = true
                 gate.firstConnection = false
                 await terminal7.storeGates()
             }
-            if (gate.session.isSSH && !gate.onlySSH) {
+            if (gate.keyRejected) {
+                const keyForm = [
+                    { prompt: "Just let me in" },
+                    { prompt: "Copy command to 📋" },
+                ]
+                const publicKey = await shell.getPublicKey()
+                const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
+                shell.t.writeln(`To use face id please copy the ES25519 key by running:\n\n\x1B[1m${cmd}\x1B[0m\n`)
+                const res = await shell.runForm(keyForm, "menu")
+                switch(res) {
+                    case "Copy command to 📋":
+                        Clipboard.write({ string: cmd })
+                        break
+                }
+            } else if (gate.session.isSSH && !gate.onlySSH) {
                 const webexecForm = [
                     { prompt: "Just let me in" },
-                    { prompt: "Copy it to clipboard & connect" },
+                    { prompt: "Copy command to 📋" },
                     { prompt: "Always use SSH for this host" },
                 ]
                 const cmd = "bash <(curl -sL https://get.webexec.sh)"
@@ -209,7 +224,8 @@ async function connectCMD(shell:Shell, args: string[]) {
             })
             resolve()
         })
-        gate.onFailure = () => {
+        gate.onFailure = reason => {
+            terminal7.log(`Connect command got failure ${reason}`) 
             terminal7.storeGates()
             resolve()
         }
@@ -491,10 +507,8 @@ async function closeCMD(shell: Shell, args: string[]) {
     gate.close()
 }
 async function copyKeyCMD(shell: Shell) {
-    const pksRaw = (await Preferences.get({key: "pubs"})).value
-    if (pksRaw) {
-        const keys = JSON.parse(pksRaw)
-        const publicKey = keys.default
+    const publicKey = await shell.getPublicKey()
+    if (publicKey) {
         Clipboard.write({ string: publicKey })
         return shell.t.writeln(`${publicKey}\n☝️ copied to 📋`)
     } else

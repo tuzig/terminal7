@@ -47,6 +47,7 @@ export class Gate {
     onlySSH: boolean
     noIds: boolean
     firstConnection: boolean
+    keyRejected: boolean
     constructor (props) {
         // given properties
         this.id = props.id
@@ -158,11 +159,6 @@ export class Gate {
             this.marker = null
             this.notify(`🥂  over ${this.session.isSSH?"SSH":"WebRTC"}`)
             this.setIndicatorColor("unset")
-            if (!this.verified) {
-                this.verified = true
-                this.updateNameE()
-                this.t7.storeGates()
-            }
             // first onConnected is special if it's a new gate but once
             // connected, we're back to loading the gate
             this.onConnected()
@@ -179,7 +175,7 @@ export class Gate {
     // handle connection failures
     async handleFailure(failure: Failure) {
         this.map.showLog(true)
-        // KeyRejected is a "light failure"
+        // KeyRejected and WrongPassword are "light failure"
         if ((failure != Failure.KeyRejected) && (failure != Failure.WrongPassword)) {
             if (!this.t7.recovering)
                 this.notify(`FAILED: ${failure || "WebRTC connection"}`)
@@ -225,6 +221,7 @@ export class Gate {
 
             case Failure.KeyRejected:
                 this.notify("🔑 Rejected")
+                this.keyRejected = true
                 try {
                     password = await this.map.shell.askPass()
                 } catch (e) { 
