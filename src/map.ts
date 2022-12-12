@@ -38,7 +38,7 @@ export class T7Map {
             const e = document.getElementById("t0")
             this.fitAddon = new FitAddon()
             const webLinksAddon = new WebLinksAddon((MouseEvent, url) => {
-                Browser.open({ url })
+                window.open(url, "_blank", "noopener")
             })
             this.t0.loadAddon(webLinksAddon)
             this.t0.loadAddon(this.fitAddon)

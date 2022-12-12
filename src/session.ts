@@ -13,6 +13,7 @@ export enum Failure {
     WebexecNotFound='Webexec Not Found',
     TimedOut='Timeout',
     Aborted='Aborted',
+    WrongAddress='Wrong Address',
 }
 
 export interface Event {
