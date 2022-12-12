@@ -417,7 +417,7 @@ export class Terminal7 {
         // add the id
         p.id = p.fp || p.name
         let g = new Gate(p)
-        g.onlySSH = p.onlySSH == 'y'
+        g.onlySSH = p.onlySSH
         this.gates.set(p.id, g)
         g.open(this.e)
         if (onMap) {
