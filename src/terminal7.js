@@ -420,7 +420,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         // add the id
         p.id = p.fp || p.name
         let g = new Gate(p)
-        g.onlySSH = p.onlySSH == 'y'
+        g.onlySSH = p.onlySSH
         this.gates.set(p.id, g)
         g.open(this.e)
         if (onMap) {
