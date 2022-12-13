@@ -198,17 +198,18 @@ export class Window {
         }
     }
     updateDivideButtons() {
+        const min = this.t7.conf.ui.min_pane_size
         let bV = document.getElementById("divide-v")
         let bH = document.getElementById("divide-h")
         if (this.rootLayout.numPanes > this.t7.conf.ui.max_panes) {
             bV.classList.add("off")
             bH.classList.add("off")
         } else {
-            if (this.activeP.sx < 0.04)
+            if (this.activeP.sx < min)
                 bV.classList.add("off")
             else
                 bV.classList.remove("off")
-            if (this.activeP.sy < 0.04)
+            if (this.activeP.sy < min)
                 bH.classList.add("off")
             else
                 bH.classList.remove("off")

@@ -68,6 +68,7 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # quickest_press = 1000
 # max_tabs = 10
 # max_panes = 7
+# min_pane_size = 0.04
 # cut_min_distance = 80
 # cut_min_speed_x = 2.5
 # by default cut_min_speed_y is set at 10 to avoid confusion with scroll
@@ -590,6 +591,7 @@ export class Terminal7 {
         this.conf.ui.quickest_press = this.conf.ui.quickest_press || 1000
         this.conf.ui.max_tabs = this.conf.ui.max_tabs || 10
         this.conf.ui.max_panes = this.conf.ui.max_panes || 7
+        this.conf.ui.min_pane_size = this.conf.ui.min_pane_size || 0.04
         this.conf.ui.leader = this.conf.ui.leader || "a"
         this.conf.ui.cutMinSpeedX = this.conf.ui.cut_min_speed_x || 2.5
         this.conf.ui.cutMinSpeedY = this.conf.ui.cut_min_speed_y || 10
