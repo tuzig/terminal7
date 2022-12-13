@@ -138,8 +138,8 @@ export class Pane extends Cell {
             })
             this.t.onData(d =>  {
                 if (!this.d || this.d.readyState != "open" ) {
-                    this.gate.notify("Data channel lost")
-                    this.gate.reset()
+                    terminal7.log("Ignoring lost data channel, hoping it'll all work out")
+                    // this.gate.handleFailure(Failure.DataChannelLost)
                 } else
                     this.d.send(d)
             })

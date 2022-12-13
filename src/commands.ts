@@ -184,14 +184,16 @@ async function connectCMD(shell:Shell, args: string[]) {
                     { prompt: "Just let me in" },
                     { prompt: "Copy command to 📋" },
                 ]
-                const publicKey = await shell.getPublicKey()
-                const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
-                shell.t.writeln(`To use face id please copy the ES25519 key by running:\n\n\x1B[1m${cmd}\x1B[0m\n`)
-                const res = await shell.runForm(keyForm, "menu")
-                switch(res) {
-                    case "Copy command to 📋":
-                        Clipboard.write({ string: cmd })
-                        break
+                const { publicKey } = await terminal7.readId()
+                if (publicKey) {
+                    const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
+                    shell.t.writeln(`\n To use face id please copy the ES25519 key by running:\n\n\x1B[1m${cmd}\x1B[0m\n`)
+                    const res = await shell.runForm(keyForm, "menu")
+                    switch(res) {
+                        case "Copy command to 📋":
+                            Clipboard.write({ string: cmd })
+                            break
+                    }
                 }
             } else if (gate.session.isSSH && !gate.onlySSH) {
                 const webexecForm = [
@@ -310,7 +312,7 @@ peer_name = "${peername}"
     terminal7.loadConf(TOML.parse(dotfile))
     terminal7.notify("Your email was added to the dotfile")
     terminal7.pbConnect()
-    terminal7.clear()
+    await terminal7.clear()
 }
 
 async function resetCMD(shell: Shell, args: string[]) {
@@ -452,7 +454,7 @@ async function editCMD (shell:Shell, args: string[]) {
                 return
             }
             if (!enabled) {
-                gate.t7.clear()
+                await gate.t7.clear()
                 return
             }
             fFields = fFields.filter((_, i) => enabled[i])
@@ -480,7 +482,7 @@ async function editCMD (shell:Shell, args: string[]) {
             }
             if (res[0] == "y")
                 gate.delete()
-            gate.t7.clear()
+            await gate.t7.clear()
             break
     }
 }

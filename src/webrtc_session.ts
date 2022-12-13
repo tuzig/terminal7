@@ -206,11 +206,11 @@ export class WebRTCSession extends BaseSession {
             }
         })
     }
-    async reconnect(marker: number|null): Promise<void> {
+    async reconnect(marker: number|null, publicKey?: string, privateKey?: string): Promise<void> {
         return new Promise((resolve, reject) => { 
             console.log("in reconnect", this.cdc, this.cdc.readyState)
             if (!this.pc)
-                return this.connect(marker)
+                return this.connect(marker, publicKey, privateKey)
             
             this.startWatchdog()
             if (!this.cdc || this.cdc.readyState != "open")

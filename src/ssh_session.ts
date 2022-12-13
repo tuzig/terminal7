@@ -1,7 +1,6 @@
 import { SSH, SSHSessionID, StartByPasswd, StartByKey} from 'capacitor-ssh-plugin'
 import { Channel, BaseChannel, BaseSession, Failure, Session, State }  from './session' 
 import { WebRTCSession }  from './webrtc_session'
-import { Preferences } from "@capacitor/preferences"
 
 const ACCEPT_CMD = "/usr/local/bin/webexec accept"
 
@@ -58,19 +57,16 @@ export class SSHSession extends BaseSession {
     }
     async connect(marker?:number, publicKey: string, privateKey:string) {
         this.startWatchdog()
-        const args: StartByKey = {
+        SSH.startSessionByKey({
             address: this.address,
             port: this.port,
             username: this.username,
             publicKey: publicKey,
             privateKey: privateKey
-        }
-
-        SSH.startSessionByKey(args)
-           .then(args => {
+        }).then(args => {
                 this.clearWatchdog()
                 this.onSSHSession(args.session)
-           }).catch(e => {
+        }).catch(e => {
                 this.clearWatchdog()
                 console.log("SSH startSession failed", e)
                 if (e.toString().startsWith("Error: Not imp"))
@@ -318,11 +314,11 @@ export class HybridSession extends SSHSession {
             return this.webrtcSession.openChannel(cmd, parent, sx, sy)
     }
 
-    async reconnect(marker?: number) {
+    async reconnect(marker?: number, publicKey?: string, privateKey?: string) {
         if (this.webrtcSession)
-            return this.webrtcSession.reconnect(marker)
+            return this.webrtcSession.reconnect(marker, privateKey, publicKey)
         else
-            return this.connect(marker)
+            return this.connect(marker, privateKey, publicKey)
     }
     close() {
         if (this.webrtcSession)

@@ -60,7 +60,7 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # timeout = 3000
 # retries = 3
 # ice_server = "stun:stun2.l.google.com:19302"
-# recovery_time = 7000
+# recovery_time = 4000
 
 [ui]
 # leader = "a"
@@ -99,7 +99,7 @@ export class Terminal7 {
         this.zoomedE = null
         this.pendingPanes = {}
         this.pb = null
-        this.ignoreNextAppEvents = 0
+        this.ignoreAppEvents = false
     }
     showKeyHelp () {
         if (Date.now() - this.metaPressStart > 987) {
@@ -116,6 +116,7 @@ export class Terminal7 {
     async open() {
         let e = document.getElementById('terminal7')
         this.log("in open")
+        this.lastActiveState = true
         this.e = e
         await Preferences.migrate()
         // reading conf
@@ -185,7 +186,7 @@ export class Terminal7 {
         this.catchFingers()
         // setting up edit host events
         document.getElementById("edit-unverified-pbhost").addEventListener(
-            "click", () => this.clear())
+            "click", async() => await this.clear())
         // keyboard
         document.addEventListener("keydown", ev => {
             if ((ev.key == "Meta") && (Capacitor.getPlatform() != "ios")) {
@@ -194,11 +195,11 @@ export class Terminal7 {
             } else
                 this.metaPressStart = Number.MAX_VALUE
         })
-        document.addEventListener("keyup", ev => {
+        document.addEventListener("keyup", async ev => {
             // hide the modals when releasing the meta key
             if ((ev.key == "Meta") &&
                 (Date.now() - this.metaPressStart > terminal7.conf.ui.quickest_press)) {
-                this.clear()
+                await this.clear()
             }
             this.metaPressStart = Number.MAX_VALUE
         })
@@ -223,8 +224,12 @@ export class Terminal7 {
             // this is a hack as some operation, like bio verification
             // fire two events
             App.addListener('appStateChange', state => {
+                if (this.lastActiveState == state.isActive)
+                    return
+                this.lastActiveState = state.isActive
+                console.log("app state changed", this.ignoreAppEvents)
                 if (!state.isActive) {
-                    if (this.ignoreNextAppEvents-- > 0) return
+                    if (this.ignoreAppEvents) return
                     if (this.pb) {
                         this.pb.close()
                         this.pb = null
@@ -233,13 +238,13 @@ export class Terminal7 {
                     this.notify("🛋️ Disengaging")
                     this.disengage()
                 } else {
-                    if (this.ignoreNextAppEvents-- > 0) return
-
                     // We're back! puts us in recovery mode so that it'll
                     // quietly reconnect to the active gate on failure
+                    if (this.ignoreAppEvents) {
+                        this.ignoreAppEvents = false
+                        return
+                    }
                     this.clearTimeouts()
-                    this.recovering = true
-                    this.run(() => this.recovering = false, this.conf.net.recoveryTime)
                     Network.getStatus().then(s => this.updateNetworkStatus(s))
                 }
             })
@@ -255,27 +260,27 @@ export class Terminal7 {
         // settings button and modal
         var modal   = document.getElementById("settings-modal")
         modal.addEventListener('click',
-            () => {
+            async () => {
                 document.getElementById("dotfile-button").classList.remove("on")
-                this.clear()
+                await this.clear()
             }
         )
         document.getElementById("dotfile-button")
                 .addEventListener("click", ev => this.toggleSettings(ev))
         modal.querySelector(".close").addEventListener('click',
-            () => {
+            async () => {
                 document.getElementById("dotfile-button").classList.remove("on")
-                this.clear()
+                await this.clear()
             }
         )
         modal.querySelector(".save").addEventListener('click',
             () => this.wqConf())
         modal.querySelector(".copy").addEventListener('click',
-            () => {
+            async () => {
                 var area = document.getElementById("edit-conf")
                 this.confEditor.save()
                 Clipboard.write({string: area.value})
-                this.clear()
+                await this.clear()
             })
         this.map.open().then(() => {
            this.goHome()
@@ -437,7 +442,7 @@ export class Terminal7 {
         await Preferences.set({key: 'gates', value: JSON.stringify(out)})
         this.map.refresh()
     }
-    clear() {
+    async clear() {
         this.e.querySelectorAll('.temporal').forEach(e => e.remove())
         this.e.querySelectorAll('.modal').forEach(e => {
             if (!e.classList.contains("non-clearable"))
@@ -446,9 +451,9 @@ export class Terminal7 {
         this.map.showLog(false)
         this.focus()
         this.longPressGate = null
-        this.map.shell.escapeActiveForm()
+        await this.map.shell.escapeActiveForm()
     }
-    goHome() {
+    async goHome() {
         Preferences.remove({key: "last_state"}) 
         const s = document.getElementById('map-button')
         s.classList.add('off')
@@ -457,7 +462,7 @@ export class Terminal7 {
             this.activeG = null
         }
         // hide the modals
-        this.clear()
+        await this.clear()
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.add("off"))
         window.location.href = "#map"
@@ -546,7 +551,9 @@ export class Terminal7 {
             this.pbConnect()
             const gate = this.activeG
             if (gate) {
-                this.notify("🌞 Reconnecting")
+                this.notify("🌞 Recovering")
+                this.recovering = true
+                this.run(() => this.recovering = false, this.conf.net.recoveryTime)
                 gate.reconnect()
                     .then(() => this.map.showLog(false))
                     .catch(() =>
@@ -581,7 +588,7 @@ export class Terminal7 {
                               Please click <i class="f7-icons">gear</i> and change net.peerbook to "api.peerbook.io"`)
         this.conf.net.timeout = this.conf.net.timeout || 5000
         this.conf.net.retries = this.conf.net.retries || 3
-        this.conf.net.recoveryTime = this.conf.net.recovery_time || 7000
+        this.conf.net.recoveryTime = this.conf.net.recovery_time || 4000
         this.conf.theme = this.conf.theme || {}
         this.conf.theme.foreground = this.conf.theme.foreground || "#00FAFA"
         this.conf.theme.background = this.conf.theme.background || "#000"
@@ -995,15 +1002,24 @@ export class Terminal7 {
      * collects the default id and returns a { publicKet, privateKey
      */
     async readId() {
-        this.ignoreNextAppEvents = 2
+        this.ignoreAppEvents = true
+        let verified
         try {
-            await NativeBiometric.verifyIdentity({
+            verified = await NativeBiometric.verifyIdentity({
                 reason: "Use private key to connect",
                 title: "Access Private Key",
             })
         } catch(e) {
-            return {public:"UNVERIFIED", private:"UNVERIFIED"}
+            if (e.message == "Authentication not available")
+                this.notify("Please turn on face id for 🔑 based auth")
+            // this.ignoreAppEvents = false
+            this.ignoreAppEvents = false
+            return {public:"UNAVAILABLE", private:"UNAVAILABLE"}
         }
+        console.log("Got biometric verified ", verified)
+        // wait for the app events to bring the ignoreAppEvents to false
+        while (this.ignoreAppEvents)
+            await (() => { return new Promise(r => setTimeout(r, 20)) })()
 
         let publicKey
         let privateKey
@@ -1026,7 +1042,7 @@ export class Terminal7 {
         }
         if (publicKey) {
             const pubDB = { default: publicKey }
-            Preferences.set({key: "pubs", value: JSON.stringify(pubDB)})
+            await Preferences.set({key: "pubs", value: JSON.stringify(pubDB)})
         } else {
             publicKey = await this.map.shell.getPublicKey()
         }

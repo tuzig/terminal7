@@ -115,7 +115,7 @@ export class Shell {
     }
 
     async runForm(fields: Fields, type: "menu" | "choice" | "text", title="") {
-        this.escapeActiveForm()
+        await this.escapeActiveForm()
         this.map.showLog(true)
         this.t.write("\r\x1B[K")
         this.t.scrollToBottom()
@@ -156,14 +156,14 @@ export class Shell {
         this.printPrompt()
     }
     
-    keyHandler(ev: KeyboardEvent) {
+    async keyHandler(ev: KeyboardEvent) {
         const form = this.activeForm,
             key = ev.key
         this.updateCapsLock(ev)
         this.printPrompt()
         if (key == 'Escape') {
             if (form)
-                this.escapeActiveForm()
+                await this.escapeActiveForm()
             else
                 this.map.showLog(false)
         } else if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
@@ -223,7 +223,7 @@ export class Shell {
      * onDisconnect is called when a gate disconnects.
      */
     async onDisconnect(gate: Gate) {
-        if (!terminal7.netStatus.connected || 
+        if (!terminal7.netStatus.connected ||
             ((terminal7.activeG != null) && (gate != terminal7.activeG)))
             return
         
@@ -262,12 +262,17 @@ export class Shell {
         return res[0]
     }
     async getPublicKey() {
-        const pksRaw = (await Preferences.get({key: "pubs"})).value
-        if (pksRaw) {
-            const keys = JSON.parse(pksRaw)
-            return keys.default
+        if (!this.pubKeys) {
+            let pksRaw
+            try {
+                pksRaw = (await Preferences.get({key: "pubs"})).value
+            } catch(e) {
+                return this.t.writeln("Failed to read public keys")
+                terminal7.log("Preferences get returned an error", e)
+            }
+            this.pubKeys = JSON.parse(pksRaw)
         }
-        return undefined
+        return this.pubKeys.default
     }
 }
 

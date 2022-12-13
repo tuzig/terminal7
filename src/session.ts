@@ -15,6 +15,7 @@ export enum Failure {
     Aborted='Aborted',
     KeyRejected='Key Rejected',
     WrongAddress='Wrong Address',
+    DataChannelLost="Data Channel Lost"
 }
 
 export interface Event {
@@ -45,7 +46,7 @@ export interface Session {
     close(): void
     getPayload(): Promise<string>
     setPayload(payload: string): Promise<void>
-    reconnect(marker?: number): Promise<void>
+    reconnect(marker?: number, publicKey?: string, privateKey?: string): Promise<void>
     disconnect(): Promise<void>
     connect(marker?:number, password?: string, tag?: string): void
     fail(failure?: Failure): void

@@ -174,23 +174,32 @@ export class Gate {
     }
     // handle connection failures
     async handleFailure(failure: Failure) {
-        this.map.showLog(true)
         // KeyRejected and WrongPassword are "light failure"
+        if (!this.t7.lastActiveState) {
+            console.log("ignoring failed event as the app is still in the back")
+            this.stopBoarding()
+            if (this.session) {
+                this.session.close()
+                this.session = null
+            }
+            return
+        }
         if ((failure != Failure.KeyRejected) && (failure != Failure.WrongPassword)) {
-            if (!this.t7.recovering)
-                this.notify(`FAILED: ${failure || "WebRTC connection"}`)
-            else
-                this.notify(`Retrying after ${failure}`)
             this.session.close()
             this.session = null
+            this.stopBoarding()
+            if (!this.t7.recovering)
+                this.notify(`FAILED: ${failure || "WebRTC connection"}`)
+            else {
+                this.notify(`Retrying after ${failure}`)
+                return
+            }
             if (this != this.t7.activeG)
                 return
-            this.stopBoarding()
         }
+        // this.map.showLog(true)
+        console.log("handling failure", failure)
         this.boarding = false
-        // onFailure should be set to `Shell.onGateFailure()` and the switch code
-        // should move there
-        // this.onFailure(failure)
         let password: string
         switch ( failure ) {
             case Failure.WrongPassword:
@@ -272,16 +281,21 @@ export class Gate {
 				})
             })()
         } else
-            this.map.shell.onDisconnect(this)
+            await this.map.shell.onDisconnect(this)
     }
     reconnect(): Promise<void> {
+        if (!this.session)
+            return this.connect()
         return new Promise((resolve, reject) => {
-            if (!this.session)
-                return this.connect()
-            this.session.reconnect(this.marker).then(layout => {
-                this.setLayout(layout)
+            this.t7.readId().then(({publicKey, privateKey}) => {
+                this.session.reconnect(this.marker, publicKey, privateKey).then(layout => {
+                    this.setLayout(layout)
+                    resolve()
+                }).catch(() => this.connect().then(resolve).catch(reject))
+            }).catch((e) => {
+                this.t7.log("failed to read id", e)
                 resolve()
-            }).catch(() => this.connect().then(resolve).catch(reject))
+            })
         })
     }
     /*
@@ -454,9 +468,9 @@ export class Gate {
                })
             }, 100)
     }
-    onPaneConnected() {
+    async onPaneConnected() {
         // hide notifications
-        this.t7.clear()
+        await this.t7.clear()
         //enable search
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.remove("off"))
@@ -526,21 +540,18 @@ export class Gate {
             this.map.showLog(false)
     }
     async completeConnect(): void {
-        if (this.map.shell.activeForm)
-            this.map.shell.escapeActiveForm()
-
+        this.keyRejected = false
         if (this.fp) {
             this.notify("🎌  PeerBook")
             this.session = new PeerbookSession(this.fp, this.t7.pb)
         }
         else {
-            if (Capacitor.getPlatform() == "ios") {
+            if (Capacitor.isNativePlatform())  {
                 if (!this.username) {
                     try {
                         this.username = await this.map.shell.askValue("Username")
                     } catch (e) {
                         this.notify("Failed to get username")
-                        this.map.shell.escapeActiveForm()
                     }
                 }
                 this.session = (this.onlySSH)?new SSHSession(this.addr, this.username):
