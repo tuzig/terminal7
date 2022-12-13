@@ -197,16 +197,21 @@ export class Window {
             this.gate.sendState()
         }
     }
-    toggleDivideButtons() {
+    updateDivideButtons() {
         let bV = document.getElementById("divide-v")
         let bH = document.getElementById("divide-h")
-        if (this.activeP.sx < 0.04)
+        if (this.rootLayout.numPanes > this.t7.conf.ui.max_panes) {
             bV.classList.add("off")
-        else
-            bV.classList.remove("off")
-        if (this.activeP.sy < 0.04)
             bH.classList.add("off")
-        else
-            bH.classList.remove("off")
+        } else {
+            if (this.activeP.sx < 0.04)
+                bV.classList.add("off")
+            else
+                bV.classList.remove("off")
+            if (this.activeP.sy < 0.04)
+                bH.classList.add("off")
+            else
+                bH.classList.remove("off")
+        }
     }
 }
