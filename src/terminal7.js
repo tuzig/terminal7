@@ -63,6 +63,7 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # leader = "a"
 # quickest_press = 1000
 # max_tabs = 10
+# max_panes = 7
 # cut_min_distance = 80
 # cut_min_speed_x = 2.5
 # by default cut_min_speed_y is set at 10 to avoid confusion with scroll
@@ -154,13 +155,13 @@ export class Terminal7 {
                 .addEventListener("click", () => this.toggleHelp())
         document.getElementById("help-button")
                 .addEventListener("click", () => this.toggleHelp())
-        document.getElementById("divide-h")
-                .addEventListener("click", () =>  {
-                    if (this.activeG && this.activeG.activeW.activeP.sy >= 0.04)
+        const dH = document.getElementById("divide-h")
+        const dV = document.getElementById("divide-v")
+        dH.addEventListener("click", () =>  {
+                    if (this.activeG && !dH.classList.contains("off"))
                         this.activeG.activeW.activeP.split("rightleft", 0.5)})
-        document.getElementById("divide-v")
-                .addEventListener("click", () =>  {
-                    if (this.activeG && this.activeG.activeW.activeP.sx >= 0.04)
+        dV.addEventListener("click", () =>  {
+                    if (this.activeG && !dV.classList.contains("off"))
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         document.getElementById('add-gate').addEventListener(
             'click', async (ev) => {
@@ -573,6 +574,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         this.conf.ui = this.conf.ui || {}
         this.conf.ui.quickest_press = this.conf.ui.quickest_press || 1000
         this.conf.ui.max_tabs = this.conf.ui.max_tabs || 10
+        this.conf.ui.max_panes = this.conf.ui.max_panes || 7
         this.conf.ui.leader = this.conf.ui.leader || "a"
         this.conf.ui.cutMinSpeedX = this.conf.ui.cut_min_speed_x || 2.5
         this.conf.ui.cutMinSpeedY = this.conf.ui.cut_min_speed_y || 10
