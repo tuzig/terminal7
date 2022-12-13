@@ -15,8 +15,8 @@ export class Shell {
     active = false
     activeForm: Form | null
     commands: Map<string, Command>
+    pubKeys: Map<string, string>
     currentLine = ''
-
     constructor(map: T7Map) {
         this.map = map
         this.t = map.t0
@@ -272,7 +272,9 @@ export class Shell {
             }
             this.pubKeys = JSON.parse(pksRaw)
         }
-        return this.pubKeys.default
+        try {
+            return this.pubKeys.default
+        } catch(e) { return undefined }
     }
 }
 

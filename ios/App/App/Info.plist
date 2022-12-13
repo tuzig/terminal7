@@ -54,6 +54,6 @@
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
     <key>NSFaceIDUsageDescription</key>
-    <string>To securly store private keys.</string>
+    <string>To securly manage private keys</string>
 </dict>
 </plist>

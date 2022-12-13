@@ -179,6 +179,7 @@ async function connectCMD(shell:Shell, args: string[]) {
                 gate.firstConnection = false
                 await terminal7.storeGates()
             }
+            let clipboardFilled = false
             if (gate.keyRejected) {
                 const keyForm = [
                     { prompt: "Just let me in" },
@@ -192,10 +193,12 @@ async function connectCMD(shell:Shell, args: string[]) {
                     switch(res) {
                         case "Copy command to 📋":
                             Clipboard.write({ string: cmd })
+                            clipboardFilled = true
                             break
                     }
                 }
-            } else if (gate.session.isSSH && !gate.onlySSH) {
+            } 
+            if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH) {
                 const webexecForm = [
                     { prompt: "Just let me in" },
                     { prompt: "Copy command to 📋" },

@@ -957,9 +957,8 @@ export class Terminal7 {
                 this.map.remove(g)
                 this.gates.delete(g.id)
             })
-            Preferences.remove({key: 'gates'}).then(() => 
-                Preferences.remove({key: 'greeted'}).then(() => 
-                    Preferences.set({key: 'dotfile', value: DEFAULT_DOTFILE})))
+            Preferences.clear().then(() => 
+                Preferences.set({key: 'dotfile', value: DEFAULT_DOTFILE}))
             const d = TOML.parse(DEFAULT_DOTFILE)
             this.loadConf(d)
             if (this.pb) {
@@ -973,7 +972,6 @@ export class Terminal7 {
                     resolve()
                 })
             })
-            Preferences.remove({key: 'pubs'})
             NativeBiometric.deleteCredentials({ server: "dev.terminal7.default" })
         })
     }

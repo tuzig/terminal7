@@ -48,7 +48,8 @@ export interface Session {
     setPayload(payload: string): Promise<void>
     reconnect(marker?: number, publicKey?: string, privateKey?: string): Promise<void>
     disconnect(): Promise<void>
-    connect(marker?:number, password?: string, tag?: string): void
+    connect(marker?:number, publicKey?: string, privateKey?: string): void
+    connectPass(marker?:number, password?: string): void
     fail(failure?: Failure): void
 }
 
@@ -102,7 +103,7 @@ export abstract class BaseSession implements Session {
     }
     startWatchdog(){
         this.clearWatchdog()
-        this.watchdog = window.terminal7.run(() => {
+        this.watchdog = this.t7.run(() => {
             console.log("WATCHDOG stops the gate connecting")
             this.fail(Failure.TimedOut)
         }, this.t7.conf.net.timeout)
