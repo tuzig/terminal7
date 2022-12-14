@@ -379,6 +379,15 @@ export class Gate {
 
         if (!this.activeW)
             this.activeW = this.windows[0]
+        setTimeout(() => {
+            this.panes().forEach((p, i) => {
+                if (p.d && p.needsResize) {
+                    // TODO: fix webexec so there's no need for this
+                    this.t7.run(() => p.d.resize(p.t.cols, p.t.rows), i*10)
+                    p.needsResize = false
+                }
+            })
+        }, 400)
         this.focus()
     }
     /*
@@ -437,6 +446,7 @@ export class Gate {
         return { windows: wins }
     }
     storeState() {
+        /* TODO: restore the restore to last state
         const dump = this.dump()
         const lastState = {windows: dump.windows}
 
@@ -447,6 +457,7 @@ export class Gate {
         lastState.name = this.name
         Preferences.set({key: "last_state",
                      value: JSON.stringify(lastState)})
+                     */
     }
 
     sendState() {

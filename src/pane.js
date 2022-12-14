@@ -48,6 +48,7 @@ export class Pane extends Cell {
         this.lastKey = ''
         this.repetition = 0
         this.resizeObserver = new window.ResizeObserver(() => this.fit())
+        this.needsResize = false
     }
 
     /*
@@ -169,14 +170,14 @@ export class Pane extends Cell {
 
     // fit a pane to the display area. If it was resized, the server is updated.
     // returns true is size was changed
+    // TODO: make it async
     fit(cb) {
         if (!this.t) {
             if (cb instanceof Function) cb(this)
             return
         }
-        var oldr = this.t.rows,
-            oldc = this.t.cols,
-            ret = false
+        let oldr = this.t.rows
+        let oldc = this.t.cols
 
         // there's no point in fitting when in the middle of a restore
         //  it happens in the eend anyway
@@ -192,14 +193,12 @@ export class Pane extends Cell {
         }
         this.refreshDividers()
         if (this.t.rows != oldr || this.t.cols != oldc) {
-            if (this.d) {
+            if (this.d)
                 this.d.resize(this.t.cols, this.t.rows)
-                this.gate.sendState()
-            }
-            ret = true
+            else
+                this.needsResize = true
         }
         if (cb instanceof Function) cb(this)
-        return ret
     }
     /*
      * Pane.focus focuses the UI on this pane
