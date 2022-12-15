@@ -6,18 +6,8 @@ const ACCEPT_CMD = "/usr/local/bin/webexec accept"
 
 export class SSHChannel extends BaseChannel {
     id: number
-    close(): Promise<void> {
-        console.log("trying to close ssh channel")
-        return new Promise((resolve, reject) => {
-            SSH.closeChannel({channel: this.id})
-               .then(() => {
-                   resolve()
-                })
-                .catch(e => {
-                    console.log("error from close SSH channel", e)
-                    reject(e)
-                })
-        })
+    async close(): Promise<void> {
+        return SSH.closeChannel({channel: this.id})
     }
     send(data: string): void {
         SSH.writeToChannel({channel: this.id, message: data})
@@ -123,28 +113,19 @@ export class SSHSession extends BaseSession {
         return true
     }
     async startCommand(cmd: string, onData) {
-        const channel = new SSHChannel()
-        const channelId = (await SSH.newChannel({session: this.id})).id
-        this.t7.log("got new channel with id ", channelId)
-        channel.id = channelId
-        channel.onClose = () => this.t7.log("webexec accept session closed")
-        try {
-            await SSH.startShell({channel: channelId, command: cmd },
-                m => {
-                    if (m && m.data && onData)
-                        onData(channelId, m.data)
-                    else {
-                        terminal7.log("Got from startShelll", m)
-                        // this.clearWatchdog()
-                    }
-                })
-        } catch (e) { 
-            this.t7.log("Failed starting webexec", e)
-            this.clearWatchdog()
-            throw e
+            const channel = new SSHChannel()
+            const { id } = await SSH.newChannel({session: this.id})
+            channel.id = id
+            // channel.onClose = onClose
+            try {
+                await SSH.startShell({channel: channel.id, command: cmd },
+                    m => onData(channel.id, m))
+            } catch (e) { 
+                this.t7.log("Failed starting webexec", e)
+                this.clearWatchdog()
+                throw e
+            }
         }
-    return channel
-    }
 }
 // HybridSession can run either as SSH or WebRTC bby signalling
 // over SSH
@@ -175,19 +156,22 @@ export class HybridSession extends SSHSession {
         }
 
         SSH.startSessionByKey(args)
-           .then(async res => {
+           .then(res => {
                 this.clearWatchdog()
                 this.id = res.session
-                try {
-                    await this.startCommand(ACCEPT_CMD, (channelId, data) =>
-                        this.onAcceptData(channelId, marker, data))
-                } catch(e) { 
-                    this.clearWatchdog()
-                    this.onStateChange("connected")
-                }
+                this.startCommand(ACCEPT_CMD, (channelId, m) => {
+                    if (m.data)
+                        this.onAcceptData(channelId, marker, m.data)
+                    else {
+                        this.t7.log("got bad msg, assuming no webexec", e.toString())
+                        if (this.watchdog) {
+                            this.clearWatchdog()
+                            this.onStateChange("connected")
+                        }
+                    }
+                })
            }).catch(e => {
                 this.clearWatchdog()
-                console.log("SSH startSession failed", e)
                 this.t7.log("startSession failed", e.toString())
                 this.fail(Failure.KeyRejected)
            })
@@ -204,13 +188,17 @@ export class HybridSession extends SSHSession {
            .then(async ({ session }) => {
                 this.t7.log("Got ssh session", session)
                 this.id = session
-                try {
-                    await this.startCommand(ACCEPT_CMD, (channelId, data) =>
-                        this.onAcceptData(channelId, marker, data))
-                } catch(e) { 
-                    this.clearWatchdog()
-                    this.onStateChange("connected")
-                }
+                this.startCommand(ACCEPT_CMD, (channelId, m) => {
+                        if (m.data)
+                            this.onAcceptData(channelId, marker, m.data)
+                        else {
+                            this.t7.log("got msg with no data", m)
+                            if (this.watchdog) {
+                                this.clearWatchdog()
+                                this.onStateChange("connected")
+                            }
+                        }
+                    })
            }).catch(e => {
                 console.log("SSH startSession failed", e)
                 if (e.code === "UNIMPLEMENTED")
@@ -235,14 +223,6 @@ export class HybridSession extends SSHSession {
                     this.t7.log("signaling over ssh failed", e)
                     return
                 }
-                return
-            }
-            //TODO: find a cleaner way to identify when the session closes without READY
-            if (line.includes("such file or")) {
-                this.clearWatchdog()
-                SSH.closeChannel({channel: channelId})
-                this.startWatchdog()
-                super.connect()
                 return
             }
             this.candidate += line
