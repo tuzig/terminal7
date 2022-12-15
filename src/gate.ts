@@ -174,6 +174,7 @@ export class Gate {
     // handle connection failures
     async handleFailure(failure: Failure) {
         // KeyRejected and WrongPassword are "light failure"
+        const active = this == this.t7.activeG
         if (!this.t7.lastActiveState) {
             console.log("ignoring failed event as the app is still in the back")
             this.stopBoarding()
@@ -187,15 +188,15 @@ export class Gate {
             this.session.close()
             this.session = null
             this.stopBoarding()
-            if (!this.t7.recovering)
+            if (!this.t7.recovering && active)
                 this.notify(`FAILED: ${failure || "WebRTC connection"}`)
             else {
                 this.notify(`Retrying after ${failure}`)
                 return
             }
-            if (this != this.t7.activeG)
-                return
         }
+        if (!active)
+            return
         // this.map.showLog(true)
         console.log("handling failure", failure)
         this.boarding = false
