@@ -235,7 +235,7 @@ export class Terminal7 {
                         this.pb = null
                     }
                     // We're getting suspended. disengage.
-                    this.notify("🛋️ Disengaging")
+                    this.notify("🛋️ Disengaging", true)
                     this.disengage()
                 } else {
                     // We're back! puts us in recovery mode so that it'll
@@ -551,7 +551,7 @@ export class Terminal7 {
             this.pbConnect()
             const gate = this.activeG
             if (gate) {
-                this.notify("🌞 Recovering")
+                this.notify("🌞 Recoverin")
                 this.recovering = true
                 this.run(() => this.recovering = false, this.conf.net.recoveryTime)
                 gate.reconnect()

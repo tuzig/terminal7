@@ -6,7 +6,6 @@
  *  License: GPLv3
  */
 import { Clipboard } from '@capacitor/clipboard'
-import { Preferences } from '@capacitor/preferences'
 
 import { Pane } from './pane.js'
 import { T7Map } from './map'
@@ -379,6 +378,7 @@ export class Gate {
 
         if (!this.activeW)
             this.activeW = this.windows[0]
+        // wait for the sizes to settle and update the server if needed
         setTimeout(() => {
             this.panes().forEach((p, i) => {
                 if (p.d && p.needsResize) {
@@ -547,8 +547,6 @@ export class Gate {
             Clipboard.write({ string: cmd })
             this.connect(this.onConnected)
         }
-        else
-            this.map.showLog(false)
     }
     async completeConnect(): void {
         this.keyRejected = false

@@ -358,17 +358,22 @@ async function resetCMD(shell: Shell, args: string[]) {
                 gate.session.close()
                 gate.session = null
             }
-            await new Promise<void>(resolve => {
+            try {
+                await new Promise<void>((resolve, reject) => {
                 //setTimeout(() => {
                     gate.connect(() => {
                         gate.load()
                         resolve()
                     })
-                    gate.onFailure(() => {
-                        resolve()
-                    })
+                    gate.onFailure = reject
                 // }, 100)
-            })
+                })
+            } catch(e) {
+                shell.t.writeln("Failed to connect. Please try again and if it keeps failing, close and connect fresh.")
+                shell.t.writeln("  Please take the time to write your flow\n  in ##🪳bugs🪳at https://discord.com/invite/rDBj8k4tUE")
+                return
+            }
+
             break
         case "Reset connection & Layout":
             if (gate.session) {
