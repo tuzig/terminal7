@@ -210,7 +210,7 @@ async function connectCMD(shell:Shell, args: string[]) {
                 shell.t.writeln(`  \x1B[1m${cmd}\x1B[0m\n`)
                 const res = await shell.runForm(webexecForm, "menu")
                 switch(res) {
-                    case "Copy it to clipboard & connect":
+                    case "Copy command to 📋":
                         Clipboard.write({ string: cmd })
                         break
 
@@ -269,13 +269,14 @@ async function addCMD(shell: Shell) {
 
     if (terminal7.validateHostAddress(hostname)) {
         shell.t.writeln(`  ${hostname} already exists, connecting...`)
-        await new Promise(resolve => {
+        await new Promise<void>(resolve => {
             const gate = shell.getGate(hostname)
             gate.connect(() => {
                 gate.load()
                 resolve()
             })
         })
+        return
     }
     const gate = terminal7.addGate({
         name: hostname, // temp name
