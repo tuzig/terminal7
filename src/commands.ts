@@ -172,7 +172,6 @@ async function connectCMD(shell:Shell, args: string[]) {
                 const res = await shell.runForm(fields, "text")
                 const name = res[0]
                 gate.name = name
-                gate.nameE = gate.map.add(gate)
                 gate.verified = true
                 gate.updateNameE()
                 gate.store = true

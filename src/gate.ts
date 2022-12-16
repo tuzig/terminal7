@@ -156,6 +156,7 @@ export class Gate {
         this.t7.log(`updating ${this.name} state to ${state} ${failure}`)
         if (state == "connected") {
             this.marker = null
+            this.boarding = true
             this.notify(`🥂  over ${this.session.isSSH?"SSH":"WebRTC"}`)
             this.setIndicatorColor("unset")
             // first onConnected is special if it's a new gate but once
@@ -323,7 +324,6 @@ export class Gate {
             this.focus()
             return
         }
-        this.boarding = true
         this.updateNameE()
         return this.completeConnect()
 
