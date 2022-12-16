@@ -12,7 +12,9 @@ import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { WebglAddon } from 'xterm-addon-webgl'
 import { WebLinksAddon } from 'xterm-addon-web-links'
+/* restore the bell. commented as it silences all background audio
 import { BELL_SOUND } from './bell.js'
+*/
 
 
 import XtermWebfont from 'xterm-webfont'
@@ -72,8 +74,9 @@ export class Pane extends Cell {
             theme: this.theme,
             rows:24,
             cols:80,
+            /* TODO: restore this. commented because it silences spotify
             bellStyle: "sound",
-            bellSound: BELL_SOUND,
+            bellSound: BELL_SOUND, */
         })
         this.fitAddon = new FitAddon()
         this.searchAddon = new SearchAddon()
