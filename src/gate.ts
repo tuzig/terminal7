@@ -531,8 +531,7 @@ export class Gate {
         }
     }
     async copyFingerprint() {
-        const fp = await this.t7.getFingerprint(),
-              cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
+        const cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         const fpForm = [{ 
             prompt: `\n  ${this.addr} refused our fingerprint.
   \n\x1B[1m${cmd}\x1B[0m\n

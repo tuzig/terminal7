@@ -639,7 +639,6 @@ export class Terminal7 {
                 .then(cert => resolve(
                     cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")))
                 .catch(reject)
-                reject(e)
             })
         })
     }

@@ -96,7 +96,11 @@ export class WebRTCSession extends BaseSession {
             }
         }
         console.log("got ice server", this.t7.iceServers)
-        await this.t7.getFingerprint()
+        try {
+            await this.t7.getFingerprint()
+        } catch (e) {
+            this.t7.certificates = undefined
+        }
         this.pc = new RTCPeerConnection({
             iceServers: this.t7.iceServer,
             certificates: this.t7.certificates})
