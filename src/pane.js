@@ -360,7 +360,7 @@ export class Pane extends Cell {
                 this.e.style.borderColor = COPYMODE_BORDER_COLOR
             Preferences.get({key: "first_copymode"}).then(v => {
                 if (v.value != "1") {
-                    this.gate.map.shell.runCommand('help', ['copymode'])
+                    // this.gate.map.shell.runCommand('help', ['copymode'])
                     Preferences.set({key: "first_copymode", value: "1"})
                 }
             })

@@ -1,5 +1,4 @@
 import { Clipboard } from "@capacitor/clipboard"
-import { Preferences } from "@capacitor/preferences"
 import { Terminal } from '@tuzig/xterm'
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
@@ -15,7 +14,6 @@ export class Shell {
     active = false
     activeForm: Form | null
     commands: Map<string, Command>
-    pubKeys: Map<string, string>
     currentLine = ''
     constructor(map: T7Map) {
         this.map = map
@@ -260,21 +258,6 @@ export class Shell {
         const res = await this.map.shell.runForm(
             [{ prompt: prompt, default: def }], "text")
         return res[0]
-    }
-    async getPublicKey() {
-        if (!this.pubKeys) {
-            let pksRaw
-            try {
-                pksRaw = (await Preferences.get({key: "pubs"})).value
-            } catch(e) {
-                return this.t.writeln("Failed to read public keys")
-                terminal7.log("Preferences get returned an error", e)
-            }
-            this.pubKeys = JSON.parse(pksRaw)
-        }
-        try {
-            return this.pubKeys.default
-        } catch(e) { return undefined }
     }
 }
 

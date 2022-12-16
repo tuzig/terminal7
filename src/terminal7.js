@@ -949,7 +949,7 @@ export class Terminal7 {
         }
         return ""
     }
-    factoryReset() {
+    async factoryReset() {
         // setting up reset cert events
         return new Promise(resolve => {
             this.gates.forEach(g => {
@@ -1024,7 +1024,9 @@ export class Terminal7 {
         try {
             const def = await NativeBiometric.getCredentials({
                 server: "dev.terminal7.default"})
+            console.log("Got from getCred", def)
             privateKey = def.password
+            publicKey = def.username
         } catch {
             this.notify("Forging 🔑")
             const sseed = randomBytes(32)
@@ -1032,17 +1034,11 @@ export class Terminal7 {
             const skeys = await ssh(sseed, `${i.name}@${i.model}`)
             privateKey = skeys.privateKey
             publicKey = skeys.publicKey
-            NativeBiometric.setCredentials({
-                username: "TBD",
+            await NativeBiometric.setCredentials({
+                username: publicKey,
                 password: privateKey,
                 server: "dev.terminal7.default",
             })
-        }
-        if (publicKey) {
-            const pubDB = { default: publicKey }
-            await Preferences.set({key: "pubs", value: JSON.stringify(pubDB)})
-        } else {
-            publicKey = await this.map.shell.getPublicKey()
         }
         return {publicKey: publicKey, privateKey: privateKey}
     }

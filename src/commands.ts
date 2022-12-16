@@ -197,6 +197,8 @@ async function connectCMD(shell:Shell, args: string[]) {
                             break
                     }
                 }
+                else 
+                    terminal7.log("oops readId failed")
             } 
             if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH) {
                 const webexecForm = [
@@ -335,7 +337,7 @@ async function resetCMD(shell: Shell, args: string[]) {
         { prompt: "\x1B[31mFactory reset\x1B[0m" },
     ]
     const factoryResetVerify = [{
-        prompt: `Factory reset will remove the certificate,\n     all gates and configuration`,
+        prompt: `Factory reset will remove the key, certificate,\n     all gates and configuration`,
         values: ["y", "n"],
         default: "n"
     }]
@@ -517,7 +519,13 @@ async function closeCMD(shell: Shell, args: string[]) {
     gate.close()
 }
 async function copyKeyCMD(shell: Shell) {
-    const publicKey = await shell.getPublicKey()
+    let publicKey
+    try {
+        const ret = await terminal7.readId()
+        publicKey = ret.publicKey
+    } catch(e) {
+        console.log("readId erro", e)
+    }
     if (publicKey) {
         Clipboard.write({ string: publicKey })
         return shell.t.writeln(`${publicKey}\n☝️ copied to 📋`)

@@ -135,6 +135,7 @@ export class HybridSession extends SSHSession {
     sentMessages: Array<string>
     onStateChange : (state: State, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
+    gotREADY: boolean
     constructor(address: string, username: string, port=22) {
         super(address, username, port)
         this.candidate = ""
@@ -154,7 +155,7 @@ export class HybridSession extends SSHSession {
             publicKey: publicKey,
             privateKey: privateKey
         }
-
+        this.gotREADY = false
         SSH.startSessionByKey(args)
            .then(res => {
                 this.clearWatchdog()
@@ -162,12 +163,12 @@ export class HybridSession extends SSHSession {
                 this.startCommand(ACCEPT_CMD, (channelId, m) => {
                     if (m.data)
                         this.onAcceptData(channelId, marker, m.data)
-                    else {
-                        this.t7.log("got bad msg, assuming no webexec", e.toString())
-                        if (this.watchdog) {
-                            this.clearWatchdog()
-                            this.onStateChange("connected")
-                        }
+                    else if ((m.error == "EOF") && !this.gotREADY) {
+                        // no webexec, didn't get ready but got EOF
+                        this.clearWatchdog()
+                        this.onStateChange("connected")
+                    } else {
+                        this.t7.log("got bad msg", m)
                     }
                 })
            }).catch(e => {
@@ -217,6 +218,7 @@ export class HybridSession extends SSHSession {
             this.t7.log("line webexec accept: ", line)
             if (line.startsWith("READY")) {
                 try {
+                    this.gotREADY = true
                     await this.openWebRTCSession(channelId, marker)
                 } catch (e) {
                     this.webrtcSession = null
