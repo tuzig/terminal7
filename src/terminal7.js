@@ -634,8 +634,11 @@ export class Terminal7 {
                     .catch(reject)
                 })
             }).catch(e => {
-                db.close()
                 this.log(`got an error opening db ${e}`)
+                this.generateCertificate()
+                .then(cert => resolve(
+                    cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")))
+                .catch(reject)
                 reject(e)
             })
         })
@@ -678,7 +681,6 @@ export class Terminal7 {
                 }).catch(reject)
             }).catch(e => {
                 this.log (`got error from open db ${e}`)
-                db.close()
                 resolve(null)
             })
         })
@@ -1024,7 +1026,6 @@ export class Terminal7 {
         try {
             const def = await NativeBiometric.getCredentials({
                 server: "dev.terminal7.default"})
-            console.log("Got from getCred", def)
             privateKey = def.password
             publicKey = def.username
         } catch {
