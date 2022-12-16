@@ -160,17 +160,8 @@ export class HybridSession extends SSHSession {
            .then(res => {
                 this.clearWatchdog()
                 this.id = res.session
-                this.startCommand(ACCEPT_CMD, (channelId, m) => {
-                    if (m.data)
-                        this.onAcceptData(channelId, marker, m.data)
-                    else if ((m.error == "EOF") && !this.gotREADY) {
-                        // no webexec, didn't get ready but got EOF
-                        this.clearWatchdog()
-                        this.onStateChange("connected")
-                    } else {
-                        this.t7.log("got bad msg", m)
-                    }
-                })
+                this.startCommand(ACCEPT_CMD, (channelId, m) =>
+                                  this.onAcceptData(channelId, marker, m))
            }).catch(e => {
                 this.clearWatchdog()
                 this.t7.log("startSession failed", e.toString())
@@ -189,17 +180,8 @@ export class HybridSession extends SSHSession {
            .then(async ({ session }) => {
                 this.t7.log("Got ssh session", session)
                 this.id = session
-                this.startCommand(ACCEPT_CMD, (channelId, m) => {
-                        if (m.data)
-                            this.onAcceptData(channelId, marker, m.data)
-                        else {
-                            this.t7.log("got msg with no data", m)
-                            if (this.watchdog) {
-                                this.clearWatchdog()
-                                this.onStateChange("connected")
-                            }
-                        }
-                    })
+                this.startCommand(ACCEPT_CMD, (channelId, m) =>
+                                  this.onAcceptData(channelId, marker, m))
            }).catch(e => {
                 console.log("SSH startSession failed", e)
                 if (e.code === "UNIMPLEMENTED")
@@ -212,8 +194,19 @@ export class HybridSession extends SSHSession {
 
            })
     }
-    async onAcceptData(channelId, marker: number, data: string) {
-        data.split("\r\n").filter(line => line.length > 0).forEach(async line => {
+    async onAcceptData(channelId, marker: number, message) {
+        if (!message.data) {
+            if ((message.error == "EOF") && !this.gotREADY) {
+                // no webexec, didn't get ready but got EOF
+                this.clearWatchdog()
+                this.onStateChange("connected")
+            } else {
+                this.t7.log("got bad msg", message)
+            }
+            return
+        }
+        message.data.split("\r\n").filter(line => line.length > 0)
+                                  .forEach(async line => {
             let c = {}
             this.t7.log("line webexec accept: ", line)
             if (line.startsWith("READY")) {
