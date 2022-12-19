@@ -181,8 +181,8 @@ export class Terminal7 {
                 })
         // hide the modal on xmark click
         // Handle network events for the indicator
-        Network.addListener('networkStatusChange', s => 
-            this.updateNetworkStatus(s))
+        /* Network.addListener('networkStatusChange', s => 
+            this.updateNetworkStatus(s)) */
         this.catchFingers()
         // setting up edit host events
         document.getElementById("edit-unverified-pbhost").addEventListener(
