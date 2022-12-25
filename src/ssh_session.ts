@@ -195,13 +195,13 @@ export class HybridSession extends SSHSession {
            })
     }
     async onAcceptData(channelId, marker: number, message) {
-        if (!message.data) {
-            if ((message.error == "EOF") && !this.gotREADY) {
+        if (!('data' in message)) {
+            if (('error' in message) && (message.error == "EOF") && !this.gotREADY) {
                 // no webexec, didn't get ready but got EOF
                 this.clearWatchdog()
                 this.onStateChange("connected")
             } else {
-                this.t7.log("got bad msg", message)
+                this.t7.log("ignoring strange msg", message)
             }
             return
         }
