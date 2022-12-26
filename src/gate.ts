@@ -156,7 +156,6 @@ export class Gate {
         this.t7.log(`updating ${this.name} state to ${state} ${failure}`)
         if (state == "connected") {
             this.marker = null
-            this.boarding = true
             this.notify(`🥂  over ${this.session.isSSH?"SSH":"WebRTC"}`)
             this.setIndicatorColor("unset")
             // first onConnected is special if it's a new gate but once
@@ -185,23 +184,13 @@ export class Gate {
             }
             return
         }
-        if ((failure != Failure.KeyRejected) && (failure != Failure.WrongPassword)) {
-            this.session.close()
-            this.session = null
-            this.stopBoarding()
-            if (!this.t7.recovering && active)
-                this.notify(`FAILED: ${failure || "WebRTC connection"}`)
-            else {
-                this.notify(`Retrying after ${failure}`)
-                return
-            }
-        }
         if (!active)
             return
         // this.map.showLog(true)
         console.log("handling failure", failure)
         this.boarding = false
         let password: string
+        let couldBeBug = false
         switch ( failure ) {
             case Failure.WrongPassword:
                 this.notify("Sorry, wrong password")
@@ -215,18 +204,33 @@ export class Gate {
                 return
 
             case Failure.NotImplemented:
-                this.notify("Please try again")
+                this.session.close()
+                this.session = null
+                this.stopBoarding()
+                this.notify("Not Implemented. Please try again")
+                couldBeBug = true
                 break
             case Failure.Unauthorized:
+                // TODO: handle HTTP based authorization failure
                 this.copyFingerprint()
                 return
             case Failure.BadMarker:
-                this.notify("Trying a fresh session")
+                this.notify("Sync Error. Starting fresh")
                 this.marker = null
+                this.session.close()
+                this.session = null
+                this.stopBoarding()
                 this.connect(this.onConnected)
+                couldBeBug = true
                 return
-            case Failure.BadRemoteDescription:
-                this.notify("Please try again")
+            case Failure.DataChannelLost:
+                if (this.recovering) 
+                    return
+                this.session.close()
+                this.session = null
+                this.stopBoarding()
+                this.notify("Data Channel Lost")
+                couldBeBug = true
                 break
 
             case Failure.KeyRejected:
@@ -282,7 +286,7 @@ export class Gate {
 				})
             })()
         } else
-            await this.map.shell.onDisconnect(this)
+            await this.map.shell.onDisconnect(this, couldBeBug)
     }
     reconnect(): Promise<void> {
         if (!this.session)
@@ -381,13 +385,22 @@ export class Gate {
             this.activeW = this.windows[0]
         // wait for the sizes to settle and update the server if needed
         setTimeout(() => {
+            let foundNull = false
             this.panes().forEach((p, i) => {
-                if (p.d && p.needsResize) {
+                if (p.d) {
+                    if (p.needsResize) {
                     // TODO: fix webexec so there's no need for this
-                    this.t7.run(() => p.d.resize(p.t.cols, p.t.rows), i*10)
-                    p.needsResize = false
-                }
+                        this.t7.run(() => p.d.resize(p.t.cols, p.t.rows), i*10)
+                        p.needsResize = false
+                    }
+                } else
+                    foundNull = true
             })
+            if (!foundNull) {
+                this.t7.log(`${this.name} is boarding`)
+                this.boarding = true
+                this.updateNameE()
+            }
         }, 400)
         this.focus()
     }

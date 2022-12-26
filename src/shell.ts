@@ -220,18 +220,23 @@ export class Shell {
     /*
      * onDisconnect is called when a gate disconnects.
      */
-    async onDisconnect(gate: Gate) {
+    async onDisconnect(gate: Gate, couldBeBug: bool) {
+        if (couldBeBug) {
+            this.t.writeln("If it keeps failing, we're sorry, you've probably found a bug.")
+            this.t.writeln("Please hit CMD-9 and paste the log in ##🪳bugs🪳at")
+            this.t.writeln("https://discord.com/invite/rDBj8k4tUE")
+        }
         if (!terminal7.netStatus.connected ||
             ((terminal7.activeG != null) && (gate != terminal7.activeG)))
             return
         
-        const reconnectForm = [
-            { prompt: "Reconnect" },
-            { prompt: "Close" }
-        ]
-
         // Don't show a menu when recovering, just clear the session and connect
         if (!terminal7.recovering) {
+            const reconnectForm = [
+                { prompt: "Reconnect" },
+                { prompt: "Close" }
+            ]
+
             let res
             try {
                 res = await this.runForm(reconnectForm, "menu")

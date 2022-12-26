@@ -377,6 +377,7 @@ async function resetCMD(shell: Shell, args: string[]) {
             }
 
             break
+
         case "Reset connection & Layout":
             if (gate.session) {
                 gate.session.close()
@@ -392,6 +393,7 @@ async function resetCMD(shell: Shell, args: string[]) {
                 })
             })
             break
+
         case "\x1B[31mFactory reset\x1B[0m":
             try {
                 ans = (await shell.runForm(factoryResetVerify, "text"))[0]

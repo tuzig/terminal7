@@ -16,6 +16,7 @@ import { WebLinksAddon } from 'xterm-addon-web-links'
 import { BELL_SOUND } from './bell.js'
 */
 
+import { Failure } from './session'
 
 import XtermWebfont from 'xterm-webfont'
 
@@ -142,8 +143,7 @@ export class Pane extends Cell {
             })
             this.t.onData(d =>  {
                 if (!this.d || this.d.readyState != "open" ) {
-                    terminal7.log("Ignoring lost data channel, hoping it'll all work out")
-                    // this.gate.handleFailure(Failure.DataChannelLost)
+                    this.gate.handleFailure(Failure.DataChannelLost)
                 } else
                     this.d.send(d)
             })
