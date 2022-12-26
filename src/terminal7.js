@@ -74,6 +74,7 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # pinch_max_y_velocity = 0.1
 # auto_restore = false
 # flash = 100
+# verification_ttl = 900000
 `
 
 export class Terminal7 {
@@ -578,6 +579,8 @@ export class Terminal7 {
         this.conf.ui.cutMinDistance = this.conf.ui.cut_min_distance || 80
         this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1
         this.conf.ui.autoRestore = this.conf.ui.auto_restore || false
+        this.conf.ui.verificationTTL = this.conf.ui.verification_ttl || 15 * 60 * 1000
+
         this.conf.net = this.conf.net || {}
         this.conf.net.iceServer = this.conf.net.ice_server ||
             "stun:stun2.l.google.com:19302"
@@ -1001,6 +1004,9 @@ export class Terminal7 {
      * collects the default id and returns a { publicKet, privateKey
      */
     async readId() {
+        const now = Date.now()
+        if (this.keys && (now - this.lastIdVerify  < this.conf.ui.verificationTTL))
+            return this.keys
         this.ignoreAppEvents = true
         let verified
         try {
@@ -1040,6 +1046,8 @@ export class Terminal7 {
                 server: "dev.terminal7.default",
             })
         }
-        return {publicKey: publicKey, privateKey: privateKey}
+        this.keys = {publicKey: publicKey, privateKey: privateKey}
+        this.lastIdVerify = now
+        return this.keys
     }
 }
