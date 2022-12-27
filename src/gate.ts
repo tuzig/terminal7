@@ -223,14 +223,18 @@ export class Gate {
                 this.connect(this.onConnected)
                 couldBeBug = true
                 return
+
+            case undefined:
             case Failure.DataChannelLost:
                 if (this.recovering) 
                     return
-                this.session.close()
-                this.session = null
+                if (this.session) {
+                    this.session.close()
+                    this.session = null
+                }
                 this.stopBoarding()
-                this.notify("Data Channel Lost")
-                couldBeBug = true
+                this.notify(failure?"Lost Data Channel":"Lost Connection")
+                couldBeBug = failure == Failure.DataChannelLost
                 break
 
             case Failure.KeyRejected:
@@ -244,6 +248,7 @@ export class Gate {
                 }
                 this.session.passConnect(this.marker, password)
                 return
+
         }
         if (this.firstConnection) {
             (async () => {
@@ -638,13 +643,13 @@ export class Gate {
         })
     }
     close() {
-        this.boarding = false
         this.clear()
-        this.updateNameE()
+        this.stopBoarding()
         if (this.session) {
             this.session.close()
             this.session = null
         }
+        // TODO: this doesn't belong here
         // we need the timeout as cell.focus is changing the href when dcs are closing
         setTimeout(() => this.t7.goHome(), 100)
     }

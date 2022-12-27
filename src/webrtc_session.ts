@@ -109,12 +109,17 @@ export class WebRTCSession extends BaseSession {
             const state = this.pc.connectionState
             console.log("new connection state", state, marker)
             if ((state == "connected") && (marker != null)) {
+                this.startWatchdog()
                 this.sendCTRLMsg({
                     type: "restore",
                     args: { marker }},
-                () => this.onStateChange("connected"),
+                () => {
+                    this.onStateChange("connected")
+                    this.clearWatchdog()
+                },
                 () => {
                     this.onStateChange("failed", Failure.BadMarker)
+                    this.clearWatchdog()
                 })
             } else  {
                 if (state == 'failed')

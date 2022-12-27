@@ -221,38 +221,40 @@ export class Shell {
      * onDisconnect is called when a gate disconnects.
      */
     async onDisconnect(gate: Gate, couldBeBug: bool) {
-        if (couldBeBug) {
-            this.t.writeln("If it keeps failing, we're sorry, you've probably found a bug.")
-            this.t.writeln("Please hit CMD-9 and paste the log in ##🪳bugs🪳at")
-            this.t.writeln("https://discord.com/invite/rDBj8k4tUE")
-        }
-        if (!terminal7.netStatus.connected ||
+        if (!terminal7.netStatus.connected || terminal7.recovering ||
             ((terminal7.activeG != null) && (gate != terminal7.activeG)))
             return
-        
-        // Don't show a menu when recovering, just clear the session and connect
-        if (!terminal7.recovering) {
-            const reconnectForm = [
-                { prompt: "Reconnect" },
-                { prompt: "Close" }
-            ]
 
-            let res
-            try {
-                res = await this.runForm(reconnectForm, "menu")
-            } catch(e) {
-                // try connection
-                res = null
-            }
-            // TODO: needs refactoring
-            if (res == "Close") {
-                this.map.showLog(false)
-                gate.close()
-                return
-            }
+        if (couldBeBug) {
+            this.t.writeln("")
+            this.t.writeln("We're sorry, it could be a 🪳")
+            this.t.writeln("Please hit CMD-9 and paste the log in #bugs at")
+            this.t.writeln("https://discord.com/invite/rDBj8k4tUE")
         }
-        gate.session = null
-        gate.connect(gate.onConnected)
+
+        const reconnectForm = [
+            { prompt: "Reconnect" },
+            { prompt: "Close" }
+        ]
+
+        let res
+        try {
+            res = await this.runForm(reconnectForm, "menu")
+        } catch(e) {
+            // try to connect
+            res = null
+        }
+        // TODO: needs refactoring
+        if (res == "Close") {
+            this.map.showLog(false)
+            gate.close()
+            return
+        }
+        if (gate.session) {
+            gate.session.close()
+            gate.session = null
+        }
+        this.runCommand("connect", [gate.name])
     }
     async askPass(): Promise<string> {
         const res = await this.map.shell.runForm(
