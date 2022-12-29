@@ -187,7 +187,7 @@ export class Gate {
         if (!active)
             return
         // this.map.showLog(true)
-        console.log("handling failure", failure)
+        terminal7.log("handling failure", failure, terminal7.recovering)
         this.boarding = false
         let password: string
         let couldBeBug = false
@@ -226,11 +226,13 @@ export class Gate {
 
             case undefined:
             case Failure.DataChannelLost:
-                if (this.recovering) 
-                    return
                 if (this.session) {
                     this.session.close()
                     this.session = null
+                }
+                if (terminal7.recovering)  {
+                    terminal7.log("Cleaned session as failure on recovering")
+                    return
                 }
                 this.stopBoarding()
                 this.notify(failure?"Lost Data Channel":"Lost Connection")
@@ -301,7 +303,12 @@ export class Gate {
                 this.session.reconnect(this.marker, publicKey, privateKey).then(layout => {
                     this.setLayout(layout)
                     resolve()
-                }).catch(() => this.connect().then(resolve).catch(reject))
+                }).catch(() => {
+                    this.session.close()
+                    this.session = null
+                    terminal7.log("reconnect failed, fresh session with marker", this.marker)
+                    this.connect().then(resolve).catch(reject)
+                })
             }).catch((e) => {
                 this.t7.log("failed to read id", e)
                 resolve()
