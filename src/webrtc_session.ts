@@ -224,15 +224,28 @@ export class WebRTCSession extends BaseSession {
             this.startWatchdog()
             if (!this.cdc || this.cdc.readyState != "open")
                 this.openCDC()
-            if (marker != null)
+            if (marker != null) {
+                let timedout = false
+                const watchdog = setTimeout(() => {
+                    timedout = true
+                    reject()
+                }, 500)
                 this.sendCTRLMsg({ type: "restore", args: { marker }}, payload => {
+                    clearTimeout(watchdog)
                     this.clearWatchdog()
-                    resolve(payload)
-                }, reject)
-            else
+                    if (!timedout)
+                        resolve(payload)
+                }, () => {
+                    clearTimeout(watchdog)
+                    this.clearWatchdog()
+                    if (!timedout)
+                        reject()
+                })
+            } else
                 this.getPayload().then(payload => {
                    this.clearWatchdog()
-                   resolve(payload)
+                   if (!timedout)
+                       resolve(payload)
                 }).catch(reject)
         })
     }
