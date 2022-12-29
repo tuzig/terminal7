@@ -552,7 +552,7 @@ export class Terminal7 {
             this.pbConnect()
             const gate = this.activeG
             if (gate) {
-                this.notify("🌞 Recoverng")
+                this.notify("🌞 Recovering")
                 this.recovering = true
                 this.run(() => this.recovering = false, this.conf.net.recoveryTime)
                 gate.reconnect()
