@@ -58,9 +58,11 @@ export class SSHSession extends BaseSession {
                 this.onSSHSession(args.session)
         }).catch(e => {
                 this.clearWatchdog()
-                console.log("SSH startSession failed", e)
-                if (e.toString().startsWith("Error: Not imp"))
-                this.onStateChange("failed", Failure.KeyRejected)
+                console.log("SSH key startSession failed", e.toString())
+                if (e.toString().startsWith("Error: UNAUTHORIZED"))
+                    this.onStateChange("failed", Failure.KeyRejected)
+                else
+                    this.onStateChange("failed", Failure.Aborted)
            })
     }
     passConnect(marker?:number, password?: string) {
@@ -72,10 +74,12 @@ export class SSHSession extends BaseSession {
             password: password,
         }
         SSH.startSessionByPasswd(args)
-           .then(this.onSSHSession)
-           .catch(e => {
+           .then(args => {
                 this.clearWatchdog()
-                console.log("SSH startSession failed", e)
+                this.onSSHSession(args.session)
+           }).catch(e => {
+                this.clearWatchdog()
+                console.log("SSH pass startSession failed", e.toString())
                 if (e.toString().startsWith("Error: Not imp"))
                     this.onStateChange("failed", Failure.NotImplemented)
                 else
