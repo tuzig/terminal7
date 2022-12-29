@@ -6,6 +6,18 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.3.1 - 2022/12/29
+
+### Added 
+
+- Biometric verification once every 15 minutes or `ui.verification_ttl` in milliseconds
+- Request to rate the app
+
+### Fixed
+
+- A couple of reconnect bugs
+- SSH only flag is now saved
+
 ## 1.3.0 - 2022/12/16
 
 ### Added
