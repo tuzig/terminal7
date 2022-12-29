@@ -225,11 +225,12 @@ export class Terminal7 {
             // this is a hack as some operation, like bio verification
             // fire two events
             App.addListener('appStateChange', state => {
-                if (this.lastActiveState == state.isActive)
+                const active =  state.isActive
+                if (this.lastActiveState == active)
                     return
-                this.lastActiveState = state.isActive
+                this.lastActiveState = active
                 console.log("app state changed", this.ignoreAppEvents)
-                if (!state.isActive) {
+                if (!active) {
                     if (this.ignoreAppEvents) return
                     if (this.pb) {
                         this.pb.close()
