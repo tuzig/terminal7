@@ -1886,6 +1886,11 @@ capacitor-native-biometric@^4.1.3:
   dependencies:
     "@capacitor/core" "^3.4.3"
 
+capacitor-rate-app@^3.1.0-beta.1:
+  version "3.1.0-beta.1"
+  resolved "https://registry.yarnpkg.com/capacitor-rate-app/-/capacitor-rate-app-3.1.0-beta.1.tgz#3a2d6c306ffa138f7c6bce2fbadecfc693b89712"
+  integrity sha512-86MxZFldb6kG5Kz4C6NrMAmILodVHnkwVwOTs5aeteQ5z3gBSnk/IQO54+rGcWImnwGaZACkn1EFmb4gckBQfA==
+
 capacitor-ssh-plugin@^0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/capacitor-ssh-plugin/-/capacitor-ssh-plugin-0.3.0.tgz#d31693ddb89f083954850df5595375bb0abf3089"

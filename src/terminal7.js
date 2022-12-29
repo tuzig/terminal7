@@ -28,6 +28,7 @@ import { Network } from '@capacitor/network'
 import { Preferences } from '@capacitor/preferences'
 import { Device } from '@capacitor/device'
 import { NativeBiometric } from "capacitor-native-biometric"
+import { RateApp } from 'capacitor-rate-app'
 
 import { PeerbookConnection } from './peerbook'
 
@@ -286,13 +287,21 @@ export class Terminal7 {
             })
         this.map.open().then(() => {
            this.goHome()
-           setTimeout(() => this.showGreetings(), 100)
+           setTimeout(async () => {
+                this.showGreetings()
+                const got = await Preferences.get({key: "activated"})
+                let runs = Number(got.value)
+                if (isNaN(runs))
+                    runs = 0
+                Preferences.set({key: "activated", value: String(runs+1)})
+                if (runs % 12 == 11)
+                    RateApp.requestReview()
+           }, 100)
         })
         Network.getStatus().then(s => {
             this.updateNetworkStatus(s)
             if (!s.connected) {
                 this.goHome()
-                return
             }
         })
     }
