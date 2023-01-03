@@ -19,6 +19,7 @@ The code here is mainly ES6 with no framworks. We do use the following projects:
 
 - capacitorjs for app packaging & plugins
 - xterm.js for terminal emulation
+- noble-ed25519 for key generation
 - pion.ly for the WebRTC backend
 - vite for packaging
 - vitest for testing
