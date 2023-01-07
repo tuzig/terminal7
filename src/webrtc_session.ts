@@ -413,7 +413,7 @@ export class PeerbookSession extends WebRTCSession {
         })
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
-        if (ev.candidate) {
+        if (ev.candidate && this.pb) {
             this.pb.send({target: this.fp, candidate: ev.candidate})
         }
     }
