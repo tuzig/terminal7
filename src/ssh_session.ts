@@ -209,8 +209,10 @@ export class HybridSession extends SSHSession {
             }
             return
         }
-        message.data.split("\r\n").filter(line => line.length > 0)
-                                  .forEach(async line => {
+        message.data
+            .split("\r\n")
+            .filter(line => line.length > 0)
+            .forEach(async line => {
             let c = {}
             this.t7.log("line webexec accept: ", line)
             if (line.startsWith("READY")) {
