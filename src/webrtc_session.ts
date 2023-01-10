@@ -398,17 +398,17 @@ export class PeerbookSession extends WebRTCSession {
                 if (!response.ok)
                     throw new Error(
                       `HTTP POST failed with status ${response.status}`)
-                return response.data
-            }).then(data => {
+                return response.json()
+            }).then(servers => {
                 clearTimeout(tId)
-                const answer = JSON.parse(data)
                 // return an array with the conf's server and subspace's
                 resolve([{ urls: this.t7.conf.net.iceServer},
-                         ...answer["ice_servers"]])
+                         ...servers])
 
             }).catch(err => {
                 clearTimeout(tId)
                 reject("failed to get ice servers " + err.toString())
+                return
             })
         })
     }
