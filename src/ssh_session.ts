@@ -199,6 +199,9 @@ export class HybridSession extends SSHSession {
            })
     }
     async onAcceptData(channelId, marker: number, message) {
+        // null message indicates connect
+        if (!message)
+            return
         if (!('data' in message)) {
             if (('error' in message) && (message.error == "EOF") && !this.gotREADY) {
                 // no webexec, didn't get ready but got EOF
@@ -221,7 +224,7 @@ export class HybridSession extends SSHSession {
                     await this.openWebRTCSession(channelId, marker)
                 } catch (e) {
                     this.webrtcSession = null
-                    this.t7.log("signaling over ssh failed", e)
+                    this.t7.log("webrtc signaling over ssh failed", e)
                     return
                 }
                 return
@@ -257,7 +260,7 @@ export class HybridSession extends SSHSession {
     openWebRTCSession(channelId, marker): Promise<Session> {
         this.webrtcSession = new WebRTCSession()
         // TODO: better to return the session and reject when failing
-        return new Promise<Session>((resolve) => {
+        return new Promise<Session>((resolve, reject) => {
                 // TODO: create a new override 
             this.webrtcSession.onStateChange = (state) => {
                 console.log("State changed", state)
@@ -268,6 +271,8 @@ export class HybridSession extends SSHSession {
                     this.webrtcSession.onStateChange = this.onStateChange
                     resolve(this.webrtcSession)
                 }
+                else if (state == "failed")
+                    reject()
             }
             this.webrtcSession.onIceCandidate = e => {
                 const candidate = JSON.stringify(e.candidate)
