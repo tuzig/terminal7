@@ -10,7 +10,7 @@ import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
 import { T7Map } from '../src/map'
 import { Terminal7Mock, sleep } from './infra.ts'
-import { Storage } from '@capacitor/storage'
+import { Preferences } from '@capacitor/preferences'
 import { Gate } from '../src/gate.ts'
 import { HTTPWebRTCSession } from '../src/webrtc_session'
 import { Terminal } from '@tuzig/xterm'
@@ -22,7 +22,7 @@ vi.mock('../src/ssh_session.ts')
 describe("gate", () => {
     var t, e
     beforeAll(async () => {
-        await Storage.clear()
+        await Preferences.clear()
         t = new Terminal7Mock()
         e = document.getElementById("t7")
         window.terminal7 = t

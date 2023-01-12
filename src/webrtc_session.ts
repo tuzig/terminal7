@@ -70,7 +70,6 @@ export class WebRTCSession extends BaseSession {
     cdc: RTCDataChannel
     pc: RTCPeerConnection
     lastMsgId: number
-    t7: object
     constructor() {
         super()
         this.channels = new Map()
@@ -97,7 +96,11 @@ export class WebRTCSession extends BaseSession {
             }
         }
         console.log("got ice server", this.t7.iceServers)
-        await this.t7.getFingerprint()
+        try {
+            await this.t7.getFingerprint()
+        } catch (e) {
+            this.t7.certificates = undefined
+        }
         this.pc = new RTCPeerConnection({
             iceServers: this.t7.iceServer,
             certificates: this.t7.certificates})
@@ -106,12 +109,17 @@ export class WebRTCSession extends BaseSession {
             const state = this.pc.connectionState
             console.log("new connection state", state, marker)
             if ((state == "connected") && (marker != null)) {
+                this.startWatchdog()
                 this.sendCTRLMsg({
                     type: "restore",
                     args: { marker }},
-                () => this.onStateChange("connected"),
+                () => {
+                    this.onStateChange("connected")
+                    this.clearWatchdog()
+                },
                 () => {
                     this.onStateChange("failed", Failure.BadMarker)
+                    this.clearWatchdog()
                 })
             } else  {
                 if (state == 'failed')
@@ -207,24 +215,37 @@ export class WebRTCSession extends BaseSession {
             }
         })
     }
-    async reconnect(marker: number|null): Promise<void> {
+    async reconnect(marker: number|null, publicKey?: string, privateKey?: string): Promise<void> {
         return new Promise((resolve, reject) => { 
             console.log("in reconnect", this.cdc, this.cdc.readyState)
             if (!this.pc)
-                return this.connect(marker)
+                return this.connect(marker, publicKey, privateKey)
             
             this.startWatchdog()
             if (!this.cdc || this.cdc.readyState != "open")
                 this.openCDC()
-            if (marker != null)
+            if (marker != null) {
+                let timedout = false
+                const watchdog = setTimeout(() => {
+                    timedout = true
+                    reject()
+                }, 500)
                 this.sendCTRLMsg({ type: "restore", args: { marker }}, payload => {
+                    clearTimeout(watchdog)
                     this.clearWatchdog()
-                    resolve(payload)
-                }, reject)
-            else
+                    if (!timedout)
+                        resolve(payload)
+                }, () => {
+                    clearTimeout(watchdog)
+                    this.clearWatchdog()
+                    if (!timedout)
+                        reject()
+                })
+            } else
                 this.getPayload().then(payload => {
                    this.clearWatchdog()
-                   resolve(payload)
+                   if (!timedout)
+                       resolve(payload)
                 }).catch(reject)
         })
     }

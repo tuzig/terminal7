@@ -18,15 +18,19 @@ import { formatDate } from './utils.js'
 import { openDB } from 'idb'
 import { marked } from 'marked'
 import changelogURL  from '../CHANGELOG.md?url'
+import ssh from 'ed25519-keygen/ssh';
+import { randomBytes } from 'ed25519-keygen/utils';
 
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
-import { Storage } from '@capacitor/storage'
+import { Preferences } from '@capacitor/preferences'
+import { Device } from '@capacitor/device'
+import { NativeBiometric } from "capacitor-native-biometric"
+import { RateApp } from 'capacitor-rate-app'
+
 import { PeerbookConnection } from './peerbook'
-
-
 
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
@@ -57,7 +61,7 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # timeout = 3000
 # retries = 3
 # ice_server = "stun:stun2.l.google.com:19302"
-# recovery_time = 7000
+# recovery_time = 4000
 
 [ui]
 # leader = "a"
@@ -71,9 +75,11 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # pinch_max_y_velocity = 0.1
 # auto_restore = false
 # flash = 100
+# verification_ttl = 900000
 `
 
 export class Terminal7 {
+    DEFAULT_KEY_TAG = "dev.terminal7.keys.default"
     /*
      * Terminal7 constructor, all properties should be initiated here
      */
@@ -95,6 +101,7 @@ export class Terminal7 {
         this.zoomedE = null
         this.pendingPanes = {}
         this.pb = null
+        this.ignoreAppEvents = false
     }
     showKeyHelp () {
         if (Date.now() - this.metaPressStart > 987) {
@@ -111,14 +118,15 @@ export class Terminal7 {
     async open() {
         let e = document.getElementById('terminal7')
         this.log("in open")
+        this.lastActiveState = true
         this.e = e
-        await Storage.migrate()
+        await Preferences.migrate()
         // reading conf
         let d = {},
-            { value } = await Storage.get({key: 'dotfile'})
+            { value } = await Preferences.get({key: 'dotfile'})
         if (value == null) {
             value = DEFAULT_DOTFILE
-            Storage.set({key: 'dotfile', value: value})
+            Preferences.set({key: 'dotfile', value: value})
         }
         try {
             d = TOML.parse(value)
@@ -180,25 +188,7 @@ export class Terminal7 {
         this.catchFingers()
         // setting up edit host events
         document.getElementById("edit-unverified-pbhost").addEventListener(
-            "click", () => this.clear())
-        // add webexec installation instructions
-        const fp = await this.getFingerprint(),
-            rc = `bash <(curl -sL https://get.webexec.sh)"
-echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
-        e.querySelectorAll('.webexec-install').forEach(e => {
-            e.innerHTML = `<p>To use WebRTC the server needs webexec:</p>
-<div>
-<pre>${rc}</pre>
-<button type="button" class="copy"><i class="f7-icons">doc_on_clipboard</i></button>
-</div>
-`
-            e.querySelector('button').addEventListener('click', () => {
-                this.notify("Copied commands to the clipboard")
-                Clipboard.write( {string: rc })
-            })
-
-        })
-
+            "click", async() => await this.clear())
         // keyboard
         document.addEventListener("keydown", ev => {
             if ((ev.key == "Meta") && (Capacitor.getPlatform() != "ios")) {
@@ -207,18 +197,18 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             } else
                 this.metaPressStart = Number.MAX_VALUE
         })
-        document.addEventListener("keyup", ev => {
+        document.addEventListener("keyup", async ev => {
             // hide the modals when releasing the meta key
             if ((ev.key == "Meta") &&
                 (Date.now() - this.metaPressStart > terminal7.conf.ui.quickest_press)) {
-                this.clear()
+                await this.clear()
             }
             this.metaPressStart = Number.MAX_VALUE
         })
         this.map = new T7Map()
         // Load gates from local storage
         let gates
-        value = (await Storage.get({key: 'gates'})).value
+        value = (await Preferences.get({key: 'gates'})).value
         if (value) {
             try {
                 gates = JSON.parse(value)
@@ -233,21 +223,31 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             this.map.refresh()
         }
         if (Capacitor.isNativePlatform())  {
+            // this is a hack as some operation, like bio verification
+            // fire two events
             App.addListener('appStateChange', state => {
-                if (!state.isActive) {
+                const active =  state.isActive
+                if (this.lastActiveState == active)
+                    return
+                this.lastActiveState = active
+                console.log("app state changed", this.ignoreAppEvents)
+                if (!active) {
+                    if (this.ignoreAppEvents) return
                     if (this.pb) {
                         this.pb.close()
                         this.pb = null
                     }
                     // We're getting suspended. disengage.
-                    this.notify("🛋️ Disengaging")
+                    this.notify("🛋️ Disengaging", true)
                     this.disengage()
                 } else {
                     // We're back! puts us in recovery mode so that it'll
                     // quietly reconnect to the active gate on failure
+                    if (this.ignoreAppEvents) {
+                        this.ignoreAppEvents = false
+                        return
+                    }
                     this.clearTimeouts()
-                    this.recovering = true
-                    this.run(() => this.recovering = false, this.conf.net.recoveryTime)
                     Network.getStatus().then(s => this.updateNetworkStatus(s))
                 }
             })
@@ -263,37 +263,45 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         // settings button and modal
         var modal   = document.getElementById("settings-modal")
         modal.addEventListener('click',
-            () => {
+            async () => {
                 document.getElementById("dotfile-button").classList.remove("on")
-                this.clear()
+                await this.clear()
             }
         )
         document.getElementById("dotfile-button")
                 .addEventListener("click", ev => this.toggleSettings(ev))
         modal.querySelector(".close").addEventListener('click',
-            () => {
+            async () => {
                 document.getElementById("dotfile-button").classList.remove("on")
-                this.clear()
+                await this.clear()
             }
         )
         modal.querySelector(".save").addEventListener('click',
             () => this.wqConf())
         modal.querySelector(".copy").addEventListener('click',
-            () => {
+            async () => {
                 var area = document.getElementById("edit-conf")
                 this.confEditor.save()
                 Clipboard.write({string: area.value})
-                this.clear()
+                await this.clear()
             })
         this.map.open().then(() => {
            this.goHome()
-           setTimeout(() => this.showGreetings(), 100)
+           setTimeout(async () => {
+                this.showGreetings()
+                const got = await Preferences.get({key: "activated"})
+                let runs = Number(got.value)
+                if (isNaN(runs))
+                    runs = 0
+                Preferences.set({key: "activated", value: String(runs+1)})
+                if (runs % 12 == 11)
+                    RateApp.requestReview()
+           }, 100)
         })
         Network.getStatus().then(s => {
             this.updateNetworkStatus(s)
             if (!s.connected) {
                 this.goHome()
-                return
             }
         })
     }
@@ -307,7 +315,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 reject()
                 return
             }
-            Storage.get({key: "last_state"}).then(({ value }) => {
+            Preferences.get({key: "last_state"}).then(({ value }) => {
                 if (!value)
                     reject()
                 else {
@@ -351,7 +359,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         var modal   = document.getElementById("settings-modal"),
             button  = document.getElementById("dotfile-button"),
             area    =  document.getElementById("edit-conf"),
-            conf    =  (await Storage.get({key: "dotfile"})).value || DEFAULT_DOTFILE
+            conf    =  (await Preferences.get({key: "dotfile"})).value || DEFAULT_DOTFILE
 
         area.value = conf
 
@@ -385,7 +393,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         document.getElementById("dotfile-button").classList.remove("on")
         this.confEditor.save()
         this.loadConf(TOML.parse(area.value))
-        Storage.set({key: "dotfile", value: area.value})
+        Preferences.set({key: "dotfile", value: area.value})
         this.cells.forEach(c => {
             if (typeof(c.setTheme) == "function")
                 c.setTheme(this.conf.theme)
@@ -420,7 +428,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         // add the id
         p.id = p.fp || p.name
         let g = new Gate(p)
-        g.onlySSH = p.onlySSH == 'y'
+        g.onlySSH = p.onlySSH
         this.gates.set(p.id, g)
         g.open(this.e)
         if (onMap) {
@@ -442,10 +450,10 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             }
         })
         this.log("Storing gates:", out)
-        await Storage.set({key: 'gates', value: JSON.stringify(out)})
+        await Preferences.set({key: 'gates', value: JSON.stringify(out)})
         this.map.refresh()
     }
-    clear() {
+    async clear() {
         this.e.querySelectorAll('.temporal').forEach(e => e.remove())
         this.e.querySelectorAll('.modal').forEach(e => {
             if (!e.classList.contains("non-clearable"))
@@ -454,10 +462,10 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         this.map.showLog(false)
         this.focus()
         this.longPressGate = null
-        this.map.shell.escapeActiveForm()
+        await this.map.shell.escapeActiveForm()
     }
-    goHome() {
-        Storage.remove({key: "last_state"}) 
+    async goHome() {
+        Preferences.remove({key: "last_state"}) 
         const s = document.getElementById('map-button')
         s.classList.add('off')
         if (this.activeG) {
@@ -465,7 +473,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             this.activeG = null
         }
         // hide the modals
-        this.clear()
+        await this.clear()
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.add("off"))
         window.location.href = "#map"
@@ -554,7 +562,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             this.pbConnect()
             const gate = this.activeG
             if (gate) {
-                this.notify("🌞 Reconnecting")
+                this.notify("🌞 Recovering")
+                this.recovering = true
+                this.run(() => this.recovering = false, this.conf.net.recoveryTime)
                 gate.reconnect()
                     .then(() => this.map.showLog(false))
                     .catch(() =>
@@ -579,6 +589,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         this.conf.ui.cutMinDistance = this.conf.ui.cut_min_distance || 80
         this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1
         this.conf.ui.autoRestore = this.conf.ui.auto_restore || false
+        this.conf.ui.verificationTTL = this.conf.ui.verification_ttl || 15 * 60 * 1000
+
         this.conf.net = this.conf.net || {}
         this.conf.net.iceServer = this.conf.net.ice_server ||
             "stun:stun2.l.google.com:19302"
@@ -589,7 +601,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                               Please click <i class="f7-icons">gear</i> and change net.peerbook to "api.peerbook.io"`)
         this.conf.net.timeout = this.conf.net.timeout || 5000
         this.conf.net.retries = this.conf.net.retries || 3
-        this.conf.net.recoveryTime = this.conf.net.recovery_time || 7000
+        this.conf.net.recoveryTime = this.conf.net.recovery_time || 4000
         this.conf.theme = this.conf.theme || {}
         this.conf.theme.foreground = this.conf.theme.foreground || "#00FAFA"
         this.conf.theme.background = this.conf.theme.background || "#000"
@@ -635,9 +647,11 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     .catch(reject)
                 })
             }).catch(e => {
-                db.close()
                 this.log(`got an error opening db ${e}`)
-                reject(e)
+                this.generateCertificate()
+                .then(cert => resolve(
+                    cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")))
+                .catch(reject)
             })
         })
     }
@@ -679,7 +693,6 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 }).catch(reject)
             }).catch(e => {
                 this.log (`got error from open db ${e}`)
-                db.close()
                 resolve(null)
             })
         })
@@ -756,7 +769,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         Clipboard.write({string: data})
         this.notify("Log copied to clipboard")
         /* TODO: wwould be nice to store log to file, problme is 
-         * Storage pluging failes
+         * Preferences pluging failes
         try { 
             await Filesystem.writeFile({
                 path: path,
@@ -895,9 +908,9 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         this.gesture = null
     }
     async showGreetings() {
-        const  { greeted } = await Storage.get({key: 'greeted'})
+        const  { greeted } = await Preferences.get({key: 'greeted'})
         if (greeted == null) {
-            Storage.set({key: "greeted", value: "yep"})
+            Preferences.set({key: "greeted", value: "yep"})
             this.map.tty(WELCOME)
         } else {
             if (!((window.matchMedia('(display-mode: standalone)').matches)
@@ -950,7 +963,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         }
         return ""
     }
-    factoryReset() {
+    async factoryReset() {
         // setting up reset cert events
         return new Promise(resolve => {
             this.gates.forEach(g => {
@@ -958,9 +971,8 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                 this.map.remove(g)
                 this.gates.delete(g.id)
             })
-            Storage.delete({key: 'gates'}).then(() => 
-                Storage.delete({key: 'greeted'}).then(() => 
-                    Storage.set({key: 'dotfile', value: DEFAULT_DOTFILE})))
+            Preferences.clear().then(() => 
+                Preferences.set({key: 'dotfile', value: DEFAULT_DOTFILE}))
             const d = TOML.parse(DEFAULT_DOTFILE)
             this.loadConf(d)
             if (this.pb) {
@@ -974,6 +986,7 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
                     resolve()
                 })
             })
+            NativeBiometric.deleteCredentials({ server: "dev.terminal7.default" })
         })
     }
 	async loadChangelog() {
@@ -996,5 +1009,55 @@ echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
             e.classList.add("show")
         else
             e.classList.remove("show")
+    }
+    /*
+     * collects the default id and returns a { publicKet, privateKey
+     */
+    async readId() {
+        const now = Date.now()
+        if (this.keys && (now - this.lastIdVerify  < this.conf.ui.verificationTTL))
+            return this.keys
+        this.ignoreAppEvents = true
+        let verified
+        try {
+            verified = await NativeBiometric.verifyIdentity({
+                reason: "Use private key to connect",
+                title: "Access Private Key",
+            })
+        } catch(e) {
+            if (e.message == "Authentication not available")
+                this.notify("Please turn on face id for 🔑 based auth")
+            // this.ignoreAppEvents = false
+            this.ignoreAppEvents = false
+            return {public:"UNAVAILABLE", private:"UNAVAILABLE"}
+        }
+        console.log("Got biometric verified ", verified)
+        // wait for the app events to bring the ignoreAppEvents to false
+        while (this.ignoreAppEvents)
+            await (() => { return new Promise(r => setTimeout(r, 20)) })()
+
+        let publicKey
+        let privateKey
+        try {
+            const def = await NativeBiometric.getCredentials({
+                server: "dev.terminal7.default"})
+            privateKey = def.password
+            publicKey = def.username
+        } catch {
+            this.notify("Forging 🔑")
+            const sseed = randomBytes(32)
+            const i = await Device.getInfo()
+            const skeys = await ssh(sseed, `${i.name}@${i.model}`)
+            privateKey = skeys.privateKey
+            publicKey = skeys.publicKey
+            await NativeBiometric.setCredentials({
+                username: publicKey,
+                password: privateKey,
+                server: "dev.terminal7.default",
+            })
+        }
+        this.keys = {publicKey: publicKey, privateKey: privateKey}
+        this.lastIdVerify = now
+        return this.keys
     }
 }

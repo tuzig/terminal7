@@ -555,7 +555,7 @@ td {
     transition: all .75s ease;
 }
 #help-gate {
-    border-top: 2px dashed var(--local-border);
+    border: 1px dotted var(--local-border);
 }
 .compact-fields {
     max-width: 20em;

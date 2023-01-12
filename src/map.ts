@@ -8,7 +8,6 @@
  */
 
 import { Terminal } from '@tuzig/xterm'
-import { Browser } from '@capacitor/browser'
 import { Gate } from './gate'
 import { WebLinksAddon } from 'xterm-addon-web-links'
 import { FitAddon } from "xterm-addon-fit"
@@ -177,7 +176,7 @@ export class T7Map {
             e.classList.remove("hidden")
             e.classList.add("show")
             document.getElementById("log-button").classList.add("on")
-            setTimeout(() => this.fitAddon.fit(), 1000)
+            setTimeout(() => this.fitAddon.fit(), 800)
         } else {
             e.classList.remove("show")
             document.getElementById("log-button").classList.remove("on")
