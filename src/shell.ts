@@ -225,12 +225,14 @@ export class Shell {
             ((terminal7.activeG != null) && (gate != terminal7.activeG)))
             return
 
+        /* TODO: kill it or improve it?
         if (couldBeBug) {
             this.t.writeln("")
             this.t.writeln("We're sorry, it could be a 🪳")
             this.t.writeln("Please hit CMD-9 and paste the log in #bugs at")
             this.t.writeln("https://discord.com/invite/rDBj8k4tUE")
         }
+        */
 
         const reconnectForm = [
             { prompt: "Reconnect" },
