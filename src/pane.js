@@ -7,14 +7,16 @@
 import { Cell } from './cell.js'
 import { Terminal } from '@tuzig/xterm'
 import { Clipboard } from '@capacitor/clipboard'
-import { Storage } from '@capacitor/storage'
-import { Browser } from '@capacitor/browser'
+import { Preferences } from '@capacitor/preferences'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { WebglAddon } from 'xterm-addon-webgl'
 import { WebLinksAddon } from 'xterm-addon-web-links'
+/* restore the bell. commented as it silences all background audio
 import { BELL_SOUND } from './bell.js'
+*/
 
+import { Failure } from './session'
 
 import XtermWebfont from 'xterm-webfont'
 
@@ -49,6 +51,7 @@ export class Pane extends Cell {
         this.lastKey = ''
         this.repetition = 0
         this.resizeObserver = new window.ResizeObserver(() => this.fit())
+        this.needsResize = false
     }
 
     /*
@@ -72,8 +75,9 @@ export class Pane extends Cell {
             theme: this.theme,
             rows:24,
             cols:80,
+            /* TODO: restore this. commented because it silences spotify
             bellStyle: "sound",
-            bellSound: BELL_SOUND,
+            bellSound: BELL_SOUND, */
         })
         this.fitAddon = new FitAddon()
         this.searchAddon = new SearchAddon()
@@ -139,8 +143,7 @@ export class Pane extends Cell {
             })
             this.t.onData(d =>  {
                 if (!this.d || this.d.readyState != "open" ) {
-                    this.gate.notify("Data channel lost")
-                    this.gate.reset()
+                    this.gate.handleFailure(Failure.DataChannelLost)
                 } else
                     this.d.send(d)
             })
@@ -170,14 +173,14 @@ export class Pane extends Cell {
 
     // fit a pane to the display area. If it was resized, the server is updated.
     // returns true is size was changed
+    // TODO: make it async
     fit(cb) {
         if (!this.t) {
             if (cb instanceof Function) cb(this)
             return
         }
-        var oldr = this.t.rows,
-            oldc = this.t.cols,
-            ret = false
+        let oldr = this.t.rows
+        let oldc = this.t.cols
 
         // there's no point in fitting when in the middle of a restore
         //  it happens in the eend anyway
@@ -193,14 +196,12 @@ export class Pane extends Cell {
         }
         this.refreshDividers()
         if (this.t.rows != oldr || this.t.cols != oldc) {
-            if (this.d) {
+            if (this.d)
                 this.d.resize(this.t.cols, this.t.rows)
-                this.gate.sendState()
-            }
-            ret = true
+            else
+                this.needsResize = true
         }
         if (cb instanceof Function) cb(this)
-        return ret
     }
     /*
      * Pane.focus focuses the UI on this pane
@@ -360,10 +361,10 @@ export class Pane extends Cell {
                 this.t7.zoomedE.children[0].style.borderColor = COPYMODE_BORDER_COLOR
             else
                 this.e.style.borderColor = COPYMODE_BORDER_COLOR
-            Storage.get({key: "first_copymode"}).then(v => {
+            Preferences.get({key: "first_copymode"}).then(v => {
                 if (v.value != "1") {
-                    this.gate.map.shell.runCommand('help', ['copymode'])
-                    Storage.set({key: "first_copymode", value: "1"})
+                    // this.gate.map.shell.runCommand('help', ['copymode'])
+                    Preferences.set({key: "first_copymode", value: "1"})
                 }
             })
         }

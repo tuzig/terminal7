@@ -13,7 +13,9 @@ export enum Failure {
     WebexecNotFound='Webexec Not Found',
     TimedOut='Timeout',
     Aborted='Aborted',
+    KeyRejected='Key Rejected',
     WrongAddress='Wrong Address',
+    DataChannelLost="Data Channel Lost"
 }
 
 export interface Event {
@@ -44,9 +46,10 @@ export interface Session {
     close(): void
     getPayload(): Promise<string>
     setPayload(payload: string): Promise<void>
-    reconnect(marker?: number): Promise<void>
+    reconnect(marker?: number, publicKey?: string, privateKey?: string): Promise<void>
     disconnect(): Promise<void>
-    connect(marker?: number): void
+    connect(marker?:number, publicKey?: string, privateKey?: string): void
+    connectPass(marker?:number, password?: string): void
     fail(failure?: Failure): void
 }
 
@@ -74,7 +77,6 @@ export abstract class BaseSession implements Session {
     watchdog: number
     onStateChange : (state: string, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
-    constructor(fp: string, address?: string)
     constructor() {
         this.t7 = window.terminal7
     }
@@ -105,11 +107,13 @@ export abstract class BaseSession implements Session {
             console.log("WATCHDOG stops the gate connecting")
             this.fail(Failure.TimedOut)
         }, this.t7.conf.net.timeout)
+        this.t7.map.shell.startHourglass(this.t7.conf.net.timeout)
     }
     clearWatchdog() {
         if (this.watchdog) {
             clearTimeout(this.watchdog)
             this.watchdog = null
+            this.t7.map.shell.stopHourglass()
         }
     }
     close() {

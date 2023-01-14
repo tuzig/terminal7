@@ -6,7 +6,6 @@
  *  License: GPLv3
  */
 import { Clipboard } from '@capacitor/clipboard'
-import { Storage } from '@capacitor/storage'
 
 import { Pane } from './pane.js'
 import { T7Map } from './map'
@@ -31,7 +30,6 @@ export class Gate {
     id: string
     marker: number
     name: string
-    pass: string | undefined
     secret: string
     session: Session
     user: string
@@ -46,8 +44,9 @@ export class Gate {
     store: boolean
     map: T7Map
     onlySSH: boolean
+    noIds: boolean
     firstConnection: boolean
-
+    keyRejected: boolean
     constructor (props) {
         // given properties
         this.id = props.id
@@ -58,7 +57,6 @@ export class Gate {
         this.store = props.store
         this.name = (!props.name)?`${this.user}@${this.addr}`:props.name
         this.username = props.username
-        this.pass = props.pass
         this.online = props.online
         this.verified = props.verified || false
         // 
@@ -155,16 +153,11 @@ export class Gate {
             this.t7.log(`Ignoring ${this.name} change state to ${state} as session is closed`)
             return
         }
-        this.t7.log(`updating ${this.name} state to ${state}`)
+        this.t7.log(`updating ${this.name} state to ${state} ${failure}`)
         if (state == "connected") {
             this.marker = null
             this.notify(`🥂  over ${this.session.isSSH?"SSH":"WebRTC"}`)
             this.setIndicatorColor("unset")
-            if (!this.verified) {
-                this.verified = true
-                this.updateNameE()
-                this.t7.storeGates()
-            }
             // first onConnected is special if it's a new gate but once
             // connected, we're back to loading the gate
             this.onConnected()
@@ -179,43 +172,88 @@ export class Gate {
         }
     }
     // handle connection failures
-    handleFailure(failure: Failure) {
-        if (!this.t7.recovering)
-            this.notify(`FAILED: ${failure || "WebRTC connection"}`)
-        this.map.showLog(true)
-        this.session.close()
-        this.session = null
-        if (!this.boarding)
+    async handleFailure(failure: Failure) {
+        // KeyRejected and WrongPassword are "light failure"
+        const active = this == this.t7.activeG
+        if (!this.t7.lastActiveState) {
+            console.log("ignoring failed event as the app is still in the back")
+            this.stopBoarding()
+            if (this.session) {
+                this.session.close()
+                this.session = null
+            }
             return
-        this.stopBoarding()
-        // onFailure should be set to `Shell.onGateFailure()` and the switch code
-        // should move there
-        // this.onFailure(failure)
+        }
+        if (!active)
+            return
+        // this.map.showLog(true)
+        terminal7.log("handling failure", failure, terminal7.recovering)
+        this.boarding = false
+        let password: string
+        let couldBeBug = false
         switch ( failure ) {
             case Failure.WrongPassword:
-                this.pass = undefined
-                this.retryForm(async () => 
-                    await this.map.shell.runCommand("connect", [this.name]),
-                    () => this.close())
+                this.notify("Sorry, wrong password")
+                try {
+                    password = await this.map.shell.askPass()
+                } catch (e) { 
+                    this.onFailure(failure)
+                    return 
+                }
+                this.session.passConnect(this.marker, password)
                 return
+
             case Failure.NotImplemented:
-                this.notify("Please try again")
+                this.session.close()
+                this.session = null
+                this.stopBoarding()
+                this.notify("Not Implemented. Please try again")
+                couldBeBug = true
                 break
             case Failure.Unauthorized:
+                // TODO: handle HTTP based authorization failure
                 this.copyFingerprint()
                 return
             case Failure.BadMarker:
-                this.notify("Trying a fresh session")
+                this.notify("Sync Error. Starting fresh")
                 this.marker = null
+                this.session.close()
+                this.session = null
+                this.stopBoarding()
                 this.connect(this.onConnected)
+                couldBeBug = true
                 return
-            case Failure.BadRemoteDescription:
-                this.notify("Please try again")
+
+            case undefined:
+            case Failure.DataChannelLost:
+                if (this.session) {
+                    this.session.close()
+                    this.session = null
+                }
+                if (terminal7.recovering)  {
+                    terminal7.log("Cleaned session as failure on recovering")
+                    return
+                }
+                this.stopBoarding()
+                this.notify(failure?"Lost Data Channel":"Lost Connection")
+                couldBeBug = failure == Failure.DataChannelLost
                 break
+
+            case Failure.KeyRejected:
+                this.notify("🔑 Rejected")
+                this.keyRejected = true
+                try {
+                    password = await this.map.shell.askPass()
+                } catch (e) { 
+                    this.onFailure(Failure.Aborted)
+                    return 
+                }
+                this.session.passConnect(this.marker, password)
+                return
+
         }
         if (this.firstConnection) {
             (async () => {
-                const rc = `bash <(curl -sL https://get.webexec.sh)"`
                 this.map.t0.writeln("Failed to connect")
                 let ans:string
                 const verifyForm = [{
@@ -234,6 +272,7 @@ export class Gate {
                     setTimeout(() => this.map.shell.handleLine("add"), 100)
                     return this.onFailure(Failure.WrongAddress)
                 }
+                /* TODO: separate the native from the in-browser:
                 const webexecForm = [{
                     prompt: `Make sure webexec is running on ${this.addr}:
                         \n\x1B[1m${rc}\x1B[0m\n\nCopy to clipboard?`,
@@ -247,22 +286,33 @@ export class Gate {
                 }
                 if (ans == "y")
                     Clipboard.write({ string: rc })
+                */
 				this.retryForm(async () => {
                     this.map.t0.writeln("Retrying...")
                     await this.map.shell.runCommand("connect", [this.name])
 				})
             })()
         } else
-            this.map.shell.onDisconnect(this)
+            await this.map.shell.onDisconnect(this, couldBeBug)
     }
     reconnect(): Promise<void> {
+        if (!this.session)
+            return this.connect()
         return new Promise((resolve, reject) => {
-            if (!this.session)
-                return this.connect()
-            this.session.reconnect(this.marker).then(layout => {
-                this.setLayout(layout)
+            this.t7.readId().then(({publicKey, privateKey}) => {
+                this.session.reconnect(this.marker, publicKey, privateKey).then(layout => {
+                    this.setLayout(layout)
+                    resolve()
+                }).catch(() => {
+                    this.session.close()
+                    this.session = null
+                    terminal7.log("reconnect failed, fresh session with marker", this.marker)
+                    this.connect().then(resolve).catch(reject)
+                })
+            }).catch((e) => {
+                this.t7.log("failed to read id", e)
                 resolve()
-            }).catch(() => this.connect().then(resolve).catch(reject))
+            })
         })
     }
     /*
@@ -290,7 +340,6 @@ export class Gate {
             this.focus()
             return
         }
-        this.boarding = true
         this.updateNameE()
         return this.completeConnect()
 
@@ -346,6 +395,25 @@ export class Gate {
 
         if (!this.activeW)
             this.activeW = this.windows[0]
+        // wait for the sizes to settle and update the server if needed
+        setTimeout(() => {
+            let foundNull = false
+            this.panes().forEach((p, i) => {
+                if (p.d) {
+                    if (p.needsResize) {
+                    // TODO: fix webexec so there's no need for this
+                        this.t7.run(() => p.d.resize(p.t.cols, p.t.rows), i*10)
+                        p.needsResize = false
+                    }
+                } else
+                    foundNull = true
+            })
+            if (!foundNull) {
+                this.t7.log(`${this.name} is boarding`)
+                this.boarding = true
+                this.updateNameE()
+            }
+        }, 400)
         this.focus()
     }
     /*
@@ -404,6 +472,7 @@ export class Gate {
         return { windows: wins }
     }
     storeState() {
+        /* TODO: restore the restore to last state
         const dump = this.dump()
         const lastState = {windows: dump.windows}
 
@@ -412,8 +481,9 @@ export class Gate {
         else
             lastState.id = this.addr
         lastState.name = this.name
-        Storage.set({key: "last_state",
+        Preferences.set({key: "last_state",
                      value: JSON.stringify(lastState)})
+                     */
     }
 
     sendState() {
@@ -435,9 +505,9 @@ export class Gate {
                })
             }, 100)
     }
-    onPaneConnected() {
+    async onPaneConnected() {
         // hide notifications
-        this.t7.clear()
+        await this.t7.clear()
         //enable search
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.remove("off"))
@@ -486,8 +556,7 @@ export class Gate {
         }
     }
     async copyFingerprint() {
-        const fp = await this.t7.getFingerprint(),
-              cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
+        const cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         const fpForm = [{ 
             prompt: `\n  ${this.addr} refused our fingerprint.
   \n\x1B[1m${cmd}\x1B[0m\n
@@ -503,51 +572,24 @@ export class Gate {
             Clipboard.write({ string: cmd })
             this.connect(this.onConnected)
         }
-        else
-            this.map.showLog(false)
     }
-    //TODO: the next function belongs in commands
-    async askPass() {
-        const name = this.name.startsWith("temp_")?this.addr:this.name
-        const authForm = []
-
-        let withUsername = false
-        if (!this.username) {
-            this.map.t0.writeln(`  Login to ${name}`)
-            authForm.push({ prompt: "Username", default: this.username })
-            withUsername = true
-        } else
-            this.map.t0.writeln(`  Login to ${this.username}@${name}`)
-        authForm.push({ prompt: "Password", password: true })
-        // Form errors/abort are handled by the caller
-        const res = await this.map.shell.runForm(authForm, "text")
-        if (withUsername) {
-            this.username = res[0]
-            this.pass = res[1]
-        } else
-            this.pass = res[0]
-    }
-    //TODO: the next function belongs in commands
     async completeConnect(): void {
-        if (this.map.shell.activeForm)
-            this.map.shell.escapeActiveForm()
-
+        this.keyRejected = false
         if (this.fp) {
             this.notify("🎌  PeerBook")
             this.session = new PeerbookSession(this.fp, this.t7.pb)
         }
         else {
-            if (Capacitor.getPlatform() == "ios") {
-                if (!this.pass) {
+            if (Capacitor.isNativePlatform())  {
+                if (!this.username) {
                     try {
-                        await this.askPass()
-                    } catch (e) { 
-                        this.onFailure(Failure.Aborted)
-                        return 
+                        this.username = await this.map.shell.askValue("Username")
+                    } catch (e) {
+                        this.notify("Failed to get username")
                     }
                 }
-                this.session = (this.onlySSH)?new SSHSession(this.addr, this.username, this.pass):
-                   new HybridSession(this.addr, this.username, this.pass)
+                this.session = (this.onlySSH)?new SSHSession(this.addr, this.username):
+                   new HybridSession(this.addr, this.username)
             } else {
                 this.notify("🎌  webexec server")
                 this.session = new HTTPWebRTCSession(this.addr)
@@ -559,7 +601,12 @@ export class Gate {
             this.t7.log("TBD: update layout", layout)
         }
         this.t7.log("opening session")
-        this.session.connect(this.marker)
+        if (this.noIds)
+            this.session.connect(this.marker)
+        else {
+            const {publicKey, privateKey} = await this.t7.readId()
+            this.session.connect(this.marker, publicKey, privateKey)
+        }
     }
     load() {
         this.t7.log("loading gate")
@@ -603,13 +650,13 @@ export class Gate {
         })
     }
     close() {
-        this.boarding = false
         this.clear()
-        this.updateNameE()
+        this.stopBoarding()
         if (this.session) {
             this.session.close()
             this.session = null
         }
+        // TODO: this doesn't belong here
         // we need the timeout as cell.focus is changing the href when dcs are closing
         setTimeout(() => this.t7.goHome(), 100)
     }
