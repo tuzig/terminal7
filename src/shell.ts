@@ -277,7 +277,8 @@ export class Shell {
             gate.session.close()
             gate.session = null
         }
-        this.runCommand("connect", [gate.name])
+        if (res == "Reconnect")
+            this.runCommand("connect", [gate.name])
     }
     async askPass(): Promise<string> {
         const res = await this.map.shell.runForm(
