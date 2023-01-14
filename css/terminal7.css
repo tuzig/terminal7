@@ -338,14 +338,13 @@ button.rename-close {
     padding: 0;
     position: fixed;
     z-index: 4;
-    left: 12px;
-    right: 12px;
+    left: 14px;
+    right: 14px;
     top: 22px;
-    bottom: 18px;
     height: max-content;
 }
 .zoomed .pane {
-    height: -webkit-fill-available;
+    border-radius: 12px;
 }
 #map:target {
     display: block;
