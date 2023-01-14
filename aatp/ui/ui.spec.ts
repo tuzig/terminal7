@@ -83,6 +83,21 @@ test.describe('terminal7 UI', ()  => {
         })
         expect(paneState).toEqual("open")
     })
+    test('a pane can be closed', async () => {
+        await page.reload({waitUntil: "networkidle"})
+        await page.evaluate(async () => {
+            window.notifications = []
+            window.terminal7.notify = (m) => window.notifications.push(m)
+        })
+        connectGate()
+        await sleep(500)
+        await page.screenshot({ path: `/result/2.png` })
+        await page.locator('.tabbar .reset').click()
+        await expect(page.locator('#t0')).toBeVisible()
+        sleep(20)
+        await page.keyboard.press('Enter')
+        await expect(page.locator('.windows-container')).toBeHidden()
+    })
     test('a pane can be reseted', async () => {
         await page.reload({waitUntil: "networkidle"})
         await page.evaluate(async () => {
@@ -95,6 +110,7 @@ test.describe('terminal7 UI', ()  => {
         await page.locator('.tabbar .reset').click()
         await expect(page.locator('#t0')).toBeVisible()
         sleep(20)
+        await page.keyboard.press('ArrowDown')
         await page.keyboard.press('Enter')
         await expect(page.locator('#t0')).toBeHidden()
         await expect(page.locator('.pane')).toHaveCount(1)

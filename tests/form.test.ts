@@ -86,7 +86,8 @@ describe("form", () => {
             finish = true
         })
         await sleep(100)
-        expect(t.out.endsWith("name [one/two]: three\nname must be one of: one, two\nname [one/two]: ")).toBeTruthy()
+        expect(t.out.endsWith("name [one/two]: three\nname must be one of: one, two\nname [one/two]: "),
+               `unexpected TWR output ${t.uot}`).toBeTruthy()
         word = "one"
         setTimeout(writeChar, 10)
         await sleep(100)

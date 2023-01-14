@@ -332,8 +332,8 @@ async function resetCMD(shell: Shell, args: string[]) {
             return shell.t.writeln("No active connection")
     }
     const fields = [
-        { prompt: "Reset connection & Layout" },
         { prompt: "Close gate" },
+        { prompt: "Reset connection & Layout" },
         { prompt: "\x1B[31mFactory reset\x1B[0m" },
     ]
     const factoryResetVerify = [{
@@ -343,7 +343,7 @@ async function resetCMD(shell: Shell, args: string[]) {
     }]
     if (!gate.onlySSH)
         // Add the connection reset option for webrtc
-        fields.splice(0,0, { prompt: "Reset connection" })
+        fields.splice(1, 0, { prompt: "Reset connection" })
     shell.t.writeln(`\x1B[4m${gate.name}\x1B[0m`)
     let choice
     try {
