@@ -167,10 +167,10 @@ export class Terminal7 {
         const dH = document.getElementById("divide-h")
         const dV = document.getElementById("divide-v")
         dH.addEventListener("click", () =>  {
-                    if (this.activeG && !dH.classList.contains("off"))
+                    if (this.activeG)
                         this.activeG.activeW.activeP.split("rightleft", 0.5)})
         dV.addEventListener("click", () =>  {
-                    if (this.activeG && !dV.classList.contains("off"))
+                    if (this.activeG)
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         document.getElementById('add-gate').addEventListener(
             'click', async (ev) => {
