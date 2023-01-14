@@ -102,7 +102,7 @@ export class WebRTCSession extends BaseSession {
             this.t7.certificates = undefined
         }
         this.pc = new RTCPeerConnection({
-            iceServers: this.t7.iceServer,
+            iceServers: this.t7.iceServers,
             certificates: this.t7.certificates})
         this.pc.onconnectionstatechange = () => {
             this.clearWatchdog()
