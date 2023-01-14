@@ -233,10 +233,6 @@ export class Terminal7 {
                 console.log("app state changed", this.ignoreAppEvents)
                 if (!active) {
                     if (this.ignoreAppEvents) return
-                    if (this.pb) {
-                        this.pb.close()
-                        this.pb = null
-                    }
                     // We're getting suspended. disengage.
                     this.notify("🛋️ Disengaging", true)
                     this.disengage()
