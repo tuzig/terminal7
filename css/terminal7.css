@@ -467,6 +467,11 @@ label {
     border: 1px solid var(--local-border);
     border-radius: 20%;
 }
+@media (max-width: 600px) {
+    #log.show {
+        width: 90vw;
+    }
+}
 .search-container {
     margin: 0 auto;
     width: 80%;
