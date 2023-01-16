@@ -6,7 +6,6 @@
  *  License: GPLv3
  */
 import { Clipboard } from '@capacitor/clipboard'
-import { Preferences } from '@capacitor/preferences'
 
 import { Pane } from './pane.js'
 import { T7Map } from './map'
@@ -175,6 +174,7 @@ export class Gate {
     // handle connection failures
     async handleFailure(failure: Failure) {
         // KeyRejected and WrongPassword are "light failure"
+        const active = this == this.t7.activeG
         if (!this.t7.lastActiveState) {
             console.log("ignoring failed event as the app is still in the back")
             this.stopBoarding()
@@ -184,23 +184,13 @@ export class Gate {
             }
             return
         }
-        if ((failure != Failure.KeyRejected) && (failure != Failure.WrongPassword)) {
-            this.session.close()
-            this.session = null
-            this.stopBoarding()
-            if (!this.t7.recovering)
-                this.notify(`FAILED: ${failure || "WebRTC connection"}`)
-            else {
-                this.notify(`Retrying after ${failure}`)
-                return
-            }
-            if (this != this.t7.activeG)
-                return
-        }
+        if (!active)
+            return
         // this.map.showLog(true)
-        console.log("handling failure", failure)
+        terminal7.log("handling failure", failure, terminal7.recovering)
         this.boarding = false
         let password: string
+        let couldBeBug = false
         switch ( failure ) {
             case Failure.WrongPassword:
                 this.notify("Sorry, wrong password")
@@ -214,18 +204,39 @@ export class Gate {
                 return
 
             case Failure.NotImplemented:
-                this.notify("Please try again")
+                this.session.close()
+                this.session = null
+                this.stopBoarding()
+                this.notify("Not Implemented. Please try again")
+                couldBeBug = true
                 break
             case Failure.Unauthorized:
+                // TODO: handle HTTP based authorization failure
                 this.copyFingerprint()
                 return
             case Failure.BadMarker:
-                this.notify("Trying a fresh session")
+                this.notify("Sync Error. Starting fresh")
                 this.marker = null
+                this.session.close()
+                this.session = null
+                this.stopBoarding()
                 this.connect(this.onConnected)
+                couldBeBug = true
                 return
-            case Failure.BadRemoteDescription:
-                this.notify("Please try again")
+
+            case undefined:
+            case Failure.DataChannelLost:
+                if (this.session) {
+                    this.session.close()
+                    this.session = null
+                }
+                if (terminal7.recovering)  {
+                    terminal7.log("Cleaned session as failure on recovering")
+                    return
+                }
+                this.stopBoarding()
+                this.notify(failure?"Lost Data Channel":"Lost Connection")
+                couldBeBug = failure == Failure.DataChannelLost
                 break
 
             case Failure.KeyRejected:
@@ -239,6 +250,7 @@ export class Gate {
                 }
                 this.session.passConnect(this.marker, password)
                 return
+
         }
         if (this.firstConnection) {
             (async () => {
@@ -281,7 +293,7 @@ export class Gate {
 				})
             })()
         } else
-            await this.map.shell.onDisconnect(this)
+            await this.map.shell.onDisconnect(this, couldBeBug)
     }
     reconnect(): Promise<void> {
         if (!this.session)
@@ -291,7 +303,12 @@ export class Gate {
                 this.session.reconnect(this.marker, publicKey, privateKey).then(layout => {
                     this.setLayout(layout)
                     resolve()
-                }).catch(() => this.connect().then(resolve).catch(reject))
+                }).catch(() => {
+                    this.session.close()
+                    this.session = null
+                    terminal7.log("reconnect failed, fresh session with marker", this.marker)
+                    this.connect().then(resolve).catch(reject)
+                })
             }).catch((e) => {
                 this.t7.log("failed to read id", e)
                 resolve()
@@ -323,7 +340,6 @@ export class Gate {
             this.focus()
             return
         }
-        this.boarding = true
         this.updateNameE()
         return this.completeConnect()
 
@@ -379,14 +395,24 @@ export class Gate {
 
         if (!this.activeW)
             this.activeW = this.windows[0]
+        // wait for the sizes to settle and update the server if needed
         setTimeout(() => {
+            let foundNull = false
             this.panes().forEach((p, i) => {
-                if (p.d && p.needsResize) {
+                if (p.d) {
+                    if (p.needsResize) {
                     // TODO: fix webexec so there's no need for this
-                    this.t7.run(() => p.d.resize(p.t.cols, p.t.rows), i*10)
-                    p.needsResize = false
-                }
+                        this.t7.run(() => p.d.resize(p.t.cols, p.t.rows), i*10)
+                        p.needsResize = false
+                    }
+                } else
+                    foundNull = true
             })
+            if (!foundNull) {
+                this.t7.log(`${this.name} is boarding`)
+                this.boarding = true
+                this.updateNameE()
+            }
         }, 400)
         this.focus()
     }
@@ -530,8 +556,7 @@ export class Gate {
         }
     }
     async copyFingerprint() {
-        const fp = await this.t7.getFingerprint(),
-              cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
+        const cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         const fpForm = [{ 
             prompt: `\n  ${this.addr} refused our fingerprint.
   \n\x1B[1m${cmd}\x1B[0m\n
@@ -547,8 +572,6 @@ export class Gate {
             Clipboard.write({ string: cmd })
             this.connect(this.onConnected)
         }
-        else
-            this.map.showLog(false)
     }
     async completeConnect(): void {
         this.keyRejected = false
@@ -627,13 +650,13 @@ export class Gate {
         })
     }
     close() {
-        this.boarding = false
         this.clear()
-        this.updateNameE()
+        this.stopBoarding()
         if (this.session) {
             this.session.close()
             this.session = null
         }
+        // TODO: this doesn't belong here
         // we need the timeout as cell.focus is changing the href when dcs are closing
         setTimeout(() => this.t7.goHome(), 100)
     }

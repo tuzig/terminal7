@@ -172,7 +172,6 @@ async function connectCMD(shell:Shell, args: string[]) {
                 const res = await shell.runForm(fields, "text")
                 const name = res[0]
                 gate.name = name
-                gate.nameE = gate.map.add(gate)
                 gate.verified = true
                 gate.updateNameE()
                 gate.store = true
@@ -197,6 +196,8 @@ async function connectCMD(shell:Shell, args: string[]) {
                             break
                     }
                 }
+                else 
+                    terminal7.log("oops readId failed")
             } 
             if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH) {
                 const webexecForm = [
@@ -209,7 +210,7 @@ async function connectCMD(shell:Shell, args: string[]) {
                 shell.t.writeln(`  \x1B[1m${cmd}\x1B[0m\n`)
                 const res = await shell.runForm(webexecForm, "menu")
                 switch(res) {
-                    case "Copy it to clipboard & connect":
+                    case "Copy command to 📋":
                         Clipboard.write({ string: cmd })
                         break
 
@@ -268,13 +269,14 @@ async function addCMD(shell: Shell) {
 
     if (terminal7.validateHostAddress(hostname)) {
         shell.t.writeln(`  ${hostname} already exists, connecting...`)
-        await new Promise(resolve => {
+        await new Promise<void>(resolve => {
             const gate = shell.getGate(hostname)
             gate.connect(() => {
                 gate.load()
                 resolve()
             })
         })
+        return
     }
     const gate = terminal7.addGate({
         name: hostname, // temp name
@@ -330,18 +332,18 @@ async function resetCMD(shell: Shell, args: string[]) {
             return shell.t.writeln("No active connection")
     }
     const fields = [
-        { prompt: "Reset connection & Layout" },
         { prompt: "Close gate" },
+        { prompt: "Reset connection & Layout" },
         { prompt: "\x1B[31mFactory reset\x1B[0m" },
     ]
     const factoryResetVerify = [{
-        prompt: `Factory reset will remove the certificate,\n     all gates and configuration`,
+        prompt: `Factory reset will remove the key, certificate,\n     all gates and configuration`,
         values: ["y", "n"],
         default: "n"
     }]
     if (!gate.onlySSH)
         // Add the connection reset option for webrtc
-        fields.splice(0,0, { prompt: "Reset connection" })
+        fields.splice(1, 0, { prompt: "Reset connection" })
     shell.t.writeln(`\x1B[4m${gate.name}\x1B[0m`)
     let choice
     try {
@@ -358,18 +360,24 @@ async function resetCMD(shell: Shell, args: string[]) {
                 gate.session.close()
                 gate.session = null
             }
-            await new Promise<void>(resolve => {
+            try {
+                await new Promise<void>((resolve, reject) => {
                 //setTimeout(() => {
                     gate.connect(() => {
                         gate.load()
                         resolve()
                     })
-                    gate.onFailure(() => {
-                        resolve()
-                    })
+                    gate.onFailure = reject
                 // }, 100)
-            })
+                })
+            } catch(e) {
+                shell.t.writeln("Failed to connect. Please try again and if it keeps failing, close and connect fresh.")
+                shell.t.writeln("  Please take the time to write your flow\n  in ##🪳bugs🪳at https://discord.com/invite/rDBj8k4tUE")
+                return
+            }
+
             break
+
         case "Reset connection & Layout":
             if (gate.session) {
                 gate.session.close()
@@ -385,6 +393,7 @@ async function resetCMD(shell: Shell, args: string[]) {
                 })
             })
             break
+
         case "\x1B[31mFactory reset\x1B[0m":
             try {
                 ans = (await shell.runForm(factoryResetVerify, "text"))[0]
@@ -512,7 +521,13 @@ async function closeCMD(shell: Shell, args: string[]) {
     gate.close()
 }
 async function copyKeyCMD(shell: Shell) {
-    const publicKey = await shell.getPublicKey()
+    let publicKey
+    try {
+        const ret = await terminal7.readId()
+        publicKey = ret.publicKey
+    } catch(e) {
+        console.log("readId erro", e)
+    }
     if (publicKey) {
         Clipboard.write({ string: publicKey })
         return shell.t.writeln(`${publicKey}\n☝️ copied to 📋`)

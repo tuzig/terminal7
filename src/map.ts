@@ -65,12 +65,10 @@ export class T7Map {
             const log = document.getElementById("log")
             if (!log)
                 return
-            /* TODO: on the iPad things are probably better without this code
             const resizeObserver = new window.ResizeObserver(() => {
-                setTimeout(() => fitAddon.fit(), 750)
+                setTimeout(() => this.fitAddon.fit(), 750)
             })
             resizeObserver.observe(log)
-            */
             log.addEventListener("transitionend", () => {
                 // fitAddon.fit()
                 if (log.classList.contains("show"))
@@ -177,6 +175,7 @@ export class T7Map {
             e.classList.add("show")
             document.getElementById("log-button").classList.add("on")
             setTimeout(() => this.fitAddon.fit(), 800)
+            setTimeout(() => e.scrollIntoView(), 800)
         } else {
             e.classList.remove("show")
             document.getElementById("log-button").classList.remove("on")

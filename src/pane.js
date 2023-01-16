@@ -12,8 +12,11 @@ import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { WebglAddon } from 'xterm-addon-webgl'
 import { WebLinksAddon } from 'xterm-addon-web-links'
+/* restore the bell. commented as it silences all background audio
 import { BELL_SOUND } from './bell.js'
+*/
 
+import { Failure } from './session'
 
 import XtermWebfont from 'xterm-webfont'
 
@@ -72,8 +75,9 @@ export class Pane extends Cell {
             theme: this.theme,
             rows:24,
             cols:80,
+            /* TODO: restore this. commented because it silences spotify
             bellStyle: "sound",
-            bellSound: BELL_SOUND,
+            bellSound: BELL_SOUND, */
         })
         this.fitAddon = new FitAddon()
         this.searchAddon = new SearchAddon()
@@ -139,8 +143,7 @@ export class Pane extends Cell {
             })
             this.t.onData(d =>  {
                 if (!this.d || this.d.readyState != "open" ) {
-                    terminal7.log("Ignoring lost data channel, hoping it'll all work out")
-                    // this.gate.handleFailure(Failure.DataChannelLost)
+                    this.gate.handleFailure(Failure.DataChannelLost)
                 } else
                     this.d.send(d)
             })
@@ -360,7 +363,7 @@ export class Pane extends Cell {
                 this.e.style.borderColor = COPYMODE_BORDER_COLOR
             Preferences.get({key: "first_copymode"}).then(v => {
                 if (v.value != "1") {
-                    this.gate.map.shell.runCommand('help', ['copymode'])
+                    // this.gate.map.shell.runCommand('help', ['copymode'])
                     Preferences.set({key: "first_copymode", value: "1"})
                 }
             })

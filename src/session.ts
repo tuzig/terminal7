@@ -107,11 +107,13 @@ export abstract class BaseSession implements Session {
             console.log("WATCHDOG stops the gate connecting")
             this.fail(Failure.TimedOut)
         }, this.t7.conf.net.timeout)
+        this.t7.map.shell.startHourglass(this.t7.conf.net.timeout)
     }
     clearWatchdog() {
         if (this.watchdog) {
             clearTimeout(this.watchdog)
             this.watchdog = null
+            this.t7.map.shell.stopHourglass()
         }
     }
     close() {

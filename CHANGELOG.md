@@ -6,21 +6,40 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## UNRELEASED
+## 1.3.2 - 2023/1/10 
+
+### Fixed
+
+- peerbook connection
+
+## 1.3.1 - 2022/12/29
+
+### Added 
+
+- Biometric verification once every 15 minutes or `ui.verification_ttl` in milliseconds
+- Request to rate the app
+
+### Fixed
+
+- A couple of reconnect bugs
+- SSH only flag is now saved
+
+## 1.3.0 - 2022/12/16
 
 ### Added
 
-- The close command
+- ED25519 keys with Face ID protection
+- TWR close and copykey commands
 - Caps lock indication
 - TWR command completion
 
 ### Fixed
 
-- Error output
 - AWS garviton support
 - Reconnect is a much lighter affair
 - Links open in external browser
 - copy-mode copy was adding a new line at the end
+- Improving error messages
 
 ## 1.2.1 - 2022/11/10
 

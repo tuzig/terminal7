@@ -28,6 +28,7 @@ import { Network } from '@capacitor/network'
 import { Preferences } from '@capacitor/preferences'
 import { Device } from '@capacitor/device'
 import { NativeBiometric } from "capacitor-native-biometric"
+import { RateApp } from 'capacitor-rate-app'
 
 import { PeerbookConnection } from './peerbook'
 
@@ -74,6 +75,7 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # pinch_max_y_velocity = 0.1
 # auto_restore = false
 # flash = 100
+# verification_ttl = 900000
 `
 
 export class Terminal7 {
@@ -224,18 +226,15 @@ export class Terminal7 {
             // this is a hack as some operation, like bio verification
             // fire two events
             App.addListener('appStateChange', state => {
-                if (this.lastActiveState == state.isActive)
+                const active =  state.isActive
+                if (this.lastActiveState == active)
                     return
-                this.lastActiveState = state.isActive
+                this.lastActiveState = active
                 console.log("app state changed", this.ignoreAppEvents)
-                if (!state.isActive) {
+                if (!active) {
                     if (this.ignoreAppEvents) return
-                    if (this.pb) {
-                        this.pb.close()
-                        this.pb = null
-                    }
                     // We're getting suspended. disengage.
-                    this.notify("🛋️ Disengaging")
+                    this.notify("🛋️ Disengaging", true)
                     this.disengage()
                 } else {
                     // We're back! puts us in recovery mode so that it'll
@@ -284,13 +283,21 @@ export class Terminal7 {
             })
         this.map.open().then(() => {
            this.goHome()
-           setTimeout(() => this.showGreetings(), 100)
+           setTimeout(async () => {
+                this.showGreetings()
+                const got = await Preferences.get({key: "activated"})
+                let runs = Number(got.value)
+                if (isNaN(runs))
+                    runs = 0
+                Preferences.set({key: "activated", value: String(runs+1)})
+                if (runs % 12 == 11)
+                    RateApp.requestReview()
+           }, 100)
         })
         Network.getStatus().then(s => {
             this.updateNetworkStatus(s)
             if (!s.connected) {
                 this.goHome()
-                return
             }
         })
     }
@@ -417,7 +424,7 @@ export class Terminal7 {
         // add the id
         p.id = p.fp || p.name
         let g = new Gate(p)
-        g.onlySSH = p.onlySSH == 'y'
+        g.onlySSH = p.onlySSH
         this.gates.set(p.id, g)
         g.open(this.e)
         if (onMap) {
@@ -578,6 +585,8 @@ export class Terminal7 {
         this.conf.ui.cutMinDistance = this.conf.ui.cut_min_distance || 80
         this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1
         this.conf.ui.autoRestore = this.conf.ui.auto_restore || false
+        this.conf.ui.verificationTTL = this.conf.ui.verification_ttl || 15 * 60 * 1000
+
         this.conf.net = this.conf.net || {}
         this.conf.net.iceServer = this.conf.net.ice_server ||
             "stun:stun2.l.google.com:19302"
@@ -634,9 +643,11 @@ export class Terminal7 {
                     .catch(reject)
                 })
             }).catch(e => {
-                db.close()
                 this.log(`got an error opening db ${e}`)
-                reject(e)
+                this.generateCertificate()
+                .then(cert => resolve(
+                    cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")))
+                .catch(reject)
             })
         })
     }
@@ -678,7 +689,6 @@ export class Terminal7 {
                 }).catch(reject)
             }).catch(e => {
                 this.log (`got error from open db ${e}`)
-                db.close()
                 resolve(null)
             })
         })
@@ -949,7 +959,7 @@ export class Terminal7 {
         }
         return ""
     }
-    factoryReset() {
+    async factoryReset() {
         // setting up reset cert events
         return new Promise(resolve => {
             this.gates.forEach(g => {
@@ -1000,6 +1010,9 @@ export class Terminal7 {
      * collects the default id and returns a { publicKet, privateKey
      */
     async readId() {
+        const now = Date.now()
+        if (this.keys && (now - this.lastIdVerify  < this.conf.ui.verificationTTL))
+            return this.keys
         this.ignoreAppEvents = true
         let verified
         try {
@@ -1025,6 +1038,7 @@ export class Terminal7 {
             const def = await NativeBiometric.getCredentials({
                 server: "dev.terminal7.default"})
             privateKey = def.password
+            publicKey = def.username
         } catch {
             this.notify("Forging 🔑")
             const sseed = randomBytes(32)
@@ -1032,18 +1046,14 @@ export class Terminal7 {
             const skeys = await ssh(sseed, `${i.name}@${i.model}`)
             privateKey = skeys.privateKey
             publicKey = skeys.publicKey
-            NativeBiometric.setCredentials({
-                username: "TBD",
+            await NativeBiometric.setCredentials({
+                username: publicKey,
                 password: privateKey,
                 server: "dev.terminal7.default",
             })
         }
-        if (publicKey) {
-            const pubDB = { default: publicKey }
-            await Preferences.set({key: "pubs", value: JSON.stringify(pubDB)})
-        } else {
-            publicKey = await this.map.shell.getPublicKey()
-        }
-        return {publicKey: publicKey, privateKey: privateKey}
+        this.keys = {publicKey: publicKey, privateKey: privateKey}
+        this.lastIdVerify = now
+        return this.keys
     }
 }

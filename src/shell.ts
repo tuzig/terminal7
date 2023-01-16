@@ -1,5 +1,4 @@
 import { Clipboard } from "@capacitor/clipboard"
-import { Preferences } from "@capacitor/preferences"
 import { Terminal } from '@tuzig/xterm'
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
@@ -15,8 +14,9 @@ export class Shell {
     active = false
     activeForm: Form | null
     commands: Map<string, Command>
-    pubKeys: Map<string, string>
     currentLine = ''
+    timer: number | null = null
+
     constructor(map: T7Map) {
         this.map = map
         this.t = map.t0
@@ -205,7 +205,26 @@ export class Shell {
         else
             e.classList.add("hidden")
     }
-    
+
+    startHourglass(timeout: number) {
+        if (this.timer) return
+        const len = 20,
+            interval = timeout / len
+        let i = 0
+        this.timer = window.setInterval(() => {
+            this.t.write(`\r\x1B[KTWR ${" ".repeat(i)}ᗧ${"·".repeat(len-i-1)}🍒\x1B[?25l`)
+            i++
+        }, interval)
+        setTimeout(() => this.stopHourglass(), timeout)
+    }
+
+    stopHourglass() {
+        if (!this.timer) return
+        clearInterval(this.timer)
+        this.timer = null
+        this.t.write(`\r\x1B[K\x1B[?25h`)
+    }
+
     getGate(name: string) {
         let ret = terminal7.gates.get(name)
         if (!ret) {
@@ -222,34 +241,43 @@ export class Shell {
     /*
      * onDisconnect is called when a gate disconnects.
      */
-    async onDisconnect(gate: Gate) {
-        if (!terminal7.netStatus.connected ||
+    async onDisconnect(gate: Gate, couldBeBug: bool) {
+        if (!terminal7.netStatus.connected || terminal7.recovering ||
             ((terminal7.activeG != null) && (gate != terminal7.activeG)))
             return
-        
+
+        /* TODO: kill it or improve it?
+        if (couldBeBug) {
+            this.t.writeln("")
+            this.t.writeln("We're sorry, it could be a 🪳")
+            this.t.writeln("Please hit CMD-9 and paste the log in #bugs at")
+            this.t.writeln("https://discord.com/invite/rDBj8k4tUE")
+        }
+        */
+
         const reconnectForm = [
             { prompt: "Reconnect" },
             { prompt: "Close" }
         ]
 
-        // Don't show a menu when recovering, just clear the session and connect
-        if (!terminal7.recovering) {
-            let res
-            try {
-                res = await this.runForm(reconnectForm, "menu")
-            } catch(e) {
-                // try connection
-                res = null
-            }
-            // TODO: needs refactoring
-            if (res == "Close") {
-                this.map.showLog(false)
-                gate.close()
-                return
-            }
+        let res
+        try {
+            res = await this.runForm(reconnectForm, "menu")
+        } catch(e) {
+            // try to connect
+            res = null
         }
-        gate.session = null
-        gate.connect(gate.onConnected)
+        // TODO: needs refactoring
+        if (res == "Close") {
+            this.map.showLog(false)
+            gate.close()
+            return
+        }
+        if (gate.session) {
+            gate.session.close()
+            gate.session = null
+        }
+        this.runCommand("connect", [gate.name])
     }
     async askPass(): Promise<string> {
         const res = await this.map.shell.runForm(
@@ -260,21 +288,6 @@ export class Shell {
         const res = await this.map.shell.runForm(
             [{ prompt: prompt, default: def }], "text")
         return res[0]
-    }
-    async getPublicKey() {
-        if (!this.pubKeys) {
-            let pksRaw
-            try {
-                pksRaw = (await Preferences.get({key: "pubs"})).value
-            } catch(e) {
-                return this.t.writeln("Failed to read public keys")
-                terminal7.log("Preferences get returned an error", e)
-            }
-            this.pubKeys = JSON.parse(pksRaw)
-        }
-        try {
-            return this.pubKeys.default
-        } catch(e) { return undefined }
     }
 }
 
