@@ -85,7 +85,6 @@ export class WebRTCSession extends BaseSession {
     }
     async connect(marker=null) {
         console.log("in connect")
-        this.startWatchdog()
 
         if ((!this.t7.iceServers) && (!this.t7.conf.peerbook?.insecure)) {
             try {
@@ -109,7 +108,6 @@ export class WebRTCSession extends BaseSession {
             const state = this.pc.connectionState
             console.log("new connection state", state, marker)
             if ((state == "connected") && (marker != null)) {
-                this.startWatchdog()
                 this.sendCTRLMsg({
                     type: "restore",
                     args: { marker }},
@@ -186,7 +184,6 @@ export class WebRTCSession extends BaseSession {
         }
         return channel
     }
-    openChannel(id: ChannelID): Promise<Channel>
     openChannel(cmdorid: unknown, parent?: ChannelID, sx?: number, sy?: number):
          Promise<Channel> {
         return new Promise((resolve, reject) => {
@@ -215,13 +212,12 @@ export class WebRTCSession extends BaseSession {
             }
         })
     }
-    async reconnect(marker: number|null, publicKey?: string, privateKey?: string): Promise<void> {
+    async reconnect(marker?: number, publicKey?: string, privateKey?: string): Promise<void> {
         return new Promise((resolve, reject) => { 
             console.log("in reconnect", this.cdc, this.cdc.readyState)
             if (!this.pc)
                 return this.connect(marker, publicKey, privateKey)
             
-            this.startWatchdog()
             if (!this.cdc || this.cdc.readyState != "open")
                 this.openCDC()
             if (marker != null) {
@@ -251,7 +247,6 @@ export class WebRTCSession extends BaseSession {
     }
     openCDC(): Promise<void> {
         // stop listening for messages
-       this.startWatchdog()
        if (this.cdc)
            this.cdc.onmessage = undefined
        // TODO: improve error handling and add areject
@@ -379,8 +374,8 @@ export class WebRTCSession extends BaseSession {
 
 export class PeerbookSession extends WebRTCSession {
     fp: string
-    pb: PeerbookConnection
-    constructor(fp: string, pb: PeerbookConnection) {
+    pb: PeerbookConnection | null
+    constructor(fp: string, pb: PeerbookConnection | null) {
         super()
         this.fp = fp
         this.pb = pb

@@ -292,8 +292,11 @@ export class Gate {
                     await this.map.shell.runCommand("connect", [this.name])
 				})
             })()
-        } else
+        } else try {
             await this.map.shell.onDisconnect(this, couldBeBug)
+        } catch (e) {
+            this.onFailure(Failure.Aborted)
+        }
     }
     reconnect(): Promise<void> {
         if (!this.session)
@@ -581,13 +584,6 @@ export class Gate {
         }
         else {
             if (Capacitor.isNativePlatform())  {
-                if (!this.username) {
-                    try {
-                        this.username = await this.map.shell.askValue("Username")
-                    } catch (e) {
-                        this.notify("Failed to get username")
-                    }
-                }
                 this.session = (this.onlySSH)?new SSHSession(this.addr, this.username):
                    new HybridSession(this.addr, this.username)
             } else {

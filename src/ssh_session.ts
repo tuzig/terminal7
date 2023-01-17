@@ -1,5 +1,5 @@
 import { SSH, SSHSessionID, StartByPasswd, StartByKey} from 'capacitor-ssh-plugin'
-import { Channel, BaseChannel, BaseSession, Failure, Session, State }  from './session' 
+import { Channel, BaseChannel, BaseSession, Failure, Session, State, ChannelID }  from './session' 
 import { WebRTCSession }  from './webrtc_session'
 
 const ACCEPT_CMD = "/usr/local/bin/webexec accept"
@@ -46,7 +46,6 @@ export class SSHSession extends BaseSession {
         this.onStateChange("connected")
     }
     async connect(marker?:number, publicKey: string, privateKey:string) {
-        this.startWatchdog()
         SSH.startSessionByKey({
             address: this.address,
             port: this.port,
@@ -66,7 +65,6 @@ export class SSHSession extends BaseSession {
            })
     }
     passConnect(marker?:number, password?: string) {
-        this.startWatchdog()
         const args: StartByPasswd = {
             address: this.address,
             port: this.port,
@@ -88,7 +86,7 @@ export class SSHSession extends BaseSession {
            })
     }
 
-    openChannel(cmd: string, parent?: ChannelID, sx?: number, sy?: number):
+    openChannel(cmd: unknown, parent?: ChannelID, sx?: number, sy?: number):
          Promise<Channel> {
         return new Promise((resolve, reject) => {
             const channel = new SSHChannel()
@@ -151,7 +149,6 @@ export class HybridSession extends SSHSession {
      * whether to use password or identity key based authentication 
      */
     async connect(marker?:number, publicKey: string, privateKey:string) {
-        this.startWatchdog()
         const args: StartByKey = {
             address: this.address,
             port: this.port,
@@ -173,7 +170,6 @@ export class HybridSession extends SSHSession {
            })
     }
     passConnect(marker?:number, password?: string) {
-        this.startWatchdog()
         const args: StartByPasswd = {
             address: this.address,
             port: this.port,
@@ -291,7 +287,7 @@ export class HybridSession extends SSHSession {
             this.webrtcSession.connect(marker)
         })
     } 
-    async openChannel(cmd: string, parent?: ChannelID, sx?: number, sy?: number) {
+    async openChannel(cmd: unknown, parent?: ChannelID, sx?: number, sy?: number) {
 
         if (!this.webrtcSession) {
             return super.openChannel(cmd, parent, sx, sy)

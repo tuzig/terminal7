@@ -6,6 +6,7 @@ import { Terminal7, DEFAULT_DOTFILE } from "./terminal7"
 import { Fields } from "./form"
 import fortuneURL from "../resources/fortune.txt"
 import { Gate } from './gate'
+import { Capacitor } from '@capacitor/core'
 
 declare const terminal7 : Terminal7
 
@@ -161,8 +162,25 @@ async function connectCMD(shell:Shell, args: string[]) {
     const gate: Gate = shell.getGate(hostname)
     if (!gate)
         return shell.t.writeln(`Host not found: ${hostname}`)
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(async (resolve) => {
+        gate.onFailure = reason => {
+            terminal7.log(`Connect command got failure ${reason}`) 
+            gate.close()
+            terminal7.storeGates()
+            resolve()
+        }
+        if (Capacitor.isNativePlatform())  {
+            if (!gate.username) {
+                try {
+                    gate.username = await shell.askValue("Username")
+                } catch (e) {
+                    gate.notify("Failed to get username")
+                }
+            }
+        }
+        shell.startWatchdog().catch(e => gate.handleFailure(e))
         gate.connect(async () => {
+            shell.stopWatchdog()
             if (gate.firstConnection) {
                 const fields: Fields = [{
                     prompt: "Gate's name",
@@ -230,11 +248,6 @@ async function connectCMD(shell:Shell, args: string[]) {
             })
             resolve()
         })
-        gate.onFailure = reason => {
-            terminal7.log(`Connect command got failure ${reason}`) 
-            terminal7.storeGates()
-            resolve()
-        }
     })
 }
 
