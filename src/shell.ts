@@ -4,6 +4,7 @@ import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
 import { Gate } from "./gate"
 import { T7Map } from './map'
+import { Failure } from "./session"
 
 export class Shell {
 
@@ -15,6 +16,7 @@ export class Shell {
     activeForm: Form | null
     commands: Map<string, Command>
     currentLine = ''
+    watchdog: number
     timer: number | null = null
 
     constructor(map: T7Map) {
@@ -206,6 +208,22 @@ export class Shell {
             e.classList.add("hidden")
     }
 
+    startWatchdog() {
+        const timeout = terminal7.conf.net.timeout
+        return new Promise((_, reject) => {
+            this.startHourglass(timeout)
+            this.watchdog = window.setTimeout(() => {
+                console.log("WATCHDOG stops the gate connecting")
+                reject(Failure.TimedOut)
+            }, timeout)
+        })
+    }
+
+    stopWatchdog() {
+        clearTimeout(this.watchdog)
+        this.stopHourglass()
+    }
+
     startHourglass(timeout: number) {
         if (this.timer) return
         const len = 20,
@@ -263,19 +281,10 @@ export class Shell {
             { prompt: "Close" }
         ]
 
-        let res
-        try {
-            res = await this.runForm(reconnectForm, "menu")
-        } catch(e) {
-            // try to connect
-            res = null
-        }
+        let res = await this.runForm(reconnectForm, "menu")
         // TODO: needs refactoring
-        if (res == "Close") {
-            this.map.showLog(false)
-            gate.close()
-            return
-        }
+        if (res == "Close")
+            throw new Error("Aborted")
         if (gate.session) {
             gate.session.close()
             gate.session = null
