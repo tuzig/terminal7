@@ -20,6 +20,7 @@ dependencies {
     implementation project(':capacitor-status-bar')
     implementation project(':robingenz-capacitor-background-task')
     implementation project(':capacitor-native-biometric')
+    implementation project(':capacitor-rate-app')
     implementation project(':capacitor-ssh-plugin')
 
 }

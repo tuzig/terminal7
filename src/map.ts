@@ -43,11 +43,6 @@ export class T7Map {
             this.t0.loadAddon(this.fitAddon)
             this.t0.loadAddon(new XtermWebfont())
             // this.t0.attachCustomKeyEventHandler(ev => {
-            this.t0.onKey(iev => {
-                this.interruptTTY()
-                const ev = iev.domEvent
-                this.shell.keyHandler(ev)
-            })
             this.t0.loadWebfontAndOpen(e).then(() => {
                 const webGLAddon = new WebglAddon()
                 webGLAddon.onContextLoss(() => {
@@ -59,6 +54,11 @@ export class T7Map {
                 } catch (e) { console.log("no webgl: " +e.toString()) }
                 this.shell.start()
                 resolve()
+            })
+            e.addEventListener("input", ev => {
+                console.log(ev)
+                this.interruptTTY()
+                this.shell.keyHandler(ev)
             })
             this.refresh()
             // handle the tower

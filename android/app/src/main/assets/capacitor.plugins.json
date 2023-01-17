@@ -44,6 +44,10 @@
 		"classpath": "com.epicshaggy.biometric.NativeBiometric"
 	},
 	{
+		"pkg": "capacitor-rate-app",
+		"classpath": "com.capacitor.rateApp.CapacitorRateAppPlugin"
+	},
+	{
 		"pkg": "capacitor-ssh-plugin",
 		"classpath": "dev.terminal7.plugins.ssh.SSHPlugin"
 	}
