@@ -31,7 +31,7 @@ export class Gate {
     marker: number
     name: string
     secret: string
-    session: Session
+    session: Session | null
     user: string
     username: string
     nameE: Element
@@ -329,18 +329,11 @@ export class Gate {
         this.onConnected = onConnected
         this.t7.activeG = this
         document.title = `Terminal 7: ${this.name}`
-        // if we're already boarding, just focus
-        if (this.session && this.session.watchdog)
-            return this.completeConnect()
         
         if (this.session) {
             // TODO: check session's status
             // hide the tower if needed
-            const log = document.getElementById("log")
-            if (!log.classList.contains("show"))
-                log.classList.add("hidden")
-            log.classList.add("hidden")
-            this.focus()
+            onConnected()
             return
         }
         this.updateNameE()
@@ -503,6 +496,7 @@ export class Gate {
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
                         this.t7.log("Closing gate after updating to empty state")
+                        setTimeout(() => this.t7.goHome(), 100)
                         this.close()
                     }
                })
@@ -580,8 +574,9 @@ export class Gate {
         this.keyRejected = false
         if (this.fp) {
             this.notify("🎌  PeerBook")
-            this.session = new PeerbookSession(this.fp)
-        } else {
+            this.session = new PeerbookSession(this.fp, this.t7.pb)
+        }
+        else {
             if (Capacitor.isNativePlatform())  {
                 this.session = (this.onlySSH)?new SSHSession(this.addr, this.username):
                    new HybridSession(this.addr, this.username)
@@ -645,12 +640,6 @@ export class Gate {
         })
     }
     close() {
-        this.e.classList.add("hidden")
-        setTimeout(() => {
-            this.clear()
-            if (this == terminal7.activeG)
-                this.t7.goHome()
-        }, 10)
         this.stopBoarding()
         if (this.session) {
             this.session.close()

@@ -104,7 +104,7 @@ export abstract class BaseSession implements Session {
             this.onStateChange("failed", failure)
     }
     clearWatchdog() {
-       this.t7.map.shell.stopWatchdog()
+       // this.t7.map.shell.stopWatchdog()
     }
     close() {
         this.clearWatchdog()
