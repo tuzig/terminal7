@@ -860,7 +860,6 @@ export class Terminal7 {
                     if (isExpand) {
                         this.map.shell.runCommand("edit", [gate.name])
                     } else if (!gate.fp || gate.verified && gate.online) {
-                        this.activeG = gate
                         await this.map.shell.runCommand("connect", [gate.name])
                     }
                 }
