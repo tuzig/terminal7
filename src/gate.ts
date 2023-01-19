@@ -577,9 +577,8 @@ export class Gate {
         this.keyRejected = false
         if (this.fp) {
             this.notify("🎌  PeerBook")
-            this.session = new PeerbookSession(this.fp, this.t7.pb)
-        }
-        else {
+            this.session = new PeerbookSession(this.fp)
+        } else {
             if (Capacitor.isNativePlatform())  {
                 if (!this.username) {
                     try {
