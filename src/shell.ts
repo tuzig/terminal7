@@ -119,6 +119,7 @@ export class Shell {
 
     async runForm(fields: Fields, type: "menu" | "choice" | "text", title="") {
         await this.escapeActiveForm()
+        this.stopWatchdog()
         this.map.showLog(true)
         this.t.write("\r\x1B[K")
         this.t.scrollToBottom()
@@ -164,6 +165,8 @@ export class Shell {
         this.stopWatchdog()
         if (terminal7.activeG)
             terminal7.activeG.onFailure("Overrun")
+        await new Promise(r => setTimeout(r, 100))
+        this.printPrompt()
     }
     
     async keyHandler(ev: KeyboardEvent) {
@@ -218,6 +221,9 @@ export class Shell {
             e.classList.add("hidden")
     }
 
+    /* 
+     * Starts a watchdog that will reject if not stopped within the given time
+    */
     startWatchdog() {
         const timeout = terminal7.conf.net.timeout
         return new Promise((_, reject) => {
@@ -226,14 +232,12 @@ export class Shell {
                 console.log("WATCHDOG stops the gate connecting")
                 reject(Failure.TimedOut)
             }, timeout)
-            console.log(`watchdog #${this.watchdog} started`)
         })
     }
 
     stopWatchdog() {
         if (!this.watchdog) return
         clearTimeout(this.watchdog)
-        console.log(`watchdog #${this.watchdog} stopped`)
         this.watchdog = 0
         this.stopHourglass()
     }
@@ -247,7 +251,6 @@ export class Shell {
             this.t.write(`\r\x1B[KTWR ${" ".repeat(i)}ᗧ${"·".repeat(len-i-1)}🍒\x1B[?25l`)
             i++
         }, interval)
-        setTimeout(() => this.stopHourglass(), timeout)
     }
 
     stopHourglass() {
@@ -299,10 +302,15 @@ export class Shell {
             gate.session.close()
             gate.session = null
         }
-        let res = await this.runForm(reconnectForm, "menu")
+        let res
+        try {
+            res = await this.runForm(reconnectForm, "menu")
+        } catch (err) {
+            gate.onFailure(Failure.Aborted)
+        }
         // TODO: needs refactoring
         if (res == "Close")
-            throw new Error("Aborted")
+            gate.onFailure(Failure.Aborted)
         if (res == "Reconnect")
             this.runCommand("connect", [gate.name])
     }

@@ -292,11 +292,8 @@ export class Gate {
                     await this.map.shell.runCommand("connect", [this.name])
 				})
             })()
-        } else try {
+        } else
             await this.map.shell.onDisconnect(this, couldBeBug)
-        } catch (e) {
-            this.onFailure(Failure.Aborted)
-        }
     }
     reconnect(): Promise<void> {
         if (!this.session)
@@ -496,7 +493,6 @@ export class Gate {
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
                         this.t7.log("Closing gate after updating to empty state")
-                        setTimeout(() => this.t7.goHome(), 100)
                         this.close()
                     }
                })
@@ -644,6 +640,9 @@ export class Gate {
         if (this.session) {
             this.session.close()
             this.session = null
+        }
+        if (this.activeW) {
+            this.t7.goHome()
         }
     }
 	

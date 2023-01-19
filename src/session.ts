@@ -103,13 +103,7 @@ export abstract class BaseSession implements Session {
         if (this.onStateChange)
             this.onStateChange("failed", failure)
     }
-    clearWatchdog() {
-       // this.t7.map.shell.stopWatchdog()
-    }
-    close() {
-        this.clearWatchdog()
-        // this.onStateChange = undefined
-    }
+    abstract close(): void
     // for reconnect
     abstract openChannel(id: ChannelID): Promise<Channel>
     abstract openChannel(cmd: string | ChannelID, parent?: ChannelID, sx?: number, sy?: number):

@@ -104,7 +104,6 @@ export class WebRTCSession extends BaseSession {
             iceServers: this.t7.iceServers,
             certificates: this.t7.certificates})
         this.pc.onconnectionstatechange = () => {
-            this.clearWatchdog()
             const state = this.pc.connectionState
             console.log("new connection state", state, marker)
             if ((state == "connected") && (marker != null)) {
@@ -113,11 +112,9 @@ export class WebRTCSession extends BaseSession {
                     args: { marker }},
                 () => {
                     this.onStateChange("connected")
-                    this.clearWatchdog()
                 },
                 () => {
                     this.onStateChange("failed", Failure.BadMarker)
-                    this.clearWatchdog()
                 })
             } else  {
                 if (state == 'failed')
@@ -126,7 +123,6 @@ export class WebRTCSession extends BaseSession {
             }
         }
         this.pc.onicecandidateerror = (ev: RTCPeerConnectionIceErrorEvent) => {
-            this.clearWatchdog()
             console.log("icecandidate error", ev.errorCode)
             if (ev.errorCode == 401) {
                 this.t7.notify("Getting fresh ICE servers")
@@ -228,18 +224,15 @@ export class WebRTCSession extends BaseSession {
                 }, 500)
                 this.sendCTRLMsg({ type: "restore", args: { marker }}, payload => {
                     clearTimeout(watchdog)
-                    this.clearWatchdog()
                     if (!timedout)
                         resolve(payload)
                 }, () => {
                     clearTimeout(watchdog)
-                    this.clearWatchdog()
                     if (!timedout)
                         reject()
                 })
             } else
                 this.getPayload().then(payload => {
-                   this.clearWatchdog()
                    if (!timedout)
                        resolve(payload)
                 }).catch(reject)
@@ -256,7 +249,6 @@ export class WebRTCSession extends BaseSession {
             this.cdc = cdc
             cdc.onopen = () => {
                 this.t7.log(">>> cdc opened")
-                this.clearWatchdog()
                 if (this.pendingCDCMsgs.length > 0)
                     // TODO: why the time out? why 100mili?
                     this.t7.run(() => {
@@ -356,7 +348,6 @@ export class WebRTCSession extends BaseSession {
         })
     }
     close(): void {
-        super.close()
         this.closeChannels()
         if (this.pc != null) {
             this.pc.onconnectionstatechange = undefined
@@ -423,7 +414,6 @@ export class PeerbookSession extends WebRTCSession {
     }
     peerAnswer(offer) {
         const sd = new RTCSessionDescription(offer)
-        this.clearWatchdog()
         this.pc.setRemoteDescription(sd)
             .catch (e => {
                 this.t7.notify(`Failed to set remote description: ${e}`)
@@ -488,7 +478,6 @@ export class HTTPWebRTCSession extends WebRTCSession {
                             this.fail(Failure.BadRemoteDescription)
                     })
                 }).catch(error => {
-                    this.clearWatchdog()
                     console.log("POST to /connect failed", error)
                     if (error.message == 'unauthorized')
                         this.fail(Failure.Unauthorized)
