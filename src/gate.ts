@@ -574,9 +574,8 @@ export class Gate {
         this.keyRejected = false
         if (this.fp) {
             this.notify("🎌  PeerBook")
-            this.session = new PeerbookSession(this.fp, this.t7.pb)
-        }
-        else {
+            this.session = new PeerbookSession(this.fp)
+        } else {
             if (Capacitor.isNativePlatform())  {
                 this.session = (this.onlySSH)?new SSHSession(this.addr, this.username):
                    new HybridSession(this.addr, this.username)

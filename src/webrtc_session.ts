@@ -375,10 +375,9 @@ export class WebRTCSession extends BaseSession {
 export class PeerbookSession extends WebRTCSession {
     fp: string
     pb: PeerbookConnection | null
-    constructor(fp: string, pb: PeerbookConnection | null) {
+    constructor(fp: string) {
         super()
         this.fp = fp
-        this.pb = pb
     }
     getIceServers() {
         return new Promise((resolve, reject) => {
@@ -408,8 +407,8 @@ export class PeerbookSession extends WebRTCSession {
         })
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
-        if (ev.candidate && this.pb) {
-            this.pb.send({target: this.fp, candidate: ev.candidate})
+        if (ev.candidate && this.t7.pb) {
+            this.t7.pb.send({target: this.fp, candidate: ev.candidate})
         }
     }
     onNegotiationNeeded(e) {
@@ -418,7 +417,8 @@ export class PeerbookSession extends WebRTCSession {
             const offer = btoa(JSON.stringify(d))
             this.pc.setLocalDescription(d)
             this.t7.log("got offer", offer)
-            this.pb.send({target: this.fp, offer: offer})
+            // this.pb is null after a disconnect
+            this.t7.pb.send({target: this.fp, offer: offer})
         })
     }
     peerAnswer(offer) {
