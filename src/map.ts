@@ -65,20 +65,23 @@ export class T7Map {
             const log = document.getElementById("log")
             if (!log)
                 return
+            /*
             const resizeObserver = new window.ResizeObserver(() => {
                 setTimeout(() => this.fitAddon.fit(), 750)
             })
             resizeObserver.observe(log)
+            */
             log.addEventListener("transitionend", () => {
                 // fitAddon.fit()
-                if (log.classList.contains("show"))
+                if (log.classList.contains("show")) {
                     this.t0.focus()
-                else {
+                    this.fitAddon.fit()
+                } else {
                     this.t0.blur()
                     // if we're not on the map, we're at the gate, hide the minimized version
                     if (window.location.hash != "#map") {
                         log.classList.add("hidden")
-                        window.terminal7.focus()
+                        terminal7.focus()
                     }
                 }
             })
@@ -174,8 +177,6 @@ export class T7Map {
             e.classList.remove("hidden")
             e.classList.add("show")
             document.getElementById("log-button").classList.add("on")
-            setTimeout(() => this.fitAddon.fit(), 800)
-            setTimeout(() => e.scrollIntoView(), 800)
         } else {
             e.classList.remove("show")
             document.getElementById("log-button").classList.remove("on")
