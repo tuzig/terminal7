@@ -189,6 +189,7 @@ export class Gate {
         // this.map.showLog(true)
         terminal7.log("handling failure", failure, terminal7.recovering)
         this.boarding = false
+        this.map.shell.stopWatchdog()
         let password: string
         let couldBeBug = false
         switch ( failure ) {
@@ -252,48 +253,7 @@ export class Gate {
                 return
 
         }
-        if (this.firstConnection) {
-            (async () => {
-                this.map.t0.writeln("Failed to connect")
-                let ans:string
-                const verifyForm = [{
-                    prompt: `Does the address \x1B[1;37m${this.addr}\x1B[0m seem correct?`,
-                    values: ["y", "n"],
-                    default: "y"
-                }]
-                try {
-                    ans = (await this.map.shell.runForm(verifyForm, "text"))[0]
-                } catch(e) {
-                    return this.onFailure(Failure.WrongAddress)
-                }
-
-                if (ans == "n") {
-                    this.delete()
-                    setTimeout(() => this.map.shell.handleLine("add"), 100)
-                    return this.onFailure(Failure.WrongAddress)
-                }
-                /* TODO: separate the native from the in-browser:
-                const webexecForm = [{
-                    prompt: `Make sure webexec is running on ${this.addr}:
-                        \n\x1B[1m${rc}\x1B[0m\n\nCopy to clipboard?`,
-					values: ["y", "n"],
-                    default: "y"
-                }]
-                try {
-                    ans = (await this.map.shell.runForm(webexecForm, "text"))[0]
-                } catch(e) {
-                    return this.onFailure(Failure.WrongAddress)
-                }
-                if (ans == "y")
-                    Clipboard.write({ string: rc })
-                */
-				this.retryForm(async () => {
-                    this.map.t0.writeln("Retrying...")
-                    await this.map.shell.runCommand("connect", [this.name])
-				})
-            })()
-        } else
-            await this.map.shell.onDisconnect(this, couldBeBug)
+        await this.map.shell.onDisconnect(this, couldBeBug)
     }
     reconnect(): Promise<void> {
         if (!this.session)
@@ -601,22 +561,6 @@ export class Gate {
         })
         document.getElementById("map").classList.add("hidden")
     }
-	async retryForm(retry: () => void, cancel?: () => void) {
-        this.map.showLog(true)
-		const retryForm = [{
-			prompt: "Retry connection?",
-			values: ["y", "n"],
-			default: "y"
-		}]
-		this.map.shell.runForm(retryForm, "text").then(results => {
-            if (results[0] == "y")
-                retry()
-            else {
-                this.map.showLog(false)
-                cancel?.()
-            }
-        }).catch(() => cancel?.())
-	}
     onFormError(err) {
         this.t7.log("Form error:", err.message)
         this.t7.clearTempGates()
