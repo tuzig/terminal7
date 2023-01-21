@@ -175,12 +175,8 @@ export class Shell {
         this.updateCapsLock(ev)
         this.printPrompt()
         if (key == 'Escape') {
-            if (form)
-                await this.escapeActiveForm()
-            else if (this.watchdog)
-                await this.escapeWatchdog()
-            else
-                this.map.showLog(false)
+            await this.escapeActiveForm()
+            await this.escapeWatchdog()
         } else if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
             Clipboard.read().then(res => {
                 if (res.type == 'text/plain') {
@@ -284,6 +280,43 @@ export class Shell {
             ((terminal7.activeG != null) && (gate != terminal7.activeG)))
             return
 
+        if (gate.firstConnection) {
+            const cmd = "bash <(curl -sL https://get.webexec.sh)"
+            this.t.writeln("Failed to connect")
+            let ans: string
+            const verifyForm = [{
+                prompt: `Does the address \x1B[1;37m${gate.addr}\x1B[0m seem correct?`,
+                    values: ["y", "n"],
+                    default: "y"
+            }]
+            try {
+                ans = (await this.runForm(verifyForm, "text"))[0]
+            } catch(e) {
+                return gate.onFailure(Failure.WrongAddress)
+            }
+
+            if (ans == "n") {
+                gate.delete()
+                setTimeout(() => this.handleLine("add"), 100)
+                return gate.onFailure(Failure.WrongAddress)
+            }
+            if (!gate.session.isSSH) {
+                const webexecForm = [{
+                    prompt: `Make sure webexec is running on ${gate.addr}:
+                        \n\x1B[1m${cmd}\x1B[0m\n\nCopy to clipboard?`,
+                            values: ["y", "n"],
+                            default: "y"
+                }]
+                try {
+                    ans = (await this.runForm(webexecForm, "text"))[0]
+                } catch(e) {
+                    return gate.onFailure(Failure.WrongAddress)
+                }
+                if (ans == "y")
+                    Clipboard.write({ string: cmd })
+            }
+        }
+
         /* TODO: kill it or improve it?
         if (couldBeBug) {
             this.t.writeln("")
@@ -314,6 +347,7 @@ export class Shell {
         if (res == "Reconnect")
             this.runCommand("connect", [gate.name])
     }
+    
     async askPass(): Promise<string> {
         const res = await this.map.shell.runForm(
             [{ prompt: "Password", password: true }], "text")
