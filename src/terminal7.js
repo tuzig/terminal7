@@ -561,12 +561,17 @@ export class Terminal7 {
                 const gate = this.activeG
                 if (gate) {
                     this.notify("🌞 Recovering")
+                    this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
                     this.recovering = true
                     this.run(() => this.recovering = false, this.conf.net.recoveryTime)
                     gate.reconnect()
-                        .then(() => this.map.showLog(false))
-                        .catch(() =>
-                            this.map.shell.runCommand("reset", [gate.name]))
+                        .then(() => {
+                            this.map.shell.stopWatchdog()
+                            this.map.showLog(false)
+                        }).catch(() => {
+                            this.map.shell.stopWatchdog()
+                            this.map.shell.runCommand("reset", [gate.name])
+                        })
                 }
             })
         } else {
