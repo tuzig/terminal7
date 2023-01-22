@@ -229,9 +229,12 @@ export class Shell {
         let ret = terminal7.gates.get(name)
         if (!ret) {
             for (const entry of terminal7.gates) {
-                if (entry[1].name == name) {
+                if (entry[0].startsWith(name) || entry[1].name.startsWith(name)) {
+                    if (ret) {
+                        this.t.writeln(`Ambiguous gate: ${name}`)
+                        throw new Error("Ambiguous gate")
+                    }
                     ret = entry[1]
-                    break
                 }
             }
         }
