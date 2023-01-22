@@ -577,9 +577,8 @@ export class Gate {
         this.keyRejected = false
         if (this.fp) {
             this.notify("🎌  PeerBook")
-            this.session = new PeerbookSession(this.fp, this.t7.pb)
-        }
-        else {
+            this.session = new PeerbookSession(this.fp)
+        } else {
             if (Capacitor.isNativePlatform())  {
                 if (!this.username) {
                     try {
@@ -650,15 +649,17 @@ export class Gate {
         })
     }
     close() {
-        this.clear()
+        this.e.classList.add("hidden")
+        setTimeout(() => {
+            this.clear()
+            if (this == terminal7.activeG)
+                this.t7.goHome()
+        }, 10)
         this.stopBoarding()
         if (this.session) {
             this.session.close()
             this.session = null
         }
-        // TODO: this doesn't belong here
-        // we need the timeout as cell.focus is changing the href when dcs are closing
-        setTimeout(() => this.t7.goHome(), 100)
     }
 	
 }
