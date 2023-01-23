@@ -226,6 +226,7 @@ export class Shell {
             this.startHourglass(timeout)
             this.watchdog = window.setTimeout(() => {
                 console.log("WATCHDOG stops the gate connecting")
+                this.stopWatchdog()
                 reject(Failure.TimedOut)
             }, timeout)
         })
@@ -244,6 +245,7 @@ export class Shell {
             interval = timeout / len
         let i = 0
         this.timer = window.setInterval(() => {
+            if (i == len) i = 0 // we should never get here but just in case
             this.t.write(`\r\x1B[KTWR ${" ".repeat(i)}ᗧ${"·".repeat(len-i-1)}🍒\x1B[?25l`)
             i++
         }, interval)
