@@ -53,13 +53,14 @@ export class T7Map {
                     this.t0.loadAddon(webGLAddon)
                 } catch (e) { console.log("no webgl: " +e.toString()) }
                 this.shell.start()
-                resolve()
-            })
-            e.addEventListener("input", ev => {
+            this.t0.textarea.addEventListener("textInput", ev => {
                 console.log(ev)
                 this.interruptTTY()
                 this.shell.keyHandler(ev)
             })
+                resolve()
+            })
+
             this.refresh()
             // handle the tower
             const log = document.getElementById("log")
