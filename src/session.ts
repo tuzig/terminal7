@@ -78,9 +78,11 @@ export abstract class BaseSession implements Session {
     watchdog: number
     onStateChange : (state: State, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
-    isSSH: boolean
     constructor() {
         this.t7 = window.terminal7
+    }
+    get isSSH(): boolean {
+        throw new Error("Not implemented")
     }
     async getPayload(): Promise<string | null> {
         return null
