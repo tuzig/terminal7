@@ -992,7 +992,13 @@ export class Terminal7 {
 		e.innerHTML = marked.parse(changelog)
 		// add prefix to all ids to avoid conflicts
         e.querySelectorAll("[id]").forEach(e => e.id = "changelog-" + e.id)
-		e.querySelectorAll("a").forEach(a => a.target = "_blank")
+        document.querySelectorAll("a[href]").forEach(e => {
+            e.addEventListener("click", ev => {
+                ev.stopPropagation()
+                ev.preventDefault()
+                window.open(e.href, '_blank')
+            })
+        })
 	}
     // if show is undefined the change log view state is toggled
 	showChangelog(show) {
