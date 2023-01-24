@@ -245,8 +245,8 @@ export class Shell {
             interval = timeout / len
         let i = 0
         this.timer = window.setInterval(() => {
-            if (i == len) i = 0 // we should never get here but just in case
-            this.t.write(`\r\x1B[KTWR ${" ".repeat(i)}ᗧ${"·".repeat(len-i-1)}🍒\x1B[?25l`)
+            const dots = Math.max(0, len - i) // i should never be > len, but just in case
+            this.t.write(`\r\x1B[KTWR ${" ".repeat(i)}ᗧ${"·".repeat(dots)}🍒\x1B[?25l`)
             i++
         }, interval)
     }
