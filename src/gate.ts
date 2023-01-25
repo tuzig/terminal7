@@ -580,13 +580,17 @@ export class Gate {
         })
     }
     close() {
+        this.e.classList.add("hidden")
+        setTimeout(() => {
+            this.clear()
+            //TODO: find a bette way to test if open or not
+            if (this.activeW && (this == terminal7.activeG))
+                this.t7.goHome()
+        }, 10)
         this.stopBoarding()
         if (this.session) {
             this.session.close()
             this.session = null
-        }
-        if (this.activeW) {
-            this.t7.goHome()
         }
     }
 	
