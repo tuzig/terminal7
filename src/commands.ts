@@ -162,6 +162,7 @@ async function connectCMD(shell:Shell, args: string[]) {
     const gate: Gate = shell.getGate(hostname)
     if (!gate)
         return shell.t.writeln(`Host not found: ${hostname}`)
+    // eslint-disable-next-line
     await new Promise<void>(async (resolve) => {
         gate.onFailure = reason => {
             terminal7.log(`Connect command got failure ${reason}`) 
