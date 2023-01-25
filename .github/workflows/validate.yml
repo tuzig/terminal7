@@ -1,4 +1,4 @@
-name: Terminal7-Tests
+name: Validate
 
 on: push
 
@@ -14,14 +14,17 @@ jobs:
       - run: yarn install --frozen-lockfile
   lint:
     needs: setup
-    - run: yarn lint
+    steps:
+      - run: yarn lint
   unit-test:
     needs: setup
-    - run: yarn test
+    steps:
+      - run: yarn test
   atp:
     needs: setup
-    - run: bash -x aatp/run
-    - name: Upload Test Results
+    steps:
+      - run: bash -x aatp/run
+      - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v3
         with:
