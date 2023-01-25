@@ -459,8 +459,11 @@ export class Pane extends Cell {
             f = () => this.t7.dumpLog()
             break
         default:
-            if (ev.key >= "1" && ev.key <= "9")
-                this.gate.windows[ev.key - 1].focus()
+            if (ev.key >= "1" && ev.key <= "9") {
+                const win = this.gate.windows[ev.key - 1]
+                if (win)
+                    win.focus()
+            }
             break
         }
 

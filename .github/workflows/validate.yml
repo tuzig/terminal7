@@ -3,28 +3,26 @@ name: Validate
 on: push
 
 jobs:
-  setup:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Node setup
+        uses: actions/setup-node@v2
         with:
           node-version: 16
-      - run: npm install --global yarn
-      - run: yarn install --frozen-lockfile
-  lint:
-    needs: setup
-    steps:
-      - run: yarn lint
-  unit-test:
-    needs: setup
-    steps:
-      - run: yarn test
-  atp:
-    needs: setup
-    steps:
-      - run: bash -x aatp/run
-      - name: Upload Test Results
+      - name: Install yarn
+        run: npm install --global yarn
+      - name: Install dependecies
+        run: yarn install --frozen-lockfile
+      - name: lint
+        run: yarn lint
+      - name: Unit tests
+        run: yarn test
+      - name: Acceptance tests
+        run: bash -x aatp/run
+      - name: Upload acceptance test results
         if: always()
         uses: actions/upload-artifact@v3
         with:
