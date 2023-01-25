@@ -919,6 +919,11 @@
     "@capacitor/filesystem" "^1.0.0"
     "@capacitor/ios" "^3.0.0"
 
+"@capacitor-community/native-audio@^3.0.4":
+  version "3.0.4"
+  resolved "https://registry.yarnpkg.com/@capacitor-community/native-audio/-/native-audio-3.0.4.tgz#53ee52b145abe6f4a40fa5b74532c6a32cb8ba75"
+  integrity sha512-WvVbcNKJpTvGwiJw9A1bmsZv/fi94pZ4Z1pYB+k65VfpAXjlBuFMexZprSwbVgb9WoHtYoY3T/Nj4BIH2QMgDg==
+
 "@capacitor/android@^3.0.0":
   version "3.9.0"
   resolved "https://registry.yarnpkg.com/@capacitor/android/-/android-3.9.0.tgz#73032c49e0d6cdb4bdd1c01565e28f3913f25fee"

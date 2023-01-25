@@ -12,7 +12,7 @@ import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { WebglAddon } from 'xterm-addon-webgl'
 import { WebLinksAddon } from 'xterm-addon-web-links'
-import bell from './bell.js'
+import { NativeAudio } from '@capacitor-community/native-audio'
 
 
 import { Failure } from './session'
@@ -81,6 +81,8 @@ export class Pane extends Cell {
             window.open(url, "_blank", "noopener")
         })
 
+        NativeAudio.preload({ assetId: "bell", assetPath: "../public/bell.mp3", isUrl: "false" })
+
         // there's a container div we need to get xtermjs to fit properly
         this.e.appendChild(con)
         con.style.height = "100%"
@@ -143,7 +145,7 @@ export class Pane extends Cell {
                 } else
                     this.d.send(d)
             })
-            this.t.onBell(() => bell.play())
+            this.t.onBell(() => NativeAudio.play({ assetId: "bell" }))
             this.resizeObserver.observe(this.e);
             this.fit(pane => { 
                if (pane != null)
