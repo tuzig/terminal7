@@ -261,13 +261,16 @@ export class Shell {
     getGate(name: string) {
         let ret = terminal7.gates.get(name)
         if (!ret) {
-            for (const entry of terminal7.gates) {
-                if (entry[0].startsWith(name) || entry[1].name.startsWith(name)) {
+            // eslint-disable-next-line
+            for (const [_, maybe] of terminal7.gates) {
+                if (maybe.name == name)
+                    return maybe
+                if (maybe.name.startsWith(name)) {
                     if (ret) {
                         this.t.writeln(`Ambiguous gate: ${name}`)
                         throw new Error("Ambiguous gate")
                     }
-                    ret = entry[1]
+                    ret = maybe
                 }
             }
         }
