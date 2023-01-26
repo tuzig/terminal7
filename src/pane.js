@@ -81,7 +81,7 @@ export class Pane extends Cell {
             window.open(url, "_blank", "noopener")
         })
 
-        NativeAudio.preload({ assetId: "bell", assetPath: "../public/bell.mp3", isUrl: "false" })
+        NativeAudio.preload({ assetId: "bell", assetPath: "/media/bell.mp3", isUrl: "false" })
 
         // there's a container div we need to get xtermjs to fit properly
         this.e.appendChild(con)
