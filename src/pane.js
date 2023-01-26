@@ -418,7 +418,7 @@ export class Pane extends Cell {
         case "-":
             f = () => this.scale(-1)
             break
-        case "5":
+        case "\\":
             f = () => this.split("topbottom")
             break
         case "'":
@@ -454,8 +454,15 @@ export class Pane extends Cell {
         case "ArrowDown":
             f = () => this.w.moveFocus("down")
             break
-        case "9":
+        case "p":
             f = () => this.t7.dumpLog()
+            break
+        default:
+            if (ev.key >= "1" && ev.key <= "9") {
+                const win = this.gate.windows[ev.key - 1]
+                if (win)
+                    win.focus()
+            }
             break
         }
 
