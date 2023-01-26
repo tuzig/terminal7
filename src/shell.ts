@@ -4,6 +4,7 @@ import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
 import { Gate } from "./gate"
 import { T7Map } from './map'
+import { Failure } from "./session"
 
 export class Shell {
 
@@ -15,6 +16,7 @@ export class Shell {
     activeForm: Form | null
     commands: Map<string, Command>
     currentLine = ''
+    watchdog: number
     timer: number | null = null
 
     constructor(map: T7Map) {
@@ -107,6 +109,7 @@ export class Shell {
     async runCommand(cmd: string, args: string[]) {
         this.map.showLog(true)
         await this.escapeActiveForm()
+        await this.escapeWatchdog()
         this.map.interruptTTY()
         this.currentLine = [cmd, ...args].join(' ')
         this.printPrompt()
@@ -116,6 +119,7 @@ export class Shell {
 
     async runForm(fields: Fields, type: "menu" | "choice" | "text", title="") {
         await this.escapeActiveForm()
+        this.stopWatchdog()
         this.map.showLog(true)
         this.t.write("\r\x1B[K")
         this.t.scrollToBottom()
@@ -155,6 +159,15 @@ export class Shell {
         await new Promise(r => setTimeout(r, 100))
         this.printPrompt()
     }
+
+    async escapeWatchdog() {
+        if (!this.watchdog) return
+        this.stopWatchdog()
+        if (terminal7.activeG)
+            terminal7.activeG.onFailure("Overrun")
+        await new Promise(r => setTimeout(r, 100))
+        this.printPrompt()
+    }
     
     async keyHandler(ev: KeyboardEvent) {
         const form = this.activeForm,
@@ -162,10 +175,8 @@ export class Shell {
         this.updateCapsLock(ev)
         this.printPrompt()
         if (key == 'Escape') {
-            if (form)
-                await this.escapeActiveForm()
-            else
-                this.map.showLog(false)
+            await this.escapeActiveForm()
+            await this.escapeWatchdog()
         } else if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
             Clipboard.read().then(res => {
                 if (res.type == 'text/plain') {
@@ -206,16 +217,38 @@ export class Shell {
             e.classList.add("hidden")
     }
 
+    /* 
+     * Starts a watchdog that will reject if not stopped within the given time
+    */
+    startWatchdog() {
+        const timeout = terminal7.conf.net.timeout
+        return new Promise((_, reject) => {
+            this.startHourglass(timeout)
+            this.watchdog = window.setTimeout(() => {
+                console.log("WATCHDOG stops the gate connecting")
+                this.stopWatchdog()
+                reject(Failure.TimedOut)
+            }, timeout)
+        })
+    }
+
+    stopWatchdog() {
+        if (!this.watchdog) return
+        clearTimeout(this.watchdog)
+        this.watchdog = 0
+        this.stopHourglass()
+    }
+
     startHourglass(timeout: number) {
         if (this.timer) return
         const len = 20,
             interval = timeout / len
         let i = 0
         this.timer = window.setInterval(() => {
-            this.t.write(`\r\x1B[KTWR ${" ".repeat(i)}ᗧ${"·".repeat(len-i-1)}🍒\x1B[?25l`)
+            const dots = Math.max(0, len - i) // i should never be > len, but just in case
+            this.t.write(`\r\x1B[KTWR ${" ".repeat(i)}ᗧ${"·".repeat(dots)}🍒\x1B[?25l`)
             i++
         }, interval)
-        setTimeout(() => this.stopHourglass(), timeout)
     }
 
     stopHourglass() {
@@ -229,9 +262,12 @@ export class Shell {
         let ret = terminal7.gates.get(name)
         if (!ret) {
             for (const entry of terminal7.gates) {
-                if (entry[1].name == name) {
+                if (entry[0].startsWith(name) || entry[1].name.startsWith(name)) {
+                    if (ret) {
+                        this.t.writeln(`Ambiguous gate: ${name}`)
+                        throw new Error("Ambiguous gate")
+                    }
                     ret = entry[1]
-                    break
                 }
             }
         }
@@ -245,6 +281,43 @@ export class Shell {
         if (!terminal7.netStatus.connected || terminal7.recovering ||
             ((terminal7.activeG != null) && (gate != terminal7.activeG)))
             return
+
+        if (gate.firstConnection) {
+            const cmd = "bash <(curl -sL https://get.webexec.sh)"
+            this.t.writeln("Failed to connect")
+            let ans: string
+            const verifyForm = [{
+                prompt: `Does the address \x1B[1;37m${gate.addr}\x1B[0m seem correct?`,
+                    values: ["y", "n"],
+                    default: "y"
+            }]
+            try {
+                ans = (await this.runForm(verifyForm, "text"))[0]
+            } catch(e) {
+                return gate.onFailure(Failure.WrongAddress)
+            }
+
+            if (ans == "n") {
+                gate.delete()
+                setTimeout(() => this.handleLine("add"), 100)
+                return gate.onFailure(Failure.WrongAddress)
+            }
+            if (!gate.session.isSSH) {
+                const webexecForm = [{
+                    prompt: `Make sure webexec is running on ${gate.addr}:
+                        \n\x1B[1m${cmd}\x1B[0m\n\nCopy to clipboard?`,
+                            values: ["y", "n"],
+                            default: "y"
+                }]
+                try {
+                    ans = (await this.runForm(webexecForm, "text"))[0]
+                } catch(e) {
+                    return gate.onFailure(Failure.WrongAddress)
+                }
+                if (ans == "y")
+                    Clipboard.write({ string: cmd })
+            }
+        }
 
         /* TODO: kill it or improve it?
         if (couldBeBug) {
@@ -260,25 +333,23 @@ export class Shell {
             { prompt: "Close" }
         ]
 
-        let res
-        try {
-            res = await this.runForm(reconnectForm, "menu")
-        } catch(e) {
-            // try to connect
-            res = null
-        }
-        // TODO: needs refactoring
-        if (res == "Close") {
-            this.map.showLog(false)
-            gate.close()
-            return
-        }
         if (gate.session) {
             gate.session.close()
             gate.session = null
         }
-        this.runCommand("connect", [gate.name])
+        let res
+        try {
+            res = await this.runForm(reconnectForm, "menu")
+        } catch (err) {
+            gate.onFailure(Failure.Aborted)
+        }
+        // TODO: needs refactoring
+        if (res == "Close")
+            gate.onFailure(Failure.Aborted)
+        if (res == "Reconnect")
+            this.runCommand("connect", [gate.name])
     }
+    
     async askPass(): Promise<string> {
         const res = await this.map.shell.runForm(
             [{ prompt: "Password", password: true }], "text")

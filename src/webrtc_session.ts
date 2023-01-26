@@ -85,7 +85,6 @@ export class WebRTCSession extends BaseSession {
     }
     async connect(marker=null) {
         console.log("in connect")
-        this.startWatchdog()
 
         if ((!this.t7.iceServers) && (!this.t7.conf.peerbook?.insecure)) {
             try {
@@ -105,21 +104,17 @@ export class WebRTCSession extends BaseSession {
             iceServers: this.t7.iceServers,
             certificates: this.t7.certificates})
         this.pc.onconnectionstatechange = () => {
-            this.clearWatchdog()
             const state = this.pc.connectionState
             console.log("new connection state", state, marker)
             if ((state == "connected") && (marker != null)) {
-                this.startWatchdog()
                 this.sendCTRLMsg({
                     type: "restore",
                     args: { marker }},
                 () => {
                     this.onStateChange("connected")
-                    this.clearWatchdog()
                 },
                 () => {
                     this.onStateChange("failed", Failure.BadMarker)
-                    this.clearWatchdog()
                 })
             } else  {
                 if (state == 'failed')
@@ -128,7 +123,6 @@ export class WebRTCSession extends BaseSession {
             }
         }
         this.pc.onicecandidateerror = (ev: RTCPeerConnectionIceErrorEvent) => {
-            this.clearWatchdog()
             console.log("icecandidate error", ev.errorCode)
             if (ev.errorCode == 401) {
                 this.t7.notify("Getting fresh ICE servers")
@@ -186,7 +180,6 @@ export class WebRTCSession extends BaseSession {
         }
         return channel
     }
-    openChannel(id: ChannelID): Promise<Channel>
     openChannel(cmdorid: unknown, parent?: ChannelID, sx?: number, sy?: number):
          Promise<Channel> {
         return new Promise((resolve, reject) => {
@@ -215,13 +208,12 @@ export class WebRTCSession extends BaseSession {
             }
         })
     }
-    async reconnect(marker: number|null, publicKey?: string, privateKey?: string): Promise<void> {
+    async reconnect(marker?: number, publicKey?: string, privateKey?: string): Promise<void> {
         return new Promise((resolve, reject) => { 
             console.log("in reconnect", this.cdc, this.cdc.readyState)
             if (!this.pc)
                 return this.connect(marker, publicKey, privateKey)
             
-            this.startWatchdog()
             if (!this.cdc || this.cdc.readyState != "open")
                 this.openCDC()
             if (marker != null) {
@@ -232,18 +224,15 @@ export class WebRTCSession extends BaseSession {
                 }, 500)
                 this.sendCTRLMsg({ type: "restore", args: { marker }}, payload => {
                     clearTimeout(watchdog)
-                    this.clearWatchdog()
                     if (!timedout)
                         resolve(payload)
                 }, () => {
                     clearTimeout(watchdog)
-                    this.clearWatchdog()
                     if (!timedout)
                         reject()
                 })
             } else
                 this.getPayload().then(payload => {
-                   this.clearWatchdog()
                    if (!timedout)
                        resolve(payload)
                 }).catch(reject)
@@ -251,7 +240,6 @@ export class WebRTCSession extends BaseSession {
     }
     openCDC(): Promise<void> {
         // stop listening for messages
-       this.startWatchdog()
        if (this.cdc)
            this.cdc.onmessage = undefined
        // TODO: improve error handling and add areject
@@ -261,7 +249,6 @@ export class WebRTCSession extends BaseSession {
             this.cdc = cdc
             cdc.onopen = () => {
                 this.t7.log(">>> cdc opened")
-                this.clearWatchdog()
                 if (this.pendingCDCMsgs.length > 0)
                     // TODO: why the time out? why 100mili?
                     this.t7.run(() => {
@@ -361,7 +348,6 @@ export class WebRTCSession extends BaseSession {
         })
     }
     close(): void {
-        super.close()
         this.closeChannels()
         if (this.pc != null) {
             this.pc.onconnectionstatechange = undefined
@@ -380,10 +366,9 @@ export class WebRTCSession extends BaseSession {
 export class PeerbookSession extends WebRTCSession {
     fp: string
     pb: PeerbookConnection
-    constructor(fp: string, pb: PeerbookConnection) {
+    constructor(fp: string) {
         super()
         this.fp = fp
-        this.pb = pb
     }
     getIceServers() {
         return new Promise((resolve, reject) => {
@@ -413,8 +398,8 @@ export class PeerbookSession extends WebRTCSession {
         })
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
-        if (ev.candidate && this.pb) {
-            this.pb.send({target: this.fp, candidate: ev.candidate})
+        if (ev.candidate && this.t7.pb) {
+            this.t7.pb.send({target: this.fp, candidate: ev.candidate})
         }
     }
     onNegotiationNeeded(e) {
@@ -423,12 +408,12 @@ export class PeerbookSession extends WebRTCSession {
             const offer = btoa(JSON.stringify(d))
             this.pc.setLocalDescription(d)
             this.t7.log("got offer", offer)
-            this.pb.send({target: this.fp, offer: offer})
+            // this.pb is null after a disconnect
+            this.t7.pb.send({target: this.fp, offer: offer})
         })
     }
     peerAnswer(offer) {
         const sd = new RTCSessionDescription(offer)
-        this.clearWatchdog()
         this.pc.setRemoteDescription(sd)
             .catch (e => {
                 this.t7.notify(`Failed to set remote description: ${e}`)
@@ -493,7 +478,6 @@ export class HTTPWebRTCSession extends WebRTCSession {
                             this.fail(Failure.BadRemoteDescription)
                     })
                 }).catch(error => {
-                    this.clearWatchdog()
                     console.log("POST to /connect failed", error)
                     if (error.message == 'unauthorized')
                         this.fail(Failure.Unauthorized)

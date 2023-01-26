@@ -338,14 +338,13 @@ button.rename-close {
     padding: 0;
     position: fixed;
     z-index: 4;
-    left: 12px;
-    right: 12px;
+    left: 14px;
+    right: 14px;
     top: 22px;
-    bottom: 18px;
     height: max-content;
 }
 .zoomed .pane {
-    height: -webkit-fill-available;
+    border-radius: 12px;
 }
 #map:target {
     display: block;
@@ -365,6 +364,7 @@ button.rename-close {
     position: absolute;
     top: 128px;
     left: 20px;
+    max-width: 35vw;
     padding: 10px;
     border: 1px dotted;
     border-radius: 4px;
@@ -467,6 +467,11 @@ label {
     transform: translate(-112.5%,8%) scale(1);
     border: 1px solid var(--local-border);
     border-radius: 20%;
+}
+@media (max-width: 600px) {
+    #log.show {
+        width: 90vw;
+    }
 }
 .search-container {
     margin: 0 auto;
@@ -710,13 +715,12 @@ button.boarding  {
 	transition: all 0.75s ease;
 	background-color: var(--text-background);
 	border-radius: 5px;
+    text-align: left;
 }
 #changelog.show {
 	opacity: 0.8;
-	width: 30em;
 	max-width: 96vw;
 	max-height: 60vh;
-    text-align: left;
     border: 1px solid var(--local-border);
 }
 #changelog::-webkit-scrollbar-thumb {

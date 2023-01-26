@@ -334,6 +334,12 @@ export class Terminal7 {
             })
         })
     }
+    pbClose() {
+        if (this.pb) {
+            this.pb.close()
+            this.pb = null
+        }
+    }
     pbConnect() {
         return new Promise((resolve) => {
             if (!this.conf.peerbook || !this.conf.peerbook.email || 
@@ -403,11 +409,10 @@ export class Terminal7 {
             ((this.pb.host != this.conf.net.peerbook) 
              || (this.pb.peerName != this.conf.peerbook.peer_name)
              || (this.pb.insecure != this.conf.peerbook.insecure)
-             || (this.pb.email != this.conf.peerbook.email))
-        )
-        this.pb.close()
-        this.pbConnect()
-		this.pb = null
+             || (this.pb.email != this.conf.peerbook.email))) {
+            this.pbClose()
+            this.pbConnect()
+        }
     }
     catchFingers() {
         this.e.addEventListener("pointerdown", ev => this.onPointerDown(ev))
@@ -538,10 +543,7 @@ export class Terminal7 {
                         })
                     }
                 })
-            if (this.pb) {
-                this.pb.close()
-                this.pb = null
-            }
+            this.pbClose()
             let callCB = () => terminal7.run(() => {
                 if (count == 0)
                     resolve()
@@ -557,21 +559,27 @@ export class Terminal7 {
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
             off.add("hidden")
-            this.pbConnect()
-            const gate = this.activeG
-            if (gate) {
-                this.notify("🌞 Recovering")
-                this.recovering = true
-                this.run(() => this.recovering = false, this.conf.net.recoveryTime)
-                gate.reconnect()
-                    .then(() => this.map.showLog(false))
-                    .catch(() =>
-                        this.map.shell.runCommand("reset", [gate.name]))
-            }
+            this.pbConnect().then(() => {   
+                const gate = this.activeG
+                if (gate) {
+                    this.notify("🌞 Recovering")
+                    this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
+                    this.recovering = true
+                    this.run(() => this.recovering = false, this.conf.net.recoveryTime)
+                    gate.reconnect()
+                        .then(() => {
+                            this.map.shell.stopWatchdog()
+                            this.map.showLog(false)
+                        }).catch(() => {
+                            this.map.shell.stopWatchdog()
+                            this.map.shell.runCommand("reset", [gate.name])
+                        })
+                }
+            })
         } else {
             off.remove("hidden")
             // this.gates.forEach(g => g.session = null)
-            this.pb = null
+            this.pbClose()
         }
     }
     loadConf(conf) {
@@ -864,7 +872,6 @@ export class Terminal7 {
                     if (isExpand) {
                         this.map.shell.runCommand("edit", [gate.name])
                     } else if (!gate.fp || gate.verified && gate.online) {
-                        this.activeG = gate
                         await this.map.shell.runCommand("connect", [gate.name])
                     }
                 }
@@ -975,10 +982,7 @@ export class Terminal7 {
                 Preferences.set({key: 'dotfile', value: DEFAULT_DOTFILE}))
             const d = TOML.parse(DEFAULT_DOTFILE)
             this.loadConf(d)
-            if (this.pb) {
-                this.pb.close()
-                this.pb = null
-            }
+            this.pbClose()
             openDB("t7", 1).then(db => {
                 let tx = db.transaction("certificates", "readwrite"),
                     store = tx.objectStore("certificates")
@@ -996,7 +1000,13 @@ export class Terminal7 {
 		e.innerHTML = marked.parse(changelog)
 		// add prefix to all ids to avoid conflicts
         e.querySelectorAll("[id]").forEach(e => e.id = "changelog-" + e.id)
-		e.querySelectorAll("a").forEach(a => a.target = "_blank")
+        document.querySelectorAll("a[href]").forEach(e => {
+            e.addEventListener("click", ev => {
+                ev.stopPropagation()
+                ev.preventDefault()
+                window.open(e.href, '_blank')
+            })
+        })
 	}
     // if show is undefined the change log view state is toggled
 	showChangelog(show) {

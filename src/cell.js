@@ -145,7 +145,7 @@ export class Cell {
         if (se.classList.contains("show"))
             style = `${document.querySelector('.windows-container').offsetHeight - 22}px`
         else
-            style = `${document.body.offsetHeight - 42}px`
+            style = `${document.body.offsetHeight - 36}px`
         e.style.height = style
         e.style.top = "0px"
         e.style.width = "100%"
