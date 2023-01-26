@@ -5,6 +5,7 @@ export class Terminal {
     loadAddon = vi.fn()
     onSelectionChange = vi.fn()
     onData = vi.fn()
+    onBell = vi.fn()
     focus = vi.fn()
     notify = vi.fn()
     open = vi.fn()
