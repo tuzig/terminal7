@@ -1,4 +1,5 @@
 import { Clipboard } from "@capacitor/clipboard"
+import { Capacitor } from "@capacitor/core"
 import { Terminal } from '@tuzig/xterm'
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
@@ -210,8 +211,11 @@ export class Shell {
     }
 
     updateCapsLock(ev: KeyboardEvent) {
+        let capsOn = ev.getModifierState("CapsLock")
+        if (ev.key == "CapsLock") // if the key is CapsLock the state is not updated yet
+            capsOn = !capsOn
         const e = document.getElementById("capslock-indicator")
-        if (ev.getModifierState("CapsLock"))
+        if (capsOn)
             e.classList.remove("hidden")
         else
             e.classList.add("hidden")
