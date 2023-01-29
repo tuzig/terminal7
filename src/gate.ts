@@ -341,7 +341,7 @@ export class Gate {
                 const win = this.addWindow(w.name)
                 if (w.active) 
                     this.activeW = win
-                win.restoreLayout(w.layout)
+                win.restoreLayout(w.layout, w.active)
                 win.nameE?.setAttribute("href", `#pane-${win.activeP?.id}`)
             })
         }
