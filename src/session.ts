@@ -1,3 +1,5 @@
+import { Terminal7 } from "./terminal7"
+
 export type CallbackType = (e: unknown) => void
 export type ChannelID = number
 export type State = "new" | "connecting" | "connected" | "reconnected" | "disconnected" | "failed" | "unauthorized" | "wrong password"
@@ -36,7 +38,7 @@ export interface Channel {
 
 export interface Session {
     readonly isSSH: boolean
-    onStateChange : (state: string, failure?: Failure) => void
+    onStateChange : (state: State, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
     // for reconnect
     openChannel(id: ChannelID): Promise<Channel>
@@ -44,12 +46,11 @@ export interface Session {
     openChannel(cmd: string, parent?: ChannelID, sx?: number, sy?: number):
         Promise<Channel>
     close(): void
-    getPayload(): Promise<string>
+    getPayload(): Promise<string | null>
     setPayload(payload: string): Promise<void>
     reconnect(marker?: number, publicKey?: string, privateKey?: string): Promise<void>
     disconnect(): Promise<void>
-    connect(marker?:number, publicKey?: string, privateKey?: string): void
-    connectPass(marker?:number, password?: string): void
+    connect(marker?:number | null, publicKey?: string, privateKey?: string): void
     fail(failure?: Failure): void
 }
 
@@ -73,12 +74,15 @@ export abstract class BaseChannel implements Channel {
     }
 }
 export abstract class BaseSession implements Session {
-    t7: object
+    t7: Terminal7
     watchdog: number
-    onStateChange : (state: string, failure?: Failure) => void
+    onStateChange : (state: State, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
     constructor() {
         this.t7 = window.terminal7
+    }
+    get isSSH(): boolean {
+        throw new Error("Not implemented")
     }
     async getPayload(): Promise<string | null> {
         return null
@@ -101,25 +105,7 @@ export abstract class BaseSession implements Session {
         if (this.onStateChange)
             this.onStateChange("failed", failure)
     }
-    startWatchdog(){
-        this.clearWatchdog()
-        this.watchdog = this.t7.run(() => {
-            console.log("WATCHDOG stops the gate connecting")
-            this.fail(Failure.TimedOut)
-        }, this.t7.conf.net.timeout)
-        this.t7.map.shell.startHourglass(this.t7.conf.net.timeout)
-    }
-    clearWatchdog() {
-        if (this.watchdog) {
-            clearTimeout(this.watchdog)
-            this.watchdog = null
-            this.t7.map.shell.stopHourglass()
-        }
-    }
-    close() {
-        this.clearWatchdog()
-        // this.onStateChange = undefined
-    }
+    abstract close(): void
     // for reconnect
     abstract openChannel(id: ChannelID): Promise<Channel>
     abstract openChannel(cmd: string | ChannelID, parent?: ChannelID, sx?: number, sy?: number):

@@ -1,5 +1,5 @@
 import { SSH, SSHSessionID, StartByPasswd, StartByKey} from 'capacitor-ssh-plugin'
-import { Channel, BaseChannel, BaseSession, Failure, Session, State }  from './session' 
+import { Channel, BaseChannel, BaseSession, Failure, Session, State, ChannelID }  from './session' 
 import { WebRTCSession }  from './webrtc_session'
 
 const ACCEPT_CMD = "/usr/local/bin/webexec accept"
@@ -46,7 +46,6 @@ export class SSHSession extends BaseSession {
         this.onStateChange("connected")
     }
     async connect(marker?:number, publicKey: string, privateKey:string) {
-        this.startWatchdog()
         SSH.startSessionByKey({
             address: this.address,
             port: this.port,
@@ -54,10 +53,8 @@ export class SSHSession extends BaseSession {
             publicKey: publicKey,
             privateKey: privateKey
         }).then(args => {
-                this.clearWatchdog()
                 this.onSSHSession(args.session)
         }).catch(e => {
-                this.clearWatchdog()
                 console.log("SSH key startSession failed", e.toString())
                 if (e.toString().startsWith("Error: UNAUTHORIZED"))
                     this.onStateChange("failed", Failure.KeyRejected)
@@ -66,7 +63,6 @@ export class SSHSession extends BaseSession {
            })
     }
     passConnect(marker?:number, password?: string) {
-        this.startWatchdog()
         const args: StartByPasswd = {
             address: this.address,
             port: this.port,
@@ -75,10 +71,8 @@ export class SSHSession extends BaseSession {
         }
         SSH.startSessionByPasswd(args)
            .then(args => {
-                this.clearWatchdog()
                 this.onSSHSession(args.session)
            }).catch(e => {
-                this.clearWatchdog()
                 console.log("SSH pass startSession failed", e.toString())
                 if (e.toString().startsWith("Error: Not imp"))
                     this.onStateChange("failed", Failure.NotImplemented)
@@ -88,7 +82,7 @@ export class SSHSession extends BaseSession {
            })
     }
 
-    openChannel(cmd: string, parent?: ChannelID, sx?: number, sy?: number):
+    openChannel(cmd: unknown, parent?: ChannelID, sx?: number, sy?: number):
          Promise<Channel> {
         return new Promise((resolve, reject) => {
             const channel = new SSHChannel()
@@ -126,7 +120,6 @@ export class SSHSession extends BaseSession {
                     m => onData(channel.id, m))
             } catch (e) { 
                 this.t7.log("Failed starting webexec", e)
-                this.clearWatchdog()
                 throw e
             }
         }
@@ -151,7 +144,6 @@ export class HybridSession extends SSHSession {
      * whether to use password or identity key based authentication 
      */
     async connect(marker?:number, publicKey: string, privateKey:string) {
-        this.startWatchdog()
         const args: StartByKey = {
             address: this.address,
             port: this.port,
@@ -162,18 +154,15 @@ export class HybridSession extends SSHSession {
         this.gotREADY = false
         SSH.startSessionByKey(args)
            .then(res => {
-                this.clearWatchdog()
                 this.id = res.session
                 this.startCommand(ACCEPT_CMD, (channelId, m) =>
                                   this.onAcceptData(channelId, marker, m))
            }).catch(e => {
-                this.clearWatchdog()
                 this.t7.log("startSession failed", e.toString())
                 this.fail(Failure.KeyRejected)
            })
     }
     passConnect(marker?:number, password?: string) {
-        this.startWatchdog()
         const args: StartByPasswd = {
             address: this.address,
             port: this.port,
@@ -194,7 +183,6 @@ export class HybridSession extends SSHSession {
                     this.t7.log("failed startsession", e.toString())
                     this.fail(Failure.WrongPassword)
                 }
-                this.clearWatchdog()
 
            })
     }
@@ -205,7 +193,6 @@ export class HybridSession extends SSHSession {
         if (!('data' in message)) {
             if (('error' in message) && (message.error == "EOF") && !this.gotREADY) {
                 // no webexec, didn't get ready but got EOF
-                this.clearWatchdog()
                 this.onStateChange("connected")
             } else {
                 this.t7.log("ignoring strange msg", message)
@@ -264,7 +251,6 @@ export class HybridSession extends SSHSession {
                 // TODO: create a new override 
             this.webrtcSession.onStateChange = (state) => {
                 console.log("State changed", state)
-                this.clearWatchdog()
                 if (state == "connected") {
                     SSH.closeChannel({channel: channelId})
                     this.onStateChange(state)
@@ -291,7 +277,7 @@ export class HybridSession extends SSHSession {
             this.webrtcSession.connect(marker)
         })
     } 
-    async openChannel(cmd: string, parent?: ChannelID, sx?: number, sy?: number) {
+    async openChannel(cmd: unknown, parent?: ChannelID, sx?: number, sy?: number) {
 
         if (!this.webrtcSession) {
             return super.openChannel(cmd, parent, sx, sy)
@@ -309,8 +295,6 @@ export class HybridSession extends SSHSession {
     close() {
         if (this.webrtcSession)
             return this.webrtcSession.close() 
-        else
-            return super.close()
     }
 
     getPayload(): Promise<string> {

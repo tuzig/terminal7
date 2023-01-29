@@ -364,6 +364,7 @@ button.rename-close {
     position: absolute;
     top: 128px;
     left: 20px;
+    max-width: 35vw;
     padding: 10px;
     border: 1px dotted;
     border-radius: 4px;
@@ -714,13 +715,12 @@ button.boarding  {
 	transition: all 0.75s ease;
 	background-color: var(--text-background);
 	border-radius: 5px;
+    text-align: left;
 }
 #changelog.show {
 	opacity: 0.8;
-	width: 30em;
 	max-width: 96vw;
 	max-height: 60vh;
-    text-align: left;
     border: 1px solid var(--local-border);
 }
 #changelog::-webkit-scrollbar-thumb {
