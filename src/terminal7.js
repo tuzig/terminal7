@@ -480,7 +480,8 @@ export class Terminal7 {
         window.location.href = "#map"
         document.getElementById("map").classList.remove("hidden")
         document.title = "Terminal 7"
-        document.getElementById('log').classList.remove('hidden', 'show')
+        if (!document.getElementById("log").classList.contains("hidden"))
+            this.map.t0.focus()
     }
     /*
      * focus restores the focus to the ative pane, if there is one

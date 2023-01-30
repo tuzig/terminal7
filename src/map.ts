@@ -65,33 +65,16 @@ export class T7Map {
             const log = document.getElementById("log")
             if (!log)
                 return
-            /*
-            const resizeObserver = new window.ResizeObserver(() => {
-                setTimeout(() => this.fitAddon.fit(), 750)
-            })
-            resizeObserver.observe(log)
-            */
-            log.addEventListener("transitionend", () => {
-                // fitAddon.fit()
-                if (log.classList.contains("show")) {
-                    this.t0.focus()
-                    this.fitAddon.fit()
-                } else {
-                    this.t0.blur()
-                    // if we're not on the map, we're at the gate, hide the minimized version
-                    if (window.location.hash != "#map") {
-                        log.classList.add("hidden")
-                        terminal7.focus()
-                    }
-                }
-            })
+            const resizeObserver = new window.ResizeObserver(() =>
+                setTimeout(() => this.fitAddon.fit(), 100)
+            )
+            resizeObserver.observe(terminal7.e)
             log.addEventListener("click", (ev) => {
-                const e = document.getElementById("log")
-                if (e.classList.contains("show"))
-                    this.t0.focus()
-                else
-                    this.showLog(true)
-            
+                ev.stopPropagation()
+                ev.preventDefault()
+            })
+            document.getElementById("log-minimized").addEventListener("click", (ev) => {
+                this.showLog(true)
                 ev.stopPropagation()
                 ev.preventDefault()
             })
@@ -165,25 +148,29 @@ export class T7Map {
      * if the parameters in udefined the function toggles the displays
      */
     showLog(show) {
-        const e = document.getElementById("log")
+        const log = document.getElementById("log")
+        const minimized = document.getElementById("log-minimized")
         if (show === undefined)
             // if show is undefined toggle current state
-            show = !e.classList.contains("show")
+            show = log.classList.contains("hidden")
         /* should we?
         if (!show && Form.activeForm)
             Form.activeForm.escape(this.t0)
         */
         if (show) {
-            e.classList.remove("hidden")
-            e.classList.add("show")
+            minimized.classList.add("hidden")
+            log.classList.remove("hidden")
             document.getElementById("log-button").classList.add("on")
+            this.t0.focus()
         } else {
-            e.classList.remove("show")
+            minimized.classList.remove("hidden")
+            log.classList.add("hidden")
             document.getElementById("log-button").classList.remove("on")
             terminal7.focus()
         }
     }
     tty (msg: string) {
+        this.showLog(true)
         const _tty = (m: string) =>  {
             if (this.ttyWait != 0) {
                 this.t0.write(m[0])

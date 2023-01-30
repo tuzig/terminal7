@@ -15,6 +15,7 @@
     --background: #271D30;
     --text-background: #11051E;
     --text-offline: #004444;
+    --pane-background: black;
 }
 @font-face {
     font-family: "FiraSans";
@@ -167,7 +168,7 @@ a {
     overflow: hidden;
     -webkit-mask-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAA5JREFUeNpiYGBgAAgwAAAEAAGbA+oJAAAAAElFTkSuQmCC); /* this fixes the overflow:hidden in Chrome/Opera */
     box-sizing: border-box;
-    background-color: black;
+    background-color: var(--pane-background);
     border: 1px solid #373702;
     border-radius: 6px;
     text-align: left;
@@ -220,7 +221,7 @@ nav {
     display: flex;
     align-content: stretch;
     border: 1px solid var(--local-border);
-    background-color: black;
+    background-color: var(--pane-background);
     border-radius: 0 0 12px 12px;
     min-height: min-content;
     overflow-x: auto;
@@ -433,43 +434,47 @@ label {
     left: 0;
     background-color: inherit;
 }
-#log-container {
+#log-minimized {
     width: 1200px;
+    cursor: pointer;
     position: relative;
     margin: 0 auto;
 }
-#log {
+#twr {
     position: absolute;
-    left: 938px;
+    background-color: var(--pane-background);
+    z-index: 5;
+    left: 966px;
     top: 93px;
     margin: 0;
-    padding: 20px;
-    z-index: 5;
-    transition: transform .75s ease, scale .75s ease;
-    opacity: 0.8;
+    padding: 0;
+    width: 42px;
+    height:42px;
+    line-height: 42px;
+    border: 1px solid var(--local-border);
+    border-radius: 3px;
+}
+#log {
+    background-color: var(--pane-background);
+    position: fixed;
+    margin: 2vmax;
+    top: 50%;
+    left: 50%;
+    transform: translate(-54%, -60%);
     overflow: hidden;
-    border: 5px solid var(--local-border);
-    background-color: black;
-    transform: scale(0.18);
-    width: 90%;
-    max-width: 540px;
-    border-radius: 33%;
-    height: 410px;
-    max-height: 80vh;
-    transform-origin: top left;
+    z-index: 5;
+    opacity: 0.8;
+    width: 540px;
+    border: 1px solid var(--local-border);
+    border-radius: 7px;
 }
 #log>div {
-    padding: 0;
+    padding: 0.4em;
     height: 100%;
     width: 100%;
 }
-#log.show {
-    transform: translate(-112.5%,8%) scale(1);
-    border: 1px solid var(--local-border);
-    border-radius: 20%;
-}
 @media (max-width: 600px) {
-    #log.show {
+    #log {
         width: 90vw;
     }
 }
