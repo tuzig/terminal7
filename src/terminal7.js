@@ -864,7 +864,10 @@ export class Terminal7 {
                 if (deltaT < this.conf.ui.quickest_press) {
                     // that's for the refresh and static host add
                     if (isExpand) {
-                        this.map.shell.runCommand("edit", [gate.name])
+                        if (gate.fp)
+                            window.open("https://peerbook.io", "_blank")
+                        else
+                            this.map.shell.runCommand("edit", [gate.name])
                     } else if (!gate.fp || gate.verified && gate.online) {
                         await this.map.shell.runCommand("connect", [gate.name])
                     }
