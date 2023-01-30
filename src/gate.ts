@@ -577,6 +577,7 @@ export class Gate {
             boarding: this.boarding,
             offline: this.online === false,
             unverified: this.verified === false,
+            peerbook: this.fp != null,
         })
     }
     close() {

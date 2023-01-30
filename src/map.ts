@@ -105,10 +105,13 @@ export class T7Map {
         this.refresh()
     }
 
-    update({ e, name, boarding, offline, unverified }): void {
+    update({ e, name, boarding, offline, unverified, peerbook }): void {
 
         const b = e.children[0]
-        b.innerHTML = `<i class="f7-icons expand-gate">expand</i>${name}`
+        if (peerbook)
+            b.innerHTML = `<i class="f7-icons expand-gate">person_2_square_stack</i>${name}`
+        else
+            b.innerHTML = `<i class="f7-icons expand-gate">expand</i>${name}`
         // there's nothing more to update for static hosts
         if (boarding)
             b.classList.add("boarding")
