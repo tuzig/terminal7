@@ -35,15 +35,8 @@ import { PeerbookConnection } from './peerbook'
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
 Thanks for choosing Terminal7. This is TWR, a local
-terminal used to log messages and get your input.
-Try typing 'help' to see what it can do.
-
-To use a real terminal you'll need a remote server.
-T7 can connect to a server using SSH or WebRTC.
-Our WebRTC server, webexec, is an open 
-source terminal server based on pion and written in go.
-In addition to WebRTC, webexec adds resilient sessions,
-behind-the-NAT connections and more.
+terminal used to control the terminal and log messages.
+Type 'hide' or 'help' to see what it can do.
 
 Enjoy!
 
@@ -916,11 +909,12 @@ export class Terminal7 {
         this.gesture = null
     }
     async showGreetings() {
-        const greeted = (await Preferences.get({key: 'gates'})).value
+        const greeted = (await Preferences.get({key: 'greeted'})).value
         if (!greeted) {
             Preferences.set({key: "greeted", value: "yep"})
             this.map.tty(WELCOME)
         } else {
+            this.map.shell.printPrompt()
             if (!((window.matchMedia('(display-mode: standalone)').matches)
                 || (window.matchMedia('(display-mode: fullscreen)').matches)
                 || window.navigator.standalone
