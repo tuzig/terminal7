@@ -912,8 +912,8 @@ export class Terminal7 {
         this.gesture = null
     }
     async showGreetings() {
-        const  { greeted } = await Preferences.get({key: 'greeted'})
-        if (greeted == null) {
+        const greeted = (await Preferences.get({key: 'gates'})).value
+        if (!greeted) {
             Preferences.set({key: "greeted", value: "yep"})
             this.map.tty(WELCOME)
         } else {
