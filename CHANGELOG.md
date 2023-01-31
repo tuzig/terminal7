@@ -6,11 +6,13 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 1.4.2 - 2023/1/31
 
 ### Fixed
 
+- TWR is not scaled down and the font doesn't turn tiny
 - Improved handling of illegal layouts
+- Greeting is shown only on first activation
 
 ## 1.4.1 - 2023/1/26
 
