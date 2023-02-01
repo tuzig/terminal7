@@ -162,6 +162,12 @@ async function connectCMD(shell:Shell, args: string[]) {
     const gate: Gate = shell.getGate(hostname)
     if (!gate)
         return shell.t.writeln(`Host not found: ${hostname}`)
+    if (gate.fp) {
+        if (!gate.verified)
+            return shell.t.writeln("Host unverified, please verify at https://peerbook.io")
+        if (!gate.online)
+            return shell.t.writeln("Host offline")
+    }
     // eslint-disable-next-line
     await new Promise<void>(async (resolve) => {
         gate.onFailure = reason => {
