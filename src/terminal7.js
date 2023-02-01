@@ -868,7 +868,7 @@ export class Terminal7 {
                             window.open("https://peerbook.io", "_blank")
                         else
                             this.map.shell.runCommand("edit", [gate.name])
-                    } else if (!gate.fp || gate.verified && gate.online) {
+                    } else {
                         await this.map.shell.runCommand("connect", [gate.name])
                     }
                 }
