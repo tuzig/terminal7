@@ -197,16 +197,16 @@ export class Window {
             this.gate.sendState()
         }
     }
-    toggleDivideButtons() {
+    updateDivideButtons() {
         let bV = document.getElementById("divide-v")
         let bH = document.getElementById("divide-h")
-        if (this.activeP.sx < 0.04)
-            bV.classList.add("off")
-        else
+        if (this.activeP.isSplittable("topbottom"))
             bV.classList.remove("off")
-        if (this.activeP.sy < 0.04)
-            bH.classList.add("off")
         else
+            bV.classList.add("off")
+        if (this.activeP.isSplittable("rightleft"))
             bH.classList.remove("off")
+        else
+            bH.classList.add("off")
     }
 }

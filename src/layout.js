@@ -38,6 +38,15 @@ export class Layout extends Cell {
         else
             this.cells = []
     }
+
+    get numPanes() {
+        let n = 0
+        this.cells.forEach(c => 
+            n += c instanceof Layout ? c.numPanes : 1
+        )
+        return n
+    }
+
     fit() {
         this.cells.forEach(c => c.fit())
     }
@@ -80,6 +89,7 @@ export class Layout extends Cell {
             p.focus()
             // remove this from the layout
             this.cells.splice(i, 1)
+            this.w.updateDivideButtons()
         }
     }
     /*
@@ -303,7 +313,7 @@ export class Layout extends Cell {
         p1[off] = dest
         p0.refreshDividers()
         p1.refreshDividers()
-        this.w.toggleDivideButtons()
+        this.w.updateDivideButtons()
     }
     findNext(c) {
         if (this.nextCell(c))

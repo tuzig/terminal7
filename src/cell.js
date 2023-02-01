@@ -46,7 +46,7 @@ export class Cell {
         }
         this.w.activeP = this
         this.e.style.borderColor = FOCUSED_BORDER_COLOR
-        this.w.toggleDivideButtons()
+        this.w.updateDivideButtons()
         setTimeout(() => window.location.href = `#pane-${this.id}`)
         this.w.nameE.setAttribute("href", `#pane-${this.id}`)
     }
