@@ -164,7 +164,7 @@ async function connectCMD(shell:Shell, args: string[]) {
         return shell.t.writeln(`Host not found: ${hostname}`)
     if (gate.fp) {
         if (!gate.verified)
-            return shell.t.writeln("Host unverified, please verify at https://peerbook.io")
+            return shell.t.writeln(`Host unverified, please verify at ${terminal7.conf.net.peerbook}`)
         if (!gate.online)
             return shell.t.writeln("Host offline")
     }

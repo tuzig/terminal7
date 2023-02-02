@@ -865,7 +865,7 @@ export class Terminal7 {
                     // that's for the refresh and static host add
                     if (isExpand) {
                         if (gate.fp)
-                            window.open("https://peerbook.io", "_blank")
+                            window.open(this.conf.net.peerbook, "_blank")
                         else
                             this.map.shell.runCommand("edit", [gate.name])
                     } else {

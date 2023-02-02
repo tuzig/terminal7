@@ -109,7 +109,7 @@ export class T7Map {
 
         const b = e.children[0]
         if (peerbook)
-            b.innerHTML = `<i class="f7-icons expand-gate">person_2_square_stack</i>${name}`
+            b.innerHTML = `<i class="f7-icons expand-gate">book</i>${name}`
         else
             b.innerHTML = `<i class="f7-icons expand-gate">expand</i>${name}`
         // there's nothing more to update for static hosts
