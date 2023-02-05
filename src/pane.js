@@ -219,6 +219,7 @@ export class Pane extends Cell {
      * Returns the new pane.
      */
     split(dir, s) {
+        if (!this.isSplittable(dir)) return
         var sx, sy, xoff, yoff, l
         // if the current dir is `TBD` we can swing it our way
         if (typeof s == "undefined")
@@ -966,4 +967,16 @@ export class Pane extends Cell {
             this.focus()
         }
     }   
+    /* receives a dir: "topbottom" or "rightleft"
+     * and returns whether or not the pane can be split in the direction
+     */
+    isSplittable(dir) {
+        const min = this.t7.conf.ui.min_pane_size
+        if (this.w.rootLayout.numPanes > this.t7.conf.ui.max_panes)
+            return false
+        else if (dir == "topbottom")
+            return this.sx >= min
+        else if (dir == "rightleft")
+            return this.sy >= min
+    }
 }

@@ -20,7 +20,9 @@ export class resizeObs {
 export function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
 export class Terminal7Mock extends Terminal7 {
-    conf = { ui: {max_tabs: 10 },
+    conf = { ui: {max_tabs: 10,
+                    max_panes: 10,
+                    min_pane_size: 0.01},
              net: {timeout: 1000,
                    iceServer: ""}, 
              exec: {shell: "bash" },
@@ -39,6 +41,7 @@ export class Terminal7Mock extends Terminal7 {
         document.body.innerHTML = `
 <div id='t7'></div>
 <div id='map'>
+    <div id='log-minimized'></div>
     <div id='gates'>
         <div id='add-gate'></div>
     </div>
