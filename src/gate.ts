@@ -203,7 +203,12 @@ export class Gate {
                 }
                 this.session.passConnect(this.marker, password)
                 return
-
+            case Failure.BadRemoteDescription:
+                this.session.close()
+                this.session = null
+                this.stopBoarding()
+                this.notify("Sync Error. Please try again")
+                break
             case Failure.NotImplemented:
                 this.session.close()
                 this.session = null
