@@ -218,7 +218,8 @@ export class HybridSession extends SSHSession {
             }
             this.candidate += line
             // ignore echo
-            if (this.sentMessages.indexOf(this.candidate) != -1 || !this.candidate.startsWith("{")) {
+            if (this.sentMessages.indexOf(this.candidate) != -1
+                || !this.candidate.startsWith("{")) {
                 this.t7.log("igonring message: "+this.candidate)
                 this.candidate = ""
                 return

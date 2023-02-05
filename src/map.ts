@@ -60,7 +60,6 @@ export class T7Map {
                 this.shell.start()
                 resolve()
             })
-
             this.refresh()
             // handle the tower
             const log = document.getElementById("log")
