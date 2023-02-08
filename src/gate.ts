@@ -269,8 +269,10 @@ export class Gate {
                     this.setLayout(layout)
                     resolve()
                 }).catch(() => {
-                    this.session.close()
-                    this.session = null
+                    if (this.session) {
+                        this.session.close()
+                        this.session = null
+                    }
                     terminal7.log("reconnect failed, fresh session with marker", this.marker)
                     this.connect().then(resolve).catch(reject)
                 })
