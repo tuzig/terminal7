@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - added a reset for out-of-sync peers
 - fixing reconnect failures
+- fixing peerbook disconnections
 
 ## 1.4.2 - 2023/1/31
 
