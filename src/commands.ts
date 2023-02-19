@@ -357,7 +357,7 @@ async function resetCMD(shell: Shell, args: string[]) {
     }]
     if (!gate.onlySSH)
         // Add the connection reset option for webrtc
-        fields.splice(1, 0, { prompt: "Reset connection" })
+        fields.splice(0, 0, { prompt: "Reset connection" })
     shell.t.writeln(`\x1B[4m${gate.name}\x1B[0m`)
     let choice
     try {
@@ -374,6 +374,8 @@ async function resetCMD(shell: Shell, args: string[]) {
                 gate.session.close()
                 gate.session = null
             }
+            // reset peerbook connection
+            terminal7.pb = null
             try {
                 await shell.runCommand("connect", [gate.name])
             } catch(e) {
