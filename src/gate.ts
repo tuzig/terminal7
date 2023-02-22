@@ -175,6 +175,7 @@ export class Gate {
     async handleFailure(failure: Failure) {
         // KeyRejected and WrongPassword are "light failure"
         const active = this == this.t7.activeG
+        const isSSH = this.session.isSSH
         if (!this.t7.lastActiveState) {
             console.log("ignoring failed event as the app is still in the back")
             this.stopBoarding()
@@ -191,7 +192,6 @@ export class Gate {
         this.boarding = false
         this.map.shell.stopWatchdog()
         let password: string
-        let couldBeBug = false
         switch ( failure ) {
             case Failure.WrongPassword:
                 this.notify("Sorry, wrong password")
@@ -214,7 +214,6 @@ export class Gate {
                 this.session = null
                 this.stopBoarding()
                 this.notify("Not Implemented. Please try again")
-                couldBeBug = true
                 break
             case Failure.Unauthorized:
                 // TODO: handle HTTP based authorization failure
@@ -227,7 +226,6 @@ export class Gate {
                 this.session = null
                 this.stopBoarding()
                 this.connect(this.onConnected)
-                couldBeBug = true
                 return
 
             case undefined:
@@ -242,7 +240,6 @@ export class Gate {
                 }
                 this.stopBoarding()
                 this.notify(failure?"Lost Data Channel":"Lost Connection")
-                couldBeBug = failure == Failure.DataChannelLost
                 break
 
             case Failure.KeyRejected:
@@ -258,7 +255,7 @@ export class Gate {
                 return
 
         }
-        await this.map.shell.onDisconnect(this, couldBeBug)
+        await this.map.shell.onDisconnect(this, isSSH && !this.onlySSH)
     }
     reconnect(): Promise<void> {
         if (!this.session)

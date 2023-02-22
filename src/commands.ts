@@ -1,4 +1,6 @@
+import { CapacitorPurchases } from '@capgo/capacitor-purchases'
 import { Clipboard } from '@capacitor/clipboard'
+import { Device } from '@capacitor/device';
 import { Shell } from "./shell"
 import * as TOML from '@tuzig/toml'
 import { Preferences } from "@capacitor/preferences"
@@ -97,6 +99,12 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             help: "Reset a connected gate",
             usage: "r[eset] [gatename]",
             execute: async args => resetCMD(shell, args)
+        },
+        subscribe: {
+            name: "subscribe",
+            help: "Subscripte to peerbook",
+            usage: "sub[scribe]",
+            execute: async args => subscribeCMD(shell, args)
         },
     }))
 }
@@ -537,4 +545,70 @@ async function copyKeyCMD(shell: Shell) {
         return shell.t.writeln(`${publicKey}\n☝️ copied to 📋`)
     } else
         return shell.t.writeln("No key yet. Please connect to generate one.\n(try connect or add)")
+}
+async function subscribeCMD(shell: shell, args: string[]) {
+    const packageTypeName = {
+        'ANNUAL': 'a year',
+        'MONTHLY': 'a month',
+        'TWO_MONTH': 'two months',
+        'THREE_MONTH': 'three months',
+        'SIX_MONTH': 'six months',
+        'LIFETIME': 'a lifetime',
+        'WEEKLY': 'a week',
+    }
+
+    let offer
+    try {
+        // await CapacitorPurchases.setDebugLogsEnabled({ enabled: true }) 
+        // Enable to get debug logs in dev mode            
+        // await CapacitorPurchases.setup({ apiKey:'appl_qKHwbgKuoVXokCTMuLRwvukoqkd'})
+        const { offerings } = await CapacitorPurchases.getOfferings()
+        offer = offerings.current
+    } catch (err) {
+        shell.t.writeln("Error getting offerings")
+        terminal7.log("Error getting offerings: " + err)
+        return false
+    }
+    if (offer == null) {  
+        return false
+            // Display current offering with offerings.current
+    }  
+    const pack = offer.availablePackages[0]
+    const product = pack.product
+    const term = packageTypeName[pack.packageType]
+    shell.t.writeln(offer.serverDescription)
+    const subPrompt = `Start your trial month (then ${product.priceString} for ${term})`
+    const subscribeMenu = [
+        { prompt: "No thanks" },
+        { prompt: subPrompt },
+        { prompt: "Don't offer again" },
+    ]
+    let choice: string
+    try {
+        choice = await shell.runForm(subscribeMenu, "menu")
+    } catch (err) {
+        shell.t.writeln("Error getting choice")
+        return
+    }
+    if (choice == subPrompt) {
+        shell.t.writeln("Thank you for subscribing!")
+        let email: string
+        let peerName: string
+
+        try {
+            peerName = await shell.askValue("Peer name", (await Device.getInfo()).name)
+            email = await shell.askValue("Recovery email")
+        } catch (e) {
+            shell.t.writeln("Aborted: "+e)
+            shell.printPrompt()
+            return
+        }
+        shell.startHourglass(terminal7.conf.ui.subscribeTimeout)
+        terminal7.pbConnect(email, peerName)
+        terminal7.ignoreAppEvents = true
+        const { customerInfo } = await CapacitorPurchases.purchasePackage({
+            identifier: pack.identifier,
+            offeringIdentifier: pack.offeringIdentifier,
+        })
+    }
 }

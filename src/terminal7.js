@@ -30,6 +30,7 @@ import { Device } from '@capacitor/device'
 import { NativeBiometric } from "capacitor-native-biometric"
 import { RateApp } from 'capacitor-rate-app'
 
+
 import { PeerbookConnection } from './peerbook'
 
 const WELCOME=`    🖖 Greetings & Salutations 🖖
@@ -333,19 +334,20 @@ export class Terminal7 {
             this.pb = null
         }
     }
-    pbConnect() {
+    pbConnect(email, peerName) {
         return new Promise((resolve) => {
-            if (!this.conf.peerbook || !this.conf.peerbook.email || 
-               (this.pb  && this.pb.isOpen())) {
+            if (!email &&
+                (!this.conf.peerbook || !this.conf.peerbook.email || 
+                (this.pb  && this.pb.isOpen()))) {
                 resolve()
                 return
             }
             this.getFingerprint().then(fp => {
                 this.pb = new PeerbookConnection(fp,
-                    this.conf.peerbook.email,
-                    this.conf.peerbook.peer_name,
+                    email || this.conf.peerbook.email,
+                    peerName || this.conf.peerbook.peer_name,
                     this.conf.net.peerbook,
-                    this.conf.peerbook.insecure
+                    this.conf.peerbook && this.conf.peerbook.insecure
                 )
                 this.pb.onUpdate = (m) => this.onPBMessage(m)
                 this.pb.connect().then(resolve)
@@ -556,6 +558,13 @@ export class Terminal7 {
             this.pbConnect().then(() => {   
                 const gate = this.activeG
                 if (gate) {
+                    if (gate.session && gate.session.isSSH) {
+                        gate.session.close()
+                        gate.session = null
+                        this.notify("Lost SSH session")
+                        this.map.shell.runCommand("subscribe")
+                        return
+                    }
                     this.notify("🌞 Recovering")
                     this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
                     this.recovering = true
@@ -592,6 +601,7 @@ export class Terminal7 {
         this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1
         this.conf.ui.autoRestore = this.conf.ui.auto_restore || false
         this.conf.ui.verificationTTL = this.conf.ui.verification_ttl || 15 * 60 * 1000
+        this.conf.ui.subscribeTimeout = this.conf.ui.subscribe_timeout || 30 * 1000
 
         this.conf.net = this.conf.net || {}
         this.conf.net.iceServer = this.conf.net.ice_server ||
@@ -1069,3 +1079,4 @@ export class Terminal7 {
         return this.keys
     }
 }
+

@@ -1,3 +1,5 @@
+import { Capacitor } from '@capacitor/core'
+import { CapacitorPurchases } from '@capgo/capacitor-purchases'
 import { Clipboard } from "@capacitor/clipboard"
 import { Terminal } from '@tuzig/xterm'
 import { Command, loadCommands } from './commands'
@@ -9,6 +11,9 @@ import { Failure } from "./session"
 export class Shell {
 
     prompt = "TWR> "
+
+    emailRe = /^(([^<>()[..,;:.@"]+(.[^<>()[..,;:.@"]+)*)|(".+"))@(([^<>()[..,;:.@"]+.)+[^<>()[..,;:.@"]{2,})$/i;
+
 
     map: T7Map
     t: Terminal
@@ -24,7 +29,7 @@ export class Shell {
         this.t = map.t0
     }
 
-    start() {
+    async start() {
         if (this.active)
             return
         this.active = true
@@ -32,6 +37,67 @@ export class Shell {
         this.currentLine = ''
         this.t.scrollToBottom()
         document.addEventListener('keydown', ev => this.updateCapsLock(ev))
+
+        CapacitorPurchases.setDebugLogsEnabled({ enabled: true }) // Enable to get debug logs in dev mode
+        if (Capacitor.getPlatform() == "ios")
+            CapacitorPurchases.setup({ apiKey:'appl_qKHwbgKuoVXokCTMuLRwvukoqkd'})
+        CapacitorPurchases.addListener('purchasesUpdate', async (data) => {
+            console.log('purchasesUpdate', data)
+            if (!data.purchases || data.customerInfo.activeSubscriptions.includes(data.purchases.identifier))
+                return
+
+            this.t.writeln("Thank you for subscribing!")
+            const res = await fetch(terminal7.conf.net.peerbook + '/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: email,
+                    temp_id: data.customerInfo.appUserID,
+                    fp: await terminal7.getFingerprint(),
+                    peer_name: peerName,
+                    public_key: asaa,
+                })
+            })
+            //  if response code is OK, the bosy is a json object with a
+            //  QR, ID & next_url
+            //  if response code is not OK, the body is an error message
+            if (!res.ok) {
+                const msg = await res.text()
+                this.gate.Notify(" " + msg)
+                this.printPrompt()
+                return
+            }
+            const userData = await res.json()
+            const QR = userData.QR
+            const ID = userData.ID
+            const url = userData.next_url
+            this.t.writeln("Please scan this QR code with your OTP app")
+            this.t.writeln("and use to generate a one time password")
+            this.t.writeln("")
+            this.t.writeln(QR)
+            this.t.writeln("")
+            const otp = await shell.askValue("OTP")
+            // post otp to url as form data
+            // if response code is OK, the body should be ignored
+            // if response code is not OK, the body is an error message
+            // if response code is not OK, the body is an error message
+            const formData = new FormData();
+            formData.append('otp', otp);
+
+            const res2 = await fetch(url, {
+                method: 'POST',
+                body: formData
+            })
+            if (!res2.ok) {
+                this.gate.Notify(" " + msg)
+                this.printPrompt()
+                return
+            }
+            this.t.writeln(`Your new user ID is ${ID}`)
+            // TODO: add it to config , install webexec on the gate and authorize it
+        })
     }
     
     async onKey(ev: KeyboardEvent) {
@@ -106,7 +172,7 @@ export class Shell {
         this.active = true
     }
 
-    async runCommand(cmd: string, args: string[]) {
+    async runCommand(cmd: string, args: string[] = []) {
         this.map.showLog(true)
         await this.escapeActiveForm()
         await this.escapeWatchdog()
@@ -280,13 +346,12 @@ export class Shell {
     /*
      * onDisconnect is called when a gate disconnects.
      */
-    async onDisconnect(gate: Gate, couldBeBug: bool) {
+    async onDisconnect(gate: Gate, offerSub: bool) {
         if (!terminal7.netStatus.connected || terminal7.recovering ||
             ((terminal7.activeG != null) && (gate != terminal7.activeG)))
             return
 
         if (gate.firstConnection) {
-            const cmd = "bash <(curl -sL https://get.webexec.sh)"
             this.t.writeln("Failed to connect")
             let ans: string
             const verifyForm = [{
@@ -306,6 +371,7 @@ export class Shell {
                 return gate.onFailure(Failure.WrongAddress)
             }
             if (!gate.session.isSSH) {
+                const cmd = "bash <(curl -sL https://get.webexec.sh)"
                 const webexecForm = [{
                     prompt: `Make sure webexec is running on ${gate.addr}:
                         \n\x1B[1m${cmd}\x1B[0m\n\nCopy to clipboard?`,
@@ -322,15 +388,10 @@ export class Shell {
             }
         }
 
-        /* TODO: kill it or improve it?
-        if (couldBeBug) {
-            this.t.writeln("")
-            this.t.writeln("We're sorry, it could be a 🪳")
-            this.t.writeln("Please hit CMD-9 and paste the log in #bugs at")
-            this.t.writeln("https://discord.com/invite/rDBj8k4tUE")
-        }
-        */
-
+        if (offerSub) {
+            await this.runCommand("subscribe")
+            return
+        } 
         const reconnectForm = [
             { prompt: "Reconnect" },
             { prompt: "Close" }
@@ -359,8 +420,9 @@ export class Shell {
         return res[0]
     }
     async askValue(prompt: string, def?): Promise<string> {
-        const res = await this.map.shell.runForm(
-            [{ prompt: prompt, default: def }], "text")
+        let res
+        res = await this.map.shell.runForm(
+                [{ prompt: prompt, default: def }], "text")
         return res[0]
     }
 }
