@@ -420,8 +420,7 @@ export class Shell {
         return res[0]
     }
     async askValue(prompt: string, def?): Promise<string> {
-        let res
-        res = await this.map.shell.runForm(
+        const res = await this.map.shell.runForm(
                 [{ prompt: prompt, default: def }], "text")
         return res[0]
     }
