@@ -179,15 +179,17 @@ export class WebRTCSession extends BaseSession {
         }
         return channel
     }
-    openChannel(cmdorid: unknown, parent?: ChannelID, sx?: number, sy?: number):
+    openChannel(cmdorid: string | string[], parent?: ChannelID, sx?: number, sy?: number):
          Promise<Channel> {
         return new Promise((resolve, reject) => {
             let msgID: number
             if (sx !== undefined) {
+                if (typeof cmdorid == "string")
+                    cmdorid = [cmdorid] 
                 msgID = this.sendCTRLMsg({
                     type: "add_pane", 
                     args: { 
-                        command: [cmdorid],
+                        command: cmdorid,
                         rows: sy,
                         cols: sx,
                         parent: parent || 0
@@ -431,9 +433,16 @@ export class PeerbookSession extends WebRTCSession {
 export class HTTPWebRTCSession extends WebRTCSession {
     address: string
     fetchTimeout: number
-    constructor(address) {
+    headers: Headers
+    constructor(address: string, headers: Headers) {
         super()
         this.address = address
+        if (headers)
+            this.headers = headers
+        else {
+            this.headers = new Headers()
+            this.headers.append("Content-Type", "application/json")
+        }
     }
 
     onNegotiationNeeded(e) {
@@ -442,17 +451,16 @@ export class HTTPWebRTCSession extends WebRTCSession {
             this.pc.setLocalDescription(offer)
             const encodedO = btoa(JSON.stringify(offer))
             this.t7.getFingerprint().then(fp => {
-                Http.request({
-                    //TODO: add port to the conf file
-                    url: `http://${this.address}:7777/connect`,
-                    headers: {"Content-Type": "application/json"},
+                Http.Request({
+                    url: this.address, 
                     method: 'POST',
-                    //TODO: fix the timeout in the plugin
+                    headers: this.headers,
                     connectTimeout: this.fetchTimeout, 
                     data: JSON.stringify({api_version: 0,
                         offer: encodedO,
                         fingerprint: fp
-                    })
+                    }),
+                    webFetchExtra: { mode: 'no-cors' }
                 }).then(response => {
                     if (response.status == 401)
                         throw new Error('unauthorized');
@@ -477,7 +485,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
                             this.fail(Failure.BadRemoteDescription)
                     })
                 }).catch(error => {
-                    console.log("POST to /connect failed", error)
+                    console.log(`POST to ${this.address} failed`, error)
                     if (error.message == 'unauthorized')
                         this.fail(Failure.Unauthorized)
                     // TODO: the next line is probably wrong

@@ -7,6 +7,7 @@ import { Fields, Form } from './form'
 import { Gate } from "./gate"
 import { T7Map } from './map'
 import { Failure } from "./session"
+import { HTTPWebRTCSession } from './webrtc_session'
 
 export class Shell {
 
@@ -29,6 +30,77 @@ export class Shell {
         this.t = map.t0
     }
 
+    async serverInstall(session: HTTPWebRTCSession, ID: string) {
+    }
+    async onPurchasesUpdate({ data }) {
+        terminal7.log('purchasesUpdate', data)
+        /*
+        if (!data.purchases || data.customerInfo.activeSubscriptions.includes(data.purchases.identifier))
+            return
+            */
+
+        this.map.showLog(true)
+        this.t.writeln("Thank you for subscribing!")
+        const url = `http://${terminal7.conf.net.peerbook}/we`
+        let headers = new Headers()
+        headers.append("Content-Type", "application/json")
+        headers.append("Bearer", data.customerInfo.originalAppUserId)
+        const session = new HTTPWebRTCSession(url, headers)
+        session.onStateChange = async (state, failure?) => {
+            terminal7.log("state change", state)
+            if (state == 'connected') {
+                this.t.writeln(`Connected to ${this.addr}`)
+                let email: string
+                let peerName: string
+
+                try {
+                    peerName = await shell.askValue("Peer name", (await Device.getInfo()).name)
+                    email = await shell.askValue("Recovery email")
+                } catch (e) {
+                    shell.t.writeln("Aborted: "+e)
+                    shell.printPrompt()
+                    return
+                }
+                const regChannel = await session.openChannel(`register ${email} ${peerName}`, 0, 80, 24)
+                regChannel.onMessage = async (data: string) => {
+                    // parse the json
+                    const userData = JSON.parse(data)
+                    const QR = userData.QR
+                    const ID = userData.ID
+                    this.t.writeln("Please scan this QR code with your OTP app")
+                    this.t.writeln("")
+                    this.t.writeln(QR)
+                    this.t.writeln("")
+                    this.t.writeln("and use it to generate a One Time Password")
+                    let validated = false
+                    while (!validated) {
+                        const otp = await shell.askValue("OTP")
+                        const validateChannel = await session.openChannel(`validate ${otp}`, 0, 80, 24)
+                        validateChannel.onMessage = (data: string) => {
+                            if (!validated && data[0]=="1")
+                                validated = true
+                        }
+                        await regChannel.close()
+                    }
+                    if (validated) {
+                        this.t.writeln(`Validated!\nYour user ID is ${ID}`)
+                        await this.serverInstall(session, ID)
+                    }
+                }
+                await regChannel.close()
+            }
+        }
+        console.log("connectin to ", url)
+        await session.connect()
+    }
+    async startPurchases() {
+        await CapacitorPurchases.setDebugLogsEnabled({ enabled: true }) 
+        await CapacitorPurchases.setup({ apiKey:'appl_qKHwbgKuoVXokCTMuLRwvukoqkd'})
+        CapacitorPurchases.addListener('purchasesUpdate', async (data) => {
+            this.onPurchasesUpdate(data)
+        })
+    }
+
     async start() {
         if (this.active)
             return
@@ -37,67 +109,7 @@ export class Shell {
         this.currentLine = ''
         this.t.scrollToBottom()
         document.addEventListener('keydown', ev => this.updateCapsLock(ev))
-
-        CapacitorPurchases.setDebugLogsEnabled({ enabled: true }) // Enable to get debug logs in dev mode
-        if (Capacitor.getPlatform() == "ios")
-            CapacitorPurchases.setup({ apiKey:'appl_qKHwbgKuoVXokCTMuLRwvukoqkd'})
-        CapacitorPurchases.addListener('purchasesUpdate', async (data) => {
-            console.log('purchasesUpdate', data)
-            if (!data.purchases || data.customerInfo.activeSubscriptions.includes(data.purchases.identifier))
-                return
-
-            this.t.writeln("Thank you for subscribing!")
-            const res = await fetch(terminal7.conf.net.peerbook + '/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    email: email,
-                    temp_id: data.customerInfo.appUserID,
-                    fp: await terminal7.getFingerprint(),
-                    peer_name: peerName,
-                    public_key: asaa,
-                })
-            })
-            //  if response code is OK, the bosy is a json object with a
-            //  QR, ID & next_url
-            //  if response code is not OK, the body is an error message
-            if (!res.ok) {
-                const msg = await res.text()
-                this.gate.Notify(" " + msg)
-                this.printPrompt()
-                return
-            }
-            const userData = await res.json()
-            const QR = userData.QR
-            const ID = userData.ID
-            const url = userData.next_url
-            this.t.writeln("Please scan this QR code with your OTP app")
-            this.t.writeln("and use to generate a one time password")
-            this.t.writeln("")
-            this.t.writeln(QR)
-            this.t.writeln("")
-            const otp = await shell.askValue("OTP")
-            // post otp to url as form data
-            // if response code is OK, the body should be ignored
-            // if response code is not OK, the body is an error message
-            // if response code is not OK, the body is an error message
-            const formData = new FormData();
-            formData.append('otp', otp);
-
-            const res2 = await fetch(url, {
-                method: 'POST',
-                body: formData
-            })
-            if (!res2.ok) {
-                this.gate.Notify(" " + msg)
-                this.printPrompt()
-                return
-            }
-            this.t.writeln(`Your new user ID is ${ID}`)
-            // TODO: add it to config , install webexec on the gate and authorize it
-        })
+        this.startPurchases()
     }
     
     async onKey(ev: KeyboardEvent) {

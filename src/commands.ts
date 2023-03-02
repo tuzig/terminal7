@@ -559,9 +559,7 @@ async function subscribeCMD(shell: shell, args: string[]) {
 
     let offer
     try {
-        // await CapacitorPurchases.setDebugLogsEnabled({ enabled: true }) 
         // Enable to get debug logs in dev mode            
-        // await CapacitorPurchases.setup({ apiKey:'appl_qKHwbgKuoVXokCTMuLRwvukoqkd'})
         const { offerings } = await CapacitorPurchases.getOfferings()
         offer = offerings.current
     } catch (err) {
@@ -592,23 +590,20 @@ async function subscribeCMD(shell: shell, args: string[]) {
     }
     if (choice == subPrompt) {
         shell.t.writeln("Thank you for subscribing!")
-        let email: string
-        let peerName: string
-
+        shell.startHourglass(terminal7.conf.ui.subscribeTimeout)
+        // terminal7.pbConnect(email, peerName)
+        terminal7.ignoreAppEvents = true
         try {
-            peerName = await shell.askValue("Peer name", (await Device.getInfo()).name)
-            email = await shell.askValue("Recovery email")
-        } catch (e) {
-            shell.t.writeln("Aborted: "+e)
+            const { customerInfo } = await CapacitorPurchases.purchasePackage({
+                identifier: pack.identifier,
+                offeringIdentifier: pack.offeringIdentifier,
+            })
+        } catch (err) {
+            shell.stopHourglass()
+            shell.t.writeln("Error purchasing subscription")
             shell.printPrompt()
             return
         }
-        shell.startHourglass(terminal7.conf.ui.subscribeTimeout)
-        terminal7.pbConnect(email, peerName)
-        terminal7.ignoreAppEvents = true
-        const { customerInfo } = await CapacitorPurchases.purchasePackage({
-            identifier: pack.identifier,
-            offeringIdentifier: pack.offeringIdentifier,
-        })
+        shell.stopHourglass()
     }
 }

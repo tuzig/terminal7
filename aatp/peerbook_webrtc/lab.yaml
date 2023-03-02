@@ -27,6 +27,8 @@ services:
     build:
       context: .
       dockerfile: ./aatp/infra/peerbook/Dockerfile
+      args:
+        BRANCH: ${PBBRANCH-master}
     expose:
       - "17777"
     depends_on:
