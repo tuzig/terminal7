@@ -84,7 +84,7 @@ export class Shell {
                     this.t.writeln("and use it to generate a One Time Password")
                     let validated = false
                     while (!validated) {
-                        const otp = await shell.askValue("OTP")
+                        const otp = await this.askValue("OTP")
                         const validateChannel = await session.openChannel(`validate ${otp}`, 0, 80, 24)
                         validateChannel.onMessage = (data: string) => {
                             if (!validated && data[0]=="1")
@@ -438,12 +438,12 @@ export class Shell {
     }
     
     async askPass(): Promise<string> {
-        const res = await this.map.shell.runForm(
+        const res = await this.runForm(
             [{ prompt: "Password", password: true }], "text")
         return res[0]
     }
     async askValue(prompt: string, def?): Promise<string> {
-        const res = await this.map.shell.runForm(
+        const res = await this.runForm(
                 [{ prompt: prompt, default: def }], "text")
         return res[0]
     }
