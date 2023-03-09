@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core'
+import { Device } from '@capacitor/device';
 import { CapacitorPurchases } from '@capgo/capacitor-purchases'
 import { Clipboard } from "@capacitor/clipboard"
 import { Terminal } from '@tuzig/xterm'
@@ -32,39 +33,48 @@ export class Shell {
 
     async serverInstall(session: HTTPWebRTCSession, ID: string) {
     }
-    async onPurchasesUpdate({ data }) {
+    async PBConnect(appUserId: string) {
+        this.map.showLog(true)
+        const schema = terminal7.conf.peerbook.insecure? "http" : "https"
+        const url = `${schema}://${terminal7.conf.net.peerbook}/we`
+        const headers = {"Bearer": appUserId, "Content-Type": "application/json"}
+        const session = new HTTPWebRTCSession(url, headers)
+        return session
+    }
+    async onPurchasesUpdate(data) {
         terminal7.log('purchasesUpdate', data)
         /*
         if (!data.purchases || data.customerInfo.activeSubscriptions.includes(data.purchases.identifier))
             return
             */
 
-        this.map.showLog(true)
-        this.t.writeln("Thank you for subscribing!")
-        const url = `http://${terminal7.conf.net.peerbook}/we`
-        let headers = new Headers()
-        headers.append("Content-Type", "application/json")
-        headers.append("Bearer", data.customerInfo.originalAppUserId)
-        const session = new HTTPWebRTCSession(url, headers)
+        // intialize the http headers with the bearer token
+        const session = await this.PBConnect(data.customerInfo.originalAppUserId)
         session.onStateChange = async (state, failure?) => {
             terminal7.log("state change", state)
             if (state == 'connected') {
+                let reply = []
                 this.t.writeln(`Connected to ${this.addr}`)
                 let email: string
                 let peerName: string
 
+                // this.t.writeln("Got a purchase update, connecting to peerbook")
                 try {
-                    peerName = await shell.askValue("Peer name", (await Device.getInfo()).name)
-                    email = await shell.askValue("Recovery email")
+                    peerName = await this.askValue("Peer name", (await Device.getInfo()).name)
+                    email = await this.askValue("Recovery email")
                 } catch (e) {
-                    shell.t.writeln("Aborted: "+e)
-                    shell.printPrompt()
+                    this.t.writeln("Aborted: "+e)
+                    this.printPrompt()
                     return
                 }
-                const regChannel = await session.openChannel(`register ${email} ${peerName}`, 0, 80, 24)
-                regChannel.onMessage = async (data: string) => {
+                const cmd = ["register", peerName, email]
+                const regChannel = await session.openChannel(cmd, 0, 80, 24)
+                regChannel.onClose = async m => {
+                    const repStr =  new TextDecoder().decode(reply)
+                    console.log("got chgannel close", repStr)
+                    const userData = JSON.parse(repStr)
                     // parse the json
-                    const userData = JSON.parse(data)
+                    
                     const QR = userData.QR
                     const ID = userData.ID
                     this.t.writeln("Please scan this QR code with your OTP app")
@@ -80,17 +90,18 @@ export class Shell {
                             if (!validated && data[0]=="1")
                                 validated = true
                         }
-                        await regChannel.close()
                     }
                     if (validated) {
                         this.t.writeln(`Validated!\nYour user ID is ${ID}`)
                         await this.serverInstall(session, ID)
                     }
                 }
-                await regChannel.close()
+                regChannel.onMessage = async (data: Uint8Array) => {
+                    console.log("Got registration data", data)
+                    reply.push(...data)
+                }
             }
         }
-        console.log("connectin to ", url)
         await session.connect()
     }
     async startPurchases() {

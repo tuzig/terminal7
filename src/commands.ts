@@ -1,6 +1,5 @@
 import { CapacitorPurchases } from '@capgo/capacitor-purchases'
 import { Clipboard } from '@capacitor/clipboard'
-import { Device } from '@capacitor/device';
 import { Shell } from "./shell"
 import * as TOML from '@tuzig/toml'
 import { Preferences } from "@capacitor/preferences"
@@ -547,63 +546,71 @@ async function copyKeyCMD(shell: Shell) {
         return shell.t.writeln("No key yet. Please connect to generate one.\n(try connect or add)")
 }
 async function subscribeCMD(shell: shell, args: string[]) {
-    const packageTypeName = {
-        'ANNUAL': 'a year',
-        'MONTHLY': 'a month',
-        'TWO_MONTH': 'two months',
-        'THREE_MONTH': 'three months',
-        'SIX_MONTH': 'six months',
-        'LIFETIME': 'a lifetime',
-        'WEEKLY': 'a week',
-    }
+    let { customerInfo } = await CapacitorPurchases.getCustomerInfo()
+    if (customerInfo.entitlements.activeSubscriptions.length == 0) {
+        const packageTypeName = {
+            'ANNUAL': 'a year',
+            'MONTHLY': 'a month',
+            'TWO_MONTH': 'two months',
+            'THREE_MONTH': 'three months',
+            'SIX_MONTH': 'six months',
+            'LIFETIME': 'a lifetime',
+            'WEEKLY': 'a week',
+        }
 
-    let offer
-    try {
-        // Enable to get debug logs in dev mode            
-        const { offerings } = await CapacitorPurchases.getOfferings()
-        offer = offerings.current
-    } catch (err) {
-        shell.t.writeln("Error getting offerings")
-        terminal7.log("Error getting offerings: " + err)
-        return false
-    }
-    if (offer == null) {  
-        return false
-            // Display current offering with offerings.current
-    }  
-    const pack = offer.availablePackages[0]
-    const product = pack.product
-    const term = packageTypeName[pack.packageType]
-    shell.t.writeln(offer.serverDescription)
-    const subPrompt = `Start your trial month (then ${product.priceString} for ${term})`
-    const subscribeMenu = [
-        { prompt: "No thanks" },
-        { prompt: subPrompt },
-        { prompt: "Don't offer again" },
-    ]
-    let choice: string
-    try {
-        choice = await shell.runForm(subscribeMenu, "menu")
-    } catch (err) {
-        shell.t.writeln("Error getting choice")
-        return
-    }
-    if (choice == subPrompt) {
-        shell.t.writeln("Thank you for subscribing!")
-        shell.startHourglass(terminal7.conf.ui.subscribeTimeout)
-        // terminal7.pbConnect(email, peerName)
-        terminal7.ignoreAppEvents = true
+        let offer
         try {
-            const { customerInfo } = await CapacitorPurchases.purchasePackage({
-                identifier: pack.identifier,
-                offeringIdentifier: pack.offeringIdentifier,
-            })
+            // Enable to get debug logs in dev mode            
+            const { offerings } = await CapacitorPurchases.getOfferings()
+            offer = offerings.current
         } catch (err) {
-            shell.stopHourglass()
-            shell.t.writeln("Error purchasing subscription")
-            shell.printPrompt()
+            shell.t.writeln("Error getting offerings")
+            terminal7.log("Error getting offerings: " + err)
+            return false
+        }
+        if (offer == null) {  
+            return false
+                // Display current offering with offerings.current
+        }  
+        const pack = offer.availablePackages[0]
+        const product = pack.product
+        const term = packageTypeName[pack.packageType]
+        shell.t.writeln(offer.serverDescription)
+        const subPrompt = `Start your trial month (then ${product.priceString} for ${term})`
+        const subscribeMenu = [
+            { prompt: "No thanks" },
+            { prompt: subPrompt },
+            { prompt: "Don't offer again" },
+        ]
+        let choice: string
+        try {
+            choice = await shell.runForm(subscribeMenu, "menu")
+        } catch (err) {
+            shell.t.writeln("Error getting choice")
             return
         }
-        shell.stopHourglass()
+        if (choice == subPrompt) {
+            shell.t.writeln("Thank you for subscribing!")
+            shell.startHourglass(terminal7.conf.ui.subscribeTimeout)
+            // terminal7.pbConnect(email, peerName)
+            terminal7.ignoreAppEvents = true
+            try {
+                const data = await CapacitorPurchases.purchasePackage({
+                    identifier: pack.identifier,
+                    offeringIdentifier: pack.offeringIdentifier,
+                })
+                customerInfo = data.customerInfo
+            } catch (err) {
+                shell.stopHourglass()
+                shell.t.writeln("Error purchasing subscription")
+                shell.printPrompt()
+                return
+            }
+            shell.stopHourglass()
+        }
+    } else {
+        shell.t.writeln("You are already subscribed, but you're welcome to try again!")
+        // call purchase update manualy
+        shell.onPurchasesUpdate({ customerInfo: customerInfo})
     }
 }

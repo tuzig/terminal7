@@ -1,4 +1,4 @@
-import { Http } from '@capacitor-community/http';
+import { CapacitorHttp } from '@capacitor/core';
 import { BaseChannel, BaseSession, CallbackType, Channel, ChannelID, Failure } from './session';
 
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
@@ -27,11 +27,12 @@ export class WebRTCChannel extends BaseChannel {
         else 
             return "disconnected"
     }
-    send(data: string) {
-        if (this.dataChannel)
-            this.dataChannel.send(data)
-        else 
+    send(data: ArrayBuffer): void {
+        if (!this.dataChannel) {
             this.t7.notify("data channel closed")
+            return
+        }
+        this.dataChannel.send(data)
     }
     resize(sx: number, sy: number): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -433,34 +434,33 @@ export class PeerbookSession extends WebRTCSession {
 export class HTTPWebRTCSession extends WebRTCSession {
     address: string
     fetchTimeout: number
-    headers: Headers
-    constructor(address: string, headers: Headers) {
+    headers: CapacitorHttp.HttpHeaders
+    constructor(address: string, headers: Object) {
         super()
         this.address = address
-        if (headers)
-            this.headers = headers
-        else {
-            this.headers = new Headers()
-            this.headers.append("Content-Type", "application/json")
-        }
+        this.headers = { "Content-Type": "application/json" }
+        for (const k in headers)
+            this.headers[k] =  headers[k]
+
+        console.log("new http webrtc session", address, JSON.stringify(this.headers))
     }
 
     onNegotiationNeeded(e) {
-        this.t7.log("on negotiation needed", e)
+        this.t7.log("over HTTP on negotiation needed", e)
         this.pc.createOffer().then(offer => {
             this.pc.setLocalDescription(offer)
             const encodedO = btoa(JSON.stringify(offer))
             this.t7.getFingerprint().then(fp => {
-                Http.Request({
+                console.log("sending offer with headers ", this.headers)
+                CapacitorHttp.post({
                     url: this.address, 
-                    method: 'POST',
                     headers: this.headers,
-                    connectTimeout: this.fetchTimeout, 
-                    data: JSON.stringify({api_version: 0,
+                    connectTimeout: 3000,
+                    data: {api_version: 0,
                         offer: encodedO,
-                        fingerprint: fp
-                    }),
-                    webFetchExtra: { mode: 'no-cors' }
+                        fingerprint: fp,
+                    },
+                    // webFetchExtra: { mode: 'no-cors' }
                 }).then(response => {
                     if (response.status == 401)
                         throw new Error('unauthorized');
@@ -485,7 +485,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
                             this.fail(Failure.BadRemoteDescription)
                     })
                 }).catch(error => {
-                    console.log(`POST to ${this.address} failed`, error)
+                    console.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
                     if (error.message == 'unauthorized')
                         this.fail(Failure.Unauthorized)
                     // TODO: the next line is probably wrong
