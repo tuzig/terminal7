@@ -1,4 +1,3 @@
-import { Capacitor } from '@capacitor/core'
 import { Device } from '@capacitor/device';
 import { CapacitorPurchases } from '@capgo/capacitor-purchases'
 import { Clipboard } from "@capacitor/clipboard"
@@ -31,7 +30,8 @@ export class Shell {
         this.t = map.t0
     }
 
-    async serverInstall(session: HTTPWebRTCSession, ID: string) {
+    async serverInstall(session: HTTPWebRTCSession, uID: string) {
+        console.log("Installing server %s %v", uID, session)
     }
     async PBConnect(appUserId: string) {
         this.map.showLog(true)
@@ -53,7 +53,7 @@ export class Shell {
         session.onStateChange = async (state, failure?) => {
             terminal7.log("state change", state)
             if (state == 'connected') {
-                let reply = []
+                const reply = []
                 this.t.writeln(`Connected to ${this.addr}`)
                 let email: string
                 let peerName: string
@@ -70,13 +70,13 @@ export class Shell {
                 const cmd = ["register", peerName, email]
                 const regChannel = await session.openChannel(cmd, 0, 80, 24)
                 regChannel.onClose = async m => {
-                    const repStr =  new TextDecoder().decode(reply)
+                    const repStr =  new TextDecoder().decode(new Uint8Array(reply))
                     console.log("got chgannel close", repStr)
                     const userData = JSON.parse(repStr)
                     // parse the json
                     
                     const QR = userData.QR
-                    const ID = userData.ID
+                    const uID = userData.ID
                     this.t.writeln("Please scan this QR code with your OTP app")
                     this.t.writeln("")
                     this.t.writeln(QR)
@@ -92,8 +92,8 @@ export class Shell {
                         }
                     }
                     if (validated) {
-                        this.t.writeln(`Validated!\nYour user ID is ${ID}`)
-                        await this.serverInstall(session, ID)
+                        this.t.writeln(`Validated!\nYour user ID is ${uID}`)
+                        await this.serverInstall(session, uID)
                     }
                 }
                 regChannel.onMessage = async (data: Uint8Array) => {
