@@ -5,7 +5,7 @@
  *  License: GPLv3
  */
 import { Cell } from './cell.js'
-import { Terminal } from '@tuzig/xterm'
+import { Terminal } from 'xterm'
 import { Clipboard } from '@capacitor/clipboard'
 import { Preferences } from '@capacitor/preferences'
 import { FitAddon } from 'xterm-addon-fit'
@@ -18,7 +18,7 @@ import { BELL_SOUND } from './bell.js'
 
 import { Failure } from './session'
 
-import XtermWebfont from 'xterm-webfont'
+import XtermWebfont from '@liveconfig/xterm-webfont'
 
 const REGEX_SEARCH = false,
     COPYMODE_BORDER_COLOR = "#F952F9",

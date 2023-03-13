@@ -7,13 +7,14 @@
  *  License: GPLv3
  */
 
-import { Terminal } from '@tuzig/xterm'
+import { Terminal } from 'xterm'
 import { Gate } from './gate'
 import { WebLinksAddon } from 'xterm-addon-web-links'
 import { FitAddon } from "xterm-addon-fit"
 import { WebglAddon } from 'xterm-addon-webgl'
 import { ImageAddon } from 'xterm-addon-image';
-import XtermWebfont from 'xterm-webfont'
+import XtermWebfont from '@liveconfig/xterm-webfont'
+
 import { Shell } from './shell'
 
 export class T7Map {

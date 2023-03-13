@@ -1,4 +1,4 @@
-import { Terminal } from "@tuzig/xterm"
+import { Terminal } from "xterm"
 import { Clipboard } from "@capacitor/clipboard"
 
 export type Fields = Array<{

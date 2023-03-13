@@ -13,9 +13,9 @@ import { Terminal7Mock, sleep } from './infra.ts'
 import { Preferences } from '@capacitor/preferences'
 import { Gate } from '../src/gate.ts'
 import { HTTPWebRTCSession } from '../src/webrtc_session'
-import { Terminal } from '@tuzig/xterm'
+import { Terminal } from 'xterm'
 
-vi.mock('@tuzig/xterm')
+vi.mock('xterm')
 vi.mock('../src/webrtc_session.ts')
 vi.mock('../src/ssh_session.ts')
 

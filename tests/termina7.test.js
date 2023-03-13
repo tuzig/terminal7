@@ -12,12 +12,12 @@ import { T7Map } from '../src/map'
 import { Terminal7Mock, sleep } from './infra'
 import { assert } from "chai"
 import { Preferences } from '@capacitor/preferences'
-import { Terminal } from '@tuzig/xterm'
+import { Terminal } from 'xterm'
 import { SSHSession } from '../src/ssh_session'
 import { expect, vi } from 'vitest'
 import { HTTPWebRTCSession } from '../src/webrtc_session'
 
-vi.mock('@tuzig/xterm')
+vi.mock('xterm')
 vi.mock('../src/ssh_session.ts')
 vi.mock('../src/webrtc_session.ts')
 

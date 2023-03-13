@@ -1,7 +1,7 @@
 import { Device } from '@capacitor/device';
 import { CapacitorPurchases } from '@capgo/capacitor-purchases'
 import { Clipboard } from "@capacitor/clipboard"
-import { Terminal } from '@tuzig/xterm'
+import { Terminal } from 'xterm'
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
 import { Gate } from "./gate"
@@ -24,6 +24,7 @@ export class Shell {
     currentLine = ''
     watchdog: number
     timer: number | null = null
+    pbSession: HTTPWebRTCSession | null = null
 
     constructor(map: T7Map) {
         this.map = map
@@ -33,13 +34,18 @@ export class Shell {
     async serverInstall(session: HTTPWebRTCSession, uID: string) {
         console.log("Installing server %s %v", uID, session)
     }
-    async PBConnect(appUserId: string) {
+    async PBConnect(appUserId?: string) {
         this.map.showLog(true)
+        if (this.pbSession) {
+            return this.pbSession
+        }
         const schema = terminal7.conf.peerbook.insecure? "http" : "https"
         const url = `${schema}://${terminal7.conf.net.peerbook}/we`
-        const headers = {"Bearer": appUserId, "Content-Type": "application/json"}
-        const session = new HTTPWebRTCSession(url, headers)
-        return session
+        const headers = {"Content-Type": "application/json"}
+        if (appUserId)
+            headers["Bearer"] = appUserId
+        this.pbSession = new HTTPWebRTCSession(url, headers)
+        return this.pbSession
     }
     async onPurchasesUpdate(data) {
         terminal7.log('purchasesUpdate', data)
@@ -63,11 +69,10 @@ export class Shell {
                     peerName = await this.askValue("Peer name", (await Device.getInfo()).name)
                     email = await this.askValue("Recovery email")
                 } catch (e) {
-                    this.t.writeln("Aborted: "+e)
                     this.printPrompt()
                     return
                 }
-                const cmd = ["register", peerName, email]
+                const cmd = ["register", email, peerName]
                 const regChannel = await session.openChannel(cmd, 0, 80, 24)
                 regChannel.onClose = async m => {
                     const repStr =  new TextDecoder().decode(new Uint8Array(reply))
@@ -82,24 +87,24 @@ export class Shell {
                     this.t.writeln(QR)
                     this.t.writeln("")
                     this.t.writeln("and use it to generate a One Time Password")
-                    let validated = false
-                    while (!validated) {
-                        const otp = await this.askValue("OTP")
-                        const validateChannel = await session.openChannel(`validate ${otp}`, 0, 80, 24)
-                        validateChannel.onMessage = (data: string) => {
-                            if (!validated && data[0]=="1")
-                                validated = true
-                        }
+                    try {
+                        await this.validateOTP()
+                    } catch(e) {
+                        return
                     }
-                    if (validated) {
-                        this.t.writeln(`Validated!\nYour user ID is ${uID}`)
-                        await this.serverInstall(session, uID)
-                    }
+                    this.t.writeln(`Validated!\nYour user ID is ${uID}`)
+                    this.t.writeln("Type `install` to install on a server")
+                    this.printPrompt()
                 }
                 regChannel.onMessage = async (data: Uint8Array) => {
                     console.log("Got registration data", data)
                     reply.push(...data)
                 }
+            }
+            else if (state == 'failed') {
+                this.t.writeln("PeerBook connection failed")
+                this.pbSession = null
+                this.printPrompt()
             }
         }
         await session.connect()
@@ -447,5 +452,26 @@ export class Shell {
                 [{ prompt: prompt, default: def }], "text")
         return res[0]
     }
+    async validateOTP() {
+        let validated = false
+        let finished = false
+        const session = await this.PBConnect()
+        while (!validated) {
+            const otp = await this.askValue("OTP")
+            const validateChannel = await session.openChannel(["ping", otp], 0, 80, 24)
+            validateChannel.onMessage = (data: string) => {
+                finished = true
+                const ret = String.fromCharCode(data[0])
+                console.log("Got ping reply", ret)
+                if (ret == "1") {
+                    validated = true
+                }
+            }
+            while (!finished) {
+                await new Promise(r => setTimeout(r, 100))
+            }
+            if (!validated)
+                this.t.writeln("Invalid OTP, please try again")
+        }
+    }
 }
-
