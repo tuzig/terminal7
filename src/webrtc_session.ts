@@ -435,13 +435,12 @@ export class HTTPWebRTCSession extends WebRTCSession {
     address: string
     fetchTimeout: number
     headers: CapacitorHttp.HttpHeaders
-    constructor(address: string, headers: Object) {
+    constructor(address: string, headers?: Map<string, string>) {
         super()
         this.address = address
         this.headers = { "Content-Type": "application/json" }
-        for (const k in headers)
-            this.headers[k] =  headers[k]
-
+        if (headers)
+            headers.forEach((v, k) => this.headers[k] =  v)
         console.log("new http webrtc session", address, JSON.stringify(this.headers))
     }
 
@@ -449,55 +448,57 @@ export class HTTPWebRTCSession extends WebRTCSession {
         this.t7.log("over HTTP on negotiation needed", e)
         this.pc.createOffer().then(offer => {
             this.pc.setLocalDescription(offer)
-            const encodedO = btoa(JSON.stringify(offer))
-            this.t7.getFingerprint().then(fp => {
-                console.log("sending offer with headers ", this.headers)
-                CapacitorHttp.post({
-                    url: this.address, 
-                    headers: this.headers,
-                    connectTimeout: 3000,
-                    data: {api_version: 0,
-                        offer: encodedO,
-                        fingerprint: fp,
-                    },
-                    // webFetchExtra: { mode: 'no-cors' }
-                }).then(response => {
-                    if (response.status == 401)
-                        throw new Error('unauthorized');
-                    if (response.status >= 300)
-                        throw new Error(
-                          `HTTP POST failed with status ${response.status}`)
-                    return response.data
-                }).then(data => {
-                    /* TODO: this needs to move
-                    if (!this.verified) {
-                        this.verified = true
-                        this.t7.storeGates()
-                    }
-                    */
-                    // TODO move this to the last line of the last then
-                    const answer = JSON.parse(atob(data))
-                    const sd = new RTCSessionDescription(answer)
-                    if (this.pc)
-                        this.pc.setRemoteDescription(sd)
-                    .catch (() => { 
-                        if (this.pc)
-                            this.fail(Failure.BadRemoteDescription)
-                    })
-                }).catch(error => {
-                    console.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
-                    if (error.message == 'unauthorized')
-                        this.fail(Failure.Unauthorized)
-                    // TODO: the next line is probably wrong
-                    else
-                        this.fail(Failure.NotSupported)
-                })
-            })
 
         })
     }
-    onIceCandidate() {
-        return
+    onIceCandidate(ev: RTCPeerConnectionIceEvent) {
+        console.log("got ice candidate", ev)
+        if (event.candidate != null)
+            return
+        this.t7.getFingerprint().then(fp => {
+            console.log("sending offer", this.pc.localDescription)
+            const encodedO = btoa(JSON.stringify(this.pc.localDescription))
+            console.log("sending offer with headers ", this.headers)
+            CapacitorHttp.post({
+                url: this.address, 
+                headers: this.headers,
+                connectTimeout: 3000,
+                data: {api_version: 0,
+                    offer: encodedO,
+                    fingerprint: fp,
+                },
+                // webFetchExtra: { mode: 'no-cors' }
+            }).then(response => {
+                if (response.status == 401)
+                    throw new Error('unauthorized');
+                if (response.status >= 300)
+                    throw new Error(
+                      `HTTP POST failed with status ${response.status}`)
+                return response.data
+            }).then(data => {
+                /* TODO: this needs to move
+                if (!this.verified) {
+                    this.verified = true
+                    this.t7.storeGates()
+                }
+                */
+                // TODO move this to the last line of the last then
+                const answer = JSON.parse(atob(data))
+                const sd = new RTCSessionDescription(answer)
+                if (this.pc)
+                    this.pc.setRemoteDescription(sd).catch (() => { 
+                        if (this.pc)
+                            this.fail(Failure.BadRemoteDescription)
+                    })
+            }).catch(error => {
+                console.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
+                if (error.message == 'unauthorized')
+                    this.fail(Failure.Unauthorized)
+                // TODO: the next line is probably wrong
+                else
+                    this.fail(Failure.NotSupported)
+            })
+        })
     }
 }
 
