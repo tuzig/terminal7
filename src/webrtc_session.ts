@@ -382,11 +382,15 @@ export class PeerbookSession extends WebRTCSession {
                   {method: 'POST', signal: ctrl.signal })
             .then(response => {
                 if (!response.ok)
-                    throw new Error(
-                      `HTTP POST failed with status ${response.status}`)
-                return response.json()
+                    return null
+                else
+                    return response.json()
             }).then(servers => {
                 clearTimeout(tId)
+                if (!servers) {
+                    reject("failed to get ice servers")
+                    return
+                }
                 // return an array with the conf's server and subspace's
                 resolve([{ urls: this.t7.conf.net.iceServer},
                          ...servers])
@@ -470,12 +474,15 @@ export class HTTPWebRTCSession extends WebRTCSession {
                 // webFetchExtra: { mode: 'no-cors' }
             }).then(response => {
                 if (response.status == 401)
-                    throw new Error('unauthorized');
-                if (response.status >= 300)
-                    throw new Error(
-                      `HTTP POST failed with status ${response.status}`)
-                return response.data
+                    this.fail(Failure.Unauthorized)
+                else if (response.status >= 300)
+                    this.fail()
+                else 
+                    return response.data
+                return null
             }).then(data => {
+                if (!data)
+                    return
                 /* TODO: this needs to move
                 if (!this.verified) {
                     this.verified = true

@@ -81,6 +81,12 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             usage: "hi[de]",
             execute: async () => shell.map.showLog(false)
         },
+        install: {
+            name: "install",
+            help: "Install webexec",
+            usage: "i[install] [gatename]",
+            execute: async args => installCMD(shell, args)
+        },
         map: {
             name: "map",
             help: "Back to the map",
@@ -104,6 +110,12 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             help: "Subscripte to peerbook",
             usage: "sub[scribe]",
             execute: async args => subscribeCMD(shell, args)
+        },
+        unsubscribe: {
+            name: "unsubscribe",
+            help: "Subscripte from peerbook",
+            usage: "unsub[scribe]",
+            execute: async args => unsubscribeCMD(shell)
         },
     }))
 }
@@ -547,7 +559,7 @@ async function copyKeyCMD(shell: Shell) {
 }
 async function subscribeCMD(shell: shell, args: string[]) {
     let { customerInfo } = await CapacitorPurchases.getCustomerInfo()
-    if (customerInfo.entitlements.activeSubscriptions.length == 0) {
+    if (!customerInfo.entitlements.active.peerbook) {
         const packageTypeName = {
             'ANNUAL': 'a year',
             'MONTHLY': 'a month',
@@ -590,9 +602,8 @@ async function subscribeCMD(shell: shell, args: string[]) {
             return
         }
         if (choice == subPrompt) {
-            shell.t.writeln("Thank you for subscribing!")
+            shell.t.writeln("Thank you. Store will open momentarily.")
             shell.startHourglass(terminal7.conf.ui.subscribeTimeout)
-            // terminal7.pbConnect(email, peerName)
             terminal7.ignoreAppEvents = true
             try {
                 const data = await CapacitorPurchases.purchasePackage({
@@ -600,17 +611,42 @@ async function subscribeCMD(shell: shell, args: string[]) {
                     offeringIdentifier: pack.offeringIdentifier,
                 })
                 customerInfo = data.customerInfo
-            } catch (err) {
+                shell.t.writeln("Waiting for store confirmation...")
+            } catch(e) {
+                shell.t.writeln("Error purchasing, please try again or contact support")
+            } finally {
                 shell.stopHourglass()
-                shell.t.writeln("Error purchasing subscription")
-                shell.printPrompt()
-                return
             }
-            shell.stopHourglass()
         }
     } else {
-        shell.t.writeln("You are already subscribed, but you're welcome to try again!")
+        shell.t.writeln("You are already subscribed")
         // call purchase update manualy
-        shell.onPurchasesUpdate({ customerInfo: customerInfo})
+        terminal7.pbConnect()
     }
+}
+async function installCMD(shell: Shell, args: string[]) {
+    let gate: Gate
+    if (args[0]) {
+        gate = shell.getGate(args[0])
+        if (!gate)
+            return shell.t.writeln(`Host not found: ${args[0]}`)
+    } else {
+        gate = terminal7.activeG
+        if (!gate) {
+            shell.t.writeln("Please select where to install:")
+            let choice: string
+            let choices = []
+            for (const [k, gate] of terminal7.gates) {
+                choices.push({ prompt: gate.name })
+            }
+            // const choices = Array.from(terminal7.gates, ([k, gate]) => { prompt: gate.name } )
+            choice = await shell.runForm(choices, "menu")
+            gate = shell.getGate(choice)
+        }
+    }
+    // actully install
+}
+async function unsubscribeCMD(shell: Shell) {
+    await Preferences.remove({key: "uID"})
+    shell.t.writeln("Unsubscribed")
 }

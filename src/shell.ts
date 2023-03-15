@@ -2,6 +2,7 @@ import { Device } from '@capacitor/device';
 import { CapacitorPurchases } from '@capgo/capacitor-purchases'
 import { Clipboard } from "@capacitor/clipboard"
 import { Terminal } from 'xterm'
+import { Preferences } from '@capacitor/preferences'
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
 import { Gate } from "./gate"
@@ -41,77 +42,129 @@ export class Shell {
         }
         const schema = terminal7.conf.peerbook.insecure? "http" : "https"
         const url = `${schema}://${terminal7.conf.net.peerbook}/we`
-        const headers = {"Content-Type": "application/json"}
+        const headers = new Map<string, string>()
         if (appUserId)
-            headers["Bearer"] = appUserId
+            headers.set("Bearer", appUserId)
         this.pbSession = new HTTPWebRTCSession(url, headers)
         return this.pbSession
     }
     async onPurchasesUpdate(data) {
-        terminal7.log('purchasesUpdate', data)
-        /*
-        if (!data.purchases || data.customerInfo.activeSubscriptions.includes(data.purchases.identifier))
-            return
-            */
+        console.log("Purchases update", data)
+        return new Promise<void>(resolve=> {
+            /*
+            if (!data.purchases || data.customerInfo.activeSubscriptions.includes(data.purchases.identifier))
+                return
+                */
 
-        // intialize the http headers with the bearer token
-        const session = await this.PBConnect(data.customerInfo.originalAppUserId)
-        session.onStateChange = async (state, failure?) => {
-            terminal7.log("state change", state)
-            if (state == 'connected') {
-                const reply = []
-                this.t.writeln(`Connected to ${this.addr}`)
-                let email: string
+            // intialize the http headers with the bearer token
+            Preferences.get({ key: 'uID' }).then(async uID => {
                 let peerName: string
-
-                // this.t.writeln("Got a purchase update, connecting to peerbook")
-                try {
-                    peerName = await this.askValue("Peer name", (await Device.getInfo()).name)
-                    email = await this.askValue("Recovery email")
-                } catch (e) {
-                    this.printPrompt()
+                console.log("uID", uID)
+                const active = data.customerInfo.entitlements.active
+                if (!active.peerbook) {
+                    terminal7.notify("PeerBook inactive. Use `subscribe` for WebRTC 🚀")
+                    resolve()
                     return
                 }
-                const cmd = ["register", email, peerName]
-                const regChannel = await session.openChannel(cmd, 0, 80, 24)
-                regChannel.onClose = async m => {
-                    const repStr =  new TextDecoder().decode(new Uint8Array(reply))
-                    console.log("got chgannel close", repStr)
-                    const userData = JSON.parse(repStr)
-                    // parse the json
-                    
-                    const QR = userData.QR
-                    const uID = userData.ID
-                    this.t.writeln("Please scan this QR code with your OTP app")
-                    this.t.writeln("")
-                    this.t.writeln(QR)
-                    this.t.writeln("")
-                    this.t.writeln("and use it to generate a One Time Password")
-                    try {
-                        await this.validateOTP()
-                    } catch(e) {
-                        return
+                // we have an active subscription and no user id, time to register
+                terminal7.notify('🏪 Update: subscribed until ' + active.webrtc.expirationDate)
+                if (uID && uID.value) {
+                    this.t.writeln("Connecting to PeerBook")
+                    this.startWatchdog()
+                    await terminal7.pbConnect(uID.value, peerName)
+                    this.stopWatchdog()
+                    resolve()
+                    return
+                }
+                this.t.writeln("Completing registration")
+                this.startWatchdog()
+                this.PBConnect(data.customerInfo.originalAppUserId).then(session => {
+                    session.onStateChange = async (state, failure?) => {
+                        terminal7.log("state change", state)
+                        this.stopWatchdog()
+                        if (state == 'connected') {
+                            const reply = []
+                            let email: string
+                            this.t.writeln("Connected")
+                            try {
+                                peerName = await this.askValue("Peer name", (await Device.getInfo()).name)
+                                email = await this.askValue("Recovery email")
+                            } catch (e) {
+                                this.t.writeln("Cancelled. Use `subscribe` to activate")
+                                this.printPrompt()
+                                resolve()
+                                // reject()
+                                return
+                            }
+                            // store peerName
+                            await Preferences.set({ key: 'peerName', value: peerName })
+                            const cmd = ["register", email, peerName]
+                            const regChannel = await session.openChannel(cmd, 0, 80, 24)
+                            regChannel.onClose = async m => {
+                                const repStr =  new TextDecoder().decode(new Uint8Array(reply))
+                                console.log("got chgannel close", repStr)
+                                const userData = JSON.parse(repStr)
+                                // parse the json
+                                
+                                const QR = userData.QR
+                                const uID = userData.ID
+                                await Preferences.set({ key: 'uID', value: uID })
+                                CapacitorPurchases.logIn({ appUserID: uID }).then (r => console.log("after login", r))
+                                this.t.writeln("Please scan this QR code with your OTP app")
+                                this.t.writeln("")
+                                this.t.writeln(QR)
+                                this.t.writeln("")
+                                this.t.writeln("and use it to generate a One Time Password")
+                                try {
+                                    await this.validateOTP()
+                                } catch(e) {
+                                    resolve()
+                                    // reject(e)
+                                    return
+                                }
+                                this.t.writeln(`Validated!\nYour user ID is ${uID}`)
+                                this.t.writeln("Type `install` to install on a server")
+                                this.printPrompt()
+                                resolve()
+                                return
+                            }
+                            regChannel.onMessage = async (data: Uint8Array) => {
+                                console.log("Got registration data", data)
+                                reply.push(...data)
+                            }
+                        }
+                        else if (state == 'failed') {
+                            if (failure == Failure.Timeout) {
+                                this.t.writeln("Connection timed out")
+                                this.t.writeln("Please try again and if persists, contact support")
+                            } else if (failure == Failure.Unauthorized) {
+                                this.t.writeln("Unauthorized")
+                            } else {
+                                this.t.writeln("Connection failed")
+                                this.t.writeln("Please try again and if persists, contact support")
+                            }
+                            this.pbSession = null
+                            this.printPrompt()
+                            resolve()
+                            return
+                        }
                     }
-                    this.t.writeln(`Validated!\nYour user ID is ${uID}`)
-                    this.t.writeln("Type `install` to install on a server")
-                    this.printPrompt()
-                }
-                regChannel.onMessage = async (data: Uint8Array) => {
-                    console.log("Got registration data", data)
-                    reply.push(...data)
-                }
-            }
-            else if (state == 'failed') {
-                this.t.writeln("PeerBook connection failed")
-                this.pbSession = null
-                this.printPrompt()
-            }
-        }
-        await session.connect()
+                    this.t.writeln("Connecting to PeerBook")
+                    session.connect()
+                })
+            })
+        })
     }
     async startPurchases() {
+        let appUserID = undefined
+        const uID = await Preferences.get({ key: 'uID' })
+        if (uID && uID.value)
+            appUserID = uID.value
+        await CapacitorPurchases.setup({
+            apiKey:'appl_qKHwbgKuoVXokCTMuLRwvukoqkd',
+            appUserID: appUserID
+        })
         await CapacitorPurchases.setDebugLogsEnabled({ enabled: true }) 
-        await CapacitorPurchases.setup({ apiKey:'appl_qKHwbgKuoVXokCTMuLRwvukoqkd'})
         CapacitorPurchases.addListener('purchasesUpdate', async (data) => {
             this.onPurchasesUpdate(data)
         })
@@ -454,24 +507,29 @@ export class Shell {
     }
     async validateOTP() {
         let validated = false
-        let finished = false
         const session = await this.PBConnect()
-        while (!validated) {
-            const otp = await this.askValue("OTP")
-            const validateChannel = await session.openChannel(["ping", otp], 0, 80, 24)
-            validateChannel.onMessage = (data: string) => {
-                finished = true
-                const ret = String.fromCharCode(data[0])
-                console.log("Got ping reply", ret)
-                if (ret == "1") {
-                    validated = true
+        // function will return when OTP is validated
+        return new Promise((resolve, reject) => {
+            while (true) {
+                let gotMsg = false
+                this.askValue("OTP").then(otp => {
+                    session.openChannel(["ping", otp], 0, 80, 24).then(validateChannel => {
+                        validateChannel.onMessage = (data: string) => {
+                            gotMsg = true
+                            const ret = String.fromCharCode(data[0])
+                            console.log("Got ping reply", ret)
+                            if (ret == "1") {
+                                resolve()
+                                return
+                            }
+                        }
+                    })
+                })
+                while (!gotMsg) {
+                    (async () => await new Promise(r => setTimeout(r, 100)))()
                 }
-            }
-            while (!finished) {
-                await new Promise(r => setTimeout(r, 100))
-            }
-            if (!validated)
                 this.t.writeln("Invalid OTP, please try again")
-        }
+            }
+        })
     }
 }
