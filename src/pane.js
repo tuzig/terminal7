@@ -94,18 +94,16 @@ export class Pane extends Cell {
         this.t.loadAddon(this.fitAddon)
         this.t.loadAddon(this.searchAddon)
         this.t.loadAddon(this.WebLinksAddon)
+        const webGLAddon = new WebglAddon()
+        webGLAddon.onContextLoss(() => {
+            terminal7.log("lost context")
+            webGLAddon.dispose()
+        })
 
         this.createDividers()
         this.t.onSelectionChange(() => this.selectionChanged())
         this.t.loadWebfontAndOpen(con).then(() => {
-            const webGLAddon = new WebglAddon()
-            webGLAddon.onContextLoss(() => {
-                console.log("lost context")
-                  webGLAddon.dispose()
-            })
-            try {
-                this.t.loadAddon(webGLAddon)
-            } catch (e) { console.log("no webgl: " +e.toString()) }
+            this.t.loadAddon(webGLAddon)
             this.t.textarea.tabIndex = -1
             this.t.attachCustomKeyEventHandler(ev => {
                 var toDo = true
