@@ -1,5 +1,6 @@
 import { Device } from '@capacitor/device';
 import { CapacitorPurchases } from '@capgo/capacitor-purchases'
+import { Channel } from "./session"
 import { Clipboard } from "@capacitor/clipboard"
 import { Terminal } from 'xterm'
 import { Preferences } from '@capacitor/preferences'
@@ -26,6 +27,7 @@ export class Shell {
     watchdog: number
     timer: number | null = null
     pbSession: HTTPWebRTCSession | null = null
+    masterChannel: Channel | null = null
 
     constructor(map: T7Map) {
         this.map = map
@@ -35,6 +37,10 @@ export class Shell {
     async serverInstall(session: HTTPWebRTCSession, uID: string) {
         console.log("Installing server %s %v", uID, session)
     }
+    /*
+     * PBConnect opens a webrtc connection the the server to be used to admin
+     * the peerbook
+     */
     async PBConnect(appUserId?: string) {
         this.map.showLog(true)
         if (this.pbSession) {
@@ -100,7 +106,7 @@ export class Shell {
                             await Preferences.set({ key: 'peerName', value: peerName })
                             const cmd = ["register", email, peerName]
                             const regChannel = await session.openChannel(cmd, 0, 80, 24)
-                            regChannel.onClose = async m => {
+                            regChannel.onClose = async () => {
                                 const repStr =  new TextDecoder().decode(new Uint8Array(reply))
                                 console.log("got chgannel close", repStr)
                                 const userData = JSON.parse(repStr)
@@ -183,6 +189,10 @@ export class Shell {
     
     async onKey(ev: KeyboardEvent) {
         const key = ev.key
+        if (this.masterChannel) {
+            this.masterChannel.send(key)
+            return
+        }
         switch (key) {
             case "Enter":
                 this.t.write("\n\x1B[K")

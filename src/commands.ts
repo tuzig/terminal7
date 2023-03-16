@@ -634,19 +634,107 @@ async function installCMD(shell: Shell, args: string[]) {
         gate = terminal7.activeG
         if (!gate) {
             shell.t.writeln("Please select where to install:")
-            let choice: string
             let choices = []
-            for (const [k, gate] of terminal7.gates) {
+            for (const [k, gate] of terminal7.gates)
                 choices.push({ prompt: gate.name })
-            }
-            // const choices = Array.from(terminal7.gates, ([k, gate]) => { prompt: gate.name } )
-            choice = await shell.runForm(choices, "menu")
+            const choice = await shell.runForm(choices, "menu")
             gate = shell.getGate(choice)
         }
     }
-    // actully install
+    // Connect to the gate over SSH and install webexec
+    const { publicKey } = await terminal7.readId()
+    const session = new SSHSession(gate.addr, gate.username)
+    session.onStateChange = async (state, failure?) => {
+        switch (state) {
+            case "connecting":
+                shell.t.writeln("Connecting...")
+            case "connected":
+                shell.t.writeln("Connected")
+                let channel: SSHChannel
+                try {
+                    channel = await session.openChannel(
+                        ["/usr/bin/env", "bash", "<(curl -sL https://get.webexec.sh)"],
+                        shell.t.cols, shell.t.rows)
+                } catch (e) {
+                    shell.t.writeln("Error opening channel")
+                    shell.t.writeln("Please try again or type `support`")
+                    return
+                }
+                shell.t.clear()
+                shell.masterChannel = channel
+                let fingerprint = ""
+                channel.onMessage = data => {
+                    shell.t.write(data)
+                    // use regex to extract the fingerprint from the data.
+                    // fingerprint is on a line "Fingerprint: <fingerprint>"
+                    fingerprint = data.match(/Fingerprint: (.*)/)?.[1]
+                    if (fingerprint) {
+                        // install is done, now we need to verify the fingerprint
+                        shell.t.writeln("Install finished")
+                        channel.close()
+                    }
+                }   
+                // channel.send("bash <(curl -sL https://get.webexec.sh)")
+                channel.onClose = () => { 
+                    this.masterChannel = null
+                    if (fingerprint)
+                        this.onInstallDone(shell, fingerprint) 
+                    else {
+                        shell.t.writeln("Install failed")
+                        shell.t.writeln("Please try again or type `support`")
+                    }
+                }
+
+        }
+    }
 }
 async function unsubscribeCMD(shell: Shell) {
     await Preferences.remove({key: "uID"})
     shell.t.writeln("Unsubscribed")
 }
+async function onInstallDone(shell, fp: string) {
+    // connect to peerbook and verify the fingerprint
+    return new Promise((resolve, reject) => {
+        let session: HTTPWebRTCSession
+        try {
+            session = shell.PBConnect()
+        } catch(e) {
+            shell.t.writeln("Error connecting to peerbook")
+            shell.t.writeln("Please try again or type `support`")
+            reject()
+            return
+        }
+        const reply = []
+        session.onStateChange = async (state, failure?) => {
+            switch (state) {
+                case "connecting":
+                    shell.t.writeln("Connecting...")
+                    break
+                case "connected":
+                    shell.t.writeln("Connected")
+                    let validated = false
+                    while (true) {
+                        let gotMsg = false
+                        const otp = await shell.askValue("Enter OTP to verify gate")
+                        const regChannel = await session.openChannel(["authorize", fp, otp], 0, shell.t.cols, shell.t.rows)
+                        regChannel.onMessage = (data: Uint8Array) => {
+                            gotMsg = true
+                            if (data[0] == "1") {
+                                shell.t.writeln("Authorizaton complete")
+                                resolve()
+                                return
+                            }
+                            else
+                                shell.t.writeln("Authorizaton failed. Please try again.")
+                        }
+                        while (!gotMsg) {
+                            await new Promise(r => setTimeout(r, 100))
+                        }
+                    }
+                case "failed":
+                    shell.t.writeln("PeerBook connection failed")
+                    break
+            }
+        }
+    })
+}   
