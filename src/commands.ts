@@ -641,10 +641,11 @@ async function installCMD(shell: Shell, args: string[]) {
             gate = shell.getGate(choice)
         }
     }
+    // Connect to the gate over SSH and install webexec
     const session = new SSHSession(gate.addr, gate.username)
-    let channel: SSHChannel
-    let fingerprint = ""
     session.onStateChange = async (state) => {
+        let channel: SSHChannel
+        let fingerprint = ""
         switch (state) {
             case "connecting":
                 shell.t.writeln("Connecting...")
@@ -677,7 +678,7 @@ async function installCMD(shell: Shell, args: string[]) {
                 channel.onClose = () => { 
                     this.masterChannel = null
                     if (fingerprint)
-                        onInstallDone(shell, fingerprint) 
+                        verifyFP(shell, fingerprint) 
                     else {
                         shell.t.writeln("Install failed")
                         shell.t.writeln("Please try again or type `support`")
@@ -691,7 +692,7 @@ async function unsubscribeCMD(shell: Shell) {
     await Preferences.remove({key: "uID"})
     shell.t.writeln("Unsubscribed")
 }
-async function onInstallDone(shell, fp: string) {
+async function verifyFP(shell, fp: string) {
     // connect to peerbook and verify the fingerprint
     return new Promise((resolve, reject) => {
         let session: HTTPWebRTCSession
