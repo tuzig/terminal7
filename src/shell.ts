@@ -73,9 +73,8 @@ export class Shell {
                     return
                 }
                 // we have an active subscription and no user id, time to register
-                terminal7.notify('🏪 Update: subscribed until ' + active.webrtc.expirationDate)
+                terminal7.notify('🏪 Update: subscribed until ' + active.peerbook.expirationDate)
                 if (uID && uID.value) {
-                    this.t.writeln("Connecting to PeerBook")
                     this.startWatchdog()
                     await terminal7.pbConnect(uID.value, peerName)
                     this.stopWatchdog()
@@ -91,7 +90,7 @@ export class Shell {
                         if (state == 'connected') {
                             const reply = []
                             let email: string
-                            this.t.writeln("Connected")
+                            this.t.writeln("WebRTC Connected")
                             try {
                                 peerName = await this.askValue("Peer name", (await Device.getInfo()).name)
                                 email = await this.askValue("Recovery email")

@@ -8,6 +8,7 @@ import { Fields } from "./form"
 import fortuneURL from "../resources/fortune.txt"
 import { Gate } from './gate'
 import { Capacitor } from '@capacitor/core'
+import { SSHSession } from './ssh_session'
 
 declare const terminal7 : Terminal7
 
@@ -84,7 +85,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
         install: {
             name: "install",
             help: "Install webexec",
-            usage: "i[install] [gatename]",
+            usage: "i[nstall] [gatename]",
             execute: async args => installCMD(shell, args)
         },
         map: {
@@ -611,7 +612,6 @@ async function subscribeCMD(shell: shell) {
                     offeringIdentifier: pack.offeringIdentifier,
                 })
                 customerInfo = data.customerInfo
-                shell.t.writeln("Waiting for store confirmation...")
             } catch(e) {
                 shell.t.writeln("Error purchasing, please try again or contact support")
             } finally {

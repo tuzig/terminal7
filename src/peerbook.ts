@@ -45,7 +45,7 @@ export class PeerbookConnection {
                 this.ws = null
             }
             this.ws.onopen = () => {
-                // terminal7.notify("\uD83D\uDCD6 Connection opened")
+                terminal7.notify("\uD83D\uDCD6 Connected")
                 resolve()
                 if ((this.pbSendTask == null) && (this.pending.length > 0))
                     this.pbSendTask = setTimeout(() => {
