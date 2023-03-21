@@ -41,8 +41,7 @@ export class Shell {
      * PBConnect opens a webrtc connection the the server to be used to admin
      * the peerbook
      */
-    async PBConnect(appUserId?: string) {
-        this.map.showLog(true)
+    newPBSession(appUserId?: string) {
         if (this.pbSession) {
             return this.pbSession
         }
@@ -68,7 +67,7 @@ export class Shell {
                 console.log("uID", uID)
                 const active = data.customerInfo.entitlements.active
                 if (!active.peerbook) {
-                    terminal7.notify("PeerBook inactive. Use `subscribe` for WebRTC 🚀")
+                    terminal7.notify("PeerBook inactive. `subscribe` for WebRTC 🍯")
                     resolve()
                     return
                 }
@@ -83,80 +82,86 @@ export class Shell {
                 }
                 this.t.writeln("Completing registration")
                 this.startWatchdog()
-                this.PBConnect(data.customerInfo.originalAppUserId).then(session => {
-                    session.onStateChange = async (state, failure?) => {
-                        terminal7.log("state change", state)
-                        this.stopWatchdog()
-                        if (state == 'connected') {
-                            const reply = []
-                            let email: string
-                            this.t.writeln("WebRTC Connected")
-                            try {
-                                peerName = await this.askValue("Peer name", (await Device.getInfo()).name)
-                                email = await this.askValue("Recovery email")
-                            } catch (e) {
-                                this.t.writeln("Cancelled. Use `subscribe` to activate")
-                                this.printPrompt()
-                                resolve()
-                                // reject()
-                                return
-                            }
-                            // store peerName
-                            await Preferences.set({ key: 'peerName', value: peerName })
-                            const cmd = ["register", email, peerName]
-                            const regChannel = await session.openChannel(cmd, 0, 80, 24)
-                            regChannel.onClose = async () => {
-                                const repStr =  new TextDecoder().decode(new Uint8Array(reply))
-                                console.log("got chgannel close", repStr)
-                                const userData = JSON.parse(repStr)
-                                // parse the json
-                                
-                                const QR = userData.QR
-                                const uID = userData.ID
-                                await Preferences.set({ key: 'uID', value: uID })
-                                CapacitorPurchases.logIn({ appUserID: uID }).then (r => console.log("after login", r))
-                                this.t.writeln("Please scan this QR code with your OTP app")
-                                this.t.writeln("")
-                                this.t.writeln(QR)
-                                this.t.writeln("")
-                                this.t.writeln("and use it to generate a One Time Password")
-                                try {
-                                    await this.validateOTP()
-                                } catch(e) {
-                                    resolve()
-                                    // reject(e)
-                                    return
-                                }
-                                this.t.writeln(`Validated!\nYour user ID is ${uID}`)
-                                this.t.writeln("Type `install` to install on a server")
-                                this.printPrompt()
-                                resolve()
-                                return
-                            }
-                            regChannel.onMessage = async (data: Uint8Array) => {
-                                console.log("Got registration data", data)
-                                reply.push(...data)
-                            }
+                const session = this.newPBSession(data.customerInfo.originalAppUserId)
+                session.onStateChange = async (state, failure?) => {
+                    terminal7.log("state change", state)
+                    this.stopWatchdog()
+                    if (state == 'connected') {
+                        const reply = []
+                        let email: string
+                        this.t.writeln("WebRTC Connected")
+                        try {
+                            peerName = await this.askValue("Peer name", (await Device.getInfo()).name)
+                            email = await this.askValue("Recovery email")
+                        } catch (e) {
+                            this.t.writeln("Cancelled. Use `subscribe` to activate")
+                            this.printPrompt()
+                            resolve()
+                            // reject()
+                            return
                         }
-                        else if (state == 'failed') {
-                            if (failure == Failure.Timeout) {
-                                this.t.writeln("Connection timed out")
+                        // store peerName
+                        await Preferences.set({ key: 'peerName', value: peerName })
+                        const cmd = ["register", email, peerName]
+                        const regChannel = await session.openChannel(cmd, 0, 80, 24)
+                        regChannel.onClose = async () => {
+                            const repStr =  new TextDecoder().decode(new Uint8Array(reply))
+                            console.log("got channel close", repStr)
+                            let userData
+                            try {
+                                userData = JSON.parse(repStr)
+                            } catch (e) {
+                                this.t.writeln("Registration failed")
                                 this.t.writeln("Please try again and if persists, contact support")
-                            } else if (failure == Failure.Unauthorized) {
-                                this.t.writeln("Unauthorized")
-                            } else {
-                                this.t.writeln("Connection failed")
-                                this.t.writeln("Please try again and if persists, contact support")
+                                this.printPrompt()
+                                resolve()
+                                return
                             }
-                            this.pbSession = null
+                            const QR = userData.QR
+                            const id = userData.ID
+                            await Preferences.set({ key: 'uID', value: id })
+                            await CapacitorPurchases.logIn({ appUserID: id })
+                            this.t.writeln("Please scan this QR code with your OTP app")
+                            this.t.writeln("")
+                            this.t.writeln(QR)
+                            this.t.writeln("")
+                            this.t.writeln("and use it to generate a One Time Password")
+                            try {
+                                await this.validateOTP()
+                            } catch(e) {
+                                resolve()
+                                // reject(e)
+                                return
+                            }
+                            this.t.writeln(`Validated!\nYour user ID is ${id}`)
+                            this.t.writeln("Type `install` to install on a server")
                             this.printPrompt()
                             resolve()
                             return
                         }
+                        regChannel.onMessage = async (data: Uint8Array) => {
+                            console.log("Got registration data", data)
+                            reply.push(...data)
+                        }
                     }
-                    this.t.writeln("Connecting to PeerBook")
-                    session.connect()
-                })
+                    else if (state == 'failed') {
+                        if (failure == Failure.Timeout) {
+                            this.t.writeln("Connection timed out")
+                            this.t.writeln("Please try again and if persists, contact support")
+                        } else if (failure == Failure.Unauthorized) {
+                            this.t.writeln("Unauthorized")
+                        } else {
+                            this.t.writeln("Connection failed")
+                            this.t.writeln("Please try again and if persists, contact support")
+                        }
+                        this.pbSession = null
+                        this.printPrompt()
+                        resolve()
+                        return
+                    }
+                }
+                this.t.writeln("Connecting to PeerBook")
+                session.connect()
             })
         })
     }
@@ -167,7 +172,8 @@ export class Shell {
             appUserID = uID.value
         await CapacitorPurchases.setup({
             apiKey:'appl_qKHwbgKuoVXokCTMuLRwvukoqkd',
-            appUserID: appUserID
+            appUserID: appUserID,
+            usesStoreKit2IfAvailable: true,
         })
         await CapacitorPurchases.setDebugLogsEnabled({ enabled: true }) 
         CapacitorPurchases.addListener('purchasesUpdate', async (data) => {
@@ -515,29 +521,42 @@ export class Shell {
         return res[0]
     }
     async validateOTP() {
-        const session = await this.PBConnect()
-        // function will return when OTP is validated
-        return new Promise(resolve => {
-            while (true) {
+        return new Promise(async (resolve, reject) => {
+            // test if session is already connected
+            // TODO: this is a hack, we should have a proper way to check
+            // if a session is connected
+            let validated = false
+            while (!validated) {
                 let gotMsg = false
-                this.askValue("OTP").then(otp => {
-                    session.openChannel(["ping", otp], 0, 80, 24).then(validateChannel => {
-                        validateChannel.onMessage = (data: string) => {
-                            gotMsg = true
-                            const ret = String.fromCharCode(data[0])
-                            console.log("Got ping reply", ret)
-                            if (ret == "1") {
-                                resolve()
-                                return
-                            }
-                        }
-                    })
-                })
-                while (!gotMsg) {
-                    (async () => await new Promise(r => setTimeout(r, 100)))()
+                let otp
+                try {
+                    otp = await this.askValue("OTP")
+                } catch(e) {
+                    reject()
+                    return
                 }
-                this.t.writeln("Invalid OTP, please try again")
+                let validateChannel
+                try {
+                    validateChannel = await this.pbSession.openChannel(["ping", otp], 0, 80, 24)
+                } catch(e) {
+                    reject()
+                    return
+                }
+                validateChannel.onMessage = (data: string) => {
+                    gotMsg = true
+                    const ret = String.fromCharCode(data[0])
+                    console.log("Got ping reply", ret)
+                    if (ret == "1") {
+                        validated = true
+                    }
+                }
+                while (!gotMsg) {
+                    await (new Promise(r => setTimeout(r, 100)))
+                }
+                if (!validated)
+                    this.t.writeln("Invalid OTP, please try again")
             }
+            resolve()
         })
     }
 }
