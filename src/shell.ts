@@ -38,7 +38,7 @@ export class Shell {
         console.log("Installing server %s %v", uID, session)
     }
     /*
-     * PBConnect opens a webrtc connection the the server to be used to admin
+     * newPBSession opens a webrtc connection the the server to be used to admin
      * the peerbook
      */
     newPBSession(appUserId?: string) {
@@ -67,25 +67,26 @@ export class Shell {
                 console.log("uID", uID)
                 const active = data.customerInfo.entitlements.active
                 if (!active.peerbook) {
-                    terminal7.notify("PeerBook inactive. `subscribe` for WebRTC 🍯")
+                    if (this.pbSession) {
+                        this.pbSession.close()
+                        this.pbSession = null
+                    }
+                    if (this.active)
+                        terminal7.notify("PeerBook inactive. `subscribe` for WebRTC 🍯")
                     resolve()
                     return
                 }
                 // we have an active subscription and no user id, time to register
                 terminal7.notify('🏪 Update: subscribed until ' + active.peerbook.expirationDate)
                 if (uID && uID.value) {
-                    this.startWatchdog()
                     await terminal7.pbConnect(uID.value, peerName)
-                    this.stopWatchdog()
                     resolve()
                     return
                 }
                 this.t.writeln("Completing registration")
-                this.startWatchdog()
+                this.active = false
                 const session = this.newPBSession(data.customerInfo.originalAppUserId)
                 session.onStateChange = async (state, failure?) => {
-                    terminal7.log("state change", state)
-                    this.stopWatchdog()
                     if (state == 'connected') {
                         const reply = []
                         let email: string
@@ -135,6 +136,7 @@ export class Shell {
                             }
                             this.t.writeln(`Validated!\nYour user ID is ${id}`)
                             this.t.writeln("Type `install` to install on a server")
+                            this.active = true
                             this.printPrompt()
                             resolve()
                             return
@@ -195,7 +197,6 @@ export class Shell {
     async onKey(ev: KeyboardEvent) {
         const key = ev.key
         if (this.masterChannel) {
-            this.masterChannel.send(key)
             return
         }
         switch (key) {
@@ -331,10 +332,17 @@ export class Shell {
         this.printPrompt()
     }
     
+    onTWRData(data: string) {
+        if (!this.masterChannel)
+            return
+        this.masterChannel.send(data)
+    }
     async keyHandler(ev: KeyboardEvent) {
         const form = this.activeForm,
             key = ev.key
         this.updateCapsLock(ev)
+        if (this.masterChannel)
+            return
         this.printPrompt()
         if (key == 'Escape') {
             await this.escapeActiveForm()
@@ -382,8 +390,9 @@ export class Shell {
     /* 
      * Starts a watchdog that will reject if not stopped within the given time
     */
-    startWatchdog() {
-        const timeout = terminal7.conf.net.timeout
+    startWatchdog(timeout? : number): Promise<void> {
+        if (!timeout)
+            timeout = terminal7.conf.net.timeout
         return new Promise((_, reject) => {
             this.startHourglass(timeout)
             this.watchdog = window.setTimeout(() => {
@@ -521,42 +530,51 @@ export class Shell {
         return res[0]
     }
     async validateOTP() {
-        return new Promise(async (resolve, reject) => {
-            // test if session is already connected
-            // TODO: this is a hack, we should have a proper way to check
-            // if a session is connected
-            let validated = false
-            while (!validated) {
-                let gotMsg = false
-                let otp
-                try {
-                    otp = await this.askValue("OTP")
-                } catch(e) {
-                    reject()
-                    return
-                }
-                let validateChannel
-                try {
-                    validateChannel = await this.pbSession.openChannel(["ping", otp], 0, 80, 24)
-                } catch(e) {
-                    reject()
-                    return
-                }
-                validateChannel.onMessage = (data: string) => {
-                    gotMsg = true
-                    const ret = String.fromCharCode(data[0])
-                    console.log("Got ping reply", ret)
-                    if (ret == "1") {
-                        validated = true
-                    }
-                }
-                while (!gotMsg) {
-                    await (new Promise(r => setTimeout(r, 100)))
-                }
-                if (!validated)
-                    this.t.writeln("Invalid OTP, please try again")
+        // test if session is already connected
+        // TODO: this is a hack, we should have a proper way to check
+        // if a session is connected
+        let validated = false
+        while (!validated) {
+            let gotMsg = false
+            let otp
+            try {
+                otp = await this.askValue("OTP")
+            } catch(e) {
+                reject()
+                return
             }
-            resolve()
-        })
+            if (!this.pbSession) {
+                const session = this.newPBSession()
+                try {
+                    await (new Promise((resolve, reject) => {
+                        session.onStateChange = async (state) => {
+                            if (state == 'connected') {
+                                resolve()
+                            } else if (state == 'failed')
+                                reject()
+                        }
+                        session.connect()
+                    }))
+                } catch(e) {
+                    this.t.writeln("Failed to open WebRTC connection to PeerBook")
+                    console.log("Failed to open WebRTC connection to PeerBook", e)
+                    throw e
+                }
+            }
+            const validateChannel = await this.pbSession.openChannel(["ping", otp], 0, 80, 24)
+            validateChannel.onMessage = (data: string) => {
+                gotMsg = true
+                const ret = String.fromCharCode(data[0])
+                console.log("Got ping reply", ret)
+                if (ret == "1") {
+                    validated = true
+                }
+            }
+            while (!gotMsg) {
+                await (new Promise(r => setTimeout(r, 100)))
+            }
+            if (!validated)
+                this.t.writeln("Invalid OTP, please try again")
+        }
     }
 }

@@ -52,6 +52,7 @@ export class T7Map {
                 const ev = iev.domEvent
                 this.shell.keyHandler(ev)
             })
+            this.t0.onData(d =>  this.shell.onTWRData(d))
             this.t0.loadWebfontAndOpen(e).then(() => {
                 const webGLAddon = new WebglAddon()
                 webGLAddon.onContextLoss(() => {

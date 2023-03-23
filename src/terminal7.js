@@ -230,7 +230,9 @@ export class Terminal7 {
                 if (!active) {
                     if (this.ignoreAppEvents) return
                     // We're getting suspended. disengage.
-                    this.notify("🛋️ Disengaging", true)
+                    if (this.activeG) {
+                        this.notify("🛋️ Disengaging", true)
+                    }
                     this.disengage()
                 } else {
                     // We're back! puts us in recovery mode so that it'll
@@ -334,17 +336,17 @@ export class Terminal7 {
             this.pb = null
         }
     }
-    pbConnect(email, peerName) {
+    pbConnect(uid, peerName) {
         return new Promise((resolve) => {
-            if (!email &&
-                (!this.conf.peerbook || !this.conf.peerbook.email || 
+            if (!uid &&
+                (!this.conf.peerbook || !this.conf.peerbook.user_id || 
                 (this.pb  && this.pb.isOpen()))) {
                 resolve()
                 return
             }
             this.getFingerprint().then(fp => {
                 this.pb = new PeerbookConnection(fp,
-                    email || this.conf.peerbook.email,
+                    uid || this.conf.peerbook.user_id,
                     peerName || this.conf.peerbook.peer_name,
                     this.conf.net.peerbook,
                     this.conf.peerbook && this.conf.peerbook.insecure
@@ -601,7 +603,7 @@ export class Terminal7 {
         this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1
         this.conf.ui.autoRestore = this.conf.ui.auto_restore || false
         this.conf.ui.verificationTTL = this.conf.ui.verification_ttl || 15 * 60 * 1000
-        this.conf.ui.subscribeTimeout = this.conf.ui.subscribe_timeout || 30 * 1000
+        this.conf.ui.subscribeTimeout = this.conf.ui.subscribe_timeout || 60 * 1000
 
         this.conf.net = this.conf.net || {}
         this.conf.net.iceServer = this.conf.net.ice_server ||

@@ -34,7 +34,7 @@ export class PeerbookConnection {
                 return
             }
             const schema = this.insecure?"ws":"wss",
-                  url = encodeURI(`${schema}://${this.host}/ws?fp=${this.fp}&name=${this.peerName}&kind=terminal7&email=${this.email}`)
+                  url = encodeURI(`${schema}://${this.host}/ws?fp=${this.fp}&name=${this.peerName}&kind=terminal7&uid=${this.email}`)
             this.ws = new WebSocket(url)
             this.ws.onmessage = ev => this.onUpdate(ev.data)
             this.ws.onerror = ev => 

@@ -13,6 +13,7 @@ import { SSHSession } from './ssh_session'
 declare const terminal7 : Terminal7
 
 const installMessage = `
+        session.on
   To get the most of T7 you need our agent - webexec.
   It's open source and you can download the binary
   for your system from: https://download.webexec.sh
@@ -559,7 +560,7 @@ async function copyKeyCMD(shell: Shell) {
         return shell.t.writeln("No key yet. Please connect to generate one.\n(try connect or add)")
 }
 async function subscribeCMD(shell: shell) {
-    let { customerInfo } = await CapacitorPurchases.getCustomerInfo()
+    const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
     if (!customerInfo.entitlements.active.peerbook) {
         const packageTypeName = {
             'ANNUAL': 'a year',
@@ -589,7 +590,7 @@ async function subscribeCMD(shell: shell) {
         const product = pack.product
         const term = packageTypeName[pack.packageType]
         shell.t.writeln(offer.serverDescription)
-        const subPrompt = `Start your trial month (then ${product.priceString} for ${term})`
+        const subPrompt = `Start your trial month (then ${product.priceString} ${term})`
         const subscribeMenu = [
             { prompt: "No thanks" },
             { prompt: subPrompt },
@@ -599,24 +600,22 @@ async function subscribeCMD(shell: shell) {
         try {
             choice = await shell.runForm(subscribeMenu, "menu")
         } catch (err) {
-            shell.t.writeln("Error getting choice")
             return
         }
         if (choice == subPrompt) {
-            shell.t.writeln("Thank you. Store will open momentarily.")
-            shell.startHourglass(terminal7.conf.ui.subscribeTimeout)
+            shell.t.writeln("Thank you, directing to payment")
             terminal7.ignoreAppEvents = true
             try {
-                const data = await CapacitorPurchases.purchasePackage({
+                await CapacitorPurchases.purchasePackage({
                     identifier: pack.identifier,
                     offeringIdentifier: pack.offeringIdentifier,
                 })
-                customerInfo = data.customerInfo
             } catch(e) {
                 shell.t.writeln("Error purchasing, please try again or contact support")
-            } finally {
-                shell.stopHourglass()
+                return
             }
+            // TODO: this line saves 3 seconds but causes reentrancy
+            // shell.onPurchasesUpdate(data)
         }
     } else {
         shell.t.writeln("You are already subscribed")
@@ -626,10 +625,18 @@ async function subscribeCMD(shell: shell) {
 }
 async function installCMD(shell: Shell, args: string[]) {
     let gate: Gate
+    const uid =  Preferences.get({key: "uID"})
+    if (!uid) {
+        shell.t.writeln("Please `subscribe` first")
+        return
+    }
+
     if (args[0]) {
         gate = shell.getGate(args[0])
-        if (!gate)
-            return shell.t.writeln(`Host not found: ${args[0]}`)
+        if (!gate) {
+            shell.t.writeln(`Host not found: ${args[0]}`)
+            return
+        }
     } else {
         gate = terminal7.activeG
         if (!gate) {
@@ -642,10 +649,18 @@ async function installCMD(shell: Shell, args: string[]) {
         }
     }
     // Connect to the gate over SSH and install webexec
+    let publicKey, privateKey
+    try {
+        const ids = await terminal7.readId()
+        publicKey = ids.publicKey
+        privateKey = ids.privateKey
+    } catch(e) {
+        console.log("readId erro", e)
+    }
+
     const session = new SSHSession(gate.addr, gate.username)
     session.onStateChange = async (state) => {
         let channel: SSHChannel
-        let fingerprint = ""
         switch (state) {
             case "connecting":
                 shell.t.writeln("Connecting...")
@@ -654,7 +669,7 @@ async function installCMD(shell: Shell, args: string[]) {
                 shell.t.writeln("Connected")
                 try {
                     channel = await session.openChannel(
-                        ["/usr/bin/env", "bash", "<(curl -sL https://get.webexec.sh)"],
+                        ["*"],
                         shell.t.cols, shell.t.rows)
                 } catch (e) {
                     shell.t.writeln("Error opening channel")
@@ -662,31 +677,32 @@ async function installCMD(shell: Shell, args: string[]) {
                     return
                 }
                 shell.t.clear()
+                shell.t.writeln(`Connecting to ${gate.addr}`)
                 shell.masterChannel = channel
-                channel.onMessage = data => {
+                // set #log border color to yellow
+                document.getElementById("log").style.borderColor = "var(--remote-border)"
+                channel.send(`PEERBOOK_UID=${uid} PEERBOOK_HOST=${terminal7.conf.net.peerbook} bash <(curl -sL https://get.webexec.sh)`)
+                channel.onMessage = async data => {
                     shell.t.write(data)
                     // use regex to extract the fingerprint from the data.
                     // fingerprint is on a line "Fingerprint: <fingerprint>"
-                    fingerprint = data.match(/Fingerprint: (.*)/)?.[1]
-                    if (fingerprint) {
+                    const match = data.match(/Fingerprint:\s*([A-F0-9]+)/)
+                    if (match) {
+                        const fp = match[1]
                         // install is done, now we need to verify the fingerprint
-                        shell.t.writeln("Install finished")
-                        channel.close()
+                        setTimeout(() => {
+                            document.getElementById("log").style.borderColor = "var(--local-border)"
+                            shell.masterChannel = null
+                            shell.t.writeln("\nInstall finished")
+                            channel.close()
+                            verifyFP(shell, fp)
+                        }, 100)
                     }
                 }   
-                // channel.send("bash <(curl -sL https://get.webexec.sh)")
-                channel.onClose = () => { 
-                    this.masterChannel = null
-                    if (fingerprint)
-                        verifyFP(shell, fingerprint) 
-                    else {
-                        shell.t.writeln("Install failed")
-                        shell.t.writeln("Please try again or type `support`")
-                    }
-                }
 
         }
     }
+    session.connect(0, publicKey, privateKey)
 }
 async function unsubscribeCMD(shell: Shell) {
     await Preferences.remove({key: "uID"})
@@ -697,20 +713,26 @@ async function verifyFP(shell, fp: string) {
     return new Promise((resolve, reject) => {
         let session: HTTPWebRTCSession
         try {
-            session = shell.PBConnect()
+            session = shell.newPBSession()
         } catch(e) {
             shell.t.writeln("Error connecting to peerbook")
             shell.t.writeln("Please try again or type `support`")
             reject()
             return
         }
+        session.onClose = () => {
+            shell.t.writeln("Connection to PeerBook closed")
+            document.getElementById("log").style.borderColor = undefined
+            shell.masterChannel = null
+            reject()
+        }
+
         session.onStateChange = async (state) => {
             switch (state) {
                 case "connecting":
-                    shell.t.writeln("Connecting...")
                     break
                 case "connected":
-                    shell.t.writeln("Connected")
+                    shell.t.writeln("Connected to PeerBook")
                     while (true) {
                         let gotMsg = false
                         const otp = await shell.askValue("Enter OTP to verify gate")
@@ -718,12 +740,12 @@ async function verifyFP(shell, fp: string) {
                         regChannel.onMessage = (data: Uint8Array) => {
                             gotMsg = true
                             if (data[0] == "1") {
-                                shell.t.writeln("Authorizaton complete")
+                                shell.t.writeln("Verification complete")
                                 resolve()
                                 return
                             }
                             else
-                                shell.t.writeln("Authorizaton failed. Please try again.")
+                                shell.t.writeln("Verification failed. Please try again.")
                         }
                         while (!gotMsg) {
                             await new Promise(r => setTimeout(r, 100))
@@ -734,5 +756,6 @@ async function verifyFP(shell, fp: string) {
                     break
             }
         }
+        session.connect()
     })
 }   
