@@ -353,7 +353,7 @@ export class Terminal7 {
         })
     }
     async toggleSettings() {
-        var modal   = document.getElementById("settings-modal"),
+        var modal   = document.getElementById("settings"),
             button  = document.getElementById("dotfile-button"),
             area    =  document.getElementById("edit-conf"),
             conf    =  (await Preferences.get({key: "dotfile"})).value || DEFAULT_DOTFILE
@@ -362,6 +362,7 @@ export class Terminal7 {
 
         button.classList.toggle("on")
         modal.classList.toggle("hidden")
+        this.map.shell.toggleVisibility()
         if (button.classList.contains("on")) {
            if (this.confEditor == null) {
                 vimMode(CodeMirror)
@@ -395,7 +396,8 @@ export class Terminal7 {
             if (typeof(c.setTheme) == "function")
                 c.setTheme(this.conf.theme)
         })
-        document.getElementById("settings-modal").classList.add("hidden")
+        document.getElementById("settings").classList.add("hidden")
+        this.map.shell.toggleVisibility()
         this.confEditor.toTextArea()
         this.confEditor = null
         if (this.pb &&

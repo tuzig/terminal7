@@ -158,7 +158,7 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #a22;}
    the editor. You probably shouldn't touch them. */
 
 .CodeMirror {
-  position: relative;
+  position: absolute;
   overflow: hidden;
 }
 

@@ -47,7 +47,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
         connect: {
             name: "connect",
             help: "Connect to an existing gate",
-            usage: "con[nect] <gatename>",
+            usage: "conn[ect] <gatename>",
             execute: async args => connectCMD(shell, args)
         },
         copykey: {
@@ -97,6 +97,12 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             help: "Reset a connected gate",
             usage: "r[eset] [gatename]",
             execute: async args => resetCMD(shell, args)
+        },
+        config: {
+            name: "config",
+            help: "Edit the config file",
+            usage: "conf[ig]",
+            execute: async () => configCMD(shell)
         },
     }))
 }
@@ -536,3 +542,7 @@ async function copyKeyCMD(shell: Shell) {
     } else
         return shell.t.writeln("No key yet. Please connect to generate one.\n(try connect or add)")
 }
+async function configCMD(shell: Shell) {
+    terminal7.toggleSettings()
+}
+

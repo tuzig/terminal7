@@ -258,6 +258,10 @@ export class Shell {
         this.t.write(`\r\x1B[K\x1B[?25h`)
     }
 
+    toggleVisibility() {
+        this.t.element.classList.toggle("hidden")
+    }
+
     getGate(name: string) {
         let ret = terminal7.gates.get(name)
         if (!ret) {
