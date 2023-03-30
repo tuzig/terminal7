@@ -260,7 +260,7 @@ export class Terminal7 {
             }
         )
         document.getElementById("dotfile-button")
-                .addEventListener("click", ev => this.toggleSettings(ev))
+                .addEventListener("click", () => this.map.shell.runCommand("config", []))
         modal.querySelector(".close").addEventListener('click',
             async () => {
                 document.getElementById("dotfile-button").classList.remove("on")
@@ -352,37 +352,6 @@ export class Terminal7 {
             })
         })
     }
-    async toggleSettings() {
-        var modal   = document.getElementById("settings"),
-            button  = document.getElementById("dotfile-button"),
-            area    =  document.getElementById("edit-conf"),
-            conf    =  (await Preferences.get({key: "dotfile"})).value || DEFAULT_DOTFILE
-
-        area.value = conf
-
-        button.classList.toggle("on")
-        modal.classList.toggle("hidden")
-        this.map.shell.toggleVisibility()
-        if (button.classList.contains("on")) {
-           if (this.confEditor == null) {
-                vimMode(CodeMirror)
-                tomlMode(CodeMirror)
-                dialogAddOn(CodeMirror)
-                CodeMirror.commands.save = () => this.wqConf()
-
-                this.confEditor  = CodeMirror.fromTextArea(area, {
-                   value: conf,
-                   lineNumbers: true,
-                   mode: "toml",
-                   keyMap: "vim",
-                   matchBrackets: true,
-                   showCursorWhenSelecting: true
-                })
-            }
-            this.confEditor.focus()
-        }
-
-    }
     /*
      * wqConf saves the configuration and closes the conf editor
      */
@@ -398,6 +367,7 @@ export class Terminal7 {
         })
         document.getElementById("settings").classList.add("hidden")
         this.map.shell.toggleVisibility()
+        this.map.t0.focus()
         this.confEditor.toTextArea()
         this.confEditor = null
         if (this.pb &&
