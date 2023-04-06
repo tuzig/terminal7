@@ -260,7 +260,9 @@ export class Terminal7 {
             }
         )
         document.getElementById("dotfile-button")
-                .addEventListener("click", () => this.map.shell.runCommand("config", []))
+                .addEventListener("click", () => this.map.shell.confEditor ?
+                    this.map.shell.closeConfig(false)
+                    : this.map.shell.runCommand("config", []))
         modal.querySelector(".close").addEventListener('click',
             async () => {
                 document.getElementById("dotfile-button").classList.remove("on")
@@ -361,23 +363,11 @@ export class Terminal7 {
         this.confEditor.save()
         this.loadConf(TOML.parse(area.value))
         Preferences.set({key: "dotfile", value: area.value})
-        this.cells.forEach(c => {
-            if (typeof(c.setTheme) == "function")
-                c.setTheme(this.conf.theme)
-        })
         document.getElementById("settings").classList.add("hidden")
         this.map.shell.toggleVisibility()
         this.map.t0.focus()
         this.confEditor.toTextArea()
         this.confEditor = null
-        if (this.pb &&
-            ((this.pb.host != this.conf.net.peerbook) 
-             || (this.pb.peerName != this.conf.peerbook.peer_name)
-             || (this.pb.insecure != this.conf.peerbook.insecure)
-             || (this.pb.email != this.conf.peerbook.email))) {
-            this.pbClose()
-            this.pbConnect()
-        }
     }
     catchFingers() {
         this.e.addEventListener("pointerdown", ev => this.onPointerDown(ev))
@@ -1039,5 +1029,23 @@ export class Terminal7 {
         this.keys = {publicKey: publicKey, privateKey: privateKey}
         this.lastIdVerify = now
         return this.keys
+    }
+    async getDotfile() {
+        return (await Preferences.get({key: "dotfile"})).value || DEFAULT_DOTFILE
+    }
+    saveDotfile() {
+        this.cells.forEach(c => {
+            if (typeof(c.setTheme) == "function")
+                c.setTheme(this.conf.theme)
+        })
+        if (this.pb &&
+            ((this.pb.host != this.conf.net.peerbook) 
+             || (this.pb.peerName != this.conf.peerbook.peer_name)
+             || (this.pb.insecure != this.conf.peerbook.insecure)
+             || (this.pb.email != this.conf.peerbook.email))) {
+            this.pbClose()
+            this.pbConnect()
+        }
+        return Preferences.set({key: "dotfile", value: TOML.stringify(this.conf)})
     }
 }

@@ -2,15 +2,11 @@ import { Clipboard } from '@capacitor/clipboard'
 import { Shell } from "./shell"
 import * as TOML from '@tuzig/toml'
 import { Preferences } from "@capacitor/preferences"
-import { Terminal7, DEFAULT_DOTFILE } from "./terminal7"
+import { Terminal7 } from "./terminal7"
 import { Fields } from "./form"
 import fortuneURL from "../resources/fortune.txt"
 import { Gate } from './gate'
 import { Capacitor } from '@capacitor/core'
-import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
-import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
-import { tomlMode} from '@tuzig/codemirror/mode/toml/toml.js'
-import { dialogAddOn } from '@tuzig/codemirror/addon/dialog/dialog.js'
 
 declare const terminal7 : Terminal7
 
@@ -313,7 +309,7 @@ async function addCMD(shell: Shell) {
 }
 
 async function peerbookForm(shell: Shell) {
-    let dotfile = (await Preferences.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
+    let dotfile = await terminal7.getDotfile()
 
     const f = [
         {
@@ -547,35 +543,6 @@ async function copyKeyCMD(shell: Shell) {
         return shell.t.writeln("No key yet. Please connect to generate one.\n(try connect or add)")
 }
 async function configCMD(shell: Shell) {
-    const modal   = document.getElementById("settings"),
-          button  = document.getElementById("dotfile-button"),
-          area    =  document.getElementById("edit-conf"),
-          conf    =  (await Preferences.get({key: "dotfile"})).value || DEFAULT_DOTFILE
-
-    area.value = conf
-
-    button.classList.toggle("on")
-    modal.classList.toggle("hidden")
-    shell.toggleVisibility()
-    if (button.classList.contains("on")) {
-        if (terminal7.confEditor == null) {
-            vimMode(CodeMirror)
-            tomlMode(CodeMirror)
-            dialogAddOn(CodeMirror)
-            CodeMirror.commands.save = () => terminal7.wqConf()
-
-            terminal7.confEditor  = CodeMirror.fromTextArea(area, {
-                value: conf,
-                lineNumbers: true,
-                mode: "toml",
-                keyMap: "vim",
-                matchBrackets: true,
-                showCursorWhenSelecting: true
-            })
-        }
-        terminal7.confEditor.focus()
-    } else {
-        shell.t.focus()
-    }
+    await shell.openConfig()
 }
 
