@@ -516,10 +516,9 @@ export class Shell {
         return res[0]
     }
     async validateOTP() {
-        let validated = false
         const session = await this.PBConnect()
         // function will return when OTP is validated
-        return new Promise((resolve, reject) => {
+        return new Promise(resolve => {
             while (true) {
                 let gotMsg = false
                 this.askValue("OTP").then(otp => {

@@ -115,7 +115,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             name: "unsubscribe",
             help: "Subscripte from peerbook",
             usage: "unsub[scribe]",
-            execute: async args => unsubscribeCMD(shell)
+            execute: async () => unsubscribeCMD(shell)
         },
     }))
 }
@@ -557,7 +557,7 @@ async function copyKeyCMD(shell: Shell) {
     } else
         return shell.t.writeln("No key yet. Please connect to generate one.\n(try connect or add)")
 }
-async function subscribeCMD(shell: shell, args: string[]) {
+async function subscribeCMD(shell: shell) {
     let { customerInfo } = await CapacitorPurchases.getCustomerInfo()
     if (!customerInfo.entitlements.active.peerbook) {
         const packageTypeName = {
@@ -634,23 +634,23 @@ async function installCMD(shell: Shell, args: string[]) {
         gate = terminal7.activeG
         if (!gate) {
             shell.t.writeln("Please select where to install:")
-            let choices = []
-            for (const [k, gate] of terminal7.gates)
+            const choices = []
+            for (const [, gate] of terminal7.gates)
                 choices.push({ prompt: gate.name })
             const choice = await shell.runForm(choices, "menu")
             gate = shell.getGate(choice)
         }
     }
-    // Connect to the gate over SSH and install webexec
-    const { publicKey } = await terminal7.readId()
     const session = new SSHSession(gate.addr, gate.username)
-    session.onStateChange = async (state, failure?) => {
+    let channel: SSHChannel
+    let fingerprint = ""
+    session.onStateChange = async (state) => {
         switch (state) {
             case "connecting":
                 shell.t.writeln("Connecting...")
+                break
             case "connected":
                 shell.t.writeln("Connected")
-                let channel: SSHChannel
                 try {
                     channel = await session.openChannel(
                         ["/usr/bin/env", "bash", "<(curl -sL https://get.webexec.sh)"],
@@ -662,7 +662,6 @@ async function installCMD(shell: Shell, args: string[]) {
                 }
                 shell.t.clear()
                 shell.masterChannel = channel
-                let fingerprint = ""
                 channel.onMessage = data => {
                     shell.t.write(data)
                     // use regex to extract the fingerprint from the data.
@@ -678,7 +677,7 @@ async function installCMD(shell: Shell, args: string[]) {
                 channel.onClose = () => { 
                     this.masterChannel = null
                     if (fingerprint)
-                        this.onInstallDone(shell, fingerprint) 
+                        onInstallDone(shell, fingerprint) 
                     else {
                         shell.t.writeln("Install failed")
                         shell.t.writeln("Please try again or type `support`")
@@ -704,15 +703,13 @@ async function onInstallDone(shell, fp: string) {
             reject()
             return
         }
-        const reply = []
-        session.onStateChange = async (state, failure?) => {
+        session.onStateChange = async (state) => {
             switch (state) {
                 case "connecting":
                     shell.t.writeln("Connecting...")
                     break
                 case "connected":
                     shell.t.writeln("Connected")
-                    let validated = false
                     while (true) {
                         let gotMsg = false
                         const otp = await shell.askValue("Enter OTP to verify gate")
