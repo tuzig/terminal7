@@ -252,32 +252,10 @@ export class Terminal7 {
         })
 
         // settings button and modal
-        var modal   = document.getElementById("settings-modal")
-        modal.addEventListener('click',
-            async () => {
-                document.getElementById("dotfile-button").classList.remove("on")
-                await this.clear()
-            }
-        )
         document.getElementById("dotfile-button")
                 .addEventListener("click", () => this.map.shell.confEditor ?
                     this.map.shell.closeConfig(false)
                     : this.map.shell.runCommand("config", []))
-        modal.querySelector(".close").addEventListener('click',
-            async () => {
-                document.getElementById("dotfile-button").classList.remove("on")
-                await this.clear()
-            }
-        )
-        modal.querySelector(".save").addEventListener('click',
-            () => this.wqConf())
-        modal.querySelector(".copy").addEventListener('click',
-            async () => {
-                var area = document.getElementById("edit-conf")
-                this.confEditor.save()
-                Clipboard.write({string: area.value})
-                await this.clear()
-            })
         this.map.open().then(() => {
            this.goHome()
            setTimeout(async () => {
@@ -353,21 +331,6 @@ export class Terminal7 {
                 this.pb.connect().then(resolve)
             })
         })
-    }
-    /*
-     * wqConf saves the configuration and closes the conf editor
-     */
-    wqConf() {
-        var area    =  document.getElementById("edit-conf")
-        document.getElementById("dotfile-button").classList.remove("on")
-        this.confEditor.save()
-        this.loadConf(TOML.parse(area.value))
-        Preferences.set({key: "dotfile", value: area.value})
-        document.getElementById("settings").classList.add("hidden")
-        this.map.shell.toggleVisibility()
-        this.map.t0.focus()
-        this.confEditor.toTextArea()
-        this.confEditor = null
     }
     catchFingers() {
         this.e.addEventListener("pointerdown", ev => this.onPointerDown(ev))

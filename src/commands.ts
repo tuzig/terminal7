@@ -543,6 +543,8 @@ async function copyKeyCMD(shell: Shell) {
         return shell.t.writeln("No key yet. Please connect to generate one.\n(try connect or add)")
 }
 async function configCMD(shell: Shell) {
+    shell.t.writeln("Opening vi-style editor.\nUse \x1B[1;37m:w\x1B[0m to save & exit or \x1B[1;37m:q\x1B[0m to exit without saving.")
+    await shell.waitForKey()
     await shell.openConfig()
 }
 

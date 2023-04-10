@@ -124,7 +124,7 @@ export class Shell {
         await this.handleLine(this.currentLine)
     }
 
-    async runForm(fields: Fields, type: "menu" | "choice" | "text", title="") {
+    async runForm(fields: Fields, type: "menu" | "choice" | "text" | "wait", title?: string) {
         await this.escapeActiveForm()
         this.stopWatchdog()
         this.map.showLog(true)
@@ -143,6 +143,9 @@ export class Shell {
                 break
             case "text":
                 run = this.activeForm.start.bind(this.activeForm)
+                break
+            case "wait":
+                run = this.activeForm.waitForKey.bind(this.activeForm)
                 break
             default:
                 throw new Error("Unknown form type: " + type)
@@ -216,6 +219,11 @@ export class Shell {
         this.t.write(`\r\x1B[K${this.prompt}${this.currentLine}`)
     }
 
+    async waitForKey() {
+        await this.runForm([], "wait")
+        this.t.writeln("\n")
+    }
+
     updateCapsLock(ev: KeyboardEvent) {
         const e = document.getElementById("capslock-indicator")
         if (ev.getModifierState("CapsLock"))
@@ -281,6 +289,7 @@ export class Shell {
             tomlMode(CodeMirror)
             dialogAddOn(CodeMirror)
             CodeMirror.commands.save = () => this.closeConfig(true)
+            CodeMirror.Vim.defineEx("quit", "q", () => this.closeConfig(false))
 
             this.confEditor  = CodeMirror.fromTextArea(area, {
                 value: conf,
@@ -305,9 +314,9 @@ export class Shell {
             this.confEditor.save()
             terminal7.loadConf(TOML.parse(area.value))
             terminal7.saveDotfile()
-            this.t.writeln("Configuration saved")
+            this.t.writeln("Changes saved.")
         } else {
-            this.t.writeln("Configuration discarded")
+            this.t.writeln("Changes discarded.")
         }
         document.getElementById("settings").classList.add("hidden")
         this.t.element.classList.remove("hidden")
