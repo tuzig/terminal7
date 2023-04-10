@@ -18,7 +18,7 @@ export class SSHChannel extends BaseChannel {
            .catch(e => console.log("error from setPtySize", e))
     }
     handleData(m) {
-        if ('data' in m)
+        if ((m instanceof Object) && ('data' in m))
             this.onMessage(m.data)
         else {
             this.t7.log("ssh read got error ", m.error)
