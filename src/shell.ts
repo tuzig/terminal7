@@ -45,7 +45,7 @@ export class Shell {
         const key = ev.key
         switch (key) {
             case "Enter":
-                this.t.write("\n\x1B[K")
+                this.t.write("\n")
                 await this.handleLine(this.currentLine)
                 this.currentLine = ''
                 break
@@ -70,7 +70,7 @@ export class Shell {
         const [cmd, ...args] = this.currentLine.trim().split(/\s+/)
         if (!cmd || args.length > 0)
             return
-        const matches = []
+        const matches: string[] = []
         for (const c of this.commands) {
             if (c[0].startsWith(cmd))
                 matches.push(c[0])
@@ -79,7 +79,7 @@ export class Shell {
             this.currentLine = matches[0] + ' '
             this.printPrompt()
         } else if (matches.length > 1) {
-            this.t.write("\x1B[s\n")
+            this.t.write("\x1B[s\n\x1B[K")
             this.t.write(matches.join(' '))
             this.t.write("\x1B[u")
         }
@@ -95,6 +95,7 @@ export class Shell {
     async execute(cmd: string, args: string[]) {
         if (!cmd)
             return
+        this.t.write("\x1B[K") // clear line
         let exec = null
         for (const c of this.commands) {
             if (c[0].startsWith(cmd))
