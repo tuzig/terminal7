@@ -11,7 +11,8 @@ build_n_run() {
         fi
     fi
     echo ">>> Running a lab based on $1"
-    docker compose -f $1  --project-directory . up --exit-code-from runner
+    docker compose -f $1  --project-directory . up $UPFLAGS
+    
 }
 usage() {
    cat <<EOS
@@ -19,21 +20,23 @@ This script builds & runs the acceptance test procedures.
 When no path is given it fnds all the testing suites under `./aatp`
 setup their lab and runs them.
 
-Syntax: $0 [-h|z|n] <test_path>
+Syntax: $0 [-h|z|n|d] <test_path>
 options:
 
 h     Print this usage
 z     Build the docker images from scratch before running
 n     Don't build the images
+l     keep containers running after the tests are done
 
 EOS
 }
 
+UPFLAGS="--exit-code-from runner --abort-on-container-exit"
 exit_error() {
     usage
     exit 1
 }
-while getopts ":hnz" option; do
+while getopts ":lhnz" option; do
     echo "option " $option
    case $option in
       h) # display usage
@@ -44,6 +47,9 @@ while getopts ":hnz" option; do
          ;;
       z) # No Cache
          BUILD_OPTIONS="--no-cache"
+         ;;
+      l) # run as daemon and don't exit when done
+         UPFLAGS=
          ;;
       \?) # Invalid option
          echo "Error: Invalid option"
