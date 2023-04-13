@@ -542,7 +542,7 @@ export class Gate {
                    new HybridSession(this.addr, this.username)
             } else {
                 this.notify("🎌  webexec server")
-                const addr = `http://${this.addr}:17777/connect`
+                const addr = `http://${this.addr}:7777/connect`
                 this.session = new HTTPWebRTCSession(addr)
             }
         }
