@@ -408,7 +408,10 @@ export class Terminal7 {
              || (this.pb.insecure != this.conf.peerbook.insecure)
              || (this.pb.email != this.conf.peerbook.email))) {
             this.pbClose()
-            this.pbConnect()
+            Preferences.get({ key: 'uID' }).then(res => {
+                const uid = res && res.value ? res.value : null
+                this.pbConnect(uid)
+            })
         }
     }
     catchFingers() {
@@ -557,29 +560,32 @@ export class Terminal7 {
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
             off.add("hidden")
-            this.pbConnect().then(() => {   
-                const gate = this.activeG
-                if (gate) {
-                    if (gate.session && gate.session.isSSH) {
-                        gate.session.close()
-                        gate.session = null
-                        this.notify("Lost SSH session")
-                        this.map.shell.runCommand("subscribe")
-                        return
+            Preferences.get({ key: 'uID' }).then(res => {
+                const uid = res && res.value ? res.value : null
+                this.pbConnect(uid).then(() => {   
+                    const gate = this.activeG
+                    if (gate) {
+                        if (gate.session && gate.session.isSSH) {
+                            gate.session.close()
+                            gate.session = null
+                            this.notify("Lost SSH session")
+                            this.map.shell.runCommand("subscribe")
+                            return
+                        }
+                        this.notify("🌞 Recovering")
+                        this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
+                        this.recovering = true
+                        this.run(() => this.recovering = false, this.conf.net.recoveryTime)
+                        gate.reconnect()
+                            .then(() => {
+                                this.map.shell.stopWatchdog()
+                                this.map.showLog(false)
+                            }).catch(() => {
+                                this.map.shell.stopWatchdog()
+                                this.map.shell.runCommand("reset", [gate.name])
+                            })
                     }
-                    this.notify("🌞 Recovering")
-                    this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
-                    this.recovering = true
-                    this.run(() => this.recovering = false, this.conf.net.recoveryTime)
-                    gate.reconnect()
-                        .then(() => {
-                            this.map.shell.stopWatchdog()
-                            this.map.showLog(false)
-                        }).catch(() => {
-                            this.map.shell.stopWatchdog()
-                            this.map.shell.runCommand("reset", [gate.name])
-                        })
-                }
+                })
             })
         } else {
             off.remove("hidden")
