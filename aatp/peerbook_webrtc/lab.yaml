@@ -19,8 +19,8 @@ services:
     build:
       context: .
       dockerfile: ./aatp/infra/webexec/Dockerfile
-      args:
-        REF: ${WEREF-latest}
+    depends_on:
+      - peerbook
     environment:
       PEERBOOK: 1
     volumes:

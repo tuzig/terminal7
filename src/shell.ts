@@ -107,7 +107,7 @@ export class Shell {
                         const regChannel = await session.openChannel(cmd, 0, 80, 24)
                         regChannel.onClose = async () => {
                             const repStr =  new TextDecoder().decode(new Uint8Array(reply))
-                            console.log("got channel close", repStr)
+                            console.log("got pb admin channel close")
                             let userData
                             try {
                                 userData = JSON.parse(repStr)

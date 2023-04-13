@@ -31,6 +31,7 @@ test.describe('terminal7 session', ()  => {
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
         await page.evaluate(async () => {
             window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
+            localStorage.setItem("CapacitorStorage.uID","123456")
             localStorage.setItem("CapacitorStorage.dotfile",`
 [theme]
 foreground = "#00FAFA"
@@ -67,6 +68,8 @@ insecure = true`)
         const redisClient = redis.createClient({url: 'redis://redis'})
         redisClient.on('error', err => console.log('Redis client error', err))
         await redisClient.connect()
+        redisClient.hSet("u:123456", "email", "joe@example.com")
+        redisClient.set("id:joe@example.com", "123456")
         let keys = []
         while (keys.length < 3) {
             keys = await redisClient.keys('peer*')

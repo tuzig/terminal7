@@ -11,8 +11,8 @@ build_n_run() {
         fi
     fi
     echo ">>> Running a lab based on $1"
-    docker compose -f $1  --project-directory . up $UPFLAGS
-    
+    docker compose -f $1  --project-directory . up $UPFLAGS | sed 's/\.\.\//aatp\//g'
+    return ${PIPESTATUS[0]}
 }
 usage() {
    cat <<EOS
@@ -31,7 +31,7 @@ l     keep containers running after the tests are done
 EOS
 }
 
-UPFLAGS="--exit-code-from runner --abort-on-container-exit"
+UPFLAGS="--exit-code-from runner"
 exit_error() {
     usage
     exit 1
@@ -67,12 +67,11 @@ if [ $# -eq 0 ]
 then
     for compose in `find aatp -name "lab.yaml"`
     do
-        dir=$(dirname $compose)
         build_n_run $compose
         if [ $? -ne 0 ]
         then
-            echo ">>> $dir tests FAILED"
-             exit 4
+            echo ">>> $(dirname $compose) tests FAILED"
+            exit 4
         fi
     done
 else
