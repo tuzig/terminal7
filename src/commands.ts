@@ -695,7 +695,7 @@ async function installCMD(shell: Shell, args: string[]) {
                             shell.masterChannel = null
                             shell.t.writeln("\nInstall finished")
                             channel.close()
-                            verifyFP(shell, fp)
+                            shell.verifyFP(fp)
                         }, 100)
                     }
                 }   
@@ -708,54 +708,3 @@ async function unsubscribeCMD(shell: Shell) {
     await Preferences.remove({key: "uID"})
     shell.t.writeln("Unsubscribed")
 }
-async function verifyFP(shell, fp: string) {
-    // connect to peerbook and verify the fingerprint
-    return new Promise((resolve, reject) => {
-        let session: HTTPWebRTCSession
-        try {
-            session = shell.newPBSession()
-        } catch(e) {
-            shell.t.writeln("Error connecting to peerbook")
-            shell.t.writeln("Please try again or type `support`")
-            reject()
-            return
-        }
-        session.onClose = () => {
-            shell.t.writeln("Connection to PeerBook closed")
-            document.getElementById("log").style.borderColor = undefined
-            shell.masterChannel = null
-            reject()
-        }
-
-        session.onStateChange = async (state) => {
-            switch (state) {
-                case "connecting":
-                    break
-                case "connected":
-                    shell.t.writeln("Connected to PeerBook")
-                    while (true) {
-                        let gotMsg = false
-                        const otp = await shell.askValue("Enter OTP to verify gate")
-                        const regChannel = await session.openChannel(["authorize", fp, otp], 0, shell.t.cols, shell.t.rows)
-                        regChannel.onMessage = (data: Uint8Array) => {
-                            gotMsg = true
-                            if (data[0] == "1") {
-                                shell.t.writeln("Verification complete")
-                                resolve()
-                                return
-                            }
-                            else
-                                shell.t.writeln("Verification failed. Please try again.")
-                        }
-                        while (!gotMsg) {
-                            await new Promise(r => setTimeout(r, 100))
-                        }
-                    }
-                case "failed":
-                    shell.t.writeln("PeerBook connection failed")
-                    break
-            }
-        }
-        session.connect()
-    })
-}   

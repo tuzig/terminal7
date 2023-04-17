@@ -83,8 +83,8 @@ export class WebRTCSession extends BaseSession {
     public get isSSH() {
         return false
     }
-    async connect(marker=null) {
-        console.log("in connect")
+    async connect(marker=null, noCDC?: boolean): Promise<void> {
+        console.log("in connect", marker, noCDC)
 
         if ((!this.t7.iceServers) && (!this.t7.conf.peerbook?.insecure)) {
             try {
@@ -154,6 +154,8 @@ export class WebRTCSession extends BaseSession {
                 }
             }
         }
+        if (noCDC)
+            return
         this.openCDC()
     }
 
@@ -197,6 +199,7 @@ export class WebRTCSession extends BaseSession {
                     }
                 }, Function.prototype(), Function.prototype())
             } else {
+                console.log("reconnect pane", cmdorid)
                 msgID = this.sendCTRLMsg({
                     type: "reconnect_pane", 
                     args: { id: cmdorid }

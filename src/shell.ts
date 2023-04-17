@@ -543,7 +543,9 @@ export class Shell {
                 reject()
                 return
             }
+            console.log("validating OTP, opening a new sesison")
             if (!this.pbSession) {
+                console.log("validating OTP, opening a new sesison")
                 const session = this.newPBSession()
                 try {
                     await (new Promise((resolve, reject) => {
@@ -563,9 +565,58 @@ export class Shell {
             }
             const validateChannel = await this.pbSession.openChannel(["ping", otp], 0, 80, 24)
             validateChannel.onMessage = (data: string) => {
-                gotMsg = true
                 const ret = String.fromCharCode(data[0])
                 console.log("Got ping reply", ret)
+                if (ret == "1") {
+                    validated = true
+                }
+            }
+            validateChannel.onClose = (data: string) => {
+                gotMsg = true
+            }
+            while (!gotMsg) {
+                await (new Promise(r => setTimeout(r, 100)))
+            }
+            if (!validated)
+                this.t.writeln("Invalid OTP, please try again")
+        }
+    }
+    async verifyFP(fp: string) {
+        let validated = false
+        while (!validated) {
+            console.log("Verifying FP", fp)
+            let gotMsg = false
+            let otp
+            try {
+                otp = await this.askValue("Enter OTP to verify gate")
+            } catch(e) {
+                reject()
+                return
+            }
+            if (!this.pbSession) {
+                console.log("verifyFP: creating new session")
+                const session = this.newPBSession()
+                try {
+                    await (new Promise((resolve, reject) => {
+                        session.onStateChange = async (state) => {
+                            if (state == 'connected') {
+                                resolve()
+                            } else if (state == 'failed')
+                                reject()
+                        }
+                        session.connect()
+                    }))
+                } catch(e) {
+                    this.t.writeln("Failed to open WebRTC connection to PeerBook")
+                    console.log("Failed to open WebRTC connection to PeerBook", e)
+                    throw e
+                }
+            }
+            const channel = await this.pbSession.openChannel(["authorize", fp, otp], 0, 80, 24)
+            channel.onMessage = (data: string) => {
+                gotMsg = true
+                const ret = String.fromCharCode(data[0])
+                console.log("Got authorize reply", ret)
                 if (ret == "1") {
                     validated = true
                 }

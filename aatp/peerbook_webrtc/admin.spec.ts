@@ -8,12 +8,13 @@ const url = process.env.LOCALDEV?"http://localhost:3000":"http://terminal7"
 test.describe('peerbook administration', ()  => {
 
     const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
-    let redisClient: redis.Redis
-    let page: Page,
-        context: BrowserContext
+    let redisClient: redis.Redis,
+        page: Page,
+        context: BrowserContext,
+        checkedC = 0
 
     async function getTWRBuffer() {
-        return await page.evaluate(() => {
+        let ret =  await page.evaluate(() => {
             const t = window.terminal7.map.t0
             const b = t.buffer.active
             let ret = ""
@@ -21,8 +22,13 @@ test.describe('peerbook administration', ()  => {
                 const line = b.getLine(i).translateToString()
                 ret += line
             }
-            return ret
+            return ret.trimEnd()
         })
+        console.log("TWR", ret)
+        const lastC = checkedC
+        checkedC = ret.length
+        console.log("sustring", lastC, checkedC)
+        return ret.substring(lastC)
     }
     async function getTWRLastLine() {
         return await page.evaluate(() => {
@@ -88,7 +94,6 @@ insecure = true`)
             })
         })
         const twr = await getTWRBuffer()
-        console.log("TWR", twr)
         await sleep(100)
         expect(twr).toMatch(/`subscribe`/)
     })
@@ -115,11 +120,11 @@ insecure = true`)
         await page.keyboard.type("foo@bar.com")
         await page.keyboard.press("Enter")
         await sleep(1200)
-        twr = await getTWRLastLine()
+        twr = await getTWRBuffer()
         expect(twr).toMatch(/OTP:/)
         await page.keyboard.type("1234")
         await page.keyboard.press("Enter")
-        await sleep(100)
+        await sleep(500)
         twr = await getTWRBuffer()
         expect(twr).toMatch(/Invalid OTP.*OTP:/)
     })
@@ -131,7 +136,53 @@ insecure = true`)
         await page.keyboard.press("Enter")
         await sleep(100)
         const twr = await getTWRBuffer()
-        console.log("TWR", twr)
         expect(twr).toMatch(/Validated/)
+    })
+    /*
+    test('validate otp', async () => {
+        const uid = await redisClient.get("id:foo@bar.com")
+        const secret = await redisClient.get(`secret:${uid}`)
+        const token = authenticator.generate(secret);
+        await page.evaluate(async (token) => {
+            terminal7.map.shell.validateOTP(token)
+        }, token)
+        await(sleep(100))
+
+        await page.keyboard.type(token)
+        await page.keyboard.press("Enter")
+        await sleep(1500)
+        const twr = await getTWRBuffer()
+        expect(twr).toMatch(/Validated/)
+    })
+    */
+    test('validate webexec', async () => {
+        const uid = await redisClient.get("id:foo@bar.com")
+        const secret = await redisClient.get(`secret:${uid}`)
+        const token = authenticator.generate(secret);
+        const keys = await redisClient.keys('peer*')
+        let fp: string
+        for (const key of keys) {
+            const peer = await redisClient.hGetAll(key)
+            if (peer.kind === "webexec") {
+                fp = peer.fp
+                break
+            }
+        }
+        await page.evaluate(async (fp) => {
+            terminal7.map.shell.verifyFP(fp)
+        }, fp)
+        await sleep(100)
+        await page.keyboard.type(token)
+        await page.keyboard.press("Enter")
+        await sleep(500)
+        const twr = await getTWRBuffer()
+        expect(twr).toMatch(/Validated/)
+        // verify the fp is verified
+        let verified = await redisClient.hGet(`peer:${fp}`, "verified")
+        expect(verified).toBe("1")
+        verified = await page.evaluate(async (fp) => {
+            return terminal7.map.shell.peers[fp].verified
+        }, fp)
+        expect(verified).toBe(true)
     })
 })
