@@ -12,7 +12,7 @@ export class Terminal {
     writeln = vi.fn(s => this.write(s + "\n"))
     reset = vi.fn()
     select = vi.fn()
-    setOption = vi.fn()
+    options = { selectionStyle: "plain", cursorBlink: false, scrollback: 1000, tabStopWidth: 4 }
     scrollToBottom = vi.fn()
     onKey = (cb) => {
         this.keyHandler = cb

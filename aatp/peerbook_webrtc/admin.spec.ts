@@ -14,7 +14,7 @@ test.describe('peerbook administration', ()  => {
         checkedC = 0
 
     async function getTWRBuffer() {
-        let ret =  await page.evaluate(() => {
+        const ret =  await page.evaluate(() => {
             const t = window.terminal7.map.t0
             const b = t.buffer.active
             let ret = ""
@@ -29,14 +29,6 @@ test.describe('peerbook administration', ()  => {
         checkedC = ret.length
         console.log("sustring", lastC, checkedC)
         return ret.substring(lastC)
-    }
-    async function getTWRLastLine() {
-        return await page.evaluate(() => {
-            const t = window.terminal7.map.t0
-            const b = t.buffer.active
-            console.log("t0 buffer len", b.length)
-            return b.getLine(b.length-1).translateToString()
-        })
     }
     test.afterAll(async () => await context.close() )
     test.beforeAll(async ({ browser }) => {

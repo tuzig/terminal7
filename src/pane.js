@@ -156,7 +156,7 @@ export class Pane extends Cell {
         return this.t
     }
     setTheme(theme) {
-        this.t.setOption("theme", theme)
+        this.t.options.theme = theme
     }
     /*
      * Pane.scale is used to change the pane's font size
@@ -165,7 +165,7 @@ export class Pane extends Cell {
         this.fontSize += by
         if (this.fontSize < 6) this.fontSize = 6
         else if (this.fontSize > 30) this.fontSize = 30
-        this.t.setOption('fontSize', this.fontSize)
+        this.t.options.fontSize = this.fontSize
         this.fit()
     }
 
@@ -476,7 +476,7 @@ export class Pane extends Cell {
         const notFound = this.gate.e.querySelector(".not-found")
         if (searchTerm) {
             this.cmAtEnd = null
-            this.t.setOption("selectionStyle", "plain")
+            this.t.options.selectionStyle = "plain"
             this.searchTerm = searchTerm
         }
 
@@ -493,7 +493,7 @@ export class Pane extends Cell {
         const notFound = this.gate.e.querySelector(".not-found")
         if (searchTerm) {
             this.cmAtEnd = null
-            this.t.setOption("selectionStyle", "plain")
+            this.t.options.selectionStyle = "plain"
             this.searchTerm = searchTerm
         }
 
@@ -879,9 +879,9 @@ export class Pane extends Cell {
     }
     cmSelectionUpdate(selection) {
         if (this.cmAtEnd == null)
-            this.t.setOption("selectionStyle", "plain")
+            this.t.options.selectionStyle = "plain"
         else
-            this.t.setOption("selectionStyle", this.cmAtEnd?"mark-end":"mark-start")
+            this.t.options.selectionStyle = this.cmAtEnd?"mark-end":"mark-start"
         // maybe it's a cursor
         if (!this.cmMarking) {
             console.log("using selection to draw a cursor at", this.cmCursor)
