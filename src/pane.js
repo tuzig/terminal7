@@ -476,7 +476,7 @@ export class Pane extends Cell {
         const notFound = this.gate.e.querySelector(".not-found")
         if (searchTerm) {
             this.cmAtEnd = null
-            this.t.options.selectionStyle = "plain"
+            // this.t.options.selectionStyle = "plain"
             this.searchTerm = searchTerm
         }
 
@@ -493,7 +493,7 @@ export class Pane extends Cell {
         const notFound = this.gate.e.querySelector(".not-found")
         if (searchTerm) {
             this.cmAtEnd = null
-            this.t.options.selectionStyle = "plain"
+            // this.t.options.selectionStyle = "plain"
             this.searchTerm = searchTerm
         }
 
@@ -878,10 +878,12 @@ export class Pane extends Cell {
                          y: buffer.cursorY + buffer.viewportY}
     }
     cmSelectionUpdate(selection) {
+        /*
         if (this.cmAtEnd == null)
             this.t.options.selectionStyle = "plain"
         else
             this.t.options.selectionStyle = this.cmAtEnd?"mark-end":"mark-start"
+            */
         // maybe it's a cursor
         if (!this.cmMarking) {
             console.log("using selection to draw a cursor at", this.cmCursor)
@@ -910,6 +912,9 @@ export class Pane extends Cell {
         const rowLength = this.t.cols
         let selectionLength = rowLength*(selection.endRow - selection.startRow) + selection.endColumn - selection.startColumn
         if (selectionLength == 0) selectionLength = 1
+
+
+
         this.t.select(selection.startColumn, selection.startRow, selectionLength)
     }
     enableSearchButtons() {

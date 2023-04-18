@@ -7,10 +7,16 @@ services:
     volumes:
       - ./aatp/peerbook_webrtc:/runner
       - ./aatp/result:/result
+    depends_on:
+      - peerbook
+      - webexec
+      - terminal7
     environment:
       PWARGS: ${PWARGS--x}
   terminal7:
     image: halverneus/static-file-server:latest
+    expose:
+      - 80
     environment:
       PORT: 80
     volumes:
@@ -23,10 +29,9 @@ services:
         REF: ${WEREF-latest}
     depends_on:
       - peerbook
-    environment:
-      PEERBOOK: 1
     volumes:
       - ./aatp/peerbook_webrtc/webexec_conf:/conf
+      - ./aatp/result:/result
   peerbook:
     build:
       context: .
@@ -34,19 +39,11 @@ services:
       args:
         BRANCH: ${PBBRANCH-master}
     expose:
-      - "17777"
+      - 17777
     depends_on:
       - redis
     environment:
       REDIS_HOST: redis:6379
-  netshoot:
-    image: nicolaka/netshoot
-    depends_on:
-      - peerbook
-    command: tcpdump -i eth0 -w /data/peerbook.pcap
-    network_mode: service:peerbook
-    volumes:
-      - ./aatp/result:/data
   redis:
     image: "redis:alpine"
     command: [sh, -c, "rm -f /data/dump.rdb && redis-server"]  # disable persistence

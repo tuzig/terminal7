@@ -566,13 +566,11 @@ export class Shell {
             const validateChannel = await this.pbSession.openChannel(["ping", otp], 0, 80, 24)
             validateChannel.onMessage = (data: string) => {
                 const ret = String.fromCharCode(data[0])
+                gotMsg = true
                 console.log("Got ping reply", ret)
                 if (ret == "1") {
                     validated = true
                 }
-            }
-            validateChannel.onClose = (data: string) => {
-                gotMsg = true
             }
             while (!gotMsg) {
                 await (new Promise(r => setTimeout(r, 100)))
@@ -616,10 +614,7 @@ export class Shell {
             channel.onMessage = (data: string) => {
                 gotMsg = true
                 const ret = String.fromCharCode(data[0])
-                console.log("Got authorize reply", ret)
-                if (ret == "1") {
-                    validated = true
-                }
+                validated = ret == "1"
             }
             while (!gotMsg) {
                 await (new Promise(r => setTimeout(r, 100)))
@@ -627,5 +622,6 @@ export class Shell {
             if (!validated)
                 this.t.writeln("Invalid OTP, please try again")
         }
+        this.t.writeln("Peer validated!")
     }
 }

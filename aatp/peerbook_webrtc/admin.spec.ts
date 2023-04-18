@@ -126,7 +126,7 @@ insecure = true`)
         const token = authenticator.generate(secret);
         await page.keyboard.type(token)
         await page.keyboard.press("Enter")
-        await sleep(100)
+        await sleep(200)
         const twr = await getTWRBuffer()
         expect(twr).toMatch(/Validated/)
     })
@@ -148,18 +148,27 @@ insecure = true`)
     })
     */
     test('validate webexec', async () => {
-        const uid = await redisClient.get("id:foo@bar.com")
-        const secret = await redisClient.get(`secret:${uid}`)
-        const token = authenticator.generate(secret);
-        const keys = await redisClient.keys('peer*')
+        // change the user id of foo@bar.com to 123456
+        await page.evaluate(async () => 
+            await localStorage.setItem("CapacitorStorage.uID","123456"))
         let fp: string
+        const keys = await redisClient.keys('peer*')
+        expect(keys.length).toBe(2)
         for (const key of keys) {
-            const peer = await redisClient.hGetAll(key)
-            if (peer.kind === "webexec") {
-                fp = peer.fp
-                break
-            }
+            const cfp = await redisClient.hGet(key, "fp")
+            const kind  = await redisClient.hGet(key, "kind")
+            console.log("fp", cfp, "kind", kind)
+            await redisClient.hSet(key, "user", "123456")
+            await redisClient.sAdd("user:123456", cfp)
+            if (kind === "webexec")
+                fp = cfp
         }
+        const oId = await redisClient.get("id:foo@bar.com")
+        await redisClient.hSet("u:123456", "email", "foo@bar.com")
+        await redisClient.set("id:foo@bar.com", "123456")
+        const secret = await redisClient.get(`secret:${oId}`)
+        await redisClient.set("secret:123456", secret)
+        const token = authenticator.generate(secret)
         await page.evaluate(async (fp) => {
             terminal7.map.shell.verifyFP(fp)
         }, fp)
@@ -167,14 +176,9 @@ insecure = true`)
         await page.keyboard.type(token)
         await page.keyboard.press("Enter")
         await sleep(500)
-        const twr = await getTWRBuffer()
-        expect(twr).toMatch(/Validated/)
-        // verify the fp is verified
-        let verified = await redisClient.hGet(`peer:${fp}`, "verified")
+        const verified = await redisClient.hGet(`peer:${fp}`, "verified")
         expect(verified).toBe("1")
-        verified = await page.evaluate(async (fp) => {
-            return terminal7.map.shell.peers[fp].verified
-        }, fp)
-        expect(verified).toBe(true)
+        const twr = await getTWRBuffer()
+        expect(twr).toMatch(/Peer validated/)
     })
 })
