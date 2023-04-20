@@ -18,6 +18,8 @@ export class Shell {
     currentLine = ''
     watchdog: number
     timer: number | null = null
+    history: string[] = []
+    historyIndex = 0
 
     constructor(map: T7Map) {
         this.map = map
@@ -51,6 +53,20 @@ export class Shell {
             case "Tab":
                 this.handleTab()
                 break
+            case "ArrowUp":
+                if (this.history.length > 0) {
+                    this.historyIndex = Math.min(this.historyIndex + 1, this.history.length)
+                    this.currentLine = this.history[this.historyIndex - 1]
+                    this.printPrompt()
+                }
+                break
+            case "ArrowDown":
+                if (this.history.length > 0) {
+                    this.historyIndex = Math.max(this.historyIndex - 1, 0)
+                    this.currentLine = this.history[this.historyIndex - 1] || ''
+                    this.printPrompt()
+                }
+                break
             default:
                 if (key.length == 1) { // make sure the key is a char
                     this.currentLine += key
@@ -81,8 +97,9 @@ export class Shell {
     async handleLine(input: string) {
         const [cmd, ...args] = input.trim().split(/\s+/)
         await this.execute(cmd, args)
-        this.currentLine = ''
-        this.printPrompt()
+        if (input)
+            this.history.unshift(input)
+        this.clearPrompt()
     }
 
     async execute(cmd: string, args: string[]) {
@@ -177,6 +194,7 @@ export class Shell {
         if (key == 'Escape') {
             await this.escapeActiveForm()
             await this.escapeWatchdog()
+            this.clearPrompt()
         } else if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
             Clipboard.read().then(res => {
                 if (res.type == 'text/plain') {
@@ -207,6 +225,12 @@ export class Shell {
     printPrompt() {
         if (this.activeForm || !this.active) return
         this.t.write(`\r\x1B[K${this.prompt}${this.currentLine}`)
+    }
+
+    clearPrompt() {
+        this.historyIndex = 0
+        this.currentLine = ''
+        this.printPrompt()
     }
 
     updateCapsLock(ev: KeyboardEvent) {
