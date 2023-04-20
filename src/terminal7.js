@@ -81,7 +81,7 @@ export class Terminal7 {
      */
     constructor(settings) {
         settings = settings || {}
-        this.gates = new Map()
+        this.gates = new Array()
         this.cells = []
         this.timeouts = []
         this.activeG = null
@@ -314,7 +314,7 @@ export class Terminal7 {
                     reject()
                 else {
                     const state = JSON.parse(value)
-                    let gate = this.gates.get(state.gateId)
+                    let gate = this.gates[state.gateId]
                     if (!gate) {
                         console.log("Invalid restore state. Starting fresh", state)
                         this.notify("Invalid restore state. Starting fresh")
@@ -430,12 +430,11 @@ export class Terminal7 {
         p.id = p.fp || p.name
         let g = new Gate(p)
         g.onlySSH = p.onlySSH
-        this.gates.set(p.id, g)
+        this.gates.push(g)
         g.open(this.e)
         if (onMap) {
             g.nameE = this.map.add(g)
             g.updateNameE()
-
         }
         return g
     }
@@ -532,7 +531,7 @@ export class Terminal7 {
     disengage() {
         return new Promise(resolve => {
             var count = 0
-            if (this.gates.size > 0)
+            if (this.gates.length > 0)
                 this.gates.forEach(g => {
                     if (g.boarding) {
                         count++
@@ -622,7 +621,10 @@ export class Terminal7 {
         this.conf.theme.background = this.conf.theme.background || "#000"
         this.conf.theme.selection = this.conf.theme.selection || "#D9F505"
         if (conf.peerbook) {
-            this.conf.peerbook= {uID: conf.peerbook.user_id }
+            this.conf.peerbook = {
+                uID: conf.peerbook.user_id,
+                insecure: conf.peerbook.insecure || false,
+            }
             if (conf.peerbook.peerName)
                 this.conf.peerbook.peerName = conf.peerbook.peer_name
             else
@@ -746,12 +748,14 @@ export class Terminal7 {
                 this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
             return
         }
-        const id = m.source_fp
-        var g = this.gates.get(id)
-        if (!g) {
+        const fp = m.source_fp
+        // look for a gate where g.fp == fp
+        const lookup =  this.gates.filter(g => g.fp == fp)
+        if (!lookup || (lookup.length != 1)) {
             terminal7.log("Got a pb message with unknown peer: " + id)
             return
         }
+        const g = lookup[0]
 
         if (m["peer_update"] !== undefined) {
             g.online = m.peer_update.online
@@ -950,8 +954,9 @@ export class Terminal7 {
         peers.forEach(p => {
             if (p.kind != "webexec")
                 return
-            var g = this.gates.get(p.fp)
-            if (g != undefined) {
+            const lookup =  this.gates.filter(g => g.fp == fp)
+            if (lookup) {
+                const g = lookup[0]
                 g.online = p.online
                 g.name = p.name
                 g.verified = p.verified
@@ -959,7 +964,7 @@ export class Terminal7 {
             } else {
                 p.id = p.fp
                 g = new Gate(p)
-                this.gates.set(p.id, g)
+                this.gates.push(g)
                 g.nameE = this.map.add(g)
                 g.updateNameE()
                 g.open(this.e)
@@ -974,13 +979,11 @@ export class Terminal7 {
         })
     }
     validateHostAddress(addr) {
-        return this.gates.has(addr) ? "Host already exists" : ""
+        const lookup = this.gates.filter(g => g.addr = addr)
+        return lookup? "Host already exists" : ""
     }
     validateHostName(name) {
-        for (const [, gate] of this.gates) {
-            if (gate.name == name)
-                return "Name already taken"
-        }
+        //  for now, all names are valid, ven single char
         return ""
     }
     async factoryReset() {
@@ -989,8 +992,9 @@ export class Terminal7 {
             this.gates.forEach(g => {
                 g.e.remove()
                 this.map.remove(g)
-                this.gates.delete(g.id)
+                // remove g from the gates array
             })
+            this.gates = new Array()
             Preferences.clear().then(() => 
                 Preferences.set({key: 'dotfile', value: DEFAULT_DOTFILE}))
             const d = TOML.parse(DEFAULT_DOTFILE)

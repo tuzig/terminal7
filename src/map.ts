@@ -89,6 +89,8 @@ export class T7Map {
         const d = document.createElement('div')
         const b = document.createElement('button')
         d.className = "gate-pad"
+        if (g.fp)
+            d.classList.add("from-peerbook")
         b.className = "text-button"
         d.gate = g
         d.appendChild(b)

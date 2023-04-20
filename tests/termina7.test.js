@@ -526,7 +526,7 @@ describe("terminal7", function() {
         const t0 = t.map.t0
         const dotfile = t.map.shell.setPBUID(`
 [peerbook]
-user_id = "GODDEAR"
+insecure = true
 `, "BADFACE")
         const d = TOML.parse(dotfile)
         expect(d.peerbook.user_id).toBe("BADFACE")

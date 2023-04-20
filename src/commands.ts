@@ -503,10 +503,6 @@ async function editCMD (shell:Shell, args: string[]) {
             gateAttrs.filter((_, i) => enabled[i])
                      .forEach((k, i) => 
                         gate[k] = (k == 'onlySSH')?res[i] == 'y':res[i])
-            if (enabled[1]) {
-                gate.t7.gates.delete(gate.id)
-                gate.t7.gates.set(gate.id, gate)
-            }
             gate.t7.storeGates()
             gate.updateNameE()
             shell.map.showLog(false)
@@ -526,9 +522,9 @@ async function editCMD (shell:Shell, args: string[]) {
 
 async function hostsCMD(shell: Shell) {
     let res = ""
-    for (const [name, gate] of terminal7.gates) {
-        res += `\x1B[1m${name}:\x1B[0m ${gate.addr}\n`
-    }
+    terminal7.gates.forEach(gate => {
+        res += `\x1B[1m${gate.name}:\x1B[0m ${gate.addr}\n`
+    })
     shell.t.writeln(res)
 }
 
@@ -642,8 +638,9 @@ async function installCMD(shell: Shell, args: string[]) {
         if (!gate) {
             shell.t.writeln("Please select where to install:")
             const choices = []
-            for (const [, gate] of terminal7.gates)
+            terminal7.gates.forEach(gate => {
                 choices.push({ prompt: gate.name })
+            })
             const choice = await shell.runForm(choices, "menu")
             gate = shell.getGate(choice)
         }

@@ -30,11 +30,11 @@ describe("gate", () => {
     })
     afterEach(() => {
         t.clearTimeouts()
-        t.gates = new Map()
+        t.gates = new Array()
         t.pendingPanes = {}
     })
     it("starts with no gates", () => {
-        expect(t.gates.size).to.equal(0)
+        expect(t.gates.length).to.equal(0)
     })
     it("s state can be restored", async () => {
         let state = { windows: [
@@ -112,12 +112,14 @@ describe("gate", () => {
         let g = t.addGate({name:"foo"})
         // TODO: add checks here
     })
-    it("has a unique name", () => {
+    it("support shared name", () => {
         let valid = t.validateHostName("foo")
         expect(valid).equal("")
         t.addGate({name:"foo", addr: "foo"})
         valid = t.validateHostName("foo")
-        expect(valid).equal("Name already taken")
+        expect(valid).equal("")
+        t.addGate({name:"foo", addr: "bar"})
+        expect(t.gates.length).to.equal(2)
     })
     it("can be connected", async () => {
         let g = t.addGate()

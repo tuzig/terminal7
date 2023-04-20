@@ -149,13 +149,16 @@ insecure = true`)
     */
     test('validate webexec', async () => {
         // change the user id of foo@bar.com to 123456
+        /*
         await page.evaluate(async () => 
-            await localStorage.setItem("CapacitorStorage.uID","123456"))
+            window.terminal7.conf.peerbook.uID = "123456")
+            */
         let fp: string
         const keys = await redisClient.keys('peer*')
-        expect(keys.length).toBe(2)
+        expect(keys.length).toBe(3)
         for (const key of keys) {
             const cfp = await redisClient.hGet(key, "fp")
+            if (!cfp) continue
             const kind  = await redisClient.hGet(key, "kind")
             console.log("fp", cfp, "kind", kind)
             await redisClient.hSet(key, "user", "123456")
@@ -180,5 +183,20 @@ insecure = true`)
         expect(verified).toBe("1")
         const twr = await getTWRBuffer()
         expect(twr).toMatch(/Peer validated/)
+    })
+    test('local and peerbook gates are properly displayed', async () => {
+        // add a gate to storage
+        localStorage.setItem("CapacitorStorage.gates", JSON.stringify(
+            [{"id":0,
+              "addr":"webexec",
+              "name":"foo",
+            }]
+        ))
+        await page.reload({waitUntil: "networkidle"})
+        const btns = page.locator('#gates button')
+        await expect(btns).toHaveCount(3)
+        // count all elments with the from-peerbook class
+        const fromPeerbook = await page.$$('.from-peerbook')
+        expect(fromPeerbook.length).toBe(1)
     })
 })

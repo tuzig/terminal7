@@ -118,8 +118,9 @@ export class Gate {
             this.e.appendChild(t)
         }
     }
+    // deletes removes the gate from terminal7 and the map
     delete() {
-        this.t7.gates.delete(this.id)
+        this.t7.gates.splice(this.t7.gates.indexOf(this), 1)
         this.t7.storeGates()
 		this.map.remove(this)
     }

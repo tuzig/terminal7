@@ -434,23 +434,17 @@ export class Shell {
         this.t.write(`\r\x1B[K\x1B[?25h`)
     }
 
-    getGate(name: string) {
-        let ret = terminal7.gates.get(name)
-        if (!ret) {
-            // eslint-disable-next-line
-            for (const [_, maybe] of terminal7.gates) {
-                if (maybe.name == name)
-                    return maybe
-                if (maybe.name.startsWith(name)) {
-                    if (ret) {
-                        this.t.writeln(`Ambiguous gate: ${name}`)
-                        throw new Error("Ambiguous gate")
-                    }
-                    ret = maybe
-                }
-            }
+    getGate(suffix: string) {
+        const maybes = terminal7.gates.filter(g => g.name.startsWith(suffix))
+        if (maybes.length == 0) {
+            this.t.write(`No gate found with suffix ${name}`)
+            return null
         }
-        return ret
+        if (maybes.length > 1) {
+            this.t.write(`Multiple gates found with suffix ${name}: ${maybes.map(g => g.name).join(', ')}`)
+            return null
+        }
+        return maybes[0]
     }
 
     /*
@@ -639,16 +633,23 @@ export class Shell {
         const lines = df.split("\n")
         console.log("lines", lines)
         let found = false
+        let pbi = -1
         for (let i = 0; i < lines.length; i++) {
             if (lines[i].startsWith("user_id")) {
                 lines[i] = `user_id = "${id}"`
                 found = true
                 break
+            } else if (lines[i].startsWith("[peerbook]")) {
+                pbi = i
             }
         }
         if (!found) {
-            lines.push("[peerbook]")
-            lines.push(`user_id = "${id}"`)
+            if (pbi == -1) {
+                lines.push("[peerbook]")
+                lines.push(`user_id = "${id}"`)
+            } else {
+                lines.splice(pbi + 1, 0, `user_id = "${id}"`)
+            }
         }
         df = lines.join("\n")
         return(df)

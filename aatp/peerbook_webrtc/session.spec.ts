@@ -31,7 +31,6 @@ test.describe('terminal7 session', ()  => {
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
         await page.evaluate(async () => {
             window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
-            localStorage.setItem("CapacitorStorage.uID","123456")
             localStorage.setItem("CapacitorStorage.dotfile",`
 [theme]
 foreground = "#00FAFA"
@@ -53,7 +52,7 @@ cut_min_distance = 80
 cut_min_speed = 2.5
 pinch_max_y_velocity = 0.1
 [peerbook]
-email = "joe@example.com"
+user_id = "123456"
 name = "client"
 insecure = true`)
         })
