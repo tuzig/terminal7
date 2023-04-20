@@ -622,7 +622,7 @@ export class Terminal7 {
         this.conf.theme.background = this.conf.theme.background || "#000"
         this.conf.theme.selection = this.conf.theme.selection || "#D9F505"
         if (conf.peerbook) {
-            this.conf.peerbook.uID = conf.peerbook.user_id 
+            this.conf.peerbook= {uID: conf.peerbook.user_id }
             if (conf.peerbook.peerName)
                 this.conf.peerbook.peerName = conf.peerbook.peer_name
             else

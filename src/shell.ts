@@ -116,7 +116,16 @@ export class Shell {
                         }
                         const QR = userData.QR
                         const id = userData.ID
-                        await this.setPBUID(id)
+                        // load the dotfile, if any, set the user id, save and load
+                        const storageDF = await Preferences.get({key: 'dotfile'})
+                        let df = DEFAULT_DOTFILE
+                        if (storageDF.value)
+                            df = storageDF.value
+                        df = this.setPBUID(df, id)
+                        const conf = TOML.parse(df)
+                        Preferences.set({key: 'dotfile', value: df})
+                        console.log("Setting PBUID", conf)
+                        terminal7.loadConf(conf)
                         await CapacitorPurchases.logIn({ appUserID: id })
                         this.t.writeln("Please scan this QR code with your OTP app")
                         this.t.writeln("")
@@ -620,10 +629,9 @@ export class Shell {
         }
         this.t.writeln("Peer validated!")
     }
-    async setPBUID(id: string) {
-        let { df } = await Preferences.get({key: 'dotfile'})
-        if (!df)
-            df = DEFAULT_DOTFILE
+    // setPBUID sets the PeerBook UID in a given toml formated string
+    // return the modified string
+    setPBUID(df: string, id: string): string {
         // search for the line that starts with "user_id"
         // if it exists, replace it with `user_id = ${id}`
         // otherwise, append it to the end of the file
@@ -643,10 +651,6 @@ export class Shell {
             lines.push(`user_id = "${id}"`)
         }
         df = lines.join("\n")
-        console.log("Setting dotfile", df)
-        Preferences.set({key: 'dotfile', value: df})
-        const conf = TOML.parse(df)
-        console.log("Setting PBUID", conf)
-        terminal7.loadConf(conf)
+        return(df)
     }
 }

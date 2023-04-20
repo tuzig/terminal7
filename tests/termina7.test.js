@@ -5,6 +5,7 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
+import * as TOML from '@tuzig/toml'
 import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
 import { Gate } from '../src/gate'
@@ -515,14 +516,19 @@ describe("terminal7", function() {
             expect(t0.out).toMatch("Gate's name")
         })
     })
-    test("can set peerbook user id", async () => {
+    test("can set peerbook user id in a clean dotfile", async () => {
         const t0 = t.map.t0
-        await Preferences.remove({key: 'dotfile'})
-        const dotfile = t.map.shell.setPBUID("BADFACE")
-        console.log("conf:", terminal7.conf)
-        expect(terminal7.conf.peerbook.uID).toBe("BADFACE")
-        // ensure it is saved
-        terminal7.loadConf()
-        expect(terminal7.conf.peerbook.uID).toBe("BADFACE")
+        const dotfile = t.map.shell.setPBUID("", "BADFACE")
+        const d = TOML.parse(dotfile)
+        expect(d.peerbook.user_id).toBe("BADFACE")
+    })
+    test("can replace peerbook user id", async () => {
+        const t0 = t.map.t0
+        const dotfile = t.map.shell.setPBUID(`
+[peerbook]
+user_id = "GODDEAR"
+`, "BADFACE")
+        const d = TOML.parse(dotfile)
+        expect(d.peerbook.user_id).toBe("BADFACE")
     })
 })
