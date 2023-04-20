@@ -336,9 +336,10 @@ export class Terminal7 {
             this.pb = null
         }
     }
-    pbConnect(uid, peerName) {
+    pbConnect(peerName) {
         return new Promise((resolve) => {
-            if (!uid &&
+            const uID = this.conf.peerbook && this.conf.peerbook.uID
+            if (!uID &&
                 (!this.conf.peerbook || !this.conf.peerbook.user_id || 
                 (this.pb  && this.pb.isOpen()))) {
                 resolve()
@@ -346,8 +347,8 @@ export class Terminal7 {
             }
             this.getFingerprint().then(fp => {
                 this.pb = new PeerbookConnection(fp,
-                    uid || this.conf.peerbook.user_id,
-                    peerName || this.conf.peerbook.peer_name,
+                    uID,
+                    this.conf.peerbook.peerName,
                     this.conf.net.peerbook,
                     this.conf.peerbook && this.conf.peerbook.insecure
                 )
@@ -408,10 +409,7 @@ export class Terminal7 {
              || (this.pb.insecure != this.conf.peerbook.insecure)
              || (this.pb.email != this.conf.peerbook.email))) {
             this.pbClose()
-            Preferences.get({ key: 'uID' }).then(res => {
-                const uid = res && res.value ? res.value : null
-                this.pbConnect(uid)
-            })
+            this.pbConnect()
         }
     }
     catchFingers() {
@@ -560,32 +558,29 @@ export class Terminal7 {
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
             off.add("hidden")
-            Preferences.get({ key: 'uID' }).then(res => {
-                const uid = res && res.value ? res.value : null
-                this.pbConnect(uid).then(() => {   
-                    const gate = this.activeG
-                    if (gate) {
-                        if (gate.session && gate.session.isSSH) {
-                            gate.session.close()
-                            gate.session = null
-                            this.notify("Lost SSH session")
-                            this.map.shell.runCommand("subscribe")
-                            return
-                        }
-                        this.notify("🌞 Recovering")
-                        this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
-                        this.recovering = true
-                        this.run(() => this.recovering = false, this.conf.net.recoveryTime)
-                        gate.reconnect()
-                            .then(() => {
-                                this.map.shell.stopWatchdog()
-                                this.map.showLog(false)
-                            }).catch(() => {
-                                this.map.shell.stopWatchdog()
-                                this.map.shell.runCommand("reset", [gate.name])
-                            })
+                this.pbConnect().then(() => {   
+                const gate = this.activeG
+                if (gate) {
+                    if (gate.session && gate.session.isSSH) {
+                        gate.session.close()
+                        gate.session = null
+                        this.notify("Lost SSH session")
+                        this.map.shell.runCommand("subscribe")
+                        return
                     }
-                })
+                    this.notify("🌞 Recovering")
+                    this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
+                    this.recovering = true
+                    this.run(() => this.recovering = false, this.conf.net.recoveryTime)
+                    gate.reconnect()
+                        .then(() => {
+                            this.map.shell.stopWatchdog()
+                            this.map.showLog(false)
+                        }).catch(() => {
+                            this.map.shell.stopWatchdog()
+                            this.map.shell.runCommand("reset", [gate.name])
+                        })
+                }
             })
         } else {
             off.remove("hidden")
@@ -626,17 +621,19 @@ export class Terminal7 {
         this.conf.theme.foreground = this.conf.theme.foreground || "#00FAFA"
         this.conf.theme.background = this.conf.theme.background || "#000"
         this.conf.theme.selection = this.conf.theme.selection || "#D9F505"
-/*
-            Device.getInfo()
-            .then(i =>
-                this.conf.peerbook.peer_name = `${i.name}'s ${i.model}`)
-            .catch(err => {
-                console.log("Device info error", err)
-                this.conf.peerbook.peer_name = "John Doe"
-            })
-            */
+        if (conf.peerbook) {
+            this.conf.peerbook.uID = conf.peerbook.user_id 
+            if (conf.peerbook.peerName)
+                this.conf.peerbook.peerName = conf.peerbook.peer_name
+            else
+                Device.getInfo().then(i =>
+                    this.conf.peerbook.peerName = `${i.name}'s ${i.model}`)
+                .catch(err => {
+                    console.log("Device info error", err)
+                    this.conf.peerbook.peerName = "John Doe"
+                })
+        }
     }
-
 
     // gets the will formatted fingerprint from the current certificate
     getFingerprint() {

@@ -1,3 +1,4 @@
+import * as TOML from '@tuzig/toml'
 import { Device } from '@capacitor/device';
 import { CapacitorPurchases } from '@capgo/capacitor-purchases'
 import { Channel } from "./session"
@@ -10,6 +11,7 @@ import { Gate } from "./gate"
 import { T7Map } from './map'
 import { Failure } from "./session"
 import { HTTPWebRTCSession } from './webrtc_session'
+import { DEFAULT_DOTFILE } from './terminal7.js'
 
 export class Shell {
 
@@ -62,116 +64,109 @@ export class Shell {
                 */
 
             // intialize the http headers with the bearer token
-            Preferences.get({ key: 'uID' }).then(async uID => {
-                let peerName: string
-                console.log("uID", uID)
-                const active = data.customerInfo.entitlements.active
-                if (!active.peerbook) {
-                    if (this.pbSession) {
-                        this.pbSession.close()
-                        this.pbSession = null
+            let peerName: string
+            const active = data.customerInfo.entitlements.active
+            if (!active.peerbook) {
+                if (this.pbSession) {
+                    this.pbSession.close()
+                    this.pbSession = null
+                }
+                if (this.active)
+                    terminal7.notify("PeerBook inactive. `subscribe` for WebRTC 🍯")
+                resolve()
+                return
+            }
+            // we have an active subscription and no user id, time to register
+            terminal7.notify('🏪 Update: subscribed until ' + active.peerbook.expirationDate)
+            terminal7.pbConnect(peerName)
+            this.t.writeln("Completing registration")
+            this.active = false
+            const session = this.newPBSession(data.customerInfo.originalAppUserId)
+            session.onStateChange = async (state, failure?) => {
+                if (state == 'connected') {
+                    const reply = []
+                    let email: string
+                    this.t.writeln("WebRTC Connected")
+                    try {
+                        peerName = await this.askValue("Peer name", (await Device.getInfo()).name)
+                        email = await this.askValue("Recovery email")
+                    } catch (e) {
+                        this.t.writeln("Cancelled. Use `subscribe` to activate")
+                        this.printPrompt()
+                        resolve()
+                        // reject()
+                        return
                     }
-                    if (this.active)
-                        terminal7.notify("PeerBook inactive. `subscribe` for WebRTC 🍯")
-                    resolve()
-                    return
-                }
-                // we have an active subscription and no user id, time to register
-                terminal7.notify('🏪 Update: subscribed until ' + active.peerbook.expirationDate)
-                if (uID && uID.value) {
-                    await terminal7.pbConnect(uID.value, peerName)
-                    resolve()
-                    return
-                }
-                this.t.writeln("Completing registration")
-                this.active = false
-                const session = this.newPBSession(data.customerInfo.originalAppUserId)
-                session.onStateChange = async (state, failure?) => {
-                    if (state == 'connected') {
-                        const reply = []
-                        let email: string
-                        this.t.writeln("WebRTC Connected")
+                    // store peerName
+                    await Preferences.set({ key: 'peerName', value: peerName })
+                    const cmd = ["register", email, peerName]
+                    const regChannel = await session.openChannel(cmd, 0, 80, 24)
+                    regChannel.onClose = async () => {
+                        const repStr =  new TextDecoder().decode(new Uint8Array(reply))
+                        console.log("got pb admin channel close")
+                        let userData
                         try {
-                            peerName = await this.askValue("Peer name", (await Device.getInfo()).name)
-                            email = await this.askValue("Recovery email")
+                            userData = JSON.parse(repStr)
                         } catch (e) {
-                            this.t.writeln("Cancelled. Use `subscribe` to activate")
-                            this.printPrompt()
-                            resolve()
-                            // reject()
-                            return
-                        }
-                        // store peerName
-                        await Preferences.set({ key: 'peerName', value: peerName })
-                        const cmd = ["register", email, peerName]
-                        const regChannel = await session.openChannel(cmd, 0, 80, 24)
-                        regChannel.onClose = async () => {
-                            const repStr =  new TextDecoder().decode(new Uint8Array(reply))
-                            console.log("got pb admin channel close")
-                            let userData
-                            try {
-                                userData = JSON.parse(repStr)
-                            } catch (e) {
-                                this.t.writeln("Registration failed")
-                                this.t.writeln("Please try again and if persists, contact support")
-                                this.printPrompt()
-                                resolve()
-                                return
-                            }
-                            const QR = userData.QR
-                            const id = userData.ID
-                            await Preferences.set({ key: 'uID', value: id })
-                            await CapacitorPurchases.logIn({ appUserID: id })
-                            this.t.writeln("Please scan this QR code with your OTP app")
-                            this.t.writeln("")
-                            this.t.writeln(QR)
-                            this.t.writeln("")
-                            this.t.writeln("and use it to generate a One Time Password")
-                            try {
-                                await this.validateOTP()
-                            } catch(e) {
-                                resolve()
-                                // reject(e)
-                                return
-                            }
-                            this.t.writeln(`Validated!\nYour user ID is ${id}`)
-                            this.t.writeln("Type `install` to install on a server")
-                            this.active = true
+                            this.t.writeln("Registration failed")
+                            this.t.writeln("Please try again and if persists, contact support")
                             this.printPrompt()
                             resolve()
                             return
                         }
-                        regChannel.onMessage = async (data: Uint8Array) => {
-                            console.log("Got registration data", data)
-                            reply.push(...data)
+                        const QR = userData.QR
+                        const id = userData.ID
+                        await this.setPBUID(id)
+                        await CapacitorPurchases.logIn({ appUserID: id })
+                        this.t.writeln("Please scan this QR code with your OTP app")
+                        this.t.writeln("")
+                        this.t.writeln(QR)
+                        this.t.writeln("")
+                        this.t.writeln("and use it to generate a One Time Password")
+                        try {
+                            await this.validateOTP()
+                        } catch(e) {
+                            resolve()
+                            // reject(e)
+                            return
                         }
-                    }
-                    else if (state == 'failed') {
-                        if (failure == Failure.Timeout) {
-                            this.t.writeln("Connection timed out")
-                            this.t.writeln("Please try again and if persists, contact support")
-                        } else if (failure == Failure.Unauthorized) {
-                            this.t.writeln("Unauthorized")
-                        } else {
-                            this.t.writeln("Connection failed")
-                            this.t.writeln("Please try again and if persists, contact support")
-                        }
-                        this.pbSession = null
+                        this.t.writeln(`Validated!\nYour user ID is ${id}`)
+                        this.t.writeln("Type `install` to install on a server")
+                        this.active = true
                         this.printPrompt()
                         resolve()
                         return
                     }
+                    regChannel.onMessage = async (data: Uint8Array) => {
+                        console.log("Got registration data", data)
+                        reply.push(...data)
+                    }
                 }
-                this.t.writeln("Connecting to PeerBook")
-                session.connect()
-            })
+                else if (state == 'failed') {
+                    if (failure == Failure.Timeout) {
+                        this.t.writeln("Connection timed out")
+                        this.t.writeln("Please try again and if persists, contact support")
+                    } else if (failure == Failure.Unauthorized) {
+                        this.t.writeln("Unauthorized")
+                    } else {
+                        this.t.writeln("Connection failed")
+                        this.t.writeln("Please try again and if persists, contact support")
+                    }
+                    this.pbSession = null
+                    this.printPrompt()
+                    resolve()
+                    return
+                }
+            }
+            this.t.writeln("Connecting to PeerBook")
+            session.connect()
         })
     }
     async startPurchases() {
         let appUserID = undefined
-        const uID = await Preferences.get({ key: 'uID' })
-        if (uID && uID.value)
-            appUserID = uID.value
+        const uID = terminal7.conf.peerbook.uID
+        if (uID)
+            appUserID = uID
         await CapacitorPurchases.setup({
             apiKey:'appl_qKHwbgKuoVXokCTMuLRwvukoqkd',
             appUserID: appUserID,
@@ -191,7 +186,8 @@ export class Shell {
         this.currentLine = ''
         this.t.scrollToBottom()
         document.addEventListener('keydown', ev => this.updateCapsLock(ev))
-        this.startPurchases()
+        if (window.terminal7)
+            this.startPurchases()
     }
     
     async onKey(ev: KeyboardEvent) {
@@ -623,5 +619,34 @@ export class Shell {
                 this.t.writeln("Invalid OTP, please try again")
         }
         this.t.writeln("Peer validated!")
+    }
+    async setPBUID(id: string) {
+        let { df } = await Preferences.get({key: 'dotfile'})
+        if (!df)
+            df = DEFAULT_DOTFILE
+        // search for the line that starts with "user_id"
+        // if it exists, replace it with `user_id = ${id}`
+        // otherwise, append it to the end of the file
+        // with a suffix of `[peerbook]`
+        const lines = df.split("\n")
+        console.log("lines", lines)
+        let found = false
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].startsWith("user_id")) {
+                lines[i] = `user_id = "${id}"`
+                found = true
+                break
+            }
+        }
+        if (!found) {
+            lines.push("[peerbook]")
+            lines.push(`user_id = "${id}"`)
+        }
+        df = lines.join("\n")
+        console.log("Setting dotfile", df)
+        Preferences.set({key: 'dotfile', value: df})
+        const conf = TOML.parse(df)
+        console.log("Setting PBUID", conf)
+        terminal7.loadConf(conf)
     }
 }

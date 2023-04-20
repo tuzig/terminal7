@@ -515,4 +515,14 @@ describe("terminal7", function() {
             expect(t0.out).toMatch("Gate's name")
         })
     })
+    test("can set peerbook user id", async () => {
+        const t0 = t.map.t0
+        await Preferences.remove({key: 'dotfile'})
+        const dotfile = t.map.shell.setPBUID("BADFACE")
+        console.log("conf:", terminal7.conf)
+        expect(terminal7.conf.peerbook.uID).toBe("BADFACE")
+        // ensure it is saved
+        terminal7.loadConf()
+        expect(terminal7.conf.peerbook.uID).toBe("BADFACE")
+    })
 })
