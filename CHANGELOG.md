@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fixing reconnect failures
 - fixing peerbook disconnections
 - dotfile editor now open inside TWR
+- Terminal7 is now T7 on narrow screens
 
 ## 1.4.2 - 2023/1/31
 
