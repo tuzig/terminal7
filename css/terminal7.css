@@ -745,6 +745,18 @@ button.boarding  {
 	right: 2%;
 	text-decoration: none;
 }
+#title-short {
+  display: none;
+  letter-spacing: 0.1em;
+}
+@media (max-width: 600px) {
+    #title-short {
+        display: block;
+    }
+    #title-long {
+        display: none;
+    }
+}
 .expand-gate {
     display: block;
     float:right;
