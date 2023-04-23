@@ -666,7 +666,7 @@ async function installCMD(shell: Shell, args: string[]) {
                 shell.t.writeln("Connected")
                 try {
                     channel = await session.openChannel(
-                        ["*"],
+                        ["*"], null,
                         shell.t.cols, shell.t.rows)
                 } catch (e) {
                     shell.t.writeln("Error opening channel")
@@ -678,7 +678,8 @@ async function installCMD(shell: Shell, args: string[]) {
                 shell.masterChannel = channel
                 // set #log border color to yellow
                 document.getElementById("log").style.borderColor = "var(--remote-border)"
-                channel.send(`PEERBOOK_UID=${uid} PEERBOOK_HOST=${terminal7.conf.net.peerbook} bash <(curl -sL https://get.webexec.sh)`)
+                const host = terminal7.conf.net.peerbook
+                channel.send(`PEERBOOK_UID=${uid} PEERBOOK_HOST=${host} \\bash <(curl -sL https://get.webexec.sh)`)
                 channel.onMessage = async data => {
                     shell.t.write(data)
                     // use regex to extract the fingerprint from the data.
