@@ -45,6 +45,10 @@ export class T7Map {
             this.t0.loadAddon(imageAddon)
             this.t0.loadAddon(webLinksAddon)
             this.t0.loadAddon(this.fitAddon)
+            setTimeout(() => {
+                this.fitAddon.fit()
+                console.log("TWR size", this.t0.cols, this.t0.rows)
+            }, 100)
             this.t0.loadAddon(new XtermWebfont())
             // this.t0.attachCustomKeyEventHandler(ev => {
             this.t0.onKey(iev => {
@@ -53,15 +57,15 @@ export class T7Map {
                 this.shell.keyHandler(ev)
             })
             this.t0.onData(d =>  this.shell.onTWRData(d))
+            const webGLAddon = new WebglAddon()
+            webGLAddon.onContextLoss(() => {
+                console.log("lost context")
+                  webGLAddon.dispose()
+            })
+            try {
+                this.t0.loadAddon(webGLAddon)
+            } catch (e) { console.log("no webgl: " +e.toString()) }
             this.t0.loadWebfontAndOpen(e).then(() => {
-                const webGLAddon = new WebglAddon()
-                webGLAddon.onContextLoss(() => {
-                    console.log("lost context")
-                      webGLAddon.dispose()
-                })
-                try {
-                    this.t0.loadAddon(webGLAddon)
-                } catch (e) { console.log("no webgl: " +e.toString()) }
                 this.shell.start()
                 resolve()
             })

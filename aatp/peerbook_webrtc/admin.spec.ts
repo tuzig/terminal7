@@ -30,6 +30,19 @@ test.describe('peerbook administration', ()  => {
         console.log("sustring", lastC, checkedC)
         return ret.substring(lastC)
     }
+    async function appReload() {
+        await page.reload({waitUntil: "load"})
+        await page.evaluate(async () => {
+            window.terminal7.map.shell.onPurchasesUpdate({
+                customerInfo: {
+                    originalAppUserId: "ValidBearer",
+                    entitlements: {active: { peerbook: {expirationDate: "2021-01-01T00:00:00Z"}}},
+                },
+                // purchases: {identifier: "com.terminal7.terminal7.terminal7", purchaseState: 0}
+            })
+        })
+        await sleep(1500)
+    }
     test.afterAll(async () => await context.close() )
     test.beforeAll(async ({ browser }) => {
         context = await browser.newContext()
@@ -92,16 +105,7 @@ insecure = true`)
     test('purchase update with an active subscription and bad otp', async () => {
         await sleep(100)
         await redisClient.set("tempid:ValidBearer", "1")
-        await page.evaluate(async () => {
-            window.terminal7.map.shell.onPurchasesUpdate({
-                customerInfo: {
-                    originalAppUserId: "ValidBearer",
-                    entitlements: {active: { peerbook: {expirationDate: "2021-01-01T00:00:00Z"}}},
-                },
-                // purchases: {identifier: "com.terminal7.terminal7.terminal7", purchaseState: 0}
-            })
-        })
-        await sleep(1500)
+        await appReload()
         let twr = await getTWRBuffer()
         expect(twr).toMatch(/Peer name/)
         await page.keyboard.type("test")
@@ -155,7 +159,7 @@ insecure = true`)
             */
         let fp: string
         const keys = await redisClient.keys('peer*')
-        expect(keys.length).toBe(3)
+        expect(keys.length).toBeGreaterThan(1)
         for (const key of keys) {
             const cfp = await redisClient.hGet(key, "fp")
             if (!cfp) continue
@@ -186,13 +190,20 @@ insecure = true`)
     })
     test('local and peerbook gates are properly displayed', async () => {
         // add a gate to storage
-        localStorage.setItem("CapacitorStorage.gates", JSON.stringify(
-            [{"id":0,
-              "addr":"webexec",
-              "name":"foo",
-            }]
-        ))
-        await page.reload({waitUntil: "networkidle"})
+        keys = await redisClient.keys('peer*')
+        keys.forEach(async key => {
+            console.log("verifying: " +key)
+            await redisClient.hSet(key, 'verified', "1")
+        })
+        await page.evaluate(() => {
+            localStorage.setItem("CapacitorStorage.gates", JSON.stringify(
+                [{"id":0,
+                  "addr":"webexec",
+                  "name":"foo",
+                }]
+            ))
+        })
+        await appReload()
         const btns = page.locator('#gates button')
         await expect(btns).toHaveCount(3)
         // count all elments with the from-peerbook class

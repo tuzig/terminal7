@@ -81,7 +81,7 @@ export class Terminal7 {
      */
     constructor(settings) {
         settings = settings || {}
-        this.gates = new Array()
+        this.gates = []
         this.cells = []
         this.timeouts = []
         this.activeG = null
@@ -336,24 +336,19 @@ export class Terminal7 {
             this.pb = null
         }
     }
-    pbConnect(peerName) {
-        return new Promise((resolve) => {
-            const uID = this.conf.peerbook && this.conf.peerbook.uID
-            if (!uID &&
-                (!this.conf.peerbook || !this.conf.peerbook.user_id || 
-                (this.pb  && this.pb.isOpen()))) {
+    pbConnect() {
+        return new Promise((resolve, reject) => {
+            if (this.pb  && this.pb.isOpen()) {
                 resolve()
                 return
             }
             this.getFingerprint().then(fp => {
                 this.pb = new PeerbookConnection(fp,
-                    uID,
-                    this.conf.peerbook.peerName,
                     this.conf.net.peerbook,
                     this.conf.peerbook && this.conf.peerbook.insecure
                 )
                 this.pb.onUpdate = (m) => this.onPBMessage(m)
-                this.pb.connect().then(resolve)
+                this.pb.connect().then(resolve).catch(reject)
             })
         })
     }
@@ -405,9 +400,7 @@ export class Terminal7 {
         this.confEditor = null
         if (this.pb &&
             ((this.pb.host != this.conf.net.peerbook) 
-             || (this.pb.peerName != this.conf.peerbook.peer_name)
-             || (this.pb.insecure != this.conf.peerbook.insecure)
-             || (this.pb.email != this.conf.peerbook.email))) {
+             || (this.pb.insecure != this.conf.peerbook.insecure))) {
             this.pbClose()
             this.pbConnect()
         }
@@ -557,30 +550,28 @@ export class Terminal7 {
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
             off.add("hidden")
-                this.pbConnect().then(() => {   
-                const gate = this.activeG
-                if (gate) {
-                    if (gate.session && gate.session.isSSH) {
-                        gate.session.close()
-                        gate.session = null
-                        this.notify("Lost SSH session")
-                        this.map.shell.runCommand("subscribe")
-                        return
-                    }
-                    this.notify("🌞 Recovering")
-                    this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
-                    this.recovering = true
-                    this.run(() => this.recovering = false, this.conf.net.recoveryTime)
-                    gate.reconnect()
-                        .then(() => {
-                            this.map.shell.stopWatchdog()
-                            this.map.showLog(false)
-                        }).catch(() => {
-                            this.map.shell.stopWatchdog()
-                            this.map.shell.runCommand("reset", [gate.name])
-                        })
+            const gate = this.activeG
+            if (gate) {
+                if (gate.session && gate.session.isSSH) {
+                    gate.session.close()
+                    gate.session = null
+                    this.notify("Lost SSH session")
+                    this.map.shell.runCommand("subscribe")
+                    return
                 }
-            })
+                this.notify("🌞 Recovering")
+                this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
+                this.recovering = true
+                this.run(() => this.recovering = false, this.conf.net.recoveryTime)
+                gate.reconnect()
+                    .then(() => {
+                        this.map.shell.stopWatchdog()
+                        this.map.showLog(false)
+                    }).catch(() => {
+                        this.map.shell.stopWatchdog()
+                        this.map.shell.runCommand("reset", [gate.name])
+                    })
+            }
         } else {
             off.remove("hidden")
             // this.gates.forEach(g => g.session = null)
@@ -634,7 +625,8 @@ export class Terminal7 {
                     console.log("Device info error", err)
                     this.conf.peerbook.peerName = "John Doe"
                 })
-        }
+        } else
+            this.conf.peerbook = {insecure: false}
     }
 
     // gets the will formatted fingerprint from the current certificate
@@ -731,9 +723,8 @@ export class Terminal7 {
             this.focus()
         // TODO: When at home remove the "on" from the home butto
     }
-    onPBMessage(data) {
-        this.log("got ws message", data)
-        const  m = JSON.parse(data)
+    onPBMessage(m) {
+        this.log("got pb message", m)
                 
         if (m["code"] !== undefined) {
             this.notify(`\uD83D\uDCD6  ${m["text"]}`)
@@ -752,7 +743,7 @@ export class Terminal7 {
         // look for a gate where g.fp == fp
         const lookup =  this.gates.filter(g => g.fp == fp)
         if (!lookup || (lookup.length != 1)) {
-            terminal7.log("Got a pb message with unknown peer: " + id)
+            terminal7.log("Got a pb message with unknown peer: ", fp)
             return
         }
         const g = lookup[0]
@@ -954,7 +945,7 @@ export class Terminal7 {
         peers.forEach(p => {
             if (p.kind != "webexec")
                 return
-            const lookup =  this.gates.filter(g => g.fp == fp)
+            const lookup =  this.gates.filter(g => g.fp == p.fp)
             if (lookup) {
                 const g = lookup[0]
                 g.online = p.online
@@ -962,8 +953,7 @@ export class Terminal7 {
                 g.verified = p.verified
                 g.updateNameE()
             } else {
-                p.id = p.fp
-                g = new Gate(p)
+                const g = new Gate(p)
                 this.gates.push(g)
                 g.nameE = this.map.add(g)
                 g.updateNameE()
@@ -994,7 +984,7 @@ export class Terminal7 {
                 this.map.remove(g)
                 // remove g from the gates array
             })
-            this.gates = new Array()
+            this.gates = []
             Preferences.clear().then(() => 
                 Preferences.set({key: 'dotfile', value: DEFAULT_DOTFILE}))
             const d = TOML.parse(DEFAULT_DOTFILE)

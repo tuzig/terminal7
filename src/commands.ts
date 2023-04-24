@@ -600,6 +600,7 @@ async function subscribeCMD(shell: shell) {
         }
         if (choice == subPrompt) {
             shell.t.writeln("Thank you, directing to payment")
+            shell.startWatchdog(30000)
             terminal7.ignoreAppEvents = true
             try {
                 await CapacitorPurchases.purchasePackage({
@@ -607,9 +608,11 @@ async function subscribeCMD(shell: shell) {
                     offeringIdentifier: pack.offeringIdentifier,
                 })
             } catch(e) {
+                shell.stopWatchdog()
                 shell.t.writeln("Error purchasing, please try again or contact support")
                 return
             }
+            shell.stopWatchdog()
             // TODO: this line saves 3 seconds but causes reentrancy
             // shell.onPurchasesUpdate(data)
         }
@@ -621,9 +624,11 @@ async function subscribeCMD(shell: shell) {
 }
 async function installCMD(shell: Shell, args: string[]) {
     let gate: Gate
-    const uid =  Preferences.get({key: "uID"})
-    if (!uid) {
-        shell.t.writeln("Please `subscribe` first")
+    let uid: string
+    try {
+          uid =  terminal7.conf.peerbook.uID
+    } catch(e)  {
+        shell.t.writeln("Dotfile has no peerbook.user_id\nPlease `subscribe` to get one")
         return
     }
 
@@ -657,6 +662,7 @@ async function installCMD(shell: Shell, args: string[]) {
 
     const session = new SSHSession(gate.addr, gate.username)
     session.onStateChange = async (state) => {
+        const host = terminal7.conf.net.peerbook
         let channel: SSHChannel
         switch (state) {
             case "connecting":
@@ -665,6 +671,7 @@ async function installCMD(shell: Shell, args: string[]) {
             case "connected":
                 shell.t.writeln("Connected")
                 try {
+                    console.log("opening channel", shell.t.cols, shell.t.rows)
                     channel = await session.openChannel(
                         ["*"], null,
                         shell.t.cols, shell.t.rows)
@@ -678,7 +685,6 @@ async function installCMD(shell: Shell, args: string[]) {
                 shell.masterChannel = channel
                 // set #log border color to yellow
                 document.getElementById("log").style.borderColor = "var(--remote-border)"
-                const host = terminal7.conf.net.peerbook
                 channel.send(`PEERBOOK_UID=${uid} PEERBOOK_HOST=${host} \\bash <(curl -sL https://get.webexec.sh)`)
                 channel.onMessage = async data => {
                     shell.t.write(data)
