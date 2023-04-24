@@ -190,7 +190,7 @@ insecure = true`)
     })
     test('local and peerbook gates are properly displayed', async () => {
         // add a gate to storage
-        keys = await redisClient.keys('peer*')
+        const keys = await redisClient.keys('peer*')
         keys.forEach(async key => {
             console.log("verifying: " +key)
             await redisClient.hSet(key, 'verified', "1")
