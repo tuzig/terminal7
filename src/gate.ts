@@ -44,7 +44,6 @@ export class Gate {
     store: boolean
     map: T7Map
     onlySSH: boolean
-    noIds: boolean
     firstConnection: boolean
     keyRejected: boolean
     constructor (props) {
@@ -553,7 +552,7 @@ export class Gate {
             this.t7.log("TBD: update layout", layout)
         }
         this.t7.log("opening session")
-        if (this.noIds)
+        if (this.fp)
             this.session.connect(this.marker)
         else {
             const {publicKey, privateKey} = await this.t7.readId()
