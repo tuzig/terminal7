@@ -945,20 +945,19 @@ export class Terminal7 {
         peers.forEach(p => {
             if (p.kind != "webexec")
                 return
-            const lookup =  this.gates.filter(g => g.fp == p.fp)
-            if (lookup) {
-                const g = lookup[0]
-                g.online = p.online
-                g.name = p.name
-                g.verified = p.verified
-                g.updateNameE()
-            } else {
-                const g = new Gate(p)
+            const lookup = this.gates.filter(g => g.fp == p.fp)
+            const gate = (lookup.length>0)?lookup[0]:new Gate(p)
+            console.log("syncPBPeers", gate, lookup)
+            gate.online = p.online
+            gate.name = p.name
+            gate.verified = p.verified
+            if (!lookup) {
+                gate.id = this.gates.length
                 this.gates.push(g)
-                g.nameE = this.map.add(g)
-                g.updateNameE()
-                g.open(this.e)
-            }
+                gate.nameE = this.map.add(g)
+                gate.open(this.e)
+            } 
+            gate.updateNameE()
         })
         this.map.refresh()
     }
