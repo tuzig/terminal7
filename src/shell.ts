@@ -77,12 +77,15 @@ export class Shell {
                 resolve()
                 return
             }
-            terminal7.notify('🏪 Update: subscribed until ' + active.peerbook.expirationDate)
+            terminal7.notify("🏪 => Subscribed until " + active.peerbook.expirationDate)
             terminal7.pbConnect()
-                .then(() => terminal7.notify("\uD83D\uDCD6 Connected"))
-                .catch(() => {
+            .then(() => {
+                terminal7.notify("\uD83D\uDCD6 => Connected")
+                resolve()
+            }).catch(e => {
                 // we have an active subscription and connection failure
                 // trying to register registering
+                console.log("pbConnect failed", e)
                 this.t.writeln("Completing registration")
                 this.active = false
                 const session = this.newPBSession(data.customerInfo.originalAppUserId)
@@ -120,18 +123,9 @@ export class Shell {
                                 return
                             }
                             const QR = userData.QR
-                            const id = userData.ID
+                            const uid = userData.ID
                             // load the dotfile, if any, set the user id, save and load
-                            const storageDF = await Preferences.get({key: 'dotfile'})
-                            let df = DEFAULT_DOTFILE
-                            if (storageDF.value)
-                                df = storageDF.value
-                            df = this.setPBUID(df, id)
-                            const conf = TOML.parse(df)
-                            Preferences.set({key: 'dotfile', value: df})
-                            console.log("Setting PBUID", conf)
-                            terminal7.loadConf(conf)
-                            await CapacitorPurchases.logIn({ appUserID: id })
+                            await CapacitorPurchases.logIn({ appUserID: uid })
                             this.t.writeln("Please scan this QR code with your OTP app")
                             this.t.writeln("")
                             this.t.writeln(QR)
@@ -144,7 +138,7 @@ export class Shell {
                                 // reject(e)
                                 return
                             }
-                            this.t.writeln(`Validated!\nYour user ID is ${id}`)
+                            this.t.writeln(`Validated!\nYour user ID is ${uid}`)
                             this.t.writeln("Type `install` to install on a server")
                             this.active = true
                             this.printPrompt()
@@ -174,13 +168,18 @@ export class Shell {
                 }
                 this.t.writeln("Connecting to PeerBook")
                 session.connect()
+                return
             })
         })
     }
     async startPurchases() {
         let appUserID = undefined
-        if (terminal7.conf.peerbook)
-            appUserID = terminal7.conf.peerbook.uID
+        const data = await terminal7.pbVerify()
+        if (data.uid)
+            appUserID = data.uid
+        else
+            terminal7.log("No user id from peerbook", data)
+
         await CapacitorPurchases.setup({
             apiKey:'appl_qKHwbgKuoVXokCTMuLRwvukoqkd',
             appUserID: appUserID,
@@ -693,36 +692,5 @@ export class Shell {
                 this.t.writeln("Invalid OTP, please try again")
         }
         this.t.writeln("Peer validated!")
-    }
-    // setPBUID sets the PeerBook UID in a given toml formated string
-    // return the modified string
-    setPBUID(df: string, id: string): string {
-        // search for the line that starts with "user_id"
-        // if it exists, replace it with `user_id = ${id}`
-        // otherwise, append it to the end of the file
-        // with a suffix of `[peerbook]`
-        const lines = df.split("\n")
-        console.log("lines", lines)
-        let found = false
-        let pbi = -1
-        for (let i = 0; i < lines.length; i++) {
-            if (lines[i].startsWith("user_id")) {
-                lines[i] = `user_id = "${id}"`
-                found = true
-                break
-            } else if (lines[i].startsWith("[peerbook]")) {
-                pbi = i
-            }
-        }
-        if (!found) {
-            if (pbi == -1) {
-                lines.push("[peerbook]")
-                lines.push(`user_id = "${id}"`)
-            } else {
-                lines.splice(pbi + 1, 0, `user_id = "${id}"`)
-            }
-        }
-        df = lines.join("\n")
-        return(df)
     }
 }

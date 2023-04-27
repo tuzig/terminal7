@@ -516,19 +516,4 @@ describe("terminal7", function() {
             expect(t0.out).toMatch("Gate's name")
         })
     })
-    test("can set peerbook user id in a clean dotfile", async () => {
-        const t0 = t.map.t0
-        const dotfile = t.map.shell.setPBUID("", "BADFACE")
-        const d = TOML.parse(dotfile)
-        expect(d.peerbook.user_id).toBe("BADFACE")
-    })
-    test("can replace peerbook user id", async () => {
-        const t0 = t.map.t0
-        const dotfile = t.map.shell.setPBUID(`
-[peerbook]
-insecure = true
-`, "BADFACE")
-        const d = TOML.parse(dotfile)
-        expect(d.peerbook.user_id).toBe("BADFACE")
-    })
 })

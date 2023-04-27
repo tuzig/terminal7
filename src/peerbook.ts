@@ -35,18 +35,11 @@ export class PeerbookConnection {
             this.ws = new WebSocket(url)
             this.ws.onmessage = ev => {
                 const m = JSON.parse(ev.data)
-                console.log("got ws message", m, m.coode)
                 if (m.code == 401) {
-                    console.log("got 401", reject)  
-                    reject()
+                    console.log("got 401")
+                    reject("Unauthorized")
                     return
                 } 
-                if (m.peers) {
-                    if (resolve) {
-                        resolve()
-                        resolve = null
-                    }
-                }
                 if (this.onUpdate)
                     this.onUpdate(m)
                 else
@@ -54,7 +47,7 @@ export class PeerbookConnection {
             }
             this.ws.onerror = ev =>  {
                 window.terminal7.log("peerbook ws error", ev)
-                reject()
+                reject(ev)
             }
             this.ws.onclose = (ev) => {
                 window.terminal7.log("peerbook ws closed", ev)
@@ -62,6 +55,7 @@ export class PeerbookConnection {
                 this.ws = null
             }
             this.ws.onopen = () => {
+                resolve()
                 if ((this.pbSendTask == null) && (this.pending.length > 0))
                     this.pbSendTask = setTimeout(() => {
                         this.pending.forEach(m => {
@@ -102,6 +96,8 @@ export class PeerbookConnection {
             ret.push(p)
             index[p.name] = p
         })
+        if (!nPeers)
+            return ret
         nPeers.forEach(p => {
             if (p.kind != "webexec")
                 return

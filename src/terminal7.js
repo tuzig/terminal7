@@ -593,7 +593,6 @@ export class Terminal7 {
         this.conf.theme.selection = this.conf.theme.selection || "#D9F505"
         if (conf.peerbook) {
             this.conf.peerbook = {
-                uID: conf.peerbook.user_id,
                 insecure: conf.peerbook.insecure || false,
             }
             if (conf.peerbook.peerName)
@@ -705,7 +704,6 @@ export class Terminal7 {
     }
     onPBMessage(m) {
         this.log("got pb message", m)
-                
         if (m["code"] !== undefined) {
             this.notify(`\uD83D\uDCD6  ${m["text"]}`)
             return
@@ -1055,5 +1053,21 @@ export class Terminal7 {
         }
         return Preferences.set({key: "dotfile", value: TOML.stringify(this.conf)})
     }
+    async pbVerify() {
+        const fp = await this.getFingerprint()
+        let response
+        try {
+            response = await fetch(`https://${this.conf.net.peerbook}/verify`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({fp: fp}),
+            })
+        } catch(e) {
+            console.log("Error verifying peerbook", e)
+            return {verified: false}
+        }
+        return await response.json()
+    }
 }
-
