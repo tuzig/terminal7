@@ -772,4 +772,14 @@ video {
 #capslock-indicator > i {
     font-size: 1em;
 }
+#edit-conf {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--text-background);
+    opacity: 0.8;
+    z-index: 3;
+}
 
