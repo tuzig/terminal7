@@ -20,6 +20,10 @@
       <div id="log" class="hidden">
           <div> <div id="t0">
                   <div id="capslock-indicator" class="hidden"><i class="f7-icons">exclamationmark_triangle</i> CAPS</div>
+                  <div id="settings" class="hidden">
+                  <textarea id="edit-conf">
+                  </textarea>
+                  </div>
               </div> </div>
       </div>
       <div id="map">
@@ -43,7 +47,8 @@
              <div class="line-break"></div>
           </div>
           <div id="version">
-              <h1>Terminal 7</h1>
+              <h1 id="title-long">Terminal 7</h1>
+              <h1 id="title-short">T7</h1>
               <p><a id="toggle-changelog">version 1.4.2</a></p>
 			  <div id="changelog">
 				  <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md" target="_blank">
@@ -99,29 +104,11 @@
               <button type="button" class="ongpos text-button">GPOS</button>
           </nav>
       </div>
-      <div id="settings-modal" class="hidden modal border">
-          <textarea id="edit-conf" lines="20" cols="40">
-          </textarea>
-          <footer>using vi to edit the toml-formatted
-            <a href="https://github.com/tuzig/terminal7/wiki/Setting-file-format"
-               target="_blank">
-                 settings
-            </a>
-          </footer>
-          <nav>
-              <button type="button" class="close"><i class="f7-icons">
-                      xmark</i></button>
-              <button type="button" class="copy"><i class="f7-icons">
-                      doc_on_clipboard</i></button>
-              <button type="button" class="save"><i class="f7-icons">
-                      floppy_disk</i></button>
-          </nav>
-      </div>
       <div id="peerbook-modal" class="hidden modal border">
           <!--
         <p>
         Welcome to our beta. To start using Terminal7 you will need a server
-        with the webexec program running. You can use any *Nix machine as your 
+        with the webexec program running. You can use any *Nix machine as your
         server. Installation is prety simple, just follow the
         <a href="https://github.com/tuzig/webexec/#install">instructions</a>.
         </p> -->
@@ -131,7 +118,7 @@
           peerbook helps with fingerprints exchange,
           ephermal IP hosts and behind-the-NAT servers.
         </p><p>
-          Regsiter to get your peerbook and help us test the service: 
+          Regsiter to get your peerbook and help us test the service:
         </p>
           <nav>
               <button type="button" class="close"><i class="f7-icons">
@@ -208,7 +195,7 @@
        <div class="lose-state modal border temporal">
           <h1 class="warning">Lost Layout & Shells</h1>
           <h3>vanilla SSH has no session memory</h3>
-          <p>To keep state while switching apps, T7 needs its backend - 
+          <p>To keep state while switching apps, T7 needs its backend -
           <a href="https://github.com/tuzig/webexec">webexec</a>. webexec is a real time
           terminal running over WebRTC written in Go.
           </p>

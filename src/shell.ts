@@ -12,6 +12,11 @@ import { T7Map } from './map'
 import { Failure } from "./session"
 import { HTTPWebRTCSession } from './webrtc_session'
 import { DEFAULT_DOTFILE } from './terminal7.js'
+import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
+import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
+import { tomlMode} from '@tuzig/codemirror/mode/toml/toml.js'
+import { dialogAddOn } from '@tuzig/codemirror/addon/dialog/dialog.js'
+import * as TOML from '@tuzig/toml'
 
 export class Shell {
 
@@ -30,6 +35,8 @@ export class Shell {
     timer: number | null = null
     pbSession: HTTPWebRTCSession | null = null
     masterChannel: Channel | null = null
+    confEditor: CodeMirror.EditorFromTextArea
+    exitConf: () => void
 
     constructor(map: T7Map) {
         this.map = map
@@ -204,7 +211,7 @@ export class Shell {
         }
         switch (key) {
             case "Enter":
-                this.t.write("\n\x1B[K")
+                this.t.write("\n")
                 await this.handleLine(this.currentLine)
                 this.currentLine = ''
                 break
@@ -229,7 +236,7 @@ export class Shell {
         const [cmd, ...args] = this.currentLine.trim().split(/\s+/)
         if (!cmd || args.length > 0)
             return
-        const matches = []
+        const matches: string[] = []
         for (const c of this.commands) {
             if (c[0].startsWith(cmd))
                 matches.push(c[0])
@@ -238,7 +245,7 @@ export class Shell {
             this.currentLine = matches[0] + ' '
             this.printPrompt()
         } else if (matches.length > 1) {
-            this.t.write("\x1B[s\n")
+            this.t.write("\x1B[s\n\x1B[K")
             this.t.write(matches.join(' '))
             this.t.write("\x1B[u")
         }
@@ -254,6 +261,7 @@ export class Shell {
     async execute(cmd: string, args: string[]) {
         if (!cmd)
             return
+        this.t.write("\x1B[K") // clear line
         let exec = null
         for (const c of this.commands) {
             if (c[0].startsWith(cmd))
@@ -283,7 +291,7 @@ export class Shell {
         await this.handleLine(this.currentLine)
     }
 
-    async runForm(fields: Fields, type: "menu" | "choice" | "text", title="") {
+    async runForm(fields: Fields, type: "menu" | "choice" | "text" | "wait", title?: string) {
         await this.escapeActiveForm()
         this.stopWatchdog()
         this.map.showLog(true)
@@ -302,6 +310,9 @@ export class Shell {
                 break
             case "text":
                 run = this.activeForm.start.bind(this.activeForm)
+                break
+            case "wait":
+                run = this.activeForm.waitForKey.bind(this.activeForm)
                 break
             default:
                 throw new Error("Unknown form type: " + type)
@@ -382,6 +393,11 @@ export class Shell {
         this.t.write(`\r\x1B[K${this.prompt}${this.currentLine}`)
     }
 
+    async waitForKey() {
+        await this.runForm([], "wait")
+        this.t.writeln("\n")
+    }
+
     updateCapsLock(ev: KeyboardEvent) {
         const e = document.getElementById("capslock-indicator")
         if (ev.getModifierState("CapsLock"))
@@ -432,18 +448,71 @@ export class Shell {
         this.t.write(`\r\x1B[K\x1B[?25h`)
     }
 
-    getGate(suffix: string) {
-        const maybes = terminal7.gates.filter(g => g.name.startsWith(suffix))
+    async openConfig() {
+        const modal   = document.getElementById("settings"),
+            button  = document.getElementById("dotfile-button"),
+            area    =  document.getElementById("edit-conf"),
+            conf    =  await terminal7.getDotfile()
+
+        area.value = conf
+
+        button.classList.add("on")
+        modal.classList.remove("hidden")
+        this.t.element.classList.add("hidden")
+        if (this.confEditor == null) {
+            vimMode(CodeMirror)
+            tomlMode(CodeMirror)
+            dialogAddOn(CodeMirror)
+            CodeMirror.commands.save = () => this.closeConfig(true)
+            CodeMirror.Vim.defineEx("quit", "q", () => this.closeConfig(false))
+
+            this.confEditor  = CodeMirror.fromTextArea(area, {
+                value: conf,
+                lineNumbers: true,
+                mode: "toml",
+                keyMap: "vim",
+                matchBrackets: true,
+                showCursorWhenSelecting: true,
+                scrollbarStyle: "null",
+            })
+        }
+        this.confEditor.focus()
+        return new Promise<void>(resolve => {
+            this.exitConf = resolve
+        })
+    }
+
+    closeConfig(save = false) {
+        const area = document.getElementById("edit-conf")
+        document.getElementById("dotfile-button").classList.remove("on")
+        if (save) {
+            this.confEditor.save()
+            terminal7.loadConf(TOML.parse(area.value))
+            terminal7.saveDotfile()
+            this.t.writeln("Changes saved.")
+        } else {
+            this.t.writeln("Changes discarded.")
+        }
+        document.getElementById("settings").classList.add("hidden")
+        this.t.element.classList.remove("hidden")
+        this.t.focus()
+        this.confEditor.toTextArea()
+        this.confEditor = null
+        this.exitConf()
+    }
+
+    getGate(prefix: string) {
+        const maybes = terminal7.gates.filter(g => g.name.startsWith(prefix))
         if (maybes.length == 0) {
-            this.t.write(`No gate found with suffix ${name}`)
+            this.t.write(`No gate found with prefix ${prefix}`)
             return null
         }
         if (maybes.length > 1) {
             // more than one, let's see if there's an exact match
-            const exact = maybes.filter(g => g.name == suffix)
+            const exact = maybes.filter(g => g.name == prefix)
             if (exact.length == 1)
                 return exact[0]
-            this.t.write(`Multiple gates found with suffix ${name}: ${maybes.map(g => g.name).join(', ')}`)
+            this.t.write(`Multiple gates found with prefix ${prefix}: ${maybes.map(g => g.name).join(', ')}`)
             return null
         }
         return maybes[0]

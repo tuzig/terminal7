@@ -3,7 +3,7 @@ import { Clipboard } from '@capacitor/clipboard'
 import { Shell } from "./shell"
 import * as TOML from '@tuzig/toml'
 import { Preferences } from "@capacitor/preferences"
-import { Terminal7, DEFAULT_DOTFILE } from "./terminal7"
+import { Terminal7 } from "./terminal7"
 import { Fields } from "./form"
 import fortuneURL from "../resources/fortune.txt"
 import { Gate } from './gate'
@@ -50,7 +50,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
         connect: {
             name: "connect",
             help: "Connect to an existing gate",
-            usage: "con[nect] <gatename>",
+            usage: "conn[ect] <gatename>",
             execute: async args => connectCMD(shell, args)
         },
         copykey: {
@@ -118,6 +118,12 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             help: "Subscripte from peerbook",
             usage: "unsub[scribe]",
             execute: async () => unsubscribeCMD(shell)
+        },
+        config: {
+            name: "config",
+            help: "Edit the config file",
+            usage: "conf[ig]",
+            execute: async () => configCMD(shell),
         },
     }))
 }
@@ -281,24 +287,6 @@ async function connectCMD(shell:Shell, args: string[]) {
 }
 
 async function addCMD(shell: Shell) {
-    // TODO: add peerbook registration
-    // if (!terminal7.conf.peerbook) {
-    // eslint-disable-next-line no-constant-condition
-    if (false) {
-        const pbForm = [
-            { prompt: "Add static host" },
-            { prompt: "Setup peerbook" }
-        ]
-        let choice
-        try {
-            choice = await shell.runForm(pbForm, "menu")
-        } catch (e) {
-            terminal7.log("add cmd menu got error: ", e)
-            return
-        }
-        if (choice == "Setup peerbook")
-            return peerbookForm(shell)
-    }
     const f = [
         { prompt: "Enter destination (ip or domain)" }
     ]
@@ -306,6 +294,7 @@ async function addCMD(shell: Shell) {
     try {
         hostname = (await shell.runForm(f, "text"))[0]
     } catch (e) { 
+        console.log("got error", e)
         return
     }
 
@@ -324,7 +313,7 @@ async function addCMD(shell: Shell) {
 }
 
 async function peerbookForm(shell: Shell) {
-    let dotfile = (await Preferences.get({key: 'dotfile'})).value || DEFAULT_DOTFILE
+    let dotfile = await terminal7.getDotfile()
 
     const f = [
         {
@@ -712,3 +701,12 @@ async function unsubscribeCMD(shell: Shell) {
     await Preferences.remove({key: "uID"})
     shell.t.writeln("Unsubscribed")
 }
+async function configCMD(shell: Shell) {
+    shell.t.writeln("Opening vi-style editor.")
+    shell.t.writeln("Use \x1B[1;37m:w\x1B[0m to save & exit or \x1B[1;37m:q\x1B[0m to exit without saving.")
+    shell.t.writeln("An example config is available at")
+    shell.t.writeln("https://github.com/tuzig/terminal7/wiki/Setting-file-format")
+    await shell.waitForKey()
+    await shell.openConfig()
+}
+
