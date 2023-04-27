@@ -112,15 +112,6 @@ describe("gate", () => {
         let g = t.addGate({name:"foo"})
         // TODO: add checks here
     })
-    it("support shared name", () => {
-        let valid = t.validateHostName("foo")
-        expect(valid).equal("")
-        t.addGate({name:"foo", addr: "foo"})
-        valid = t.validateHostName("foo")
-        expect(valid).equal("")
-        t.addGate({name:"foo", addr: "bar"})
-        expect(t.gates.length).to.equal(2)
-    })
     it("can be connected", async () => {
         let g = t.addGate()
         expect(typeof g).toEqual("object")

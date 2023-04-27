@@ -43,7 +43,18 @@ test.describe('peerbook administration', ()  => {
         })
         await sleep(1500)
     }
-    test.afterAll(async () => await context.close() )
+    test.afterAll(async () => {
+        // delete the user and peer from redis
+        const redisClient = redis.createClient({url: 'redis://redis'})
+        redisClient.on('error', err => console.log('Redis client error', err))
+        await redisClient.connect()
+        redisClient.del("u:123456")
+        redisClient.del("id:foo@bar.com")
+        const fp = await page.evaluate(() => window.terminal7.getFingerprint())
+        redisClient.del(`peer:${fp}`)
+        await redisClient.quit()
+        await context.close()
+    })
     test.beforeAll(async ({ browser }) => {
         context = await browser.newContext()
         page = await context.newPage()

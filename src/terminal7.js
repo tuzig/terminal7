@@ -731,7 +731,8 @@ export class Terminal7 {
             return
         }
         if (m["peers"] !== undefined) {
-            this.syncPBPeers(m["peers"])
+            this.gates = this.pb.syncPeers(this.gates, m["peers"])
+            this.map.refresh()
             return
         }
         if (m["verified"] !== undefined) {
@@ -941,26 +942,6 @@ export class Terminal7 {
         }
   
     }
-    syncPBPeers(peers) {
-        peers.forEach(p => {
-            if (p.kind != "webexec")
-                return
-            const lookup = this.gates.filter(g => g.fp == p.fp)
-            const gate = (lookup.length>0)?lookup[0]:new Gate(p)
-            console.log("syncPBPeers", gate, lookup)
-            gate.online = p.online
-            gate.name = p.name
-            gate.verified = p.verified
-            if (!lookup) {
-                gate.id = this.gates.length
-                this.gates.push(g)
-                gate.nameE = this.map.add(g)
-                gate.open(this.e)
-            } 
-            gate.updateNameE()
-        })
-        this.map.refresh()
-    }
     clearTempGates() {
         this.gates.forEach(g => {
             if (g.name.startsWith("temp_"))
@@ -968,12 +949,12 @@ export class Terminal7 {
         })
     }
     validateHostAddress(addr) {
-        const lookup = this.gates.filter(g => g.addr = addr)
+        const lookup = this.gates.filter(g => g.addr == addr)
         return lookup? "Host already exists" : ""
     }
     validateHostName(name) {
-        //  for now, all names are valid, ven single char
-        return ""
+        const lookup = this.gates.filter(g => g.name == name)
+        return lookup? "Name already exists" : ""
     }
     async factoryReset() {
         // setting up reset cert events

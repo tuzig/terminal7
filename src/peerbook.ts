@@ -7,6 +7,7 @@
  *  License: GPLv3
  */
 
+import { Gate } from './gate.ts'
 
 export class PeerbookConnection {
     ws: WebSocket = null
@@ -93,5 +94,31 @@ export class PeerbookConnection {
     }
     isOpen() {
         return this.ws ? this.ws.readyState === WebSocket.OPEN : false
+    }
+    syncPeers(gates: Array<Gate>, nPeers: Array<any>) {
+        const ret = []
+        const index = {}
+        gates.forEach(p => {
+            ret.push(p)
+            index[p.name] = p
+        })
+        nPeers.forEach(p => {
+            if (p.kind != "webexec")
+                return
+            let gate = index[p.name]
+            if (!gate) {
+                gate = new Gate(p)
+                gate.id = ret.length
+                gate.nameE = terminal7.map.add(gate)
+                gate.open(terminal7.e)
+                ret.push(gate)
+            }
+            for (const k in p) {
+                console.log("copying", k, p[k])
+                gate[k] = p[k]
+            }
+            gate.updateNameE()
+        })
+        return ret
     }
 }
