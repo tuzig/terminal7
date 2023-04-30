@@ -745,6 +745,18 @@ button.boarding  {
 	right: 2%;
 	text-decoration: none;
 }
+#title-short {
+  display: none;
+  letter-spacing: 0.1em;
+}
+@media (max-width: 600px) {
+    #title-short {
+        display: block;
+    }
+    #title-long {
+        display: none;
+    }
+}
 .expand-gate {
     display: block;
     float:right;
@@ -771,5 +783,15 @@ video {
 }
 #capslock-indicator > i {
     font-size: 1em;
+}
+#edit-conf {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--text-background);
+    opacity: 0.8;
+    z-index: 3;
 }
 

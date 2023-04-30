@@ -178,6 +178,18 @@ export class Form {
         })
     }
 
+    waitForKey(t: Terminal) {
+        this.currentField = 0
+        return new Promise((resolve, reject) => {
+            t.write("\nPress any key to continue...")
+            this.onKey = ev => {
+                resolve(ev.key)
+            }
+            this.reject = reject
+            setTimeout(() => t.focus(), 0)
+        })
+    }
+
     // saves the current field and prints the next one
     // returns true if there are more fields to edit, false if done
     next(t: Terminal) {
