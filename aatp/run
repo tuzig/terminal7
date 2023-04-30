@@ -57,7 +57,7 @@ while getopts ":lhnz" option; do
    esac
 done
 shift $((OPTIND-1))
-npx vite build
+npm run build
 if [ $? -ne 0 ]
 then
      echo ">>> Terminal7 build FAILED"

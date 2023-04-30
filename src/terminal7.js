@@ -1055,9 +1055,10 @@ export class Terminal7 {
     }
     async pbVerify() {
         const fp = await this.getFingerprint()
+        const schema = this.insecure?"http":"https"
         let response
         try {
-            response = await fetch(`https://${this.conf.net.peerbook}/verify`, {
+            response = await fetch(`${schema}://${this.conf.net.peerbook}/verify`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -1068,6 +1069,8 @@ export class Terminal7 {
             console.log("Error verifying peerbook", e)
             return {verified: false}
         }
-        return await response.json()
+        const ret = await response.json()
+        terminal7.log("Peerbook verification response", ret)
+        return ret
     }
 }

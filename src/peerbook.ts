@@ -35,11 +35,12 @@ export class PeerbookConnection {
             this.ws = new WebSocket(url)
             this.ws.onmessage = ev => {
                 const m = JSON.parse(ev.data)
-                if (m.code == 401) {
-                    console.log("got 401")
-                    reject("Unauthorized")
+                if (m.code >= 400) {
+                    console.log("peerbook connect got code", m.code)
+                    reject()
                     return
                 } 
+                resolve()
                 if (this.onUpdate)
                     this.onUpdate(m)
                 else
@@ -55,7 +56,6 @@ export class PeerbookConnection {
                 this.ws = null
             }
             this.ws.onopen = () => {
-                resolve()
                 if ((this.pbSendTask == null) && (this.pending.length > 0))
                     this.pbSendTask = setTimeout(() => {
                         this.pending.forEach(m => {
@@ -110,7 +110,6 @@ export class PeerbookConnection {
                 ret.push(gate)
             }
             for (const k in p) {
-                console.log("copying", k, p[k])
                 gate[k] = p[k]
             }
             gate.updateNameE()

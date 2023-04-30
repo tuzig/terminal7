@@ -30,19 +30,6 @@ test.describe('peerbook administration', ()  => {
         console.log("sustring", lastC, checkedC)
         return ret.substring(lastC)
     }
-    async function appReload() {
-        await page.reload({waitUntil: "load"})
-        await page.evaluate(async () => {
-            window.terminal7.map.shell.onPurchasesUpdate({
-                customerInfo: {
-                    originalAppUserId: "ValidBearer",
-                    entitlements: {active: { peerbook: {expirationDate: "2021-01-01T00:00:00Z"}}},
-                },
-                // purchases: {identifier: "com.terminal7.terminal7.terminal7", purchaseState: 0}
-            })
-        })
-        await sleep(1500)
-    }
     test.afterAll(async () => {
         // delete the user and peer from redis
         const redisClient = redis.createClient({url: 'redis://redis'})
@@ -103,10 +90,9 @@ insecure = true`)
         await page.evaluate(async () => {
             await window.terminal7.map.shell.onPurchasesUpdate({
                 customerInfo: {
-                    originalAppUserId: "ValidBearer",
+                    originalAppUserId: "BadUser",
                     entitlements: {active: []},
                 },
-                // purchases: {identifier: "com.terminal7.terminal7.terminal7", purchaseState: 0}
             })
         })
         const twr = await getTWRBuffer()
@@ -116,7 +102,16 @@ insecure = true`)
     test('purchase update with an active subscription and bad otp', async () => {
         await sleep(100)
         await redisClient.set("tempid:ValidBearer", "1")
-        await appReload()
+        await page.evaluate(async () => {
+            window.terminal7.map.shell.onPurchasesUpdate({
+                customerInfo: {
+                    originalAppUserId: "ValidBearer",
+                    entitlements: {active: { peerbook: {expirationDate: "2021-01-01T00:00:00Z"}}},
+                },
+                // purchases: {identifier: "com.terminal7.terminal7.terminal7", purchaseState: 0}
+            })
+        })
+        await sleep(1500)
         let twr = await getTWRBuffer()
         expect(twr).toMatch(/Peer name/)
         await page.keyboard.type("test")
@@ -214,7 +209,17 @@ insecure = true`)
                 }]
             ))
         })
-        await appReload()
+        await page.reload({waitUntil: "load"})
+        await page.evaluate(async () => {
+            window.terminal7.map.shell.onPurchasesUpdate({
+                customerInfo: {
+                    originalAppUserId: "ValidBearer",
+                    entitlements: {active: { peerbook: {expirationDate: "2021-01-01T00:00:00Z"}}},
+                },
+                // purchases: {identifier: "com.terminal7.terminal7.terminal7", purchaseState: 0}
+            })
+        })
+        await sleep(1500)
         const btns = page.locator('#gates button')
         await expect(btns).toHaveCount(3)
         // count all elments with the from-peerbook class

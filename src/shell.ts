@@ -4,14 +4,12 @@ import { CapacitorPurchases } from '@capgo/capacitor-purchases'
 import { Channel } from "./session"
 import { Clipboard } from "@capacitor/clipboard"
 import { Terminal } from 'xterm'
-import { Preferences } from '@capacitor/preferences'
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
 import { Gate } from "./gate"
 import { T7Map } from './map'
 import { Failure } from "./session"
 import { HTTPWebRTCSession } from './webrtc_session'
-import { DEFAULT_DOTFILE } from './terminal7.js'
 import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
 import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
 import { tomlMode} from '@tuzig/codemirror/mode/toml/toml.js'
@@ -77,7 +75,10 @@ export class Shell {
                 resolve()
                 return
             }
-            terminal7.notify("🏪 => Subscribed until " + active.peerbook.expirationDate)
+            if (this.pbSession && this.pbSession.isOpen()) {
+                return
+            }
+            terminal7.notify("🏪 => PeerBook Subscription until " + active.peerbook.expirationDate)
             terminal7.pbConnect()
             .then(() => {
                 terminal7.notify("\uD83D\uDCD6 => Connected")
@@ -131,9 +132,13 @@ export class Shell {
                             this.t.writeln(QR)
                             this.t.writeln("")
                             this.t.writeln("and use it to generate a One Time Password")
+                            // verify ourselves - it's the first time and we were approved thanks 
+                            // to the revenuecat's user id
+                            const fp = await terminal7.getFingerprint()
                             try {
-                                await this.validateOTP()
+                                await this.verifyFP(fp, "OTP")
                             } catch(e) {
+                                console.log("got an error verifying peer", e)
                                 resolve()
                                 // reject(e)
                                 return
@@ -648,14 +653,15 @@ export class Shell {
                 this.t.writeln("Invalid OTP, please try again")
         }
     }
-    async verifyFP(fp: string) {
+    async verifyFP(fp: string, prompt: string) {
         let validated = false
+        // TODO:gAdd biometrics verification
         while (!validated) {
             console.log("Verifying FP", fp)
             let gotMsg = false
             let otp
             try {
-                otp = await this.askValue("Enter OTP to verify gate")
+                otp = await this.askValue(prompt || "Enter OTP to verify gate")
             } catch(e) {
                 reject()
                 return

@@ -21,7 +21,7 @@ export class SSHChannel extends BaseChannel {
         if ((m instanceof Object) && ('data' in m))
             this.onMessage(m.data)
         else {
-            this.t7.log("ssh read got error ", m.error)
+            this.t7.log("ssh read got error ", m)
             this.onClose(m.error)
         }
     }

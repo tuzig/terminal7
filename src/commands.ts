@@ -1,7 +1,6 @@
 import { CapacitorPurchases } from '@capgo/capacitor-purchases'
 import { Clipboard } from '@capacitor/clipboard'
 import { Shell } from "./shell"
-import * as TOML from '@tuzig/toml'
 import { Preferences } from "@capacitor/preferences"
 import { Terminal7 } from "./terminal7"
 import { Fields } from "./form"
@@ -9,6 +8,7 @@ import fortuneURL from "../resources/fortune.txt"
 import { Gate } from './gate'
 import { Capacitor } from '@capacitor/core'
 import { SSHSession } from './ssh_session'
+import { Failure } from './session'
 
 declare const terminal7 : Terminal7
 
@@ -190,10 +190,16 @@ async function connectCMD(shell:Shell, args: string[]) {
     if (!gate)
         return shell.t.writeln(`Host not found: ${hostname}`)
     if (gate.fp) {
-        if (!gate.verified)
-            return shell.t.writeln(`Host unverified, please verify at ${terminal7.conf.net.peerbook}`)
+        if (!gate.verified) {
+            shell.t.write(`Host unverified, would you like to verify it?`)
+            const answer = await shell.askValue("Y/n")
+            if (answer == "y" || answer == "Y" || answer == "") {
+                await shell.verifyFP(gate.fp)
+            } else
+                return shell.t.writeln("Doing nothing")
+        }
         if (!gate.online)
-            return shell.t.writeln("Host offline")
+            return shell.t.writeln("Host is offline")
     }
     // eslint-disable-next-line
     await new Promise<void>(async (resolve) => {
@@ -310,38 +316,6 @@ async function addCMD(shell: Shell) {
         store: true,
     })
     return connectCMD(shell, [gate.name])
-}
-
-async function peerbookForm(shell: Shell) {
-    let dotfile = await terminal7.getDotfile()
-
-    const f = [
-        {
-            prompt: "Email",
-            validator: email => !email.match(/.+@.+\..+/) ? "Must be a valid email" : ''
-        },
-        { prompt: "Peer's name" }
-    ]
-    let results
-    try {
-        results = await shell.runForm(f, "text")
-    } catch (e) {
-        return
-    }
-    const email = results[0],
-        peername = results[1]
-
-    dotfile += `
-[peerbook]
-email = "${email}"
-peer_name = "${peername}"
-`
-
-    Preferences.set({ key: "dotfile", value: dotfile })
-    terminal7.loadConf(TOML.parse(dotfile))
-    terminal7.notify("Your email was added to the dotfile")
-    terminal7.pbConnect()
-    await terminal7.clear()
 }
 
 async function resetCMD(shell: Shell, args: string[]) {
@@ -512,7 +486,7 @@ async function editCMD (shell:Shell, args: string[]) {
 async function hostsCMD(shell: Shell) {
     let res = ""
     terminal7.gates.forEach(gate => {
-        res += `\x1B[1m${gate.name}:\x1B[0m ${gate.addr}\n`
+        res += `\x1B[1m${gate.name}:\x1B[0m ${gate.addr} ${gate.fp || ""}\n`
     })
     shell.t.writeln(res)
 }
@@ -589,7 +563,7 @@ async function subscribeCMD(shell: shell) {
         }
         if (choice == subPrompt) {
             shell.t.writeln("Thank you, directing to payment")
-            shell.startWatchdog(30000)
+            shell.startWatchdog(50000)
             terminal7.ignoreAppEvents = true
             try {
                 await CapacitorPurchases.purchasePackage({
@@ -613,13 +587,6 @@ async function subscribeCMD(shell: shell) {
 }
 async function installCMD(shell: Shell, args: string[]) {
     let gate: Gate
-    let uid: string
-    try {
-          uid =  terminal7.conf.peerbook.uID
-    } catch(e)  {
-        shell.t.writeln("Dotfile has no peerbook.user_id\nPlease `subscribe` to get one")
-        return
-    }
 
     if (args[0]) {
         gate = shell.getGate(args[0])
@@ -646,13 +613,15 @@ async function installCMD(shell: Shell, args: string[]) {
         publicKey = ids.publicKey
         privateKey = ids.privateKey
     } catch(e) {
-        console.log("readId erro", e)
+        console.log("readId error", e)
     }
 
     const session = new SSHSession(gate.addr, gate.username)
-    session.onStateChange = async (state) => {
+    session.onStateChange = async (state, failure?: Failure) => {
         const host = terminal7.conf.net.peerbook
         let channel: SSHChannel
+        let password: string
+        let data 
         switch (state) {
             case "connecting":
                 shell.t.writeln("Connecting...")
@@ -674,12 +643,13 @@ async function installCMD(shell: Shell, args: string[]) {
                 shell.masterChannel = channel
                 // set #log border color to yellow
                 document.getElementById("log").style.borderColor = "var(--remote-border)"
-                channel.send(`PEERBOOK_UID=${uid} PEERBOOK_HOST=${host} \\bash <(curl -sL https://get.webexec.sh)`)
-                channel.onMessage = async data => {
-                    shell.t.write(data)
-                    // use regex to extract the fingerprint from the data.
+                data  = await terminal7.pbVerify()
+                channel.send(`PEERBOOK_UID=${data.uid} PEERBOOK_HOST=${host} bash <(curl -sL https://get.webexec.sh)`)
+                channel.onMessage = async msg => {
+                    shell.t.write(msg)
+                    // use regex to extract the fingerprint from the message.
                     // fingerprint is on a line "Fingerprint: <fingerprint>"
-                    const match = data.match(/Fingerprint:\s*([A-F0-9]+)/)
+                    const match = msg.match(/Fingerprint:\s*([A-F0-9]+)/)
                     if (match) {
                         const fp = match[1]
                         // install is done, now we need to verify the fingerprint
@@ -692,7 +662,19 @@ async function installCMD(shell: Shell, args: string[]) {
                         }, 100)
                     }
                 }   
-
+                break
+            case "failed":
+                if (failure == Failure.KeyRejected) {
+                    shell.t.write("🔑 Rejected")
+                    password = await shell.askPass()
+                    session.passConnect(null, password)
+                    return
+                } else {
+                    shell.t.writeln("Connection failed")
+                    shell.t.writeln("Please try again or type `support`")
+                    return
+                }
+                break
         }
     }
     session.connect(0, publicKey, privateKey)
