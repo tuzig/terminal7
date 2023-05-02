@@ -3,6 +3,7 @@ import { Device } from '@capacitor/device';
 import { CapacitorPurchases } from '@capgo/capacitor-purchases'
 import { Channel } from "./session"
 import { Clipboard } from "@capacitor/clipboard"
+import { Preferences } from '@capacitor/preferences'
 import { Terminal } from 'xterm'
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
@@ -15,6 +16,8 @@ import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
 import { tomlMode} from '@tuzig/codemirror/mode/toml/toml.js'
 import { dialogAddOn } from '@tuzig/codemirror/addon/dialog/dialog.js'
 import * as TOML from '@tuzig/toml'
+
+const PEERBOOK = "\uD83D\uDCD6"
 
 export class Shell {
 
@@ -80,22 +83,37 @@ export class Shell {
             if (this.pbSession && this.pbSession.isOpen()) {
                 return
             }
-            terminal7.notify("🏪 => PeerBook Subscription until " + active.peerbook.expirationDate)
+            // print the number of days left
+            const days = Math.floor((active.peerbook.expirationDate - Date.now()) / (1000 * 60 * 60 * 24))
+            terminal7.notify(`🏪 Subscribed to ${PEERBOOK} for ${days} days`)
             terminal7.pbConnect()
             .then(() => {
-                terminal7.notify("\uD83D\uDCD6 => Connected")
+                terminal7.notify(`${PEERBOOK} Connected`)
                 resolve()
-            }).catch(e => this.completeRegistration(data.customerInfo.originalAppUserId).then(resolve))
-
+            }).catch(e => {
+                Preferences.get({ key: "tempRCID" }).then(v => {
+                    let tempID = v.value
+                    if (!tempID) {
+                        // we have a fresh subscription, save the temp user id 
+                        // untill registration is completed
+                        tempID = data.customerInfo.originalAppUserId
+                        Preferences.set({
+                            key: "tempRCID",
+                            value: tempID
+                        })
+                    }
+                    this.completeRegistration(tempID).then(resolve)
+                })
+            })
         })
     }
-    async completeRegistration (uid: string) {
+    async completeRegistration (bearer: string) {
         return new Promise<void>(resolve => {
             // we have an active subscription and connection failure
             // trying to register registering
             this.t.writeln("Completing registration")
-            this.active = false
-            const session = this.newPBSession(uid)
+            //get the temp id from local storage
+            const session = this.newPBSession(bearer)
             session.onStateChange = async (state, failure?) => {
                 if (state == 'connected') {
                     const reply = []
@@ -150,9 +168,9 @@ export class Shell {
                         }
                         this.t.writeln(`Validated!\nYour user ID is ${uid}`)
                         this.t.writeln("Type `install` to install on a server")
-                        this.active = true
                         this.printPrompt()
-                        terminal7.pbConnect()
+                        await terminal7.pbConnect()
+                        await Preferences.remove({ key: "tempRCID" })
                         resolve()
                         return
                     }
@@ -177,7 +195,7 @@ export class Shell {
                     return
                 }
             }
-            this.t.writeln("Connecting to PeerBook")
+            this.t.writeln(`Connecting to ${PEERBOOK}`)
             session.connect()
         })
     }
@@ -723,6 +741,6 @@ export class Shell {
             if (!validated)
                 this.t.writeln("Invalid OTP, please try again")
         }
-        this.t.writeln("Peer validated!")
+        this.t.writeln(`${PEERBOOK} Validated ${fp.slice(0, 8)}\u2026`)
     }
 }

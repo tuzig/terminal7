@@ -183,7 +183,7 @@ insecure = true`)
         await redisClient.set("secret:123456", secret)
         const token = authenticator.generate(secret)
         await page.evaluate(async (fp) => {
-            terminal7.map.shell.verifyFP(fp)
+            await terminal7.map.shell.verifyFP(fp)
         }, fp)
         await sleep(100)
         await page.keyboard.type(token)
@@ -192,8 +192,16 @@ insecure = true`)
         const verified = await redisClient.hGet(`peer:${fp}`, "verified")
         expect(verified).toBe("1")
         const twr = await getTWRBuffer()
-        expect(twr).toMatch(/Peer validated/)
+        // create a regexp to match "Validated <first 8 chars of fp>"
+        const fp8 = fp.slice(0, 8)
+        const re = new RegExp(`Validated ${fp8}`)
+        expect(twr).toMatch(re)
     })
+    test('peers are properly displayed', async () => {
+        const btns = page.locator('#gates button')
+        await expect(btns).toHaveCount(3)
+    })
+
     test('local and peerbook gates are properly displayed', async () => {
         // add a gate to storage
         const keys = await redisClient.keys('peer*')
