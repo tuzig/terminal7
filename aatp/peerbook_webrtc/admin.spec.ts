@@ -159,10 +159,6 @@ insecure = true`)
     */
     test('validate webexec', async () => {
         // change the user id of foo@bar.com to 123456
-        /*
-        await page.evaluate(async () => 
-            window.terminal7.conf.peerbook.uID = "123456")
-            */
         let fp: string
         const keys = await redisClient.keys('peer*')
         expect(keys.length).toBeGreaterThan(1)
@@ -183,7 +179,8 @@ insecure = true`)
         await redisClient.set("secret:123456", secret)
         const token = authenticator.generate(secret)
         await page.evaluate(async (fp) => {
-            await terminal7.map.shell.verifyFP(fp)
+            // window.terminal7.conf.peerbook.uID = "123456"
+            terminal7.map.shell.verifyFP(fp)
         }, fp)
         await sleep(100)
         await page.keyboard.type(token)
@@ -198,8 +195,12 @@ insecure = true`)
         expect(twr).toMatch(re)
     })
     test('peers are properly displayed', async () => {
+        await page.evaluate(async (fp) => {
+            terminal7.pbClose()
+            await terminal7.pbConnect()
+        })
         const btns = page.locator('#gates button')
-        await expect(btns).toHaveCount(3)
+        await expect(btns).toHaveCount(2)
     })
 
     test('local and peerbook gates are properly displayed', async () => {
@@ -221,13 +222,12 @@ insecure = true`)
         await page.evaluate(async () => {
             window.terminal7.map.shell.onPurchasesUpdate({
                 customerInfo: {
-                    originalAppUserId: "ValidBearer",
+                    originalAppUserId: "123456",
                     entitlements: {active: { peerbook: {expirationDate: "2021-01-01T00:00:00Z"}}},
                 },
                 // purchases: {identifier: "com.terminal7.terminal7.terminal7", purchaseState: 0}
             })
         })
-        await sleep(1500)
         const btns = page.locator('#gates button')
         await expect(btns).toHaveCount(3)
         // count all elments with the from-peerbook class
