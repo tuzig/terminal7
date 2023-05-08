@@ -203,21 +203,7 @@ export class Terminal7 {
         })
         this.map = new T7Map()
         // Load gates from local storage
-        let gates
-        value = (await Preferences.get({key: 'gates'})).value
-        if (value) {
-            try {
-                gates = JSON.parse(value)
-            } catch(e) {
-                 terminal7.log("failed to parse gates", value, e)
-                gates = []
-            }
-            gates.forEach(g => {
-                g.store = true
-                this.addGate(g).e.classList.add("hidden")
-            })
-            this.map.refresh()
-        }
+        this.loadLocalGates()
         if (Capacitor.isNativePlatform())  {
             // this is a hack as some operation, like bio verification
             // fire two events
@@ -1081,5 +1067,23 @@ export class Terminal7 {
         const ret = await response.json()
         terminal7.log("Peerbook verification response", ret)
         return ret
+    }
+    async loadLocalGates() {
+        let gates
+        const { value } = await Preferences.get({key: 'gates'})
+
+        if (value) {
+            try {
+                gates = JSON.parse(value)
+            } catch(e) {
+                 terminal7.log("failed to parse gates", value, e)
+                gates = []
+            }
+            gates.forEach(g => {
+                g.store = true
+                this.addGate(g).e.classList.add("hidden")
+            })
+            this.map.refresh()
+        }
     }
 }
