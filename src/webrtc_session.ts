@@ -98,8 +98,11 @@ export class WebRTCSession extends BaseSession {
         try {
             await this.t7.getFingerprint()
         } catch (e) {
+            console.log("failed to get fingerprint", e)
             this.t7.certificates = undefined
+            return
         }
+        console.log("certs ", this.t7.certificates)
         this.pc = new RTCPeerConnection({
             iceServers: this.t7.iceServers,
             certificates: this.t7.certificates})
@@ -460,12 +463,11 @@ export class HTTPWebRTCSession extends WebRTCSession {
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         console.log("got ice candidate", ev)
-        if (event.candidate != null)
+        if (ev.candidate != null)
             return
         this.t7.getFingerprint().then(fp => {
-            console.log("sending offer", this.pc.localDescription)
             const encodedO = btoa(JSON.stringify(this.pc.localDescription))
-            console.log("sending offer with headers ", this.headers)
+            console.log("sending offer with headers ", this.headers, fp)
             CapacitorHttp.post({
                 url: this.address, 
                 headers: this.headers,

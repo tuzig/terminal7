@@ -680,8 +680,9 @@ async function installCMD(shell: Shell, args: string[]) {
     session.connect(0, publicKey, privateKey)
 }
 async function unsubscribeCMD(shell: Shell) {
-    await Preferences.remove({key: "uID"})
+    await Preferences.remove({key: "PBUID"})
     shell.t.writeln("Unsubscribed")
+    terminal7.pbClose()
 }
 async function configCMD(shell: Shell) {
     shell.t.writeln("Opening vi-style editor.")

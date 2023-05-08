@@ -65,8 +65,8 @@ export class Shell {
         this.pbSession = new HTTPWebRTCSession(url, headers)
         return this.pbSession
     }
+    // TODO: remove the asnyc
     async onPurchasesUpdate(data) {
-        console.log("Purchases update", data)
         return new Promise<void>(resolve=> {
             // intialize the http headers with the bearer token
             const active = data.customerInfo.entitlements.active
@@ -80,30 +80,23 @@ export class Shell {
                 resolve()
                 return
             }
-            if (this.pbSession && this.pbSession.isOpen()) {
+            if (this.pbSession && this.pbSession.cdc) {
                 return
             }
             // print the number of days left
-            const days = Math.floor((active.peerbook.expirationDate - Date.now()) / (1000 * 60 * 60 * 24))
-            terminal7.notify(`🏪 Subscribed to ${PEERBOOK} for ${days} days`)
+            const uid = data.customerInfo.originalAppUserId
+            Preferences.set({ key: "PBUID" , value: data.customerInfo.originalAppUserId })
+            terminal7.notify(`🏪 Subscribed to ${PEERBOOK}`)
+            terminal7.log("Subscribed to PB, uid: ", data.customerInfo.originalAppUserId)
             terminal7.pbConnect()
             .then(() => {
                 terminal7.notify(`${PEERBOOK} Connected`)
                 resolve()
-            }).catch(e => {
-                Preferences.get({ key: "tempRCID" }).then(v => {
-                    let tempID = v.value
-                    if (!tempID) {
-                        // we have a fresh subscription, save the temp user id 
-                        // untill registration is completed
-                        tempID = data.customerInfo.originalAppUserId
-                        Preferences.set({
-                            key: "tempRCID",
-                            value: tempID
-                        })
-                    }
-                    this.completeRegistration(tempID).then(resolve)
-                })
+            }).catch(() => {
+            // if uid is temp then we need to complete registration
+            // we identify temp id by checking if they contain a letter
+                if (uid.match(/[a-z]/i))
+                    this.completeRegistration(uid).then(resolve)
             })
         })
     }
@@ -111,7 +104,8 @@ export class Shell {
         return new Promise<void>(resolve => {
             // we have an active subscription and connection failure
             // trying to register registering
-            this.t.writeln("Completing registration")
+            this.t.writeln(`Completing ${PEERBOOK} registration`)
+            this.t.writeln(`  Bearer: ${bearer}`)
             //get the temp id from local storage
             const session = this.newPBSession(bearer)
             session.onStateChange = async (state, failure?) => {
@@ -148,8 +142,6 @@ export class Shell {
                         }
                         const QR = userData.QR
                         const uid = userData.ID
-                        // load the dotfile, if any, set the user id, save and load
-                        await CapacitorPurchases.logIn({ appUserID: uid })
                         this.t.writeln("Please scan this QR code with your OTP app")
                         this.t.writeln("")
                         this.t.writeln(QR)
@@ -166,11 +158,12 @@ export class Shell {
                             // reject(e)
                             return
                         }
-                        this.t.writeln(`Validated!\nYour user ID is ${uid}`)
+                        this.t.writeln(`Validated! User ID is ${uid}`)
                         this.t.writeln("Type `install` to install on a server")
                         this.printPrompt()
                         await terminal7.pbConnect()
-                        await Preferences.remove({ key: "tempRCID" })
+                        await Preferences.set({ key: "PBUID" , value: uid })
+                        await CapacitorPurchases.logIn({ appUserID: uid })
                         resolve()
                         return
                     }
@@ -201,19 +194,20 @@ export class Shell {
     }
     async startPurchases() {
         let appUserID = undefined
-        const data = await terminal7.pbVerify()
-        if (data.uid)
-            appUserID = data.uid
-        else
-            terminal7.log("No user id from peerbook", data)
-
+        try {
+            const pbuid = await Preferences.get({ key: "PBUID" })
+            if (pbuid.value)
+                appUserID = pbuid.value
+        } catch (e) {
+            terminal7.log("No PBUID", e)
+        }
+        terminal7.log("RC Setup with appUserID", appUserID)
         await CapacitorPurchases.setup({
             apiKey:'appl_qKHwbgKuoVXokCTMuLRwvukoqkd',
-            appUserID: appUserID,
-            usesStoreKit2IfAvailable: true,
+            appUserID: appUserID
         })
         await CapacitorPurchases.setDebugLogsEnabled({ enabled: true }) 
-        CapacitorPurchases.addListener('purchasesUpdate', async (data) => {
+        CapacitorPurchases.addListener('purchasesUpdate', data => {
             this.onPurchasesUpdate(data)
         })
     }
@@ -741,6 +735,5 @@ export class Shell {
             if (!validated)
                 this.t.writeln("Invalid OTP, please try again")
         }
-        this.t.writeln(`${PEERBOOK} Validated ${fp.slice(0, 8)}\u2026`)
     }
 }

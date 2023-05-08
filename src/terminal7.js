@@ -612,9 +612,13 @@ export class Terminal7 {
     getFingerprint() {
         // gets the certificate from indexDB. If they are not there, create them
         return new Promise((resolve, reject) => {
+            const compactCert = cert => {
+                const ret = cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")
+                console.log("compacted:", ret)
+                return ret
+            }
             if (this.certificates) {
-                var cert = this.certificates[0].getFingerprints()[0]
-                resolve(cert.value.toUpperCase().replaceAll(":", ""))
+                resolve(compactCert(this.certificates[0]))
                 return
             }
             openDB("t7", 1, { 
@@ -626,21 +630,26 @@ export class Terminal7 {
                 let tx = db.transaction("certificates"),
                     store = tx.objectStore("certificates")
                  store.getAll().then(certificates => {
-                     this.certificates = certificates
+                     if (certificates.length == 0) {
+                         console.log("got no certificates, generating", certificates)
+                         this.generateCertificate()
+                         .then(cert => resolve(compactCert(cert)))
+                         .catch(reject)
+                         return
+                     }
                      db.close()
-                     const cert = certificates[0].getFingerprints()[0]
-                     resolve(cert.value.toUpperCase().replaceAll(":", ""))
-                 }).catch(() => {
-                    this.generateCertificate()
-                    .then(cert => resolve(
-                        cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")))
-                    .catch(reject)
+                     this.certificates = certificates
+                     resolve(compactCert(certificates[0]))
+                 }).catch(e => {
+                     this.log("caught an error reading store", e)
+                     this.generateCertificate()
+                     .then(cert => resolve(compactCert(cert)))
+                     .catch(reject)
                 })
             }).catch(e => {
                 this.log(`got an error opening db ${e}`)
                 this.generateCertificate()
-                .then(cert => resolve(
-                    cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")))
+                .then(cert => resolve(compactCert(cert)))
                 .catch(reject)
             })
         })

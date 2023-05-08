@@ -17,17 +17,26 @@ export class PeerbookConnection {
     pbSendTask = null
     onUpdate: (r: string) => void
     pending: Array<string>
+    verified: boolean
 
     constructor(fp, host = "api.peerbook.io", insecure = false) {
         this.fp = fp
         this.host = host
         this.insecure = insecure
         this.pending = []
+        this.verified = false
     }
     connect() {
         return new Promise<void>((resolve, reject) =>{
             if ((this.ws != null) && this.isOpen()) {
-                resolve()
+                if (this.verified) {
+                    console.log("already connected")
+                    resolve()
+                }
+                else {
+                    console.log("already connected but not verified")
+                    reject()
+                }
                 return
             }
             const schema = this.insecure?"ws":"wss",
@@ -37,9 +46,16 @@ export class PeerbookConnection {
                 const m = JSON.parse(ev.data)
                 if (m.code >= 400) {
                     console.log("peerbook connect got code", m.code)
+                    if (m.code == 401) {
+                        window.terminal7.notify(`\uD83D\uDCD6 Terminal7 is unverified`)
+                    } else {
+                        window.terminal7.notify(`\uD83D\uDCD6 PeerBook connection error ${m.code}`)
+                        this.ws = null
+                    }
                     reject()
                     return
                 } 
+                this.verified = true
                 resolve()
                 if (this.onUpdate)
                     this.onUpdate(m)
