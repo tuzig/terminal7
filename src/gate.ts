@@ -10,7 +10,7 @@ import { Clipboard } from '@capacitor/clipboard'
 import { Pane } from './pane.js'
 import { T7Map } from './map'
 import { Failure, Session } from './session'
-import { SSHSession, HybridSession } from './ssh_session'
+import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
 import { Capacitor } from '@capacitor/core'
@@ -532,16 +532,16 @@ export class Gate {
     }
     async completeConnect(): void {
         this.keyRejected = false
-        if (this.fp) {
+        if (this.fp && !this.onlySSH) {
             this.notify("🎌  PeerBook")
             this.session = new PeerbookSession(this.fp, this.t7.pb)
         }
         else {
             if (Capacitor.isNativePlatform())  {
-                this.session = (this.onlySSH)?new SSHSession(this.addr, this.username):
-                   new HybridSession(this.addr, this.username)
+                // TODO: Restore hybrid sessions
+                this.session = new SSHSession(this.addr, this.username)
             } else {
-                this.notify("🎌  webexec server")
+                this.notify("🎌  webexec HTTP server")
                 const addr = `http://${this.addr}:7777/connect`
                 this.session = new HTTPWebRTCSession(addr)
             }
