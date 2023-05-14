@@ -183,38 +183,26 @@ async function fortuneCMD(shell: Shell) {
 }
 
 async function connectCMD(shell:Shell, args: string[]) {
-    await new Promise<void>(async (resolve) => {
-        const hostname = args[0]
-        if (!hostname) {
-            shell.t.writeln("Missing hostname")
-            resolve()
-            return
+    const hostname = args[0]
+    if (!hostname)
+        return shell.t.writeln("Missing hostname")
+    const gate: Gate = shell.getGate(hostname)
+    if (!gate)
+        return shell.t.writeln(`Host not found: ${hostname}`)
+    if (gate.fp) {
+        if (!gate.verified) {
+            shell.t.write(`Host unverified, would you like to verify it?`)
+            const answer = await shell.askValue("Y/n")
+            if (answer == "y" || answer == "Y" || answer == "") {
+                await shell.verifyFP(gate.fp)
+            } else
+                return shell.t.writeln("Doing nothing")
         }
-        const gate: Gate = shell.getGate(hostname)
-        if (!gate) {
-            shell.t.writeln(`Host not found: ${hostname}`)
-            resolve()
-            return
-        }
-        if (gate.fp) {
-            if (!gate.verified) {
-                shell.t.write(`Host unverified, would you like to verify it?`)
-                const answer = await shell.askValue("Y/n")
-                if (answer == "y" || answer == "Y" || answer == "") {
-                    await shell.verifyFP(gate.fp)
-                } else {
-                    shell.t.writeln("Doing nothing")
-                    resolve()
-                    return
-                }
-            }
-            if (!gate.online) {
-                shell.t.writeln("Host is offline")
-                resolve()
-                return
-            }
-        }
+        if (!gate.online)
+            return shell.t.writeln("Host is offline")
+    }
     // eslint-disable-next-line
+    await new Promise<void>(async (resolve) => {
         gate.onFailure = reason => {
             terminal7.log(`Connect command got failure ${reason}`) 
             shell.stopWatchdog()
@@ -610,6 +598,7 @@ async function installCMD(shell: Shell, args: string[]) {
     } else {
         gate = terminal7.activeG
         if (!gate) {
+            shell.t.writeln("Please select gate:")
             const choices = []
             terminal7.gates.forEach(gate => {
                 choices.push({ prompt: gate.name })
