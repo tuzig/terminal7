@@ -610,6 +610,7 @@ async function installCMD(shell: Shell, args: string[]) {
     } else {
         gate = terminal7.activeG
         if (!gate) {
+            shell.t.writeln("Please select gate:")
             const choices = []
             terminal7.gates.forEach(gate => {
                 choices.push({ prompt: gate.name })
