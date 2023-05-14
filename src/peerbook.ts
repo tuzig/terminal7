@@ -30,11 +30,11 @@ export class PeerbookConnection {
         return new Promise<void>((resolve, reject) =>{
             if ((this.ws != null) && this.isOpen()) {
                 if (this.verified) {
-                    console.log("already connected")
+                    console.log("PB already connected")
                     resolve()
                 }
                 else {
-                    console.log("already connected but not verified")
+                    console.log("PB already connected but not verified")
                     reject()
                 }
                 return
