@@ -602,6 +602,12 @@ async function installCMD(shell: Shell, args: string[]) {
             terminal7.gates.forEach(gate => {
                 choices.push({ prompt: gate.name })
             })
+            if (choices.length == 0) {
+                shell.t.writeln("No gates found")
+                shell.t.writeln("Please `add` one and run install again")
+                return
+            }
+            shell.t.writeln("Please select where to install:")
             const choice = await shell.runForm(choices, "menu")
             gate = shell.getGate(choice)
         }
