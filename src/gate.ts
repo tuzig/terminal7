@@ -581,7 +581,7 @@ export class Gate {
             name: this.name || this.addr,
             boarding: this.boarding,
             offline: this.online === false,
-            unverified: this.verified === false,
+            unverified: this.fp?!this.verified:this.firstConnection,
             peerbook: this.fp != null,
         })
     }
