@@ -175,7 +175,7 @@ export class Gate {
     async handleFailure(failure: Failure) {
         // KeyRejected and WrongPassword are "light failure"
         const active = this == this.t7.activeG
-        const isSSH = this.session.isSSH
+        const isSSH = this.session && this.session.isSSH
         if (!this.t7.lastActiveState) {
             console.log("ignoring failed event as the app is still in the back")
             this.stopBoarding()
