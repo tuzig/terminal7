@@ -598,7 +598,7 @@ async function subscribeCMD(shell: shell) {
         terminal7.pbConnect()
     }
 }
-async function installCMD(shell: Shell, args: string[]) {
+export async function installCMD(shell: Shell, args: string[]) {
     let gate: Gate
 
     if (args[0]) {
@@ -641,6 +641,7 @@ async function installCMD(shell: Shell, args: string[]) {
         let channel: SSHChannel
         let password: string
         let data 
+        terminal7.log("Install SSH session got state", state, failure)
         switch (state) {
             case "connecting":
                 shell.t.writeln("Connecting...")

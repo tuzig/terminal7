@@ -1,26 +1,40 @@
 import { vi } from "vitest"
 
 export class Terminal {
+    options = {
+        selectionStyle: "plain",
+        cursorBlink: false,
+        scrollback: 1000,
+        tabStopWidth: 4,
+    }
+    constructor (props) {
+        this.out = ""
+        for (const k in props)
+            this[k] = props[k]
+    }
+    clear = vi.fn()
+    focus = vi.fn()
+    getSelectionPosition = () => null
     keyHandler: (a:any) => void
     loadAddon = vi.fn()
-    onSelectionChange = vi.fn()
-    onData = vi.fn()
-    focus = vi.fn()
     notify = vi.fn()
+    onData = vi.fn()
+    onSelectionChange = vi.fn()
     open = vi.fn()
-    write = vi.fn(s => this.out += s)
-    writeln = vi.fn(s => this.write(s + "\n"))
     reset = vi.fn()
-    select = vi.fn()
-    options = { selectionStyle: "plain", cursorBlink: false, scrollback: 1000, tabStopWidth: 4 }
     scrollToBottom = vi.fn()
+    select = vi.fn()
+    writeln = vi.fn(s => this.write(s + "\n"))
+    write = vi.fn(s => this.out += s)
     onKey = (cb) => {
         this.keyHandler = cb
         return { dispose: vi.fn() }
     }
-    buffer = { active: { cursorX: 0, cursorY: 0, viewportY: 0, lines: [""],
-        getLine: y => {
-            return { translateToString: () => this.buffer.active.lines[y] || '' }
+    buffer = {
+        active: {
+            cursorX: 0, cursorY: 0, viewportY: 0, lines: [""],
+            getLine: (y: number) => {
+                return { translateToString: () => this.buffer.active.lines[y] || '' }
         }
     }
     }
@@ -36,12 +50,6 @@ export class Terminal {
     }))
     setBuffer(lines : string[]) {
         this.buffer.active.lines = lines
-    }
-    getSelectionPosition = () => null
-    constructor (props) {
-        this.out = ""
-        for (const k in props)
-            this[k] = props[k]
     }
     pressKey(key) {
         const ev = new KeyboardEvent("keydown", { key })

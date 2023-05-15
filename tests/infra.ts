@@ -119,4 +119,10 @@ export class Terminal7Mock extends Terminal7 {
             resolve("BADFACE")
         })
     }
+    async readId() {
+        return {
+            publicKey: "foo",
+            privateKey: "bar"
+        }
+    }
 }
