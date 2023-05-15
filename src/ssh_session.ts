@@ -5,7 +5,6 @@ import { WebRTCSession }  from './webrtc_session'
 const ACCEPT_CMD = "/usr/local/bin/webexec accept"
 
 export class SSHChannel extends BaseChannel {
-    id: number
     async close(): Promise<void> {
         return SSH.closeChannel({channel: this.id})
     }
