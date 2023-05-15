@@ -21,7 +21,7 @@ export class SSHChannel extends BaseChannel {
             this.onMessage(m.data)
         else {
             this.t7.log("ssh read got error ", m)
-            this.onClose(m.error)
+            this.onClose(m && m.error)
         }
     }
 }
@@ -122,6 +122,9 @@ export class SSHSession extends BaseSession {
                 throw e
             }
         }
+    close() {
+        // SSH.closeSession({session: this.id})
+    }
 }
 // HybridSession can run either as SSH or WebRTC bby signalling
 // over SSH
