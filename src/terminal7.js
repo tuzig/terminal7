@@ -926,11 +926,11 @@ export class Terminal7 {
     }
     validateHostAddress(addr) {
         const lookup = this.gates.filter(g => g.addr == addr)
-        return lookup? "Host already exists" : ""
+        return (lookup.length > 0)?"Gate with this address already exists" : ""
     }
     validateHostName(name) {
         const lookup = this.gates.filter(g => g.name == name)
-        return lookup? "Name already exists" : ""
+        return (lookup.length > 0)? "Name already exists" : ""
     }
     async factoryReset() {
         // setting up reset cert events
