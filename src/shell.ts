@@ -163,6 +163,7 @@ export class Shell {
                         this.printPrompt()
                         await terminal7.pbConnect()
                         await Preferences.set({ key: "PBUID" , value: uid })
+                        terminal7.log("Logging in to PB, uid: ", uid)
                         await CapacitorPurchases.logIn({ appUserID: uid })
                         resolve()
                         return

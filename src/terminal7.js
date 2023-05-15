@@ -22,6 +22,7 @@ import ssh from 'ed25519-keygen/ssh';
 import { randomBytes } from 'ed25519-keygen/utils';
 
 import { Capacitor } from '@capacitor/core'
+import { CapacitorPurchases } from '@capgo/capacitor-purchases'
 import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
@@ -704,8 +705,10 @@ export class Terminal7 {
             return
         }
         if (m["peers"] !== undefined) {
-            this.gates = this.pb.syncPeers(this.gates, m["peers"])
+            this.gates = this.pb.syncPeers(this.gates, m.peers)
             this.map.refresh()
+            Preferences.set({ key: "PBUID" , value: m.uid })
+            CapacitorPurchases.logIn({ appUserID: m.uid })
             return
         }
         if (m["verified"] !== undefined) {

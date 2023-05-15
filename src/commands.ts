@@ -675,9 +675,9 @@ async function installCMD(shell: Shell, args: string[]) {
                         setTimeout(() => {
                             document.getElementById("log").style.borderColor = "var(--local-border)"
                             shell.masterChannel = null
-                            shell.t.writeln("\nInstall finished")
                             channel.close()
-                            shell.verifyFP(fp)
+                            shell.t.writeln("~~~ Orderly Disconnect")
+                            shell.verifyFP(fp, "Finished install, enter OTP to verify")
                         }, 100)
                     }
                 }   
