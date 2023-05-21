@@ -10,7 +10,7 @@ import { Clipboard } from '@capacitor/clipboard'
 import { Pane } from './pane.js'
 import { T7Map } from './map'
 import { Failure, Session } from './session'
-import { SSHSession } from './ssh_session'
+import { SSHSession, HybridSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
 import { Capacitor } from '@capacitor/core'
@@ -538,8 +538,8 @@ export class Gate {
         }
         else {
             if (Capacitor.isNativePlatform())  {
-                // TODO: Restore hybrid sessions
-                this.session = new SSHSession(this.addr, this.username)
+                this.session = (this.onlySSH)?new SSHSession(this.addr, this.username):
+                   new HybridSession(this.addr, this.username)
             } else {
                 this.notify("🎌  webexec HTTP server")
                 const addr = `http://${this.addr}:7777/connect`
