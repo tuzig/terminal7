@@ -45,6 +45,7 @@ export class SSHSession extends BaseSession {
         this.onStateChange("connected")
     }
     async connect(marker?:number, publicKey: string, privateKey:string) {
+        terminal7.log("Connecting using SSH", this.address, this.username, this.port)
         SSH.startSessionByKey({
             address: this.address,
             port: this.port,

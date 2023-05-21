@@ -19,6 +19,10 @@ export class resizeObs {
 
 export function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
+export function returnLater(ret: unknown) {
+    vi.fn(() => new Promise( resolve => setTimeout(() => resolve(ret), 0)))
+}
+
 export class Terminal7Mock extends Terminal7 {
     conf = { ui: {max_tabs: 10,
                     max_panes: 10,
