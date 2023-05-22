@@ -44,6 +44,7 @@ export class Pane extends Cell {
         this.cmAtEnd = null
         this.cmCursor = null
         this.cmMarking = false
+        this.cmDecoration = null
         this.dividers = []
         this.flashTimer = null
         this.aLeader = false
@@ -75,6 +76,7 @@ export class Pane extends Cell {
             theme: this.theme,
             rows:24,
             cols:80,
+            allowProposedApi: true,
             /* TODO: restore this. commented because it silences spotify
             bellStyle: "sound",
             bellSound: BELL_SOUND, */
@@ -372,7 +374,8 @@ export class Pane extends Cell {
         if (this.copyMode) {
             this.copyMode = false
             this.e.style.borderColor = FOCUSED_BORDER_COLOR
-            this.t.clearSelection()
+            this.cmDecoration.dispose()
+            this.cmDecoration = null
             this.t.scrollToBottom()
             if (this.zoomed)
                 this.t7.zoomedE.children[0].style.borderColor = FOCUSED_BORDER_COLOR
@@ -691,7 +694,7 @@ export class Pane extends Cell {
                 break
             case "Enter":
                 if (this.t.hasSelection())
-                    this.copySelection().then(this.exitCopyMode())
+                    this.copySelection().then(() => this.exitCopyMode())
                 else
                     this.exitCopyMode();
                 break
@@ -865,17 +868,31 @@ export class Pane extends Cell {
         }
     }
     cmInitCursor() {
-        var selection = this.t.getSelectionPosition()
+        /* var selection = this.t.getSelectionPosition()
         if (selection) {
             this.cmCursor = {
                 x: this.cmAtEnd?selection.endColumn:selection.startColumn,
                 y: this.cmAtEnd?selection.endRow:selection.startRow
             }
             return
-        }
+        } */
+        if (this.cmDecoration)
+            return
         const buffer = this.t.buffer.active
         this.cmCursor = {x: buffer.cursorX,
                          y: buffer.cursorY + buffer.viewportY}
+    }
+    cmMark(x, y, length=1) {
+        if (this.cmDecoration) {
+            this.cmDecoration.dispose()
+        }
+        const marker = this.t.registerMarker(y - this.t.buffer.active.cursorY)
+        this.cmDecoration = this.t.registerDecoration({
+            marker,
+            x,
+            width: length,
+            backgroundColor: '#ffffff',
+        })
     }
     cmSelectionUpdate(selection) {
         /*
@@ -887,7 +904,7 @@ export class Pane extends Cell {
         // maybe it's a cursor
         if (!this.cmMarking) {
             console.log("using selection to draw a cursor at", this.cmCursor)
-            this.t.select(this.cmCursor.x, this.cmCursor.y, 1)
+            this.cmMark(this.cmCursor.x, this.cmCursor.y)
             return
         }
         if (!this.cmAtEnd) {
@@ -915,7 +932,7 @@ export class Pane extends Cell {
 
 
 
-        this.t.select(selection.startColumn, selection.startRow, selectionLength)
+        this.cmMark(selection.startColumn, selection.startRow, selectionLength)
     }
     enableSearchButtons() {
         const se = this.gate.e.querySelector(".search-box")
