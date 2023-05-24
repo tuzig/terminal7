@@ -44,7 +44,8 @@ export class Pane extends Cell {
         this.cmAtEnd = null
         this.cmCursor = null
         this.cmMarking = false
-        this.cmDecoration = null
+        this.cmSelection = null
+        this.cmDecorations = []
         this.dividers = []
         this.flashTimer = null
         this.aLeader = false
@@ -374,8 +375,8 @@ export class Pane extends Cell {
         if (this.copyMode) {
             this.copyMode = false
             this.e.style.borderColor = FOCUSED_BORDER_COLOR
-            this.cmDecoration.dispose()
-            this.cmDecoration = null
+            this.cmDecorationsClear()
+            this.cmSelection = null
             this.t.scrollToBottom()
             if (this.zoomed)
                 this.t7.zoomedE.children[0].style.borderColor = FOCUSED_BORDER_COLOR
@@ -596,7 +597,7 @@ export class Pane extends Cell {
     }
     handleCMKey(key) {
         var x, y, newX, newY,
-            selection = this.t.getSelectionPosition(),
+            selection = this.cmSelection,
             line
         // chose the x & y we're going to change
         if ((!this.cmMarking) || (selection == null)) {
@@ -876,38 +877,72 @@ export class Pane extends Cell {
             }
             return
         } */
-        if (this.cmDecoration)
+        if (this.cmSelection)
             return
         const buffer = this.t.buffer.active
         this.cmCursor = {x: buffer.cursorX,
                          y: buffer.cursorY + buffer.viewportY}
     }
-    cmMark(x, y, length=1) {
-        if (this.cmDecoration) {
-            this.cmDecoration.dispose()
+    cmMark() {
+        this.cmDecorationsClear()
+        const x1 = this.cmSelection.startColumn,
+            x2 = this.cmSelection.endColumn,
+            y1 = this.cmSelection.startRow,
+            y2 = this.cmSelection.endRow
+        const baseY = this.t.buffer.active.viewportY + this.t.buffer.active.cursorY,
+            rowLength = this.t.cols,
+            backgroundColor = '#ffff00',
+            foregroundColor = '#000000'
+        const m1 = this.t.registerMarker(y1 - baseY)
+        if (y1 == y2) {
+            this.cmDecorations.push(this.t.registerDecoration({
+                marker: m1,
+                x: x1,
+                width: x2 - x1 + 1,
+                backgroundColor,
+                foregroundColor,
+            }))
+            return
         }
-        const marker = this.t.registerMarker(y - this.t.buffer.active.cursorY)
-        this.cmDecoration = this.t.registerDecoration({
-            marker,
-            x,
-            width: length,
-            backgroundColor: '#ffffff',
-        })
+        this.cmDecorations.push(this.t.registerDecoration({
+            marker: m1,
+            x: x1,
+            width: rowLength - x1,
+            backgroundColor,
+            foregroundColor,
+        }))
+        for (let i = y1 + 1; i < y2; i++) {
+            const m = this.t.registerMarker(i - baseY)
+            this.cmDecorations.push(this.t.registerDecoration({
+                marker: m,
+                x: 0,
+                width: rowLength,
+                backgroundColor,
+                foregroundColor,
+            }))
+        }
+        const m2 = this.t.registerMarker(y2 - baseY)
+        this.cmDecorations.push(this.t.registerDecoration({
+            marker: m2,
+            x: 0,
+            width: x2 + 1,
+            backgroundColor,
+        }))
+    }
+    cmDecorationsClear() {
+        this.cmDecorations.forEach(d => d.dispose())
     }
     cmSelectionUpdate(selection) {
-        /*
-        if (this.cmAtEnd == null)
-            this.t.options.selectionStyle = "plain"
-        else
-            this.t.options.selectionStyle = this.cmAtEnd?"mark-end":"mark-start"
-            */
         // maybe it's a cursor
         if (!this.cmMarking) {
             console.log("using selection to draw a cursor at", this.cmCursor)
-            this.cmMark(this.cmCursor.x, this.cmCursor.y)
-            return
-        }
-        if (!this.cmAtEnd) {
+            selection = {
+                startRow: this.cmCursor.y,
+                startColumn: this.cmCursor.x,
+                endRow: this.cmCursor.y,
+                endColumn: this.cmCursor.x
+            }
+        } else if (!this.cmAtEnd) {
             if (selection.startRow > selection.endRow) {
                 selection.endRow = selection.startRow
             }
@@ -931,8 +966,8 @@ export class Pane extends Cell {
         if (selectionLength == 0) selectionLength = 1
 
 
-
-        this.cmMark(selection.startColumn, selection.startRow, selectionLength)
+        this.cmSelection = selection
+        this.cmMark()
     }
     enableSearchButtons() {
         const se = this.gate.e.querySelector(".search-box")
