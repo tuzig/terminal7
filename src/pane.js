@@ -852,7 +852,9 @@ export class Pane extends Cell {
                     ((newY == selection.endRow)
                      && (newX > selection.endColumn))) {
                     this.cmAtEnd = true
+                    selection.startRow = selection.endRow
                     selection.endRow = newY
+                    selection.startColumn = selection.endColumn
                     selection.endColumn = newX
                 } else {
                     selection.startColumn = newX
