@@ -24,6 +24,10 @@ export class Terminal {
     reset = vi.fn()
     scrollToBottom = vi.fn()
     select = vi.fn()
+    registerMarker = vi.fn()
+    registerDecoration = vi.fn(() => ({
+        dispose: vi.fn()
+    }))
     writeln = vi.fn(s => this.write(s + "\n"))
     write = vi.fn(s => this.out += s)
     onKey = (cb) => {
