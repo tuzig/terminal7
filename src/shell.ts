@@ -727,8 +727,7 @@ export class Shell {
             const channel = await this.pbSession.openChannel(["authorize", fp, otp], 0, 80, 24)
             channel.onMessage = (data: string) => {
                 gotMsg = true
-                const ret = String.fromCharCode(data[0])
-                validated = ret == "1"
+                validated = data[0] == "1"
             }
             while (!gotMsg) {
                 await (new Promise(r => setTimeout(r, 100)))
