@@ -175,7 +175,6 @@ export class WebRTCSession extends BaseSession {
         // callbacks are set after the resolve as that's 
         // where caller's onMessage & onClose are set
         dc.onmessage = m => {
-            // ignore close events when an older generation channel
             const data = new Uint8Array(m.data)
             channel.onMessage(data)
         }

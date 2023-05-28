@@ -133,30 +133,14 @@ insecure = true`)
     test('complete purchase with a valid OTP', async () => {
         const uid = await redisClient.get("id:foo@bar.com")
         const secret = await redisClient.get(`secret:${uid}`)
-        const token = authenticator.generate(secret);
+        const token = authenticator.generate(secret)
+        await sleep(200)
         await page.keyboard.type(token)
         await page.keyboard.press("Enter")
         await sleep(200)
         const twr = await getTWRBuffer()
         expect(twr).toMatch(/Validated/)
     })
-    /*
-    test('validate otp', async () => {
-        const uid = await redisClient.get("id:foo@bar.com")
-        const secret = await redisClient.get(`secret:${uid}`)
-        const token = authenticator.generate(secret);
-        await page.evaluate(async (token) => {
-            terminal7.map.shell.validateOTP(token)
-        }, token)
-        await(sleep(100))
-
-        await page.keyboard.type(token)
-        await page.keyboard.press("Enter")
-        await sleep(1500)
-        const twr = await getTWRBuffer()
-        expect(twr).toMatch(/Validated/)
-    })
-    */
     test('validate webexec', async () => {
         // change the user id of foo@bar.com to 123456
         let fp: string
@@ -218,15 +202,6 @@ insecure = true`)
             ))
         })
         await page.reload({waitUntil: "load"})
-        await page.evaluate(async () => {
-            window.terminal7.map.shell.onPurchasesUpdate({
-                customerInfo: {
-                    originalAppUserId: "123456",
-                    entitlements: {active: { peerbook: {expirationDate: "2021-01-01T00:00:00Z"}}},
-                },
-                // purchases: {identifier: "com.terminal7.terminal7.terminal7", purchaseState: 0}
-            })
-        })
         const btns = page.locator('#gates button')
         await expect(btns).toHaveCount(3)
         // count all elments with the from-peerbook class

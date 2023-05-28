@@ -511,34 +511,34 @@ export class Terminal7 {
             callCB()
         })
     }
-    updateNetworkStatus (status) {
+    async updateNetworkStatus (status) {
         let off = document.getElementById("offline").classList
         this.netStatus = status
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
             off.add("hidden")
+            const pbuid = await Preferences.get({ key: "PBUID" })
             const gate = this.activeG
-            if (gate) {
-                if (gate.session && gate.session.isSSH) {
-                    gate.session.close()
-                    gate.session = null
-                    this.notify("Lost SSH session")
-                    this.map.shell.runCommand("subscribe")
-                    return
-                }
-                this.notify("🌞 Recovering")
-                this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
-                this.recovering = true
-                this.run(() => this.recovering = false, this.conf.net.recoveryTime)
-                gate.reconnect()
-                    .then(() => {
-                        this.map.shell.stopWatchdog()
-                        this.map.showLog(false)
-                    }).catch(() => {
-                        this.map.shell.stopWatchdog()
-                        this.map.shell.runCommand("reset", [gate.name])
-                    })
+            if (!pbuid.value) {
+                // TODO: check if gate and if so notify the user he can subscribe to not lose sessions
+                return
             }
+            this.pbConnect().then(() => {
+                if (gate) {
+                    this.notify("🌞 Recovering")
+                    this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
+                    this.recovering = true
+                    this.run(() => this.recovering = false, this.conf.net.recoveryTime)
+                    gate.reconnect()
+                        .then(() => {
+                            this.map.shell.stopWatchdog()
+                            this.map.showLog(false)
+                        }).catch(() => {
+                            this.map.shell.stopWatchdog()
+                            this.map.shell.runCommand("reset", [gate.name])
+                        })
+                }
+            })
         } else {
             off.remove("hidden")
             // this.gates.forEach(g => g.session = null)

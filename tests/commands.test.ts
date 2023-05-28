@@ -47,6 +47,7 @@ describe("TWR commands", function() {
             // expect(shell.verifyFP).toHaveBeenCalled
         })
     })
+
     describe("Verify fingerprint command", () => {
         it("should verify the fingerprint", async () => {
             let map = new T7Map()
@@ -59,7 +60,7 @@ describe("TWR commands", function() {
             shell.verifyFP("1234", "whatever").then(() => verifyFinished = true)
             await sleep(100)
             expect (shell.pbSession.openChannel).toHaveBeenCalled()
-            globalThis.lastHTTPWebRTCChannel.onMessage("1")
+            globalThis.lastHTTPWebRTCChannel.onMessage([ "1".charCodeAt(0) ])
             await sleep(100)
             console.log("output", shell.t.out)
             expect(shell.t.out).toEqual("")
