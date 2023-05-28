@@ -39,7 +39,7 @@ describe("TWR commands", function() {
             shell.t.writeln("try")
             expect(shell.t.out).toMatch(/try/)
             installCMD(shell, "whatever")
-            await sleep(100)
+            await sleep(300)
             globalThis.lastSSHChannel.onMessage("Fingerprint: 1234")
             // expect(shell.t.out).toMatch(/~~~~/)
             // TODO: ensure shell.verfyFP has been called
