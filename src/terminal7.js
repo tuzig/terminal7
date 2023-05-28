@@ -698,6 +698,7 @@ export class Terminal7 {
             this.focus()
         // TODO: When at home remove the "on" from the home butto
     }
+    // handle incomming peerbook messages (coming over sebsocket)
     onPBMessage(m) {
         this.log("got pb message", m)
         if (m["code"] !== undefined) {
