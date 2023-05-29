@@ -12,6 +12,7 @@ import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { WebglAddon } from 'xterm-addon-webgl'
 import { WebLinksAddon } from 'xterm-addon-web-links'
+import { SerializeAddon } from 'xterm-addon-serialize'
 /* restore the bell. commented as it silences all background audio
 import { BELL_SOUND } from './bell.js'
 */
@@ -87,6 +88,7 @@ export class Pane extends Cell {
         this.WebLinksAddon = new WebLinksAddon((MouseEvent, url) => {
             window.open(url, "_blank", "noopener")
         })
+        this.serializeAddon = new SerializeAddon()
 
         // there's a container div we need to get xtermjs to fit properly
         this.e.appendChild(con)
@@ -97,6 +99,7 @@ export class Pane extends Cell {
         this.t.loadAddon(this.fitAddon)
         this.t.loadAddon(this.searchAddon)
         this.t.loadAddon(this.WebLinksAddon)
+        this.t.loadAddon(this.serializeAddon)
         const webGLAddon = new WebglAddon()
         webGLAddon.onContextLoss(() => {
             terminal7.log("lost context")
@@ -401,8 +404,7 @@ export class Pane extends Cell {
         this.t7.log(`Handling meta key ${ev.key}`)
         switch (ev.key) {
         case "c":
-            if (this.t.hasSelection()) 
-                this.copySelection()
+            this.copySelection()
             break
         case "z":
             f = () => this.toggleZoom()
@@ -590,10 +592,23 @@ export class Pane extends Cell {
         }
     }
     copySelection() {
-        const lines = this.t.getSelection().split('\n'),
-            linesFormatted = lines.map(l => l.trimEnd())
-    
-        return Clipboard.write({string: linesFormatted.join('\n')})
+        if (!this.cmSelection)
+            return
+        const serialized = this.serializeAddon.serialize()
+        const lines = serialized.split('\n')
+            .slice(this.cmSelection.startRow, this.cmSelection.endRow + 1)
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+        if (lines.length == 0)
+            return
+        if (lines.length == 1)
+            lines[0] = lines[0].slice(this.cmSelection.startColumn, this.cmSelection.endColumn + 1)
+        else {
+            lines[0] = lines[0].slice(this.cmSelection.startColumn)
+            lines[lines.length - 1] = lines[lines.length - 1].slice(0, this.cmSelection.endColumn + 1)
+        }
+        console.log(lines.join('\n'))
+        return Clipboard.write({string: lines.join('\n')})
     }
     handleCMKey(key) {
         var x, y, newX, newY,
@@ -694,10 +709,8 @@ export class Pane extends Cell {
                 this.cmSelectionUpdate(selection)
                 break
             case "Enter":
-                if (this.t.hasSelection())
-                    this.copySelection().then(() => this.exitCopyMode())
-                else
-                    this.exitCopyMode();
+                this.copySelection()
+                this.exitCopyMode();
                 break
             case '/':
                 this.showSearch(true)
@@ -866,7 +879,6 @@ export class Pane extends Cell {
                 (newY < this.t.buffer.active.viewportY)) {
                 let scroll = newY - this.t.buffer.active.viewportY
                 this.t.scrollLines(scroll, true)
-                console.log(scroll, this.t.buffer.active.viewportY, this.t.buffer.active.baseY)
             }
         }
     }
@@ -885,16 +897,17 @@ export class Pane extends Cell {
             y2 = this.cmSelection.endRow
         const baseY = this.t.buffer.active.baseY + this.t.buffer.active.cursorY,
             rowLength = this.t.cols,
-            backgroundColor = '#ffff00',
-            foregroundColor = '#000000'
+            colors = {
+                backgroundColor: '#ffff00',
+                foregroundColor: '#000000'
+            }
         const m1 = this.t.registerMarker(y1 - baseY)
         if (y1 == y2) {
             this.cmDecorations.push(this.t.registerDecoration({
                 marker: m1,
                 x: x1,
                 width: x2 - x1 + 1,
-                backgroundColor,
-                foregroundColor,
+                ...colors
             }))
             return
         }
@@ -902,8 +915,7 @@ export class Pane extends Cell {
             marker: m1,
             x: x1,
             width: rowLength - x1,
-            backgroundColor,
-            foregroundColor,
+            ...colors,
         }))
         for (let i = y1 + 1; i < y2; i++) {
             const m = this.t.registerMarker(i - baseY)
@@ -911,8 +923,7 @@ export class Pane extends Cell {
                 marker: m,
                 x: 0,
                 width: rowLength,
-                backgroundColor,
-                foregroundColor,
+                ...colors,
             }))
         }
         const m2 = this.t.registerMarker(y2 - baseY)
@@ -920,7 +931,7 @@ export class Pane extends Cell {
             marker: m2,
             x: 0,
             width: x2 + 1,
-            backgroundColor,
+            ...colors,
         }))
     }
     cmDecorationsClear() {
