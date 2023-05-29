@@ -83,7 +83,6 @@ export class Shell {
             if (this.pbSession && this.pbSession.cdc) {
                 return
             }
-            // print the number of days left
             const uid = data.customerInfo.originalAppUserId
             Preferences.set({ key: "PBUID" , uid })
             terminal7.notify(`🏪 Subscribed to ${PEERBOOK}`)
@@ -92,6 +91,8 @@ export class Shell {
             // we identify temp id by checking if they contain a letter
             if (uid.match(/[a-z]/i))
                 this.completeRegistration(uid).then(resolve)
+            else
+                terminal7.pbConnect()
         })
     }
     async completeRegistration (bearer: string) {
