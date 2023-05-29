@@ -728,7 +728,7 @@ export class Pane extends Cell {
                 break
             case 'ArrowDown':
             case 'j':
-                if (y < this.t.buffer.active.baseY + this.t.rows)
+                if (y < this.t.buffer.active.baseY + this.t.rows - 1)
                     newY = y + 1
                 if (this.cmAtEnd === null)
                     this.cmAtEnd = true
@@ -871,14 +871,6 @@ export class Pane extends Cell {
         }
     }
     cmInitCursor() {
-        /* var selection = this.t.getSelectionPosition()
-        if (selection) {
-            this.cmCursor = {
-                x: this.cmAtEnd?selection.endColumn:selection.startColumn,
-                y: this.cmAtEnd?selection.endRow:selection.startRow
-            }
-            return
-        } */
         if (this.cmSelection)
             return
         const buffer = this.t.buffer.active
@@ -891,7 +883,7 @@ export class Pane extends Cell {
             x2 = this.cmSelection.endColumn,
             y1 = this.cmSelection.startRow,
             y2 = this.cmSelection.endRow
-        const baseY = this.t.buffer.active.viewportY + this.t.buffer.active.cursorY,
+        const baseY = this.t.buffer.active.baseY + this.t.buffer.active.cursorY,
             rowLength = this.t.cols,
             backgroundColor = '#ffff00',
             foregroundColor = '#000000'
