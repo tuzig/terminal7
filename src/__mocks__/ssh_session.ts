@@ -3,7 +3,7 @@ import { Session, Channel, State, CallbackType } from "../session.ts"
 const returnLater = (ret: unknown) => 
     vi.fn(() => new Promise( resolve => setTimeout(() => resolve(ret), 0)))
 
-class MockChannel implements Channel {
+export class MockChannel implements Channel {
     static id = 1
     static out = ""
     onClose: CallbackType
@@ -32,6 +32,7 @@ export class SSHSession implements Session {
         return new Promise(resolve => {
             setTimeout(() => {
                 const c = new MockChannel()
+                vi.stubGlobal('lastSSHChannel', c)
                 resolve(c)
             }, 0)
         })

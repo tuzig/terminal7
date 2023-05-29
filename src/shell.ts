@@ -85,19 +85,13 @@ export class Shell {
             }
             // print the number of days left
             const uid = data.customerInfo.originalAppUserId
-            Preferences.set({ key: "PBUID" , value: data.customerInfo.originalAppUserId })
+            Preferences.set({ key: "PBUID" , uid })
             terminal7.notify(`🏪 Subscribed to ${PEERBOOK}`)
-            terminal7.log("Subscribed to PB, uid: ", data.customerInfo.originalAppUserId)
-            terminal7.pbConnect()
-            .then(() => {
-                terminal7.notify(`${PEERBOOK} Connected`)
-                resolve()
-            }).catch(() => {
+            terminal7.log("Subscribed to PB, uid: ", uid)
             // if uid is temp then we need to complete registration
             // we identify temp id by checking if they contain a letter
-                if (uid.match(/[a-z]/i))
-                    this.completeRegistration(uid).then(resolve)
-            })
+            if (uid.match(/[a-z]/i))
+                this.completeRegistration(uid).then(resolve)
         })
     }
     async completeRegistration (bearer: string) {
@@ -161,10 +155,10 @@ export class Shell {
                         this.t.writeln(`Validated! User ID is ${uid}`)
                         this.t.writeln("Type `install` to install on a server")
                         this.printPrompt()
-                        await terminal7.pbConnect()
                         await Preferences.set({ key: "PBUID" , value: uid })
                         terminal7.log("Logging in to PB, uid: ", uid)
                         await CapacitorPurchases.logIn({ appUserID: uid })
+                        terminal7.pbConnect()
                         resolve()
                         return
                     }
@@ -724,11 +718,11 @@ export class Shell {
                     throw e
                 }
             }
-            const channel = await this.pbSession.openChannel(["authorize", fp, otp], 0, 80, 24)
-            channel.onMessage = (data: string) => {
+            const channel = await this.pbSession.openChannel(["verify", fp, otp], 0, 80, 24)
+            channel.onMessage = (data: Uint8Array) => {
                 gotMsg = true
-                const ret = String.fromCharCode(data[0])
-                validated = ret == "1"
+                console.log("Got verify reply", data[0])
+                validated = data[0] == "1".charCodeAt(0)
             }
             while (!gotMsg) {
                 await (new Promise(r => setTimeout(r, 100)))
