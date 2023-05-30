@@ -12,7 +12,6 @@ import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { WebglAddon } from 'xterm-addon-webgl'
 import { WebLinksAddon } from 'xterm-addon-web-links'
-import { SerializeAddon } from 'xterm-addon-serialize'
 /* restore the bell. commented as it silences all background audio
 import { BELL_SOUND } from './bell.js'
 */
@@ -88,7 +87,6 @@ export class Pane extends Cell {
         this.WebLinksAddon = new WebLinksAddon((MouseEvent, url) => {
             window.open(url, "_blank", "noopener")
         })
-        this.serializeAddon = new SerializeAddon()
 
         // there's a container div we need to get xtermjs to fit properly
         this.e.appendChild(con)
@@ -99,7 +97,6 @@ export class Pane extends Cell {
         this.t.loadAddon(this.fitAddon)
         this.t.loadAddon(this.searchAddon)
         this.t.loadAddon(this.WebLinksAddon)
-        this.t.loadAddon(this.serializeAddon)
         const webGLAddon = new WebglAddon()
         webGLAddon.onContextLoss(() => {
             terminal7.log("lost context")
@@ -594,20 +591,15 @@ export class Pane extends Cell {
     copySelection() {
         if (!this.cmSelection)
             return
-        const serialized = this.serializeAddon.serialize()
-        const lines = serialized.split('\n')
-            .slice(this.cmSelection.startRow, this.cmSelection.endRow + 1)
-            .map(line => line.trim())
-            .filter(line => line.length > 0)
-        if (lines.length == 0)
-            return
-        if (lines.length == 1)
-            lines[0] = lines[0].slice(this.cmSelection.startColumn, this.cmSelection.endColumn + 1)
-        else {
-            lines[0] = lines[0].slice(this.cmSelection.startColumn)
-            lines[lines.length - 1] = lines[lines.length - 1].slice(0, this.cmSelection.endColumn + 1)
+
+        const lines = []
+        for (let line = this.cmSelection.startRow; line <= this.cmSelection.endRow; line++) {
+            const lineText = this.t.buffer.active.getLine(line).translateToString(true)
+            const start = line == this.cmSelection.startRow ? this.cmSelection.startColumn : 0
+            const end = line == this.cmSelection.endRow ? this.cmSelection.endColumn : lineText.length
+            const selectedText = lineText.slice(start, end)
+            lines.push(selectedText)
         }
-        console.log(lines.join('\n'))
         return Clipboard.write({string: lines.join('\n')})
     }
     handleCMKey(key) {
