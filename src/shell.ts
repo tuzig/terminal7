@@ -541,7 +541,6 @@ export class Shell {
     getGate(prefix: string) {
         const maybes = terminal7.gates.filter(g => g.name.startsWith(prefix))
         if (maybes.length == 0) {
-            this.t.write(`No gate found with prefix ${prefix}`)
             return null
         }
         if (maybes.length > 1) {
@@ -729,6 +728,60 @@ export class Shell {
             }
             if (!validated)
                 this.t.writeln("Invalid OTP, please try again")
+        }
+    }
+    async resetGate(gate: Gate) {
+        const fields = [
+            { prompt: "Close gate" },
+            { prompt: "Reset connection & Layout" },
+            { prompt: "\x1B[31mFactory reset\x1B[0m" },
+        ]
+        if (!gate.onlySSH)
+            // Add the connection reset option for webrtc
+            fields.splice(0, 0, { prompt: "Reset connection" })
+        this.t.writeln(`\x1B[4m${gate.name}\x1B[0m`)
+        let choice
+        try {
+            choice = await this.runForm(fields, "menu")
+        } catch (e) {
+            return
+        }
+        let ans
+
+        switch (choice) {
+            case "Reset connection":
+                // TODO: simplify
+                if (gate.session) {
+                    gate.session.close()
+                    gate.session = null
+                }
+                // reset peerbook connection
+                terminal7.pb = null
+                try {
+                    await this.runCommand("connect", [gate.name])
+                } catch(e) {
+                    this.t.writeln("Failed to connect. Please try again and if it keeps failing, close and connect fresh.")
+                    this.t.writeln("  Please take the time to write your flow\n  in ##🪳bugs🪳at https://discord.com/invite/rDBj8k4tUE")
+                    return
+                }
+
+                break
+
+            case "Reset connection & Layout":
+                if (gate.session) {
+                    gate.session.close()
+                    gate.session = null
+                }
+                await this.runCommand("connect", [gate.name])
+                gate.clear()
+                gate.map.showLog(false)
+                gate.activeW = gate.addWindow("", true)
+                gate.focus()
+                break
+
+            case "Close gate":
+                gate.close()
+                break
         }
     }
 }
