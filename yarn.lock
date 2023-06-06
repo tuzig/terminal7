@@ -3516,10 +3516,10 @@ ms@2.1.2:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.2.tgz#d09d1f357b443f493382a8eb3ccd183872ae6009"
   integrity sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==
 
-nanoid@^3.3.4:
-  version "3.3.4"
-  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.4.tgz#730b67e3cd09e2deacf03c027c81c9d9dbc5e8ab"
-  integrity sha512-MqBkQh/OHTS2egovRtLk45wEyNXwF+cokD+1YPf9u5VfJiRdAiRwB2froX5Co9Rh20xs4siNPm8naNotSD6RBw==
+nanoid@^3.3.6:
+  version "3.3.6"
+  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.6.tgz#443380c856d6e9f9824267d960b4236ad583ea4c"
+  integrity sha512-BGcqMMJuToF7i1rt+2PWSNVnWIkGCU78jBG3RxO/bZlnZPK2Cmi2QaffxGO/2RvWi9sL+FAiRiXMgsyxQ1DIDA==
 
 native-run@^1.6.0:
   version "1.7.1"
@@ -3717,12 +3717,12 @@ plist@^3.0.5, plist@^3.0.6:
     base64-js "^1.5.1"
     xmlbuilder "^15.1.1"
 
-postcss@^8.4.18, postcss@^8.4.19:
-  version "8.4.19"
-  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.4.19.tgz#61178e2add236b17351897c8bcc0b4c8ecab56fc"
-  integrity sha512-h+pbPsyhlYj6N2ozBmHhHrs9DzGmbaarbLvWipMRO7RLS+v4onj26MPFXA5OBYFxyqYhUJK456SwDcY9H2/zsA==
+postcss@^8.4.18, postcss@^8.4.20:
+  version "8.4.24"
+  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.4.24.tgz#f714dba9b2284be3cc07dbd2fc57ee4dc972d2df"
+  integrity sha512-M0RzbcI0sO/XJNucsGjvWU9ERWxb/ytp1w6dKtxTKgixdtQDq4rmx/g8W1hnaheq9jgwL/oyEdH5Bc4WwJKMqg==
   dependencies:
-    nanoid "^3.3.4"
+    nanoid "^3.3.6"
     picocolors "^1.0.0"
     source-map-js "^1.0.2"
 
@@ -4551,13 +4551,13 @@ vite-plugin-pwa@^0.11.13:
   optionalDependencies:
     fsevents "~2.3.2"
 
-vite@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/vite/-/vite-4.0.0.tgz#b81b88349a06b2faaa53ae14cf96c942548e3454"
-  integrity sha512-ynad+4kYs8Jcnn8J7SacS9vAbk7eMy0xWg6E7bAhS1s79TK+D7tVFGXVZ55S7RNLRROU1rxoKlvZ/qjaB41DGA==
+vite@^4.0.5:
+  version "4.0.5"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-4.0.5.tgz#634f0bd1edf8bb8468ed42a1c3fd938c67d2f94b"
+  integrity sha512-7m87RC+caiAxG+8j3jObveRLqaWA/neAdCat6JAZwMkSWqFHOvg8MYe5fAQxVBRAuKAQ1S6XDh3CBQuLNbY33w==
   dependencies:
     esbuild "^0.16.3"
-    postcss "^8.4.19"
+    postcss "^8.4.20"
     resolve "^1.22.1"
     rollup "^3.7.0"
   optionalDependencies:

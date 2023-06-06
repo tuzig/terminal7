@@ -57,7 +57,7 @@
     "eslint": "<9",
     "jsdom": "^19.0.0",
     "typescript": "<5",
-    "vite": "^4.0.0",
+    "vite": "^4.0.5",
     "vite-plugin-pwa": "^0.11.13",
     "vitest": "^0.22.1",
     "yarn": "^1.22.17"
