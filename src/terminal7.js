@@ -708,8 +708,6 @@ export class Terminal7 {
         if (m["peers"] !== undefined) {
             this.gates = this.pb.syncPeers(this.gates, m.peers)
             this.map.refresh()
-            Preferences.set({ key: "PBUID" , value: m.uid })
-            CapacitorPurchases.logIn({ appUserID: m.uid })
             return
         }
         if (m["verified"] !== undefined) {
