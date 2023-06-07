@@ -531,67 +531,14 @@ async function copyKeyCMD(shell: Shell) {
     } else
         return shell.t.writeln("No key yet. Please connect to generate one.\n(try connect or add)")
 }
-async function subscribeCMD(shell: shell) {
+async function subscribeCMD(shell: Shell) {
     const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
     if (!customerInfo.entitlements.active.peerbook) {
-        const packageTypeName = {
-            'ANNUAL': 'a year',
-            'MONTHLY': 'a month',
-            'TWO_MONTH': 'two months',
-            'THREE_MONTH': 'three months',
-            'SIX_MONTH': 'six months',
-            'LIFETIME': 'a lifetime',
-            'WEEKLY': 'a week',
-        }
-
-        let offer
-        try {
-            // Enable to get debug logs in dev mode            
-            const { offerings } = await CapacitorPurchases.getOfferings()
-            offer = offerings.current
-        } catch (err) {
-            shell.t.writeln("Error getting offerings")
-            terminal7.log("Error getting offerings: " + err)
-            return false
-        }
-        if (offer == null) {  
-            return false
-                // Display current offering with offerings.current
-        }  
-        const pack = offer.availablePackages[0]
-        const product = pack.product
-        const term = packageTypeName[pack.packageType]
-        shell.t.writeln(offer.serverDescription)
-        const subPrompt = `Start your trial month (then ${product.priceString} ${term})`
-        const subscribeMenu = [
-            { prompt: "No thanks" },
-            { prompt: subPrompt },
-            { prompt: "Don't offer again" },
-        ]
-        let choice: string
-        try {
-            choice = await shell.runForm(subscribeMenu, "menu")
-        } catch (err) {
+        const offer = await shell.getOffer()
+        if (!offer)
             return
-        }
-        if (choice == subPrompt) {
-            shell.t.writeln("Thank you, directing to payment")
-            shell.startWatchdog(50000)
-            terminal7.ignoreAppEvents = true
-            try {
-                await CapacitorPurchases.purchasePackage({
-                    identifier: pack.identifier,
-                    offeringIdentifier: pack.offeringIdentifier,
-                })
-            } catch(e) {
-                shell.stopWatchdog()
-                shell.t.writeln("Error purchasing, please try again or contact support")
-                return
-            }
-            shell.stopWatchdog()
-            // TODO: this line saves 3 seconds but causes reentrancy
-            // shell.onPurchasesUpdate(data)
-        }
+        shell.t.writeln("Directing to payment...")
+        await shell.subscribe(offer)
     } else {
         shell.t.writeln("You are already subscribed")
         // call purchase update manualy
