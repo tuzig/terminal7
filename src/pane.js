@@ -44,6 +44,8 @@ export class Pane extends Cell {
         this.cmAtEnd = null
         this.cmCursor = null
         this.cmMarking = false
+        this.cmSelection = null
+        this.cmDecorations = []
         this.dividers = []
         this.flashTimer = null
         this.aLeader = false
@@ -75,6 +77,7 @@ export class Pane extends Cell {
             theme: this.theme,
             rows:24,
             cols:80,
+            allowProposedApi: true,
             /* TODO: restore this. commented because it silences spotify
             bellStyle: "sound",
             bellSound: BELL_SOUND, */
@@ -372,7 +375,8 @@ export class Pane extends Cell {
         if (this.copyMode) {
             this.copyMode = false
             this.e.style.borderColor = FOCUSED_BORDER_COLOR
-            this.t.clearSelection()
+            this.cmDecorationsClear()
+            this.cmSelection = null
             this.t.scrollToBottom()
             if (this.zoomed)
                 this.t7.zoomedE.children[0].style.borderColor = FOCUSED_BORDER_COLOR
@@ -397,8 +401,7 @@ export class Pane extends Cell {
         this.t7.log(`Handling meta key ${ev.key}`)
         switch (ev.key) {
         case "c":
-            if (this.t.hasSelection()) 
-                this.copySelection()
+            this.copySelection()
             break
         case "z":
             f = () => this.toggleZoom()
@@ -586,14 +589,22 @@ export class Pane extends Cell {
         }
     }
     copySelection() {
-        const lines = this.t.getSelection().split('\n'),
-            linesFormatted = lines.map(l => l.trimEnd())
-    
-        return Clipboard.write({string: linesFormatted.join('\n')})
+        if (!this.cmSelection)
+            return
+
+        const lines = []
+        for (let line = this.cmSelection.startRow; line <= this.cmSelection.endRow; line++) {
+            const lineText = this.t.buffer.active.getLine(line).translateToString(true)
+            const start = line == this.cmSelection.startRow ? this.cmSelection.startColumn : 0
+            const end = line == this.cmSelection.endRow ? this.cmSelection.endColumn : lineText.length
+            const selectedText = lineText.slice(start, end)
+            lines.push(selectedText)
+        }
+        return Clipboard.write({string: lines.join('\n')})
     }
     handleCMKey(key) {
         var x, y, newX, newY,
-            selection = this.t.getSelectionPosition(),
+            selection = this.cmSelection,
             line
         // chose the x & y we're going to change
         if ((!this.cmMarking) || (selection == null)) {
@@ -690,10 +701,8 @@ export class Pane extends Cell {
                 this.cmSelectionUpdate(selection)
                 break
             case "Enter":
-                if (this.t.hasSelection())
-                    this.copySelection().then(this.exitCopyMode())
-                else
-                    this.exitCopyMode();
+                this.copySelection()
+                this.exitCopyMode();
                 break
             case '/':
                 this.showSearch(true)
@@ -724,7 +733,7 @@ export class Pane extends Cell {
                 break
             case 'ArrowDown':
             case 'j':
-                if (y < this.t.buffer.active.baseY + this.t.rows)
+                if (y < this.t.buffer.active.baseY + this.t.rows - 1)
                     newY = y + 1
                 if (this.cmAtEnd === null)
                     this.cmAtEnd = true
@@ -848,7 +857,9 @@ export class Pane extends Cell {
                     ((newY == selection.endRow)
                      && (newX > selection.endColumn))) {
                     this.cmAtEnd = true
+                    selection.startRow = selection.endRow
                     selection.endRow = newY
+                    selection.startColumn = selection.endColumn
                     selection.endColumn = newX
                 } else {
                     selection.startColumn = newX
@@ -860,37 +871,75 @@ export class Pane extends Cell {
                 (newY < this.t.buffer.active.viewportY)) {
                 let scroll = newY - this.t.buffer.active.viewportY
                 this.t.scrollLines(scroll, true)
-                console.log(scroll, this.t.buffer.active.viewportY, this.t.buffer.active.baseY)
             }
         }
     }
     cmInitCursor() {
-        var selection = this.t.getSelectionPosition()
-        if (selection) {
-            this.cmCursor = {
-                x: this.cmAtEnd?selection.endColumn:selection.startColumn,
-                y: this.cmAtEnd?selection.endRow:selection.startRow
-            }
+        if (this.cmSelection)
             return
-        }
         const buffer = this.t.buffer.active
         this.cmCursor = {x: buffer.cursorX,
                          y: buffer.cursorY + buffer.viewportY}
     }
+    cmMark() {
+        this.cmDecorationsClear()
+        const x1 = this.cmSelection.startColumn,
+            x2 = this.cmSelection.endColumn,
+            y1 = this.cmSelection.startRow,
+            y2 = this.cmSelection.endRow
+        const baseY = this.t.buffer.active.baseY + this.t.buffer.active.cursorY,
+            rowLength = this.t.cols,
+            colors = {
+                backgroundColor: '#ffff00',
+                foregroundColor: '#000000'
+            }
+        const m1 = this.t.registerMarker(y1 - baseY)
+        if (y1 == y2) {
+            this.cmDecorations.push(this.t.registerDecoration({
+                marker: m1,
+                x: x1,
+                width: x2 - x1 + 1,
+                ...colors
+            }))
+            return
+        }
+        this.cmDecorations.push(this.t.registerDecoration({
+            marker: m1,
+            x: x1,
+            width: rowLength - x1,
+            ...colors,
+        }))
+        for (let i = y1 + 1; i < y2; i++) {
+            const m = this.t.registerMarker(i - baseY)
+            this.cmDecorations.push(this.t.registerDecoration({
+                marker: m,
+                x: 0,
+                width: rowLength,
+                ...colors,
+            }))
+        }
+        const m2 = this.t.registerMarker(y2 - baseY)
+        this.cmDecorations.push(this.t.registerDecoration({
+            marker: m2,
+            x: 0,
+            width: x2 + 1,
+            ...colors,
+        }))
+    }
+    cmDecorationsClear() {
+        this.cmDecorations.forEach(d => d.dispose())
+    }
     cmSelectionUpdate(selection) {
-        /*
-        if (this.cmAtEnd == null)
-            this.t.options.selectionStyle = "plain"
-        else
-            this.t.options.selectionStyle = this.cmAtEnd?"mark-end":"mark-start"
-            */
         // maybe it's a cursor
         if (!this.cmMarking) {
             console.log("using selection to draw a cursor at", this.cmCursor)
-            this.t.select(this.cmCursor.x, this.cmCursor.y, 1)
-            return
-        }
-        if (!this.cmAtEnd) {
+            selection = {
+                startRow: this.cmCursor.y,
+                startColumn: this.cmCursor.x,
+                endRow: this.cmCursor.y,
+                endColumn: this.cmCursor.x
+            }
+        } else if (!this.cmAtEnd) {
             if (selection.startRow > selection.endRow) {
                 selection.endRow = selection.startRow
             }
@@ -914,8 +963,8 @@ export class Pane extends Cell {
         if (selectionLength == 0) selectionLength = 1
 
 
-
-        this.t.select(selection.startColumn, selection.startRow, selectionLength)
+        this.cmSelection = selection
+        this.cmMark()
     }
     enableSearchButtons() {
         const se = this.gate.e.querySelector(".search-box")

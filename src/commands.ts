@@ -341,6 +341,7 @@ async function resetCMD(shell: Shell) {
     switch(res) {
         case "Fingerprint":
             await Preferences.remove({key: "PBUID"})
+            await CapacitorPurchases.logOut()
             shell.t.writeln("Unsubscribed")
             terminal7.pbClose()
             break
@@ -626,12 +627,15 @@ export async function installCMD(shell: Shell, args: string[]) {
                     if (match) {
                         const fp = match[1]
                         // install is done, now we need to verify the fingerprint
-                        setTimeout(() => {
+                        setTimeout(async () => {
                             document.getElementById("log").style.borderColor = "var(--local-border)"
                             shell.masterChannel = null
                             channel.close()
                             shell.t.writeln("~~~ Orderly Disconnect")
-                            shell.verifyFP(fp, "Finished install, enter OTP to verify")
+                            // will throw exception if not verified
+                            await shell.verifyFP(fp, "Finished install, enter OTP to verify")
+                            shell.t.writeln("Gate is installed & verified")
+                            // TODO: resolve the command that started it all
                         }, 100)
                     }
                 }   
