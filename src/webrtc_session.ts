@@ -1,6 +1,5 @@
 import { Http } from '@capacitor-community/http';
 import { BaseChannel, BaseSession, CallbackType, Channel, ChannelID, Failure } from './session';
-import { PeerbookConnection } from './peerbook'
 
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
 
@@ -365,7 +364,6 @@ export class WebRTCSession extends BaseSession {
 
 export class PeerbookSession extends WebRTCSession {
     fp: string
-    pb: PeerbookConnection
     constructor(fp: string) {
         super()
         this.fp = fp
@@ -399,7 +397,8 @@ export class PeerbookSession extends WebRTCSession {
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate && this.t7.pb) {
-            this.t7.pb.send({target: this.fp, candidate: ev.candidate})
+            this.t7.pbConnect().then(() =>
+                this.t7.pb.send({target: this.fp, candidate: ev.candidate}))
         }
     }
     onNegotiationNeeded(e) {
@@ -408,8 +407,8 @@ export class PeerbookSession extends WebRTCSession {
             const offer = btoa(JSON.stringify(d))
             this.pc.setLocalDescription(d)
             this.t7.log("got offer", offer)
-            // this.pb is null after a disconnect
-            this.t7.pb.send({target: this.fp, offer: offer})
+            this.t7.pbConnect().then(() =>
+                this.t7.pb.send({target: this.fp, offer: offer}))
         })
     }
     peerAnswer(offer) {

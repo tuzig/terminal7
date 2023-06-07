@@ -6,6 +6,11 @@ import { Fields, Form } from './form'
 import { Gate } from "./gate"
 import { T7Map } from './map'
 import { Failure } from "./session"
+import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
+import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
+import { tomlMode} from '@tuzig/codemirror/mode/toml/toml.js'
+import { dialogAddOn } from '@tuzig/codemirror/addon/dialog/dialog.js'
+import * as TOML from '@tuzig/toml'
 
 export class Shell {
 
@@ -19,6 +24,10 @@ export class Shell {
     currentLine = ''
     watchdog: number
     timer: number | null = null
+    history: string[] = []
+    historyIndex = 0
+    confEditor: CodeMirror.EditorFromTextArea
+    exitConf: () => void
 
     constructor(map: T7Map) {
         this.map = map
@@ -39,7 +48,7 @@ export class Shell {
         const key = ev.key
         switch (key) {
             case "Enter":
-                this.t.write("\n\x1B[K")
+                this.t.write("\n")
                 await this.handleLine(this.currentLine)
                 this.currentLine = ''
                 break
@@ -51,6 +60,20 @@ export class Shell {
                 break
             case "Tab":
                 this.handleTab()
+                break
+            case "ArrowUp":
+                if (this.history.length > 0) {
+                    this.historyIndex = Math.min(this.historyIndex + 1, this.history.length)
+                    this.currentLine = this.history[this.historyIndex - 1]
+                    this.printPrompt()
+                }
+                break
+            case "ArrowDown":
+                if (this.history.length > 0) {
+                    this.historyIndex = Math.max(this.historyIndex - 1, 0)
+                    this.currentLine = this.history[this.historyIndex - 1] || ''
+                    this.printPrompt()
+                }
                 break
             default:
                 if (key.length == 1) { // make sure the key is a char
@@ -64,7 +87,7 @@ export class Shell {
         const [cmd, ...args] = this.currentLine.trim().split(/\s+/)
         if (!cmd || args.length > 0)
             return
-        const matches = []
+        const matches: string[] = []
         for (const c of this.commands) {
             if (c[0].startsWith(cmd))
                 matches.push(c[0])
@@ -73,7 +96,7 @@ export class Shell {
             this.currentLine = matches[0] + ' '
             this.printPrompt()
         } else if (matches.length > 1) {
-            this.t.write("\x1B[s\n")
+            this.t.write("\x1B[s\n\x1B[K")
             this.t.write(matches.join(' '))
             this.t.write("\x1B[u")
         }
@@ -82,13 +105,15 @@ export class Shell {
     async handleLine(input: string) {
         const [cmd, ...args] = input.trim().split(/\s+/)
         await this.execute(cmd, args)
-        this.currentLine = ''
-        this.printPrompt()
+        if (input)
+            this.history.unshift(input)
+        this.clearPrompt()
     }
 
     async execute(cmd: string, args: string[]) {
         if (!cmd)
             return
+        this.t.write("\x1B[K") // clear line
         let exec = null
         for (const c of this.commands) {
             if (c[0].startsWith(cmd))
@@ -118,7 +143,7 @@ export class Shell {
         await this.handleLine(this.currentLine)
     }
 
-    async runForm(fields: Fields, type: "menu" | "choice" | "text", title="") {
+    async runForm(fields: Fields, type: "menu" | "choice" | "text" | "wait", title?: string) {
         await this.escapeActiveForm()
         this.stopWatchdog()
         this.map.showLog(true)
@@ -137,6 +162,9 @@ export class Shell {
                 break
             case "text":
                 run = this.activeForm.start.bind(this.activeForm)
+                break
+            case "wait":
+                run = this.activeForm.waitForKey.bind(this.activeForm)
                 break
             default:
                 throw new Error("Unknown form type: " + type)
@@ -178,6 +206,7 @@ export class Shell {
         if (key == 'Escape') {
             await this.escapeActiveForm()
             await this.escapeWatchdog()
+            this.clearPrompt()
         } else if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
             Clipboard.read().then(res => {
                 if (res.type == 'text/plain') {
@@ -208,6 +237,17 @@ export class Shell {
     printPrompt() {
         if (this.activeForm || !this.active) return
         this.t.write(`\r\x1B[K${this.prompt}${this.currentLine}`)
+    }
+
+    clearPrompt() {
+        this.historyIndex = 0
+        this.currentLine = ''
+        this.printPrompt()
+    }
+
+    async waitForKey() {
+        await this.runForm([], "wait")
+        this.t.writeln("\n")
     }
 
     updateCapsLock(ev: KeyboardEvent) {
@@ -260,6 +300,59 @@ export class Shell {
         clearInterval(this.timer)
         this.timer = null
         this.t.write(`\r\x1B[K\x1B[?25h`)
+    }
+
+    async openConfig() {
+        const modal   = document.getElementById("settings"),
+            button  = document.getElementById("dotfile-button"),
+            area    =  document.getElementById("edit-conf"),
+            conf    =  await terminal7.getDotfile()
+
+        area.value = conf
+
+        button.classList.add("on")
+        modal.classList.remove("hidden")
+        this.t.element.classList.add("hidden")
+        if (this.confEditor == null) {
+            vimMode(CodeMirror)
+            tomlMode(CodeMirror)
+            dialogAddOn(CodeMirror)
+            CodeMirror.commands.save = () => this.closeConfig(true)
+            CodeMirror.Vim.defineEx("quit", "q", () => this.closeConfig(false))
+
+            this.confEditor  = CodeMirror.fromTextArea(area, {
+                value: conf,
+                lineNumbers: true,
+                mode: "toml",
+                keyMap: "vim",
+                matchBrackets: true,
+                showCursorWhenSelecting: true,
+                scrollbarStyle: "null",
+            })
+        }
+        this.confEditor.focus()
+        return new Promise<void>(resolve => {
+            this.exitConf = resolve
+        })
+    }
+
+    closeConfig(save = false) {
+        const area = document.getElementById("edit-conf")
+        document.getElementById("dotfile-button").classList.remove("on")
+        if (save) {
+            this.confEditor.save()
+            terminal7.loadConf(TOML.parse(area.value))
+            terminal7.saveDotfile()
+            this.t.writeln("Changes saved.")
+        } else {
+            this.t.writeln("Changes discarded.")
+        }
+        document.getElementById("settings").classList.add("hidden")
+        this.t.element.classList.remove("hidden")
+        this.t.focus()
+        this.confEditor.toTextArea()
+        this.confEditor = null
+        this.exitConf()
     }
 
     getGate(name: string) {

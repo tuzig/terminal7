@@ -252,30 +252,10 @@ export class Terminal7 {
         })
 
         // settings button and modal
-        var modal   = document.getElementById("settings-modal")
-        modal.addEventListener('click',
-            async () => {
-                document.getElementById("dotfile-button").classList.remove("on")
-                await this.clear()
-            }
-        )
         document.getElementById("dotfile-button")
-                .addEventListener("click", ev => this.toggleSettings(ev))
-        modal.querySelector(".close").addEventListener('click',
-            async () => {
-                document.getElementById("dotfile-button").classList.remove("on")
-                await this.clear()
-            }
-        )
-        modal.querySelector(".save").addEventListener('click',
-            () => this.wqConf())
-        modal.querySelector(".copy").addEventListener('click',
-            async () => {
-                var area = document.getElementById("edit-conf")
-                this.confEditor.save()
-                Clipboard.write({string: area.value})
-                await this.clear()
-            })
+                .addEventListener("click", () => this.map.shell.confEditor ?
+                    this.map.shell.closeConfig(false)
+                    : this.map.shell.runCommand("config", []))
         this.map.open().then(() => {
            this.goHome()
            setTimeout(async () => {
@@ -351,61 +331,6 @@ export class Terminal7 {
                 this.pb.connect().then(resolve)
             })
         })
-    }
-    async toggleSettings() {
-        var modal   = document.getElementById("settings-modal"),
-            button  = document.getElementById("dotfile-button"),
-            area    =  document.getElementById("edit-conf"),
-            conf    =  (await Preferences.get({key: "dotfile"})).value || DEFAULT_DOTFILE
-
-        area.value = conf
-
-        button.classList.toggle("on")
-        modal.classList.toggle("hidden")
-        if (button.classList.contains("on")) {
-           if (this.confEditor == null) {
-                vimMode(CodeMirror)
-                tomlMode(CodeMirror)
-                dialogAddOn(CodeMirror)
-                CodeMirror.commands.save = () => this.wqConf()
-
-                this.confEditor  = CodeMirror.fromTextArea(area, {
-                   value: conf,
-                   lineNumbers: true,
-                   mode: "toml",
-                   keyMap: "vim",
-                   matchBrackets: true,
-                   showCursorWhenSelecting: true
-                })
-            }
-            this.confEditor.focus()
-        }
-
-    }
-    /*
-     * wqConf saves the configuration and closes the conf editor
-     */
-    wqConf() {
-        var area    =  document.getElementById("edit-conf")
-        document.getElementById("dotfile-button").classList.remove("on")
-        this.confEditor.save()
-        this.loadConf(TOML.parse(area.value))
-        Preferences.set({key: "dotfile", value: area.value})
-        this.cells.forEach(c => {
-            if (typeof(c.setTheme) == "function")
-                c.setTheme(this.conf.theme)
-        })
-        document.getElementById("settings-modal").classList.add("hidden")
-        this.confEditor.toTextArea()
-        this.confEditor = null
-        if (this.pb &&
-            ((this.pb.host != this.conf.net.peerbook) 
-             || (this.pb.peerName != this.conf.peerbook.peer_name)
-             || (this.pb.insecure != this.conf.peerbook.insecure)
-             || (this.pb.email != this.conf.peerbook.email))) {
-            this.pbClose()
-            this.pbConnect()
-        }
     }
     catchFingers() {
         this.e.addEventListener("pointerdown", ev => this.onPointerDown(ev))
@@ -1067,5 +992,23 @@ export class Terminal7 {
         this.keys = {publicKey: publicKey, privateKey: privateKey}
         this.lastIdVerify = now
         return this.keys
+    }
+    async getDotfile() {
+        return (await Preferences.get({key: "dotfile"})).value || DEFAULT_DOTFILE
+    }
+    saveDotfile() {
+        this.cells.forEach(c => {
+            if (typeof(c.setTheme) == "function")
+                c.setTheme(this.conf.theme)
+        })
+        if (this.pb &&
+            ((this.pb.host != this.conf.net.peerbook) 
+             || (this.pb.peerName != this.conf.peerbook.peer_name)
+             || (this.pb.insecure != this.conf.peerbook.insecure)
+             || (this.pb.email != this.conf.peerbook.email))) {
+            this.pbClose()
+            this.pbConnect()
+        }
+        return Preferences.set({key: "dotfile", value: TOML.stringify(this.conf)})
     }
 }
