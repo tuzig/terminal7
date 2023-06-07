@@ -105,7 +105,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             name: "reset",
             help: "Reset various settings",
             usage: "r[eset]",
-            execute: async () => resetCMD(shell)
+            execute: async args => resetCMD(shell, args)
         },
         subscribe: {
             name: "subscribe",
@@ -325,7 +325,67 @@ async function addCMD(shell: Shell) {
     return connectCMD(shell, [gate.name])
 }
 
-async function resetCMD(shell: Shell) {
+async function resetCMD(shell: Shell, args: string[]) {
+    let gate: Gate
+    if (args[0]) {
+        gate = shell.getGate(args[0])
+        if (!gate) {
+            return shell.t.writeln(`Host not found: ${args[0]}`)
+        }
+    } else {
+        gate = terminal7.activeG
+    }
+    if (gate) {
+        const fields = [
+            { prompt: "Close gate" },
+            { prompt: "Reset connection & Layout" },
+            { prompt: "\x1B[31mFactory reset\x1B[0m" },
+        ]
+        if (!gate.onlySSH)
+            // Add the connection reset option for webrtc
+            fields.splice(0, 0, { prompt: "Reset connection" })
+        shell.t.writeln(`\x1B[4m${gate.name}\x1B[0m`)
+        let choice
+        try {
+            choice = await shell.runForm(fields, "menu")
+        } catch (e) {
+            return
+        }
+
+        switch (choice) {
+            case "Reset connection":
+                // TODO: simplify
+                if (gate.session) {
+                    gate.session.close()
+                    gate.session = null
+                }
+                // reset peerbook connection
+                terminal7.pb = null
+                try {
+                    await shell.runCommand("connect", [gate.name])
+                } catch(e) {
+                    shell.t.writeln("Failed to connect. Please try again and if it keeps failing, close and connect fresh.")
+                    shell.t.writeln("  Please take the time to write your flow\n  in ##🪳bugs🪳at https://discord.com/invite/rDBj8k4tUE")
+                }
+                return
+
+            case "Reset connection & Layout":
+                if (gate.session) {
+                    gate.session.close()
+                    gate.session = null
+                }
+                await shell.runCommand("connect", [gate.name])
+                gate.clear()
+                gate.map.showLog(false)
+                gate.activeW = gate.addWindow("", true)
+                gate.focus()
+                return
+
+            case "Close gate":
+                gate.close()
+                return
+        }
+    }
     const reset = [
         { prompt: "Fingerprint" },
         { prompt: "Gates" },
@@ -346,11 +406,7 @@ async function resetCMD(shell: Shell) {
             terminal7.pbClose()
             break
         case "Gates":
-            const name = await shell.askValue("Gate", terminal7.activeG?.name)
-            const gate = shell.getGate(name)
-            if (!gate)
-                return shell.t.writeln(`Host not found: ${name}`)
-            await shell.resetGate(gate)
+            terminal7.resetGates()
             break
         case "Private/public key":
             terminal7.keys = undefined
@@ -359,8 +415,7 @@ async function resetCMD(shell: Shell) {
         case "\x1B[31mEverything\x1B[0m":
             const ans = (await shell.runForm(factoryResetVerify, "text"))[0]
             if (ans == "y") {
-                gate.t7.factoryReset()
-                gate.close()
+                terminal7.factoryReset()
             }
             else
                 this.map.showLog(false)

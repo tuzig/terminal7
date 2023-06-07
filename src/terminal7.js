@@ -931,15 +931,21 @@ export class Terminal7 {
         const lookup = this.gates.filter(g => g.name == name)
         return (lookup.length > 0)? "Name already exists" : ""
     }
+    resetGates() {
+        if (this.activeG)
+            this.activeG.close()
+        this.gates.forEach(g => {
+            g.e.remove()
+            this.map.remove(g)
+            // remove g from the gates array
+        })
+        this.gates = []
+        this.storeGates()
+    }
     async factoryReset() {
         // setting up reset cert events
         return new Promise(resolve => {
-            this.gates.forEach(g => {
-                g.e.remove()
-                this.map.remove(g)
-                // remove g from the gates array
-            })
-            this.gates = []
+            this.resetGates()
             Preferences.clear().then(() => 
                 Preferences.set({key: 'dotfile', value: DEFAULT_DOTFILE}))
             const d = TOML.parse(DEFAULT_DOTFILE)
