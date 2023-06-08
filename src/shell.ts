@@ -542,7 +542,6 @@ export class Shell {
     getGate(prefix: string) {
         const maybes = terminal7.gates.filter(g => g.name.startsWith(prefix))
         if (maybes.length == 0) {
-            this.t.write(`No gate found with prefix ${prefix}`)
             return null
         }
         if (maybes.length > 1) {

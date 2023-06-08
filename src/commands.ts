@@ -103,21 +103,15 @@ export function loadCommands(shell: Shell): Map<string, Command> {
         },
         reset: {
             name: "reset",
-            help: "Reset a connected gate",
-            usage: "r[eset] [gatename]",
+            help: "Reset various settings",
+            usage: "r[eset]",
             execute: async args => resetCMD(shell, args)
         },
         subscribe: {
             name: "subscribe",
             help: "Subscripte to peerbook",
             usage: "sub[scribe]",
-            execute: async args => subscribeCMD(shell, args)
-        },
-        unsubscribe: {
-            name: "unsubscribe",
-            help: "Subscripte from peerbook",
-            usage: "unsub[scribe]",
-            execute: async () => unsubscribeCMD(shell)
+            execute: async () => subscribeCMD(shell)
         },
         config: {
             name: "config",
@@ -335,81 +329,96 @@ async function resetCMD(shell: Shell, args: string[]) {
     let gate: Gate
     if (args[0]) {
         gate = shell.getGate(args[0])
-        if (!gate)
+        if (!gate) {
             return shell.t.writeln(`Host not found: ${args[0]}`)
+        }
     } else {
         gate = terminal7.activeG
-        if (!gate)
-            return shell.t.writeln("No active connection")
     }
-    const fields = [
-        { prompt: "Close gate" },
-        { prompt: "Reset connection & Layout" },
-        { prompt: "\x1B[31mFactory reset\x1B[0m" },
+    if (gate) {
+        const fields = [
+            { prompt: "Close gate" },
+            { prompt: "Reset connection & Layout" },
+            { prompt: "\x1B[31mFactory reset\x1B[0m" },
+        ]
+        if (!gate.onlySSH)
+            // Add the connection reset option for webrtc
+            fields.splice(0, 0, { prompt: "Reset connection" })
+        shell.t.writeln(`\x1B[4m${gate.name}\x1B[0m`)
+        let choice
+        try {
+            choice = await shell.runForm(fields, "menu")
+        } catch (e) {
+            return
+        }
+
+        switch (choice) {
+            case "Reset connection":
+                // TODO: simplify
+                if (gate.session) {
+                    gate.session.close()
+                    gate.session = null
+                }
+                // reset peerbook connection
+                terminal7.pb = null
+                try {
+                    await shell.runCommand("connect", [gate.name])
+                } catch(e) {
+                    shell.t.writeln("Failed to connect. Please try again and if it keeps failing, close and connect fresh.")
+                    shell.t.writeln("  Please take the time to write your flow\n  in ##🪳bugs🪳at https://discord.com/invite/rDBj8k4tUE")
+                }
+                return
+
+            case "Reset connection & Layout":
+                if (gate.session) {
+                    gate.session.close()
+                    gate.session = null
+                }
+                await shell.runCommand("connect", [gate.name])
+                gate.clear()
+                gate.map.showLog(false)
+                gate.activeW = gate.addWindow("", true)
+                gate.focus()
+                return
+
+            case "Close gate":
+                gate.close()
+                return
+        }
+    }
+    const reset = [
+        { prompt: "Fingerprint" },
+        { prompt: "Gates" },
+        { prompt: "Private/public key" },
+        { prompt: "\x1B[31mEverything\x1B[0m" },
     ]
     const factoryResetVerify = [{
         prompt: `Factory reset will remove the key, certificate,\n     all gates and configuration`,
         values: ["y", "n"],
         default: "n"
     }]
-    if (!gate.onlySSH)
-        // Add the connection reset option for webrtc
-        fields.splice(0, 0, { prompt: "Reset connection" })
-    shell.t.writeln(`\x1B[4m${gate.name}\x1B[0m`)
-    let choice
-    try {
-        choice = await shell.runForm(fields, "menu")
-    } catch (e) {
-        return
-    }
-    let ans
-
-    switch (choice) {
-        case "Reset connection":
-            // TODO: simplify
-            if (gate.session) {
-                gate.session.close()
-                gate.session = null
-            }
-            // reset peerbook connection
-            terminal7.pb = null
-            try {
-                await shell.runCommand("connect", [gate.name])
-            } catch(e) {
-                shell.t.writeln("Failed to connect. Please try again and if it keeps failing, close and connect fresh.")
-                shell.t.writeln("  Please take the time to write your flow\n  in ##🪳bugs🪳at https://discord.com/invite/rDBj8k4tUE")
-                return
-            }
-
+    const res = await shell.runForm(reset, "menu", "What do you want to reset?")
+    switch(res) {
+        case "Fingerprint":
+            await Preferences.remove({key: "PBUID"})
+            await CapacitorPurchases.logOut()
+            shell.t.writeln("Unsubscribed")
+            terminal7.pbClose()
             break
-
-        case "Reset connection & Layout":
-            if (gate.session) {
-                gate.session.close()
-                gate.session = null
-            }
-            await shell.runCommand("connect", [gate.name])
-            gate.clear()
-            gate.map.showLog(false)
-            gate.activeW = gate.addWindow("", true)
-            gate.focus()
+        case "Gates":
+            terminal7.resetGates()
             break
-
-        case "\x1B[31mFactory reset\x1B[0m":
-            try {
-                ans = (await shell.runForm(factoryResetVerify, "text"))[0]
-            } catch (e) {
-                return
-            }
+        case "Private/public key":
+            terminal7.keys = undefined
+            shell.t.writeln("Keys removed")
+            break
+        case "\x1B[31mEverything\x1B[0m":
+            const ans = (await shell.runForm(factoryResetVerify, "text"))[0]
             if (ans == "y") {
-                gate.t7.factoryReset()
-                gate.close()
+                terminal7.factoryReset()
             }
             else
-                shell.map.showLog(false)
-            break
-        case "Close gate":
-            gate.close()
+                this.map.showLog(false)
             break
     }
 }
@@ -531,7 +540,7 @@ async function copyKeyCMD(shell: Shell) {
     } else
         return shell.t.writeln("No key yet. Please connect to generate one.\n(try connect or add)")
 }
-async function subscribeCMD(shell: shell) {
+async function subscribeCMD(shell: Shell) {
     const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
     if (!customerInfo.entitlements.active.peerbook) {
         const packageTypeName = {
@@ -552,10 +561,10 @@ async function subscribeCMD(shell: shell) {
         } catch (err) {
             shell.t.writeln("Error getting offerings")
             terminal7.log("Error getting offerings: " + err)
-            return false
+            return
         }
         if (offer == null) {  
-            return false
+            return
                 // Display current offering with offerings.current
         }  
         const pack = offer.availablePackages[0]
@@ -701,12 +710,6 @@ export async function installCMD(shell: Shell, args: string[]) {
         }
     }
     session.connect(0, publicKey, privateKey)
-}
-async function unsubscribeCMD(shell: Shell) {
-    await Preferences.remove({key: "PBUID"})
-    await CapacitorPurchases.logOut()
-    shell.t.writeln("Unsubscribed")
-    terminal7.pbClose()
 }
 async function configCMD(shell: Shell) {
     shell.t.writeln("Opening vi-style editor.")
