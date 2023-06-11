@@ -400,7 +400,6 @@ async function resetCMD(shell: Shell, args: string[]) {
     const res = await shell.runForm(reset, "menu", "What do you want to reset?")
     switch(res) {
         case "Fingerprint":
-            await Preferences.remove({key: "PBUID"})
             await CapacitorPurchases.logOut()
             shell.t.writeln("Unsubscribed")
             terminal7.pbClose()

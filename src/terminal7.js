@@ -303,9 +303,11 @@ export class Terminal7 {
             this.pb = null
         }
     }
-    pbConnect() {
+    async pbConnect() {
         return new Promise((resolve, reject) => {
-            if (this.pb  && this.pb.isOpen()) {
+            // do nothing when no subscription or already connected
+            if (!this.map.shell.pbuid ||
+                (this.pb  && this.pb.isOpen())) {
                 resolve()
                 return
             }
@@ -517,13 +519,9 @@ export class Terminal7 {
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
             off.add("hidden")
-            const pbuid = await Preferences.get({ key: "PBUID" })
-            const gate = this.activeG
-            if (!pbuid.value) {
-                // TODO: check if gate and if so notify the user he can subscribe to not lose sessions
-                return
-            }
+            await this.map.shell.reset()
             this.pbConnect().then(() => {
+                const gate = this.activeG
                 if (gate) {
                     this.notify("🌞 Recovering")
                     this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
