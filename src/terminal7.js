@@ -222,8 +222,8 @@ export class Terminal7 {
             // fire two events
             App.addListener('appStateChange', state => {
                 const active =  state.isActive
-                if (this.lastActiveState == active)
-                    return
+                /* if (this.lastActiveState == active)
+                    return */
                 this.lastActiveState = active
                 console.log("app state changed", this.ignoreAppEvents)
                 if (!active) {
