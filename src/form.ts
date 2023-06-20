@@ -200,7 +200,7 @@ export class Form {
             valid = false
         }
         else if (this.field && current.values && current.values.indexOf(this.field) == -1) {
-            t.writeln(`${current.prompt} must be one of: ${current.values.join(', ')}`)
+            t.writeln(`Value must be one of: ${current.values.join(', ')}`)
             valid = false
         }
         else if (this.field && current.validator) {
