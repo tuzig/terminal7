@@ -124,6 +124,7 @@ export class PeerbookConnection {
                 gate.nameE = terminal7.map.add(gate)
                 gate.open(terminal7.e)
                 ret.push(gate)
+                terminal7.map.shell.verifyPeer(gate)
             }
             for (const k in p) {
                 gate[k] = p[k]

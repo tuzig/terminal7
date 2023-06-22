@@ -686,7 +686,7 @@ export class Shell {
                 this.t.writeln("Invalid OTP, please try again")
         }
     }
-    async verifyFP(fp: string, prompt: string) {
+    async verifyFP(fp: string, prompt?: string) {
         let validated = false
         // TODO:gAdd biometrics verification
         while (!validated) {
@@ -729,6 +729,30 @@ export class Shell {
             }
             if (!validated)
                 this.t.writeln("Invalid OTP, please try again")
+        }
+    }
+    async verifyPeer(g: Gate) {
+        if (g.verified || !g.fp)
+            return
+        this.t.writeln(`Peer ${g.name} is unverified`)
+        const fields = [
+            { prompt: "Verify peer" },
+            { prompt: "Not now" },
+            { prompt: "Don't ask again"}
+        ]
+        let ans
+        try {
+            ans = await this.runForm(fields, "menu")
+        } catch(e) {
+            return
+        }
+        switch (ans) {
+            case "Verify peer":
+                break
+            case "Not now":
+                break
+            case "Don't ask again":
+                break
         }
     }
 }
