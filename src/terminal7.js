@@ -178,8 +178,8 @@ export class Terminal7 {
                 })
         // hide the modal on xmark click
         // Handle network events for the indicator
-        /* Network.addListener('networkStatusChange', s => 
-            this.updateNetworkStatus(s)) */
+        Network.addListener('networkStatusChange', s => 
+            this.updateNetworkStatus(s))
         this.catchFingers()
         // setting up edit host events
         document.getElementById("edit-unverified-pbhost").addEventListener(
@@ -222,8 +222,8 @@ export class Terminal7 {
             // fire two events
             App.addListener('appStateChange', state => {
                 const active =  state.isActive
-                /* if (this.lastActiveState == active)
-                    return */
+                if (this.lastActiveState == active)
+                    return
                 this.lastActiveState = active
                 console.log("app state changed", this.ignoreAppEvents)
                 if (!active) {
@@ -474,6 +474,8 @@ export class Terminal7 {
     }
     updateNetworkStatus (status) {
         let off = document.getElementById("offline").classList
+        if (this.netStatus = status)
+            return
         this.netStatus = status
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
@@ -965,6 +967,7 @@ export class Terminal7 {
             return {public:"UNAVAILABLE", private:"UNAVAILABLE"}
         }
         console.log("Got biometric verified ", verified)
+        this.lastActiveState = false
         // wait for the app events to bring the ignoreAppEvents to false
         while (this.ignoreAppEvents)
             await (() => { return new Promise(r => setTimeout(r, 20)) })()

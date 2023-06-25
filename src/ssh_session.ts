@@ -205,7 +205,7 @@ export class HybridSession extends SSHSession {
             .forEach(async line => {
             let c = {}
             this.t7.log("line webexec accept: ", line)
-            if (line.includes("READY")) {
+            if (line.startsWith("READY")) {
                 try {
                     this.gotREADY = true
                     await this.openWebRTCSession(channelId, marker)
@@ -218,8 +218,7 @@ export class HybridSession extends SSHSession {
             }
             this.candidate += line
             // ignore echo
-            if (this.sentMessages.indexOf(this.candidate) != -1
-                || !this.candidate.startsWith("{")) {
+            if (this.sentMessages.indexOf(this.candidate) != -1) {
                 this.t7.log("igonring message: "+this.candidate)
                 this.candidate = ""
                 return
