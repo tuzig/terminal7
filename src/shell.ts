@@ -1,6 +1,6 @@
 import * as TOML from '@tuzig/toml'
 import { Device } from '@capacitor/device';
-import { CapacitorPurchases } from '@capgo/capacitor-purchases'
+import { CapacitorPurchases, Offering } from '@capgo/capacitor-purchases'
 import { Channel } from "./session"
 import { Clipboard } from "@capacitor/clipboard"
 import { Preferences } from '@capacitor/preferences'
@@ -40,6 +40,7 @@ export class Shell {
     historyIndex = 0
     confEditor: CodeMirror.EditorFromTextArea
     exitConf: () => void
+    noOfferSub = false
 
     constructor(map: T7Map) {
         this.map = map
@@ -68,6 +69,7 @@ export class Shell {
     // TODO: remove the asnyc
     async onPurchasesUpdate(data) {
         return new Promise<void>(resolve=> {
+            this.stopWatchdog()
             // intialize the http headers with the bearer token
             const active = data.customerInfo.entitlements.active
             if (!active.peerbook) {
@@ -92,7 +94,7 @@ export class Shell {
             if (uid.match(/[a-z]/i))
                 this.completeRegistration(uid).then(resolve)
             else
-                terminal7.pbConnect()
+                terminal7.pbConnect().then(resolve)
         })
     }
     async completeRegistration (bearer: string) {
@@ -582,7 +584,7 @@ export class Shell {
                 setTimeout(() => this.handleLine("add"), 100)
                 return gate.onFailure(Failure.WrongAddress)
             }
-            if (!gate.session.isSSH) {
+            if (gate.session.isSSH) {
                 const cmd = "bash <(curl -sL https://get.webexec.sh)"
                 const webexecForm = [{
                     prompt: `Make sure webexec is running on ${gate.addr}:
@@ -601,7 +603,7 @@ export class Shell {
         }
 
         if (offerSub) {
-            await this.runCommand("subscribe")
+            await this.offerSub()
             return
         } 
         const reconnectForm = [
@@ -753,6 +755,89 @@ export class Shell {
                 break
             case "Don't ask again":
                 break
+        }
+    }
+    async getOffer() : Promise<Offering | null> {
+        let offer: Offering | null
+        try {
+            // Enable to get debug logs in dev mode            
+            const { offerings } = await CapacitorPurchases.getOfferings()
+            offer = offerings.current
+        } catch (err) {
+            this.t.writeln("Error getting offerings")
+            terminal7.log("Error getting offerings: " + err)
+            return null
+        }
+        return offer
+    }
+    subscribe(offer: Offering) {
+        return new Promise<void>(async resolve => {
+            const pack = offer.availablePackages[0]
+            this.startWatchdog(50000).catch(() => {
+                this.t.writeln("Purchase timed out, please try again")
+                resolve()
+            })
+            terminal7.ignoreAppEvents = true
+            try {
+                await CapacitorPurchases.purchasePackage({
+                    identifier: pack.identifier,
+                    offeringIdentifier: pack.offeringIdentifier,
+                })
+                CapacitorPurchases.addListener("purchasesUpdate", () => {
+                    this.stopWatchdog()
+                    resolve()
+                })
+            } catch(e) {
+                this.stopWatchdog()
+                console.log("Error purchasing", e)
+                this.t.writeln("Error purchasing, please try again or contact support")
+                return
+            }
+        })
+    }
+    async offerSub() {
+        if (this.noOfferSub)
+            return
+        const packageTypeName = {
+            'ANNUAL': 'a year',
+            'MONTHLY': 'a month',
+            'TWO_MONTH': 'two months',
+            'THREE_MONTH': 'three months',
+            'SIX_MONTH': 'six months',
+            'LIFETIME': 'a lifetime',
+            'WEEKLY': 'a week',
+        }
+
+        const offer = await this.getOffer()
+        if (offer == null) {  
+            return
+                // Display current offering with offerings.current
+        }
+        const pack = offer.availablePackages[0]
+        const product = pack.product
+        const term = packageTypeName[pack.packageType]
+        this.t.writeln(`We're sorry, SSH connections lose their session on disconnect.
+Sign up to our service to enjoy real time communications,
+behind-the-NAT connections, persistent sessions and more.`)
+        this.t.writeln(offer.serverDescription)
+        const subPrompt = `Start your trial month (then ${product.priceString} ${term})`
+        const subscribeMenu = [
+            { prompt: "No thanks" },
+            { prompt: subPrompt },
+            { prompt: "Don't offer again" },
+        ]
+        let choice: string
+        try {
+            choice = await this.runForm(subscribeMenu, "menu")
+        } catch (err) {
+            return
+        }
+        if (choice == subPrompt) {
+            this.t.writeln("Thank you, directing to payment")
+            await this.subscribe(offer)
+        } else if (choice == "Don't offer again") {
+            this.t.writeln("Thank you, we won't offer again")
+            this.noOfferSub = true
         }
     }
 }
