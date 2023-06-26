@@ -737,6 +737,11 @@ export class Shell {
         if (g.verified || !g.fp)
             return
         this.t.writeln(`Peer ${g.name} is unverified`)
+        const { value } = await Preferences.get({ key: "alwaysVerify" })
+        if (value == "true") {
+            await this.verifyFP(g.fp)
+            return
+        }
         const fields = [
             { prompt: "Verify peer" },
             { prompt: "Not now" },
@@ -749,12 +754,13 @@ export class Shell {
             return
         }
         switch (ans) {
+            case "Don't ask again":
+                Preferences.set({ key: "alwaysVerify", value: "true" })
             case "Verify peer":
+                await this.verifyFP(g.fp)
                 break
             case "Not now":
-                break
-            case "Don't ask again":
-                break
+                throw new Error("Verification rejected")
         }
     }
     async getOffer() : Promise<Offering | null> {

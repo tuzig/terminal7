@@ -192,15 +192,11 @@ async function connectCMD(shell:Shell, args: string[]) {
         }
         if (gate.fp) {
             if (!gate.verified) {
-                shell.t.write(`Host unverified, would you like to verify it?`)
-                const answer = await shell.askValue("Y/n")
-                if (answer == "y" || answer == "Y" || answer == "") {
-                    await shell.verifyFP(gate.fp)
-                } else {
+                shell.verifyPeer(gate).catch(() => {
                     shell.t.writeln("Doing nothing")
                     resolve()
                     return
-                }
+                })
             }
             if (!gate.online) {
                 shell.t.writeln("Host is offline")
