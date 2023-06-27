@@ -22,7 +22,6 @@ import ssh from 'ed25519-keygen/ssh';
 import { randomBytes } from 'ed25519-keygen/utils';
 
 import { Capacitor } from '@capacitor/core'
-import { CapacitorPurchases } from '@capgo/capacitor-purchases'
 import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
@@ -99,6 +98,7 @@ export class Terminal7 {
         this.pendingPanes = {}
         this.pb = null
         this.ignoreAppEvents = false
+        this.purchasesStarted = false
     }
     showKeyHelp () {
         if (Date.now() - this.metaPressStart > 987) {
@@ -306,17 +306,22 @@ export class Terminal7 {
     async pbConnect() {
         return new Promise((resolve, reject) => {
             // do nothing when no subscription or already connected
-            if (!this.map.shell.pbuid ||
-                (this.pb  && this.pb.isOpen())) {
+            if (this.pb  && this.pb.isOpen()) {
                 resolve()
                 return
             }
             this.getFingerprint().then(fp => {
-                this.pb = new PeerbookConnection(fp,
-                    this.conf.net.peerbook,
-                    this.conf.peerbook && this.conf.peerbook.insecure
-                )
+                this.pb = new PeerbookConnection({
+                    fp: fp,
+                    host: this.conf.net.peerbook,
+                    insecure: this.conf.peerbook && this.conf.peerbook.insecure,
+                    shell: this.map.shell
+                })
                 this.pb.onUpdate = (m) => this.onPBMessage(m)
+                if (!this.purchasesStarted) {
+                    this.pb.startPurchases()
+                    this.purchasesStarted = true
+                }
                 this.pb.connect().then(resolve).catch(reject)
             })
         })

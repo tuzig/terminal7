@@ -1,9 +1,6 @@
 import * as TOML from '@tuzig/toml'
-import { Device } from '@capacitor/device';
-import { CapacitorPurchases, Offering } from '@capgo/capacitor-purchases'
 import { Channel } from "./session"
 import { Clipboard } from "@capacitor/clipboard"
-import { Preferences } from '@capacitor/preferences'
 import { Terminal } from 'xterm'
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
@@ -16,8 +13,6 @@ import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
 import { tomlMode} from '@tuzig/codemirror/mode/toml/toml.js'
 import { dialogAddOn } from '@tuzig/codemirror/addon/dialog/dialog.js'
 import * as TOML from '@tuzig/toml'
-
-const PEERBOOK = "\uD83D\uDCD6"
 
 export class Shell {
 
@@ -66,150 +61,6 @@ export class Shell {
         this.pbSession = new HTTPWebRTCSession(url, headers)
         return this.pbSession
     }
-    // TODO: remove the asnyc
-    async onPurchasesUpdate(data) {
-        return new Promise<void>(resolve=> {
-            this.stopWatchdog()
-            // intialize the http headers with the bearer token
-            const active = data.customerInfo.entitlements.active
-            if (!active.peerbook) {
-                if (this.pbSession) {
-                    this.pbSession.close()
-                    this.pbSession = null
-                }
-                if (this.active)
-                    terminal7.notify("PeerBook inactive. `subscribe` for WebRTC 🍯")
-                resolve()
-                return
-            }
-            if (this.pbSession && this.pbSession.cdc) {
-                return
-            }
-            const uid = data.customerInfo.originalAppUserId
-            Preferences.set({ key: "PBUID" , uid })
-            terminal7.notify(`🏪 Subscribed to ${PEERBOOK}`)
-            terminal7.log("Subscribed to PB, uid: ", uid)
-            // if uid is temp then we need to complete registration
-            // we identify temp id by checking if they contain a letter
-            if (uid.match(/[a-z]/i))
-                this.completeRegistration(uid).then(resolve)
-            else
-                terminal7.pbConnect().then(resolve)
-        })
-    }
-    async completeRegistration (bearer: string) {
-        return new Promise<void>(resolve => {
-            // we have an active subscription and connection failure
-            // trying to register registering
-            this.t.writeln(`Completing ${PEERBOOK} registration`)
-            this.t.writeln(`  Bearer: ${bearer}`)
-            //get the temp id from local storage
-            const session = this.newPBSession(bearer)
-            session.onStateChange = async (state, failure?) => {
-                if (state == 'connected') {
-                    const reply = []
-                    let email: string
-                    let peerName: string
-                    this.t.writeln("WebRTC Connected")
-                    try {
-                        peerName = await this.askValue("Peer name", (await Device.getInfo()).name)
-                        email = await this.askValue("Recovery email")
-                    } catch (e) {
-                        console.log("Registration Cancelled", e)
-                        this.t.writeln("Cancelled. Use `subscribe` to activate")
-                        this.printPrompt()
-                        resolve()
-                        return
-                    }
-                    // store peerName
-                    const cmd = ["register", email, peerName]
-                    const regChannel = await session.openChannel(cmd, 0, 80, 24)
-                    regChannel.onClose = async () => {
-                        const repStr =  new TextDecoder().decode(new Uint8Array(reply))
-                        console.log("got pb admin channel close")
-                        let userData
-                        try {
-                            userData = JSON.parse(repStr)
-                        } catch (e) {
-                            this.t.writeln("Registration failed")
-                            this.t.writeln("Please try again and if persists, contact support")
-                            this.printPrompt()
-                            resolve()
-                            return
-                        }
-                        const QR = userData.QR
-                        const uid = userData.ID
-                        this.t.writeln("Please scan this QR code with your OTP app")
-                        this.t.writeln("")
-                        this.t.writeln(QR)
-                        this.t.writeln("")
-                        this.t.writeln("and use it to generate a One Time Password")
-                        // verify ourselves - it's the first time and we were approved thanks 
-                        // to the revenuecat's user id
-                        const fp = await terminal7.getFingerprint()
-                        try {
-                            await this.verifyFP(fp, "OTP")
-                        } catch(e) {
-                            console.log("got an error verifying peer", e)
-                            resolve()
-                            // reject(e)
-                            return
-                        }
-                        this.t.writeln(`Validated! User ID is ${uid}`)
-                        this.t.writeln("Type `install` to install on a server")
-                        this.printPrompt()
-                        await Preferences.set({ key: "PBUID" , value: uid })
-                        terminal7.log("Logging in to PB, uid: ", uid)
-                        await CapacitorPurchases.logIn({ appUserID: uid })
-                        terminal7.pbConnect()
-                        resolve()
-                        return
-                    }
-                    regChannel.onMessage = async (data: Uint8Array) => {
-                        console.log("Got registration data", data)
-                        reply.push(...data)
-                    }
-                }
-                else if (state == 'failed') {
-                    if (failure == Failure.TimedOut) {
-                        this.t.writeln("Connection timed out")
-                        this.t.writeln("Please try again and if persists, contact support")
-                    } else if (failure == Failure.Unauthorized) {
-                        this.t.writeln("Unauthorized")
-                    } else {
-                        this.t.writeln("Connection failed")
-                        this.t.writeln("Please try again and if persists, contact support")
-                    }
-                    this.pbSession = null
-                    this.printPrompt()
-                    resolve()
-                    return
-                }
-            }
-            this.t.writeln(`Connecting to ${PEERBOOK}`)
-            session.connect()
-        })
-    }
-    async startPurchases() {
-        let appUserID = undefined
-        try {
-            const pbuid = await Preferences.get({ key: "PBUID" })
-            if (pbuid.value)
-                appUserID = pbuid.value
-        } catch (e) {
-            terminal7.log("No PBUID", e)
-        }
-        terminal7.log("RC Setup with appUserID", appUserID)
-        await CapacitorPurchases.setup({
-            apiKey:'appl_qKHwbgKuoVXokCTMuLRwvukoqkd',
-            appUserID: appUserID
-        })
-        await CapacitorPurchases.setDebugLogsEnabled({ enabled: true }) 
-        CapacitorPurchases.addListener('purchasesUpdate', data => {
-            this.onPurchasesUpdate(data)
-        })
-    }
-
     async start() {
         if (this.active)
             return
@@ -218,8 +69,6 @@ export class Shell {
         this.currentLine = ''
         this.t.scrollToBottom()
         document.addEventListener('keydown', ev => this.updateCapsLock(ev))
-        if (window.terminal7)
-            this.startPurchases()
     }
     
     async onKey(ev: KeyboardEvent) {
@@ -733,87 +582,7 @@ export class Shell {
                 this.t.writeln("Invalid OTP, please try again")
         }
     }
-    async getOffer() : Promise<Offering | null> {
-        let offer: Offering | null
-        try {
-            // Enable to get debug logs in dev mode            
-            const { offerings } = await CapacitorPurchases.getOfferings()
-            offer = offerings.current
-        } catch (err) {
-            this.t.writeln("Error getting offerings")
-            terminal7.log("Error getting offerings: " + err)
-            return null
-        }
-        return offer
-    }
-    subscribe(offer: Offering) {
-        return new Promise<void>(async resolve => {
-            const pack = offer.availablePackages[0]
-            this.startWatchdog(50000).catch(() => {
-                this.t.writeln("Purchase timed out, please try again")
-                resolve()
-            })
-            terminal7.ignoreAppEvents = true
-            try {
-                await CapacitorPurchases.purchasePackage({
-                    identifier: pack.identifier,
-                    offeringIdentifier: pack.offeringIdentifier,
-                })
-                CapacitorPurchases.addListener("purchasesUpdate", () => {
-                    this.stopWatchdog()
-                    resolve()
-                })
-            } catch(e) {
-                this.stopWatchdog()
-                console.log("Error purchasing", e)
-                this.t.writeln("Error purchasing, please try again or contact support")
-                return
-            }
-        })
-    }
-    async offerSub() {
-        if (this.noOfferSub)
-            return
-        const packageTypeName = {
-            'ANNUAL': 'a year',
-            'MONTHLY': 'a month',
-            'TWO_MONTH': 'two months',
-            'THREE_MONTH': 'three months',
-            'SIX_MONTH': 'six months',
-            'LIFETIME': 'a lifetime',
-            'WEEKLY': 'a week',
-        }
-
-        const offer = await this.getOffer()
-        if (offer == null) {  
-            return
-                // Display current offering with offerings.current
-        }
-        const pack = offer.availablePackages[0]
-        const product = pack.product
-        const term = packageTypeName[pack.packageType]
-        this.t.writeln(`We're sorry, SSH connections lose their session on disconnect.
-Sign up to our service to enjoy real time communications,
-behind-the-NAT connections, persistent sessions and more.`)
-        this.t.writeln(offer.serverDescription)
-        const subPrompt = `Start your trial month (then ${product.priceString} ${term})`
-        const subscribeMenu = [
-            { prompt: "No thanks" },
-            { prompt: subPrompt },
-            { prompt: "Don't offer again" },
-        ]
-        let choice: string
-        try {
-            choice = await this.runForm(subscribeMenu, "menu")
-        } catch (err) {
-            return
-        }
-        if (choice == subPrompt) {
-            this.t.writeln("Thank you, directing to payment")
-            await this.subscribe(offer)
-        } else if (choice == "Don't offer again") {
-            this.t.writeln("Thank you, we won't offer again")
-            this.noOfferSub = true
-        }
+    async reset() {
+        this.pbSession = null
     }
 }

@@ -88,28 +88,18 @@ insecure = true`)
     test('purchase update with no active subscription', async () => {
         await sleep(100)
         await page.evaluate(async () => {
-            await window.terminal7.map.shell.onPurchasesUpdate({
-                customerInfo: {
-                    originalAppUserId: "BadUser",
-                    entitlements: {active: []},
-                },
-            })
+            terminal7.pb.close()
+            terminal7.pb.connect("BadBearer")
         })
-        const twr = await getTWRBuffer()
-        await sleep(100)
-        expect(twr).toMatch(/`subscribe`/)
+        const pbOpen = await page.evaluate(() => window.terminal7.pb.isOpen())
+        expect(pbOpen).toBeFalsy()
     })
     test('purchase update with an active subscription and bad otp', async () => {
-        await sleep(100)
-        await redisClient.set("tempid:ValidBearer", "1")
+        await sleep(500)
+        await redisClient.set("tempid:$ValidBearer", "1")
         await page.evaluate(async () => {
-            window.terminal7.map.shell.onPurchasesUpdate({
-                customerInfo: {
-                    originalAppUserId: "ValidBearer",
-                    entitlements: {active: { peerbook: {expirationDate: "2021-01-01T00:00:00Z"}}},
-                },
-                // purchases: {identifier: "com.terminal7.terminal7.terminal7", purchaseState: 0}
-            })
+            terminal7.pb.close()
+            terminal7.pb.connect("$ValidBearer")
         })
         await sleep(1500)
         let twr = await getTWRBuffer()
@@ -141,7 +131,7 @@ insecure = true`)
         const twr = await getTWRBuffer()
         expect(twr).toMatch(/Validated/)
     })
-    test('validate webexec', async () => {
+    test('validate servers', async () => {
         // change the user id of foo@bar.com to 123456
         let fp: string
         const keys = await redisClient.keys('peer*')
@@ -163,7 +153,7 @@ insecure = true`)
         await redisClient.set("secret:123456", secret)
         const token = authenticator.generate(secret)
         await page.evaluate(async (fp) => {
-            terminal7.map.shell.verifyFP(fp).then(() => 
+            terminal7.pb.verifyFP(fp).then(() => 
                 terminal7.map.shell.t.writeln("VVVerified"))
             .catch(() => terminal7.map.shell.t.writeln("Failed"))
         }, fp)

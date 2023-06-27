@@ -7,20 +7,15 @@ const url = process.env.LOCALDEV?"http://localhost:3000":"http://terminal7"
 test.describe('terminal7 session', ()  => {
 
     const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
-    // pageReload reloads the page and setups for a new debugging session
     let page: Page
     let context: BrowserContext
 
+    // pageReload reloads the page and setups for a new debugging session
     const pageReload = async () => {
         await page.reload({waitUntil: "networkidle"})
         await sleep(500)
         await page.evaluate(async () => {
             window.terminal7.notify = console.log
-            /*
-            window.terminal7.conf.net.peerbook = "peerbook:17777"
-            window.terminal7.conf.peerbook = { insecure: true }
-            */
-            await window.terminal7.pbConnect()
         })
         await sleep(500)
     }
@@ -112,7 +107,6 @@ insecure = true`)
         await page.evaluate(async () => {
             console.log("page reloaded")
             window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
-            await window.terminal7.pbConnect()
         })
     })
 
