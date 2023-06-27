@@ -26,7 +26,6 @@ export type Command = {
     usage: string
     execute(args: string[]): Promise<void>
 }
-
 export function loadCommands(shell: Shell): Map<string, Command> {
     return new Map<string, Command>(Object.entries({
         'add': {
@@ -394,11 +393,11 @@ async function resetCMD(shell: Shell, args: string[]) {
         default: "n"
     }]
     const res = await shell.runForm(reset, "menu", "What do you want to reset?")
+    let ans
     switch(res) {
         case "Fingerprint":
-            await Preferences.remove({key: "PBUID"})
             await CapacitorPurchases.logOut()
-            shell.t.writeln("Unsubscribed")
+            shell.t.writeln("Cleared fingerprint and disconnected from PeerBook")
             terminal7.pbClose()
             break
         case "Gates":
@@ -409,7 +408,7 @@ async function resetCMD(shell: Shell, args: string[]) {
             shell.t.writeln("Keys removed")
             break
         case "\x1B[31mEverything\x1B[0m":
-            const ans = (await shell.runForm(factoryResetVerify, "text"))[0]
+            ans = (await shell.runForm(factoryResetVerify, "text"))[0]
             if (ans == "y") {
                 terminal7.factoryReset()
             }
@@ -542,12 +541,22 @@ async function subscribeCMD(shell: Shell) {
         const offer = await shell.getOffer()
         if (!offer)
             return
-        shell.t.writeln("Directing to payment...")
-        await shell.subscribe(offer)
+        shell.t.writeln("Directing to the store")
+        shell.startWatchdog(50000)
+        terminal7.ignoreAppEvents = true
+        try {
+            await terminal7.pb.purchase(pack.identifier, pack.offeringIdentifier)
+        } catch(e) {
+            console.log("purchase error", e)
+            shell.t.writeln("Error purchasing, please try again or contact support")
+        }
+        shell.stopWatchdog()
     } else {
-        shell.t.writeln("You are already subscribed")
-        // call purchase update manualy
-        terminal7.pbConnect()
+        if (!terminal7.pb.session) {
+            shell.t.writeln("You are already subscribed, please register:")
+            terminal7.pb.register(customerInfo.originalAppUserId)
+        } else
+            shell.t.writeln("You are already subscribed and registered")
     }
 }
 export async function installCMD(shell: Shell, args: string[]) {
@@ -588,6 +597,7 @@ export async function installCMD(shell: Shell, args: string[]) {
     }
 
     const session = new SSHSession(gate.addr, gate.username)
+
     session.onStateChange = async (state, failure?: Failure) => {
         const host = terminal7.conf.net.peerbook
         let channel: SSHChannel

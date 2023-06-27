@@ -27,6 +27,7 @@ export class SSHSession implements Session {
     constructor(address: string, username: string, password: string, port?=22) {
         console.log("New mocked SSH seesion", address, username, password, port)
     }
+    // eslint-disable-next-line
     openChannel(cmd: string | string[], parent?: ChannelID, sx?: number, sy?: number):
         Promise<MockChannel> {
         return new Promise(resolve => {

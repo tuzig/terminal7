@@ -113,6 +113,7 @@ pinch_max_y_velocity = 0.1`
         await expect(page.locator('.pane')).toHaveCount(2)
     })
     test('a pane can be close', async() => {
+        sleep(500)
         const exitState = await page.evaluate(() => {
             try {
                 window.terminal7.activeG.activeW.activeP.d.send("exit\n")
