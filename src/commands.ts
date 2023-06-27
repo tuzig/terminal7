@@ -542,16 +542,13 @@ async function copyKeyCMD(shell: Shell) {
 async function subscribeCMD(shell: Shell) {
     const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
     if (!customerInfo.entitlements.active.peerbook) {
-        const offer = await shell.getOffer()
-        if (!offer)
-            return
         shell.t.writeln("Directing to the store")
         shell.startWatchdog(50000)
         terminal7.ignoreAppEvents = true
         try {
-            await terminal7.pb.purchase(pack.identifier, pack.offeringIdentifier)
+            await terminal7.pb.purchaseCurrent()
         } catch(e) {
-            console.log("purchase error", e)
+            console.log("purchase error", e.toString())
             shell.t.writeln("Error purchasing, please try again or contact support")
         }
         shell.stopWatchdog()

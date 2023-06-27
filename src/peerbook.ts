@@ -396,6 +396,12 @@ export class PeerbookConnection {
                 this.echo("Invalid OTP, please try again")
         }
     }
+    async purchaseCurrent(): Promise<void> {
+        const { offerings } = await CapacitorPurchases.getOfferings()
+        const offer = offerings.current
+        const pack = offer.availablePackages[0]
+        await this.purchase(pack.identifier, pack.offeringIdentifier)
+    }
     purchase(id, offeringId): Promise<void> {
         return new Promise((resolve, reject) => {
             // ensure there's only one listener
