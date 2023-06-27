@@ -519,8 +519,7 @@ export class Terminal7 {
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
             off.add("hidden")
-            await this.map.shell.reset()
-            this.pbConnect().then(() => {
+            this.pbConnect().finally(() => {
                 const gate = this.activeG
                 if (gate) {
                     this.notify("🌞 Recovering")
