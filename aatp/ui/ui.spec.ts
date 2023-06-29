@@ -89,6 +89,7 @@ test.describe('terminal7 UI', ()  => {
             window.notifications = []
             window.terminal7.notify = (m) => window.notifications.push(m)
         })
+        await sleep(500)
         connectGate()
         await page.locator('.tabbar .reset').click()
         await expect(page.locator('#t0')).toBeVisible()
@@ -103,6 +104,7 @@ test.describe('terminal7 UI', ()  => {
             window.notifications = []
             window.terminal7.notify = (m) => window.notifications.push(m)
         })
+        await sleep(500)
         connectGate()
         await sleep(500)
         await page.screenshot({ path: `/result/2.png` })

@@ -108,7 +108,9 @@ pinch_max_y_velocity = 0.1`
         await page.evaluate(async () => {
             window.terminal7.notify = console.log
         })
+        await sleep(500)
         connectGate()
+        await sleep(500)
         await page.screenshot({ path: `/result/2.png` })
         await expect(page.locator('.pane')).toHaveCount(2)
     })
