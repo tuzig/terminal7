@@ -13,6 +13,7 @@ import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
 import { tomlMode} from '@tuzig/codemirror/mode/toml/toml.js'
 import { dialogAddOn } from '@tuzig/codemirror/addon/dialog/dialog.js'
 import * as TOML from '@tuzig/toml'
+import { Preferences } from '@capacitor/preferences'
 
 export class Shell {
 
@@ -538,7 +539,8 @@ export class Shell {
         }
     }
     async verifyFP(fp: string, prompt?: string) {
-        let validated = false
+        return terminal7.pb.verifyFP(fp, prompt)
+        /* let validated = false
         // TODO:gAdd biometrics verification
         while (!validated) {
             console.log("Verifying FP", fp)
@@ -580,7 +582,7 @@ export class Shell {
             }
             if (!validated)
                 this.t.writeln("Invalid OTP, please try again")
-        }
+        } */
     }
     async verifyPeer(g: Gate) {
         if (g.verified || !g.fp)
@@ -594,7 +596,7 @@ export class Shell {
         const fields = [
             { prompt: "Verify peer" },
             { prompt: "Not now" },
-            { prompt: "Don't ask again"}
+            { prompt: "Always verify"}
         ]
         let ans
         try {
@@ -602,15 +604,11 @@ export class Shell {
         } catch(e) {
             return
         }
-        switch (ans) {
-            case "Don't ask again":
-                Preferences.set({ key: "alwaysVerify", value: "true" })
-            case "Verify peer":
-                await this.verifyFP(g.fp)
-                break
-            case "Not now":
-                throw new Error("Verification rejected")
-        }
+        if (ans == "Not now")
+            throw new Error("Verification rejected")
+        if (ans == "Always verify")
+            Preferences.set({ key: "alwaysVerify", value: "true" })
+        await this.verifyFP(g.fp)
     }
     async getOffer() : Promise<Offering | null> {
         let offer: Offering | null
