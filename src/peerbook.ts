@@ -74,7 +74,7 @@ export class PeerbookConnection {
         } catch (e) {
             console.log("Registration Cancelled", e)
             this.shell.t.writeln("Cancelled. Use `subscribe` to try again")
-            await this.escapeActiveForm()
+            await this.shell.escapeActiveForm()
             return
         }
         try {
