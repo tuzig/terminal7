@@ -47,7 +47,6 @@ export class PeerbookConnection {
 
         return new Promise(resolve => {
             const reply = []
-            console.log("adminCmd w/ session", this.session)
             this.session.openChannel(c, 0, 80, 24).then(channel  => {
                 channel.onClose = () => {
                     const ret =  new TextDecoder().decode(new Uint8Array(reply))
@@ -331,7 +330,6 @@ export class PeerbookConnection {
         return (this.session != null) && (this.ws ? this.ws.readyState === WebSocket.OPEN : false)
     }
     syncPeers(gates: Array<Gate>, nPeers: Array<Peer>) {
-        console.log("syncPeers", gates, nPeers)
         const ret = []
         const index = {}
         gates.forEach(p => {
