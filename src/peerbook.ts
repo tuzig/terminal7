@@ -28,7 +28,7 @@ export class PeerbookConnection {
     session: HTTPWebRTCSession | null = null
     token: string
     shell: Shell
-    updateingStore = false
+    updatingStore = false
 
     constructor(props:Map<string, Any>) {
         // copy all props to this
@@ -165,8 +165,8 @@ export class PeerbookConnection {
     async onPurchasesUpdate(data) {
         console.log("onPurchasesUpdate", data)
             // intialize the http headers with the bearer token
-        if (this.updateingStore) {
-            terminal7.log("got anotyher evenm while updateingStore")
+        if (this.updatingStore) {
+            terminal7.log("got anotyher evenm while updatingStore")
             return
         }
         const active = data.customerInfo.entitlements.active
@@ -180,27 +180,18 @@ export class PeerbookConnection {
                 terminal7.log("Failed to log out", e)
             }
             */
-            this.updateingStore = false
+            this.updatingStore = false
             return
         }
         const uid = data.customerInfo.originalAppUserId
         terminal7.log("Subscribed to PB, uid: ", uid)
-        // if uid is temp then we need to complete registration
-        // we identify temp id by checking if they contain a letter
-        if (uid[0]=="$")
-            try {
-                await this.connect(uid)
-                // await this.register(uid)
-            } catch (e) {
-                terminal7.log("Failed to register", e.toString())
-                this.updateingStore = false
-                return
-            }
-        else {
-            terminal7.notify(`${PB} Regsitered uid: uid`)
-            this.wsConnect()
+        try {
+            await this.connect(uid)
+        } catch (e) {
+            terminal7.log("Failed to connect", e.toString())
+        } finally {
+            this.updatingStore = false
         }
-        this.updateingStore = false
     }
     async echo(data: string) {
         this.shell.t.writeln(data)
