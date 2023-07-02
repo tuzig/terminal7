@@ -86,7 +86,7 @@ insecure = true`)
     })
 
     test('purchase update with no active subscription', async () => {
-        await sleep(100)
+        await sleep(500)
         await page.evaluate(async () => {
             terminal7.pb.close()
             terminal7.pb.connect("BadBearer")
@@ -97,6 +97,7 @@ insecure = true`)
     test('purchase update with an active subscription and bad otp', async () => {
         await sleep(500)
         await redisClient.set("tempid:$ValidBearer", "1")
+        await sleep(1500)
         await page.evaluate(async () => {
             terminal7.pb.close()
             terminal7.pb.connect("$ValidBearer")
@@ -168,6 +169,7 @@ insecure = true`)
         expect(twr).toMatch(/VVVerified/)
     })
     test('peers are properly displayed', async () => {
+        await sleep(500)
         await page.evaluate(async () => {
             terminal7.pbClose()
             await terminal7.pbConnect()
