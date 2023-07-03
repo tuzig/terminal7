@@ -217,6 +217,7 @@ export class WebRTCSession extends BaseSession {
     }
     async reconnect(marker?: number, publicKey?: string, privateKey?: string): Promise<void> {
         return new Promise((resolve, reject) => { 
+            let timedout = false
             console.log("in reconnect", this.cdc, this.cdc.readyState)
             if (!this.pc)
                 return this.connect(marker, publicKey, privateKey)
@@ -224,7 +225,6 @@ export class WebRTCSession extends BaseSession {
             if (!this.cdc || this.cdc.readyState != "open")
                 this.openCDC()
             if (marker != null) {
-                let timedout = false
                 const watchdog = setTimeout(() => {
                     timedout = true
                     reject()
