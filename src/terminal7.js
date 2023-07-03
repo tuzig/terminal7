@@ -319,10 +319,12 @@ export class Terminal7 {
                 })
                 this.pb.onUpdate = (m) => this.onPBMessage(m)
                 if (!this.purchasesStarted) {
-                    this.pb.startPurchases()
-                    this.purchasesStarted = true
-                }
-                this.pb.connect().then(resolve).catch(reject)
+                    this.pb.startPurchases().then(() => 
+                        this.pb.connect().then(resolve).catch(reject)
+                        // this.pb.updateCustomerInfo().then(resolve).catch(reject)
+                    ).catch(reject).finally(() => this.purchasesStarted = true)
+                } else
+                    this.pb.connect().then(resolve).catch(reject)
             })
         })
     }

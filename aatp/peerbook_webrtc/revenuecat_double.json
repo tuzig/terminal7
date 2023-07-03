@@ -10,6 +10,7 @@
                 "subscriber": {
                     "subscriptions": {
                         "peerbook": {
+                            "expires_date": "2123-07-03T11:08:26Z",
                             "store": "app_store"
                         }
                     }
@@ -28,6 +29,7 @@
                 "subscriber": {
                     "subscriptions": {
                         "peerbook": {
+                            "expires_date": "2123-07-03T11:08:26Z",
                             "store": "app_store"
                         }
                     }
@@ -45,6 +47,7 @@
             "body": {
                 "subscriber": {
                     "subscriptions": {
+                        "expires_date": "2023-07-02T11:08:26Z"
                     }
                 }
             }
