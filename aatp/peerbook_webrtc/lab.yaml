@@ -51,6 +51,6 @@ services:
   revenuecat:
     image: "mockserver/mockserver"
     environment:
-      MOCKSERVER_INITIALIZATION_JSON_PATH: /config/initializer.json
+      MOCKSERVER_INITIALIZATION_JSON_PATH: /config/revenuecat_double.json
     volumes:
-        - ./aatp/infra/mockserver:/config
+        - ./aatp/peerbook_webrtc:/config
