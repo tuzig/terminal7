@@ -599,6 +599,10 @@ export async function installCMD(shell: Shell, args: string[]) {
 
     const session = new SSHSession(gate.addr, gate.username)
 
+    session.onClose = () => {
+        // TODO: handle close without installation
+        terminal7.log("Install SSH session closed")
+    }
     session.onStateChange = async (state, failure?: Failure) => {
         const host = terminal7.conf.net.peerbook
         let channel: SSHChannel
