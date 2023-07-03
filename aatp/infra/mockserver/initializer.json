@@ -1,0 +1,53 @@
+[
+    {
+        "httpRequest": {
+            "method": "GET",
+            "path": "/v1/subscribers/123456"
+        },
+        "httpResponse": {
+            "statusCode": 200,
+            "body": {
+                "subscriber": {
+                    "subscriptions": {
+                        "peerbook": {
+                            "store": "app_store"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    {
+        "httpRequest": {
+            "method": "GET",
+            "path": "/v1/subscribers/%24ValidBearer"
+        },
+        "httpResponse": {
+            "statusCode": 200,
+            "body": {
+                "subscriber": {
+                    "subscriptions": {
+                        "peerbook": {
+                            "store": "app_store"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    {
+        "httpRequest": {
+            "method": "GET",
+            "path": "/v1/subscribers/%24BadBearer"
+        },
+        "httpResponse": {
+            "statusCode": 200,
+            "body": {
+                "subscriber": {
+                    "subscriptions": {
+                    }
+                }
+            }
+        }
+    }
+]

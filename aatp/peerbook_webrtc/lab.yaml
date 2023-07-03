@@ -44,6 +44,13 @@ services:
       - redis
     environment:
       REDIS_HOST: redis:6379
+      REVENUECAT_URL: http://revenuecat:1080
   redis:
     image: "redis:alpine"
     command: [sh, -c, "rm -f /data/dump.rdb && redis-server"]  # disable persistence
+  revenuecat:
+    image: "mockserver/mockserver"
+    environment:
+      MOCKSERVER_INITIALIZATION_JSON_PATH: /config/initializer.json
+    volumes:
+        - ./aatp/infra/mockserver:/config

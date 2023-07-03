@@ -61,7 +61,7 @@ flash = 100
 [exec]
 shell = "bash"
 [net]
-timeout = 3000
+timeout = 8000
 retries = 3
 ice_server = "stun:stun2.l.google.com:19302"
 peerbook = "peerbook:17777"
@@ -113,7 +113,10 @@ insecure = true`)
     test('connect to gate see help page and hide it', async () => {
         await page.evaluate(() => window.terminal7.pbConnect())
         await sleep(1000)
+        await page.reload({waitUntil: "networkidle"})
+        await sleep(5000)
         connectGate()
+        await sleep(1000)
         await page.screenshot({ path: `/result/second.png` })
         const help  = page.locator('#help-gate')
         await page.screenshot({ path: '/result/3.png' })
