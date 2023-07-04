@@ -487,56 +487,6 @@ export class Shell {
                 [{ prompt: prompt, default: def }], "text")
         return res[0]
     }
-    async validateOTP() {
-        // test if session is already connected
-        // TODO: this is a hack, we should have a proper way to check
-        // if a session is connected
-        let validated = false
-        while (!validated) {
-            let gotMsg = false
-            let otp
-            try {
-                otp = await this.askValue("OTP")
-            } catch(e) {
-                reject()
-                return
-            }
-            console.log("validating OTP, opening a new sesison")
-            if (!this.pbSession) {
-                console.log("validating OTP, opening a new sesison")
-                const session = this.newPBSession()
-                try {
-                    await (new Promise((resolve, reject) => {
-                        session.onStateChange = async (state) => {
-                            if (state == 'connected') {
-                                resolve()
-                            } else if (state == 'failed')
-                                reject()
-                        }
-                        session.connect()
-                    }))
-                } catch(e) {
-                    this.t.writeln("Failed to open WebRTC connection to PeerBook")
-                    console.log("Failed to open WebRTC connection to PeerBook", e)
-                    throw e
-                }
-            }
-            const validateChannel = await this.pbSession.openChannel(["ping", otp], 0, 80, 24)
-            validateChannel.onMessage = (data: string) => {
-                const ret = String.fromCharCode(data[0])
-                gotMsg = true
-                console.log("Got ping reply", ret)
-                if (ret == "1") {
-                    validated = true
-                }
-            }
-            while (!gotMsg) {
-                await (new Promise(r => setTimeout(r, 100)))
-            }
-            if (!validated)
-                this.t.writeln("Invalid OTP, please try again")
-        }
-    }
     async verifyFP(fp: string, prompt: string) {
         let validated = false
         // TODO:gAdd biometrics verification
@@ -555,17 +505,20 @@ export class Shell {
                 const session = this.newPBSession()
                 try {
                     await (new Promise((resolve, reject) => {
-                        session.onStateChange = async (state) => {
+                        session.onStateChange = async (state, failure) => {
                             if (state == 'connected') {
                                 resolve()
                             } else if (state == 'failed')
-                                reject()
+                                reject(failure)
                         }
                         session.connect()
                     }))
                 } catch(e) {
-                    this.t.writeln("Failed to open WebRTC connection to PeerBook")
-                    console.log("Failed to open WebRTC connection to PeerBook", e)
+                    if (e == Failure.Unauthorized) {
+                        this.t.writeln("Seems like you're not subscribed to PeerBook")
+                        this.t.writeln("Use `subscribe` to subscribe")
+                    } else
+                        this.t.writeln(`Failed to connect to PeerBook: ${e}`)
                     throw e
                 }
             }

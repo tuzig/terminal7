@@ -67,6 +67,7 @@ export class PeerbookConnection {
         let fp: string
         let userData
 
+        this.echo("Registering with PeerBook")
         try {
             peerName = await this.shell.askValue("Peer name", (await Device.getInfo()).name)
             email = await this.shell.askValue("Recovery email")
@@ -217,7 +218,7 @@ export class PeerbookConnection {
                             terminal7.log("Got TBD as uid")
                             this.register(token).then(resolve).catch(reject)
                         } else {
-                            terminal7.notify(`${PB} Your PeerBook user id is ${uid}`)
+                            terminal7.notify(`${PB} Connected to PeerBook`)
                             CapacitorPurchases.logIn({ appUserID: uid })
                             this.wsConnect().then(resolve).catch(reject)
                         }
@@ -236,11 +237,7 @@ export class PeerbookConnection {
                         this.echo("Please try again and if persists, `open issue`")
                     } else if (failure == Failure.Unauthorized) {
                         terminal7.log("peerbook connection unauthorized")
-                    } else {
-                        this.echo("Connection failed: " + failure)
-                        this.echo("Please try again and if persists, contact support")
-                    }
-                    this.shell.printPrompt()
+                    }                     this.shell.printPrompt()
                     reject(failure)
                     return
                 }
@@ -322,6 +319,7 @@ export class PeerbookConnection {
             this.ws = null
         }
         if (this.session) {
+            this.session.onStateChange = undefined
             this.session.close()
             this.session = null
         }

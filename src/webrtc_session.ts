@@ -470,6 +470,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
             CapacitorHttp.post({
                 url: this.address, 
                 headers: this.headers,
+                readTimeout: 3000,
                 connectTimeout: 3000,
                 data: {api_version: 0,
                     offer: encodedO,

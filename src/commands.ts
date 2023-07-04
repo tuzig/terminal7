@@ -191,8 +191,7 @@ async function connectCMD(shell:Shell, args: string[]) {
         }
         if (gate.fp) {
             if (!gate.verified) {
-                shell.t.write(`Host unverified, would you like to verify it?`)
-                const answer = await shell.askValue("Y/n")
+                const answer = await shell.askValue("Gate unverified, would you like to verify it? (Y/n)")
                 if (answer == "y" || answer == "Y" || answer == "") {
                     await shell.verifyFP(gate.fp)
                 } else {
@@ -403,6 +402,7 @@ async function resetCMD(shell: Shell, args: string[]) {
             await CapacitorPurchases.logOut()
             shell.t.writeln("Cleared fingerprint and disconnected from PeerBook")
             terminal7.pbClose()
+            await terminal7.pbConnect()
             break
         case "Gates":
             terminal7.resetGates()
@@ -555,7 +555,8 @@ async function subscribeCMD(shell: Shell) {
     } else {
         if (!terminal7.pb.session) {
             shell.t.writeln("You are already subscribed, please register:")
-            terminal7.pb.register(customerInfo.originalAppUserId)
+            terminal7.pb.close()
+            await terminal7.pb.connect(customerInfo.originalAppUserId)
         } else
             shell.t.writeln("You are already subscribed and registered")
     }
@@ -646,10 +647,16 @@ export async function installCMD(shell: Shell, args: string[]) {
                             channel.close()
                             shell.t.writeln("~~~ Orderly Disconnect")
                             // will throw exception if not verified
-                            await shell.verifyFP(fp, "Finished install, enter OTP to verify")
+                            try {
+                                await shell.verifyFP(fp, "Finished install, enter OTP to verify")
+                            } catch(e) {
+                                shell.t.writeln("Verification failed")
+                                shell.t.writeln("Please try again or type `support`")
+                                return
+                            }
                             shell.t.writeln("Gate is installed & verified")
                             // TODO: resolve the command that started it all
-                        }, 100)
+                        }, 1000)
                     }
                 }   
                 break

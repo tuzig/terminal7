@@ -703,7 +703,7 @@ export class Terminal7 {
         // TODO: When at home remove the "on" from the home butto
     }
     // handle incomming peerbook messages (coming over sebsocket)
-    onPBMessage(m) {
+    async onPBMessage(m) {
         this.log("got pb message", m)
         if (m["code"] !== undefined) {
             this.notify(`\uD83D\uDCD6  ${m["text"]}`)
@@ -721,7 +721,12 @@ export class Terminal7 {
         }
         const fp = m.source_fp
         // look for a gate where g.fp == fp
+        const myFP = await this.getFingerprint()
+        if (fp == myFP) {
+            return
+        }
         const lookup =  this.gates.filter(g => g.fp == fp)
+
         if (!lookup || (lookup.length != 1)) {
             terminal7.log("Got a pb message with unknown peer: ", fp)
             return
