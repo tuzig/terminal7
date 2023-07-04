@@ -542,8 +542,8 @@ async function copyKeyCMD(shell: Shell) {
 async function subscribeCMD(shell: Shell) {
     const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
     if (!customerInfo.entitlements.active.peerbook) {
-        shell.t.writeln("Directing you to the store")
-        shell.startWatchdog(50000)
+        shell.t.writeln("Directing you to the store, please be patient")
+        shell.startWatchdog(120000)
         terminal7.ignoreAppEvents = true
         try {
             await terminal7.pb.purchaseCurrent()

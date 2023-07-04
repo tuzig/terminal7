@@ -210,8 +210,10 @@ export class Terminal7 {
             // fire two events
             App.addListener('appStateChange', state => {
                 const active =  state.isActive
-                if (this.lastActiveState == active)
+                if (this.lastActiveState == active) {
+                    this.log("app state event on unchanged state ignored")
                     return
+                }
                 this.lastActiveState = active
                 console.log("app state changed", this.ignoreAppEvents)
                 if (!active) {
@@ -536,7 +538,7 @@ export class Terminal7 {
                     gate.reconnect()
                         .then(() => {
                             this.map.shell.stopWatchdog()
-                            this.map.showLog(false)
+                            // this.map.showLog(false)
                         }).catch(() => {
                             this.map.shell.stopWatchdog()
                             this.map.shell.runCommand("reset", [gate.name])
@@ -605,7 +607,6 @@ export class Terminal7 {
         return new Promise((resolve, reject) => {
             const compactCert = cert => {
                 const ret = cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")
-                console.log("compacted:", ret)
                 return ret
             }
             if (this.certificates) {

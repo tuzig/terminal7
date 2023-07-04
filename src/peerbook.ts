@@ -7,7 +7,7 @@
  *  License: GPLv3
  */
 
-const PB = "\uD83D\uDCD6"
+export const PB = "\uD83D\uDCD6"
 
 import { Device } from '@capacitor/device';
 import { CapacitorPurchases } from '@capgo/capacitor-purchases'
@@ -42,7 +42,12 @@ export class PeerbookConnection {
     async adminCmd(cmd: string, ...args: string[]) {
         const c = args?[cmd, ...args]:[cmd]
         if (!this.session) {
-            await this.connect()
+            try {
+                await this.connect()
+            } catch (e) {
+                console.log("Failed to connect to peerbook", e)
+                throw new Failure("Failed to connect")
+            }
         }   
 
         return new Promise(resolve => {
