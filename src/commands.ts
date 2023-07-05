@@ -176,124 +176,122 @@ async function fortuneCMD(shell: Shell) {
 }
 
 async function connectCMD(shell:Shell, args: string[]) {
-    await new Promise<void>(async (resolve) => {
-        const hostname = args[0]
-        if (!hostname) {
-            shell.t.writeln("Missing hostname")
-            resolve()
-            return
-        }
-        const gate: Gate = shell.getGate(hostname)
-        if (!gate) {
-            shell.t.writeln(`Host not found: ${hostname}`)
-            resolve()
-            return
-        }
-        if (gate.fp) {
-            if (!gate.verified) {
-                const answer = await shell.askValue("Gate unverified, would you like to verify it? (Y/n)")
-                if (answer == "y" || answer == "Y" || answer == "") {
-                    await shell.verifyFP(gate.fp)
-                } else {
-                    shell.t.writeln("Doing nothing")
-                    resolve()
-                    return
-                }
-            }
-            if (!gate.online) {
-                shell.t.writeln("Host is offline")
-                resolve()
+    const hostname = args[0]
+    if (!hostname) {
+        shell.t.writeln("Missing hostname")
+        return
+    }
+    const gate: Gate = shell.getGate(hostname)
+    if (!gate) {
+        shell.t.writeln(`Host not found: ${hostname}`)
+        return
+    }
+    if (gate.fp) {
+        if (!gate.verified) {
+            const answer = await shell.askValue("Gate unverified, would you like to verify it? (Y/n)")
+            if (answer == "y" || answer == "Y" || answer == "") {
+                await shell.verifyFP(gate.fp)
+            } else {
+                shell.t.writeln("Doing nothing")
                 return
             }
         }
-    // eslint-disable-next-line
-        gate.onFailure = reason => {
-            terminal7.log(`Connect command got failure ${reason}`) 
-            shell.stopWatchdog()
-            gate.close()
-            terminal7.storeGates()
-            resolve()
+        if (!gate.online) {
+            shell.t.writeln("Host is offline")
+            return
         }
-        if (Capacitor.isNativePlatform())  {
-            if (!gate.fp && !gate.username) {
-                try {
-                    gate.username = await shell.askValue("Username")
-                } catch (e) {
-                    gate.notify("Failed to get username")
-                }
+    }
+    if (Capacitor.isNativePlatform())  {
+        if (!gate.fp && !gate.username) {
+            try {
+                gate.username = await shell.askValue("Username")
+            } catch (e) {
+                gate.notify("Failed to get username")
+                return
             }
         }
-        shell.startWatchdog().catch(e => gate.handleFailure(e))
-        gate.connect(async () => {
-            shell.stopWatchdog()
-            if (gate.firstConnection) {
-                const fields: Fields = [{
-                    prompt: "Gate's name",
-                    validator: (a) => gate.t7.validateHostName(a),
-                }]
-                fields[0].default = gate.addr
-                const res = await shell.runForm(fields, "text")
-                const name = res[0]
-                gate.name = name
-                gate.verified = true
-                gate.updateNameE()
-                gate.store = true
-                gate.firstConnection = false
-                await terminal7.storeGates()
-            }
-            let clipboardFilled = false
-            if (gate.keyRejected) {
-                const keyForm = [
-                    { prompt: "Just let me in" },
-                    { prompt: "Copy command to 📋" },
-                ]
-                const { publicKey } = await terminal7.readId()
-                if (publicKey) {
-                    const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
-                    shell.t.writeln(`\n To use face id please copy the ES25519 key by running:\n\n\x1B[1m${cmd}\x1B[0m\n`)
-                    const res = await shell.runForm(keyForm, "menu")
-                    switch(res) {
-                        case "Copy command to 📋":
-                            Clipboard.write({ string: cmd })
-                            clipboardFilled = true
-                            break
-                    }
-                }
-                else 
-                    terminal7.log("oops readId failed")
-            } 
-            if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH) {
-                const webexecForm = [
-                    { prompt: "Just let me in" },
-                    { prompt: "Copy command to 📋" },
-                    { prompt: "Always use SSH for this host" },
-                ]
-                const cmd = "bash <(curl -sL https://get.webexec.sh)"
-                shell.t.writeln(installMessage)
-                shell.t.writeln(`  \x1B[1m${cmd}\x1B[0m\n`)
-                const res = await shell.runForm(webexecForm, "menu")
+    }
+    let done = false
+    gate.onFailure = reason => {
+        terminal7.log(`Connect command got failure ${reason}`) 
+        shell.stopWatchdog()
+        gate.close()
+        terminal7.storeGates()
+        done = true
+    }
+    shell.startWatchdog().catch(e => gate.handleFailure(e))
+    gate.connect(async () => {
+        shell.stopWatchdog()
+        if (gate.firstConnection) {
+            const fields: Fields = [{
+                prompt: "Gate's name",
+                validator: (a) => gate.t7.validateHostName(a),
+            }]
+            fields[0].default = gate.addr
+            const res = await shell.runForm(fields, "text")
+            const name = res[0]
+            gate.name = name
+            gate.verified = true
+            gate.updateNameE()
+            gate.store = true
+            gate.firstConnection = false
+            await terminal7.storeGates()
+        }
+        let clipboardFilled = false
+        if (gate.keyRejected) {
+            const keyForm = [
+                { prompt: "Just let me in" },
+                { prompt: "Copy command to 📋" },
+            ]
+            const { publicKey } = await terminal7.readId()
+            if (publicKey) {
+                const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
+                shell.t.writeln(`\n To use face id please copy the ES25519 key by running:\n\n\x1B[1m${cmd}\x1B[0m\n`)
+                const res = await shell.runForm(keyForm, "menu")
                 switch(res) {
                     case "Copy command to 📋":
                         Clipboard.write({ string: cmd })
-                        break
-
-                    case "Always use SSH for this host":
-                        gate.onlySSH = true
-                        await gate.t7.storeGates()
+                        clipboardFilled = true
                         break
                 }
             }
-            gate.load()
-            Preferences.get({key: "first_gate"}).then(v => {
-                if (v.value != "nope")
-                    setTimeout(() => {
-                        Preferences.set({key: "first_gate", value: "nope"})
-                        terminal7.toggleHelp()
-                    }, 1000)
-            })
-            resolve()
+            else 
+                terminal7.log("oops readId failed")
+        } 
+        if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH) {
+            const webexecForm = [
+                { prompt: "Just let me in" },
+                { prompt: "Copy command to 📋" },
+                { prompt: "Always use SSH for this host" },
+            ]
+            const cmd = "bash <(curl -sL https://get.webexec.sh)"
+            shell.t.writeln(installMessage)
+            shell.t.writeln(`  \x1B[1m${cmd}\x1B[0m\n`)
+            const res = await shell.runForm(webexecForm, "menu")
+            switch(res) {
+                case "Copy command to 📋":
+                    Clipboard.write({ string: cmd })
+                    break
+
+                case "Always use SSH for this host":
+                    gate.onlySSH = true
+                    await gate.t7.storeGates()
+                    break
+            }
+        }
+        gate.load()
+        Preferences.get({key: "first_gate"}).then(v => {
+            if (v.value != "nope")
+                setTimeout(() => {
+                    Preferences.set({key: "first_gate", value: "nope"})
+                    terminal7.toggleHelp()
+                }, 1000)
         })
+        done = true
     })
+    while (!done) {
+        await new Promise(r => setTimeout(r, 100))
+    }
 }
 
 async function addCMD(shell: Shell) {
