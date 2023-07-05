@@ -21,7 +21,7 @@ jobs:
       - name: Unit Tests
         run: yarn test
       - name: Acceptance Tests
-        run: bash -x aatp/run
+        run: PEERBOOK_REF=subs WEBEXEC_REF=subs bash -x aatp/run
       - name: Upload acceptance test results
         if: ${{ failure() }}
         uses: actions/upload-artifact@v3
