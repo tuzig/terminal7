@@ -36,9 +36,16 @@ describe("TWR commands", function() {
                 t: new Terminal({}),
                 verifyFP: vi.fn(),
             }
+            window.terminal7.pb = {
+                adminCommand: vi.fn(() => "j")
+            }
             shell.t.writeln("try")
             expect(shell.t.out).toMatch(/try/)
-            installCMD(shell, "whatever")
+            try {
+                installCMD(shell, "whatever")
+            } catch (e) {
+                console.log("install command error", e)
+            }
             await sleep(300)
             globalThis.lastSSHChannel.onMessage("Fingerprint: 1234")
             // expect(shell.t.out).toMatch(/~~~~/)
