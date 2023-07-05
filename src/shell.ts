@@ -487,7 +487,7 @@ export class Shell {
                 [{ prompt: prompt, default: def }], "text")
         return res[0]
     }
-    async verifyFP(fp: string, prompt: string) {
+    async verifyFP(fp: string, prompt?: string) {
         let validated = false
         // TODO:gAdd biometrics verification
         while (!validated) {
