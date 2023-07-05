@@ -26,7 +26,7 @@ services:
       context: .
       dockerfile: ./aatp/infra/webexec/Dockerfile
       args:
-        REF: ${WEREF-latest}
+        REF: ${WEBEXEC_REF-latest}
     depends_on:
       - peerbook
     volumes:
@@ -37,7 +37,7 @@ services:
       context: .
       dockerfile: ./aatp/infra/peerbook/Dockerfile
       args:
-        BRANCH: ${PBBRANCH-master}
+        BRANCH: ${PEERBOOK_REF-master}
     expose:
       - 17777
     depends_on:
