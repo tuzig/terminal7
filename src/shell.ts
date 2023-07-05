@@ -42,14 +42,12 @@ export class Shell {
         this.t = map.t0
     }
 
-    async serverInstall(session: HTTPWebRTCSession, uID: string) {
-        console.log("Installing server %s %v", uID, session)
-    }
     /*
      * newPBSession opens a webrtc connection the the server to be used to admin
      * the peerbook
      */
     newPBSession(appUserId?: string) {
+        console.log("newPBSession")
         if (this.pbSession) {
             return this.pbSession
         }
