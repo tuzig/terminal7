@@ -39,7 +39,7 @@ export class PeerbookConnection {
         this.headers = new Map<string, string>()
     }
 
-    async adminCmd(cmd: string, ...args: string[]) {
+    async adminCommand(cmd: string, ...args: string[]) {
         const c = args?[cmd, ...args]:[cmd]
         if (!this.session) {
             try {
@@ -83,7 +83,7 @@ export class PeerbookConnection {
             return
         }
         try {
-            repStr = await this.adminCmd("register", email, peerName)
+            repStr = await this.adminCommand("register", email, peerName)
         } catch (e) {
             this.shell.t.writeln(`${PB} Registration failed\n    Please try again and if persists, \`support\``)
             this.shell.printPrompt()
@@ -214,11 +214,11 @@ export class PeerbookConnection {
                 this.headers.set("Authorization", `Bearer ${token}`)
             const session = new HTTPWebRTCSession(url, this.headers)
             this.session = session
-            session.onStateChange = async (state, failure?) => {
+            session.onStateChange = (state, failure?) => {
                 if (state == 'connected') {
                     terminal7.log("Connected PB webrtc connection")
                     // send a ping to get the uid
-                    this.adminCmd("ping").then(uid => {
+                    this.adminCommand("ping").then(uid => {
                         if (uid == "TBD") {
                             terminal7.log("Got TBD as uid")
                             this.echo("You are already subscribed, please register:")
@@ -365,7 +365,7 @@ export class PeerbookConnection {
         // TODO:gAdd biometrics verification
         while (!validated) {
             console.log("Verifying FP", fp)
-            let otp
+            let otp: string
             try {
                 otp = await this.shell.askValue(prompt || "Enter OTP to verify gate")
             } catch(e) {
@@ -377,7 +377,7 @@ export class PeerbookConnection {
             }
             let data
             try {
-                data = await this.adminCmd("verify", fp, otp)
+                data = await this.adminCommand("verify", fp, otp)
             } catch(e) {
                 console.log("verifyFP: failed to verify", e.toString())
                 this.echo("Failed to verify, please try again")

@@ -563,8 +563,8 @@ async function subscribeCMD(shell: Shell) {
             await terminal7.pb.connect(customerInfo.originalAppUserId)
         } else
             shell.t.writeln("You are already subscribed and registered")
-        const answer = await shell.askValue("Do you want to copy your UID? (Y/n)")
-        if (answer == "y" || answer == "Y" || answer == "") {
+        const answer = await shell.askValue("Do you want to copy your user id? (Y/n)", "y")
+        if (answer.upperCase() == "Y") {
             Clipboard.write({ string: customerInfo.originalAppUserId })
             shell.t.writeln("UID copied to clipboard")
         }
@@ -618,7 +618,7 @@ export async function installCMD(shell: Shell, args: string[]) {
         const host = terminal7.conf.net.peerbook
         let channel: SSHChannel
         let password: string
-        let data 
+        let uid: string
         terminal7.log("Install SSH session got state", state, failure)
         switch (state) {
             case "connecting":
@@ -634,6 +634,7 @@ export async function installCMD(shell: Shell, args: string[]) {
                 } catch (e) {
                     shell.t.writeln("Error opening channel")
                     shell.t.writeln("Please try again or type `support`")
+                    session.close()
                     return
                 }
                 shell.t.clear()
@@ -641,8 +642,23 @@ export async function installCMD(shell: Shell, args: string[]) {
                 shell.masterChannel = channel
                 // set #log border color to yellow
                 document.getElementById("log").style.borderColor = "var(--remote-border)"
-                data  = await terminal7.pbVerify()
-                channel.send(`PEERBOOK_UID=${data.uid} PEERBOOK_HOST=${host} bash <(curl -sL https://get.webexec.sh)`)
+                try {
+                    uid  = await terminal7.pb.adminCommand("ping")
+                } catch(e) {
+                    console.log("ping error", e)
+                    shell.t.writeln("Error connecting to Peerbook")
+                    session.close()
+                    return
+                }
+                console.log("got uid", uid)
+
+                if (!uid) {
+                    shell.t.writeln("You are not subscribed to Peerbook")
+                    shell.t.writeln("Please `subscribe`")
+                    session.close()
+                    return
+                }
+                channel.send(`PEERBOOK_UID=${uid} PEERBOOK_HOST=${host} bash <(curl -sL https://get.webexec.sh)`)
                 channel.onMessage = async (msg: string) => {
                     shell.t.write(msg)
                     // use regex to extract the fingerprint from the message.
@@ -687,8 +703,7 @@ export async function installCMD(shell: Shell, args: string[]) {
         }
     }
     session.connect(0, publicKey, privateKey)
-    let i = 0
-    while (!done && i++ < 50)
+    while (!done)
         await (new Promise(r => setTimeout(r, 100)))
     if (!done) {
         shell.t.writeln("Install failed")
