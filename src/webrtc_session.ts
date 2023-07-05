@@ -122,7 +122,8 @@ export class WebRTCSession extends BaseSession {
             } else  {
                 if (state == 'failed')
                     this.closeChannels()
-                this.onStateChange(state)
+                if (this.onStateChange)
+                    this.onStateChange(state)
             }
         }
         this.pc.onicecandidateerror = (ev: RTCPeerConnectionIceErrorEvent) => {

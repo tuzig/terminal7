@@ -554,7 +554,6 @@ async function subscribeCMD(shell: Shell) {
         shell.stopWatchdog()
     } else {
         if (!terminal7.pb.session) {
-            shell.t.writeln("You are already subscribed, please register:")
             terminal7.pb.close()
             await terminal7.pb.connect(customerInfo.originalAppUserId)
         } else
