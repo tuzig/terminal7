@@ -88,8 +88,7 @@ insecure = true`)
     test('purchase update with no active subscription', async () => {
         await sleep(500)
         await page.evaluate(async () => {
-            terminal7.pb.close()
-            terminal7.pb.connect("BadBearer")
+            terminal7.pbConnect()
         })
         const pbOpen = await page.evaluate(() => window.terminal7.pb.isOpen())
         expect(pbOpen).toBeFalsy()

@@ -217,6 +217,7 @@ export class WebRTCSession extends BaseSession {
     }
     async reconnect(marker?: number, publicKey?: string, privateKey?: string): Promise<void> {
         return new Promise((resolve, reject) => { 
+            let timedout = false
             console.log("in reconnect", this.cdc, this.cdc.readyState)
             if (!this.pc)
                 return this.connect(marker, publicKey, privateKey)
@@ -224,7 +225,6 @@ export class WebRTCSession extends BaseSession {
             if (!this.cdc || this.cdc.readyState != "open")
                 this.openCDC()
             if (marker != null) {
-                let timedout = false
                 const watchdog = setTimeout(() => {
                     timedout = true
                     reject()
@@ -259,7 +259,7 @@ export class WebRTCSession extends BaseSession {
                 if (this.pendingCDCMsgs.length > 0)
                     // TODO: why the time out? why 100mili?
                     this.t7.run(() => {
-                        this.t7.log("sending pending messages:", this.pendingCDCMsgs)
+                        this.t7.log("sending pending messages")
                         this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m[0], m[1], m[2]))
                         this.pendingCDCMsgs = []
                         resolve()
@@ -300,9 +300,9 @@ export class WebRTCSession extends BaseSession {
             msg.time = Date.now()
         this.msgHandlers[msg.message_id] = [resolve, reject]
         if (!this.cdc || this.cdc.readyState != "open")
+            // message stays frozen when restrting
             this.pendingCDCMsgs.push([msg, resolve, reject])
         else {
-            // message stays frozen when restrting
             const s = msg.payload || JSON.stringify(msg)
             this.t7.log("sending ctrl message ", s)
             msg.payload = s
@@ -470,6 +470,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
             CapacitorHttp.post({
                 url: this.address, 
                 headers: this.headers,
+                readTimeout: 3000,
                 connectTimeout: 3000,
                 data: {api_version: 0,
                     offer: encodedO,

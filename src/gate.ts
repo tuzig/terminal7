@@ -10,6 +10,7 @@ import { Clipboard } from '@capacitor/clipboard'
 import { Pane } from './pane.js'
 import { T7Map } from './map'
 import { Failure, Session } from './session'
+import { PB } from './peerbook'
 import { SSHSession, HybridSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
@@ -552,9 +553,14 @@ export class Gate {
             this.t7.log("TBD: update layout", layout)
         }
         this.t7.log("opening session")
-        if (this.fp)
-            this.session.connect(this.marker)
-        else {
+        if (this.fp) {
+            try {
+                this.session.connect(this.marker)
+            } catch(e) {
+                this.t7.log("error connecting", e)
+                this.notify(`${PB} Connection failed: ${e}`)
+            }
+        } else {
             const {publicKey, privateKey} = await this.t7.readId()
             this.session.connect(this.marker, publicKey, privateKey)
         }

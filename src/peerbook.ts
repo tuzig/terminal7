@@ -7,7 +7,7 @@
  *  License: GPLv3
  */
 
-const PB = "\uD83D\uDCD6"
+export const PB = "\uD83D\uDCD6"
 
 import { Device } from '@capacitor/device';
 import { CapacitorPurchases } from '@capgo/capacitor-purchases'
@@ -28,7 +28,7 @@ export class PeerbookConnection {
     session: HTTPWebRTCSession | null = null
     token: string
     shell: Shell
-    updateingStore = false
+    updatingStore = false
 
     constructor(props:Map<string, Any>) {
         // copy all props to this
@@ -42,12 +42,16 @@ export class PeerbookConnection {
     async adminCmd(cmd: string, ...args: string[]) {
         const c = args?[cmd, ...args]:[cmd]
         if (!this.session) {
-            await this.connect()
+            try {
+                await this.connect()
+            } catch (e) {
+                console.log("Failed to connect to peerbook", e)
+                throw new Failure("Failed to connect")
+            }
         }   
 
         return new Promise(resolve => {
             const reply = []
-            console.log("adminCmd w/ session", this.session)
             this.session.openChannel(c, 0, 80, 24).then(channel  => {
                 channel.onClose = () => {
                     const ret =  new TextDecoder().decode(new Uint8Array(reply))
@@ -68,13 +72,14 @@ export class PeerbookConnection {
         let fp: string
         let userData
 
+        this.echo("Registering with PeerBook")
         try {
             peerName = await this.shell.askValue("Peer name", (await Device.getInfo()).name)
             email = await this.shell.askValue("Recovery email")
         } catch (e) {
             console.log("Registration Cancelled", e)
             this.shell.t.writeln("Cancelled. Use `subscribe` to try again")
-            await this.escapeActiveForm()
+            await this.shell.escapeActiveForm()
             return
         }
         try {
@@ -165,8 +170,8 @@ export class PeerbookConnection {
     async onPurchasesUpdate(data) {
         console.log("onPurchasesUpdate", data)
             // intialize the http headers with the bearer token
-        if (this.updateingStore) {
-            terminal7.log("got anotyher evenm while updateingStore")
+        if (this.updatingStore) {
+            terminal7.log("got anotyher evenm while updatingStore")
             return
         }
         const active = data.customerInfo.entitlements.active
@@ -180,27 +185,18 @@ export class PeerbookConnection {
                 terminal7.log("Failed to log out", e)
             }
             */
-            this.updateingStore = false
+            this.updatingStore = false
             return
         }
         const uid = data.customerInfo.originalAppUserId
         terminal7.log("Subscribed to PB, uid: ", uid)
-        // if uid is temp then we need to complete registration
-        // we identify temp id by checking if they contain a letter
-        if (uid[0]=="$")
-            try {
-                await this.connect(uid)
-                // await this.register(uid)
-            } catch (e) {
-                terminal7.log("Failed to register", e.toString())
-                this.updateingStore = false
-                return
-            }
-        else {
-            terminal7.notify(`${PB} Regsitered uid: uid`)
-            this.wsConnect()
+        try {
+            await this.connect(uid)
+        } catch (e) {
+            terminal7.log("Failed to connect", e.toString())
+        } finally {
+            this.updatingStore = false
         }
-        this.updateingStore = false
     }
     async echo(data: string) {
         this.shell.t.writeln(data)
@@ -227,7 +223,7 @@ export class PeerbookConnection {
                             terminal7.log("Got TBD as uid")
                             this.register(token).then(resolve).catch(reject)
                         } else {
-                            terminal7.notify(`${PB} Your PeerBook user id is ${uid}`)
+                            terminal7.notify(`${PB} Connected to PeerBook`)
                             CapacitorPurchases.logIn({ appUserID: uid })
                             this.wsConnect().then(resolve).catch(reject)
                         }
@@ -246,11 +242,7 @@ export class PeerbookConnection {
                         this.echo("Please try again and if persists, `open issue`")
                     } else if (failure == Failure.Unauthorized) {
                         terminal7.log("peerbook connection unauthorized")
-                    } else {
-                        this.echo("Connection failed: " + failure)
-                        this.echo("Please try again and if persists, contact support")
-                    }
-                    this.shell.printPrompt()
+                    }                     this.shell.printPrompt()
                     reject(failure)
                     return
                 }
@@ -332,6 +324,7 @@ export class PeerbookConnection {
             this.ws = null
         }
         if (this.session) {
+            this.session.onStateChange = undefined
             this.session.close()
             this.session = null
         }
@@ -340,7 +333,6 @@ export class PeerbookConnection {
         return (this.session != null) && (this.ws ? this.ws.readyState === WebSocket.OPEN : false)
     }
     syncPeers(gates: Array<Gate>, nPeers: Array<Peer>) {
-        console.log("syncPeers", gates, nPeers)
         const ret = []
         const index = {}
         gates.forEach(p => {

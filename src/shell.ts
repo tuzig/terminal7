@@ -557,17 +557,20 @@ export class Shell {
                 const session = this.newPBSession()
                 try {
                     await (new Promise((resolve, reject) => {
-                        session.onStateChange = async (state) => {
+                        session.onStateChange = async (state, failure) => {
                             if (state == 'connected') {
                                 resolve()
                             } else if (state == 'failed')
-                                reject()
+                                reject(failure)
                         }
                         session.connect()
                     }))
                 } catch(e) {
-                    this.t.writeln("Failed to open WebRTC connection to PeerBook")
-                    console.log("Failed to open WebRTC connection to PeerBook", e)
+                    if (e == Failure.Unauthorized) {
+                        this.t.writeln("Seems like you're not subscribed to PeerBook")
+                        this.t.writeln("Use `subscribe` to subscribe")
+                    } else
+                        this.t.writeln(`Failed to connect to PeerBook: ${e}`)
                     throw e
                 }
             }

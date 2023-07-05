@@ -210,8 +210,10 @@ export class Terminal7 {
             // fire two events
             App.addListener('appStateChange', state => {
                 const active =  state.isActive
-                if (this.lastActiveState == active)
+                if (this.lastActiveState == active) {
+                    this.log("app state event on unchanged state ignored")
                     return
+                }
                 this.lastActiveState = active
                 console.log("app state changed", this.ignoreAppEvents)
                 if (!active) {
@@ -319,10 +321,12 @@ export class Terminal7 {
                 })
                 this.pb.onUpdate = (m) => this.onPBMessage(m)
                 if (!this.purchasesStarted) {
-                    this.pb.startPurchases()
-                    this.purchasesStarted = true
-                }
-                this.pb.connect().then(resolve).catch(reject)
+                    this.pb.startPurchases().then(() => 
+                        this.pb.connect().then(resolve).catch(reject)
+                        // this.pb.updateCustomerInfo().then(resolve).catch(reject)
+                    ).catch(reject).finally(() => this.purchasesStarted = true)
+                } else
+                    this.pb.connect().then(resolve).catch(reject)
             })
         })
     }
@@ -534,7 +538,7 @@ export class Terminal7 {
                     gate.reconnect()
                         .then(() => {
                             this.map.shell.stopWatchdog()
-                            this.map.showLog(false)
+                            // this.map.showLog(false)
                         }).catch(() => {
                             this.map.shell.stopWatchdog()
                             this.map.shell.runCommand("reset", [gate.name])
@@ -603,7 +607,6 @@ export class Terminal7 {
         return new Promise((resolve, reject) => {
             const compactCert = cert => {
                 const ret = cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")
-                console.log("compacted:", ret)
                 return ret
             }
             if (this.certificates) {
@@ -701,7 +704,7 @@ export class Terminal7 {
         // TODO: When at home remove the "on" from the home butto
     }
     // handle incomming peerbook messages (coming over sebsocket)
-    onPBMessage(m) {
+    async onPBMessage(m) {
         this.log("got pb message", m)
         if (m["code"] !== undefined) {
             this.notify(`\uD83D\uDCD6  ${m["text"]}`)
@@ -719,7 +722,12 @@ export class Terminal7 {
         }
         const fp = m.source_fp
         // look for a gate where g.fp == fp
+        const myFP = await this.getFingerprint()
+        if (fp == myFP) {
+            return
+        }
         const lookup =  this.gates.filter(g => g.fp == fp)
+
         if (!lookup || (lookup.length != 1)) {
             terminal7.log("Got a pb message with unknown peer: ", fp)
             return
