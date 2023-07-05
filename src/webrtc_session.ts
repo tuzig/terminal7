@@ -91,7 +91,7 @@ export class WebRTCSession extends BaseSession {
                 this.t7.iceServers = await this.getIceServers()
             } catch(e) {
                 this.t7.iceServers = []
-                console.log(e)
+                terminal7.log("error getting iceservers", e)
             }
         }
         console.log("got ice server", this.t7.iceServers)
@@ -366,18 +366,6 @@ export class WebRTCSession extends BaseSession {
         }
     }
     getIceServers() {
-        return new Promise((resolve) =>
-            resolve([{ urls: this.t7.conf.net.iceServer}]))
-    }
-}
-
-export class PeerbookSession extends WebRTCSession {
-    fp: string
-    constructor(fp: string) {
-        super()
-        this.fp = fp
-    }
-    getIceServers() {
         return new Promise((resolve, reject) => {
             const ctrl = new AbortController(),
                   tId = setTimeout(() => ctrl.abort(), 1000),
@@ -407,6 +395,14 @@ export class PeerbookSession extends WebRTCSession {
                 return
             })
         })
+    }
+}
+
+export class PeerbookSession extends WebRTCSession {
+    fp: string
+    constructor(fp: string) {
+        super()
+        this.fp = fp
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate && this.t7.pb) {
