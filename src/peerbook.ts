@@ -221,6 +221,7 @@ export class PeerbookConnection {
                     this.adminCmd("ping").then(uid => {
                         if (uid == "TBD") {
                             terminal7.log("Got TBD as uid")
+                            this.echo("You are already subscribed, please register:")
                             this.register(token).then(resolve).catch(reject)
                         } else {
                             terminal7.notify(`${PB} Connected to PeerBook`)
