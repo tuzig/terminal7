@@ -7,7 +7,7 @@ import { Fields } from "./form"
 import fortuneURL from "../resources/fortune.txt"
 import { Gate } from './gate'
 import { Capacitor } from '@capacitor/core'
-import { SSHSession } from './ssh_session'
+import { SSHSession, SSHChannel } from './ssh_session'
 import { Failure } from './session'
 
 declare const terminal7 : Terminal7
@@ -559,6 +559,11 @@ async function subscribeCMD(shell: Shell) {
             await terminal7.pb.connect(customerInfo.originalAppUserId)
         } else
             shell.t.writeln("You are already subscribed and registered")
+        const answer = await shell.askValue("Do you want to copy your UID? (Y/n)")
+        if (answer == "y" || answer == "Y" || answer == "") {
+            Clipboard.write({ string: customerInfo.originalAppUserId })
+            shell.t.writeln("UID copied to clipboard")
+        }
     }
 }
 export async function installCMD(shell: Shell, args: string[]) {
@@ -590,6 +595,7 @@ export async function installCMD(shell: Shell, args: string[]) {
     }
     // Connect to the gate over SSH and install webexec
     let publicKey, privateKey
+    let done = false
     try {
         const ids = await terminal7.readId()
         publicKey = ids.publicKey
@@ -633,7 +639,7 @@ export async function installCMD(shell: Shell, args: string[]) {
                 document.getElementById("log").style.borderColor = "var(--remote-border)"
                 data  = await terminal7.pbVerify()
                 channel.send(`PEERBOOK_UID=${data.uid} PEERBOOK_HOST=${host} bash <(curl -sL https://get.webexec.sh)`)
-                channel.onMessage = async msg => {
+                channel.onMessage = async (msg: string) => {
                     shell.t.write(msg)
                     // use regex to extract the fingerprint from the message.
                     // fingerprint is on a line "Fingerprint: <fingerprint>"
@@ -653,6 +659,8 @@ export async function installCMD(shell: Shell, args: string[]) {
                                 shell.t.writeln("Verification failed")
                                 shell.t.writeln("Please try again or type `support`")
                                 return
+                            } finally {
+                                done = true
                             }
                             shell.t.writeln("Gate is installed & verified")
                             // TODO: resolve the command that started it all
@@ -675,6 +683,13 @@ export async function installCMD(shell: Shell, args: string[]) {
         }
     }
     session.connect(0, publicKey, privateKey)
+    let i = 0
+    while (!done && i++ < 50)
+        await (new Promise(r => setTimeout(r, 100)))
+    if (!done) {
+        shell.t.writeln("Install failed")
+        shell.t.writeln("Please try again or type `support`")
+    }
 }
 async function configCMD(shell: Shell) {
     shell.t.writeln("Opening vi-style editor.")
