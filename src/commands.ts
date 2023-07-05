@@ -46,6 +46,12 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             usage: "clo[se]",
             execute: async args => closeCMD(shell, args)
         },
+        config: {
+            name: "config",
+            help: "Edit the config file",
+            usage: "conf[ig]",
+            execute: async () => configCMD(shell),
+        },
         connect: {
             name: "connect",
             help: "Connect to an existing gate",
@@ -69,6 +75,12 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             help: "Get a fortune",
             usage: "f[ortune]",
             execute: async () => fortuneCMD(shell)
+        },
+        gates: {
+            name: "gates",
+            help: "List all gates",
+            usage: "g[ates]",
+            execute: async () => hostsCMD(shell)
         },
         help: {
             name: "help",
@@ -94,29 +106,23 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             usage: "m[ap]",
             execute: async () => terminal7.goHome()
         },
-        gates: {
-            name: "gates",
-            help: "List all gates",
-            usage: "g[ates]",
-            execute: async () => hostsCMD(shell)
-        },
         reset: {
             name: "reset",
             help: "Reset various settings",
             usage: "r[eset]",
             execute: async args => resetCMD(shell, args)
         },
+        support: {
+            name: "support",
+            help: "Get support",
+            usage: "sup[port]",
+            execute: async () => supportCMD(shell)
+        },
         subscribe: {
             name: "subscribe",
             help: "Subscripte to peerbook",
             usage: "sub[scribe]",
             execute: async () => subscribeCMD(shell)
-        },
-        config: {
-            name: "config",
-            help: "Edit the config file",
-            usage: "conf[ig]",
-            execute: async () => configCMD(shell),
         },
     }))
 }
@@ -715,5 +721,9 @@ async function configCMD(shell: Shell) {
     shell.t.writeln("https://github.com/tuzig/terminal7/wiki/Setting-file-format")
     await shell.waitForKey()
     await shell.openConfig()
+}
+async function supportCMD(shell: Shell) {
+    shell.t.writeln("https://discord.gg/Puu2afdUtr")
+    shell.t.writeln("☝️  Please click join & get help")
 }
 
