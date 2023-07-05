@@ -543,7 +543,12 @@ async function subscribeCMD(shell: Shell) {
     const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
     if (!customerInfo.entitlements.active.peerbook) {
         shell.t.writeln("Directing you to the store, please be patient")
-        shell.startWatchdog(120000)
+        shell.startWatchdog(120000).catch(e => {
+            shell.t.writeln("Sorry, subscribe command timed out")
+            shell.t.writeln("Please try again or type `support`")
+            throw e
+        })
+
         terminal7.ignoreAppEvents = true
         try {
             await terminal7.pb.purchaseCurrent()
