@@ -264,7 +264,7 @@ export class WebRTCSession extends BaseSession {
                         this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m[0], m[1], m[2]))
                         this.pendingCDCMsgs = []
                         resolve()
-                    }, 100)
+                    }, 500)
                 else
                     resolve()
             }
