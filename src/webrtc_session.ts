@@ -366,6 +366,18 @@ export class WebRTCSession extends BaseSession {
         }
     }
     getIceServers() {
+        return new Promise((resolve) =>
+            resolve([{ urls: this.t7.conf.net.iceServer}]))
+    }
+}
+
+export class PeerbookSession extends WebRTCSession {
+    fp: string
+    constructor(fp: string) {
+        super()
+        this.fp = fp
+    }
+    getIceServers() {
         return new Promise((resolve, reject) => {
             const ctrl = new AbortController(),
                   tId = setTimeout(() => ctrl.abort(), 1000),
@@ -395,14 +407,6 @@ export class WebRTCSession extends BaseSession {
                 return
             })
         })
-    }
-}
-
-export class PeerbookSession extends WebRTCSession {
-    fp: string
-    constructor(fp: string) {
-        super()
-        this.fp = fp
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate && this.t7.pb) {
