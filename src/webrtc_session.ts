@@ -436,7 +436,7 @@ export class PeerbookSession extends WebRTCSession {
     }
     peerCandidate(candidate) {
         this.pc.addIceCandidate(candidate).catch(e =>
-            this.t7.notify(`ICE candidate error: ${e}`))
+            this.t7.log(`ICE candidate error: ${e}`))
         return
     }
 }

@@ -29,6 +29,7 @@ export class PeerbookConnection {
     token: string
     shell: Shell
     updatingStore = false
+    connecting = false
 
     constructor(props:Map<string, Any>) {
         // copy all props to this
@@ -204,10 +205,11 @@ export class PeerbookConnection {
 
 
     async connect(token?: string) {
-        if (this.session)
+        if (this.session || this.connecting)
             return
         return new Promise<void>((resolve, reject) =>{
             // connect to admin over webrtc
+            this.connecting = true
             const schema = terminal7.conf.peerbook.insecure? "http" : "https"
             const url = `${schema}://${terminal7.conf.net.peerbook}/we`
             if (token)
@@ -235,7 +237,7 @@ export class PeerbookConnection {
                         this.session = null
                         terminal7.log("Failed to get user id", e.toString())
                         resolve()
-                    })
+                    }).finally(() => this.connecting = false)
                     return
                 }
                 else if (state == 'failed') {
