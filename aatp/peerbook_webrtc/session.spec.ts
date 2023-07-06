@@ -183,7 +183,7 @@ insecure = true`)
         })
         // connectGate()
         await expect(page.locator('.pane')).toHaveCount(1)
-        await sleep(500)
+        await sleep(1500)
         const lines2 = await page.evaluate(() =>
            window.terminal7.activeG.activeW.activeP.t.buffer.active.length)
         await page.screenshot({ path: `/result/fourth.png` })
