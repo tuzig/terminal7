@@ -222,7 +222,10 @@ export class PeerbookConnection {
                         if (uid == "TBD") {
                             terminal7.log("Got TBD as uid")
                             this.echo("You are already subscribed, please register:")
-                            this.register(token).then(resolve).catch(reject)
+                            this.register(token).then(resolve).catch(e => { 
+                                terminal7.log("Failed to register", e.toString())
+                                reject(e)
+                            })
                         } else {
                             terminal7.notify(`${PB} Connected to PeerBook`)
                             CapacitorPurchases.logIn({ appUserID: uid })
