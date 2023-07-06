@@ -415,13 +415,15 @@ export class PeerbookSession extends WebRTCSession {
         }
     }
     onNegotiationNeeded(e) {
-        this.t7.log("on negotiation needed", e)
+        terminal7.log("on negotiation needed", e)
         this.pc.createOffer().then(d => {
             const offer = btoa(JSON.stringify(d))
             this.pc.setLocalDescription(d)
-            this.t7.log("got offer", offer)
-            this.t7.pbConnect().then(() =>
-                this.t7.pb.send({target: this.fp, offer: offer}))
+            terminal7.log("got offer", offer)
+            if (!terminal7.pb)
+                console.log("no peerbook")
+            else
+                terminal7.pb.send({target: this.fp, offer: offer})
         })
     }
     peerAnswer(offer) {
