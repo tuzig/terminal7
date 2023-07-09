@@ -30,7 +30,6 @@ export class PeerbookConnection {
     shell: Shell
     uid: string
     updatingStore = false
-    connecting = false
 
     constructor(props:Map<string, Any>) {
         // copy all props to this
@@ -165,11 +164,6 @@ export class PeerbookConnection {
         await this.onPurchasesUpdate(data)
     }
 
-    /*
-    * Open a session with PeerBook
-    * first opens a webrtc connection, then pings to get the uid
-    * and finally starts the purchases
-    */
     async onPurchasesUpdate(data) {
         console.log("onPurchasesUpdate", data)
             // intialize the http headers with the bearer token
@@ -224,11 +218,10 @@ export class PeerbookConnection {
             
 
     async connect(token?: string) {
-        if (this.session || this.connecting)
+        if (this.session)
             return
         return new Promise<void>((resolve, reject) =>{
             // connect to admin over webrtc
-            this.connecting = true
             const schema = terminal7.conf.peerbook.insecure? "http" : "https"
             const url = `${schema}://${terminal7.conf.net.peerbook}/we`
             if (token)
@@ -256,7 +249,7 @@ export class PeerbookConnection {
                         this.session = null
                         terminal7.log("Failed to get user id", e.toString())
                         resolve()
-                    }).finally(() => this.connecting = false)
+                    })
                     return
                 }
                 else if (state == 'failed') {
