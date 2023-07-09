@@ -220,7 +220,7 @@ export class Terminal7 {
                     if (this.ignoreAppEvents) return
                     // We're getting suspended. disengage.
                     if (this.activeG) {
-                        this.notify("🛋️ Disengaging", true)
+                        this.notify("🌜 Benched", true)
                     }
                     this.disengage()
                 } else {
@@ -528,10 +528,12 @@ export class Terminal7 {
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
             off.add("hidden")
-            this.pbConnect().finally(() => {
-                const gate = this.activeG
+            const gate = this.activeG
+            if (gate)
+                this.notify("🌞 Recovering")
+            this.pbConnect().catch(e => this.log("pbConnect failed", e))
+                .finally(() => {
                 if (gate) {
-                    this.notify("🌞 Recovering")
                     this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
                     this.recovering = true
                     this.run(() => this.recovering = false, this.conf.net.recoveryTime)
