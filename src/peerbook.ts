@@ -28,6 +28,7 @@ export class PeerbookConnection {
     session: HTTPWebRTCSession | null = null
     token: string
     shell: Shell
+    uid: string
     updatingStore = false
     connecting = false
 
@@ -38,6 +39,7 @@ export class PeerbookConnection {
         this.verified = false
         this.token = ""
         this.headers = new Map<string, string>()
+        this.uid = "TBD"
     }
 
     async adminCommand(cmd: string, ...args: string[]) {
@@ -203,6 +205,23 @@ export class PeerbookConnection {
         this.shell.t.writeln(data)
     }
 
+    getUID() {
+        return new Promise<string>((resolve, reject) => {
+            if (!this.session) {
+                reject("No session")
+                return
+            }
+            if (this.uid != "TBD") {
+                resolve(this.uid)
+                return
+            }
+            this.adminCommand("ping").then(uid => {
+                this.uid = uid
+                resolve(uid)
+            }).catch(reject)
+        })
+    }
+            
 
     async connect(token?: string) {
         if (this.session || this.connecting)
@@ -220,7 +239,7 @@ export class PeerbookConnection {
                 if (state == 'connected') {
                     terminal7.log("Connected PB webrtc connection")
                     // send a ping to get the uid
-                    this.adminCommand("ping").then(uid => {
+                    this.getUID().then(uid => {
                         if (uid == "TBD") {
                             terminal7.log("Got TBD as uid")
                             this.echo("You are already subscribed, please register:")

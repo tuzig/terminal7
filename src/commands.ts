@@ -643,7 +643,7 @@ export async function installCMD(shell: Shell, args: string[]) {
                 // set #log border color to yellow
                 document.getElementById("log").style.borderColor = "var(--remote-border)"
                 try {
-                    uid  = await terminal7.pb.adminCommand("ping")
+                    uid  = await terminal7.pb.getUID()
                 } catch(e) {
                     console.log("ping error", e)
                     shell.t.writeln("Error connecting to Peerbook")
