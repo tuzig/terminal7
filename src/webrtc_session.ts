@@ -96,7 +96,7 @@ export class WebRTCSession extends BaseSession {
         } else {
             this.t7.iceServers = []
         }
-        this.t7.log("got ice server", this.t7.iceServers)
+        this.t7.log("got ice server", JSON.stringify(this.t7.iceServers))
         try {
             await this.t7.getFingerprint()
         } catch (e) {
@@ -367,18 +367,6 @@ export class WebRTCSession extends BaseSession {
         }
     }
     getIceServers() {
-        return new Promise((resolve) =>
-            resolve([{ urls: this.t7.conf.net.iceServer}]))
-    }
-}
-
-export class PeerbookSession extends WebRTCSession {
-    fp: string
-    constructor(fp: string) {
-        super()
-        this.fp = fp
-    }
-    getIceServers() {
         return new Promise((resolve, reject) => {
             const ctrl = new AbortController(),
                   tId = setTimeout(() => ctrl.abort(), 1000),
@@ -408,6 +396,14 @@ export class PeerbookSession extends WebRTCSession {
                 return
             })
         })
+    }
+}
+
+export class PeerbookSession extends WebRTCSession {
+    fp: string
+    constructor(fp: string) {
+        super()
+        this.fp = fp
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate && this.t7.pb) {
@@ -497,14 +493,12 @@ export class HTTPWebRTCSession extends WebRTCSession {
                 const sd = new RTCSessionDescription(answer)
                 if (this.pc)
                     this.pc.setRemoteDescription(sd).catch (() => { 
-                        if (this.pc)
-                            this.fail(Failure.BadRemoteDescription)
+                        this.fail(Failure.BadRemoteDescription)
                     })
             }).catch(error => {
                 console.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
                 if (error.message == 'unauthorized')
                     this.fail(Failure.Unauthorized)
-                // TODO: the next line is probably wrong
                 else
                     this.fail(Failure.NotSupported)
             })
