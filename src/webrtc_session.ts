@@ -93,8 +93,10 @@ export class WebRTCSession extends BaseSession {
                 this.t7.iceServers = []
                 terminal7.log("error getting iceservers", e)
             }
+        } else {
+            this.t7.iceServers = []
         }
-        console.log("got ice server", this.t7.iceServers)
+        this.t7.log("got ice server", this.t7.iceServers)
         try {
             await this.t7.getFingerprint()
         } catch (e) {
@@ -102,7 +104,6 @@ export class WebRTCSession extends BaseSession {
             this.t7.certificates = undefined
             return
         }
-        console.log("certs ", this.t7.certificates)
         this.pc = new RTCPeerConnection({
             iceServers: this.t7.iceServers,
             certificates: this.t7.certificates})
@@ -491,12 +492,6 @@ export class HTTPWebRTCSession extends WebRTCSession {
             }).then(data => {
                 if (!data)
                     return
-                /* TODO: this needs to move
-                if (!this.verified) {
-                    this.verified = true
-                    this.t7.storeGates()
-                }
-                */
                 // TODO move this to the last line of the last then
                 const answer = JSON.parse(atob(data))
                 const sd = new RTCSessionDescription(answer)
