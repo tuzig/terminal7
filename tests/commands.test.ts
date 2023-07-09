@@ -36,8 +36,9 @@ describe("TWR commands", function() {
                 t: new Terminal({}),
                 verifyFP: vi.fn(),
             }
-            window.terminal7.pb = {
-                adminCommand: vi.fn(() => "j")
+            t.pb = {
+                adminCommand: vi.fn(() => "j"),
+                getUID: vi.fn(() => "5678")
             }
             shell.t.writeln("try")
             expect(shell.t.out).toMatch(/try/)
