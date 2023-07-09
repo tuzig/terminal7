@@ -563,8 +563,8 @@ async function subscribeCMD(shell: Shell) {
             await terminal7.pb.connect(customerInfo.originalAppUserId)
         } else
             shell.t.writeln("You are already subscribed and registered")
-        const answer = await shell.askValue("Do you want to copy your user id? (Y/n)", "y")
-        if (answer.upperCase() == "Y") {
+        const answer = await shell.askValue("Do you want to copy your user id? (y/N)", "n")
+        if (answer.toLowerCase() == "y") {
             Clipboard.write({ string: customerInfo.originalAppUserId })
             shell.t.writeln("UID copied to clipboard")
         }
