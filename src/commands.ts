@@ -724,6 +724,6 @@ async function configCMD(shell: Shell) {
 }
 async function supportCMD(shell: Shell) {
     shell.t.writeln("https://discord.gg/Puu2afdUtr")
-    shell.t.writeln("☝️  Please click join & get help")
+    shell.t.writeln("☝️  Please click to join and get help")
 }
 
