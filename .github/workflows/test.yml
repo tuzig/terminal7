@@ -1,6 +1,16 @@
-name: Validate
+name: Test
 
-on: push
+on:
+  workflow_dispatch:
+    inputs:
+      pbRef:
+        description: "Peerbook tag/branch/sha to deploy. Defaults to selected branch"
+        required: false
+        default: master
+      weRef:
+        description: "webexec tag/branch/sha to deploy. Defaults to selected branch"
+        required: false
+        default: master
 
 jobs:
   test:
@@ -21,7 +31,7 @@ jobs:
       - name: Unit Tests
         run: yarn test
       - name: Acceptance Tests
-        run: bash -x aatp/run
+        run: PEERBOOK_REF="${{ github.event.inputs.pbRef }}" WEBEXEC_REF="${{ github.event.inputs.weRef }}" bash -x aatp/run
       - name: Upload acceptance test results
         if: ${{ failure() }}
         uses: actions/upload-artifact@v3

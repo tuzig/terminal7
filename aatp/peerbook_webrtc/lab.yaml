@@ -37,7 +37,7 @@ services:
       context: .
       dockerfile: ./aatp/infra/peerbook/Dockerfile
       args:
-        BRANCH: ${PEERBOOK_REF-master}
+        REF: ${PEERBOOK_REF-master}
     expose:
       - 17777
     depends_on:
