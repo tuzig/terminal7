@@ -308,9 +308,11 @@ export class Terminal7 {
     async pbConnect() {
         return new Promise((resolve, reject) => {
             // do nothing when no subscription or already connected
-            if (this.pb  && this.pb.isOpen()) {
-                resolve()
-                return
+            if (this.pb) {
+                if (this.pb.isOpen())
+                    resolve()
+                else
+                    this.pb.connect().then(resolve).catch(reject)
             }
             this.getFingerprint().then(fp => {
                 this.pb = new PeerbookConnection({

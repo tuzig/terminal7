@@ -45,7 +45,9 @@ test.describe('terminal7 UI', ()  => {
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
         await page.evaluate(async () => {
             window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
-            localStorage.setItem("CapacitorStorage.dotfile","")
+            localStorage.setItem("CapacitorStorage.dotfile",`
+[peerbook]
+insecure=true`)
             localStorage.setItem("CapacitorStorage.gates", JSON.stringify(
                 [{"id":0,
                   "addr":"webexec",

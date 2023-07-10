@@ -553,7 +553,7 @@ async function subscribeCMD(shell: Shell) {
         try {
             await terminal7.pb.purchaseCurrent()
         } catch(e) {
-            console.log("purchase error", e.toString())
+            console.log("purchase error", e)
             shell.t.writeln("Error purchasing, please try again or contact support")
         }
         shell.stopWatchdog()

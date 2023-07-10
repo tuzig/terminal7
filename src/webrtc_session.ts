@@ -86,15 +86,17 @@ export class WebRTCSession extends BaseSession {
     async connect(marker=null, noCDC?: boolean): Promise<void> {
         console.log("in connect", marker, noCDC)
 
-        if ((!this.t7.iceServers) && (!this.t7.conf.peerbook?.insecure)) {
-            try {
-                this.t7.iceServers = await this.getIceServers()
-            } catch(e) {
-                this.t7.iceServers = []
-                terminal7.log("error getting iceservers", e)
-            }
-        } else {
+        if (this.t7.conf.peerbook?.insecure) 
             this.t7.iceServers = []
+        else {
+            if (!this.t7.iceServers) {
+                try {
+                    this.t7.iceServers = await this.getIceServers()
+                } catch(e) {
+                    this.t7.iceServers = []
+                    terminal7.log("error getting iceservers", e)
+                }
+            } 
         }
         this.t7.log("got ice server", JSON.stringify(this.t7.iceServers))
         try {
@@ -407,8 +409,9 @@ export class PeerbookSession extends WebRTCSession {
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate && this.t7.pb) {
-            this.t7.pbConnect().then(() =>
-                this.t7.pb.send({target: this.fp, candidate: ev.candidate}))
+            this.t7.pb.send({target: this.fp, candidate: ev.candidate})
+        } else {
+            terminal7.log("ignoring ice candidate", JSON.stringify(ev.candidate))
         }
     }
     onNegotiationNeeded(e) {

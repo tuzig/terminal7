@@ -201,15 +201,16 @@ export class PeerbookConnection {
 
     getUID() {
         return new Promise<string>((resolve, reject) => {
-            if (!this.session) {
-                reject("No session")
-                return
-            }
             if (this.uid != "TBD") {
                 resolve(this.uid)
                 return
             }
-            this.adminCommand("ping").then(uid => {
+            if (!this.session) {
+                console.log("get UID with No session")
+                reject("No session")
+                return
+            }
+            this.adminCommand("ping").then((uid: string) => {
                 this.uid = uid
                 resolve(uid)
             }).catch(reject)
