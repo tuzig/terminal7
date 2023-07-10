@@ -30,6 +30,7 @@ import { Device } from '@capacitor/device'
 import { NativeBiometric } from "capacitor-native-biometric"
 import { RateApp } from 'capacitor-rate-app'
 
+
 import { PeerbookConnection } from './peerbook'
 
 const WELCOME=`    🖖 Greetings & Salutations 🖖
@@ -80,7 +81,7 @@ export class Terminal7 {
      */
     constructor(settings) {
         settings = settings || {}
-        this.gates = new Map()
+        this.gates = []
         this.cells = []
         this.timeouts = []
         this.activeG = null
@@ -97,6 +98,7 @@ export class Terminal7 {
         this.pendingPanes = {}
         this.pb = null
         this.ignoreAppEvents = false
+        this.purchasesStarted = false
     }
     showKeyHelp () {
         if (Date.now() - this.metaPressStart > 987) {
@@ -202,34 +204,24 @@ export class Terminal7 {
         })
         this.map = new T7Map()
         // Load gates from local storage
-        let gates
-        value = (await Preferences.get({key: 'gates'})).value
-        if (value) {
-            try {
-                gates = JSON.parse(value)
-            } catch(e) {
-                 terminal7.log("failed to parse gates", value, e)
-                gates = []
-            }
-            gates.forEach(g => {
-                g.store = true
-                this.addGate(g).e.classList.add("hidden")
-            })
-            this.map.refresh()
-        }
+        this.loadLocalGates()
         if (Capacitor.isNativePlatform())  {
             // this is a hack as some operation, like bio verification
             // fire two events
             App.addListener('appStateChange', state => {
                 const active =  state.isActive
-                if (this.lastActiveState == active)
+                if (this.lastActiveState == active) {
+                    this.log("app state event on unchanged state ignored")
                     return
+                }
                 this.lastActiveState = active
                 console.log("app state changed", this.ignoreAppEvents)
                 if (!active) {
                     if (this.ignoreAppEvents) return
                     // We're getting suspended. disengage.
-                    this.notify("🛋️ Disengaging", true)
+                    if (this.activeG) {
+                        this.notify("🌜 Benched", true)
+                    }
                     this.disengage()
                 } else {
                     // We're back! puts us in recovery mode so that it'll
@@ -291,7 +283,7 @@ export class Terminal7 {
                     reject()
                 else {
                     const state = JSON.parse(value)
-                    let gate = this.gates.get(state.gateId)
+                    let gate = this.gates[state.gateId]
                     if (!gate) {
                         console.log("Invalid restore state. Starting fresh", state)
                         this.notify("Invalid restore state. Starting fresh")
@@ -313,24 +305,85 @@ export class Terminal7 {
             this.pb = null
         }
     }
-    pbConnect() {
-        return new Promise((resolve) => {
-            if (!this.conf.peerbook || !this.conf.peerbook.email || 
-               (this.pb  && this.pb.isOpen())) {
-                resolve()
-                return
+    async pbConnect() {
+        return new Promise((resolve, reject) => {
+            // do nothing when no subscription or already connected
+            if (this.pb) {
+                if (this.pb.isOpen())
+                    resolve()
+                else
+                    this.pb.connect().then(resolve).catch(reject)
             }
             this.getFingerprint().then(fp => {
-                this.pb = new PeerbookConnection(fp,
-                    this.conf.peerbook.email,
-                    this.conf.peerbook.peer_name,
-                    this.conf.net.peerbook,
-                    this.conf.peerbook.insecure
-                )
+                this.pb = new PeerbookConnection({
+                    fp: fp,
+                    host: this.conf.net.peerbook,
+                    insecure: this.conf.peerbook && this.conf.peerbook.insecure,
+                    shell: this.map.shell
+                })
                 this.pb.onUpdate = (m) => this.onPBMessage(m)
-                this.pb.connect().then(resolve)
+                if (!this.purchasesStarted) {
+                    this.pb.startPurchases().then(() => 
+                        this.pb.connect().then(resolve).catch(reject)
+                        // this.pb.updateCustomerInfo().then(resolve).catch(reject)
+                    ).catch(reject).finally(() => this.purchasesStarted = true)
+                } else
+                    this.pb.connect().then(resolve).catch(reject)
             })
         })
+    }
+    async toggleSettings() {
+        var modal   = document.getElementById("settings-modal"),
+            button  = document.getElementById("dotfile-button"),
+            area    =  document.getElementById("edit-conf"),
+            conf    =  (await Preferences.get({key: "dotfile"})).value || DEFAULT_DOTFILE
+
+        area.value = conf
+
+        button.classList.toggle("on")
+        modal.classList.toggle("hidden")
+        if (button.classList.contains("on")) {
+           if (this.confEditor == null) {
+                vimMode(CodeMirror)
+                tomlMode(CodeMirror)
+                dialogAddOn(CodeMirror)
+                CodeMirror.commands.save = () => this.wqConf()
+
+                this.confEditor  = CodeMirror.fromTextArea(area, {
+                   value: conf,
+                   lineNumbers: true,
+                   mode: "toml",
+                   keyMap: "vim",
+                   matchBrackets: true,
+                   showCursorWhenSelecting: true
+                })
+            }
+            this.confEditor.focus()
+        }
+
+    }
+    /*
+     * wqConf saves the configuration and closes the conf editor
+     */
+    wqConf() {
+        var area    =  document.getElementById("edit-conf")
+        document.getElementById("dotfile-button").classList.remove("on")
+        this.confEditor.save()
+        this.loadConf(TOML.parse(area.value))
+        Preferences.set({key: "dotfile", value: area.value})
+        this.cells.forEach(c => {
+            if (typeof(c.setTheme) == "function")
+                c.setTheme(this.conf.theme)
+        })
+        document.getElementById("settings-modal").classList.add("hidden")
+        this.confEditor.toTextArea()
+        this.confEditor = null
+        if (this.pb &&
+            ((this.pb.host != this.conf.net.peerbook) 
+             || (this.pb.insecure != this.conf.peerbook.insecure))) {
+            this.pbClose()
+            this.pbConnect()
+        }
     }
     catchFingers() {
         this.e.addEventListener("pointerdown", ev => this.onPointerDown(ev))
@@ -350,12 +403,11 @@ export class Terminal7 {
         p.id = p.fp || p.name
         let g = new Gate(p)
         g.onlySSH = p.onlySSH
-        this.gates.set(p.id, g)
+        this.gates.push(g)
         g.open(this.e)
         if (onMap) {
             g.nameE = this.map.add(g)
             g.updateNameE()
-
         }
         return g
     }
@@ -452,7 +504,7 @@ export class Terminal7 {
     disengage() {
         return new Promise(resolve => {
             var count = 0
-            if (this.gates.size > 0)
+            if (this.gates.length > 0)
                 this.gates.forEach(g => {
                     if (g.boarding) {
                         count++
@@ -472,7 +524,7 @@ export class Terminal7 {
             callCB()
         })
     }
-    updateNetworkStatus (status) {
+    async updateNetworkStatus (status) {
         let off = document.getElementById("offline").classList
         if (this.netStatus = status)
             return
@@ -480,17 +532,19 @@ export class Terminal7 {
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
             off.add("hidden")
-            this.pbConnect().then(() => {   
-                const gate = this.activeG
+            const gate = this.activeG
+            if (gate)
+                this.notify("🌞 Recovering")
+            this.pbConnect().catch(e => this.log("pbConnect failed", e))
+                .finally(() => {
                 if (gate) {
-                    this.notify("🌞 Recovering")
                     this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
                     this.recovering = true
                     this.run(() => this.recovering = false, this.conf.net.recoveryTime)
                     gate.reconnect()
                         .then(() => {
                             this.map.shell.stopWatchdog()
-                            this.map.showLog(false)
+                            // this.map.showLog(false)
                         }).catch(() => {
                             this.map.shell.stopWatchdog()
                             this.map.shell.runCommand("reset", [gate.name])
@@ -519,6 +573,7 @@ export class Terminal7 {
         this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1
         this.conf.ui.autoRestore = this.conf.ui.auto_restore || false
         this.conf.ui.verificationTTL = this.conf.ui.verification_ttl || 15 * 60 * 1000
+        this.conf.ui.subscribeTimeout = this.conf.ui.subscribe_timeout || 60 * 1000
 
         this.conf.net = this.conf.net || {}
         this.conf.net.iceServer = this.conf.net.ice_server ||
@@ -535,25 +590,33 @@ export class Terminal7 {
         this.conf.theme.foreground = this.conf.theme.foreground || "#00FAFA"
         this.conf.theme.background = this.conf.theme.background || "#000"
         this.conf.theme.selection = this.conf.theme.selection || "#D9F505"
-/*
-            Device.getInfo()
-            .then(i =>
-                this.conf.peerbook.peer_name = `${i.name}'s ${i.model}`)
-            .catch(err => {
-                console.log("Device info error", err)
-                this.conf.peerbook.peer_name = "John Doe"
-            })
-            */
+        if (conf.peerbook) {
+            this.conf.peerbook = {
+                insecure: conf.peerbook.insecure || false,
+            }
+            if (conf.peerbook.peerName)
+                this.conf.peerbook.peerName = conf.peerbook.peer_name
+            else
+                Device.getInfo().then(i =>
+                    this.conf.peerbook.peerName = `${i.name}'s ${i.model}`)
+                .catch(err => {
+                    console.log("Device info error", err)
+                    this.conf.peerbook.peerName = "John Doe"
+                })
+        } else
+            this.conf.peerbook = {insecure: false}
     }
-
 
     // gets the will formatted fingerprint from the current certificate
     getFingerprint() {
         // gets the certificate from indexDB. If they are not there, create them
         return new Promise((resolve, reject) => {
+            const compactCert = cert => {
+                const ret = cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")
+                return ret
+            }
             if (this.certificates) {
-                var cert = this.certificates[0].getFingerprints()[0]
-                resolve(cert.value.toUpperCase().replaceAll(":", ""))
+                resolve(compactCert(this.certificates[0]))
                 return
             }
             openDB("t7", 1, { 
@@ -565,21 +628,26 @@ export class Terminal7 {
                 let tx = db.transaction("certificates"),
                     store = tx.objectStore("certificates")
                  store.getAll().then(certificates => {
-                     this.certificates = certificates
+                     if (certificates.length == 0) {
+                         console.log("got no certificates, generating", certificates)
+                         this.generateCertificate()
+                         .then(cert => resolve(compactCert(cert)))
+                         .catch(reject)
+                         return
+                     }
                      db.close()
-                     const cert = certificates[0].getFingerprints()[0]
-                     resolve(cert.value.toUpperCase().replaceAll(":", ""))
-                 }).catch(() => {
-                    this.generateCertificate()
-                    .then(cert => resolve(
-                        cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")))
-                    .catch(reject)
+                     this.certificates = certificates
+                     resolve(compactCert(certificates[0]))
+                 }).catch(e => {
+                     this.log("caught an error reading store", e)
+                     this.generateCertificate()
+                     .then(cert => resolve(compactCert(cert)))
+                     .catch(reject)
                 })
             }).catch(e => {
                 this.log(`got an error opening db ${e}`)
                 this.generateCertificate()
-                .then(cert => resolve(
-                    cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")))
+                .then(cert => resolve(compactCert(cert)))
                 .catch(reject)
             })
         })
@@ -641,16 +709,16 @@ export class Terminal7 {
             this.focus()
         // TODO: When at home remove the "on" from the home butto
     }
-    onPBMessage(data) {
-        this.log("got ws message", data)
-        const  m = JSON.parse(data)
-                
+    // handle incomming peerbook messages (coming over sebsocket)
+    async onPBMessage(m) {
+        this.log("got pb message", m)
         if (m["code"] !== undefined) {
             this.notify(`\uD83D\uDCD6  ${m["text"]}`)
             return
         }
         if (m["peers"] !== undefined) {
-            this.syncPBPeers(m["peers"])
+            this.gates = this.pb.syncPeers(this.gates, m.peers)
+            this.map.refresh()
             return
         }
         if (m["verified"] !== undefined) {
@@ -658,12 +726,19 @@ export class Terminal7 {
                 this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
             return
         }
-        const id = m.source_fp
-        var g = this.gates.get(id)
-        if (!g) {
-            terminal7.log("Got a pb message with unknown peer: " + id)
+        const fp = m.source_fp
+        // look for a gate where g.fp == fp
+        const myFP = await this.getFingerprint()
+        if (fp == myFP) {
             return
         }
+        const lookup =  this.gates.filter(g => g.fp == fp)
+
+        if (!lookup || (lookup.length != 1)) {
+            terminal7.log("Got a pb message with unknown peer: ", fp)
+            return
+        }
+        const g = lookup[0]
 
         if (m["peer_update"] !== undefined) {
             g.online = m.peer_update.online
@@ -858,27 +933,6 @@ export class Terminal7 {
         }
   
     }
-    syncPBPeers(peers) {
-        peers.forEach(p => {
-            if (p.kind != "webexec")
-                return
-            var g = this.gates.get(p.fp)
-            if (g != undefined) {
-                g.online = p.online
-                g.name = p.name
-                g.verified = p.verified
-                g.updateNameE()
-            } else {
-                p.id = p.fp
-                g = new Gate(p)
-                this.gates.set(p.id, g)
-                g.nameE = this.map.add(g)
-                g.updateNameE()
-                g.open(this.e)
-            }
-        })
-        this.map.refresh()
-    }
     clearTempGates() {
         this.gates.forEach(g => {
             if (g.name.startsWith("temp_"))
@@ -886,23 +940,28 @@ export class Terminal7 {
         })
     }
     validateHostAddress(addr) {
-        return this.gates.has(addr) ? "Host already exists" : ""
+        const lookup = this.gates.filter(g => g.addr == addr)
+        return (lookup.length > 0)?"Gate with this address already exists" : ""
     }
     validateHostName(name) {
-        for (const [, gate] of this.gates) {
-            if (gate.name == name)
-                return "Name already taken"
-        }
-        return ""
+        const lookup = this.gates.filter(g => g.name == name)
+        return (lookup.length > 0)? "Name already exists" : ""
+    }
+    resetGates() {
+        if (this.activeG)
+            this.activeG.close()
+        this.gates.forEach(g => {
+            g.e.remove()
+            this.map.remove(g)
+            // remove g from the gates array
+        })
+        this.gates = []
+        this.storeGates()
     }
     async factoryReset() {
         // setting up reset cert events
         return new Promise(resolve => {
-            this.gates.forEach(g => {
-                g.e.remove()
-                this.map.remove(g)
-                this.gates.delete(g.id)
-            })
+            this.resetGates()
             Preferences.clear().then(() => 
                 Preferences.set({key: 'dotfile', value: DEFAULT_DOTFILE}))
             const d = TOML.parse(DEFAULT_DOTFILE)
@@ -1013,5 +1072,43 @@ export class Terminal7 {
             this.pbConnect()
         }
         return Preferences.set({key: "dotfile", value: TOML.stringify(this.conf)})
+    }
+    async pbVerify() {
+        const fp = await this.getFingerprint()
+        const schema = this.insecure?"http":"https"
+        let response
+        try {
+            response = await fetch(`${schema}://${this.conf.net.peerbook}/verify`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({fp: fp}),
+            })
+        } catch(e) {
+            console.log("Error verifying peerbook", e)
+            return {verified: false}
+        }
+        const ret = await response.json()
+        terminal7.log("Peerbook verification response", ret)
+        return ret
+    }
+    async loadLocalGates() {
+        let gates
+        const { value } = await Preferences.get({key: 'gates'})
+
+        if (value) {
+            try {
+                gates = JSON.parse(value)
+            } catch(e) {
+                 terminal7.log("failed to parse gates", value, e)
+                gates = []
+            }
+            gates.forEach(g => {
+                g.store = true
+                this.addGate(g).e.classList.add("hidden")
+            })
+            this.map.refresh()
+        }
     }
 }

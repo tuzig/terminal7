@@ -9,9 +9,9 @@ import { afterEach, vi, describe, it, expect, beforeEach,beforeAll } from 'vites
 import { sleep, resizeObs } from './infra'
 import { Form } from '../src/form'
 import { T7Map } from '../src/map'
-import { IDisposable } from '@tuzig/xterm'
+import { IDisposable } from 'xterm'
 
-vi.mock('@tuzig/xterm')
+vi.mock('xterm')
 
 describe("form", () => {
     let word
@@ -86,7 +86,7 @@ describe("form", () => {
             finish = true
         })
         await sleep(100)
-        expect(t.out.endsWith("name [one/two]: three\nname must be one of: one, two\nname [one/two]: "),
+        expect(t.out.endsWith("name [one/two]: three\nValue must be one of: one, two\nname [one/two]: "),
                `unexpected TWR output ${t.uot}`).toBeTruthy()
         word = "one"
         setTimeout(writeChar, 10)

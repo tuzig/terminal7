@@ -7,10 +7,16 @@ services:
     volumes:
       - ./aatp/peerbook_webrtc:/runner
       - ./aatp/result:/result
+    depends_on:
+      - peerbook
+      - webexec
+      - terminal7
     environment:
       PWARGS: ${PWARGS--x}
   terminal7:
     image: halverneus/static-file-server:latest
+    expose:
+      - 80
     environment:
       PORT: 80
     volumes:
@@ -19,20 +25,32 @@ services:
     build:
       context: .
       dockerfile: ./aatp/infra/webexec/Dockerfile
-    environment:
-      PEERBOOK: 1
+      args:
+        REF: ${WEBEXEC_REF-latest}
+    depends_on:
+      - peerbook
     volumes:
       - ./aatp/peerbook_webrtc/webexec_conf:/conf
+      - ./aatp/result:/result
   peerbook:
     build:
       context: .
       dockerfile: ./aatp/infra/peerbook/Dockerfile
+      args:
+        REF: ${PEERBOOK_REF-master}
     expose:
-      - "17777"
+      - 17777
     depends_on:
       - redis
     environment:
       REDIS_HOST: redis:6379
+      REVENUECAT_URL: http://revenuecat:1080
   redis:
     image: "redis:alpine"
     command: [sh, -c, "rm -f /data/dump.rdb && redis-server"]  # disable persistence
+  revenuecat:
+    image: "mockserver/mockserver"
+    environment:
+      MOCKSERVER_INITIALIZATION_JSON_PATH: /config/revenuecat_double.json
+    volumes:
+        - ./aatp/peerbook_webrtc:/config

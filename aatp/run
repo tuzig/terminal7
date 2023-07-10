@@ -11,7 +11,8 @@ build_n_run() {
         fi
     fi
     echo ">>> Running a lab based on $1"
-    docker compose -f $1  --project-directory . up --exit-code-from runner
+    docker compose -f $1  --project-directory . up $UPFLAGS | sed 's/\.\.\//aatp\//g'
+    return ${PIPESTATUS[0]}
 }
 usage() {
    cat <<EOS
@@ -19,21 +20,23 @@ This script builds & runs the acceptance test procedures.
 When no path is given it fnds all the testing suites under `./aatp`
 setup their lab and runs them.
 
-Syntax: $0 [-h|z|n] <test_path>
+Syntax: $0 [-h|z|n|d] <test_path>
 options:
 
 h     Print this usage
 z     Build the docker images from scratch before running
 n     Don't build the images
+l     keep containers running after the tests are done
 
 EOS
 }
 
+UPFLAGS="--exit-code-from runner"
 exit_error() {
     usage
     exit 1
 }
-while getopts ":hnz" option; do
+while getopts ":lhnz" option; do
     echo "option " $option
    case $option in
       h) # display usage
@@ -45,13 +48,16 @@ while getopts ":hnz" option; do
       z) # No Cache
          BUILD_OPTIONS="--no-cache"
          ;;
+      l) # run as daemon and don't exit when done
+         UPFLAGS=
+         ;;
       \?) # Invalid option
          echo "Error: Invalid option"
          exit_error;;
    esac
 done
 shift $((OPTIND-1))
-npx vite build
+npm run build
 if [ $? -ne 0 ]
 then
      echo ">>> Terminal7 build FAILED"
@@ -61,12 +67,11 @@ if [ $# -eq 0 ]
 then
     for compose in `find aatp -name "lab.yaml"`
     do
-        dir=$(dirname $compose)
         build_n_run $compose
         if [ $? -ne 0 ]
         then
-            echo ">>> $dir tests FAILED"
-             exit 4
+            echo ">>> $(dirname $compose) tests FAILED"
+            exit 4
         fi
     done
 else

@@ -23,6 +23,8 @@ services:
     build:
       context: .
       dockerfile: ./aatp/infra/webexec/Dockerfile
+      args:
+        REF: ${WEBEXEC_REF-latest}
     volumes:
       - ./aatp/http_webrtc/webexec_conf:/conf
       - webexec_auth:/auth

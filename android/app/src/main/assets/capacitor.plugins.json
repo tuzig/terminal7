@@ -1,9 +1,5 @@
 [
 	{
-		"pkg": "@capacitor-community/http",
-		"classpath": "com.getcapacitor.plugin.http.Http"
-	},
-	{
 		"pkg": "@capacitor/app",
 		"classpath": "com.capacitorjs.plugins.app.AppPlugin"
 	},
@@ -34,6 +30,13 @@
 	{
 		"pkg": "@capacitor/status-bar",
 		"classpath": "com.capacitorjs.plugins.statusbar.StatusBarPlugin"
+<<<<<<< HEAD
+=======
+	},
+	{
+		"pkg": "@capgo/capacitor-purchases",
+		"classpath": "ee.forgr.plugin.capacitor_purchases.CapacitorPurchasesPlugin"
+>>>>>>> origin/master
 	},
 	{
 		"pkg": "@robingenz/capacitor-background-task",

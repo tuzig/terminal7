@@ -10,6 +10,12 @@
 		},
 		"Keyboard": {
 			"resize": "native"
+<<<<<<< HEAD
+=======
+		},
+		"CapacitorHttp": {
+			"enabled": true
+>>>>>>> origin/master
 		}
 	},
 	"cordova": {

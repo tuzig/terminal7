@@ -43,7 +43,7 @@ export interface Session {
     // for reconnect
     openChannel(id: ChannelID): Promise<Channel>
     // for new channel
-    openChannel(cmd: string, parent?: ChannelID, sx?: number, sy?: number):
+    openChannel(cmd: string | string[], parent?: ChannelID, sx?: number, sy?: number):
         Promise<Channel>
     close(): void
     getPayload(): Promise<string | null>

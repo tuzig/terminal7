@@ -19,8 +19,8 @@ if [[ $PEERBOOK == "1" ]]
 then
     /scripts/wait-for-it.sh -h peerbook -p 17777
 fi
-su -c "$EXE start --debug" runner &
+su -c "$EXE start --debug" runner
 while true
 do
-    sleep 10
+    sleep 1
 done

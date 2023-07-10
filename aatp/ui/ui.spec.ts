@@ -45,7 +45,9 @@ test.describe('terminal7 UI', ()  => {
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
         await page.evaluate(async () => {
             window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
-            localStorage.setItem("CapacitorStorage.dotfile","")
+            localStorage.setItem("CapacitorStorage.dotfile",`
+[peerbook]
+insecure=true`)
             localStorage.setItem("CapacitorStorage.gates", JSON.stringify(
                 [{"id":0,
                   "addr":"webexec",
@@ -90,11 +92,10 @@ test.describe('terminal7 UI', ()  => {
             window.terminal7.notify = (m) => window.notifications.push(m)
         })
         connectGate()
-        await sleep(500)
-        await page.screenshot({ path: `/result/2.png` })
         await page.locator('.tabbar .reset').click()
         await expect(page.locator('#t0')).toBeVisible()
-        sleep(20)
+        await sleep(500)
+        await page.keyboard.press('ArrowDown')
         await page.keyboard.press('Enter')
         await expect(page.locator('.windows-container')).toBeHidden()
     })
@@ -110,7 +111,6 @@ test.describe('terminal7 UI', ()  => {
         await page.locator('.tabbar .reset').click()
         await expect(page.locator('#t0')).toBeVisible()
         sleep(20)
-        await page.keyboard.press('ArrowDown')
         await page.keyboard.press('Enter')
         await expect(page.locator('#t0')).toBeHidden()
         await expect(page.locator('.pane')).toHaveCount(1)

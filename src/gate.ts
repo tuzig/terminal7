@@ -10,6 +10,7 @@ import { Clipboard } from '@capacitor/clipboard'
 import { Pane } from './pane.js'
 import { T7Map } from './map'
 import { Failure, Session } from './session'
+import { PB } from './peerbook'
 import { SSHSession, HybridSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
@@ -44,7 +45,6 @@ export class Gate {
     store: boolean
     map: T7Map
     onlySSH: boolean
-    noIds: boolean
     firstConnection: boolean
     keyRejected: boolean
     constructor (props) {
@@ -118,8 +118,9 @@ export class Gate {
             this.e.appendChild(t)
         }
     }
+    // deletes removes the gate from terminal7 and the map
     delete() {
-        this.t7.gates.delete(this.id)
+        this.t7.gates.splice(this.t7.gates.indexOf(this), 1)
         this.t7.storeGates()
 		this.map.remove(this)
     }
@@ -175,6 +176,7 @@ export class Gate {
     async handleFailure(failure: Failure) {
         // KeyRejected and WrongPassword are "light failure"
         const active = this == this.t7.activeG
+        const isSSH = this.session && this.session.isSSH
         if (!this.t7.lastActiveState) {
             console.log("ignoring failed event as the app is still in the back")
             this.stopBoarding()
@@ -191,7 +193,6 @@ export class Gate {
         this.boarding = false
         this.map.shell.stopWatchdog()
         let password: string
-        let couldBeBug = false
         switch ( failure ) {
             case Failure.WrongPassword:
                 this.notify("Sorry, wrong password")
@@ -214,7 +215,6 @@ export class Gate {
                 this.session = null
                 this.stopBoarding()
                 this.notify("Not Implemented. Please try again")
-                couldBeBug = true
                 break
             case Failure.Unauthorized:
                 // TODO: handle HTTP based authorization failure
@@ -227,7 +227,6 @@ export class Gate {
                 this.session = null
                 this.stopBoarding()
                 this.connect(this.onConnected)
-                couldBeBug = true
                 return
 
             case undefined:
@@ -242,7 +241,6 @@ export class Gate {
                 }
                 this.stopBoarding()
                 this.notify(failure?"Lost Data Channel":"Lost Connection")
-                couldBeBug = failure == Failure.DataChannelLost
                 break
 
             case Failure.KeyRejected:
@@ -258,7 +256,7 @@ export class Gate {
                 return
 
         }
-        await this.map.shell.onDisconnect(this, couldBeBug)
+        await this.map.shell.onDisconnect(this, isSSH && !this.onlySSH)
     }
     reconnect(): Promise<void> {
         if (!this.session)
@@ -535,7 +533,7 @@ export class Gate {
     }
     async completeConnect(): void {
         this.keyRejected = false
-        if (this.fp) {
+        if (this.fp && !this.onlySSH) {
             this.notify("🎌  PeerBook")
             this.session = new PeerbookSession(this.fp, this.t7.pb)
         }
@@ -544,8 +542,9 @@ export class Gate {
                 this.session = (this.onlySSH)?new SSHSession(this.addr, this.username):
                    new HybridSession(this.addr, this.username)
             } else {
-                this.notify("🎌  webexec server")
-                this.session = new HTTPWebRTCSession(this.addr)
+                this.notify("🎌  webexec HTTP server")
+                const addr = `http://${this.addr}:7777/connect`
+                this.session = new HTTPWebRTCSession(addr)
             }
         }
         this.session.onStateChange = (state, failure?) => this.onSessionState(state, failure)
@@ -554,9 +553,14 @@ export class Gate {
             this.t7.log("TBD: update layout", layout)
         }
         this.t7.log("opening session")
-        if (this.noIds)
-            this.session.connect(this.marker)
-        else {
+        if (this.fp) {
+            try {
+                this.session.connect(this.marker)
+            } catch(e) {
+                this.t7.log("error connecting", e)
+                this.notify(`${PB} Connection failed: ${e}`)
+            }
+        } else {
             const {publicKey, privateKey} = await this.t7.readId()
             this.session.connect(this.marker, publicKey, privateKey)
         }
@@ -583,7 +587,7 @@ export class Gate {
             name: this.name || this.addr,
             boarding: this.boarding,
             offline: this.online === false,
-            unverified: this.verified === false,
+            unverified: this.fp?!this.verified:this.firstConnection,
             peerbook: this.fp != null,
         })
     }

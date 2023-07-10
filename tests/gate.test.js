@@ -13,9 +13,9 @@ import { Terminal7Mock, sleep } from './infra.ts'
 import { Preferences } from '@capacitor/preferences'
 import { Gate } from '../src/gate.ts'
 import { HTTPWebRTCSession } from '../src/webrtc_session'
-import { Terminal } from '@tuzig/xterm'
+import { Terminal } from 'xterm'
 
-vi.mock('@tuzig/xterm')
+vi.mock('xterm')
 vi.mock('../src/webrtc_session.ts')
 vi.mock('../src/ssh_session.ts')
 
@@ -30,11 +30,11 @@ describe("gate", () => {
     })
     afterEach(() => {
         t.clearTimeouts()
-        t.gates = new Map()
+        t.gates = new Array()
         t.pendingPanes = {}
     })
     it("starts with no gates", () => {
-        expect(t.gates.size).to.equal(0)
+        expect(t.gates.length).to.equal(0)
     })
     it("s state can be restored", async () => {
         let state = { windows: [
@@ -111,13 +111,6 @@ describe("gate", () => {
     it("can edit gate", async () => {
         let g = t.addGate({name:"foo"})
         // TODO: add checks here
-    })
-    it("has a unique name", () => {
-        let valid = t.validateHostName("foo")
-        expect(valid).equal("")
-        t.addGate({name:"foo", addr: "foo"})
-        valid = t.validateHostName("foo")
-        expect(valid).equal("Name already taken")
     })
     it("can be connected", async () => {
         let g = t.addGate()

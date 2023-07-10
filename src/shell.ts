@@ -1,11 +1,14 @@
+import * as TOML from '@tuzig/toml'
+import { Channel } from "./session"
 import { Clipboard } from "@capacitor/clipboard"
 import { Capacitor } from "@capacitor/core"
-import { Terminal } from '@tuzig/xterm'
+import { Terminal } from 'xterm'
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
 import { Gate } from "./gate"
 import { T7Map } from './map'
 import { Failure } from "./session"
+import { HTTPWebRTCSession } from './webrtc_session'
 import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
 import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
 import { tomlMode} from '@tuzig/codemirror/mode/toml/toml.js'
@@ -16,6 +19,9 @@ export class Shell {
 
     prompt = "TWR> "
 
+    emailRe = /^(([^<>()[..,;:.@"]+(.[^<>()[..,;:.@"]+)*)|(".+"))@(([^<>()[..,;:.@"]+.)+[^<>()[..,;:.@"]{2,})$/i;
+
+
     map: T7Map
     t: Terminal
     active = false
@@ -24,17 +30,37 @@ export class Shell {
     currentLine = ''
     watchdog: number
     timer: number | null = null
+    pbSession: HTTPWebRTCSession | null = null
+    masterChannel: Channel | null = null
     history: string[] = []
     historyIndex = 0
     confEditor: CodeMirror.EditorFromTextArea
     exitConf: () => void
+    noOfferSub = false
 
     constructor(map: T7Map) {
         this.map = map
         this.t = map.t0
     }
 
-    start() {
+    /*
+     * newPBSession opens a webrtc connection the the server to be used to admin
+     * the peerbook
+     */
+    newPBSession(appUserId?: string) {
+        console.log("newPBSession")
+        if (this.pbSession) {
+            return this.pbSession
+        }
+        const schema = terminal7.conf.peerbook.insecure? "http" : "https"
+        const url = `${schema}://${terminal7.conf.net.peerbook}/we`
+        const headers = new Map<string, string>()
+        if (appUserId)
+            headers.set("Bearer", appUserId)
+        this.pbSession = new HTTPWebRTCSession(url, headers)
+        return this.pbSession
+    }
+    async start() {
         if (this.active)
             return
         this.active = true
@@ -46,6 +72,9 @@ export class Shell {
     
     async onKey(ev: KeyboardEvent) {
         const key = ev.key
+        if (this.masterChannel) {
+            return
+        }
         switch (key) {
             case "Enter":
                 this.t.write("\n")
@@ -132,7 +161,7 @@ export class Shell {
         this.active = true
     }
 
-    async runCommand(cmd: string, args: string[]) {
+    async runCommand(cmd: string, args: string[] = []) {
         this.map.showLog(true)
         await this.escapeActiveForm()
         await this.escapeWatchdog()
@@ -198,10 +227,17 @@ export class Shell {
         this.printPrompt()
     }
     
+    onTWRData(data: string) {
+        if (!this.masterChannel)
+            return
+        this.masterChannel.send(data)
+    }
     async keyHandler(ev: KeyboardEvent) {
         const form = this.activeForm,
             key = ev.key
         this.updateCapsLock(ev)
+        if (this.masterChannel)
+            return
         this.printPrompt()
         if (key == 'Escape') {
             await this.escapeActiveForm()
@@ -264,8 +300,9 @@ export class Shell {
     /* 
      * Starts a watchdog that will reject if not stopped within the given time
     */
-    startWatchdog() {
-        const timeout = terminal7.conf.net.timeout
+    startWatchdog(timeout? : number): Promise<void> {
+        if (!timeout)
+            timeout = terminal7.conf.net.timeout
         return new Promise((_, reject) => {
             this.startHourglass(timeout)
             this.watchdog = window.setTimeout(() => {
@@ -355,35 +392,31 @@ export class Shell {
         this.exitConf()
     }
 
-    getGate(name: string) {
-        let ret = terminal7.gates.get(name)
-        if (!ret) {
-            // eslint-disable-next-line
-            for (const [_, maybe] of terminal7.gates) {
-                if (maybe.name == name)
-                    return maybe
-                if (maybe.name.startsWith(name)) {
-                    if (ret) {
-                        this.t.writeln(`Ambiguous gate: ${name}`)
-                        throw new Error("Ambiguous gate")
-                    }
-                    ret = maybe
-                }
-            }
+    getGate(prefix: string) {
+        const maybes = terminal7.gates.filter(g => g.name.startsWith(prefix))
+        if (maybes.length == 0) {
+            return null
         }
-        return ret
+        if (maybes.length > 1) {
+            // more than one, let's see if there's an exact match
+            const exact = maybes.filter(g => g.name == prefix)
+            if (exact.length == 1)
+                return exact[0]
+            this.t.write(`Multiple gates found with prefix ${prefix}: ${maybes.map(g => g.name).join(', ')}`)
+            return null
+        }
+        return maybes[0]
     }
 
     /*
      * onDisconnect is called when a gate disconnects.
      */
-    async onDisconnect(gate: Gate, couldBeBug: bool) {
+    async onDisconnect(gate: Gate, offerSub: bool) {
         if (!terminal7.netStatus.connected || terminal7.recovering ||
             ((terminal7.activeG != null) && (gate != terminal7.activeG)))
             return
 
         if (gate.firstConnection) {
-            const cmd = "bash <(curl -sL https://get.webexec.sh)"
             this.t.writeln("Failed to connect")
             let ans: string
             const verifyForm = [{
@@ -402,7 +435,8 @@ export class Shell {
                 setTimeout(() => this.handleLine("add"), 100)
                 return gate.onFailure(Failure.WrongAddress)
             }
-            if (!gate.session.isSSH) {
+            if (gate.session.isSSH) {
+                const cmd = "bash <(curl -sL https://get.webexec.sh)"
                 const webexecForm = [{
                     prompt: `Make sure webexec is running on ${gate.addr}:
                         \n\x1B[1m${cmd}\x1B[0m\n\nCopy to clipboard?`,
@@ -419,15 +453,10 @@ export class Shell {
             }
         }
 
-        /* TODO: kill it or improve it?
-        if (couldBeBug) {
-            this.t.writeln("")
-            this.t.writeln("We're sorry, it could be a 🪳")
-            this.t.writeln("Please hit CMD-9 and paste the log in #bugs at")
-            this.t.writeln("https://discord.com/invite/rDBj8k4tUE")
-        }
-        */
-
+        if (offerSub) {
+            await this.offerSub()
+            return
+        } 
         const reconnectForm = [
             { prompt: "Reconnect" },
             { prompt: "Close" }
@@ -451,14 +480,64 @@ export class Shell {
     }
     
     async askPass(): Promise<string> {
-        const res = await this.map.shell.runForm(
+        const res = await this.runForm(
             [{ prompt: "Password", password: true }], "text")
         return res[0]
     }
     async askValue(prompt: string, def?): Promise<string> {
-        const res = await this.map.shell.runForm(
-            [{ prompt: prompt, default: def }], "text")
+        const res = await this.runForm(
+                [{ prompt: prompt, default: def }], "text")
         return res[0]
     }
+    async verifyFP(fp: string, prompt?: string) {
+        let validated = false
+        // TODO:gAdd biometrics verification
+        while (!validated) {
+            console.log("Verifying FP", fp)
+            let gotMsg = false
+            let otp
+            try {
+                otp = await this.askValue(prompt || "Enter OTP to verify gate")
+            } catch(e) {
+                reject()
+                return
+            }
+            if (!this.pbSession) {
+                console.log("verifyFP: creating new session")
+                const session = this.newPBSession()
+                try {
+                    await (new Promise((resolve, reject) => {
+                        session.onStateChange = async (state, failure) => {
+                            if (state == 'connected') {
+                                resolve()
+                            } else if (state == 'failed')
+                                reject(failure)
+                        }
+                        session.connect()
+                    }))
+                } catch(e) {
+                    if (e == Failure.Unauthorized) {
+                        this.t.writeln("Seems like you're not subscribed to PeerBook")
+                        this.t.writeln("Use `subscribe` to subscribe")
+                    } else
+                        this.t.writeln(`Failed to connect to PeerBook: ${e}`)
+                    throw e
+                }
+            }
+            const channel = await this.pbSession.openChannel(["verify", fp, otp], 0, 80, 24)
+            channel.onMessage = (data: Uint8Array) => {
+                gotMsg = true
+                console.log("Got verify reply", data[0])
+                validated = data[0] == "1".charCodeAt(0)
+            }
+            while (!gotMsg) {
+                await (new Promise(r => setTimeout(r, 100)))
+            }
+            if (!validated)
+                this.t.writeln("Invalid OTP, please try again")
+        }
+    }
+    async reset() {
+        this.pbSession = null
+    }
 }
-

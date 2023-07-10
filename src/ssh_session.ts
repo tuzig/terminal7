@@ -5,7 +5,6 @@ import { WebRTCSession }  from './webrtc_session'
 const ACCEPT_CMD = "/usr/local/bin/webexec accept"
 
 export class SSHChannel extends BaseChannel {
-    id: number
     async close(): Promise<void> {
         return SSH.closeChannel({channel: this.id})
     }
@@ -18,11 +17,11 @@ export class SSHChannel extends BaseChannel {
            .catch(e => console.log("error from setPtySize", e))
     }
     handleData(m) {
-        if ('data' in m)
+        if ((m instanceof Object) && ('data' in m))
             this.onMessage(m.data)
         else {
-            this.t7.log("ssh read got error ", m.error)
-            this.onClose(m.error)
+            this.t7.log("ssh read got error ", m)
+            this.onClose(m && m.error)
         }
     }
 }
@@ -46,6 +45,7 @@ export class SSHSession extends BaseSession {
         this.onStateChange("connected")
     }
     async connect(marker?:number, publicKey: string, privateKey:string) {
+        terminal7.log("Connecting using SSH", this.address, this.username, this.port)
         SSH.startSessionByKey({
             address: this.address,
             port: this.port,
@@ -123,6 +123,9 @@ export class SSHSession extends BaseSession {
                 throw e
             }
         }
+    close() {
+        // SSH.closeSession({session: this.id})
+    }
 }
 // HybridSession can run either as SSH or WebRTC bby signalling
 // over SSH

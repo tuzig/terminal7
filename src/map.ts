@@ -7,12 +7,14 @@
  *  License: GPLv3
  */
 
-import { Terminal } from '@tuzig/xterm'
+import { Terminal } from 'xterm'
 import { Gate } from './gate'
 import { WebLinksAddon } from 'xterm-addon-web-links'
 import { FitAddon } from "xterm-addon-fit"
 import { WebglAddon } from 'xterm-addon-webgl'
-import XtermWebfont from 'xterm-webfont'
+import { ImageAddon } from 'xterm-addon-image';
+import XtermWebfont from '@liveconfig/xterm-webfont'
+
 import { Shell } from './shell'
 
 export class T7Map {
@@ -39,8 +41,14 @@ export class T7Map {
             const webLinksAddon = new WebLinksAddon((MouseEvent, url) => {
                 window.open(url, "_blank", "noopener")
             })
+            const imageAddon = new ImageAddon()
+            this.t0.loadAddon(imageAddon)
             this.t0.loadAddon(webLinksAddon)
             this.t0.loadAddon(this.fitAddon)
+            setTimeout(() => {
+                this.fitAddon.fit()
+                console.log("TWR size", this.t0.cols, this.t0.rows)
+            }, 100)
             this.t0.loadAddon(new XtermWebfont())
             // this.t0.attachCustomKeyEventHandler(ev => {
             this.t0.onKey(iev => {
@@ -48,15 +56,16 @@ export class T7Map {
                 const ev = iev.domEvent
                 this.shell.keyHandler(ev)
             })
+            this.t0.onData(d =>  this.shell.onTWRData(d))
+            const webGLAddon = new WebglAddon()
+            webGLAddon.onContextLoss(() => {
+                console.log("lost context")
+                  webGLAddon.dispose()
+            })
+            try {
+                this.t0.loadAddon(webGLAddon)
+            } catch (e) { console.log("no webgl: " +e.toString()) }
             this.t0.loadWebfontAndOpen(e).then(() => {
-                const webGLAddon = new WebglAddon()
-                webGLAddon.onContextLoss(() => {
-                    console.log("lost context")
-                      webGLAddon.dispose()
-                })
-                try {
-                    this.t0.loadAddon(webGLAddon)
-                } catch (e) { console.log("no webgl: " +e.toString()) }
                 this.shell.start()
                 resolve()
             })
@@ -84,6 +93,8 @@ export class T7Map {
         const d = document.createElement('div')
         const b = document.createElement('button')
         d.className = "gate-pad"
+        if (g.fp)
+            d.classList.add("from-peerbook")
         b.className = "text-button"
         d.gate = g
         d.appendChild(b)

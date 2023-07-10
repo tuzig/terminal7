@@ -3,9 +3,9 @@ import { Terminal7 } from "../src/terminal7.js"
 import { Gate } from "../src/gate"
 import { T7Map } from "../src/map"
 import { vi } from "vitest";
-import { Terminal } from "@tuzig/xterm";
+import { Terminal } from "xterm"
 
-vi.mock("@tuzig/xterm");
+vi.mock("xterm");
 
 export class resizeObs {
     constructor(cb) {
@@ -18,6 +18,10 @@ export class resizeObs {
 }
 
 export function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
+
+export function returnLater(ret: unknown) {
+    vi.fn(() => new Promise( resolve => setTimeout(() => resolve(ret), 0)))
+}
 
 export class Terminal7Mock extends Terminal7 {
     conf = { ui: {max_tabs: 10,
@@ -118,5 +122,11 @@ export class Terminal7Mock extends Terminal7 {
         return new Promise((resolve, reject) => {
             resolve("BADFACE")
         })
+    }
+    async readId() {
+        return {
+            publicKey: "foo",
+            privateKey: "bar"
+        }
     }
 }

@@ -5,6 +5,7 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
+import * as TOML from '@tuzig/toml'
 import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
 import { Gate } from '../src/gate'
@@ -12,12 +13,10 @@ import { T7Map } from '../src/map'
 import { Terminal7Mock, sleep } from './infra'
 import { assert } from "chai"
 import { Preferences } from '@capacitor/preferences'
-import { Terminal } from '@tuzig/xterm'
-import { SSHSession } from '../src/ssh_session'
 import { expect, vi } from 'vitest'
 import { HTTPWebRTCSession } from '../src/webrtc_session'
 
-vi.mock('@tuzig/xterm')
+vi.mock('xterm')
 vi.mock('../src/ssh_session.ts')
 vi.mock('../src/webrtc_session.ts')
 
@@ -476,7 +475,7 @@ describe("terminal7", function() {
             t0.pressKey("Enter")
             t0.pressKey("n")
             t0.pressKey("Enter")
-            await sleep(100)
+            await sleep(300)
             console.log("t0.out:", t0.out)
             expect(t0.out, `TWR out: ${t0.out}`).toMatch(/webexec/)
             expect(t0.out, `TWR out: ${t0.out}`).toMatch(/over WebRTC/)

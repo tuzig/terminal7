@@ -1,4 +1,4 @@
-import { Http } from '@capacitor-community/http';
+import { CapacitorHttp } from '@capacitor/core';
 import { BaseChannel, BaseSession, CallbackType, Channel, ChannelID, Failure } from './session';
 
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
@@ -27,11 +27,12 @@ export class WebRTCChannel extends BaseChannel {
         else 
             return "disconnected"
     }
-    send(data: string) {
-        if (this.dataChannel)
-            this.dataChannel.send(data)
-        else 
+    send(data: ArrayBuffer): void {
+        if (!this.dataChannel) {
             this.t7.notify("data channel closed")
+            return
+        }
+        this.dataChannel.send(data)
     }
     resize(sx: number, sy: number): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -82,22 +83,28 @@ export class WebRTCSession extends BaseSession {
     public get isSSH() {
         return false
     }
-    async connect(marker=null) {
-        console.log("in connect")
+    async connect(marker=null, noCDC?: boolean): Promise<void> {
+        console.log("in connect", marker, noCDC)
 
-        if ((!this.t7.iceServers) && (!this.t7.conf.peerbook?.insecure)) {
-            try {
-                this.t7.iceServers = await this.getIceServers()
-            } catch(e) {
-                this.t7.iceServers = []
-                console.log(e)
-            }
+        if (this.t7.conf.peerbook?.insecure) 
+            this.t7.iceServers = []
+        else {
+            if (!this.t7.iceServers) {
+                try {
+                    this.t7.iceServers = await this.getIceServers()
+                } catch(e) {
+                    this.t7.iceServers = []
+                    terminal7.log("error getting iceservers", e)
+                }
+            } 
         }
-        console.log("got ice server", this.t7.iceServers)
+        this.t7.log("got ice server", JSON.stringify(this.t7.iceServers))
         try {
             await this.t7.getFingerprint()
         } catch (e) {
+            console.log("failed to get fingerprint", e)
             this.t7.certificates = undefined
+            return
         }
         this.pc = new RTCPeerConnection({
             iceServers: this.t7.iceServers,
@@ -118,7 +125,8 @@ export class WebRTCSession extends BaseSession {
             } else  {
                 if (state == 'failed')
                     this.closeChannels()
-                this.onStateChange(state)
+                if (this.onStateChange)
+                    this.onStateChange(state)
             }
         }
         this.pc.onicecandidateerror = (ev: RTCPeerConnectionIceErrorEvent) => {
@@ -153,6 +161,8 @@ export class WebRTCSession extends BaseSession {
                 }
             }
         }
+        if (noCDC)
+            return
         this.openCDC()
     }
 
@@ -169,7 +179,6 @@ export class WebRTCSession extends BaseSession {
         // callbacks are set after the resolve as that's 
         // where caller's onMessage & onClose are set
         dc.onmessage = m => {
-            // ignore close events when an older generation channel
             const data = new Uint8Array(m.data)
             channel.onMessage(data)
         }
@@ -179,21 +188,24 @@ export class WebRTCSession extends BaseSession {
         }
         return channel
     }
-    openChannel(cmdorid: unknown, parent?: ChannelID, sx?: number, sy?: number):
+    openChannel(cmdorid: string | string[], parent?: ChannelID, sx?: number, sy?: number):
          Promise<Channel> {
         return new Promise((resolve, reject) => {
             let msgID: number
             if (sx !== undefined) {
+                if (typeof cmdorid == "string")
+                    cmdorid = [cmdorid] 
                 msgID = this.sendCTRLMsg({
                     type: "add_pane", 
                     args: { 
-                        command: [cmdorid],
+                        command: cmdorid,
                         rows: sy,
                         cols: sx,
                         parent: parent || 0
                     }
                 }, Function.prototype(), Function.prototype())
             } else {
+                console.log("reconnect pane", cmdorid)
                 msgID = this.sendCTRLMsg({
                     type: "reconnect_pane", 
                     args: { id: cmdorid }
@@ -209,6 +221,7 @@ export class WebRTCSession extends BaseSession {
     }
     async reconnect(marker?: number, publicKey?: string, privateKey?: string): Promise<void> {
         return new Promise((resolve, reject) => { 
+            let timedout = false
             console.log("in reconnect", this.cdc, this.cdc.readyState)
             if (!this.pc)
                 return this.connect(marker, publicKey, privateKey)
@@ -216,7 +229,6 @@ export class WebRTCSession extends BaseSession {
             if (!this.cdc || this.cdc.readyState != "open")
                 this.openCDC()
             if (marker != null) {
-                let timedout = false
                 const watchdog = setTimeout(() => {
                     timedout = true
                     reject()
@@ -251,11 +263,11 @@ export class WebRTCSession extends BaseSession {
                 if (this.pendingCDCMsgs.length > 0)
                     // TODO: why the time out? why 100mili?
                     this.t7.run(() => {
-                        this.t7.log("sending pending messages:", this.pendingCDCMsgs)
+                        this.t7.log("sending pending messages")
                         this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m[0], m[1], m[2]))
                         this.pendingCDCMsgs = []
                         resolve()
-                    }, 100)
+                    }, 500)
                 else
                     resolve()
             }
@@ -292,9 +304,9 @@ export class WebRTCSession extends BaseSession {
             msg.time = Date.now()
         this.msgHandlers[msg.message_id] = [resolve, reject]
         if (!this.cdc || this.cdc.readyState != "open")
+            // message stays frozen when restrting
             this.pendingCDCMsgs.push([msg, resolve, reject])
         else {
-            // message stays frozen when restrting
             const s = msg.payload || JSON.stringify(msg)
             this.t7.log("sending ctrl message ", s)
             msg.payload = s
@@ -357,18 +369,6 @@ export class WebRTCSession extends BaseSession {
         }
     }
     getIceServers() {
-        return new Promise((resolve) =>
-            resolve([{ urls: this.t7.conf.net.iceServer}]))
-    }
-}
-
-export class PeerbookSession extends WebRTCSession {
-    fp: string
-    constructor(fp: string) {
-        super()
-        this.fp = fp
-    }
-    getIceServers() {
         return new Promise((resolve, reject) => {
             const ctrl = new AbortController(),
                   tId = setTimeout(() => ctrl.abort(), 1000),
@@ -379,11 +379,15 @@ export class PeerbookSession extends WebRTCSession {
                   {method: 'POST', signal: ctrl.signal })
             .then(response => {
                 if (!response.ok)
-                    throw new Error(
-                      `HTTP POST failed with status ${response.status}`)
-                return response.json()
+                    return null
+                else
+                    return response.json()
             }).then(servers => {
                 clearTimeout(tId)
+                if (!servers) {
+                    reject("failed to get ice servers")
+                    return
+                }
                 // return an array with the conf's server and subspace's
                 resolve([{ urls: this.t7.conf.net.iceServer},
                          ...servers])
@@ -395,20 +399,31 @@ export class PeerbookSession extends WebRTCSession {
             })
         })
     }
+}
+
+export class PeerbookSession extends WebRTCSession {
+    fp: string
+    constructor(fp: string) {
+        super()
+        this.fp = fp
+    }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate && this.t7.pb) {
-            this.t7.pbConnect().then(() =>
-                this.t7.pb.send({target: this.fp, candidate: ev.candidate}))
+            this.t7.pb.send({target: this.fp, candidate: ev.candidate})
+        } else {
+            terminal7.log("ignoring ice candidate", JSON.stringify(ev.candidate))
         }
     }
     onNegotiationNeeded(e) {
-        this.t7.log("on negotiation needed", e)
+        terminal7.log("on negotiation needed", e)
         this.pc.createOffer().then(d => {
             const offer = btoa(JSON.stringify(d))
             this.pc.setLocalDescription(d)
-            this.t7.log("got offer", offer)
-            this.t7.pbConnect().then(() =>
-                this.t7.pb.send({target: this.fp, offer: offer}))
+            terminal7.log("got offer", offer)
+            if (!terminal7.pb)
+                console.log("no peerbook")
+            else
+                terminal7.pb.send({target: this.fp, offer: offer})
         })
     }
     peerAnswer(offer) {
@@ -421,7 +436,7 @@ export class PeerbookSession extends WebRTCSession {
     }
     peerCandidate(candidate) {
         this.pc.addIceCandidate(candidate).catch(e =>
-            this.t7.notify(`ICE candidate error: ${e}`))
+            this.t7.log(`ICE candidate error: ${e}`))
         return
     }
 }
@@ -431,65 +446,66 @@ export class PeerbookSession extends WebRTCSession {
 export class HTTPWebRTCSession extends WebRTCSession {
     address: string
     fetchTimeout: number
-    constructor(address) {
+    headers: CapacitorHttp.HttpHeaders
+    constructor(address: string, headers?: Map<string, string>) {
         super()
         this.address = address
+        this.headers = { "Content-Type": "application/json" }
+        if (headers)
+            headers.forEach((v, k) => this.headers[k] =  v)
+        console.log("new http webrtc session", address, JSON.stringify(this.headers))
     }
 
     onNegotiationNeeded(e) {
-        this.t7.log("on negotiation needed", e)
+        this.t7.log("over HTTP on negotiation needed", e)
         this.pc.createOffer().then(offer => {
             this.pc.setLocalDescription(offer)
-            const encodedO = btoa(JSON.stringify(offer))
-            this.t7.getFingerprint().then(fp => {
-                Http.request({
-                    //TODO: add port to the conf file
-                    url: `http://${this.address}:7777/connect`,
-                    headers: {"Content-Type": "application/json"},
-                    method: 'POST',
-                    //TODO: fix the timeout in the plugin
-                    connectTimeout: this.fetchTimeout, 
-                    data: JSON.stringify({api_version: 0,
-                        offer: encodedO,
-                        fingerprint: fp
-                    })
-                }).then(response => {
-                    if (response.status == 401)
-                        throw new Error('unauthorized');
-                    if (response.status >= 300)
-                        throw new Error(
-                          `HTTP POST failed with status ${response.status}`)
-                    return response.data
-                }).then(data => {
-                    /* TODO: this needs to move
-                    if (!this.verified) {
-                        this.verified = true
-                        this.t7.storeGates()
-                    }
-                    */
-                    // TODO move this to the last line of the last then
-                    const answer = JSON.parse(atob(data))
-                    const sd = new RTCSessionDescription(answer)
-                    if (this.pc)
-                        this.pc.setRemoteDescription(sd)
-                    .catch (() => { 
-                        if (this.pc)
-                            this.fail(Failure.BadRemoteDescription)
-                    })
-                }).catch(error => {
-                    console.log("POST to /connect failed", error)
-                    if (error.message == 'unauthorized')
-                        this.fail(Failure.Unauthorized)
-                    // TODO: the next line is probably wrong
-                    else
-                        this.fail(Failure.NotSupported)
-                })
-            })
 
         })
     }
-    onIceCandidate() {
-        return
+    onIceCandidate(ev: RTCPeerConnectionIceEvent) {
+        console.log("got ice candidate", ev)
+        if (ev.candidate != null)
+            return
+        this.t7.getFingerprint().then(fp => {
+            const encodedO = btoa(JSON.stringify(this.pc.localDescription))
+            console.log("sending offer with headers ", this.headers, fp)
+            CapacitorHttp.post({
+                url: this.address, 
+                headers: this.headers,
+                readTimeout: 3000,
+                connectTimeout: 3000,
+                data: {api_version: 0,
+                    offer: encodedO,
+                    fingerprint: fp,
+                },
+                // webFetchExtra: { mode: 'no-cors' }
+            }).then(response => {
+                if (response.status == 401)
+                    this.fail(Failure.Unauthorized)
+                else if (response.status >= 300)
+                    this.fail()
+                else 
+                    return response.data
+                return null
+            }).then(data => {
+                if (!data)
+                    return
+                // TODO move this to the last line of the last then
+                const answer = JSON.parse(atob(data))
+                const sd = new RTCSessionDescription(answer)
+                if (this.pc)
+                    this.pc.setRemoteDescription(sd).catch (() => { 
+                        this.fail(Failure.BadRemoteDescription)
+                    })
+            }).catch(error => {
+                console.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
+                if (error.message == 'unauthorized')
+                    this.fail(Failure.Unauthorized)
+                else
+                    this.fail(Failure.NotSupported)
+            })
+        })
     }
 }
 

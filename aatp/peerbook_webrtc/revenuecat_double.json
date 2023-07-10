@@ -1,0 +1,56 @@
+[
+    {
+        "httpRequest": {
+            "method": "GET",
+            "path": "/v1/subscribers/123456"
+        },
+        "httpResponse": {
+            "statusCode": 200,
+            "body": {
+                "subscriber": {
+                    "subscriptions": {
+                        "peerbook": {
+                            "expires_date": "2123-07-03T11:08:26Z",
+                            "store": "app_store"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    {
+        "httpRequest": {
+            "method": "GET",
+            "path": "/v1/subscribers/%24ValidBearer"
+        },
+        "httpResponse": {
+            "statusCode": 200,
+            "body": {
+                "subscriber": {
+                    "subscriptions": {
+                        "peerbook": {
+                            "expires_date": "2123-07-03T11:08:26Z",
+                            "store": "app_store"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    {
+        "httpRequest": {
+            "method": "GET",
+            "path": "/v1/subscribers/%24BadBearer"
+        },
+        "httpResponse": {
+            "statusCode": 200,
+            "body": {
+                "subscriber": {
+                    "subscriptions": {
+                        "expires_date": "2023-07-02T11:08:26Z"
+                    }
+                }
+            }
+        }
+    }
+]
