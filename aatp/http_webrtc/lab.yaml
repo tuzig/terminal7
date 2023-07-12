@@ -6,6 +6,7 @@ services:
       dockerfile: ./aatp/infra/runner/Dockerfile
     volumes:
       - ./aatp/http_webrtc:/runner
+      - ./aatp/common:/common
       - ./aatp/result:/result
       - webexec_auth:/webexec_config
     environment:
