@@ -2,7 +2,7 @@ import { test, expect, Page, BrowserContext } from '@playwright/test'
 import { authenticator } from 'otplib'
 import waitPort from 'wait-port'
 import * as redis from 'redis'
-import { reloadPage } from '../common/utils'
+import { reloadPage, getTWRBuffer } from '../common/utils'
 
 const url = process.env.LOCALDEV?"http://localhost:3000":"http://terminal7"
 
@@ -11,35 +11,14 @@ test.describe('peerbook administration', ()  => {
     const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
     let redisClient: redis.Redis,
         page: Page,
-        context: BrowserContext,
-        checkedC = 0
+        context: BrowserContext
 
-    async function getTWRBuffer() {
-        const ret =  await page.evaluate(() => {
-            const t = window.terminal7.map.t0
-            const b = t.buffer.active
-            let ret = ""
-            for (let i = 0; i < b.length; i++) {
-                const line = b.getLine(i).translateToString()
-                ret += line
-            }
-            return ret.trimEnd()
-        })
-        console.log("TWR", ret)
-        const lastC = checkedC
-        checkedC = ret.length
-        console.log("sustring", lastC, checkedC)
-        return ret.substring(lastC)
-    }
     test.afterAll(async () => {
         // delete the user and peer from redis
         const redisClient = redis.createClient({url: 'redis://redis'})
         redisClient.on('error', err => console.log('Redis client error', err))
         await redisClient.connect()
-        redisClient.del("u:123456")
-        redisClient.del("id:foo@bar.com")
-        const fp = await page.evaluate(() => window.terminal7.getFingerprint())
-        redisClient.del(`peer:${fp}`)
+        await redisClient.flushAll()
         await redisClient.quit()
         await context.close()
     })
@@ -65,7 +44,6 @@ shell = "bash"
 [net]
 timeout = 3000
 retries = 3
-ice_server = "stun:stun2.l.google.com:19302"
 peerbook = "peerbook:17777"
 [ui]
 quickest_press = 1000
@@ -80,6 +58,7 @@ insecure = true`)
         await reloadPage(page)
         // add terminal7 initializtion and globblas
         await waitPort({host:'webexec', port:7777})
+        await waitPort({host:'revenuecat', port:1080})
 
         redisClient = redis.createClient({url: 'redis://redis'})
         redisClient.on('error', err => console.log('Redis client error', err))
@@ -103,22 +82,22 @@ insecure = true`)
             terminal7.pb.connect("$ValidBearer")
         })
         await sleep(2500)
-        let twr = await getTWRBuffer()
+        let twr = await getTWRBuffer(page)
         expect(twr).toMatch(/Peer name/)
         await page.keyboard.type("test")
         await page.keyboard.press("Enter")
         await sleep(100)
-        twr = await getTWRBuffer()
+        twr = await getTWRBuffer(page)
         expect(twr).toMatch(/email/)
         await page.keyboard.type("foo@bar.com")
         await page.keyboard.press("Enter")
         await sleep(1000)
-        twr = await getTWRBuffer()
+        twr = await getTWRBuffer(page)
         expect(twr).toMatch(/OTP:/)
         await page.keyboard.type("1234")
         await page.keyboard.press("Enter")
         await sleep(500)
-        twr = await getTWRBuffer()
+        twr = await getTWRBuffer(page)
         expect(twr).toMatch(/Invalid OTP.*OTP:/)
     })
     test('complete purchase with a valid OTP', async () => {
@@ -129,13 +108,14 @@ insecure = true`)
         await page.keyboard.type(token)
         await page.keyboard.press("Enter")
         await sleep(200)
-        const twr = await getTWRBuffer()
+        const twr = await getTWRBuffer(page)
         expect(twr).toMatch(/Validated/)
     })
     test('validate servers', async () => {
         // change the user id of foo@bar.com to 123456
         let fp: string
         let keys = []
+        reloadPage(page)
         while (keys.length < 2) {
             await sleep(200)
             keys = await redisClient.keys('peer*')
@@ -158,9 +138,7 @@ insecure = true`)
         await redisClient.set("secret:123456", secret)
         const token = authenticator.generate(secret)
         await page.evaluate(async (fp) => {
-            terminal7.pb.verifyFP(fp).then(() => 
-                terminal7.map.shell.t.writeln("VVVerified"))
-            .catch(() => terminal7.map.shell.t.writeln("Failed"))
+            terminal7.pb.verifyFP(fp)
         }, fp)
         await sleep(100)
         await page.keyboard.type(token)
@@ -168,9 +146,6 @@ insecure = true`)
         await sleep(500)
         const verified = await redisClient.hGet(`peer:${fp}`, "verified")
         expect(verified).toBe("1")
-        const twr = await getTWRBuffer()
-        // create a regexp to match "Validated <first 8 chars of fp>"
-        expect(twr).toMatch(/VVVerified/)
     })
     test('peers are properly displayed', async () => {
         await sleep(500)

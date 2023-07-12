@@ -578,8 +578,7 @@ export class Terminal7 {
         this.conf.ui.subscribeTimeout = this.conf.ui.subscribe_timeout || 60 * 1000
 
         this.conf.net = this.conf.net || {}
-        this.conf.net.iceServer = this.conf.net.ice_server ||
-            "stun:stun2.l.google.com:19302"
+        this.conf.net.iceServer = this.conf.net.ice_server || []
         this.conf.net.peerbook = this.conf.net.peerbook ||
             "api.peerbook.io"
         if (this.conf.net.peerbook == "pb.terminal7.dev")

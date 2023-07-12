@@ -40,7 +40,6 @@ shell = "bash"
 [net]
 timeout = 3000
 retries = 3
-ice_server = "stun:stun2.l.google.com:19302"
 [ui]
 quickest_press = 1000
 max_tabs = 10

@@ -8,6 +8,7 @@ services:
       PWARGS: ${PWARGS--x}
     volumes:
       - ./aatp/ui:/runner
+      - ./aatp/common:/common
       - ./aatp/result:/result
       - webexec_auth:/webexec_config
     depends_on:
