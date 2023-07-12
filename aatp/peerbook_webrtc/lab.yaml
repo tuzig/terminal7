@@ -28,6 +28,8 @@ services:
       dockerfile: ./aatp/infra/webexec/Dockerfile
       args:
         REF: ${WEBEXEC_REF-latest}
+    environment:
+      PEERBOOK: 1
     depends_on:
       - peerbook
     volumes:
