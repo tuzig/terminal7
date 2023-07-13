@@ -490,9 +490,10 @@ export class Terminal7 {
         if (this.map.shell.activeForm)
             this.map.shell.printBelowForm(formatted)
         else {
-            this.map.t0.write("\x1B[s\n\x1B[A\x1B[L") // save cursor, insert line
+            const x = this.map.t0.buffer.active.cursorX
+            this.map.t0.write("\x1B[L")
             this.map.t0.writeln(formatted)
-            this.map.t0.write("\x1B[u\x1B[B") // restore cursor
+            this.map.t0.write(`\x1B[${x}C`) // restore cursor
         }
         if (!dontShow)
             this.map.showLog(true)

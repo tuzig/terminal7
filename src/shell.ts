@@ -540,4 +540,8 @@ export class Shell {
     async reset() {
         this.pbSession = null
     }
+    async offerSub() {
+        terminal7.notify("SSH Connection Lost.")
+        terminal7.notify("For persistent connections over WebRTC hit `subscribe`")
+    }
 }

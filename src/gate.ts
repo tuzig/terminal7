@@ -256,7 +256,7 @@ export class Gate {
                 return
 
         }
-        await this.map.shell.onDisconnect(this, isSSH && !this.onlySSH)
+        await this.map.shell.onDisconnect(this, isSSH)
     }
     reconnect(): Promise<void> {
         if (!this.session)
