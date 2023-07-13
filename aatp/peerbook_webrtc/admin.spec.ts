@@ -137,6 +137,7 @@ insecure = true`)
         const secret = await redisClient.get(`secret:${oId}`)
         await redisClient.set("secret:123456", secret)
         const token = authenticator.generate(secret)
+        await sleep(500)
         await page.evaluate(async (fp) => {
             terminal7.pb.verifyFP(fp)
         }, fp)

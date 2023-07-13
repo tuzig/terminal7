@@ -26,9 +26,8 @@ test.describe('terminal7 direct WebRTC session', ()  => {
         await waitPort({host:'terminal7', port:80})
         const response = await page.goto(url)
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
-        await page.evaluate(async () => {
-            window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
-            localStorage.setItem("CapacitorStorage.dotfile",`
+        await context.addInitScript(async () => {
+            await localStorage.setItem("CapacitorStorage.dotfile",`
 [theme]
 foreground = "#00FAFA"
 background = "#000"
@@ -40,6 +39,7 @@ shell = "bash"
 [net]
 timeout = 3000
 retries = 3
+peerbook = "peerbook:17777"
 [ui]
 quickest_press = 1000
 max_tabs = 10
@@ -48,7 +48,7 @@ cut_min_speed = 2.5
 # no pinch when scrolling -> y velocity higher than XTZ px/ms
 pinch_max_y_velocity = 0.1`
 )
-            localStorage.setItem("CapacitorStorage.gates", JSON.stringify(
+            await localStorage.setItem("CapacitorStorage.gates", JSON.stringify(
                 [{"id":0,
                   "addr":"webexec",
                   "name":"foo",

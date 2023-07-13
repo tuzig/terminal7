@@ -2,7 +2,7 @@ import { test, expect, Page, BrowserContext } from '@playwright/test'
 import waitPort from 'wait-port'
 import * as redis from 'redis'
 
-import { reloadPage, connectFirstGate, sleep } from '../common/utils'
+import { reloadPage, connectFirstGate, sleep, webexecReset } from '../common/utils'
 
 const url = process.env.LOCALDEV?"http://localhost:3000":"http://terminal7"
 
@@ -28,9 +28,7 @@ test.describe('terminal7 session', ()  => {
         await waitPort({host:'terminal7', port:80})
         const response = await page.goto(url)
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
-        await page.evaluate(async () => {
-            window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
-            localStorage.removeItem("CapacitorStorage.first_gate")
+        await context.addInitScript(async () => {
             localStorage.setItem("CapacitorStorage.dotfile",`
 [theme]
 foreground = "#00FAFA"
@@ -53,8 +51,11 @@ pinch_max_y_velocity = 0.1
 [peerbook]
 user_id = "123456"
 name = "client"
-insecure = true`)
+insecure = true
+`)
         })
+        await reloadPage(page)
+        await page.evaluate(() => localStorage.removeItem("CapacitorStorage.first_gate"))
         // first page session for just for storing the dotfiles
         await waitPort({host:'peerbook', port:17777})
         await waitPort({host:'webexec', port:7777})
@@ -64,8 +65,8 @@ insecure = true`)
         await redisClient.connect()
         redisClient.hSet("u:123456", "email", "joe@example.com")
         redisClient.set("id:joe@example.com", "123456")
-        const fp = await page.evaluate(() => window.terminal7.getFingerprint())
-        console.log("fp", fp)
+        const fp = await page.evaluate(async () => terminal7.getFingerprint())
+        console.log("adding peer to redis", fp)
         redisClient.hSet(`peer:${fp}`, {
             verified: "1",
             name: "foo",
@@ -73,7 +74,8 @@ insecure = true`)
             fp: fp,
             user: "123456",
         })
-        await reloadPage(page)
+        await webexecReset("123456")
+        console.log("waiting for peerbook to update")
         sleep(2000)
         const keys = await redisClient.keys('peer*')
         console.log("keys", keys)
@@ -81,20 +83,21 @@ insecure = true`)
             // key is in the template of `peer:${fp}`
             console.log("verifying: " +key)
             await redisClient.hSet(key, 'verified', "1")
+            await redisClient.hSet(key, 'user', "123456")
             const fp = key.split(':')[1]
             redisClient.sAdd("user:123456", fp)
         })
+        await reloadPage(page)
     })
 
     test('connect to gate see help page and hide it', async () => {
-        await reloadPage(page)
         await sleep(1000)
-        await page.evaluate(() => {
+        await page.evaluate(async() => {
             window.terminal7.map.showLog(true)
         })
+        // await sleep(1000)
         await page.screenshot({ path: `/result/second.png` })
         connectFirstGate(page)
-        await sleep(1000)
         const help  = page.locator('#help-gate')
         await page.screenshot({ path: '/result/3.png' })
         await expect(help).toBeVisible()
