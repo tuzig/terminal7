@@ -89,8 +89,9 @@ pinch_max_y_velocity = 0.1`
             const pane = window.terminal7.activeG.activeW.activeP
             pane.split("topbottom")
         })
+        // wait for the update to hit the server
+        await sleep(500)
         await expect(page.locator('.pane')).toHaveCount(2)
-        await page.evaluate(() => window.terminal7.goHome())
     })
     test('a gate restores after reload', async() => {
         await reloadPage(page)
