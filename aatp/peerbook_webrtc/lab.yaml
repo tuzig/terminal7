@@ -6,6 +6,7 @@ services:
       dockerfile: ./aatp/infra/runner/Dockerfile
     volumes:
       - ./aatp/peerbook_webrtc:/runner
+      - ./aatp/common:/common
       - ./aatp/result:/result
     depends_on:
       - peerbook

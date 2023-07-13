@@ -1,22 +1,13 @@
 import { test, expect, Page, BrowserContext } from '@playwright/test'
 import * as fs from 'fs'
 import waitPort from 'wait-port'
+import { connectFirstGate, reloadPage, sleep } from '../common/utils'
 
 
 const local = process.env.LOCALDEV !== undefined,
       url = local?"http://localhost:3000":"http://terminal7"
 
 test.describe('terminal7 direct WebRTC session', ()  => {
-
-    const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
-    const connectGate = async () => {
-        const btns = page.locator('#gates button')
-        await page.screenshot({ path: `/result/zero.png` })
-        await expect(btns).toHaveCount(2)
-        await btns.first().dispatchEvent('pointerdown')
-        await sleep(50)
-        await btns.first().dispatchEvent('pointerup')
-    }
 
     let page: Page,
         context: BrowserContext
@@ -68,9 +59,8 @@ pinch_max_y_velocity = 0.1`
             ))
         })
         // first page session for just for storing the dotfiles
-        await page.reload({waitUntil: "networkidle"})
+        await reloadPage(page)
         const fp = await page.evaluate(async () => {
-            window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
             return await window.terminal7.getFingerprint()
         })
         fs.writeFileSync('/webexec_config/authorized_fingerprints', fp + '\n')
@@ -79,7 +69,7 @@ pinch_max_y_velocity = 0.1`
     })
 
     test('connect to gate see help page and hide it', async () => {
-        connectGate()
+        connectFirstGate(page)
         await page.screenshot({ path: `/result/second.png` })
         const help  = page.locator('#help-gate')
         await expect(help).toBeVisible()
@@ -104,11 +94,8 @@ pinch_max_y_velocity = 0.1`
         await page.evaluate(() => window.terminal7.goHome())
     })
     test('a gate restores after reload', async() => {
-        await page.reload({waitUntil: "networkidle"})
-        await page.evaluate(async () => {
-            window.terminal7.notify = console.log
-        })
-        connectGate()
+        await reloadPage(page)
+        await connectFirstGate(page)
         await page.screenshot({ path: `/result/2.png` })
         await expect(page.locator('.pane')).toHaveCount(2)
     })
@@ -145,7 +132,7 @@ pinch_max_y_velocity = 0.1`
         await page.evaluate(async() => {
             await window.terminal7.activeG.reconnect()
         })
-        // connectGate()
+        // connectFirstGate()
         await expect(page.locator('.pane')).toHaveCount(1)
         await sleep(500)
         const lines2 = await page.evaluate(() => {
@@ -176,13 +163,13 @@ pinch_max_y_velocity = 0.1`
         await expect(page.locator('.windows-container')).toBeHidden()
     })
     test('after exit, the gate can be re-opened', async() => {
-        connectGate()
+        connectFirstGate(page)
         await page.screenshot({ path: `/result/6.png` })
         await expect(page.locator('.windows-container')).toBeVisible()
         await expect(page.locator('.pane')).toHaveCount(1)
     })
     test.skip('auto restore gate', async() => {
-        connectGate()
+        connectFirstGate(page)
         await expect(page.locator('.pane')).toHaveCount(1)
         await page.evaluate(async () => {
             const value = localStorage.getItem("CapacitorStorage.dotfile")
@@ -190,10 +177,7 @@ pinch_max_y_velocity = 0.1`
             console.log(lines)
             await localStorage.setItem("CapacitorStorage.dotfile", lines)
         })
-        await page.reload({waitUntil: "networkidle"})
-        await page.evaluate(async () => {
-            window.terminal7.notify = console.log
-        })
+        await reloadPage()
         await sleep(1000)
         await page.screenshot({ path: `/result/7.png` })
         await expect(page.locator('.pane')).toHaveCount(1)

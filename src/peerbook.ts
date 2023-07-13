@@ -24,7 +24,6 @@ export class PeerbookConnection {
     pbSendTask = null
     onUpdate: (r: string) => void
     pending: Array<string>
-    verified: boolean
     session: HTTPWebRTCSession | null = null
     token: string
     shell: Shell
@@ -35,7 +34,6 @@ export class PeerbookConnection {
         // copy all props to this
         Object.assign(this, props)
         this.pending = []
-        this.verified = false
         this.token = ""
         this.headers = new Map<string, string>()
         this.uid = "TBD"
@@ -242,7 +240,6 @@ export class PeerbookConnection {
                                 reject(e)
                             })
                         } else {
-                            terminal7.notify(`${PB} Connected to PeerBook`)
                             CapacitorPurchases.logIn({ appUserID: uid })
                             this.wsConnect().then(resolve).catch(reject)
                         }
@@ -271,6 +268,7 @@ export class PeerbookConnection {
     }
     async wsConnect() {
         console.log("peerbook wsConnect called")
+        let firstMessage = true
         return new Promise<void>((resolve, reject) => {
             if (this.ws != null) {
                 this.ws.onopen = undefined
@@ -295,8 +293,11 @@ export class PeerbookConnection {
                     reject()
                     return
                 } 
-                this.verified = true
-                resolve()
+                if (firstMessage) {
+                    firstMessage = false
+                    terminal7.notify(`Connected to PeerBook ${PB}`)
+                    resolve()
+                }
                 if (this.onUpdate)
                     this.onUpdate(m)
                 else

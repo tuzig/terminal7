@@ -2,6 +2,7 @@ import { test, expect, Page, BrowserContext } from '@playwright/test'
 import { authenticator } from 'otplib'
 import waitPort from 'wait-port'
 import * as redis from 'redis'
+import { reloadPage } from '../common/utils'
 
 const url = process.env.LOCALDEV?"http://localhost:3000":"http://terminal7"
 
@@ -46,7 +47,7 @@ test.describe('peerbook administration', ()  => {
         context = await browser.newContext()
         page = await context.newPage()
         page.on('console', (msg) => console.log('console log:', msg.text()))
-        page.on('pageerror', (err: Error) => console.log('PAGEERROR', err.message))
+        page.on('pageerror', (err: Error) => console.trace('PAGEERROR', err))
         await waitPort({host:'peerbook', port:17777})
         await waitPort({host:'terminal7', port:80})
         const response = await page.goto(url)
@@ -76,7 +77,7 @@ pinch_max_y_velocity = 0.1
 insecure = true`)
         })
         // first page session for just for storing the dotfiles
-        await page.reload({waitUntil: "load"})
+        await reloadPage(page)
         // add terminal7 initializtion and globblas
         await waitPort({host:'webexec', port:7777})
 
@@ -134,7 +135,11 @@ insecure = true`)
     test('validate servers', async () => {
         // change the user id of foo@bar.com to 123456
         let fp: string
-        const keys = await redisClient.keys('peer*')
+        let keys = []
+        while (keys.length < 2) {
+            await sleep(200)
+            keys = await redisClient.keys('peer*')
+        }
         expect(keys.length).toBeGreaterThan(1)
         for (const key of keys) {
             const cfp = await redisClient.hGet(key, "fp")
@@ -192,7 +197,7 @@ insecure = true`)
                 }]
             ))
         })
-        await page.reload({waitUntil: "load"})
+        await reloadPage(page)
         const btns = page.locator('#gates button')
         await expect(btns).toHaveCount(3)
         // count all elments with the from-peerbook class

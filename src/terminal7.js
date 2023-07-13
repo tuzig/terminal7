@@ -99,6 +99,7 @@ export class Terminal7 {
         this.pb = null
         this.ignoreAppEvents = false
         this.purchasesStarted = false
+        this.iceServers = settings.iceServers || null
     }
     showKeyHelp () {
         if (Date.now() - this.metaPressStart > 987) {
@@ -302,13 +303,16 @@ export class Terminal7 {
     pbClose() {
         if (this.pb) {
             this.pb.close()
-            this.pb = null
         }
     }
     async pbConnect() {
         return new Promise((resolve, reject) => {
             // do nothing when no subscription or already connected
             if (this.pb) {
+                if (this.pb.uid != "TBD") {
+                    this.pb.wsConnect().then(resolve).catch(reject)
+                    return
+                }
                 if (this.pb.isOpen())
                     resolve()
                 else

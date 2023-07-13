@@ -86,19 +86,15 @@ export class WebRTCSession extends BaseSession {
     async connect(marker=null, noCDC?: boolean): Promise<void> {
         console.log("in connect", marker, noCDC)
 
-        if (this.t7.conf.peerbook?.insecure) 
-            this.t7.iceServers = []
-        else {
-            if (!this.t7.iceServers) {
-                try {
-                    this.t7.iceServers = await this.getIceServers()
-                } catch(e) {
-                    this.t7.iceServers = []
-                    terminal7.log("error getting iceservers", e)
-                }
-            } 
+        if (this.t7.iceServers == null) {
+            try {
+                this.t7.iceServers = await this.getIceServers()
+            } catch(e) {
+                this.t7.iceServers = []
+                terminal7.log("error getting iceservers", e)
+            }
         }
-        this.t7.log("got ice server", JSON.stringify(this.t7.iceServers))
+        this.t7.log("using ice server", JSON.stringify(this.t7.iceServers))
         try {
             await this.t7.getFingerprint()
         } catch (e) {
@@ -130,7 +126,7 @@ export class WebRTCSession extends BaseSession {
             }
         }
         this.pc.onicecandidateerror = (ev: RTCPeerConnectionIceErrorEvent) => {
-            console.log("icecandidate error", ev.errorCode)
+            console.log("icecandidate error", ev.errorCode, ev.errorText)
             if (ev.errorCode == 401) {
                 this.t7.notify("Getting fresh ICE servers")
                 this.connect()
@@ -483,9 +479,10 @@ export class HTTPWebRTCSession extends WebRTCSession {
             }).then(response => {
                 if (response.status == 401)
                     this.fail(Failure.Unauthorized)
-                else if (response.status >= 300)
+                else if (response.status >= 300) {
+                    console.log("failed to post to PB", response)
                     this.fail()
-                else 
+                } else
                     return response.data
                 return null
             }).then(data => {
