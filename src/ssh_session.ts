@@ -126,6 +126,9 @@ export class SSHSession extends BaseSession {
     close() {
         // SSH.closeSession({session: this.id})
     }
+    async disconnect() {
+        this.onStateChange("failed")
+    }
 }
 // HybridSession can run either as SSH or WebRTC bby signalling
 // over SSH
