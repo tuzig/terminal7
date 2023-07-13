@@ -74,6 +74,10 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # verification_ttl = 900000
 `
 
+function compactCert(cert) {
+    const ret = cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")
+    return ret
+}
 export class Terminal7 {
     DEFAULT_KEY_TAG = "dev.terminal7.keys.default"
     /*
@@ -612,10 +616,6 @@ export class Terminal7 {
     getFingerprint() {
         // gets the certificate from indexDB. If they are not there, create them
         return new Promise((resolve, reject) => {
-            const compactCert = cert => {
-                const ret = cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")
-                return ret
-            }
             if (this.certificates) {
                 resolve(compactCert(this.certificates[0]))
                 return
