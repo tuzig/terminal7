@@ -95,6 +95,7 @@ pinch_max_y_velocity = 0.1`
     test('a gate restores after reload', async() => {
         await reloadPage(page)
         await connectFirstGate(page)
+        await sleep(500)
         await page.screenshot({ path: `/result/2.png` })
         await expect(page.locator('.pane')).toHaveCount(2)
     })

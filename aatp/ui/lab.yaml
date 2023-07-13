@@ -24,6 +24,8 @@ services:
     build:
       context: .
       dockerfile: ./aatp/infra/webexec/Dockerfile
+      args:
+        REF: ${WEBEXEC_REF-master}
     volumes:
       - ./aatp/ui/webexec_conf:/conf
       - webexec_auth:/auth

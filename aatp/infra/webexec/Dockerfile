@@ -1,7 +1,7 @@
 FROM ubuntu:latest
-ARG REF=latest
-RUN apt update
-RUN apt install -y git bash openssh-server golang
+ARG REF=master
+RUN apt-get update
+RUN apt-get install -y git bash openssh-server golang
 COPY ./aatp/infra/webexec/ssh_config /etc/ssh/
 RUN mkdir /scripts
 COPY ./aatp/infra/webexec/docker_entry.sh /scripts/

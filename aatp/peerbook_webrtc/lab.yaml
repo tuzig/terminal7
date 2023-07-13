@@ -27,7 +27,7 @@ services:
       context: .
       dockerfile: ./aatp/infra/webexec/Dockerfile
       args:
-        REF: ${WEBEXEC_REF-latest}
+        REF: ${WEBEXEC_REF-master}
     environment:
       PEERBOOK: 1
     depends_on:
