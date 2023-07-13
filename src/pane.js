@@ -589,6 +589,9 @@ export class Pane extends Cell {
         }
     }
     copySelection() {
+        if (this.t.hasSelection()) {
+            return Clipboard.write({string: this.t.getSelection()})
+        }
         if (!this.cmSelection)
             return
 
@@ -890,8 +893,8 @@ export class Pane extends Cell {
         const baseY = this.t.buffer.active.baseY + this.t.buffer.active.cursorY,
             rowLength = this.t.cols,
             colors = {
-                backgroundColor: '#ffff00',
-                foregroundColor: '#000000'
+                backgroundColor: '#D9F505',
+                foregroundColor: '#271D30'
             }
         const m1 = this.t.registerMarker(y1 - baseY)
         if (y1 == y2) {

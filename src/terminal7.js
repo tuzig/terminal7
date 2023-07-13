@@ -46,7 +46,8 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 [theme]
 # foreground = "#00FAFA"
 # background = "#000"
-# selection = "#D9F505"
+# selectionBackground = "#D9F505"
+# selectionForeground = "#271D30"
 
 [exec]
 # shell = "*"
@@ -591,7 +592,8 @@ export class Terminal7 {
         this.conf.theme = this.conf.theme || {}
         this.conf.theme.foreground = this.conf.theme.foreground || "#00FAFA"
         this.conf.theme.background = this.conf.theme.background || "#000"
-        this.conf.theme.selection = this.conf.theme.selection || "#D9F505"
+        this.conf.theme.selectionBackground = this.conf.theme.selectionBackground || "#D9F505"
+        this.conf.theme.selectionForeground = this.conf.theme.selectionForeground || "#271D30"
         if (conf.peerbook) {
             this.conf.peerbook = {
                 insecure: conf.peerbook.insecure || false,
