@@ -91,13 +91,17 @@ export class T7Map {
     }
     add(g: Gate): Element {
         const d = document.createElement('div')
-        const b = document.createElement('button')
+        const container = document.createElement('div')
         d.className = "gate-pad"
         if (g.fp)
             d.classList.add("from-peerbook")
-        b.className = "text-button"
+        container.className = "text-button"
         d.gate = g
-        d.appendChild(b)
+        container.innerHTML = `
+            <div class="gate-name">${g.name}</div>
+            <div class="gate-edit"></div>
+        `
+        d.appendChild(container)
         const gates = document.getElementById("gates")
         gates.prepend(d)
         this.refresh()
@@ -119,10 +123,13 @@ export class T7Map {
     update({ e, name, boarding, offline, unverified, peerbook }): void {
 
         const b = e.children[0]
+        const nameE = b.children[0]
+        nameE.innerHTML = name
+        const edit = b.children[1]
         if (peerbook)
-            b.innerHTML = `<i class="f7-icons expand-gate">book</i>${name}`
+            edit.innerHTML = `<i class="f7-icons expand-gate">book</i>`
         else
-            b.innerHTML = `<i class="f7-icons expand-gate">expand</i>${name}`
+            edit.innerHTML = `<i class="f7-icons expand-gate">pencil</i>`
         // there's nothing more to update for static hosts
         if (boarding)
             b.classList.add("boarding")

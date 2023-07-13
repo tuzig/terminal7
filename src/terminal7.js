@@ -858,7 +858,7 @@ export class Terminal7 {
             return
         if (gatePad) {
             const gate = gatePad.gate
-            const isExpand = e.classList.contains("expand-gate")
+            const isExpand = e.classList.contains("gate-edit")
             if (!gate)
                 return
             else {
