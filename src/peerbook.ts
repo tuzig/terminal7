@@ -299,7 +299,7 @@ export class PeerbookConnection {
                 } 
                 if (firstMessage) {
                     firstMessage = false
-                    terminal7.notify(`Connected to PeerBook ${PB}`)
+                    terminal7.notify(`Connected to ${PB} aka PeerBook`)
                     resolve()
                 }
                 if (this.onUpdate)
@@ -335,8 +335,10 @@ export class PeerbookConnection {
         const state = this.ws ? this.ws.readyState : WebSocket.CLOSED
         if (state == WebSocket.OPEN) {
             this.ws.send(JSON.stringify(m))
-        } else
+        } else {
+            terminal7.log("peerbook send called with state", state)
             this.pending.push(m)
+        }
     }
     close() {
         if (this.ws) {
