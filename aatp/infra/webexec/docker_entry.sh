@@ -7,7 +7,7 @@ CONF=/conf
 
 
 /etc/init.d/ssh start
-rm -f $HOME/.local/run/webexec.*
+rm -rf $HOME/.local/state/webexec
 mkdir -p $HOME/.config/webexec
 cp -r $CONF/* /home/runner/.config/webexec
 chown -R runner /home/runner

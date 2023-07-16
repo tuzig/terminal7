@@ -26,9 +26,8 @@ test.describe('terminal7 direct WebRTC session', ()  => {
         await waitPort({host:'terminal7', port:80})
         const response = await page.goto(url)
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
-        await page.evaluate(async () => {
-            window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
-            localStorage.setItem("CapacitorStorage.dotfile",`
+        await context.addInitScript(async () => {
+            await localStorage.setItem("CapacitorStorage.dotfile",`
 [theme]
 foreground = "#00FAFA"
 background = "#000"
@@ -40,7 +39,7 @@ shell = "bash"
 [net]
 timeout = 3000
 retries = 3
-ice_server = "stun:stun2.l.google.com:19302"
+peerbook = "peerbook:17777"
 [ui]
 quickest_press = 1000
 max_tabs = 10
@@ -49,7 +48,7 @@ cut_min_speed = 2.5
 # no pinch when scrolling -> y velocity higher than XTZ px/ms
 pinch_max_y_velocity = 0.1`
 )
-            localStorage.setItem("CapacitorStorage.gates", JSON.stringify(
+            await localStorage.setItem("CapacitorStorage.gates", JSON.stringify(
                 [{"id":0,
                   "addr":"webexec",
                   "name":"foo",
@@ -90,12 +89,14 @@ pinch_max_y_velocity = 0.1`
             const pane = window.terminal7.activeG.activeW.activeP
             pane.split("topbottom")
         })
+        // wait for the update to hit the server
+        await sleep(500)
         await expect(page.locator('.pane')).toHaveCount(2)
-        await page.evaluate(() => window.terminal7.goHome())
     })
     test('a gate restores after reload', async() => {
         await reloadPage(page)
         await connectFirstGate(page)
+        await sleep(500)
         await page.screenshot({ path: `/result/2.png` })
         await expect(page.locator('.pane')).toHaveCount(2)
     })
