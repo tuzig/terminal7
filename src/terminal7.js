@@ -538,7 +538,7 @@ export class Terminal7 {
     }
     async updateNetworkStatus (status) {
         let off = document.getElementById("offline").classList
-        if (this.netStatus = status)
+        if (this.netStatus == status)
             return
         this.netStatus = status
         this.log(`updateNetworkStatus: ${status.connected}`)
