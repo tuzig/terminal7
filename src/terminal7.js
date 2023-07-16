@@ -535,6 +535,8 @@ export class Terminal7 {
     }
     async updateNetworkStatus (status) {
         let off = document.getElementById("offline").classList
+        if (this.netStatus = status)
+            return
         this.netStatus = status
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
@@ -1029,6 +1031,7 @@ export class Terminal7 {
             return {public:"UNAVAILABLE", private:"UNAVAILABLE"}
         }
         console.log("Got biometric verified ", verified)
+        this.lastActiveState = false
         // wait for the app events to bring the ignoreAppEvents to false
         while (this.ignoreAppEvents)
             await (() => { return new Promise(r => setTimeout(r, 20)) })()
