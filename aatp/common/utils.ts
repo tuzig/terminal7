@@ -1,5 +1,4 @@
-import { Client, Stream } from 'ssh2'
-import { expect } from '@playwright/test'
+import { Client } from 'ssh2'
 let checkedC = 0
 export async function reloadPage(page) {
     console.log("-- Reloading Page --")
@@ -44,7 +43,11 @@ export function webexecReset(uid: string) {
         conn.on('ready', () => {
           console.log('Client :: ready')
           conn.shell((err, stream) => {
-            if (err) throw err
+            if (err) {
+                console.log("Error on SSH connect", err)
+                reject(err)
+                return
+            }
             stream.on('close', () => {
               console.log('Stream :: close')
               conn.end()
