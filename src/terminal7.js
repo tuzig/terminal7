@@ -223,7 +223,10 @@ export class Terminal7 {
                 this.lastActiveState = active
                 console.log("app state changed", this.ignoreAppEvents)
                 if (!active) {
-                    if (this.ignoreAppEvents) return
+                    if (this.ignoreAppEvents) {
+                        terminal7.log("ignoring benched app event")
+                        return
+                    }
                     // We're getting suspended. disengage.
                     if (this.activeG) {
                         this.notify("🌜 Benched", true)
@@ -1034,7 +1037,7 @@ export class Terminal7 {
         this.lastActiveState = false
         // wait for the app events to bring the ignoreAppEvents to false
         while (this.ignoreAppEvents)
-            await (() => { return new Promise(r => setTimeout(r, 20)) })()
+            await (() => { return new Promise(r => setTimeout(r, 50)) })()
 
         let publicKey
         let privateKey

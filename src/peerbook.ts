@@ -275,7 +275,11 @@ export class PeerbookConnection {
                 this.ws.onmessage = undefined
                 this.ws.onerror = undefined
                 this.ws.onclose = undefined
-                this.ws.close()
+                try {
+                    this.ws.close()
+                } catch (e) {
+                    terminal7.log("ws close failed", e)
+                }
             }
             const schema = this.insecure?"ws":"wss",
                   url = encodeURI(`${schema}://${this.host}/ws?fp=${this.fp}`)

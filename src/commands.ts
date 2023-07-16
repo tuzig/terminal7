@@ -563,11 +563,15 @@ async function subscribeCMD(shell: Shell) {
         shell.stopWatchdog()
     } else {
         if (!terminal7.pb.session) {
-            terminal7.pb.close()
-            await terminal7.pb.connect(customerInfo.originalAppUserId)
+            try {
+                await terminal7.pb.connect(customerInfo.originalAppUserId)
+            } catch(e) {
+                shell.t.writeln(`Error connecting to peerbook: ${e.message}`)
+                shell.t.writeln("Please try again or type `support`")
+            }
         } else
             shell.t.writeln("You are already subscribed and registered")
-        const answer = await shell.askValue("Do you want to copy your user id? (y/N)", "n")
+        const answer = await shell.askValue(`Copy your user id to ? (y/N)`, "n")
         if (answer.toLowerCase() == "y") {
             Clipboard.write({ string: customerInfo.originalAppUserId })
             shell.t.writeln("UID copied to clipboard")
