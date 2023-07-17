@@ -1027,7 +1027,7 @@ export class Terminal7 {
                 this.notify("Please turn on face id for 🔑 based auth")
             // this.ignoreAppEvents = false
             this.ignoreAppEvents = false
-            return {public:"UNAVAILABLE", private:"UNAVAILABLE"}
+            return {publicKey:"UNAVAILABLE", privateKey:"UNAVAILABLE"}
         }
         console.log("Got biometric verified ", verified)
         this.lastActiveState = false

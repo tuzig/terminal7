@@ -248,13 +248,14 @@ async function connectCMD(shell:Shell, args: string[]) {
             await terminal7.storeGates()
         }
         let clipboardFilled = false
-        if (gate.keyRejected) {
+        const pbOpen = terminal7.pb && terminal7.pb.isOpen()
+        if (gate.keyRejected && !pbOpen) {
             const keyForm = [
                 { prompt: "Just let me in" },
                 { prompt: "Copy command to 📋" },
             ]
             const { publicKey } = await terminal7.readId()
-            if (publicKey) {
+            if (publicKey && (publicKey !== "UNAVAILABLE")) {
                 const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
                 shell.t.writeln(`\n To use face id please copy the ES25519 key by running:\n\n\x1B[1m${cmd}\x1B[0m\n`)
                 const res = await shell.runForm(keyForm, "menu")
@@ -268,19 +269,18 @@ async function connectCMD(shell:Shell, args: string[]) {
             else 
                 terminal7.log("oops readId failed")
         } 
-        if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH) {
+        if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH && pbOpen) {
             const webexecForm = [
                 { prompt: "Just let me in" },
-                { prompt: "Copy command to 📋" },
+                { prompt: "Install webexec for WebRTC 🍯" },
                 { prompt: "Always use SSH for this host" },
             ]
-            const cmd = "bash <(curl -sL https://get.webexec.sh)"
-            shell.t.writeln(installMessage)
-            shell.t.writeln(`  \x1B[1m${cmd}\x1B[0m\n`)
+            shell.t.writeln("Please choose:")
             const res = await shell.runForm(webexecForm, "menu")
             switch(res) {
-                case "Copy command to 📋":
-                    Clipboard.write({ string: cmd })
+                case "Install webexec for WebRTC 🍯":
+                    await shell.runCommand("install", [gate.name])
+                    await shell.runCommand("connect", [gate.name])
                     break
 
                 case "Always use SSH for this host":
