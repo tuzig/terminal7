@@ -2,7 +2,7 @@ import { CapacitorPurchases } from '@capgo/capacitor-purchases'
 import { Clipboard } from '@capacitor/clipboard'
 import { Shell } from "./shell"
 import { Preferences } from "@capacitor/preferences"
-import { Terminal7 } from "./terminal7"
+import { DEFAULT_DOTFILE, Terminal7 } from "./terminal7"
 import { Fields } from "./form"
 import fortuneURL from "../resources/fortune.txt"
 import { Gate } from './gate'
@@ -393,6 +393,7 @@ async function resetCMD(shell: Shell, args: string[]) {
         }
     }
     const reset = [
+        { prompt: "Dotfile" },
         { prompt: "Fingerprint" },
         { prompt: "Gates" },
         { prompt: "Private/public key" },
@@ -406,6 +407,10 @@ async function resetCMD(shell: Shell, args: string[]) {
     const res = await shell.runForm(reset, "menu", "What do you want to reset?")
     let ans
     switch(res) {
+        case "Dotfile":
+            terminal7.saveDotfile(DEFAULT_DOTFILE)
+            shell.t.writeln("dotfile back to default")
+            break
         case "Fingerprint":
             await CapacitorPurchases.logOut()
             shell.t.writeln("Cleared fingerprint and disconnected from PeerBook")
