@@ -256,7 +256,7 @@ export class Gate {
                 return
 
         }
-        await this.map.shell.onDisconnect(this, isSSH && !this.onlySSH)
+        await this.map.shell.onDisconnect(this, isSSH)
     }
     reconnect(): Promise<void> {
         if (!this.session)
@@ -267,12 +267,13 @@ export class Gate {
                     this.setLayout(layout)
                     resolve()
                 }).catch(() => {
+                    const isSSH = this.session.isSSH
                     if (this.session) {
                         this.session.close()
                         this.session = null
                     }
-                    terminal7.log("reconnect failed, fresh session with marker", this.marker)
-                    this.connect().then(resolve).catch(reject)
+                    terminal7.log("reconnect failed, calling the shell to handle it", isSSH)
+                    this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
                 })
             }).catch((e) => {
                 this.t7.log("failed to read id", e)

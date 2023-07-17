@@ -258,7 +258,7 @@ export class PeerbookConnection {
                         this.echo("Please try again and if persists, `open issue`")
                     } else if (failure == Failure.Unauthorized) {
                         terminal7.log("peerbook connection unauthorized")
-                    }                     this.shell.printPrompt()
+                    }
                     reject(failure)
                     return
                 }
@@ -299,7 +299,7 @@ export class PeerbookConnection {
                 } 
                 if (firstMessage) {
                     firstMessage = false
-                    terminal7.notify(`Connected to ${PB} aka PeerBook`)
+                    terminal7.notify(`Connected to ${PB} PeerBook${PB}`)
                     resolve()
                 }
                 if (this.onUpdate)
@@ -356,7 +356,7 @@ export class PeerbookConnection {
         }
     }
     isOpen() {
-        return (this.session != null) && (this.ws ? this.ws.readyState === WebSocket.OPEN : false)
+        return (this.ws ? this.ws.readyState === WebSocket.OPEN : false)
     }
     syncPeers(gates: Array<Gate>, nPeers: Array<Peer>) {
         const ret = []

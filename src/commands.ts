@@ -571,7 +571,7 @@ async function subscribeCMD(shell: Shell) {
             }
         } else
             shell.t.writeln("You are already subscribed and registered")
-        const answer = await shell.askValue(`Copy your user id to ? (y/N)`, "n")
+        const answer = await shell.askValue(`Copy user id to the clipboard? (y/N)`, "n")
         if (answer.toLowerCase() == "y") {
             Clipboard.write({ string: customerInfo.originalAppUserId })
             shell.t.writeln("UID copied to clipboard")
@@ -667,6 +667,11 @@ export async function installCMD(shell: Shell, args: string[]) {
                     return
                 }
                 channel.send(`PEERBOOK_UID=${uid} PEERBOOK_HOST=${host} bash <(curl -sL https://get.webexec.sh)`)
+                channel.onClose = () => {
+                    shell.t.writeln("~~~ Disconnected without install")
+                    done = true
+                }
+
                 channel.onMessage = async (msg: string) => {
                     shell.t.write(msg)
                     // use regex to extract the fingerprint from the message.
