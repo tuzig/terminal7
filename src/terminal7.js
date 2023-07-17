@@ -1062,7 +1062,7 @@ export class Terminal7 {
     async getDotfile() {
         return (await Preferences.get({key: "dotfile"})).value || DEFAULT_DOTFILE
     }
-    saveDotfile() {
+    saveDotfile(text) {
         this.cells.forEach(c => {
             if (typeof(c.setTheme) == "function")
                 c.setTheme(this.conf.theme)
@@ -1075,7 +1075,8 @@ export class Terminal7 {
             this.pbClose()
             this.pbConnect()
         }
-        return Preferences.set({key: "dotfile", value: TOML.stringify(this.conf)})
+        terminal7.loadConf(TOML.parse(text))
+        return Preferences.set({key: "dotfile", value: text})
     }
     async pbVerify() {
         const fp = await this.getFingerprint()
