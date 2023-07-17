@@ -8,6 +8,7 @@ services:
       PWARGS: ${PWARGS--x}
     volumes:
       - ./aatp/ui:/runner
+      - ./aatp/common:/common
       - ./aatp/result:/result
       - webexec_auth:/webexec_config
     depends_on:
@@ -23,6 +24,8 @@ services:
     build:
       context: .
       dockerfile: ./aatp/infra/webexec/Dockerfile
+      args:
+        REF: ${WEBEXEC_REF-master}
     volumes:
       - ./aatp/ui/webexec_conf:/conf
       - webexec_auth:/auth

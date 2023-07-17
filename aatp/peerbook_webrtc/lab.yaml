@@ -13,7 +13,7 @@ services:
       - webexec
       - terminal7
     environment:
-      PWARGS: ${PWARGS--x}
+      PWARGS: ${PWARGS--x -j 1}
   terminal7:
     image: halverneus/static-file-server:latest
     expose:
@@ -27,7 +27,9 @@ services:
       context: .
       dockerfile: ./aatp/infra/webexec/Dockerfile
       args:
-        REF: ${WEBEXEC_REF-latest}
+        REF: ${WEBEXEC_REF-master}
+    environment:
+      PEERBOOK: 1
     depends_on:
       - peerbook
     volumes:
@@ -43,6 +45,7 @@ services:
       - 17777
     depends_on:
       - redis
+      - revenuecat
     environment:
       REDIS_HOST: redis:6379
       REVENUECAT_URL: http://revenuecat:1080
@@ -53,5 +56,8 @@ services:
     image: "mockserver/mockserver"
     environment:
       MOCKSERVER_INITIALIZATION_JSON_PATH: /config/revenuecat_double.json
+      MOCKSERVER_LOG_LEVEL: WARN
+    expose:
+      - 1080
     volumes:
-        - ./aatp/peerbook_webrtc:/config
+      - ./aatp/peerbook_webrtc:/config

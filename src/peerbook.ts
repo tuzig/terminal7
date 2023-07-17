@@ -275,7 +275,11 @@ export class PeerbookConnection {
                 this.ws.onmessage = undefined
                 this.ws.onerror = undefined
                 this.ws.onclose = undefined
-                this.ws.close()
+                try {
+                    this.ws.close()
+                } catch (e) {
+                    terminal7.log("ws close failed", e)
+                }
             }
             const schema = this.insecure?"ws":"wss",
                   url = encodeURI(`${schema}://${this.host}/ws?fp=${this.fp}`)
@@ -295,7 +299,7 @@ export class PeerbookConnection {
                 } 
                 if (firstMessage) {
                     firstMessage = false
-                    terminal7.notify(`Connected to PeerBook ${PB}`)
+                    terminal7.notify(`Connected to ${PB} aka PeerBook`)
                     resolve()
                 }
                 if (this.onUpdate)
@@ -331,8 +335,10 @@ export class PeerbookConnection {
         const state = this.ws ? this.ws.readyState : WebSocket.CLOSED
         if (state == WebSocket.OPEN) {
             this.ws.send(JSON.stringify(m))
-        } else
+        } else {
+            terminal7.log("peerbook send called with state", state)
             this.pending.push(m)
+        }
     }
     close() {
         if (this.ws) {

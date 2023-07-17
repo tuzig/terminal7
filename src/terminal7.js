@@ -46,7 +46,8 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 [theme]
 # foreground = "#00FAFA"
 # background = "#000"
-# selection = "#D9F505"
+# selectionBackground = "#D9F505"
+# selectionForeground = "#271D30"
 
 [exec]
 # shell = "*"
@@ -74,6 +75,10 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # verification_ttl = 900000
 `
 
+function compactCert(cert) {
+    const ret = cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")
+    return ret
+}
 export class Terminal7 {
     DEFAULT_KEY_TAG = "dev.terminal7.keys.default"
     /*
@@ -218,7 +223,10 @@ export class Terminal7 {
                 this.lastActiveState = active
                 console.log("app state changed", this.ignoreAppEvents)
                 if (!active) {
-                    if (this.ignoreAppEvents) return
+                    if (this.ignoreAppEvents) {
+                        terminal7.log("ignoring benched app event")
+                        return
+                    }
                     // We're getting suspended. disengage.
                     if (this.activeG) {
                         this.notify("🌜 Benched", true)
@@ -530,6 +538,8 @@ export class Terminal7 {
     }
     async updateNetworkStatus (status) {
         let off = document.getElementById("offline").classList
+        if (this.netStatus == status)
+            return
         this.netStatus = status
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
@@ -578,8 +588,7 @@ export class Terminal7 {
         this.conf.ui.subscribeTimeout = this.conf.ui.subscribe_timeout || 60 * 1000
 
         this.conf.net = this.conf.net || {}
-        this.conf.net.iceServer = this.conf.net.ice_server ||
-            "stun:stun2.l.google.com:19302"
+        this.conf.net.iceServer = this.conf.net.ice_server || []
         this.conf.net.peerbook = this.conf.net.peerbook ||
             "api.peerbook.io"
         if (this.conf.net.peerbook == "pb.terminal7.dev")
@@ -591,7 +600,8 @@ export class Terminal7 {
         this.conf.theme = this.conf.theme || {}
         this.conf.theme.foreground = this.conf.theme.foreground || "#00FAFA"
         this.conf.theme.background = this.conf.theme.background || "#000"
-        this.conf.theme.selection = this.conf.theme.selection || "#D9F505"
+        this.conf.theme.selectionBackground = this.conf.theme.selectionBackground || "#D9F505"
+        this.conf.theme.selectionForeground = this.conf.theme.selectionForeground || "#271D30"
         if (conf.peerbook) {
             this.conf.peerbook = {
                 insecure: conf.peerbook.insecure || false,
@@ -613,10 +623,6 @@ export class Terminal7 {
     getFingerprint() {
         // gets the certificate from indexDB. If they are not there, create them
         return new Promise((resolve, reject) => {
-            const compactCert = cert => {
-                const ret = cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")
-                return ret
-            }
             if (this.certificates) {
                 resolve(compactCert(this.certificates[0]))
                 return
@@ -1028,9 +1034,10 @@ export class Terminal7 {
             return {public:"UNAVAILABLE", private:"UNAVAILABLE"}
         }
         console.log("Got biometric verified ", verified)
+        this.lastActiveState = false
         // wait for the app events to bring the ignoreAppEvents to false
         while (this.ignoreAppEvents)
-            await (() => { return new Promise(r => setTimeout(r, 20)) })()
+            await (() => { return new Promise(r => setTimeout(r, 50)) })()
 
         let publicKey
         let privateKey
