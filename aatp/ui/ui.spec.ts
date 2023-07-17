@@ -3,6 +3,8 @@ import { Client } from 'ssh2'
 import * as fs from 'fs'
 import waitPort from 'wait-port'
 
+import { connectFirstGate } from '../common/utils'
+
 
 const local = process.env.LOCALDEV !== undefined,
       url = local?"http://localhost:3000":"http://terminal7"
@@ -10,15 +12,6 @@ const local = process.env.LOCALDEV !== undefined,
 test.describe('terminal7 UI', ()  => {
 
     const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
-    const connectGate = async () => {
-        const btns = page.locator('#gates button')
-        await page.screenshot({ path: `/result/0.png` })
-        await expect(btns).toHaveCount(2)
-        await btns.first().dispatchEvent('pointerdown')
-        await sleep(50)
-        await btns.first().dispatchEvent('pointerup')
-    }
-
     let page: Page,
         context: BrowserContext
 
@@ -70,7 +63,7 @@ insecure=true`)
     })
 
     test('connect to gate see help page and hide it', async () => {
-        connectGate()
+        await connectFirstGate(page)
         const help  = page.locator('#help-gate')
         await expect(help).toBeVisible()
         await help.click()
@@ -91,7 +84,7 @@ insecure=true`)
             window.notifications = []
             window.terminal7.notify = (m) => window.notifications.push(m)
         })
-        connectGate()
+        await connectFirstGate(page)
         await page.locator('.tabbar .reset').click()
         await expect(page.locator('#t0')).toBeVisible()
         await sleep(500)
@@ -105,7 +98,7 @@ insecure=true`)
             window.notifications = []
             window.terminal7.notify = (m) => window.notifications.push(m)
         })
-        connectGate()
+        await connectFirstGate(page)
         await sleep(500)
         await page.screenshot({ path: `/result/2.png` })
         await page.locator('.tabbar .reset').click()
