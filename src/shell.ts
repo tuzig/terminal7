@@ -377,11 +377,10 @@ export class Shell {
         document.getElementById("dotfile-button").classList.remove("on")
         if (save) {
             this.confEditor.save()
-            terminal7.loadConf(TOML.parse(area.value))
-            terminal7.saveDotfile()
-            this.t.writeln("Changes saved.")
+            terminal7.saveDotfile(area.value)
+            this.t.writeln("Saved changes")
         } else {
-            this.t.writeln("Changes discarded.")
+            this.t.writeln("Discarded changes")
         }
         document.getElementById("settings").classList.add("hidden")
         this.t.element.classList.remove("hidden")
@@ -576,6 +575,8 @@ export class Shell {
         let ans
         if (res == "Subscribe") {
             await this.runCommand("subscribe")
+            this.t.writeln("Type `install` to install on a server")
+            return false
         } else if (res == "Close Gate") {
             gate.close()
             return false
