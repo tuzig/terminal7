@@ -777,6 +777,7 @@ button.boarding  {
     text-shadow: none;
     transform: translate(50%, -50%);
     top: 50%;
+    pointer-events: none;
 }
 .tabbar-search .not-found {
     position: relative;
