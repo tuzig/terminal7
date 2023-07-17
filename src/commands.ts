@@ -226,6 +226,10 @@ async function connectCMD(shell:Shell, args: string[]) {
         done = true
     }
     shell.startWatchdog().catch(e => gate.handleFailure(e))
+    if (gate.session) {
+        gate.focus()
+        return
+    }
     gate.connect(async () => {
         shell.stopWatchdog()
         if (gate.firstConnection) {

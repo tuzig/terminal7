@@ -125,6 +125,7 @@ export class Gate {
 		this.map.remove(this)
     }
     focus() {
+        terminal7.activeG = this
         this.map.showLog(false)
         // hide the current focused gate
         document.getElementById("map-button").classList.remove("off")
