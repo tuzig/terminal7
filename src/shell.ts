@@ -36,7 +36,6 @@ export class Shell {
     historyIndex = 0
     confEditor: CodeMirror.EditorFromTextArea
     exitConf: () => void
-    noOfferSub = false
 
     constructor(map: T7Map) {
         this.map = map
@@ -411,7 +410,16 @@ export class Shell {
     /*
      * onDisconnect is called when a gate disconnects.
      */
-    async onDisconnect(gate: Gate, offerSub: bool) {
+    async onDisconnect(gate: Gate, wasSSH: bool) {
+        console.log("onDisconnect", gate)
+        if (wasSSH) {
+            terminal7.notify("SSH Session Lost")
+            const toConnect = terminal7.pb.isOpen()?await this.offerInstall(gate):await this.offerSub(gate)
+            if (toConnect)
+                await this.runCommand("connect", [gate.name])
+            return
+        } 
+        // if (!terminal7.netStatus.connected || terminal7.recovering ||
         if (!terminal7.netStatus.connected || terminal7.recovering ||
             ((terminal7.activeG != null) && (gate != terminal7.activeG)))
             return
@@ -453,10 +461,6 @@ export class Shell {
             }
         }
 
-        if (offerSub) {
-            await this.offerSub()
-            return
-        } 
         const reconnectForm = [
             { prompt: "Reconnect" },
             { prompt: "Close" }
@@ -476,7 +480,7 @@ export class Shell {
         if (res == "Close")
             gate.onFailure(Failure.Aborted)
         if (res == "Reconnect")
-            this.runCommand("connect", [gate.name])
+            await this.runCommand("connect", [gate.name])
     }
     
     async askPass(): Promise<string> {
@@ -540,8 +544,42 @@ export class Shell {
     async reset() {
         this.pbSession = null
     }
-    async offerSub() {
-        terminal7.notify("SSH Connection Lost.")
-        terminal7.notify("For persistent connections over WebRTC hit `subscribe`")
+    async offerInstall(gate): Promise<boolean> {
+        this.t.writeln("[2K\nInstall WebExec for persistent sessions over WebRTC")
+        const install = [
+            { prompt: "Reconnect using SSH" },
+            { prompt: "Install" },
+            { prompt: "Close Gate" },
+        ]
+        const res = await this.runForm(install, "menu", "Please choose")
+        let ans
+        if (res == "Install") {
+            await this.runCommand(`install ${gate.name}`)
+        } else if (res == "Close Gate") {
+            gate.close()
+            return false
+        }
+        return true
+    }
+    async offerSub(gate): Promise<boolean> {
+        this.t.writeln("[2K\nSubscribe to PeerBook and enjoy:")
+        this.t.writeln("  󰟆  Persistent Sessions")
+        this.t.writeln("  󰴽  WebRTC Connections")
+        this.t.writeln("  󰟀  Behind-the-NAT Servers")
+        this.t.writeln("    Address Book\n")
+        const reconnect = [
+            { prompt: "Reconnect using SSH" },
+            { prompt: "Subscribe" },
+            { prompt: "Close Gate" },
+        ]
+        const res = await this.runForm(reconnect, "menu", "Please choose")
+        let ans
+        if (res == "Subscribe") {
+            await this.runCommand("subscribe")
+        } else if (res == "Close Gate") {
+            gate.close()
+            return false
+        }
+        return true
     }
 }

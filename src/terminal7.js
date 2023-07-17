@@ -550,20 +550,15 @@ export class Terminal7 {
                 this.notify("🌞 Recovering")
             this.pbConnect().catch(e => this.log("pbConnect failed", e))
                 .finally(() => {
-                if (gate) {
-                    this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
-                    this.recovering = true
-                    this.run(() => this.recovering = false, this.conf.net.recoveryTime)
-                    gate.reconnect()
-                        .then(() => {
-                            this.map.shell.stopWatchdog()
-                            // this.map.showLog(false)
-                        }).catch(() => {
-                            this.map.shell.stopWatchdog()
-                            this.map.shell.runCommand("reset", [gate.name])
-                        })
-                }
-            })
+                    if (gate) {
+                        this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
+                        this.recovering = true
+                        this.run(() => this.recovering = false, this.conf.net.recoveryTime)
+                        gate.reconnect()
+                            .catch(() => this.map.shell.runCommand("reset", [gate.name]))
+                            .finally(() => this.map.shell.stopWatchdog())
+                    }
+                })
         } else {
             off.remove("hidden")
             // this.gates.forEach(g => g.session = null)
