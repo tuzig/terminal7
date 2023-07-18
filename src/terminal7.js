@@ -539,7 +539,7 @@ export class Terminal7 {
     }
     async updateNetworkStatus (status) {
         let off = document.getElementById("offline").classList
-        if (this.netStatus == status)
+        if (this.netStatus?.connected == status.connected)
             return
         this.netStatus = status
         this.log(`updateNetworkStatus: ${status.connected}`)
@@ -1023,8 +1023,7 @@ export class Terminal7 {
                 title: "Access Private Key",
             })
         } catch(e) {
-            if (e.message == "Authentication not available")
-                this.notify("Please turn on face id for 🔑 based auth")
+            this.notify(`Biometric verification failed: ${e.message}`)
             // this.ignoreAppEvents = false
             this.ignoreAppEvents = false
             return {publicKey:"UNAVAILABLE", privateKey:"UNAVAILABLE"}

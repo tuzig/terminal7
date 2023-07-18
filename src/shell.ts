@@ -411,13 +411,6 @@ export class Shell {
      */
     async onDisconnect(gate: Gate, wasSSH: bool) {
         console.log("onDisconnect", gate)
-        if (wasSSH) {
-            terminal7.notify("SSH Session Lost")
-            const toConnect = terminal7.pb.isOpen()?await this.offerInstall(gate):await this.offerSub(gate)
-            if (toConnect)
-                await this.runCommand("connect", [gate.name])
-            return
-        } 
         // if (!terminal7.netStatus.connected || terminal7.recovering ||
         if (!terminal7.netStatus.connected || terminal7.recovering ||
             ((terminal7.activeG != null) && (gate != terminal7.activeG)))
@@ -458,7 +451,15 @@ export class Shell {
                 if (ans == "y")
                     Clipboard.write({ string: cmd })
             }
-        }
+        } else if (wasSSH) {
+            terminal7.notify("SSH Session Lost")
+            const toConnect = terminal7.pb.isOpen()?await this.offerInstall(gate):await this.offerSub(gate)
+            if (toConnect)
+                await this.runCommand("connect", [gate.name])
+            else
+                gate.onFailure(Failure.Aborted)
+            return
+        } 
 
         const reconnectForm = [
             { prompt: "Reconnect" },
@@ -575,7 +576,6 @@ export class Shell {
         let ans
         if (res == "Subscribe") {
             await this.runCommand("subscribe")
-            this.t.writeln("Type `install` to install on a server")
             return false
         } else if (res == "Close Gate") {
             gate.close()

@@ -225,11 +225,11 @@ async function connectCMD(shell:Shell, args: string[]) {
         terminal7.storeGates()
         done = true
     }
-    shell.startWatchdog().catch(e => gate.handleFailure(e))
     if (gate.session) {
         gate.focus()
         return
     }
+    shell.startWatchdog().catch(e => gate.handleFailure(e))
     gate.connect(async () => {
         shell.stopWatchdog()
         if (gate.firstConnection) {

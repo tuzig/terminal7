@@ -2006,7 +2006,7 @@ capacitor-rate-app@^3.1.0-beta.1:
   resolved "https://registry.yarnpkg.com/capacitor-rate-app/-/capacitor-rate-app-3.1.0-beta.1.tgz#3a2d6c306ffa138f7c6bce2fbadecfc693b89712"
   integrity sha512-86MxZFldb6kG5Kz4C6NrMAmILodVHnkwVwOTs5aeteQ5z3gBSnk/IQO54+rGcWImnwGaZACkn1EFmb4gckBQfA==
 
-capacitor-ssh-plugin@^0.5.0:
+capacitor-ssh-plugin@^0.5.3:
   version "0.5.3"
   resolved "https://registry.yarnpkg.com/capacitor-ssh-plugin/-/capacitor-ssh-plugin-0.5.3.tgz#7b7dc9b538a927940f62fbe546a3664ae45bc718"
   integrity sha512-gjUweu/WziZ2cLR8fT2NiKZbW8KoAi0q2WrhBXf6rSQBReR9SzHy7fXMq6DmSFKOs5Q61lrJz0/QSw1WZt1niw==
