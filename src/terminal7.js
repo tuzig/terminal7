@@ -31,7 +31,7 @@ import { NativeBiometric } from "capacitor-native-biometric"
 import { RateApp } from 'capacitor-rate-app'
 
 
-import { PeerbookConnection } from './peerbook'
+import { PeerbookConnection, PB } from './peerbook'
 
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
@@ -546,12 +546,19 @@ export class Terminal7 {
         if (status.connected) {
             off.add("hidden")
             const gate = this.activeG
-            if (gate)
-                this.notify("🌞 Recovering")
+            if (gate) {
+                gate.notify("🌞 Recovering")
+                this.map.shell.startWatchdog().catch(e => {
+                    if (this.pb.isOpen())
+                        gate.notify("Timed out, please try `connect` again")
+                    else
+                        this.notify(`${PB} timed out, please try \`subscribe\``)
+                    gate.close()
+                })
+            }
             this.pbConnect().catch(e => this.log("pbConnect failed", e))
                 .finally(() => {
                     if (gate) {
-                        this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
                         this.recovering = true
                         this.run(() => this.recovering = false, this.conf.net.recoveryTime)
                         gate.reconnect()
