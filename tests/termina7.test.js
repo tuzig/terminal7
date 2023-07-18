@@ -477,7 +477,7 @@ describe("terminal7", function() {
             t0.pressKey("Enter")
             await sleep(300)
             console.log("t0.out:", t0.out)
-            expect(t0.out, `TWR out: ${t0.out}`).toMatch(/webexec/)
+            expect(t0.out, `TWR out: ${t0.out}`).toMatch(/WebExec/)
             expect(t0.out, `TWR out: ${t0.out}`).toMatch(/over WebRTC/)
         })
         it("can connect to SSH through form", async () => {

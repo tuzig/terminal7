@@ -11,7 +11,7 @@ import { Pane } from './pane.js'
 import { T7Map } from './map'
 import { Failure, Session } from './session'
 import { PB } from './peerbook'
-import { SSHSession, HybridSession } from './ssh_session'
+import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
 import { Capacitor } from '@capacitor/core'
@@ -535,16 +535,15 @@ export class Gate {
     }
     async completeConnect(): void {
         this.keyRejected = false
+        const isNative = Capacitor.isNativePlatform()
         if (this.fp && !this.onlySSH) {
             this.notify("🎌  PeerBook")
             this.session = new PeerbookSession(this.fp, this.t7.pb)
-        }
-        else {
-            if (Capacitor.isNativePlatform())  {
-                this.session = (this.onlySSH)?new SSHSession(this.addr, this.username):
-                   new HybridSession(this.addr, this.username)
+        } else {
+            if (isNative)  {
+                this.session = new SSHSession(this.addr, this.username)
             } else {
-                this.notify("🎌  webexec HTTP server")
+                this.notify("🎌  WebExec HTTP server")
                 const addr = `http://${this.addr}:7777/connect`
                 this.session = new HTTPWebRTCSession(addr)
             }
@@ -563,8 +562,12 @@ export class Gate {
                 this.notify(`${PB} Connection failed: ${e}`)
             }
         } else {
-            const {publicKey, privateKey} = await this.t7.readId()
-            this.session.connect(this.marker, publicKey, privateKey)
+            if (isNative) {
+                const {publicKey, privateKey} = await this.t7.readId()
+                this.session.connect(this.marker, publicKey, privateKey)
+            } else {
+                this.session.connect(this.marker)
+            }
         }
     }
     load() {
