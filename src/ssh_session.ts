@@ -21,7 +21,8 @@ export class SSHChannel extends BaseChannel {
             this.onMessage(m.data)
         else {
             this.t7.log("ssh read got error ", m)
-            this.onClose(m && m.error)
+            if (this.onClose)
+                this.onClose(m && m.error)
         }
     }
 }

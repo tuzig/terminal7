@@ -271,8 +271,7 @@ async function connectCMD(shell:Shell, args: string[]) {
                 terminal7.log("oops readId failed")
         } 
         if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH && pbOpen) {
-            if (await shell.offerInstall(gate))
-                shell.t.writeln("WebExec installed, please try `connect` again")
+            await shell.offerInstall(gate)
         }
         gate.load()
         Preferences.get({key: "first_gate"}).then(v => {
@@ -664,6 +663,7 @@ export async function installCMD(shell: Shell, args: string[]) {
                 channel.onClose = () => {
                     shell.t.writeln("~~~ Disconnected without install")
                     document.getElementById("log").style.borderColor = "var(--local-border)"
+                    channel.onClose = undefined
                     done = true
                 }
 
@@ -678,6 +678,7 @@ export async function installCMD(shell: Shell, args: string[]) {
                         setTimeout(async () => {
                             document.getElementById("log").style.borderColor = "var(--local-border)"
                             shell.masterChannel = null
+                            channel.onClose = undefined
                             channel.close()
                             shell.t.writeln("~~~ Orderly Disconnect")
                             // will throw exception if not verified
@@ -713,7 +714,14 @@ export async function installCMD(shell: Shell, args: string[]) {
     session.connect(0, publicKey, privateKey)
     while (!done)
         await (new Promise(r => setTimeout(r, 100)))
-    if (!done) {
+    if (done) {
+        // wait for the gate to get an fp
+        let timedOut = false
+        shell.startWatchdog(() => timedOut = true, terminal7.conf.net.timeout)
+
+        while (!gate.fp && ! timedOut)
+            await (new Promise(r => setTimeout(r, 100)))
+    } else {
         shell.t.writeln("Install failed")
         shell.t.writeln("Please try again or type `support`")
     }

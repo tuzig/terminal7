@@ -516,6 +516,7 @@ export class Terminal7 {
      */
     disengage() {
         return new Promise(resolve => {
+            this.pbClose()
             var count = 0
             if (this.gates.length > 0)
                 this.gates.forEach(g => {
@@ -527,7 +528,6 @@ export class Terminal7 {
                         })
                     }
                 })
-            this.pbClose()
             let callCB = () => terminal7.run(() => {
                 if (count == 0)
                     resolve()

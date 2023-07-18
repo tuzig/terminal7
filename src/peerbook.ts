@@ -314,6 +314,7 @@ export class PeerbookConnection {
             this.ws.onclose = (ev) => {
                 window.terminal7.log("peerbook ws closed", ev)
                 window.terminal7.notify(`${PB} Web socket closed`)
+                this.ws.onclose = undefined
                 this.ws = null
             }
             this.ws.onopen = () => {

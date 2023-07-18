@@ -413,7 +413,8 @@ export class Shell {
         console.log("onDisconnect", gate)
         if (wasSSH) {
             terminal7.notify("SSH Session Lost")
-            const toConnect = terminal7.pb.isOpen()?await this.offerInstall(gate):await this.offerSub(gate)
+            const toConnect = terminal7.pb.isOpen()?await this.offerInstall(gate, "Reconnect using SSH"):
+                await this.offerSub(gate)
             if (toConnect)
                 await this.runCommand("connect", [gate.name])
             return
@@ -543,22 +544,32 @@ export class Shell {
     async reset() {
         this.pbSession = null
     }
-    async offerInstall(gate): Promise<boolean> {
+    async offerInstall(gate, firstOption?): Promise<boolean> {
+        if (gate.onlySSH)
+            return true
         this.t.writeln("[2K\nInstall WebExec for persistent sessions over WebRTC")
         const install = [
-            { prompt: "Reconnect using SSH" },
+            { prompt: firstOption || "Connect over SSH" },
             { prompt: "Install" },
+            { prompt: "Always use SSH" },
             { prompt: "Close Gate" },
         ]
         const res = await this.runForm(install, "menu", "Please choose")
-        let ans
-        if (res == "Install") {
-            await this.runCommand(`install ${gate.name}`)
-        } else if (res == "Close Gate") {
-            gate.close()
-            return false
+        let ret = true
+        switch (res) {
+            case "Install":
+                await this.runCommand(`install ${gate.name}`)
+                break
+            case  "Close Gate":
+                gate.close()
+                ret = false
+                break
+            case "Always use SSH":
+                gate.onlySSH = true
+                terminal7.storeGates()
+                break
         }
-        return true
+        return ret
     }
     async offerSub(gate): Promise<boolean> {
         this.t.writeln("[2K\nSubscribe to PeerBook and enjoy:")
