@@ -538,6 +538,8 @@ export class Gate {
         const isNative = Capacitor.isNativePlatform()
         if (this.fp && !this.onlySSH && this.online) {
             this.notify("🎌  PeerBook")
+            if (!terminal7.pb.isOpen()) 
+                await terminal7.pbConnect()
             this.session = new PeerbookSession(this.fp, this.t7.pb)
         } else {
             if (isNative)  {
