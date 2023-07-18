@@ -192,7 +192,9 @@ async function connectCMD(shell:Shell, args: string[]) {
         shell.t.writeln(`Host not found: ${hostname}`)
         return
     }
-    if (gate.fp) {
+    const pbOpen = terminal7.pb && terminal7.pb.isOpen()
+    let overPB = pbOpen && gate.fp && (gate.fp.length > 0) && gate.online
+    if (overPB) {
         if (!gate.verified) {
             const answer = await shell.askValue("Gate unverified, would you like to verify it? (Y/n)")
             if (answer == "y" || answer == "Y" || answer == "") {
@@ -203,7 +205,7 @@ async function connectCMD(shell:Shell, args: string[]) {
             }
         }
         if (!gate.online) {
-            shell.t.writeln("Host is offline")
+            shell.t.writeln("Host is offline, better try another host")
             return
         }
     }
@@ -232,6 +234,7 @@ async function connectCMD(shell:Shell, args: string[]) {
     }
     gate.connect(async () => {
         shell.stopWatchdog()
+        const { publicKey } = await terminal7.readId()
         if (gate.firstConnection) {
             const fields: Fields = [{
                 prompt: "Gate's name",
@@ -248,13 +251,11 @@ async function connectCMD(shell:Shell, args: string[]) {
             await terminal7.storeGates()
         }
         let clipboardFilled = false
-        const pbOpen = terminal7.pb && terminal7.pb.isOpen()
-        if (gate.keyRejected && !pbOpen) {
+        if (gate.keyRejected && !overPB) {
             const keyForm = [
                 { prompt: "Just let me in" },
                 { prompt: "Copy command to 📋" },
             ]
-            const { publicKey } = await terminal7.readId()
             if (publicKey && (publicKey !== "UNAVAILABLE")) {
                 const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
                 shell.t.writeln(`\n To use face id please copy the ES25519 key by running:\n\n\x1B[1m${cmd}\x1B[0m\n`)
@@ -270,24 +271,8 @@ async function connectCMD(shell:Shell, args: string[]) {
                 terminal7.log("oops readId failed")
         } 
         if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH && pbOpen) {
-            const webexecForm = [
-                { prompt: "Just let me in" },
-                { prompt: "Install webexec for WebRTC 🍯" },
-                { prompt: "Always use SSH for this host" },
-            ]
-            shell.t.writeln("Please choose:")
-            const res = await shell.runForm(webexecForm, "menu")
-            switch(res) {
-                case "Install webexec for WebRTC 🍯":
-                    await shell.runCommand("install", [gate.name])
-                    await shell.runCommand("connect", [gate.name])
-                    break
-
-                case "Always use SSH for this host":
-                    gate.onlySSH = true
-                    await gate.t7.storeGates()
-                    break
-            }
+            if (await shell.offerInstall(gate))
+                shell.t.writeln("WebExec installed, please try `connect` again")
         }
         gate.load()
         Preferences.get({key: "first_gate"}).then(v => {
@@ -678,6 +663,7 @@ export async function installCMD(shell: Shell, args: string[]) {
                 channel.send(`PEERBOOK_UID=${uid} PEERBOOK_HOST=${host} bash <(curl -sL https://get.webexec.sh)`)
                 channel.onClose = () => {
                     shell.t.writeln("~~~ Disconnected without install")
+                    document.getElementById("log").style.borderColor = "var(--local-border)"
                     done = true
                 }
 
