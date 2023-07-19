@@ -178,6 +178,7 @@ export class Gate {
         // KeyRejected and WrongPassword are "light failure"
         const active = this == this.t7.activeG
         const wasSSH = this.session && this.session.isSSH
+        /*
         if (!this.t7.lastActiveState) {
             console.log("ignoring failed event as the app is still in the back")
             this.stopBoarding()
@@ -187,6 +188,7 @@ export class Gate {
             }
             return
         }
+        */
         if (!active)
             return
         // this.map.showLog(true)
@@ -572,13 +574,16 @@ export class Gate {
                 this.notify(`${PB} Connection failed: ${e}`)
             }
         } else {
-            try {
-                const {publicKey, privateKey} = await this.t7.readId()
-                this.session.connect(this.marker, publicKey, privateKey)
-            } catch(e) {
-                terminal7.log("error connecting with keys", e)
-                this.session.passConnect(this.marker)
-            }
+            if (this.session.isSSH) {
+                try {
+                    const {publicKey, privateKey} = await this.t7.readId()
+                    this.session.connect(this.marker, publicKey, privateKey)
+                } catch(e) {
+                    terminal7.log("error connecting with keys", e)
+                    this.handleFailure(Failure.KeyRejected)
+                }
+            } else
+                this.session.connect(this.marker)
         }
     }
     load() {

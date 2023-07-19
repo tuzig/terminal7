@@ -247,21 +247,22 @@ async function connectCMD(shell:Shell, args: string[]) {
                 { prompt: "Just let me in" },
                 { prompt: "Copy command to clipboard" },
             ]
-            let publicKey: string
+            let publicKey = ""  
             try {
                 publicKey = (await terminal7.readId()).publicKey
             } catch (e) {
                 terminal7.log("oops readId failed")
-                return
             }
-            const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
-            shell.t.writeln(`\n To use face id please copy the ES25519 key by running:\n\n\x1B[1m${cmd}\x1B[0m\n`)
-            const res = await shell.runForm(keyForm, "menu")
-            switch(res) {
-                case "Copy command to clipboard":
-                    Clipboard.write({ string: cmd })
-                    clipboardFilled = true
-                    break
+            if (publicKey) {
+                const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
+                shell.t.writeln(`\n To use face id please copy the ES25519 key by running:\n\n\x1B[1m${cmd}\x1B[0m\n`)
+                const res = await shell.runForm(keyForm, "menu")
+                switch(res) {
+                    case "Copy command to clipboard":
+                        Clipboard.write({ string: cmd })
+                        clipboardFilled = true
+                        break
+                }
             }
         } 
         if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH && pbOpen) {
@@ -552,7 +553,6 @@ async function subscribeCMD(shell: Shell) {
     } else {
         if (!terminal7.pb.isOpen()) {
             try {
-                terminal7.pbClose()
                 await terminal7.pb.connect(customerInfo.originalAppUserId)
             } catch(e) {
                 shell.t.writeln(`Error connecting to peerbook: ${e.message}`)
@@ -709,7 +709,12 @@ export async function installCMD(shell: Shell, args: string[]) {
                 break
         }
     }
-    session.connect(0, publicKey, privateKey)
+    if (publicKey) {
+        session.connect(0, publicKey, privateKey)
+    } else {
+        const password = await shell.askPass()
+        session.passConnect(undefined, password)
+    }
     while (!done && !error) 
         await (new Promise(r => setTimeout(r, 100)))
     if (done) {
