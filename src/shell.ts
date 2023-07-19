@@ -408,6 +408,7 @@ export class Shell {
      */
     async onDisconnect(gate: Gate, wasSSH?: boolean) {
         console.log("onDisconnect", gate)
+        this.stopWatchdog()
         if (wasSSH) {
             terminal7.notify("SSH Session Lost")
             const toConnect = terminal7.pb.isOpen()?await this.offerInstall(gate, "Reconnect using SSH"):
