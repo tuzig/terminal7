@@ -53,7 +53,7 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # shell = "*"
 
 [net]
-# timeout = 3000
+# timeout = 5000
 # retries = 3
 # ice_server = "stun:stun2.l.google.com:19302"
 # recovery_time = 4000

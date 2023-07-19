@@ -99,6 +99,7 @@ export class PeerbookConnection {
         }
         const QR = userData.QR
         const uid = userData.ID
+        this.uid = uid
         // eslint-disable-next-line
         this.echo("Please scan this QR code with your OTP app")
         this.echo(QR)
@@ -237,7 +238,7 @@ export class PeerbookConnection {
                             this.echo("You are already subscribed, please register:")
                             this.register(token).then(resolve).catch(e => { 
                                 terminal7.log("Failed to register", e.toString())
-                                reject(e)
+                                reject(e.toString())
                             })
                         } else {
                             CapacitorPurchases.logIn({ appUserID: uid })
@@ -252,13 +253,7 @@ export class PeerbookConnection {
                 }
                 else if (state == 'failed') {
                     this.session = null
-                    // TODO: remove websocket
-                    if (failure == Failure.TimedOut) {
-                        this.echo("Connection timed out")
-                        this.echo("Please try again and if persists, `open issue`")
-                    } else if (failure == Failure.Unauthorized) {
-                        terminal7.log("peerbook connection unauthorized")
-                    }
+                    console.log("PB webrtc connection failed", failure)
                     reject(failure)
                     return
                 }
@@ -294,7 +289,7 @@ export class PeerbookConnection {
                         window.terminal7.notify(`${PB} PeerBook connection error ${m.code}`)
                         this.ws = null
                     }
-                    reject()
+                    reject(`PeerBook connection error ${m.code}`)
                     return
                 } 
                 if (firstMessage) {
@@ -309,7 +304,7 @@ export class PeerbookConnection {
             }
             this.ws.onerror = ev =>  {
                 window.terminal7.log("peerbook ws error", ev)
-                reject(ev)
+                reject(ev.toString())
             }
             this.ws.onclose = (ev) => {
                 window.terminal7.log("peerbook ws closed", ev)

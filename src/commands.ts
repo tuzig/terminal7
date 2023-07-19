@@ -554,9 +554,13 @@ async function subscribeCMD(shell: Shell) {
         if (!terminal7.pb.isOpen()) {
             try {
                 await terminal7.pb.connect(customerInfo.originalAppUserId)
-            } catch(e) {
-                shell.t.writeln(`Error connecting to peerbook: ${e.message}`)
-                shell.t.writeln("Please try again or type `support`")
+            } catch(failure) {
+                let msg = "PeerBook Connection failed"
+                if (failure)
+                    msg += ": " + failure
+                shell.t.writeln(msg)
+                shell.t.writeln("Please try again and if persists, `support`")
+                return
             }
         } else
             shell.t.writeln("You are already subscribed and registered")
@@ -715,8 +719,11 @@ export async function installCMD(shell: Shell, args: string[]) {
         const password = await shell.askPass()
         session.passConnect(undefined, password)
     }
-    while (!done && !error) 
+    let wait = terminal7.conf.net.timeout / 100
+    while (!done && !error && (wait > 0)) {
         await (new Promise(r => setTimeout(r, 100)))
+        wait--
+    }
     if (done) {
         // wait for the gate to get an fp
         let timedOut = false
@@ -725,7 +732,7 @@ export async function installCMD(shell: Shell, args: string[]) {
             await (new Promise(r => setTimeout(r, 100)))
         shell.stopWatchdog()
     } else {
-        shell.t.writeln("Install failed")
+        shell.t.writeln(err?"Install failed":"Install timed out")
         shell.t.writeln("Please try again or type `support`")
     }
 }
