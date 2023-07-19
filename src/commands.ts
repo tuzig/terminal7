@@ -219,14 +219,13 @@ async function connectCMD(shell:Shell, args: string[]) {
         terminal7.storeGates()
         done = true
     }
-    shell.startWatchdog().catch(e => gate.handleFailure(e))
     if (gate.session) {
         gate.focus()
         return
     }
+    shell.startWatchdog().catch(e => gate.handleFailure(e))
     gate.connect(async () => {
         shell.stopWatchdog()
-        const { publicKey } = await terminal7.readId()
         if (gate.firstConnection) {
             const fields: Fields = [{
                 prompt: "Gate's name",
@@ -246,21 +245,24 @@ async function connectCMD(shell:Shell, args: string[]) {
         if (gate.keyRejected && !overPB) {
             const keyForm = [
                 { prompt: "Just let me in" },
-                { prompt: "Copy command to 📋" },
+                { prompt: "Copy command to clipboard" },
             ]
-            if (publicKey && (publicKey !== "UNAVAILABLE")) {
-                const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
-                shell.t.writeln(`\n To use face id please copy the ES25519 key by running:\n\n\x1B[1m${cmd}\x1B[0m\n`)
-                const res = await shell.runForm(keyForm, "menu")
-                switch(res) {
-                    case "Copy command to 📋":
-                        Clipboard.write({ string: cmd })
-                        clipboardFilled = true
-                        break
-                }
-            }
-            else 
+            let publicKey: string
+            try {
+                publicKey = (await terminal7.readId()).publicKey
+            } catch (e) {
                 terminal7.log("oops readId failed")
+                return
+            }
+            const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
+            shell.t.writeln(`\n To use face id please copy the ES25519 key by running:\n\n\x1B[1m${cmd}\x1B[0m\n`)
+            const res = await shell.runForm(keyForm, "menu")
+            switch(res) {
+                case "Copy command to clipboard":
+                    Clipboard.write({ string: cmd })
+                    clipboardFilled = true
+                    break
+            }
         } 
         if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH && pbOpen) {
             await shell.offerInstall(gate)
@@ -342,7 +344,7 @@ async function resetCMD(shell: Shell, args: string[]) {
                     gate.session = null
                 }
                 // reset peerbook connection
-                terminal7.pb = null
+                terminal7.pbClose()
                 try {
                     await shell.runCommand("connect", [gate.name])
                 } catch(e) {
@@ -520,7 +522,7 @@ async function copyKeyCMD(shell: Shell) {
         const ret = await terminal7.readId()
         publicKey = ret.publicKey
     } catch(e) {
-        console.log("readId erro", e)
+        terminal7.log("readId error", e)
     }
     if (publicKey) {
         Clipboard.write({ string: publicKey })
@@ -541,14 +543,16 @@ async function subscribeCMD(shell: Shell) {
         terminal7.ignoreAppEvents = true
         try {
             await terminal7.pb.purchaseCurrent()
+            shell.stopWatchdog()
         } catch(e) {
+            shell.stopWatchdog()
             console.log("purchase error", e)
             shell.t.writeln("Error purchasing, please try again or contact support")
         }
-        shell.stopWatchdog()
     } else {
-        if (!terminal7.pb.session) {
+        if (!terminal7.pb.isOpen()) {
             try {
+                terminal7.pbClose()
                 await terminal7.pb.connect(customerInfo.originalAppUserId)
             } catch(e) {
                 shell.t.writeln(`Error connecting to peerbook: ${e.message}`)
@@ -593,6 +597,8 @@ export async function installCMD(shell: Shell, args: string[]) {
     // Connect to the gate over SSH and install webexec
     let publicKey, privateKey
     let done = false
+    let error = false
+
     try {
         const ids = await terminal7.readId()
         publicKey = ids.publicKey
@@ -656,7 +662,7 @@ export async function installCMD(shell: Shell, args: string[]) {
                     shell.t.writeln("~~~ Disconnected without install")
                     document.getElementById("log").style.borderColor = "var(--local-border)"
                     channel.onClose = undefined
-                    done = true
+                    error = true
                 }
 
                 channel.onMessage = async (msg: string) => {
@@ -704,15 +710,15 @@ export async function installCMD(shell: Shell, args: string[]) {
         }
     }
     session.connect(0, publicKey, privateKey)
-    while (!done)
+    while (!done && !error) 
         await (new Promise(r => setTimeout(r, 100)))
     if (done) {
         // wait for the gate to get an fp
         let timedOut = false
         shell.startWatchdog(() => timedOut = true, terminal7.conf.net.timeout)
-
         while (!gate.fp && ! timedOut)
             await (new Promise(r => setTimeout(r, 100)))
+        shell.stopWatchdog()
     } else {
         shell.t.writeln("Install failed")
         shell.t.writeln("Please try again or type `support`")

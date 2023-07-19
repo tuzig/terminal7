@@ -57,8 +57,11 @@ export class SSHSession extends BaseSession {
                 this.onSSHSession(args.session)
         }).catch(e => {
                 console.log("SSH key startSession failed", e.toString())
-                if (e.toString().startsWith("Error: UNAUTHORIZED"))
+                const msg = e.toString()
+                if (msg.match(/(Error: UNAUTHORIZED|Auth fail)/))
                     this.onStateChange("failed", Failure.KeyRejected)
+                else if (msg.startsWith("Error: Failed to connect"))
+                    this.onStateChange("failed", Failure.FailedToConnect)
                 else
                     this.onStateChange("failed", Failure.Aborted)
            })

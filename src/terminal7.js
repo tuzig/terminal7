@@ -97,7 +97,7 @@ export class Terminal7 {
         this.certificates = null
         this.confEditor = null
         this.flashTimer = null
-        this.netStatus = null
+        this.netConnected = true
         this.logBuffer = CyclicArray(settings.logLines || 101)
         this.zoomedE = null
         this.pendingPanes = {}
@@ -227,11 +227,8 @@ export class Terminal7 {
                         terminal7.log("ignoring benched app event")
                         return
                     }
-                    // We're getting suspended. disengage.
-                    if (this.activeG) {
-                        this.notify("🌜 Benched", true)
-                    }
-                    this.disengage()
+                    this.notify("🌜 Benched", true)
+                    this.updateNetworkStatus({connected: false}, false)
                 } else {
                     // We're back! puts us in recovery mode so that it'll
                     // quietly reconnect to the active gate on failure
@@ -270,12 +267,14 @@ export class Terminal7 {
                     RateApp.requestReview()
            }, 100)
         })
-        Network.getStatus().then(s => {
-            this.updateNetworkStatus(s)
-            if (!s.connected) {
-                this.goHome()
-            }
-        })
+        this.pbConnect().finally(() =>
+            Network.getStatus().then(s => {
+                this.updateNetworkStatus(s)
+                if (!s.connected) {
+                    this.goHome()
+                }
+            })
+        )
     }
     /*
      * restoreState is a future feature that uses local storage to restore
@@ -537,17 +536,18 @@ export class Terminal7 {
             callCB()
         })
     }
-    async updateNetworkStatus (status) {
+    async updateNetworkStatus (status, updateNetPopup = true) {
         let off = document.getElementById("offline").classList
-        if (this.netStatus == status)
+        if (this.netConnected == status.connected)
             return
-        this.netStatus = status
+        this.netConnected = status.connected
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
-            off.add("hidden")
+            if (updateNetPopup)
+                off.add("hidden")
             const gate = this.activeG
+            this.notify("🌞 Recovering")
             if (gate) {
-                gate.notify("🌞 Recovering")
                 this.map.shell.startWatchdog().catch(() => {
                     if (this.pb.isOpen())
                         gate.notify("Timed out, please try `connect` again")
@@ -567,9 +567,9 @@ export class Terminal7 {
                     }
                 })
         } else {
-            off.remove("hidden")
-            // this.gates.forEach(g => g.session = null)
-            this.pbClose()
+            if (updateNetPopup)
+                off.remove("hidden")
+            this.disengage()
         }
     }
     loadConf(conf) {
@@ -1030,11 +1030,9 @@ export class Terminal7 {
                 title: "Access Private Key",
             })
         } catch(e) {
-            if (e.message == "Authentication not available")
-                this.notify("Please turn on face id for 🔑 based auth")
-            // this.ignoreAppEvents = false
+            this.notify(`Biometric failed: ${e.message}`)
             this.ignoreAppEvents = false
-            return {publicKey:"UNAVAILABLE", privateKey:"UNAVAILABLE"}
+            throw "Biometric failed: " + e.message
         }
         console.log("Got biometric verified ", verified)
         this.lastActiveState = false

@@ -33,7 +33,7 @@ export class Terminal7Mock extends Terminal7 {
              peerbook: { insecure: true },
            }
     keys = {default: { public: "TBD", private: "TBD" }}
-    netStatus = {connected: true}
+    netConnected = true
     notifications: string[] = []
     notify(message: string) {
         this.map.t0.out += message

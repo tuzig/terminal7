@@ -17,7 +17,8 @@ export enum Failure {
     Aborted='Aborted',
     KeyRejected='Key Rejected',
     WrongAddress='Wrong Address',
-    DataChannelLost="Data Channel Lost"
+    DataChannelLost="Data Channel Lost",
+    FailedToConnect="Failed To Connect",
 }
 
 export interface Event {

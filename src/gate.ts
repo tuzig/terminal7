@@ -177,7 +177,7 @@ export class Gate {
     async handleFailure(failure: Failure) {
         // KeyRejected and WrongPassword are "light failure"
         const active = this == this.t7.activeG
-        const isSSH = this.session && this.session.isSSH
+        const wasSSH = this.session && this.session.isSSH
         if (!this.t7.lastActiveState) {
             console.log("ignoring failed event as the app is still in the back")
             this.stopBoarding()
@@ -255,20 +255,24 @@ export class Gate {
                 }
                 this.session.passConnect(this.marker, password)
                 return
+            case Failure.FailedToConnect:
+                // SSH failed, don't offer install
+                await this.map.shell.onDisconnect(this)
+                return
 
         }
-        await this.map.shell.onDisconnect(this, isSSH)
+        await this.map.shell.onDisconnect(this, wasSSH)
     }
     reconnect(): Promise<void> {
         if (!this.session)
             return this.connect()
+        const isSSH = this.session.isSSH
         return new Promise((resolve, reject) => {
             this.t7.readId().then(({publicKey, privateKey}) => {
                 this.session.reconnect(this.marker, publicKey, privateKey).then(layout => {
                     this.setLayout(layout)
                     resolve()
                 }).catch(() => {
-                    const isSSH = this.session.isSSH
                     if (this.session) {
                         this.session.close()
                         this.session = null
@@ -278,6 +282,11 @@ export class Gate {
                 })
             }).catch((e) => {
                 this.t7.log("failed to read id", e)
+                if (this.session) {
+                    this.session.close()
+                    this.session = null
+                }
+                this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
                 resolve()
             })
         })
@@ -287,8 +296,7 @@ export class Gate {
      */
     async connect(onConnected = () => this.load()) {
         
-        // do nothing when the network is down
-        if (!this.t7.netStatus || !this.t7.netStatus.connected)
+        if (!terminal7.netConnected)
             return
         this.onConnected = onConnected
         this.t7.activeG = this
@@ -564,11 +572,12 @@ export class Gate {
                 this.notify(`${PB} Connection failed: ${e}`)
             }
         } else {
-            if (isNative) {
+            try {
                 const {publicKey, privateKey} = await this.t7.readId()
                 this.session.connect(this.marker, publicKey, privateKey)
-            } else {
-                this.session.connect(this.marker)
+            } catch(e) {
+                terminal7.log("error connecting with keys", e)
+                this.session.passConnect(this.marker)
             }
         }
     }

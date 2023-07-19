@@ -302,7 +302,7 @@ export class Shell {
         return new Promise((_, reject) => {
             this.startHourglass(timeout)
             this.watchdog = window.setTimeout(() => {
-                console.log("WATCHDOG stops the gate connecting")
+                console.log("WATCHDOG TIMEOUT")
                 this.stopWatchdog()
                 reject(Failure.TimedOut)
             }, timeout)
@@ -406,7 +406,7 @@ export class Shell {
     /*
      * onDisconnect is called when a gate disconnects.
      */
-    async onDisconnect(gate: Gate, wasSSH: bool) {
+    async onDisconnect(gate: Gate, wasSSH?: boolean) {
         console.log("onDisconnect", gate)
         if (wasSSH) {
             terminal7.notify("SSH Session Lost")
@@ -416,8 +416,7 @@ export class Shell {
                 await this.runCommand("connect", [gate.name])
             return
         } 
-        // if (!terminal7.netStatus.connected || terminal7.recovering ||
-        if (!terminal7.netStatus.connected || terminal7.recovering ||
+        if (!terminal7.netConnected || terminal7.recovering ||
             ((terminal7.activeG != null) && (gate != terminal7.activeG)))
             return
 
@@ -544,7 +543,7 @@ export class Shell {
     async offerInstall(gate, firstOption?): Promise<boolean> {
         if (gate.onlySSH)
             return true
-        this.t.writeln("[2K\nInstall WebExec for persistent sessions over WebRTC")
+        this.t.writeln("\rInstall WebExec for persistent sessions over WebRTC")
         const install = [
             { prompt: firstOption || "Connect over SSH" },
             { prompt: "Install" },
@@ -582,7 +581,6 @@ export class Shell {
         const res = await this.runForm(reconnect, "menu", "Please choose")
         if (res == "Subscribe") {
             await this.runCommand("subscribe")
-            this.t.writeln("Type `install` to install on a server")
             return false
         } else if (res == "Close Gate") {
             gate.close()

@@ -188,7 +188,7 @@ export class PeerbookConnection {
         try {
             await this.connect(uid)
         } catch (e) {
-            terminal7.log("Failed to connect", e.toString())
+            terminal7.log("Failed to connect", e)
         } finally {
             this.updatingStore = false
         }
