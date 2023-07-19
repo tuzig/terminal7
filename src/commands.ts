@@ -12,14 +12,6 @@ import { Failure } from './session'
 
 declare const terminal7 : Terminal7
 
-const installMessage = `
-        session.on
-  To get the most of T7 you need our agent - webexec.
-  It's open source and you can download the binary
-  for your system from: https://download.webexec.sh
-  and copy it to /usr/local/bin
-  Or you can use the web installer: 
-`
 export type Command = {
     name: string
     help: string
@@ -193,7 +185,7 @@ async function connectCMD(shell:Shell, args: string[]) {
         return
     }
     const pbOpen = terminal7.pb && terminal7.pb.isOpen()
-    let overPB = pbOpen && gate.fp && (gate.fp.length > 0) && gate.online
+    const overPB = pbOpen && gate.fp && (gate.fp.length > 0) && gate.online
     if (overPB) {
         if (!gate.verified) {
             const answer = await shell.askValue("Gate unverified, would you like to verify it? (Y/n)")

@@ -1,7 +1,5 @@
-import * as TOML from '@tuzig/toml'
 import { Channel } from "./session"
 import { Clipboard } from "@capacitor/clipboard"
-import { Capacitor } from "@capacitor/core"
 import { Terminal } from 'xterm'
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
@@ -13,7 +11,6 @@ import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
 import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
 import { tomlMode} from '@tuzig/codemirror/mode/toml/toml.js'
 import { dialogAddOn } from '@tuzig/codemirror/addon/dialog/dialog.js'
-import * as TOML from '@tuzig/toml'
 
 export class Shell {
 
@@ -583,7 +580,6 @@ export class Shell {
             { prompt: "Close Gate" },
         ]
         const res = await this.runForm(reconnect, "menu", "Please choose")
-        let ans
         if (res == "Subscribe") {
             await this.runCommand("subscribe")
             this.t.writeln("Type `install` to install on a server")

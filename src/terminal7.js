@@ -548,7 +548,7 @@ export class Terminal7 {
             const gate = this.activeG
             if (gate) {
                 gate.notify("🌞 Recovering")
-                this.map.shell.startWatchdog().catch(e => {
+                this.map.shell.startWatchdog().catch(() => {
                     if (this.pb.isOpen())
                         gate.notify("Timed out, please try `connect` again")
                     else
