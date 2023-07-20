@@ -422,7 +422,6 @@ export class Shell {
             return
 
         if (gate.firstConnection) {
-            this.t.writeln("Failed to connect")
             let ans: string
             const verifyForm = [{
                 prompt: `Does the address \x1B[1;37m${gate.addr}\x1B[0m seem correct?`,
@@ -439,22 +438,6 @@ export class Shell {
                 gate.delete()
                 setTimeout(() => this.handleLine("add"), 100)
                 return gate.onFailure(Failure.WrongAddress)
-            }
-            if (gate.session.isSSH) {
-                const cmd = "bash <(curl -sL https://get.webexec.sh)"
-                const webexecForm = [{
-                    prompt: `Make sure webexec is running on ${gate.addr}:
-                        \n\x1B[1m${cmd}\x1B[0m\n\nCopy to clipboard?`,
-                            values: ["y", "n"],
-                            default: "y"
-                }]
-                try {
-                    ans = (await this.runForm(webexecForm, "text"))[0]
-                } catch(e) {
-                    return gate.onFailure(Failure.WrongAddress)
-                }
-                if (ans == "y")
-                    Clipboard.write({ string: cmd })
             }
         }
 

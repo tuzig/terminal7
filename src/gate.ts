@@ -258,6 +258,7 @@ export class Gate {
                 this.session.passConnect(this.marker, password)
                 return
             case Failure.FailedToConnect:
+                this.notify("Failed to connect")
                 // SSH failed, don't offer install
                 await this.map.shell.onDisconnect(this)
                 return
