@@ -717,8 +717,7 @@ audio { display: none; }
     padding: 0;
     clear: both;
 }
-button.boarding  {
-    font-weight: bold;
+div.boarding  {
     text-shadow: var(--remote-border) 1px 0 10px;
 }
 #changelog {
