@@ -184,6 +184,7 @@ export class PeerbookConnection {
             this.updatingStore = false
             return
         }
+        this.shell.stopWatchdog()
         const uid = data.customerInfo.originalAppUserId
         terminal7.log("Subscribed to PB, uid: ", uid)
         try {
@@ -235,7 +236,7 @@ export class PeerbookConnection {
                     this.getUID().then(uid => {
                         if (uid == "TBD") {
                             terminal7.log("Got TBD as uid")
-                            this.echo("You are already subscribed, please register:")
+                            this.echo("You are subscribed, please register:")
                             this.register(token).then(resolve).catch(e => { 
                                 terminal7.log("Failed to register", e.toString())
                                 reject(e.toString())

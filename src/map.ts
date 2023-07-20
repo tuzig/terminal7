@@ -50,7 +50,16 @@ export class T7Map {
                 console.log("TWR size", this.t0.cols, this.t0.rows)
             }, 100)
             this.t0.loadAddon(new XtermWebfont())
-            // this.t0.attachCustomKeyEventHandler(ev => {
+            this.t0.attachCustomKeyEventHandler(ev => {
+                if (ev.ctrlKey && ev.key === "c") {
+                    if (this.shell.masterChannel)
+                        this.shell.masterChannel.send(String.fromCharCode(3))
+                    else
+                        this.shell.escape()
+                    return false
+                }
+                return true
+            })
             this.t0.onKey(iev => {
                 this.interruptTTY()
                 const ev = iev.domEvent

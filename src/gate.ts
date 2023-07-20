@@ -126,6 +126,8 @@ export class Gate {
     }
     focus() {
         terminal7.activeG = this
+        this.boarding = true
+        this.updateNameE()
         this.map.showLog(false)
         // hide the current focused gate
         document.getElementById("map-button").classList.remove("off")
@@ -392,7 +394,6 @@ export class Gate {
             })
             if (!foundNull) {
                 this.t7.log(`${this.name} is boarding`)
-                this.boarding = true
                 this.updateNameE()
             }
         }, 400)

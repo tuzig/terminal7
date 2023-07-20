@@ -236,9 +236,7 @@ export class Shell {
             return
         this.printPrompt()
         if (key == 'Escape') {
-            await this.escapeActiveForm()
-            await this.escapeWatchdog()
-            this.clearPrompt()
+            await this.escape()
         } else if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
             Clipboard.read().then(res => {
                 if (res.type == 'text/plain') {
@@ -252,6 +250,12 @@ export class Shell {
         else if (this.active)
             this.onKey(ev)
         ev.preventDefault()
+    }
+
+    async escape() {
+        await this.escapeActiveForm()
+        await this.escapeWatchdog()
+        this.clearPrompt()
     }
 
     onFormError(err: Error) {
@@ -539,6 +543,7 @@ export class Shell {
         switch (res) {
             case "Install":
                 await this.runCommand(`install ${gate.name}`)
+                ret = false
                 break
             case  "Close Gate":
                 gate.close()
