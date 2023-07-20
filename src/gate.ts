@@ -193,7 +193,7 @@ export class Gate {
             return
         // this.map.showLog(true)
         terminal7.log("handling failure", failure, terminal7.recovering)
-        this.boarding = false
+        this.stopBoarding()
         this.map.shell.stopWatchdog()
         let password: string
         switch ( failure ) {
@@ -210,13 +210,11 @@ export class Gate {
             case Failure.BadRemoteDescription:
                 this.session.close()
                 this.session = null
-                this.stopBoarding()
                 this.notify("Sync Error. Please try again")
                 break
             case Failure.NotImplemented:
                 this.session.close()
                 this.session = null
-                this.stopBoarding()
                 this.notify("Not Implemented. Please try again")
                 break
             case Failure.Unauthorized:
@@ -228,7 +226,6 @@ export class Gate {
                 this.marker = null
                 this.session.close()
                 this.session = null
-                this.stopBoarding()
                 this.connect(this.onConnected)
                 return
 
@@ -242,7 +239,6 @@ export class Gate {
                     terminal7.log("Cleaned session as failure on recovering")
                     return
                 }
-                this.stopBoarding()
                 this.notify(failure?"Lost Data Channel":"Lost Connection")
                 break
 

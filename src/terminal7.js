@@ -522,7 +522,6 @@ export class Terminal7 {
                     if (g.boarding) {
                         count++
                         g.disengage().then(() => {
-                            g.boarding = false
                             count--
                         })
                     }
@@ -547,7 +546,7 @@ export class Terminal7 {
                 off.add("hidden")
             const gate = this.activeG
             this.notify("🌞 Recovering")
-            if (gate) {
+            if (gate && gate.boarding) {
                 this.map.shell.startWatchdog().catch(() => {
                     if (this.pb.isOpen())
                         gate.notify("Timed out, please try `connect` again")
@@ -558,7 +557,7 @@ export class Terminal7 {
             }
             this.pbConnect().catch(e => this.log("pbConnect failed", e))
                 .finally(() => {
-                    if (gate) {
+                    if (gate && gate.boarding) {
                         this.recovering = true
                         this.run(() => this.recovering = false, this.conf.net.recoveryTime)
                         gate.reconnect()
