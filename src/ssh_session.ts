@@ -81,8 +81,10 @@ export class SSHSession extends BaseSession {
                 console.log("SSH pass startSession failed", e.toString())
                 if (e.toString().startsWith("Error: Not imp"))
                     this.onStateChange("failed", Failure.NotImplemented)
-                else
+                else if (e.toString().startsWith("Error: Wrong password"))
                     this.onStateChange("failed", Failure.WrongPassword)
+                else
+                    this.onStateChange("failed", Failure.FailedToConnect)
 
            })
     }
