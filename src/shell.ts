@@ -410,8 +410,8 @@ export class Shell {
         console.log("onDisconnect", gate)
         this.stopWatchdog()
         if (wasSSH) {
-            terminal7.notify("SSH Session Lost")
-            const toConnect = terminal7.pb.isOpen()?await this.offerInstall(gate, "Reconnect using SSH"):
+            terminal7.notify("SSH Session might be lost")
+            const toConnect = terminal7.pb.isOpen()?await this.offerInstall(gate, "I'm feeling lucky"):
                 await this.offerSub(gate)
             if (toConnect)
                 await this.runCommand("connect", [gate.name])
@@ -548,28 +548,36 @@ export class Shell {
                 gate.onlySSH = true
                 terminal7.storeGates()
                 break
+            case "I'm feeling lucky": 
+                gate.focus()
+                ret = false
+                break
         }
         return ret
     }
     async offerSub(gate): Promise<boolean> {
-        this.t.writeln("[2K\nSubscribe to PeerBook and enjoy:")
-        this.t.writeln("  󰟆  Persistent Sessions")
+        this.t.writeln("")
+        this.t.writeln("\rTCP based SSH sessions are flaky and un-managed")
+        this.t.writeln("Better subscribe to PeerBook and enjoy:")
         this.t.writeln("  󰴽  WebRTC Connections")
+        this.t.writeln("  󰟆  Persistent Sessions")
         this.t.writeln("  󰟀  Behind-the-NAT Servers")
         this.t.writeln("    Address Book\n")
         const reconnect = [
-            { prompt: "Reconnect using SSH" },
+            { prompt: "I'm feeling lucky" },
             { prompt: "Subscribe" },
             { prompt: "Close Gate" },
         ]
         const res = await this.runForm(reconnect, "menu", "Please choose")
         if (res == "Subscribe") {
-            await this.runCommand("subscribe")
-            return false
-        } else if (res == "Close Gate") {
             gate.close()
-            return false
-        }
-        return true
+            await new Promise(r => setTimeout(r, 15))
+            await this.runCommand("subscribe")
+        } else if (res == "Close Gate")
+            gate.close()
+        else 
+            gate.focus()
+
+        return false
     }
 }

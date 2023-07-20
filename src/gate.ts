@@ -291,7 +291,7 @@ export class Gate {
                     this.setLayout(layout)
                     resolve()
                 }).catch(() => {
-                    if (this.session) {
+                    if (this.session && !this.session.isSSH) {
                         this.session.close()
                         this.session = null
                     }
@@ -300,7 +300,7 @@ export class Gate {
                 })
             }).catch((e) => {
                 this.t7.log("failed to read id", e)
-                if (this.session) {
+                if (this.session && !this.session.isSSH) {
                     this.session.close()
                     this.session = null
                 }

@@ -32,7 +32,6 @@ export class SSHSession extends BaseSession {
     address: string
     username: string
     port: number
-    channels: Array<SSHChannel> = []
     onStateChange : (state: State, failure?: Failure) => void
     onPayloadUpdate: (payload: string) => void
     constructor(address: string, username: string, port=22) {
@@ -93,7 +92,6 @@ export class SSHSession extends BaseSession {
          Promise<Channel> {
         return new Promise((resolve, reject) => {
             const channel = new SSHChannel()
-            this.channels.push(channel)
             SSH.newChannel({session: this.id})
                .then(({ id }) => {
                    console.log("got new channel with id ", id)
@@ -133,13 +131,6 @@ export class SSHSession extends BaseSession {
         }
     close() {
         // SSH.closeSession({session: this.id})
-    }
-    async disconnect() {
-        this.channels.forEach(c => {
-           c.onClose = undefined
-           c.close()
-        })
-        this.channels = []
     }
 }
 // HybridSession can run either as SSH or WebRTC bby signalling
