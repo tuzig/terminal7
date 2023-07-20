@@ -876,8 +876,11 @@ export class Terminal7 {
                 if (deltaT < this.conf.ui.quickest_press) {
                     // that's for the refresh and static host add
                     if (isExpand) {
-                        if (gate.fp)
-                            window.open(this.conf.net.peerbook, "_blank")
+                        if (gate.fp) {
+                            const insecure = this.conf.peerbook.insecure,
+                                schema = insecure?"http":"https"
+                            window.open(`${schema}://${this.conf.net.peerbook}`, "_blank")
+                        }
                         else
                             this.map.shell.runCommand("edit", [gate.name])
                     } else {

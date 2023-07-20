@@ -266,7 +266,12 @@ async function connectCMD(shell:Shell, args: string[]) {
             }
         } 
         if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH && pbOpen) {
-            await shell.offerInstall(gate)
+            const toConnect = await shell.offerInstall(gate)
+            if (!toConnect) {
+                gate.close()
+                done = true
+                return
+            }
         }
         gate.load()
         Preferences.get({key: "first_gate"}).then(v => {
@@ -603,6 +608,17 @@ export async function installCMD(shell: Shell, args: string[]) {
     let done = false
     let error = false
 
+    const passConnect = async () => {
+        let password: string
+        try {
+            password = await shell.askPass()
+        } catch(e) {
+            error = true
+            return
+        }
+        session.passConnect(undefined, password)
+    }
+
     try {
         const ids = await terminal7.readId()
         publicKey = ids.publicKey
@@ -651,6 +667,7 @@ export async function installCMD(shell: Shell, args: string[]) {
                     console.log("ping error", e)
                     shell.t.writeln("Error connecting to Peerbook")
                     session.close()
+                    shell.masterChannel = null
                     return
                 }
                 console.log("got uid", uid)
@@ -666,6 +683,7 @@ export async function installCMD(shell: Shell, args: string[]) {
                     shell.t.writeln("~~~ Disconnected without install")
                     document.getElementById("log").style.borderColor = "var(--local-border)"
                     channel.onClose = undefined
+                    shell.masterChannel = null
                     error = true
                 }
 
@@ -689,11 +707,11 @@ export async function installCMD(shell: Shell, args: string[]) {
                             } catch(e) {
                                 shell.t.writeln("Verification failed")
                                 shell.t.writeln("Please try again or type `support`")
+                                error = true
                                 return
-                            } finally {
-                                done = true
                             }
                             shell.t.writeln("Gate is installed & verified")
+                            done = true
                             // TODO: resolve the command that started it all
                         }, 1000)
                     }
@@ -702,12 +720,16 @@ export async function installCMD(shell: Shell, args: string[]) {
             case "failed":
                 if (failure == Failure.KeyRejected) {
                     shell.t.write("🔑 Rejected")
-                    password = await shell.askPass()
-                    session.passConnect(null, password)
+                    await passConnect()
+                    return
+                } else if (failure == Failure.WrongPassword) {
+                    shell.t.writeln("Wrong password")
+                    await passConnect()
                     return
                 } else {
                     shell.t.writeln("Connection failed")
                     shell.t.writeln("Please try again or type `support`")
+                    error = true
                     return
                 }
                 break
@@ -716,20 +738,20 @@ export async function installCMD(shell: Shell, args: string[]) {
     if (publicKey) {
         session.connect(0, publicKey, privateKey)
     } else {
-        const password = await shell.askPass()
-        session.passConnect(undefined, password)
+        await passConnect()
     }
     while (!done && !error) 
         await (new Promise(r => setTimeout(r, 100)))
     if (done) {
         // wait for the gate to get an fp
         let timedOut = false
-        shell.startWatchdog(() => timedOut = true, terminal7.conf.net.timeout)
+        shell.startWatchdog(terminal7.conf.net.timeout)
+            .catch(() => timedOut = true)
         while (!gate.fp && ! timedOut)
             await (new Promise(r => setTimeout(r, 100)))
         shell.stopWatchdog()
     } else {
-        shell.t.writeln(err?"Install failed":"Install timed out")
+        shell.t.writeln("Install failed")
         shell.t.writeln("Please try again or type `support`")
     }
 }
