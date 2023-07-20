@@ -719,11 +719,8 @@ export async function installCMD(shell: Shell, args: string[]) {
         const password = await shell.askPass()
         session.passConnect(undefined, password)
     }
-    let wait = terminal7.conf.net.timeout / 100
-    while (!done && !error && (wait > 0)) {
+    while (!done && !error) 
         await (new Promise(r => setTimeout(r, 100)))
-        wait--
-    }
     if (done) {
         // wait for the gate to get an fp
         let timedOut = false
