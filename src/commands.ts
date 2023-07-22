@@ -223,7 +223,10 @@ async function connectCMD(shell:Shell, args: string[]) {
         gate.focus()
         return
     }
-    shell.startWatchdog().catch(e => gate.handleFailure(e))
+    const  firstGate = (await Preferences.get({key: "first_gate"})).value
+    const timeout = (firstGate == "nope") ? undefined : 10000
+
+    shell.startWatchdog(timeout).catch(e => gate.handleFailure(e))
     gate.connect(async () => {
         shell.stopWatchdog()
         if (gate.firstConnection) {
