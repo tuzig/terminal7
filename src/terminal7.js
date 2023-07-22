@@ -546,7 +546,8 @@ export class Terminal7 {
                 off.add("hidden")
             const gate = this.activeG
             this.notify("🌞 Recovering")
-            if (gate && gate.boarding) {
+            const  firstGate = (await Preferences.get({key: "first_gate"})).value
+            if (gate && gate.boarding && (firstGate == "nope")) {
                 this.map.shell.startWatchdog().catch(() => {
                     if (this.pb.isOpen())
                         gate.notify("Timed out, please try `connect` again")
@@ -557,7 +558,7 @@ export class Terminal7 {
             }
             this.pbConnect().catch(e => this.log("pbConnect failed", e))
                 .finally(() => {
-                    if (gate && gate.boarding) {
+                    if (gate && gate.boarding && (firstGate == "nope")) {
                         this.recovering = true
                         this.run(() => this.recovering = false, this.conf.net.recoveryTime)
                         gate.reconnect()
