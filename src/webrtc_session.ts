@@ -461,8 +461,8 @@ export class HTTPWebRTCSession extends WebRTCSession {
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         console.log("got ice candidate", ev)
-        if (ev.candidate != null)
-            return
+        /* if (ev.candidate != null)
+            return */
         this.t7.getFingerprint().then(fp => {
             const encodedO = btoa(JSON.stringify(this.pc.localDescription))
             console.log("sending offer with headers ", this.headers, fp)
