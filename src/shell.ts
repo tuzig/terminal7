@@ -415,8 +415,13 @@ export class Shell {
         this.stopWatchdog()
         if (wasSSH) {
             terminal7.notify("SSH Session might be lost")
-            const toConnect = terminal7.pb.isOpen()?await this.offerInstall(gate, "I'm feeling lucky"):
-                await this.offerSub(gate)
+            let toConnect: boolean
+            try {
+                toConnect = terminal7.pb.isOpen()?await this.offerInstall(gate, "I'm feeling lucky"):
+                    await this.offerSub(gate)
+            } catch(e) {
+                return
+            }
             if (toConnect)
                 await this.runCommand("connect", [gate.name])
             return
