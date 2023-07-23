@@ -69,7 +69,8 @@ export class T7Map {
             const webGLAddon = new WebglAddon()
             webGLAddon.onContextLoss(() => {
                 console.log("lost context")
-                  webGLAddon.dispose()
+                webGLAddon.dispose()
+                this.t0.loadAddon(webGLAddon)
             })
             try {
                 this.t0.loadAddon(webGLAddon)
