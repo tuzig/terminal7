@@ -27,7 +27,15 @@ const REGEX_SEARCH = false,
         regex: REGEX_SEARCH,
         wholeWord: false,
         incremental: false,
-        caseSensitive: true
+        caseSensitive: true,
+        decorations: {
+            matchBackground: "#0000FF",
+            matchBorder: "#FF0000",
+            matchOverviewRuler: "#0000FF",
+            activeMatchBackground: "#FF0000",
+            activeMatchBorder: "#FF0000",
+            activeMatchColorOverviewRuler: "#FF0000",
+        }
     }
 
 
@@ -582,6 +590,7 @@ export class Pane extends Cell {
     }
     // listening for terminal selection changes
     selectionChanged() {
+        return
         const selection = this.t.getSelectionPosition()
         if (selection != null) {
             this.copySelection()
