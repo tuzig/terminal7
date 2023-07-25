@@ -31,10 +31,8 @@ const REGEX_SEARCH = false,
         decorations: {
             matchBackground: "#0000FF",
             matchBorder: "#FF0000",
-            matchOverviewRuler: "#0000FF",
             activeMatchBackground: "#FF0000",
             activeMatchBorder: "#FF0000",
-            activeMatchColorOverviewRuler: "#FF0000",
         }
     }
 
@@ -385,6 +383,8 @@ export class Pane extends Cell {
             this.e.style.borderColor = FOCUSED_BORDER_COLOR
             this.cmDecorationsClear()
             this.cmSelection = null
+            this.searchAddon.clearDecorations()
+            this.t.clearSelection()
             this.t.scrollToBottom()
             if (this.zoomed)
                 this.t7.zoomedE.children[0].style.borderColor = FOCUSED_BORDER_COLOR
@@ -497,6 +497,7 @@ export class Pane extends Cell {
             else {
                 notFound.classList.add("hidden")
                 this.enterCopyMode(true)
+                this.markSelection()
             }
         }
     }
@@ -514,8 +515,17 @@ export class Pane extends Cell {
             else {
                 notFound.classList.add("hidden")
                 this.enterCopyMode(true)
+                this.markSelection()
             }
         }
+    }
+    markSelection() {
+        const selection = this.t.getSelectionPosition()
+        if (!selection)
+            return
+        this.cmCursor = { x: selection.start.x, y: selection.start.y }
+        this.cmSelectionUpdate({ startRow: selection.start.y, endRow: selection.end.y,
+            startColumn: selection.start.x, endColumn: selection.end.x - 1 })
     }
     /*
      * createDividers creates a top and left educationsl dividers.
@@ -590,6 +600,7 @@ export class Pane extends Cell {
     }
     // listening for terminal selection changes
     selectionChanged() {
+        this.markSelection()
         return
         const selection = this.t.getSelectionPosition()
         if (selection != null) {
