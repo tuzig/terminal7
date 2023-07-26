@@ -7,6 +7,9 @@ export class Terminal {
         scrollback: 1000,
         tabStopWidth: 4,
     }
+    element = {
+        addEventListener: vi.fn(),
+    }
     constructor (props) {
         this.out = ""
         for (const k in props)
