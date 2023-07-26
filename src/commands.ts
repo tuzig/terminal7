@@ -529,12 +529,10 @@ async function copyKeyCMD(shell: Shell) {
         publicKey = ret.publicKey
     } catch(e) {
         terminal7.log("readId error", e)
+        return shell.t.writeln("Error reading key")
     }
-    if (publicKey) {
-        Clipboard.write({ string: publicKey })
-        return shell.t.writeln(`${publicKey}\n☝️ copied to 📋`)
-    } else
-        return shell.t.writeln("No key yet. Please connect to generate one.\n(try connect or add)")
+    Clipboard.write({ string: publicKey })
+    return shell.t.writeln(`${publicKey}\n☝️ copied to 📋`)
 }
 async function subscribeCMD(shell: Shell) {
     const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
