@@ -654,6 +654,7 @@ export async function installCMD(shell: Shell, args: string[]) {
                     shell.t.writeln("Error opening channel")
                     shell.t.writeln("Please try again or type `support`")
                     session.close()
+                    error = true
                     return
                 }
                 shell.t.clear()
@@ -661,13 +662,21 @@ export async function installCMD(shell: Shell, args: string[]) {
                 shell.masterChannel = channel
                 // set #log border color to yellow
                 document.getElementById("log").style.borderColor = "var(--remote-border)"
+                channel.onClose = () => {
+                    shell.t.writeln("~~~ Disconnected without install")
+                    document.getElementById("log").style.borderColor = "var(--local-border)"
+                    channel.onClose = undefined
+                    shell.masterChannel = null
+                    error = true
+                }
+
                 try {
                     uid  = await terminal7.pb.getUID()
                 } catch(e) {
                     console.log("ping error", e)
                     shell.t.writeln("Error connecting to Peerbook")
                     session.close()
-                    shell.masterChannel = null
+                    channel.close()
                     return
                 }
                 console.log("got uid", uid)
@@ -676,16 +685,10 @@ export async function installCMD(shell: Shell, args: string[]) {
                     shell.t.writeln("You are not subscribed to Peerbook")
                     shell.t.writeln("Please `subscribe`")
                     session.close()
+                    channel.close()
                     return
                 }
                 channel.send(`PEERBOOK_UID=${uid} PEERBOOK_HOST=${host} bash <(curl -sL https://get.webexec.sh)`)
-                channel.onClose = () => {
-                    shell.t.writeln("~~~ Disconnected without install")
-                    document.getElementById("log").style.borderColor = "var(--local-border)"
-                    channel.onClose = undefined
-                    shell.masterChannel = null
-                    error = true
-                }
 
                 channel.onMessage = async (msg: string) => {
                     shell.t.write(msg)
