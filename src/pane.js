@@ -28,12 +28,6 @@ const REGEX_SEARCH = false,
         wholeWord: false,
         incremental: false,
         caseSensitive: true,
-        decorations: {
-            matchBackground: "#0000FF",
-            matchBorder: "#FF0000",
-            activeMatchBackground: "#FF0000",
-            activeMatchBorder: "#FF0000",
-        }
     }
 
 
@@ -153,6 +147,13 @@ export class Pane extends Cell {
                     this.gate.handleFailure(Failure.DataChannelLost)
                 } else
                     this.d.send(d)
+            })
+            this.t.element.addEventListener('mouseup', () => {
+                if (this.cmSelection) {
+                    this.copySelection()
+                    this.t.clearSelection()
+                    this.cmDecorationsClear()
+                }
             })
             this.resizeObserver.observe(this.e);
             this.fit(pane => { 
@@ -602,11 +603,6 @@ export class Pane extends Cell {
     selectionChanged() {
         this.markSelection()
         return
-        const selection = this.t.getSelectionPosition()
-        if (selection != null) {
-            this.copySelection()
-            this.t.clearSelection()
-        }
     }
     copySelection() {
         if (this.t.hasSelection()) {
@@ -951,6 +947,7 @@ export class Pane extends Cell {
     }
     cmDecorationsClear() {
         this.cmDecorations.forEach(d => d.dispose())
+        this.cmDecorations = []
     }
     cmSelectionUpdate(selection) {
         // maybe it's a cursor
