@@ -50,7 +50,7 @@ export class PeerbookConnection {
             }
         }   
 
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             const reply = []
             this.session.openChannel(c, 0, 80, 24).then(channel  => {
                 channel.onClose = () => {
@@ -61,7 +61,7 @@ export class PeerbookConnection {
                 channel.onMessage = (data) => {
                     reply.push(...data)
                 }
-            })
+            }).catch(reject)
         })
     }
 
