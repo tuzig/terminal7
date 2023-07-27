@@ -650,7 +650,6 @@ export async function installCMD(shell: Shell, args: string[]) {
                         shell.t.cols, shell.t.rows)
                 } catch (e) {
                     shell.t.writeln("Error opening channel")
-                    shell.t.writeln("Please try again or type `support`")
                     session.close()
                     error = true
                     return
@@ -729,7 +728,6 @@ export async function installCMD(shell: Shell, args: string[]) {
                     return
                 } else {
                     shell.t.writeln("Connection failed")
-                    shell.t.writeln("Please try again or type `support`")
                     error = true
                     return
                 }
