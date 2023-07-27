@@ -37,7 +37,7 @@ describe("form", () => {
         map.open()
         t = map.t0
         t.out = ""
-        keyListener = t.onKey(ev => f.onKey(ev.domEvent))
+        keyListener = t.onKey(ev => f.onKey(ev.domEvent.key))
         f = null
     })
     afterEach(() => keyListener.dispose())
