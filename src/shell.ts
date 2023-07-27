@@ -66,8 +66,7 @@ export class Shell {
         document.addEventListener('keydown', ev => this.updateCapsLock(ev))
     }
     
-    async onKey(ev: KeyboardEvent) {
-        const key = ev.key
+    async onKey(key: string) {
         if (this.masterChannel) {
             return
         }
@@ -228,28 +227,30 @@ export class Shell {
             return
         this.masterChannel.send(data)
     }
-    async keyHandler(ev: KeyboardEvent) {
-        const form = this.activeForm,
-            key = ev.key
-        this.updateCapsLock(ev)
-        if (this.masterChannel)
+    async paste() {
+        const cb = await Clipboard.read()
+        if (cb.type != 'text/plain')
             return
+        const text = cb.value
+        if (this.activeForm) {
+            this.activeForm.field += text
+            if (!this.activeForm.hidden)
+                this.t.write(text)
+        } else if (this.active) {
+            this.t.write(text)
+            this.currentLine += text
+        }
+    }
+
+    async keyHandler(key: string) {
+        const form = this.activeForm
         this.printPrompt()
         if (key == 'Escape') {
             await this.escape()
-        } else if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
-            Clipboard.read().then(res => {
-                if (res.type == 'text/plain') {
-                    form.field += res.value
-                    if (!form.hidden)
-                        this.t.write(res.value)
-                }
-            })
         } else if (form?.onKey)
-            form.onKey(ev)
+            form.onKey(key)
         else if (this.active)
-            this.onKey(ev)
-        ev.preventDefault()
+            this.onKey(key)
     }
 
     async escape() {

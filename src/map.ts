@@ -16,6 +16,7 @@ import { ImageAddon } from 'xterm-addon-image';
 import XtermWebfont from '@liveconfig/xterm-webfont'
 
 import { Shell } from './shell'
+import { Capacitor } from '@capacitor/core'
 
 export class T7Map {
     t0: Terminal
@@ -51,6 +52,7 @@ export class T7Map {
             }, 100)
             this.t0.loadAddon(new XtermWebfont())
             this.t0.attachCustomKeyEventHandler(ev => {
+                console.log(ev)
                 if (ev.ctrlKey && ev.key === "c") {
                     if (this.shell.masterChannel)
                         this.shell.masterChannel.send(String.fromCharCode(3))
@@ -63,7 +65,16 @@ export class T7Map {
             this.t0.onKey(iev => {
                 this.interruptTTY()
                 const ev = iev.domEvent
-                this.shell.keyHandler(ev)
+                if (this.shell.masterChannel) {
+                    return
+                }
+                this.shell.updateCapsLock(ev)
+                if ((ev.ctrlKey || ev.metaKey) && ev.key === "v") {
+                    this.shell.paste()
+                    return
+                }
+                this.shell.keyHandler(ev.key)
+                ev.preventDefault()
             })
             this.t0.onData(d =>  this.shell.onTWRData(d))
             const webGLAddon = new WebglAddon()
@@ -76,6 +87,13 @@ export class T7Map {
                 this.t0.loadAddon(webGLAddon)
             } catch (e) { console.log("no webgl: " +e.toString()) }
             this.t0.loadWebfontAndOpen(e).then(() => {
+                if (Capacitor.getPlatform() === "android") {
+                    // hack for android spacebar & virtual keyboard
+                    this.t0.element.addEventListener("input", ev => {
+                        if (ev.data)
+                            this.shell.keyHandler(ev.data)
+                    })
+                }
                 this.shell.start()
                 resolve()
             })
