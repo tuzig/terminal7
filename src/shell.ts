@@ -33,7 +33,7 @@ export class Shell {
     historyIndex = 0
     confEditor: CodeMirror.EditorFromTextArea
     exitConf: () => void
-    lineAboveForm: number = 0
+    lineAboveForm: 0
 
     constructor(map: T7Map) {
         this.map = map
