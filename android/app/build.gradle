@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
 
   namespace 'dev.terminal7'
-  compileSdkVersion rootProject.ext.compileSdkVersion
+    compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "dev.terminal7"
         minSdkVersion rootProject.ext.minSdkVersion
