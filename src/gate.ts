@@ -179,18 +179,7 @@ export class Gate {
     async handleFailure(failure: Failure) {
         // KeyRejected and WrongPassword are "light failure"
         const active = this == this.t7.activeG
-        const wasSSH = this.session && this.session.isSSH
-        /*
-        if (!this.t7.lastActiveState) {
-            console.log("ignoring failed event as the app is still in the back")
-            this.stopBoarding()
-            if (this.session) {
-                this.session.close()
-                this.session = null
-            }
-            return
-        }
-        */
+        const wasSSH = this.session && this.session.isSSH && this.boarding
         if (!active)
             return
         // this.map.showLog(true)
