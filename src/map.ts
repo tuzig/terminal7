@@ -52,7 +52,6 @@ export class T7Map {
             }, 100)
             this.t0.loadAddon(new XtermWebfont())
             this.t0.attachCustomKeyEventHandler(ev => {
-                console.log(ev)
                 if (ev.ctrlKey && ev.key === "c") {
                     if (this.shell.masterChannel)
                         this.shell.masterChannel.send(String.fromCharCode(3))
