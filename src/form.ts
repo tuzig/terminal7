@@ -1,5 +1,4 @@
 import { Terminal } from "xterm"
-import { Clipboard } from "@capacitor/clipboard"
 
 export type Fields = Array<{
     prompt:string,

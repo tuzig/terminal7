@@ -634,7 +634,6 @@ export async function installCMD(shell: Shell, args: string[]) {
     session.onStateChange = async (state, failure?: Failure) => {
         const host = terminal7.conf.net.peerbook
         let channel: SSHChannel
-        let password: string
         let uid: string
         terminal7.log("Install SSH session got state", state, failure)
         switch (state) {
