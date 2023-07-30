@@ -536,12 +536,14 @@ async function copyKeyCMD(shell: Shell) {
 }
 async function subscribeCMD(shell: Shell) {
     const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
-    if (!customerInfo.entitlements.active.peerbook) {
-        shell.t.writeln("Subscribe to PeerBook to enjoy:")
+    if (!customerInfo.entitlements.all.peerbook) {
+        shell.t.writeln("Subscribe to PeerBook to enjoy:\n")
         shell.t.writeln("  󰴽  WebRTC Connections")
         shell.t.writeln("  󰟆  Persistent Sessions")
         shell.t.writeln("  󰟀  Behind-the-NAT Servers")
         shell.t.writeln("    Address Book\n")
+        shell.t.write("(\x1B]8;;https://www.apple.com/legal/internet-services/itunes/dev/stdeula/\x07Terms of Service\x1B]8;;\x07 and ")
+        shell.t.writeln("\x1B]8;;https://terminal7.dev/privacy\x07Privacy Policy\x1B]8;;\x07)")
         const TYPES = {
             "MONTHLY": "Month",
             "TWO_MONTH": "2 Months",
@@ -570,7 +572,7 @@ async function subscribeCMD(shell: Shell) {
         if (choice == "Cancel")
             return
         const product = products.find(p => `${p.price} / ${p.period}` == choice)
-        shell.t.writeln("Directing you to the store, please be patient")
+        shell.t.writeln("Thaank you! directing you to the store")
         shell.startWatchdog(120000).catch(e => {
             shell.t.writeln("Sorry, subscribe command timed out")
             shell.t.writeln("Please try again or type `support`")
