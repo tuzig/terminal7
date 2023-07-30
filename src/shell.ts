@@ -583,18 +583,14 @@ export class Shell {
     async offerSub(gate): Promise<boolean> {
         this.t.writeln("")
         this.t.writeln("\rTCP based SSH sessions are flaky and un-managed")
-        this.t.writeln("Better subscribe to PeerBook and enjoy:")
-        this.t.writeln("  󰴽  WebRTC Connections")
-        this.t.writeln("  󰟆  Persistent Sessions")
-        this.t.writeln("  󰟀  Behind-the-NAT Servers")
-        this.t.writeln("    Address Book\n")
+        this.t.writeln("Better subscribe to PeerBook and enjoy persistent sessions")
         const reconnect = [
             { prompt: "I'm feeling lucky" },
-            { prompt: "Subscribe" },
+            { prompt: "Learn More" },
             { prompt: "Close Gate" },
         ]
         const res = await this.runForm(reconnect, "menu", "Please choose")
-        if (res == "Subscribe") {
+        if (res == "Learn More") {
             gate.close()
             await new Promise(r => setTimeout(r, 15))
             await this.runCommand("subscribe")

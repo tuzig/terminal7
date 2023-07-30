@@ -537,6 +537,39 @@ async function copyKeyCMD(shell: Shell) {
 async function subscribeCMD(shell: Shell) {
     const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
     if (!customerInfo.entitlements.active.peerbook) {
+        shell.t.writeln("Subscribe to PeerBook to enjoy:")
+        shell.t.writeln("  󰴽  WebRTC Connections")
+        shell.t.writeln("  󰟆  Persistent Sessions")
+        shell.t.writeln("  󰟀  Behind-the-NAT Servers")
+        shell.t.writeln("    Address Book\n")
+        const TYPES = {
+            "MONTHLY": "Month",
+            "TWO_MONTH": "2 Months",
+            "THREE_MONTH": "3 Months",
+            "SIX_MONTH": "6 Months",
+            "ANNUAL": "Year",
+        }
+        const { offerings } = await CapacitorPurchases.getOfferings(),
+            offer = offerings.current
+        const products = offer.availablePackages.map(p => ({
+            identifier: p.identifier,
+            price: p.product.priceString,
+            period: TYPES[p.packageType],
+        }))
+        const fields: Fields = []
+        products.forEach(p => {
+            fields.push({ prompt: `${p.price} / ${p.period}`})
+        })
+        fields.push({ prompt: "Cancel" })
+        let choice
+        try {
+            choice = await shell.runForm(fields, "menu")
+        } catch(e) {
+            return
+        }
+        if (choice == "Cancel")
+            return
+        const product = products.find(p => `${p.price} / ${p.period}` == choice)
         shell.t.writeln("Directing you to the store, please be patient")
         shell.startWatchdog(120000).catch(e => {
             shell.t.writeln("Sorry, subscribe command timed out")
@@ -546,7 +579,7 @@ async function subscribeCMD(shell: Shell) {
 
         terminal7.ignoreAppEvents = true
         try {
-            await terminal7.pb.purchaseCurrent()
+            await terminal7.pb.purchase(product.identifier, offer.identifier)
             shell.stopWatchdog()
         } catch(e) {
             shell.stopWatchdog()
