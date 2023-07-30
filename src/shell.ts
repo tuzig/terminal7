@@ -33,6 +33,7 @@ export class Shell {
     historyIndex = 0
     confEditor: CodeMirror.EditorFromTextArea
     exitConf: () => void
+    lineAboveForm: number = 0
 
     constructor(map: T7Map) {
         this.map = map
@@ -173,6 +174,7 @@ export class Shell {
         this.map.showLog(true)
         this.t.write("\r\x1B[K")
         this.t.scrollToBottom()
+        this.lineAboveForm = this.t.buffer.active.baseY + this.t.buffer.active.cursorY
         if (title)
             this.t.writeln(title)
         this.activeForm = new Form(fields)
@@ -265,10 +267,22 @@ export class Shell {
 
     printBelowForm(text: string, returnToForm = false) {
         if (!this.activeForm) return
-        this.t.scrollToBottom()
         this.t.write(`\x1B[s\x1B[${this.activeForm.fields.length-this.activeForm.currentField}B\n\x1B[K${text}`)
         if (returnToForm)
             this.t.write(`\x1B[u`)
+    }
+
+    printAbove(text: string) {
+        if (this.activeForm) {
+            this.printBelowForm("", true) // add empty line for scrolling
+            setTimeout(() => {
+                const line = this.lineAboveForm - this.t.buffer.active.baseY + 2
+                this.lineAboveForm++
+                this.t.write(`\x1B[s\x1B[${line};H\x1B[L${text}\x1B[u\x1B[B`)
+            }, 0)
+            return
+        }
+        this.t.write(`\x1B[s\n\x1B[A\x1B[L\x1B[K${text}\x1B[u\x1B[B`)
     }
 
     printPrompt() {

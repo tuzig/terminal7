@@ -486,14 +486,7 @@ export class Terminal7 {
         this.map.interruptTTY()
         this.map.t0.scrollToBottom()
         const formatted = `\x1B[2m${t}\x1B[0m ${message}`
-        if (this.map.shell.activeForm)
-            this.map.shell.printBelowForm(formatted)
-        else {
-            const x = this.map.t0.buffer.active.cursorX
-            this.map.t0.write("\x1B[L")
-            this.map.t0.writeln(formatted)
-            this.map.t0.write(`\x1B[${x}C`) // restore cursor
-        }
+        this.map.shell.printAbove(formatted)
         if (!dontShow)
             this.map.showLog(true)
     }
