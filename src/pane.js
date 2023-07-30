@@ -27,7 +27,7 @@ const REGEX_SEARCH = false,
         regex: REGEX_SEARCH,
         wholeWord: false,
         incremental: false,
-        caseSensitive: true
+        caseSensitive: true,
     }
 
 
@@ -147,6 +147,13 @@ export class Pane extends Cell {
                     this.gate.handleFailure(Failure.DataChannelLost)
                 } else
                     this.d.send(d)
+            })
+            this.t.element.addEventListener('mouseup', () => {
+                if (this.cmSelection) {
+                    this.copySelection()
+                    this.t.clearSelection()
+                    this.cmDecorationsClear()
+                }
             })
             this.resizeObserver.observe(this.e);
             this.fit(pane => { 
@@ -377,6 +384,8 @@ export class Pane extends Cell {
             this.e.style.borderColor = FOCUSED_BORDER_COLOR
             this.cmDecorationsClear()
             this.cmSelection = null
+            this.searchAddon.clearDecorations()
+            this.t.clearSelection()
             this.t.scrollToBottom()
             if (this.zoomed)
                 this.t7.zoomedE.children[0].style.borderColor = FOCUSED_BORDER_COLOR
@@ -489,6 +498,7 @@ export class Pane extends Cell {
             else {
                 notFound.classList.add("hidden")
                 this.enterCopyMode(true)
+                this.markSelection()
             }
         }
     }
@@ -506,8 +516,17 @@ export class Pane extends Cell {
             else {
                 notFound.classList.add("hidden")
                 this.enterCopyMode(true)
+                this.markSelection()
             }
         }
+    }
+    markSelection() {
+        const selection = this.t.getSelectionPosition()
+        if (!selection)
+            return
+        this.cmCursor = { x: selection.start.x, y: selection.start.y }
+        this.cmSelectionUpdate({ startRow: selection.start.y, endRow: selection.end.y,
+            startColumn: selection.start.x, endColumn: selection.end.x - 1 })
     }
     /*
      * createDividers creates a top and left educationsl dividers.
@@ -582,11 +601,8 @@ export class Pane extends Cell {
     }
     // listening for terminal selection changes
     selectionChanged() {
-        const selection = this.t.getSelectionPosition()
-        if (selection != null) {
-            this.copySelection()
-            this.t.clearSelection()
-        }
+        this.markSelection()
+        return
     }
     copySelection() {
         if (this.t.hasSelection()) {
@@ -931,6 +947,7 @@ export class Pane extends Cell {
     }
     cmDecorationsClear() {
         this.cmDecorations.forEach(d => d.dispose())
+        this.cmDecorations = []
     }
     cmSelectionUpdate(selection) {
         // maybe it's a cursor
