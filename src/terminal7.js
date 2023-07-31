@@ -227,7 +227,6 @@ export class Terminal7 {
                         terminal7.log("ignoring benched app event")
                         return
                     }
-                    this.notify("🌜 Benched", true)
                     this.updateNetworkStatus({connected: false}, false)
                 } else {
                     // We're back! puts us in recovery mode so that it'll
@@ -510,7 +509,9 @@ export class Terminal7 {
         return new Promise(resolve => {
             this.pbClose()
             var count = 0
-            if (this.gates.length > 0)
+            if (this.activeG && this.activeG.boarding)
+                this.notify("🌜 Benched", true)
+            if (this.gates.length > 0) {
                 this.gates.forEach(g => {
                     if (g.boarding) {
                         count++
@@ -519,6 +520,7 @@ export class Terminal7 {
                         })
                     }
                 })
+            }
             let callCB = () => terminal7.run(() => {
                 if (count == 0)
                     resolve()
@@ -538,9 +540,9 @@ export class Terminal7 {
             if (updateNetPopup)
                 off.add("hidden")
             const gate = this.activeG
-            this.notify("🌞 Recovering")
             const  firstGate = (await Preferences.get({key: "first_gate"})).value
             if (gate && gate.boarding && (firstGate == "nope")) {
+                this.notify("🌞 Recovering")
                 this.map.shell.startWatchdog().catch(() => {
                     if (this.pb.isOpen())
                         gate.notify("Timed out, please try `connect` again")
