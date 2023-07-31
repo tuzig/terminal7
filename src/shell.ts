@@ -429,7 +429,7 @@ export class Shell {
         console.log("onDisconnect", gate)
         this.stopWatchdog()
         if (wasSSH) {
-            terminal7.notify("SSH Session might be lost")
+            terminal7.notify("⚠️ SSH Session might be lost")
             let toConnect: boolean
             try {
                 toConnect = terminal7.pb.isOpen()?await this.offerInstall(gate, "I'm feeling lucky"):
@@ -582,8 +582,7 @@ export class Shell {
     }
     async offerSub(gate): Promise<boolean> {
         this.t.writeln("")
-        this.t.writeln("\rTCP based SSH sessions are flaky and un-managed")
-        this.t.writeln("Better subscribe to PeerBook and enjoy persistent sessions")
+        this.t.writeln("\rJoin our subscribers and enjoy persistent sessions over WebRTC")
         const reconnect = [
             { prompt: "I'm feeling lucky" },
             { prompt: "Learn More" },
@@ -602,3 +601,4 @@ export class Shell {
         return false
     }
 }
+
