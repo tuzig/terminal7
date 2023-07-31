@@ -558,7 +558,7 @@ export class Shell {
             { prompt: "Always use SSH" },
             { prompt: "Close Gate" },
         ]
-        const res = await this.runForm(install, "menu", "Please choose")
+        const res = await this.runForm(install, "menu")
         let ret = true
         switch (res) {
             case "Install":
