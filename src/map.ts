@@ -35,6 +35,11 @@ export class T7Map {
                 convertEol: true,
                 rows: 20,
                 cols: 55,
+                linkHandler: {
+                    activate: (_, url) => {
+                        window.open(url, "_blank", "noopener")
+                    }
+                }
             })
             this.shell = new Shell(this)
             const e = document.getElementById("t0")

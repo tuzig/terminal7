@@ -536,7 +536,7 @@ async function copyKeyCMD(shell: Shell) {
 }
 async function subscribeCMD(shell: Shell) {
     const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
-    if (!customerInfo.entitlements.all.peerbook) {
+    if (!customerInfo.entitlements.active.peerbook) {
         shell.t.writeln("Subscribe to PeerBook to enjoy:\n")
         shell.t.writeln("  󰴽  WebRTC Connections")
         shell.t.writeln("  󰟆  Persistent Sessions")
@@ -549,19 +549,18 @@ async function subscribeCMD(shell: Shell) {
             "TWO_MONTH": "2 Months",
             "THREE_MONTH": "3 Months",
             "SIX_MONTH": "6 Months",
-            "ANNUAL": "Year",
+            "ANNUAL": "Year - Start with a 1 month free trial",
         }
         const { offerings } = await CapacitorPurchases.getOfferings(),
             offer = offerings.current
-        const products = offer.availablePackages.map(p => ({
-            identifier: p.identifier,
-            price: p.product.priceString,
-            period: TYPES[p.packageType],
-        }))
-        const fields: Fields = []
-        products.forEach(p => {
-            fields.push({ prompt: `${p.price} / ${p.period}`})
+        const products = offer.availablePackages.map(p => {
+            const identifier = p.identifier,
+                price = p.product.priceString,
+                period = TYPES[p.packageType],
+                prompt = `${price} / ${period}`
+            return { identifier, prompt }
         })
+        const fields: Fields = products.map(p => ({ prompt: p.prompt }))
         fields.push({ prompt: "Cancel" })
         let choice
         try {
@@ -571,8 +570,8 @@ async function subscribeCMD(shell: Shell) {
         }
         if (choice == "Cancel")
             return
-        const product = products.find(p => `${p.price} / ${p.period}` == choice)
-        shell.t.writeln("Thaank you! directing you to the store")
+        const product = products.find(p => p.prompt == choice)
+        shell.t.writeln("Thank you! directing you to the store")
         shell.startWatchdog(120000).catch(e => {
             shell.t.writeln("Sorry, subscribe command timed out")
             shell.t.writeln("Please try again or type `support`")
