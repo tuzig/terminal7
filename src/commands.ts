@@ -30,7 +30,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             name: "clear",
             help: "Clear the screen",
             usage: "cle[ar]",
-            execute: async () => shell.t.clear()
+            execute: () => setTimeout(() => shell.t.clear(),10)
         },
         close: {
             name: "close",
@@ -540,13 +540,15 @@ async function copyKeyCMD(shell: Shell) {
 async function subscribeCMD(shell: Shell) {
     const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
     if (!customerInfo.entitlements.active.peerbook) {
-        shell.t.writeln("Subscribe to PeerBook to enjoy:\n")
-        shell.t.writeln("  󰴽  WebRTC Connections")
+        shell.t.writeln("Join PeerBook subscribers and enjoy:")
+        shell.t.writeln("")
+        shell.t.writeln("    2FA & SRTP Based Encryption")
+        shell.t.writeln("  󰴽  WebRTC w/ Direct and Relay Connections")
         shell.t.writeln("  󰟆  Persistent Sessions")
-        shell.t.writeln("  󰟀  Behind-the-NAT Servers")
-        shell.t.writeln("    Address Book\n")
-        shell.t.write("(\x1B]8;;https://www.apple.com/legal/internet-services/itunes/dev/stdeula/\x07Terms of Service\x1B]8;;\x07 and ")
-        shell.t.writeln("\x1B]8;;https://terminal7.dev/privacy\x07Privacy Policy\x1B]8;;\x07)")
+        shell.t.writeln("  󰟀  Connecting to Behind-the-NAT Desktops")
+        shell.t.writeln("  󰱱  Connecting to ephemeral IP Servers")
+        shell.t.write("\t\t\t(\x1B]8;;https://terminal7.dev/privacy\x07Privacy Policy\x1B]8;;\x07 & ")
+        shell.t.writeln("\x1B]8;;https://www.apple.com/legal/internet-services/itunes/dev/stdeula/\x07Terms of Service\x1B]8;;\x07)")
         const TYPES = {
             "MONTHLY": "Month",
             "TWO_MONTH": "2 Months",
