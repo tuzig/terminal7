@@ -267,6 +267,10 @@ export class PeerbookConnection {
         let firstMessage = true
         return new Promise<void>((resolve, reject) => {
             if (this.ws != null) {
+                if (this.isOpen()) {
+                    resolve()
+                    return
+                }
                 this.ws.onopen = undefined
                 this.ws.onmessage = undefined
                 this.ws.onerror = undefined
@@ -279,8 +283,9 @@ export class PeerbookConnection {
             }
             const schema = this.insecure?"ws":"wss",
                   url = encodeURI(`${schema}://${this.host}/ws?fp=${this.fp}`)
-            this.ws = new WebSocket(url)
-            this.ws.onmessage = ev => {
+            const ws = new WebSocket(url)
+            this.ws = ws
+            ws.onmessage = ev => {
                 const m = JSON.parse(ev.data)
                 if (m.code >= 400) {
                     console.log("peerbook connect got code", m.code)
@@ -295,7 +300,7 @@ export class PeerbookConnection {
                 } 
                 if (firstMessage) {
                     firstMessage = false
-                    terminal7.notify(`Connected to ${PB} PeerBook${PB}`)
+                    terminal7.notify(`Connected to ${PB} PeerBook ${PB}`)
                     resolve()
                 }
                 if (this.onUpdate)
@@ -303,23 +308,22 @@ export class PeerbookConnection {
                 else
                     terminal7.log("got ws message but no onUpdate", m)
             }
-            this.ws.onerror = ev =>  {
+            ws.onerror = ev =>  {
                 window.terminal7.log("peerbook ws error", ev)
                 reject(ev.toString())
             }
-            this.ws.onclose = (ev) => {
+            ws.onclose = (ev) => {
                 window.terminal7.log("peerbook ws closed", ev)
                 window.terminal7.notify(`${PB} Web socket closed`)
-                this.ws.onclose = undefined
                 this.ws = null
             }
-            this.ws.onopen = () => {
+            ws.onopen = () => {
                 console.log("peerbook ws open")
                 if ((this.pbSendTask == null) && (this.pending.length > 0))
                     this.pbSendTask = setTimeout(() => {
                         this.pending.forEach(m => {
                             console.log("sending ", m)
-                            this.ws.send(JSON.stringify(m))
+                            ws.send(JSON.stringify(m))
                         })
                         this.pbSendTask = null
                         this.pending = []

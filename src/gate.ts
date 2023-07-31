@@ -201,6 +201,7 @@ export class Gate {
             case Failure.BadRemoteDescription:
                 this.session.close()
                 this.session = null
+                terminal7.pbClose()
                 this.notify("Sync Error. Please try again")
                 break
             case Failure.NotImplemented:
