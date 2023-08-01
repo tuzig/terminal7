@@ -439,6 +439,7 @@ export class Shell {
             }
             if (toConnect)
                 await this.runCommand("connect", [gate.name])
+            this.printPrompt()
             return
         } 
         if (!terminal7.netConnected || terminal7.recovering ||
@@ -582,7 +583,7 @@ export class Shell {
     }
     async offerSub(gate): Promise<boolean> {
         this.t.writeln("")
-        this.t.writeln("\rJoin our subscribers and enjoy persistent sessions over WebRTC")
+        this.t.writeln("\rJoin our subscribers and enjoy persistent sessions over\nWebRTC and more")
         const reconnect = [
             { prompt: "I'm feeling lucky" },
             { prompt: "Learn More" },

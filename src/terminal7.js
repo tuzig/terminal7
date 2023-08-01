@@ -37,7 +37,7 @@ const WELCOME=`    🖖 Greetings & Salutations 🖖
 
 Thanks for choosing Terminal7. This is TWR, a local
 terminal used to control the terminal and log messages.
-Type 'hide' or 'help' to see what it can do.
+Type 'hide' or 'help' to list available commands. 
 
 Enjoy!
 
@@ -53,6 +53,7 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # shell = "*"
 
 [net]
+# peerbook = "api.peerbook.io"
 # timeout = 5000
 # retries = 3
 # ice_server = "stun:stun2.l.google.com:19302"
@@ -313,6 +314,16 @@ export class Terminal7 {
     }
     async pbConnect() {
         return new Promise((resolve, reject) => {
+            const catchConnect = e => {
+                if (e =="Unregistered")
+                    this.notify("You are unregistered, please `subscribe` to register")
+                else {
+                    this.notify("Failed to connect to peerbook, please try again")
+                    this.notify("If the problem persists, `support`")
+                }
+                reject(e)
+            }
+
             // do nothing when no subscription or already connected
             if (this.pb) {
                 if (this.pb.uid != "TBD") {
@@ -322,7 +333,8 @@ export class Terminal7 {
                 if (this.pb.isOpen())
                     resolve()
                 else
-                    this.pb.connect().then(resolve).catch(reject)
+                    this.pb.connect().then(resolve).catch(catchConnect)
+                return
             }
             this.getFingerprint().then(fp => {
                 this.pb = new PeerbookConnection({
@@ -334,11 +346,11 @@ export class Terminal7 {
                 this.pb.onUpdate = (m) => this.onPBMessage(m)
                 if (!this.purchasesStarted) {
                     this.pb.startPurchases().then(() => 
-                        this.pb.connect().then(resolve).catch(reject)
+                        this.pb.connect().then(resolve).catch(catchConnect)
                         // this.pb.updateCustomerInfo().then(resolve).catch(reject)
                     ).catch(reject).finally(() => this.purchasesStarted = true)
                 } else
-                    this.pb.connect().then(resolve).catch(reject)
+                    this.pb.connect().then(resolve).catch(catchConnect)
             })
         })
     }

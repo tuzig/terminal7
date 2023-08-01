@@ -579,7 +579,7 @@ async function subscribeCMD(shell: Shell) {
         shell.t.writeln("Thank you! directing you to the store")
         shell.startWatchdog(120000).catch(e => {
             shell.t.writeln("Sorry, subscribe command timed out")
-            shell.t.writeln("Please try again or type `support`")
+            shell.t.writeln("Please try again or `support`")
             throw e
         })
 
@@ -590,7 +590,8 @@ async function subscribeCMD(shell: Shell) {
         } catch(e) {
             shell.stopWatchdog()
             console.log("purchase error", e)
-            shell.t.writeln("Error purchasing, please try again or contact support")
+            shell.t.writeln("Error purchasing, please try again or `support`")
+            return
         }
     } else {
         if (!terminal7.pb.isOpen()) {
