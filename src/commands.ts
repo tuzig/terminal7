@@ -675,6 +675,7 @@ export async function installCMD(shell: Shell, args: string[]) {
         const host = terminal7.conf.net.peerbook
         let channel: SSHChannel
         let uid: string
+        let cmd: string
         terminal7.log("Install SSH session got state", state, failure)
         switch (state) {
             case "connecting":
@@ -724,7 +725,11 @@ export async function installCMD(shell: Shell, args: string[]) {
                     channel.close()
                     return
                 }
-                channel.send(`PEERBOOK_UID=${uid} PEERBOOK_HOST=${host} bash <(curl -sL https://get.webexec.sh)`)
+                cmd = `PEERBOOK_UID=${uid} PEERBOOK_NAME="${gate.name}"`
+                if (host != "api.peerbook.io")
+                    cmd += ` PEERBOOK_HOST=${host}`
+                cmd += " \\\nbash <(curl -sL https://get.webexec.sh)"
+                channel.send(cmd)
 
                 channel.onMessage = async (msg: string) => {
                     shell.t.write(msg)
