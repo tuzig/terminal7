@@ -103,7 +103,7 @@ export class PeerbookConnection {
         // eslint-disable-next-line
         this.echo("Please scan this QR code with your OTP app")
         this.echo(QR)
-        this.echo()
+        this.echo("")
         this.echo("and use it to generate a One Time Password")
         // verify ourselves - it's the first time and we were approved thanks 
         // to the revenuecat's user id
@@ -131,7 +131,12 @@ export class PeerbookConnection {
         await CapacitorPurchases.logIn({ appUserID: uid })
         this.shell.t.writeln(`Validated! User ID is ${uid}`)
         this.shell.t.writeln("Type `install` to install on a server")
-        this.wsConnect()
+        try {
+            await this.wsConnect()
+        } catch (e) {
+            this.shell.t.writeln("Failed to connect to PeerBook")
+            console.log("Failed to connect to PeerBook", e)
+        }
         this.shell.printPrompt()
     }
     async startPurchases() {
@@ -309,7 +314,7 @@ export class PeerbookConnection {
                     terminal7.log("got ws message but no onUpdate", m)
             }
             ws.onerror = ev =>  {
-                window.terminal7.log("peerbook ws error", ev)
+                window.terminal7.log("peerbook ws error", ev.toString())
                 reject(ev.toString())
             }
             ws.onclose = (ev) => {

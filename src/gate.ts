@@ -305,7 +305,7 @@ export class Gate {
         if (!terminal7.netConnected)
             return
         this.onConnected = onConnected
-        this.t7.activeG = this
+        this.t7.activeG = this // TODO: move this out of here
         document.title = `Terminal 7: ${this.name}`
         
         if (this.session) {
