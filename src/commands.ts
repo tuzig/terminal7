@@ -217,7 +217,6 @@ async function connectCMD(shell:Shell, args: string[]) {
         shell.stopWatchdog()
         gate.close()
         terminal7.storeGates()
-        terminal7.activeG = null
         done = true
     }
     if (gate.session) {
@@ -274,7 +273,6 @@ async function connectCMD(shell:Shell, args: string[]) {
             if (!toConnect) {
                 gate.close()
                 done = true
-                terminal7.activeG = null
                 return
             }
         }
@@ -378,7 +376,6 @@ async function resetCMD(shell: Shell, args: string[]) {
 
             case "Close gate":
                 gate.close()
-                terminal7.activeG = null
                 return
         }
     }
@@ -527,7 +524,6 @@ async function closeCMD(shell: Shell, args: string[]) {
             return shell.t.writeln("No active connection")
     }
     gate.close()
-    terminal7.activeG = null
 }
 async function copyKeyCMD(shell: Shell) {
     let publicKey

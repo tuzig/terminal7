@@ -620,8 +620,11 @@ export class Gate {
         setTimeout(() => {
             this.clear()
             //TODO: find a bette way to test if open or not
-            if (this.activeW && (this == terminal7.activeG))
-                this.t7.goHome()
+            if (this == terminal7.activeG) {
+                if (this.activeW)
+                    this.t7.goHome()
+                terminal7.activeG = null
+            }
         }, 10)
         this.stopBoarding()
         if (this.session) {
