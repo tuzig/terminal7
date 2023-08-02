@@ -327,7 +327,7 @@ export class Terminal7 {
 
             // do nothing when no subscription or already connected
             if (this.pb) {
-                if (this.pb.uid != "TBD") {
+                if ((this.pb.uid != "TBD")  && (this.pb.uid != "")) {
                     this.pb.wsConnect().then(resolve).catch(reject)
                     return
                 }
