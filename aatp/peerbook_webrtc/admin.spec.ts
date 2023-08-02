@@ -75,7 +75,7 @@ insecure = true`)
             }
         })
         const pbOpen = await page.evaluate(() => window.terminal7.pb.isOpen())
-        expect(pbOpen).toBeFalsy()
+        expect(pbOpen).toBeTruthy()
     })
     test('purchase update with an active subscription and bad otp', async () => {
         await sleep(500)
