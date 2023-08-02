@@ -1027,12 +1027,18 @@ export class Pane extends Cell {
             const v = document.createElement("video");
             this.e.querySelector("div").classList.add("hidden")
             this.e.prepend(v)
-            navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-            .then((stream) => {
-                v.srcObject = stream
-                v.addEventListener("loadedmetadata", () => v.play())
-			})
-			.catch(e => this.t7.log("mediaDevices error", e))
+            navigator.permissions.query({name: 'camera'}).then(result => {
+                if (result.state == "prompt") {
+                    terminal7.log("camera permission prompt")
+                    terminal7.ignoreAppEvents = true
+                }
+                navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+                    .then((stream) => {
+                        v.srcObject = stream
+                        v.addEventListener("loadedmetadata", () => v.play())
+                    })
+                    .catch(e => this.t7.log("mediaDevices error", e))
+            })
 		} else {
             button.classList.remove("on")
             this.e.querySelector("div").classList.remove("hidden")
