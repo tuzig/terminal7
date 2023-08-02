@@ -278,12 +278,12 @@ export class Gate {
                 this.session.reconnect(this.marker, publicKey, privateKey).then(layout => {
                     this.setLayout(layout)
                     resolve()
-                }).catch(() => {
+                }).catch(e => {
                     if (this.session && !this.session.isSSH) {
                         this.session.close()
                         this.session = null
                     }
-                    terminal7.log("reconnect failed, calling the shell to handle it", isSSH)
+                    terminal7.log("reconnect failed, calling the shell to handle it", isSSH, e)
                     this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
                 })
             }).catch((e) => {

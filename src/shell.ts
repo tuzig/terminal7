@@ -27,7 +27,6 @@ export class Shell {
     currentLine = ''
     watchdog: number
     timer: number | null = null
-    pbSession: HTTPWebRTCSession | null = null
     masterChannel: Channel | null = null
     history: string[] = []
     historyIndex = 0
@@ -40,23 +39,6 @@ export class Shell {
         this.t = map.t0
     }
 
-    /*
-     * newPBSession opens a webrtc connection the the server to be used to admin
-     * the peerbook
-     */
-    newPBSession(appUserId?: string) {
-        console.log("newPBSession")
-        if (this.pbSession) {
-            return this.pbSession
-        }
-        const schema = terminal7.conf.peerbook.insecure? "http" : "https"
-        const url = `${schema}://${terminal7.conf.net.peerbook}/we`
-        const headers = new Map<string, string>()
-        if (appUserId)
-            headers.set("Bearer", appUserId)
-        this.pbSession = new HTTPWebRTCSession(url, headers)
-        return this.pbSession
-    }
     async start() {
         if (this.active)
             return
@@ -172,9 +154,10 @@ export class Shell {
         await this.escapeActiveForm()
         this.stopWatchdog()
         this.map.showLog(true)
+        await new Promise(resolve => setTimeout(resolve, 0))
+        this.lineAboveForm = this.t.buffer.active.baseY + this.t.buffer.active.cursorY
         this.t.write("\r\x1B[K")
         this.t.scrollToBottom()
-        this.lineAboveForm = this.t.buffer.active.baseY + this.t.buffer.active.cursorY
         if (title)
             this.t.writeln(title)
         this.activeForm = new Form(fields)
@@ -276,8 +259,8 @@ export class Shell {
         if (this.activeForm) {
             this.printBelowForm("", true) // add empty line for scrolling
             setTimeout(() => {
-                const line = this.lineAboveForm - this.t.buffer.active.baseY + 2
                 this.lineAboveForm++
+                const line = this.lineAboveForm - this.t.buffer.active.baseY
                 this.t.write(`\x1B[s\x1B[${line};H\x1B[L${text}\x1B[u\x1B[B`)
             }, 0)
             return
@@ -437,8 +420,13 @@ export class Shell {
             } catch(e) {
                 return
             }
-            if (toConnect)
-                await this.runCommand("connect", [gate.name])
+            if (toConnect) {
+                try {
+                    await this.runCommand("connect", [gate.name])
+                } catch(e) {
+                    console.log("connect failed", e)
+                }
+            }
             this.printPrompt()
             return
         } 
@@ -499,6 +487,14 @@ export class Shell {
         return res[0]
     }
     async verifyFP(fp: string, prompt?: string) {
+        try {
+            await terminal7.pbConnect()
+        } catch(e) {
+            console.log("Failed to connect to PB", e)
+            this.t.writeln("Failed to connect to PeerBook: " + e)
+            this.t.writeln("Please `subscribe` and try again")
+            return
+        }
         let validated = false
         // TODO:gAdd biometrics verification
         while (!validated) {
@@ -511,29 +507,7 @@ export class Shell {
                 reject()
                 return
             }
-            if (!this.pbSession) {
-                console.log("verifyFP: creating new session")
-                const session = this.newPBSession()
-                try {
-                    await (new Promise((resolve, reject) => {
-                        session.onStateChange = async (state, failure) => {
-                            if (state == 'connected') {
-                                resolve()
-                            } else if (state == 'failed')
-                                reject(failure)
-                        }
-                        session.connect()
-                    }))
-                } catch(e) {
-                    if (e == Failure.Unauthorized) {
-                        this.t.writeln("Seems like you're not subscribed to PeerBook")
-                        this.t.writeln("Use `subscribe` to subscribe")
-                    } else
-                        this.t.writeln(`Failed to connect to PeerBook: ${e}`)
-                    throw e
-                }
-            }
-            const channel = await this.pbSession.openChannel(["verify", fp, otp], 0, 80, 24)
+            const channel = await terminal7.pb.session.openChannel(["verify", fp, otp], 0, 80, 24)
             channel.onMessage = (data: Uint8Array) => {
                 gotMsg = true
                 console.log("Got verify reply", data[0])
@@ -545,9 +519,6 @@ export class Shell {
             if (!validated)
                 this.t.writeln("Invalid OTP, please try again")
         }
-    }
-    async reset() {
-        this.pbSession = null
     }
     async offerInstall(gate, firstOption?): Promise<boolean> {
         if (gate.onlySSH)
@@ -594,9 +565,10 @@ export class Shell {
             gate.close()
             await new Promise(r => setTimeout(r, 15))
             await this.runCommand("subscribe")
-        } else if (res == "Close Gate")
+        } else if (res == "Close Gate") {
             gate.close()
-        else 
+            terminal7.activeG = null
+        } else 
             gate.focus()
 
         return false

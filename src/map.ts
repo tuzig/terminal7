@@ -128,6 +128,7 @@ export class T7Map {
         if (g.fp)
             d.classList.add("from-peerbook")
         container.className = "text-button"
+        container.setAttribute("data-test", "gateButton")
         d.gate = g
         container.innerHTML = `
             <div class="gate-name" data-test="connectGate">${g.name}</div>

@@ -68,7 +68,11 @@ insecure = true`)
     test('purchase update with no active subscription', async () => {
         await sleep(500)
         await page.evaluate(async () => {
-            terminal7.pbConnect()
+            try {
+                await terminal7.pbConnect()
+            } catch (e) {
+                console.log("pbConnect failed", e)
+            }
         })
         const pbOpen = await page.evaluate(() => window.terminal7.pb.isOpen())
         expect(pbOpen).toBeFalsy()
@@ -79,7 +83,13 @@ insecure = true`)
         await sleep(1500)
         await page.evaluate(async () => {
             terminal7.pb.close()
-            terminal7.pb.connect("$ValidBearer")
+            try {
+                await terminal7.pb.connect("$ValidBearer")
+            } catch (e) {
+                console.log("pb.connect failed", e)
+                if (e == "Unregistered")
+                    terminal7.pb.register()
+            }
         })
         await sleep(2500)
         let twr = await getTWRBuffer(page)
@@ -150,12 +160,13 @@ insecure = true`)
     })
     test('peers are properly displayed', async () => {
         await sleep(500)
-        await page.evaluate(async () => {
-            terminal7.pbClose()
-            await terminal7.pbConnect()
-        })
-        const btns = page.locator('[data-test="connectGate"]')
+        const btns = page.locator('[data-test="gateButton"]')
         await expect(btns).toHaveCount(1)
+        const isOpen = await page.evaluate(() => window.terminal7.pb.isOpen())
+        await expect(isOpen).toBeTruthy()
+        const btn = btns.first()
+        await expect(btn).toHaveClass(/text-button/)
+        await expect(btn).not.toHaveClass(/unverified/)
     })
 
     test('local and peerbook gates are properly displayed', async () => {

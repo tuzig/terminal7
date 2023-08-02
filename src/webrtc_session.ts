@@ -227,8 +227,8 @@ export class WebRTCSession extends BaseSession {
             if (marker != null) {
                 const watchdog = setTimeout(() => {
                     timedout = true
-                    reject()
-                }, 500)
+                    reject("Timedout")
+                }, terminal7.conf.net.timeout)
                 this.sendCTRLMsg({ type: "restore", args: { marker }}, payload => {
                     clearTimeout(watchdog)
                     if (!timedout)
@@ -236,7 +236,7 @@ export class WebRTCSession extends BaseSession {
                 }, () => {
                     clearTimeout(watchdog)
                     if (!timedout)
-                        reject()
+                        reject("Restore failed")
                 })
             } else
                 this.getPayload().then(payload => {
@@ -424,6 +424,10 @@ export class PeerbookSession extends WebRTCSession {
     }
     peerAnswer(offer) {
         const sd = new RTCSessionDescription(offer)
+        if (this.pc.signalingState == "stable") {
+            terminal7.log("got an answer but we're stable")
+            return
+        }
         this.pc.setRemoteDescription(sd)
             .catch (e => {
                 this.t7.log(`Failed to set remote description: ${e}`)

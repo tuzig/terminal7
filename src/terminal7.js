@@ -150,7 +150,7 @@ export class Terminal7 {
         document.getElementById("trash-button")
                 .addEventListener("click",
                     () =>  {
-                        if (this.activeG)
+                        if (this.activeG?.activeW?.activeP)
                             this.activeG.activeW.activeP.close()})
         document.getElementById("map-button")
                 .addEventListener("click", () => this.goHome())
@@ -316,9 +316,10 @@ export class Terminal7 {
         return new Promise((resolve, reject) => {
             const catchConnect = e => {
                 if (e =="Unregistered")
-                    this.notify("You are unregistered, please `subscribe` to register")
-                else {
-                    this.notify("Failed to connect to peerbook, please try again")
+                    this.notify(`${PB} You are unregistered, please \`subscribe\``)
+                else if (e != "Unauthorized") {
+                    terminal7.log("PB connect failed", e)
+                    this.notify(`${PB} Failed to connect, please try \`sub\``)
                     this.notify("If the problem persists, `support`")
                 }
                 reject(e)
@@ -760,6 +761,7 @@ export class Terminal7 {
 
         if (m["peer_update"] !== undefined) {
             g.online = m.peer_update.online
+            g.verified = m.peer_update.verified
             g.updateNameE()
             return
         }

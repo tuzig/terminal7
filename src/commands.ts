@@ -217,6 +217,7 @@ async function connectCMD(shell:Shell, args: string[]) {
         shell.stopWatchdog()
         gate.close()
         terminal7.storeGates()
+        terminal7.activeG = null
         done = true
     }
     if (gate.session) {
@@ -273,6 +274,7 @@ async function connectCMD(shell:Shell, args: string[]) {
             if (!toConnect) {
                 gate.close()
                 done = true
+                terminal7.activeG = null
                 return
             }
         }
@@ -376,6 +378,7 @@ async function resetCMD(shell: Shell, args: string[]) {
 
             case "Close gate":
                 gate.close()
+                terminal7.activeG = null
                 return
         }
     }
@@ -524,6 +527,7 @@ async function closeCMD(shell: Shell, args: string[]) {
             return shell.t.writeln("No active connection")
     }
     gate.close()
+    terminal7.activeG = null
 }
 async function copyKeyCMD(shell: Shell) {
     let publicKey
@@ -546,7 +550,7 @@ async function subscribeCMD(shell: Shell) {
         shell.t.writeln("  󰴽  WebRTC w/ Direct and Relay Connections")
         shell.t.writeln("  󰟆  Persistent Sessions")
         shell.t.writeln("  󰟀  Connecting to Behind-the-NAT Desktops")
-        shell.t.writeln("  󰱱  Connecting to ephemeral IP Servers")
+        shell.t.writeln("  󰱱  Connecting to Ephemeral IP Servers")
         shell.t.write("\t\t\t(\x1B]8;;https://terminal7.dev/privacy\x07Privacy Policy\x1B]8;;\x07 & ")
         shell.t.writeln("\x1B]8;;https://www.apple.com/legal/internet-services/itunes/dev/stdeula/\x07Terms of Service\x1B]8;;\x07)")
         const TYPES = {
@@ -593,25 +597,34 @@ async function subscribeCMD(shell: Shell) {
             shell.t.writeln("Error purchasing, please try again or `support`")
             return
         }
-    } else {
-        if (!terminal7.pb.isOpen()) {
-            try {
-                await terminal7.pb.connect(customerInfo.originalAppUserId)
-            } catch(failure) {
-                let msg = "PeerBook Connection failed"
-                if (failure)
-                    msg += ": " + failure
+    }
+    if (!terminal7.pb.isOpen()) {
+        try {
+            await terminal7.pb.connect(customerInfo.originalAppUserId)
+        } catch(e) {
+            if (e == "Unregistered") {
+                shell.t.writeln("You are subscribed, please register:")
+                await terminal7.pb.register()
+            } else if (e == "Unauthorized") {
+                shell.t.writeln("Failed to connect to PeerBook, please try again or `support`")
+                return
+            } else {
+                let msg = "PeerBook connection failed"
+                if (e)
+                    msg += ": " + e
                 shell.t.writeln(msg)
                 shell.t.writeln("Please try again and if persists, `support`")
                 return
             }
-        } else
-            shell.t.writeln("You are already subscribed and registered")
-        const answer = await shell.askValue(`Copy user id to the clipboard? (y/N)`, "n")
-        if (answer.toLowerCase() == "y") {
-            Clipboard.write({ string: customerInfo.originalAppUserId })
-            shell.t.writeln("UID copied to clipboard")
         }
+    } else
+        shell.t.writeln("You are already subscribed and registered")
+    if (customerInfo.originalAppUserId[0] == "$")
+        return
+    const answer = await shell.askValue(`Copy user id to the clipboard? (y/N)`, "n")
+    if (answer.toLowerCase() == "y") {
+        Clipboard.write({ string: customerInfo.originalAppUserId })
+        shell.t.writeln("UID copied to clipboard")
     }
 }
 export async function installCMD(shell: Shell, args: string[]) {
@@ -626,7 +639,6 @@ export async function installCMD(shell: Shell, args: string[]) {
     } else {
         gate = terminal7.activeG
         if (!gate) {
-            shell.t.writeln("Please select gate:")
             const choices = []
             terminal7.gates.forEach(gate => {
                 choices.push({ prompt: gate.name })
@@ -636,7 +648,7 @@ export async function installCMD(shell: Shell, args: string[]) {
                 shell.t.writeln("Please `add` one and run install again")
                 return
             }
-            shell.t.writeln("Please select where to install:")
+            shell.t.writeln("Please select server to install on:")
             const choice = await shell.runForm(choices, "menu")
             gate = shell.getGate(choice)
         }
@@ -750,7 +762,6 @@ export async function installCMD(shell: Shell, args: string[]) {
                                 await shell.verifyFP(fp, "Finished install, enter OTP to verify")
                             } catch(e) {
                                 shell.t.writeln("Verification failed")
-                                shell.t.writeln("Please try again or type `support`")
                                 error = true
                                 return
                             }

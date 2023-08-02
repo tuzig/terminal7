@@ -36,12 +36,13 @@ export class PeerbookConnection {
         this.pending = []
         this.token = ""
         this.headers = new Map<string, string>()
-        this.uid = "TBD"
+        this.uid = ""
     }
 
     async adminCommand(cmd: string, ...args: string[]) {
         const c = args?[cmd, ...args]:[cmd]
         if (!this.session) {
+            console.log("Admin command with no session")
             try {
                 await this.connect()
             } catch (e) {
@@ -206,7 +207,7 @@ export class PeerbookConnection {
 
     getUID() {
         return new Promise<string>((resolve, reject) => {
-            if (this.uid != "TBD") {
+            if ((this.uid != "TBD") && (this.uid != "")) {
                 resolve(this.uid)
                 return
             }
@@ -224,9 +225,14 @@ export class PeerbookConnection {
             
 
     async connect(token?: string) {
-        if (this.session)
-            return
         return new Promise<void>((resolve, reject) =>{
+            if (this.session) {
+                if (this.uid == "TBD")
+                    reject("Unregistered")
+                else
+                    resolve()
+                return
+            }
             // connect to admin over webrtc
             const schema = terminal7.conf.peerbook.insecure? "http" : "https"
             const url = `${schema}://${terminal7.conf.net.peerbook}/we`
@@ -241,11 +247,7 @@ export class PeerbookConnection {
                     this.getUID().then(uid => {
                         if (uid == "TBD") {
                             terminal7.log("Got TBD as uid")
-                            this.echo("You are subscribed, please register:")
-                            this.register(token).then(resolve).catch(e => { 
-                                terminal7.log("Failed to register", e.toString())
-                                reject(e.toString())
-                            })
+                            reject("Unregistered")
                         } else {
                             CapacitorPurchases.logIn({ appUserID: uid })
                             this.wsConnect().then(resolve).catch(reject)
@@ -260,7 +262,10 @@ export class PeerbookConnection {
                 else if (state == 'failed') {
                     this.session = null
                     console.log("PB webrtc connection failed", failure)
-                    reject(failure)
+                    if (this.uid == "TBD")
+                        reject("Unregistered")
+                    else
+                        reject(failure)
                     return
                 }
             }
@@ -319,7 +324,7 @@ export class PeerbookConnection {
             }
             ws.onclose = (ev) => {
                 window.terminal7.log("peerbook ws closed", ev)
-                window.terminal7.notify(`${PB} Disconnect. Please \`sub\` again.`)
+                window.terminal7.notify(`${PB} Disconnected. Please \`sub\` to reconnect`)
                 this.ws = null
             }
             ws.onopen = () => {
