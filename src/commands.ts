@@ -761,7 +761,6 @@ export async function installCMD(shell: Shell, args: string[]) {
                                 error = true
                                 return
                             }
-                            shell.t.writeln("Gate is installed & verified")
                             done = true
                             // TODO: resolve the command that started it all
                         }, 1000)
@@ -799,6 +798,7 @@ export async function installCMD(shell: Shell, args: string[]) {
             .catch(() => timedOut = true)
         while (!gate.fp && ! timedOut)
             await (new Promise(r => setTimeout(r, 100)))
+        shell.t.writeln(`Gate is installed & verified, use \`connect ${gate.name}\``)
         shell.stopWatchdog()
     } else {
         shell.t.writeln("Install failed")
