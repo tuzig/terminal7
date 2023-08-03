@@ -751,17 +751,23 @@ export class Terminal7 {
         if (fp == myFP) {
             return
         }
-        const lookup =  this.gates.filter(g => g.fp == fp)
+        let lookup =  this.gates.filter(g => g.fp == fp)
 
         if (!lookup || (lookup.length != 1)) {
-            terminal7.log("Got a pb message with unknown peer: ", fp)
-            return
+            if (m["peer_update"] !== undefined) {
+                lookup =  this.gates.filter(g => g.name == m.peer_update.name)
+            }
+            if (!lookup || (lookup.length != 1)) {
+                terminal7.log("Got a pb message with unknown peer: ", fp)
+                return
+            }
         }
         const g = lookup[0]
 
         if (m["peer_update"] !== undefined) {
             g.online = m.peer_update.online
             g.verified = m.peer_update.verified
+            g.fp = m.source_fp
             g.updateNameE()
             return
         }
