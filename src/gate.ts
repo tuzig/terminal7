@@ -17,6 +17,7 @@ import { Terminal7 } from './terminal7'
 import { Capacitor } from '@capacitor/core'
 import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
 import { Window } from './window.js'
+import { Preferences } from '@capacitor/preferences'
 
 
 const FAILED_COLOR = "red"// ashort period of time, in milli
@@ -171,8 +172,20 @@ export class Gate {
             this.lastDisconnect = Date.now()
             // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR)
+            if (terminal7.recovering)  {
+                this.session.msgHandlers.forEach((v, k) => {
+                    v[1]("Disconnected")
+                })
+                setTimeout(() => this.reconnect(), 10)
+                return
+            }
         } else if (state == "failed")  {
-            this.handleFailure(failure)
+            if (terminal7.recovering)  {
+                this.session.close()
+                this.session = null
+                this.reconnect()
+            } else
+                this.handleFailure(failure)
         }
     }
     // handle connection failures
@@ -187,6 +200,7 @@ export class Gate {
         this.stopBoarding()
         this.map.shell.stopWatchdog()
         let password: string
+        let firstGate: string | null
         switch ( failure ) {
             case Failure.WrongPassword:
                 this.notify("Sorry, wrong password")
@@ -243,6 +257,9 @@ export class Gate {
                     this.onFailure(Failure.Aborted)
                     return 
                 }
+                firstGate = (await Preferences.get({key: "first_gate"})).value
+                if (firstGate)
+                    terminal7.ignoreAppEvents = true
                 this.session.passConnect(this.marker, password)
                 return
             case Failure.FailedToConnect:
@@ -580,6 +597,9 @@ export class Gate {
             if (this.session.isSSH) {
                 try {
                     const {publicKey, privateKey} = await this.t7.readId()
+                    const firstGate = (await Preferences.get({key: "first_gate"})).value
+                    if (firstGate)
+                        terminal7.ignoreAppEvents = true
                     this.session.connect(this.marker, publicKey, privateKey)
                 } catch(e) {
                     terminal7.log("error connecting with keys", e)

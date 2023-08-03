@@ -412,6 +412,7 @@ export class Shell {
         console.log("onDisconnect", gate)
         this.stopWatchdog()
         if (wasSSH) {
+            this.escapeActiveForm()
             terminal7.notify("⚠️ SSH Session might be lost")
             let toConnect: boolean
             try {
@@ -486,40 +487,6 @@ export class Shell {
                 [{ prompt: prompt, default: def }], "text")
         return res[0]
     }
-    async verifyFP(fp: string, prompt?: string) {
-        try {
-            await terminal7.pbConnect()
-        } catch(e) {
-            console.log("Failed to connect to PB", e)
-            this.t.writeln("Failed to connect to PeerBook: " + e)
-            this.t.writeln("Please `subscribe` and try again")
-            return
-        }
-        let validated = false
-        // TODO:gAdd biometrics verification
-        while (!validated) {
-            console.log("Verifying FP", fp)
-            let gotMsg = false
-            let otp
-            try {
-                otp = await this.askValue(prompt || "Enter OTP to verify gate")
-            } catch(e) {
-                reject()
-                return
-            }
-            const channel = await terminal7.pb.session.openChannel(["verify", fp, otp], 0, 80, 24)
-            channel.onMessage = (data: Uint8Array) => {
-                gotMsg = true
-                console.log("Got verify reply", data[0])
-                validated = data[0] == "1".charCodeAt(0)
-            }
-            while (!gotMsg) {
-                await (new Promise(r => setTimeout(r, 100)))
-            }
-            if (!validated)
-                this.t.writeln("Invalid OTP, please try again")
-        }
-    }
     async offerInstall(gate, firstOption?): Promise<boolean> {
         if (gate.onlySSH)
             return true
@@ -565,10 +532,9 @@ export class Shell {
             gate.close()
             await new Promise(r => setTimeout(r, 15))
             await this.runCommand("subscribe")
-        } else if (res == "Close Gate") {
+        } else if (res == "Close Gate")
             gate.close()
-            terminal7.activeG = null
-        } else 
+        else 
             gate.focus()
 
         return false

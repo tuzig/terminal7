@@ -217,7 +217,6 @@ export class WebRTCSession extends BaseSession {
     }
     async reconnect(marker?: number, publicKey?: string, privateKey?: string): Promise<void> {
         return new Promise((resolve, reject) => { 
-            let timedout = false
             console.log("in reconnect", this.cdc, this.cdc.readyState)
             if (!this.pc)
                 return this.connect(marker, publicKey, privateKey)
@@ -225,24 +224,10 @@ export class WebRTCSession extends BaseSession {
             if (!this.cdc || this.cdc.readyState != "open")
                 this.openCDC()
             if (marker != null) {
-                const watchdog = setTimeout(() => {
-                    timedout = true
-                    reject("Timedout")
-                }, terminal7.conf.net.timeout)
-                this.sendCTRLMsg({ type: "restore", args: { marker }}, payload => {
-                    clearTimeout(watchdog)
-                    if (!timedout)
-                        resolve(payload)
-                }, () => {
-                    clearTimeout(watchdog)
-                    if (!timedout)
-                        reject("Restore failed")
-                })
+                this.sendCTRLMsg({ type: "restore", args: { marker }}, resolve,
+                                 () => reject("Restore failed"))
             } else
-                this.getPayload().then(payload => {
-                   if (!timedout)
-                       resolve(payload)
-                }).catch(reject)
+                this.getPayload().then(resolve).catch(reject)
         })
     }
     openCDC(): Promise<void> {
@@ -273,7 +258,7 @@ export class WebRTCSession extends BaseSession {
                 // handle Ack
                 if ((msg.type == "ack") || (msg.type == "nack")) {
                     const i = msg.args.ref
-                    const handlers = this.msgHandlers[i]
+                    const handlers = this.msgHandlers.get(i)
                     this.msgHandlers.delete(msg.args.ref)
                     this.t7.log("got cdc message:",  msg)
                     if (msg.type == "nack") {
@@ -298,7 +283,7 @@ export class WebRTCSession extends BaseSession {
         // don't change the time if it's a retransmit
         if (msg.time == undefined)
             msg.time = Date.now()
-        this.msgHandlers[msg.message_id] = [resolve, reject]
+        this.msgHandlers.set(msg.message_id, [resolve, reject])
         if (!this.cdc || this.cdc.readyState != "open")
             // message stays frozen when restrting
             this.pendingCDCMsgs.push([msg, resolve, reject])

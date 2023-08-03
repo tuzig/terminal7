@@ -9,6 +9,7 @@ import { Gate } from './gate'
 import { Capacitor } from '@capacitor/core'
 import { SSHSession, SSHChannel } from './ssh_session'
 import { Failure } from './session'
+import { NativeBiometric } from 'capacitor-native-biometric'
 
 declare const terminal7 : Terminal7
 
@@ -188,9 +189,9 @@ async function connectCMD(shell:Shell, args: string[]) {
     const overPB = pbOpen && gate.fp && (gate.fp.length > 0) && gate.online
     if (overPB) {
         if (!gate.verified) {
-            const answer = await shell.askValue("Gate unverified, would you like to verify it? (Y/n)")
+            const answer = await shell.askValue("Gate unverified, would you like to verify it?", "y")
             if (answer == "y" || answer == "Y" || answer == "") {
-                await shell.verifyFP(gate.fp)
+                await terminal7.pb.verifyFP(gate.fp)
             } else {
                 shell.t.writeln("Doing nothing")
                 return
@@ -409,6 +410,7 @@ async function resetCMD(shell: Shell, args: string[]) {
             break
         case "Private/public key":
             terminal7.keys = undefined
+            NativeBiometric.deleteCredentials({ server: "dev.terminal7.default" })
             shell.t.writeln("Keys removed")
             break
         case "\x1B[31mEverything\x1B[0m":
@@ -624,6 +626,10 @@ async function subscribeCMD(shell: Shell) {
     }
 }
 export async function installCMD(shell: Shell, args: string[]) {
+    if (!terminal7.pb?.isOpen()) {
+        shell.t.writeln("Please `subscribe` to PeerBook first")
+        return
+    }
     let gate: Gate
 
     if (args[0]) {
@@ -755,7 +761,7 @@ export async function installCMD(shell: Shell, args: string[]) {
                             shell.t.writeln("~~~ Orderly Disconnect")
                             // will throw exception if not verified
                             try {
-                                await shell.verifyFP(fp, "Finished install, enter OTP to verify")
+                                await terminal7.pb.verifyFP(fp, "Finished install, enter OTP to verify")
                             } catch(e) {
                                 shell.t.writeln("Verification failed")
                                 error = true

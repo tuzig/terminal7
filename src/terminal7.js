@@ -553,31 +553,34 @@ export class Terminal7 {
             if (updateNetPopup)
                 off.add("hidden")
             const gate = this.activeG
-            const  firstGate = (await Preferences.get({key: "first_gate"})).value
-            if (gate && gate.boarding && (firstGate == "nope")) {
+            const firstGate = (await Preferences.get({key: "first_gate"})).value
+            const toReconnect = gate && gate.boarding && (firstGate == "nope")
+            console.log("toReconnect", toReconnect, "firstGate", firstGate)
+            if (toReconnect ) {
                 this.notify("🌞 Recovering")
                 this.map.shell.startWatchdog().catch(() => {
                     if (this.pb.isOpen())
-                        gate.notify("Timed out, please try `connect` again")
+                        gate.notify("Timed out")
                     else
                         this.notify(`${PB} timed out, please try \`subscribe\``)
-                    gate.close()
+                    gate.stopBoarding()
                 })
             }
             this.pbConnect().catch(e => this.log("pbConnect failed", e))
                 .finally(() => {
-                    if (gate && gate.boarding && (firstGate == "nope")) {
-                        this.recovering = true
-                        this.run(() => this.recovering = false, this.conf.net.recoveryTime)
+                    if (toReconnect) {
                         gate.reconnect()
                             .catch(() => this.map.shell.runCommand("reset", [gate.name]))
-                            .finally(() => this.map.shell.stopWatchdog())
+                            .finally(() =>  {
+                                this.recovering = false
+                                this.map.shell.stopWatchdog()
+                            })
                     }
                 })
         } else {
             if (updateNetPopup)
                 off.remove("hidden")
-            this.disengage()
+            this.disengage().then(() => this.recovering = true)
         }
     }
     loadConf(conf) {

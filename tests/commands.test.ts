@@ -34,11 +34,11 @@ describe("TWR commands", function() {
             let shell = {
                 getGate: () => gate,
                 t: new Terminal({}),
-                verifyFP: vi.fn(),
             }
             t.pb = {
                 adminCommand: vi.fn(() => "j"),
-                getUID: vi.fn(() => "5678")
+                getUID: vi.fn(() => "5678"),
+                isOpen: vi.fn(() => true),
             }
             shell.t.writeln("try")
             expect(shell.t.out).toMatch(/try/)
@@ -56,27 +56,4 @@ describe("TWR commands", function() {
         })
     })
 
-    /* TODO: move to aatp
-    describe("Verify fingerprint command", () => {
-        it("should verify the fingerprint", async () => {
-            let map = new T7Map()
-            let verifyFinished = false
-            map.open()
-            map.shell.start()
-            let shell = map.shell
-            shell.t.out = ""
-            shell.askValue = async () => "5678"
-            shell.verifyFP("1234", "whatever").then(() => verifyFinished = true)
-            await sleep(500)
-            // expect (shell.pbSession.openChannel).toHaveBeenCalled()
-            globalThis.lastHTTPWebRTCChannel.onMessage([ "1".charCodeAt(0) ])
-            await sleep(100)
-            console.log("output", shell.t.out)
-            expect(shell.t.out).toEqual("")
-            while (!verifyFinished) {
-                await sleep(100)
-            }
-        })
-    })
-    */
 })
