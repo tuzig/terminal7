@@ -64,6 +64,10 @@ export class T7Map {
                         this.shell.escape()
                     return false
                 }
+                if ((ev.ctrlKey || ev.metaKey) && ev.key === "v") {
+                    this.shell.paste()
+                    return false
+                }
                 return true
             })
             this.t0.onKey(iev => {
@@ -73,10 +77,6 @@ export class T7Map {
                     return
                 }
                 this.shell.updateCapsLock(ev)
-                if ((ev.ctrlKey || ev.metaKey) && ev.key === "v") {
-                    this.shell.paste()
-                    return
-                }
                 this.shell.keyHandler(ev.key)
                 ev.preventDefault()
             })
