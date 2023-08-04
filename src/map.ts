@@ -73,6 +73,7 @@ export class T7Map {
             this.t0.onKey(iev => {
                 this.interruptTTY()
                 const ev = iev.domEvent
+                // TWR is connected to a remote shell (for install)
                 if (this.shell.masterChannel) {
                     return
                 }

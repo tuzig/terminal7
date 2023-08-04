@@ -173,7 +173,7 @@ export class Gate {
             // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR)
             if (terminal7.recovering)  {
-                this.session.msgHandlers.forEach((v, k) => {
+                this.session.msgHandlers.forEach(v => {
                     v[1]("Disconnected")
                 })
                 setTimeout(() => this.reconnect(), 10)

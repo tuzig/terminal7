@@ -6,7 +6,6 @@ import { Fields, Form } from './form'
 import { Gate } from "./gate"
 import { T7Map } from './map'
 import { Failure } from "./session"
-import { HTTPWebRTCSession } from './webrtc_session'
 import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
 import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
 import { tomlMode} from '@tuzig/codemirror/mode/toml/toml.js'
