@@ -1,9 +1,5 @@
 [
 	{
-		"pkg": "@capacitor-community/http",
-		"classpath": "com.getcapacitor.plugin.http.Http"
-	},
-	{
 		"pkg": "@capacitor/app",
 		"classpath": "com.capacitorjs.plugins.app.AppPlugin"
 	},
@@ -38,10 +34,6 @@
 	{
 		"pkg": "@capgo/capacitor-purchases",
 		"classpath": "ee.forgr.plugin.capacitor_purchases.CapacitorPurchasesPlugin"
-	},
-	{
-		"pkg": "@robingenz/capacitor-background-task",
-		"classpath": "dev.robingenz.capacitor.backgroundtask.BackgroundTaskPlugin"
 	},
 	{
 		"pkg": "capacitor-native-biometric",
