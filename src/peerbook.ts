@@ -143,7 +143,8 @@ export class PeerbookConnection {
     async startPurchases() {
         console.log("Starting purchases")
         const props = {
-            apiKey: 'appl_qKHwbgKuoVXokCTMuLRwvukoqkd',
+            // apiKey: 'appl_qKHwbgKuoVXokCTMuLRwvukoqkd',
+            apiKey: 'goog_ncGFZWWmIsdzdfkyMRtPqqyNlsx',
         }
 
         try {
