@@ -1044,10 +1044,8 @@
   resolved "https://registry.yarnpkg.com/@capacitor/status-bar/-/status-bar-5.0.6.tgz#281568a7f7aeacf80777702cb9947c29dc32685c"
   integrity sha512-7od8CxsBnot1XMK3IeOkproFL4hgoKoWAc3pwUvmDOkQsXoxwQm4SR9mLwQavv1XfxtHbFV9Ukd7FwMxOPSViw==
 
-"@capgo/capacitor-purchases@^2.0.24":
-  version "2.9.0"
-  resolved "https://registry.yarnpkg.com/@capgo/capacitor-purchases/-/capacitor-purchases-2.9.0.tgz#cd77c0b90f105b8bec83fb8db91cf02453e0e8d8"
-  integrity sha512-L5hnD02NnQiSK01nnNAiNGyymWkuycYw27IWM7d5RE1n9nem7556Ka++1gTkP8sdKxn0KfeQmTwlAX16+1v9pA==
+"@capgo/capacitor-purchases@../capacitor-purchases":
+  version "5.1.0"
 
 "@esbuild/android-arm64@0.18.18":
   version "0.18.18"

@@ -29,7 +29,7 @@
     "@capacitor/network": "^5.0.0",
     "@capacitor/preferences": "^5.0.0",
     "@capacitor/status-bar": "^5.0.0",
-    "@capgo/capacitor-purchases": "^2.0.24",
+    "@capgo/capacitor-purchases": "../capacitor-purchases",
     "@liveconfig/xterm-webfont": "^2.1.0",
     "@tuzig/codemirror": "5.65.5-mods",
     "@tuzig/toml": "^3.0.0-browser",
