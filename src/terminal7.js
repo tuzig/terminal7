@@ -32,12 +32,14 @@ import { RateApp } from 'capacitor-rate-app'
 
 
 import { PeerbookConnection, PB } from './peerbook'
+import { Failure } from './session';
 
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
 Thanks for choosing Terminal7. This is TWR, a local
 terminal used to control the terminal and log messages.
-Type 'hide' or 'help' to list available commands. 
+Type \`hide\`, \`help\` or \`add\` if you're ready to board. 
+For WebRTC 🍯 please \`subscribe\` to our online service.
 
 Enjoy!
 
@@ -317,6 +319,10 @@ export class Terminal7 {
             const catchConnect = e => {
                 if (e =="Unregistered")
                     this.notify(`${PB} You are unregistered, please \`subscribe\``)
+                else if (e == Failure.NotSupported)
+                    // TODO: this should be changed to a notification
+                    // after we upgrade peerbook
+                    console.log("PB not supported")
                 else if (e != "Unauthorized") {
                     terminal7.log("PB connect failed", e)
                     this.notify(`${PB} Failed to connect, please try \`sub\``)

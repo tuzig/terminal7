@@ -470,7 +470,10 @@ export class HTTPWebRTCSession extends WebRTCSession {
                     this.fail(Failure.Unauthorized)
                 else if (response.status >= 300) {
                     console.log("failed to post to PB", response)
-                    this.fail()
+                    if (response.status == 404)
+                        this.fail(Failure.NotSupported)
+                    else
+                        this.fail()
                 } else
                     return response.data
                 return null
