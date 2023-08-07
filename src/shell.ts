@@ -520,14 +520,13 @@ export class Shell {
         return ret
     }
     async offerSub(gate): Promise<boolean> {
-        this.t.writeln("")
-        this.t.writeln("\rJoin our subscribers and enjoy persistent sessions over\nWebRTC and more")
+        this.t.writeln("\rJoin our subscribers for persistent sessions and WebRTC 🍯")
         const reconnect = [
             { prompt: "I'm feeling lucky" },
             { prompt: "Learn More" },
             { prompt: "Close Gate" },
         ]
-        const res = await this.runForm(reconnect, "menu", "Please choose")
+        const res = await this.runForm(reconnect, "menu")
         if (res == "Learn More") {
             gate.close()
             await new Promise(r => setTimeout(r, 15))
