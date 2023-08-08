@@ -370,8 +370,10 @@ export class WebRTCSession extends BaseSession {
                     return
                 }
                 // return an array with the conf's server and subspace's
-                resolve([{ urls: this.t7.conf.net.iceServer},
-                         ...servers])
+                const iceServer = this.t7.conf.net.iceServer
+                if (iceServer?.length > 0)
+                    servers.unshift({ urls: iceServer })
+                resolve(servers)
 
             }).catch(err => {
                 clearTimeout(tId)
