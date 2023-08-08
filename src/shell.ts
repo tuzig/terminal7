@@ -500,7 +500,8 @@ export class Shell {
         let ret = true
         switch (res) {
             case "Install":
-                await this.runCommand(`install ${gate.name}`)
+                gate.close()
+                setTimeout(() => this.runCommand(`install ${gate.name}`), 10)
                 ret = false
                 break
             case  "Close Gate":
