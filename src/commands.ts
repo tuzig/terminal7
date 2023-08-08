@@ -573,6 +573,7 @@ async function subscribeCMD(shell: Shell) {
             return { identifier, prompt }
         })
         const fields: Fields = products.map(p => ({ prompt: p.prompt }))
+        fields.push({ prompt: "Restore Purchases" })
         fields.push({ prompt: "Cancel" })
         let choice
         try {
@@ -582,23 +583,44 @@ async function subscribeCMD(shell: Shell) {
         }
         if (choice == "Cancel")
             return
-        const product = products.find(p => p.prompt == choice)
-        shell.t.writeln("Thank you! directing you to the store")
-        shell.startWatchdog(120000).catch(e => {
-            shell.t.writeln("Sorry, subscribe command timed out")
-            shell.t.writeln("Please try again or `support`")
-            throw e
-        })
-
-        terminal7.ignoreAppEvents = true
-        try {
-            await terminal7.pb.purchase(product.identifier, offer.identifier)
-            shell.stopWatchdog()
-        } catch(e) {
-            shell.stopWatchdog()
-            console.log("purchase error", e)
-            shell.t.writeln("Error purchasing, please try again or `support`")
-            return
+        if (choice == "Restore Purchases") {
+            shell.t.writeln("Restoring purchases")
+            shell.startWatchdog(10000).catch(e => {
+                shell.t.writeln("Sorry, restore command timed out")
+                shell.t.writeln("Please try again or `support`")
+                throw e
+            })
+            try {
+                await CapacitorPurchases.restorePurchases()
+            } catch(e) {
+                shell.stopWatchdog()
+                shell.t.writeln("Error restoring purchases, please try again or `support`")
+                return
+            }
+            const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
+            if (!customerInfo.entitlements.active.peerbook) {
+                shell.t.writeln("Sorry, no active subscription found")
+            } else {
+                shell.t.writeln("Subscription restored")
+            }
+        } else {
+            const product = products.find(p => p.prompt == choice)
+            shell.t.writeln("Thank you! directing you to the store")
+            shell.startWatchdog(120000).catch(e => {
+                shell.t.writeln("Sorry, subscribe command timed out")
+                shell.t.writeln("Please try again or `support`")
+                throw e
+            })
+            terminal7.ignoreAppEvents = true
+            try {
+                await terminal7.pb.purchase(product.identifier, offer.identifier)
+                shell.stopWatchdog()
+            } catch(e) {
+                shell.stopWatchdog()
+                console.log("purchase error", e)
+                shell.t.writeln("Error purchasing, please try again or `support`")
+                return
+            }
         }
     }
     if (!terminal7.pb.isOpen()) {
