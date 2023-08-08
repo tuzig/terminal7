@@ -260,7 +260,10 @@ async function connectCMD(shell:Shell, args: string[]) {
             if (publicKey) {
                 const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
                 shell.t.writeln(`\n To use face id please copy the ES25519 key by running:\n\n\x1B[1m${cmd}\x1B[0m\n`)
-                const res = await shell.runForm(keyForm, "menu")
+                let res = ""
+                try {
+                    res = await shell.runForm(keyForm, "menu")
+                } catch (e) {}
                 switch(res) {
                     case "Copy command to clipboard":
                         Clipboard.write({ string: cmd })
@@ -617,11 +620,10 @@ async function subscribeCMD(shell: Shell) {
         }
     } else
         shell.t.writeln("You are already subscribed and registered")
-    if (customerInfo.originalAppUserId[0] == "$")
-        return
+    const uid = await terminal7.pb.getUID()
     const answer = await shell.askValue(`Copy user id to the clipboard? (y/N)`, "n")
     if (answer.toLowerCase() == "y") {
-        Clipboard.write({ string: customerInfo.originalAppUserId })
+        Clipboard.write({ string: uid })
         shell.t.writeln("UID copied to clipboard")
     }
 }
