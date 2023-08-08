@@ -8,6 +8,9 @@ project(':capacitor-app').projectDir = new File('../node_modules/@capacitor/app/
 include ':capacitor-browser'
 project(':capacitor-browser').projectDir = new File('../node_modules/@capacitor/browser/android')
 
+include ':capacitor-camera'
+project(':capacitor-camera').projectDir = new File('../node_modules/@capacitor/camera/android')
+
 include ':capacitor-clipboard'
 project(':capacitor-clipboard').projectDir = new File('../node_modules/@capacitor/clipboard/android')
 
@@ -27,7 +30,7 @@ include ':capacitor-status-bar'
 project(':capacitor-status-bar').projectDir = new File('../node_modules/@capacitor/status-bar/android')
 
 include ':capgo-capacitor-purchases'
-project(':capgo-capacitor-purchases').projectDir = new File('../../capacitor-purchases/android')
+project(':capgo-capacitor-purchases').projectDir = new File('../node_modules/@capgo/capacitor-purchases/android')
 
 include ':capacitor-native-biometric'
 project(':capacitor-native-biometric').projectDir = new File('../node_modules/capacitor-native-biometric/android')
@@ -36,4 +39,4 @@ include ':capacitor-rate-app'
 project(':capacitor-rate-app').projectDir = new File('../node_modules/capacitor-rate-app/android')
 
 include ':capacitor-ssh-plugin'
-project(':capacitor-ssh-plugin').projectDir = new File('../../capacitor-ssh-plugin/android')
+project(':capacitor-ssh-plugin').projectDir = new File('../node_modules/capacitor-ssh-plugin/android')
