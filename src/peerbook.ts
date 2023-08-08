@@ -18,7 +18,7 @@ import { Shell } from './shell'
 
 export class PeerbookConnection {
     ws: WebSocket = null
-    host = "https://api.peerbook.io"
+    host: string
     insecure = false
     fp: string
     pbSendTask = null

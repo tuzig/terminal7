@@ -270,7 +270,12 @@ async function connectCMD(shell:Shell, args: string[]) {
             }
         } 
         if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH && pbOpen) {
-            const toConnect = await shell.offerInstall(gate)
+            let toConnect: boolean
+            try {
+                toConnect = await shell.offerInstall(gate)
+            } catch (e) {
+                toConnect = true
+            }
             if (!toConnect) {
                 gate.close()
                 done = true
@@ -630,6 +635,23 @@ export async function installCMD(shell: Shell, args: string[]) {
         shell.t.writeln("Please `subscribe` to PeerBook first")
         return
     }
+
+    let uid: string
+    try {
+        uid  = await terminal7.pb.getUID()
+    } catch(e) {
+        console.log("ping error", e)
+        shell.t.writeln("Error connecting to Peerbook")
+        shell.t.writeln("Please try again or `support`")
+        return
+    }
+    console.log("got uid", uid)
+
+    if (!uid) {
+        shell.t.writeln("You are not subscribed to Peerbook")
+        shell.t.writeln("Please `subscribe`")
+        return
+    }
     let gate: Gate
 
     if (args[0]) {
@@ -655,11 +677,33 @@ export async function installCMD(shell: Shell, args: string[]) {
             gate = shell.getGate(choice)
         }
     }
+
+    const host = terminal7.conf.net.peerbook
+    let cmd = `PEERBOOK_UID=${uid} PEERBOOK_NAME="${gate.name}"`
+    if (host != "api.peerbook.io")
+        cmd += ` PEERBOOK_HOST=${host}`
+    cmd += " \\\nbash <(curl -sL https://get.webexec.sh)"
+
     // Connect to the gate over SSH and install webexec
     let publicKey, privateKey
     let done = false
     let error = false
-
+    const fields: Fields = [
+        { prompt: "Connect & send command" },
+        { prompt: "Copy command to 📋" },
+        { prompt: "Cancel" },
+    ]
+    shell.t.writeln("To Enjoy WebRTC you need Terminal7 agent installed & running")
+    shell.t.writeln("")
+    shell.t.writeln(`$ \x1B[1m${cmd}\x1B[0m`)
+    const choice= await shell.runForm(fields, "menu")
+    if (choice == "Cancel")
+        return
+    if (choice == "Copy command to 📋") {
+        Clipboard.write({ string: cmd })
+        shell.t.writeln("Command copied to clipboard")
+        return
+    }
     const passConnect = async () => {
         let password: string
         try {
@@ -686,10 +730,7 @@ export async function installCMD(shell: Shell, args: string[]) {
         terminal7.log("Install SSH session closed")
     }
     session.onStateChange = async (state, failure?: Failure) => {
-        const host = terminal7.conf.net.peerbook
         let channel: SSHChannel
-        let uid: string
-        let cmd: string
         terminal7.log("Install SSH session got state", state, failure)
         switch (state) {
             case "connecting":
@@ -721,28 +762,6 @@ export async function installCMD(shell: Shell, args: string[]) {
                     error = true
                 }
 
-                try {
-                    uid  = await terminal7.pb.getUID()
-                } catch(e) {
-                    console.log("ping error", e)
-                    shell.t.writeln("Error connecting to Peerbook")
-                    session.close()
-                    channel.close()
-                    return
-                }
-                console.log("got uid", uid)
-
-                if (!uid) {
-                    shell.t.writeln("You are not subscribed to Peerbook")
-                    shell.t.writeln("Please `subscribe`")
-                    session.close()
-                    channel.close()
-                    return
-                }
-                cmd = `PEERBOOK_UID=${uid} PEERBOOK_NAME="${gate.name}"`
-                if (host != "api.peerbook.io")
-                    cmd += ` PEERBOOK_HOST=${host}`
-                cmd += " \\\nbash <(curl -sL https://get.webexec.sh)"
                 channel.send(cmd)
 
                 channel.onMessage = async (msg: string) => {
