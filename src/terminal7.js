@@ -571,7 +571,8 @@ export class Terminal7 {
                         this.notify(`${PB} timed out, please try \`subscribe\``)
                     gate.stopBoarding()
                 })
-            }
+            } else
+                this.recovering = false
             this.pbConnect().catch(e => this.log("pbConnect failed", e))
                 .finally(() => {
                     if (toReconnect) {
@@ -586,7 +587,7 @@ export class Terminal7 {
         } else {
             if (updateNetPopup)
                 off.remove("hidden")
-            this.disengage().then(() => this.recovering = true)
+            this.disengage().finally(() => this.recovering = true)
         }
     }
     loadConf(conf) {

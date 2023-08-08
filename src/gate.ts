@@ -181,6 +181,11 @@ export class Gate {
             }
         } else if (state == "failed")  {
             if (terminal7.recovering)  {
+                terminal7.log("failure while recovering")
+                if (this.session?.isSSH) { // if ssh, try again
+                    setTimeout(() => this.completeConnect(), 100)
+                    return
+                }
                 this.session.close()
                 this.session = null
                 this.reconnect()
