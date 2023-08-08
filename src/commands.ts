@@ -544,11 +544,11 @@ async function subscribeCMD(shell: Shell) {
     if (!customerInfo.entitlements.active.peerbook) {
         shell.t.writeln("Join PeerBook subscribers and enjoy:")
         shell.t.writeln("")
+        shell.t.writeln("  󰟆  Persistent Sessions")
         shell.t.writeln("    2FA & SRTP Based Encryption")
         shell.t.writeln("  󰴽  WebRTC w/ Direct and Relay Connections")
-        shell.t.writeln("  󰟆  Persistent Sessions")
-        shell.t.writeln("  󰟀  Connecting to Behind-the-NAT Desktops")
-        shell.t.writeln("  󰱱  Connecting to Ephemeral IP Servers")
+        shell.t.writeln("  󰟀  Behind-the-NAT Desktops connections")
+        shell.t.writeln("    Ephemeral IP Servers connections")
         shell.t.write("\t\t\t(\x1B]8;;https://terminal7.dev/privacy\x07Privacy Policy\x1B]8;;\x07 & ")
         shell.t.writeln("\x1B]8;;https://www.apple.com/legal/internet-services/itunes/dev/stdeula/\x07Terms of Service\x1B]8;;\x07)")
         const TYPES = {
