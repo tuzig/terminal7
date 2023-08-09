@@ -5,6 +5,7 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
+import * as TOML from '@tuzig/toml'
 import { Layout } from '../src/layout.js'
 import { Cell } from '../src/cell.js'
 import { Gate } from '../src/gate'
@@ -12,12 +13,10 @@ import { T7Map } from '../src/map'
 import { Terminal7Mock, sleep } from './infra'
 import { assert } from "chai"
 import { Preferences } from '@capacitor/preferences'
-import { Terminal } from '@tuzig/xterm'
-import { SSHSession } from '../src/ssh_session'
 import { expect, vi } from 'vitest'
 import { HTTPWebRTCSession } from '../src/webrtc_session'
 
-vi.mock('@tuzig/xterm')
+vi.mock('xterm')
 vi.mock('../src/ssh_session.ts')
 vi.mock('../src/webrtc_session.ts')
 
@@ -291,7 +290,7 @@ describe("terminal7", function() {
             h = t.addGate()
             h.open(e)
             w = h.addWindow("restored")
-            w.restoreLayout(state, [])
+            w.restoreLayout(state, true)
             expect(w.rootLayout.dir).to.equal("topbottom")
             expect(w.rootLayout.cells[0].yoff).to.equal(0.2)
             expect(w.rootLayout.cells[1].yoff).to.equal(0.5)
@@ -332,8 +331,7 @@ describe("terminal7", function() {
                             }
                         ]
                     }
-                ]}, []
-            )
+                ]}, true)
             expect(w.rootLayout.dir).to.equal("topbottom")
             expect(w.rootLayout.cells.length).to.equal(2)
             expect(w.rootLayout.cells[1].dir).to.equal("rightleft")
@@ -395,6 +393,7 @@ describe("terminal7", function() {
             expect(p4.sx).to.equal(0.25)
             expect(p4.xoff+p4.sx).to.be.closeTo(p2.xoff, 0.000001)
         })
+
         it("can move a border in another complex layout panes", function () {
             /* here's the layout we build and then move the border between
              * 1 to 2
@@ -430,6 +429,40 @@ describe("terminal7", function() {
             expect(p4.sy).to.equal(0.2)
             expect(p4.yoff+p4.sy).to.be.closeTo(p2.yoff, 0.000001)
         })
+        it("can be restored from a bad layout", () => {
+            // this is a layout that was saved with a zoomed pane in a non-active window
+            // it should be restored without the zoomed pane
+            // and the active pane should be the first one
+            // and the window should be active
+
+            // the layout is two window each with one pane
+            h = t.addGate()
+            h.open(e)
+            w = h.addWindow("restored")
+            w.restoreLayout({
+                dir: "topbottom",
+                cells: [
+                    {
+                        sx: 0.8,
+                        sy: 0.6,
+                        xoff: 0.1,
+                        yoff: 0.2,
+                        pane_id: 0
+                    }, {
+                        sx: 0.8,
+                        sy: 0.6,
+                        xoff: 0.1,
+                        yoff: 0.2,
+                        pane_id: 1,
+                        zoomed: true,
+                        active: true
+                    }
+                ]
+            }, false)
+            expect(w.rootLayout.dir).to.equal("topbottom")
+            expect(w.rootLayout.cells.length).to.equal(2)
+            expect(w.activeP.zoomed).to.equal(false)
+        })
     })
     describe("gate", () => {
         it("can open connection form without SSH", async () => {
@@ -442,9 +475,9 @@ describe("terminal7", function() {
             t0.pressKey("Enter")
             t0.pressKey("n")
             t0.pressKey("Enter")
-            await sleep(100)
+            await sleep(300)
             console.log("t0.out:", t0.out)
-            expect(t0.out, `TWR out: ${t0.out}`).toMatch(/webexec/)
+            expect(t0.out, `TWR out: ${t0.out}`).toMatch(/WebExec/)
             expect(t0.out, `TWR out: ${t0.out}`).toMatch(/over WebRTC/)
         })
         it("can connect to SSH through form", async () => {

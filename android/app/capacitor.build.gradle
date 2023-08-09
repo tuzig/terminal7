@@ -2,8 +2,8 @@
 
 android {
   compileOptions {
-      sourceCompatibility JavaVersion.VERSION_1_8
-      targetCompatibility JavaVersion.VERSION_1_8
+      sourceCompatibility JavaVersion.VERSION_11
+      targetCompatibility JavaVersion.VERSION_11
   }
 }
 
@@ -14,9 +14,14 @@ dependencies {
     implementation project(':capacitor-browser')
     implementation project(':capacitor-clipboard')
     implementation project(':capacitor-device')
+    implementation project(':capacitor-keyboard')
     implementation project(':capacitor-network')
-    implementation project(':capacitor-storage')
+    implementation project(':capacitor-preferences')
+    implementation project(':capacitor-status-bar')
+    implementation project(':capgo-capacitor-purchases')
     implementation project(':robingenz-capacitor-background-task')
+    implementation project(':capacitor-native-biometric')
+    implementation project(':capacitor-rate-app')
     implementation project(':capacitor-ssh-plugin')
 
 }

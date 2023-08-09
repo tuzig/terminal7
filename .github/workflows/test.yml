@@ -1,22 +1,39 @@
-name: Terminal7-Tests
+name: Test
 
-on: push
+on:
+  workflow_dispatch:
+    inputs:
+      pbRef:
+        description: "Peerbook tag/branch/sha to deploy. Defaults to selected branch"
+        required: false
+        default: master
+      weRef:
+        description: "webexec tag/branch/sha to deploy. Defaults to selected branch"
+        required: false
+        default: master
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Node setup
+        uses: actions/setup-node@v2
         with:
           node-version: 16
-      - run: npm install --global yarn
-      - run: yarn install --frozen-lockfile
-      - run: yarn lint
-      - run: yarn test
-      - run: bash -x aatp/run
-      - name: Upload Test Results
-        if: always()
+      - name: Install yarn
+        run: npm install --global yarn
+      - name: Install dependecies
+        run: yarn install --frozen-lockfile
+      - name: lint
+        run: yarn lint
+      - name: Unit Tests
+        run: yarn test
+      - name: Acceptance Tests
+        run: PEERBOOK_REF="${{ github.event.inputs.pbRef }}" WEBEXEC_REF="${{ github.event.inputs.weRef }}" bash -x aatp/run
+      - name: Upload acceptance test results
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v3
         with:
           name: aatp-result

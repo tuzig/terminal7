@@ -30,20 +30,14 @@ import { Device } from '@capacitor/device'
 import { NativeBiometric } from "capacitor-native-biometric"
 import { RateApp } from 'capacitor-rate-app'
 
-import { PeerbookConnection } from './peerbook'
+
+import { PeerbookConnection, PB } from './peerbook'
 
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
 Thanks for choosing Terminal7. This is TWR, a local
-terminal used to log messages and get your input.
-Try typing 'help' to see what it can do.
-
-To use a real terminal you'll need a remote server.
-T7 can connect to a server using SSH or WebRTC.
-Our WebRTC server, webexec, is an open 
-source terminal server based on pion and written in go.
-In addition to WebRTC, webexec adds resilient sessions,
-behind-the-NAT connections and more.
+terminal used to control the terminal and log messages.
+Type 'hide' or 'help' to list available commands. 
 
 Enjoy!
 
@@ -52,13 +46,15 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 [theme]
 # foreground = "#00FAFA"
 # background = "#000"
-# selection = "#D9F505"
+# selectionBackground = "#D9F505"
+# selectionForeground = "#271D30"
 
 [exec]
 # shell = "*"
 
 [net]
-# timeout = 3000
+# peerbook = "api.peerbook.io"
+# timeout = 5000
 # retries = 3
 # ice_server = "stun:stun2.l.google.com:19302"
 # recovery_time = 4000
@@ -67,6 +63,8 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # leader = "a"
 # quickest_press = 1000
 # max_tabs = 10
+# max_panes = 7
+# min_pane_size = 0.04
 # cut_min_distance = 80
 # cut_min_speed_x = 2.5
 # by default cut_min_speed_y is set at 10 to avoid confusion with scroll
@@ -78,6 +76,10 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 # verification_ttl = 900000
 `
 
+function compactCert(cert) {
+    const ret = cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")
+    return ret
+}
 export class Terminal7 {
     DEFAULT_KEY_TAG = "dev.terminal7.keys.default"
     /*
@@ -85,7 +87,7 @@ export class Terminal7 {
      */
     constructor(settings) {
         settings = settings || {}
-        this.gates = new Map()
+        this.gates = []
         this.cells = []
         this.timeouts = []
         this.activeG = null
@@ -96,12 +98,14 @@ export class Terminal7 {
         this.certificates = null
         this.confEditor = null
         this.flashTimer = null
-        this.netStatus = null
+        this.netConnected = true
         this.logBuffer = CyclicArray(settings.logLines || 101)
         this.zoomedE = null
         this.pendingPanes = {}
         this.pb = null
         this.ignoreAppEvents = false
+        this.purchasesStarted = false
+        this.iceServers = settings.iceServers || null
     }
     showKeyHelp () {
         if (Date.now() - this.metaPressStart > 987) {
@@ -146,7 +150,7 @@ export class Terminal7 {
         document.getElementById("trash-button")
                 .addEventListener("click",
                     () =>  {
-                        if (this.activeG)
+                        if (this.activeG?.activeW?.activeP)
                             this.activeG.activeW.activeP.close()})
         document.getElementById("map-button")
                 .addEventListener("click", () => this.goHome())
@@ -162,13 +166,13 @@ export class Terminal7 {
                 .addEventListener("click", () => this.toggleHelp())
         document.getElementById("help-button")
                 .addEventListener("click", () => this.toggleHelp())
-        document.getElementById("divide-h")
-                .addEventListener("click", () =>  {
-                    if (this.activeG && this.activeG.activeW.activeP.sy >= 0.04)
+        const dH = document.getElementById("divide-h")
+        const dV = document.getElementById("divide-v")
+        dH.addEventListener("click", () =>  {
+                    if (this.activeG)
                         this.activeG.activeW.activeP.split("rightleft", 0.5)})
-        document.getElementById("divide-v")
-                .addEventListener("click", () =>  {
-                    if (this.activeG && this.activeG.activeW.activeP.sx >= 0.04)
+        dV.addEventListener("click", () =>  {
+                    if (this.activeG)
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
         document.getElementById('add-gate').addEventListener(
             'click', async (ev) => {
@@ -207,35 +211,24 @@ export class Terminal7 {
         })
         this.map = new T7Map()
         // Load gates from local storage
-        let gates
-        value = (await Preferences.get({key: 'gates'})).value
-        if (value) {
-            try {
-                gates = JSON.parse(value)
-            } catch(e) {
-                 terminal7.log("failed to parse gates", value, e)
-                gates = []
-            }
-            gates.forEach(g => {
-                g.store = true
-                this.addGate(g).e.classList.add("hidden")
-            })
-            this.map.refresh()
-        }
+        this.loadLocalGates()
         if (Capacitor.isNativePlatform())  {
             // this is a hack as some operation, like bio verification
             // fire two events
             App.addListener('appStateChange', state => {
                 const active =  state.isActive
-                if (this.lastActiveState == active)
+                if (this.lastActiveState == active) {
+                    this.log("app state event on unchanged state ignored")
                     return
+                }
                 this.lastActiveState = active
                 console.log("app state changed", this.ignoreAppEvents)
                 if (!active) {
-                    if (this.ignoreAppEvents) return
-                    // We're getting suspended. disengage.
-                    this.notify("🛋️ Disengaging", true)
-                    this.disengage()
+                    if (this.ignoreAppEvents) {
+                        terminal7.log("ignoring benched app event")
+                        return
+                    }
+                    this.updateNetworkStatus({connected: false}, false)
                 } else {
                     // We're back! puts us in recovery mode so that it'll
                     // quietly reconnect to the active gate on failure
@@ -257,30 +250,10 @@ export class Terminal7 {
         })
 
         // settings button and modal
-        var modal   = document.getElementById("settings-modal")
-        modal.addEventListener('click',
-            async () => {
-                document.getElementById("dotfile-button").classList.remove("on")
-                await this.clear()
-            }
-        )
         document.getElementById("dotfile-button")
-                .addEventListener("click", ev => this.toggleSettings(ev))
-        modal.querySelector(".close").addEventListener('click',
-            async () => {
-                document.getElementById("dotfile-button").classList.remove("on")
-                await this.clear()
-            }
-        )
-        modal.querySelector(".save").addEventListener('click',
-            () => this.wqConf())
-        modal.querySelector(".copy").addEventListener('click',
-            async () => {
-                var area = document.getElementById("edit-conf")
-                this.confEditor.save()
-                Clipboard.write({string: area.value})
-                await this.clear()
-            })
+                .addEventListener("click", () => this.map.shell.confEditor ?
+                    this.map.shell.closeConfig(false)
+                    : this.map.shell.runCommand("config", []))
         this.map.open().then(() => {
            this.goHome()
            setTimeout(async () => {
@@ -294,12 +267,14 @@ export class Terminal7 {
                     RateApp.requestReview()
            }, 100)
         })
-        Network.getStatus().then(s => {
-            this.updateNetworkStatus(s)
-            if (!s.connected) {
-                this.goHome()
-            }
-        })
+        this.pbConnect().finally(() =>
+            Network.getStatus().then(s => {
+                this.updateNetworkStatus(s)
+                if (!s.connected) {
+                    this.goHome()
+                }
+            })
+        )
     }
     /*
      * restoreState is a future feature that uses local storage to restore
@@ -316,7 +291,7 @@ export class Terminal7 {
                     reject()
                 else {
                     const state = JSON.parse(value)
-                    let gate = this.gates.get(state.gateId)
+                    let gate = this.gates[state.gateId]
                     if (!gate) {
                         console.log("Invalid restore state. Starting fresh", state)
                         this.notify("Invalid restore state. Starting fresh")
@@ -335,25 +310,48 @@ export class Terminal7 {
     pbClose() {
         if (this.pb) {
             this.pb.close()
-            this.pb = null
         }
     }
-    pbConnect() {
-        return new Promise((resolve) => {
-            if (!this.conf.peerbook || !this.conf.peerbook.email || 
-               (this.pb  && this.pb.isOpen())) {
-                resolve()
+    async pbConnect() {
+        return new Promise((resolve, reject) => {
+            const catchConnect = e => {
+                if (e =="Unregistered")
+                    this.notify(`${PB} You are unregistered, please \`subscribe\``)
+                else if (e != "Unauthorized") {
+                    terminal7.log("PB connect failed", e)
+                    this.notify(`${PB} Failed to connect, please try \`sub\``)
+                    this.notify("If the problem persists, `support`")
+                }
+                reject(e)
+            }
+
+            // do nothing when no subscription or already connected
+            if (this.pb) {
+                if ((this.pb.uid != "TBD")  && (this.pb.uid != "")) {
+                    this.pb.wsConnect().then(resolve).catch(reject)
+                    return
+                }
+                if (this.pb.isOpen())
+                    resolve()
+                else
+                    this.pb.connect().then(resolve).catch(catchConnect)
                 return
             }
             this.getFingerprint().then(fp => {
-                this.pb = new PeerbookConnection(fp,
-                    this.conf.peerbook.email,
-                    this.conf.peerbook.peer_name,
-                    this.conf.net.peerbook,
-                    this.conf.peerbook.insecure
-                )
+                this.pb = new PeerbookConnection({
+                    fp: fp,
+                    host: this.conf.net.peerbook,
+                    insecure: this.conf.peerbook && this.conf.peerbook.insecure,
+                    shell: this.map.shell
+                })
                 this.pb.onUpdate = (m) => this.onPBMessage(m)
-                this.pb.connect().then(resolve)
+                if (!this.purchasesStarted) {
+                    this.pb.startPurchases().then(() => 
+                        this.pb.connect().then(resolve).catch(catchConnect)
+                        // this.pb.updateCustomerInfo().then(resolve).catch(reject)
+                    ).catch(reject).finally(() => this.purchasesStarted = true)
+                } else
+                    this.pb.connect().then(resolve).catch(catchConnect)
             })
         })
     }
@@ -405,9 +403,7 @@ export class Terminal7 {
         this.confEditor = null
         if (this.pb &&
             ((this.pb.host != this.conf.net.peerbook) 
-             || (this.pb.peerName != this.conf.peerbook.peer_name)
-             || (this.pb.insecure != this.conf.peerbook.insecure)
-             || (this.pb.email != this.conf.peerbook.email))) {
+             || (this.pb.insecure != this.conf.peerbook.insecure))) {
             this.pbClose()
             this.pbConnect()
         }
@@ -430,12 +426,11 @@ export class Terminal7 {
         p.id = p.fp || p.name
         let g = new Gate(p)
         g.onlySSH = p.onlySSH
-        this.gates.set(p.id, g)
+        this.gates.push(g)
         g.open(this.e)
         if (onMap) {
             g.nameE = this.map.add(g)
             g.updateNameE()
-
         }
         return g
     }
@@ -480,7 +475,8 @@ export class Terminal7 {
         window.location.href = "#map"
         document.getElementById("map").classList.remove("hidden")
         document.title = "Terminal 7"
-        document.getElementById('log').classList.remove('hidden', 'show')
+        if (!document.getElementById("log").classList.contains("hidden"))
+            this.map.t0.focus()
     }
     /*
      * focus restores the focus to the ative pane, if there is one
@@ -502,13 +498,7 @@ export class Terminal7 {
         this.map.interruptTTY()
         this.map.t0.scrollToBottom()
         const formatted = `\x1B[2m${t}\x1B[0m ${message}`
-        if (this.map.shell.activeForm)
-            this.map.shell.printBelowForm(formatted)
-        else {
-            this.map.t0.write("\x1B[s\n\x1B[A\x1B[L") // save cursor, insert line
-            this.map.t0.writeln(formatted)
-            this.map.t0.write("\x1B[u\x1B[B") // restore cursor
-        }
+        this.map.shell.printAbove(formatted)
         if (!dontShow)
             this.map.showLog(true)
     }
@@ -530,18 +520,20 @@ export class Terminal7 {
      */
     disengage() {
         return new Promise(resolve => {
+            this.pbClose()
             var count = 0
-            if (this.gates.size > 0)
+            if (this.activeG && this.activeG.boarding)
+                this.notify("🌜 Benched", true)
+            if (this.gates.length > 0) {
                 this.gates.forEach(g => {
                     if (g.boarding) {
                         count++
                         g.disengage().then(() => {
-                            g.boarding = false
                             count--
                         })
                     }
                 })
-            this.pbClose()
+            }
             let callCB = () => terminal7.run(() => {
                 if (count == 0)
                     resolve()
@@ -551,33 +543,44 @@ export class Terminal7 {
             callCB()
         })
     }
-    updateNetworkStatus (status) {
+    async updateNetworkStatus (status, updateNetPopup = true) {
         let off = document.getElementById("offline").classList
-        this.netStatus = status
+        if (this.netConnected == status.connected)
+            return
+        this.netConnected = status.connected
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
-            off.add("hidden")
-            this.pbConnect().then(() => {   
-                const gate = this.activeG
-                if (gate) {
-                    this.notify("🌞 Recovering")
-                    this.map.shell.startWatchdog().catch(e => gate.handleFailure(e))
-                    this.recovering = true
-                    this.run(() => this.recovering = false, this.conf.net.recoveryTime)
-                    gate.reconnect()
-                        .then(() => {
-                            this.map.shell.stopWatchdog()
-                            this.map.showLog(false)
-                        }).catch(() => {
-                            this.map.shell.stopWatchdog()
-                            this.map.shell.runCommand("reset", [gate.name])
-                        })
-                }
-            })
+            if (updateNetPopup)
+                off.add("hidden")
+            const gate = this.activeG
+            const firstGate = (await Preferences.get({key: "first_gate"})).value
+            const toReconnect = gate && gate.boarding && (firstGate == "nope")
+            console.log("toReconnect", toReconnect, "firstGate", firstGate)
+            if (toReconnect ) {
+                this.notify("🌞 Recovering")
+                this.map.shell.startWatchdog().catch(() => {
+                    if (this.pb.isOpen())
+                        gate.notify("Timed out")
+                    else
+                        this.notify(`${PB} timed out, please try \`subscribe\``)
+                    gate.stopBoarding()
+                })
+            }
+            this.pbConnect().catch(e => this.log("pbConnect failed", e))
+                .finally(() => {
+                    if (toReconnect) {
+                        gate.reconnect()
+                            .catch(() => this.map.shell.runCommand("reset", [gate.name]))
+                            .finally(() =>  {
+                                this.recovering = false
+                                this.map.shell.stopWatchdog()
+                            })
+                    }
+                })
         } else {
-            off.remove("hidden")
-            // this.gates.forEach(g => g.session = null)
-            this.pbClose()
+            if (updateNetPopup)
+                off.remove("hidden")
+            this.disengage().then(() => this.recovering = true)
         }
     }
     loadConf(conf) {
@@ -587,6 +590,8 @@ export class Terminal7 {
         this.conf.ui = this.conf.ui || {}
         this.conf.ui.quickest_press = this.conf.ui.quickest_press || 1000
         this.conf.ui.max_tabs = this.conf.ui.max_tabs || 10
+        this.conf.ui.max_panes = this.conf.ui.max_panes || 7
+        this.conf.ui.min_pane_size = this.conf.ui.min_pane_size || 0.04
         this.conf.ui.leader = this.conf.ui.leader || "a"
         this.conf.ui.cutMinSpeedX = this.conf.ui.cut_min_speed_x || 2.5
         this.conf.ui.cutMinSpeedY = this.conf.ui.cut_min_speed_y || 10
@@ -594,10 +599,10 @@ export class Terminal7 {
         this.conf.ui.pinchMaxYVelocity = this.conf.ui.pinch_max_y_velocity || 0.1
         this.conf.ui.autoRestore = this.conf.ui.auto_restore || false
         this.conf.ui.verificationTTL = this.conf.ui.verification_ttl || 15 * 60 * 1000
+        this.conf.ui.subscribeTimeout = this.conf.ui.subscribe_timeout || 60 * 1000
 
         this.conf.net = this.conf.net || {}
-        this.conf.net.iceServer = this.conf.net.ice_server ||
-            "stun:stun2.l.google.com:19302"
+        this.conf.net.iceServer = this.conf.net.ice_server || []
         this.conf.net.peerbook = this.conf.net.peerbook ||
             "api.peerbook.io"
         if (this.conf.net.peerbook == "pb.terminal7.dev")
@@ -609,26 +614,31 @@ export class Terminal7 {
         this.conf.theme = this.conf.theme || {}
         this.conf.theme.foreground = this.conf.theme.foreground || "#00FAFA"
         this.conf.theme.background = this.conf.theme.background || "#000"
-        this.conf.theme.selection = this.conf.theme.selection || "#D9F505"
-/*
-            Device.getInfo()
-            .then(i =>
-                this.conf.peerbook.peer_name = `${i.name}'s ${i.model}`)
-            .catch(err => {
-                console.log("Device info error", err)
-                this.conf.peerbook.peer_name = "John Doe"
-            })
-            */
+        this.conf.theme.selectionBackground = this.conf.theme.selectionBackground || "#D9F505"
+        this.conf.theme.selectionForeground = this.conf.theme.selectionForeground || "#271D30"
+        if (conf.peerbook) {
+            this.conf.peerbook = {
+                insecure: conf.peerbook.insecure || false,
+            }
+            if (conf.peerbook.peerName)
+                this.conf.peerbook.peerName = conf.peerbook.peer_name
+            else
+                Device.getInfo().then(i =>
+                    this.conf.peerbook.peerName = `${i.name}'s ${i.model}`)
+                .catch(err => {
+                    console.log("Device info error", err)
+                    this.conf.peerbook.peerName = "John Doe"
+                })
+        } else
+            this.conf.peerbook = {insecure: false}
     }
-
 
     // gets the will formatted fingerprint from the current certificate
     getFingerprint() {
         // gets the certificate from indexDB. If they are not there, create them
         return new Promise((resolve, reject) => {
             if (this.certificates) {
-                var cert = this.certificates[0].getFingerprints()[0]
-                resolve(cert.value.toUpperCase().replaceAll(":", ""))
+                resolve(compactCert(this.certificates[0]))
                 return
             }
             openDB("t7", 1, { 
@@ -640,21 +650,26 @@ export class Terminal7 {
                 let tx = db.transaction("certificates"),
                     store = tx.objectStore("certificates")
                  store.getAll().then(certificates => {
-                     this.certificates = certificates
+                     if (certificates.length == 0) {
+                         console.log("got no certificates, generating", certificates)
+                         this.generateCertificate()
+                         .then(cert => resolve(compactCert(cert)))
+                         .catch(reject)
+                         return
+                     }
                      db.close()
-                     const cert = certificates[0].getFingerprints()[0]
-                     resolve(cert.value.toUpperCase().replaceAll(":", ""))
-                 }).catch(() => {
-                    this.generateCertificate()
-                    .then(cert => resolve(
-                        cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")))
-                    .catch(reject)
+                     this.certificates = certificates
+                     resolve(compactCert(certificates[0]))
+                 }).catch(e => {
+                     this.log("caught an error reading store", e)
+                     this.generateCertificate()
+                     .then(cert => resolve(compactCert(cert)))
+                     .catch(reject)
                 })
             }).catch(e => {
                 this.log(`got an error opening db ${e}`)
                 this.generateCertificate()
-                .then(cert => resolve(
-                    cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")))
+                .then(cert => resolve(compactCert(cert)))
                 .catch(reject)
             })
         })
@@ -716,16 +731,16 @@ export class Terminal7 {
             this.focus()
         // TODO: When at home remove the "on" from the home butto
     }
-    onPBMessage(data) {
-        this.log("got ws message", data)
-        const  m = JSON.parse(data)
-                
+    // handle incomming peerbook messages (coming over sebsocket)
+    async onPBMessage(m) {
+        this.log("got pb message", m)
         if (m["code"] !== undefined) {
             this.notify(`\uD83D\uDCD6  ${m["text"]}`)
             return
         }
         if (m["peers"] !== undefined) {
-            this.syncPBPeers(m["peers"])
+            this.gates = this.pb.syncPeers(this.gates, m.peers)
+            this.map.refresh()
             return
         }
         if (m["verified"] !== undefined) {
@@ -733,15 +748,29 @@ export class Terminal7 {
                 this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
             return
         }
-        const id = m.source_fp
-        var g = this.gates.get(id)
-        if (!g) {
-            terminal7.log("Got a pb message with unknown peer: " + id)
+        const fp = m.source_fp
+        // look for a gate where g.fp == fp
+        const myFP = await this.getFingerprint()
+        if (fp == myFP) {
             return
         }
+        let lookup =  this.gates.filter(g => g.fp == fp)
+
+        if (!lookup || (lookup.length != 1)) {
+            if (m["peer_update"] !== undefined) {
+                lookup =  this.gates.filter(g => g.name == m.peer_update.name)
+            }
+            if (!lookup || (lookup.length != 1)) {
+                terminal7.log("Got a pb message with unknown peer: ", fp)
+                return
+            }
+        }
+        const g = lookup[0]
 
         if (m["peer_update"] !== undefined) {
             g.online = m.peer_update.online
+            g.verified = m.peer_update.verified
+            g.fp = m.source_fp
             g.updateNameE()
             return
         }
@@ -856,7 +885,7 @@ export class Terminal7 {
             return
         if (gatePad) {
             const gate = gatePad.gate
-            const isExpand = e.classList.contains("expand-gate")
+            const isExpand = e.classList.contains("gate-edit")
             if (!gate)
                 return
             else {
@@ -866,8 +895,14 @@ export class Terminal7 {
                 if (deltaT < this.conf.ui.quickest_press) {
                     // that's for the refresh and static host add
                     if (isExpand) {
-                        this.map.shell.runCommand("edit", [gate.name])
-                    } else if (!gate.fp || gate.verified && gate.online) {
+                        if (gate.fp) {
+                            const insecure = this.conf.peerbook.insecure,
+                                schema = insecure?"http":"https"
+                            window.open(`${schema}://${this.conf.net.peerbook}`, "_blank")
+                        }
+                        else
+                            this.map.shell.runCommand("edit", [gate.name])
+                    } else {
                         await this.map.shell.runCommand("connect", [gate.name])
                     }
                 }
@@ -911,11 +946,12 @@ export class Terminal7 {
         this.gesture = null
     }
     async showGreetings() {
-        const  { greeted } = await Preferences.get({key: 'greeted'})
-        if (greeted == null) {
+        const greeted = (await Preferences.get({key: 'greeted'})).value
+        if (!greeted) {
             Preferences.set({key: "greeted", value: "yep"})
             this.map.tty(WELCOME)
         } else {
+            this.map.shell.printPrompt()
             if (!((window.matchMedia('(display-mode: standalone)').matches)
                 || (window.matchMedia('(display-mode: fullscreen)').matches)
                 || window.navigator.standalone
@@ -929,27 +965,6 @@ export class Terminal7 {
         }
   
     }
-    syncPBPeers(peers) {
-        peers.forEach(p => {
-            if (p.kind != "webexec")
-                return
-            var g = this.gates.get(p.fp)
-            if (g != undefined) {
-                g.online = p.online
-                g.name = p.name
-                g.verified = p.verified
-                g.updateNameE()
-            } else {
-                p.id = p.fp
-                g = new Gate(p)
-                this.gates.set(p.id, g)
-                g.nameE = this.map.add(g)
-                g.updateNameE()
-                g.open(this.e)
-            }
-        })
-        this.map.refresh()
-    }
     clearTempGates() {
         this.gates.forEach(g => {
             if (g.name.startsWith("temp_"))
@@ -957,23 +972,28 @@ export class Terminal7 {
         })
     }
     validateHostAddress(addr) {
-        return this.gates.has(addr) ? "Host already exists" : ""
+        const lookup = this.gates.filter(g => g.addr == addr)
+        return (lookup.length > 0)?"Gate with this address already exists" : ""
     }
     validateHostName(name) {
-        for (const [, gate] of this.gates) {
-            if (gate.name == name)
-                return "Name already taken"
-        }
-        return ""
+        const lookup = this.gates.filter(g => g.name == name)
+        return (lookup.length > 0)? "Name already exists" : ""
+    }
+    resetGates() {
+        if (this.activeG)
+            this.activeG.close()
+        this.gates.forEach(g => {
+            g.e.remove()
+            this.map.remove(g)
+            // remove g from the gates array
+        })
+        this.gates = []
+        this.storeGates()
     }
     async factoryReset() {
         // setting up reset cert events
         return new Promise(resolve => {
-            this.gates.forEach(g => {
-                g.e.remove()
-                this.map.remove(g)
-                this.gates.delete(g.id)
-            })
+            this.resetGates()
             Preferences.clear().then(() => 
                 Preferences.set({key: 'dotfile', value: DEFAULT_DOTFILE}))
             const d = TOML.parse(DEFAULT_DOTFILE)
@@ -1031,16 +1051,15 @@ export class Terminal7 {
                 title: "Access Private Key",
             })
         } catch(e) {
-            if (e.message == "Authentication not available")
-                this.notify("Please turn on face id for 🔑 based auth")
-            // this.ignoreAppEvents = false
+            this.notify(`Biometric failed: ${e.message}`)
             this.ignoreAppEvents = false
-            return {public:"UNAVAILABLE", private:"UNAVAILABLE"}
+            throw "Biometric failed: " + e.message
         }
         console.log("Got biometric verified ", verified)
+        this.lastActiveState = false
         // wait for the app events to bring the ignoreAppEvents to false
         while (this.ignoreAppEvents)
-            await (() => { return new Promise(r => setTimeout(r, 20)) })()
+            await (() => { return new Promise(r => setTimeout(r, 50)) })()
 
         let publicKey
         let privateKey
@@ -1065,5 +1084,62 @@ export class Terminal7 {
         this.keys = {publicKey: publicKey, privateKey: privateKey}
         this.lastIdVerify = now
         return this.keys
+    }
+    async getDotfile() {
+        return (await Preferences.get({key: "dotfile"})).value || DEFAULT_DOTFILE
+    }
+    saveDotfile(text) {
+        this.cells.forEach(c => {
+            if (typeof(c.setTheme) == "function")
+                c.setTheme(this.conf.theme)
+        })
+        if (this.pb &&
+            ((this.pb.host != this.conf.net.peerbook) 
+             || (this.pb.peerName != this.conf.peerbook.peer_name)
+             || (this.pb.insecure != this.conf.peerbook.insecure)
+             || (this.pb.email != this.conf.peerbook.email))) {
+            this.pbClose()
+            this.pbConnect()
+        }
+        terminal7.loadConf(TOML.parse(text))
+        return Preferences.set({key: "dotfile", value: text})
+    }
+    async pbVerify() {
+        const fp = await this.getFingerprint()
+        const schema = this.insecure?"http":"https"
+        let response
+        try {
+            response = await fetch(`${schema}://${this.conf.net.peerbook}/verify`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({fp: fp}),
+            })
+        } catch(e) {
+            console.log("Error verifying peerbook", e)
+            return {verified: false}
+        }
+        const ret = await response.json()
+        terminal7.log("Peerbook verification response", ret)
+        return ret
+    }
+    async loadLocalGates() {
+        let gates
+        const { value } = await Preferences.get({key: 'gates'})
+
+        if (value) {
+            try {
+                gates = JSON.parse(value)
+            } catch(e) {
+                 terminal7.log("failed to parse gates", value, e)
+                gates = []
+            }
+            gates.forEach(g => {
+                g.store = true
+                this.addGate(g).e.classList.add("hidden")
+            })
+            this.map.refresh()
+        }
     }
 }

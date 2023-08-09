@@ -1,5 +1,4 @@
-import { Terminal } from "@tuzig/xterm"
-import { Clipboard } from "@capacitor/clipboard"
+import { Terminal } from "xterm"
 
 export type Fields = Array<{
     prompt:string,
@@ -20,7 +19,7 @@ export class Form {
     fields: Fields
     results: Results
     hidden: boolean
-    onKey: (ev: KeyboardEvent) => void
+    onKey: ((key: string) => void) | null
 
     constructor(fields: Fields) {
         this.fields = fields
@@ -39,8 +38,7 @@ export class Form {
             t.writeln("[Use ⇅ to move, space to select, → to all, ← to none]")
             t.writeln(this.fields.map(f => `[ ] ${f.prompt}: ${f.default}`).join('\n'))
             t.write(`\x1B[2G\x1B[${len}A`) // move cursor to first field
-            this.onKey = ev => {
-                const key = ev.key
+            this.onKey = key => {
                 const char = !enabled[current] ? 'X' : ' '
                 switch (key) {
                     case "ArrowUp":
@@ -98,8 +96,7 @@ export class Form {
             t.writeln(this.fields.map(f => `  ${f.prompt}`).join('\n'))
             t.write(`\x1B[G\x1B[${len}A`) // move cursor to first field
             t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[G`) // bold first field
-            this.onKey = ev => {
-                const key = ev.key
+            this.onKey = key => {
                 switch (key) {
                     case "ArrowUp":
                         if (current > 0) {
@@ -139,8 +136,7 @@ export class Form {
             this.reject = reject
             this.writeCurrentField(t)
             setTimeout(() => t.focus(), 0)
-            this.onKey  = ev => {
-                const key = ev.key
+            this.onKey  = key => {
                 this.hidden = this.fields[this.currentField].password
                 switch (key) {
                     case "Backspace":
@@ -158,15 +154,6 @@ export class Form {
                         }
                         break
                     default:
-                        if ((ev.ctrlKey || ev.metaKey) && (key == 'v')) {
-                            Clipboard.read().then(res => {
-                                if (res.type == 'text/plain') {
-                                    this.field += res.value
-                                    if (!this.hidden)
-                                        t.write(res.value)
-                                }
-                            })
-                        }
                         if (key.length == 1) { // make sure the key is a char
                             this.field += key
                             if (!this.hidden)
@@ -174,6 +161,18 @@ export class Form {
                         }
                 }
             }
+            setTimeout(() => t.focus(), 0)
+        })
+    }
+
+    waitForKey(t: Terminal) {
+        this.currentField = 0
+        return new Promise((resolve, reject) => {
+            t.write("\nPress any key to continue...")
+            this.onKey = key => {
+                resolve(key)
+            }
+            this.reject = reject
             setTimeout(() => t.focus(), 0)
         })
     }
@@ -188,7 +187,7 @@ export class Form {
             valid = false
         }
         else if (this.field && current.values && current.values.indexOf(this.field) == -1) {
-            t.writeln(`${current.prompt} must be one of: ${current.values.join(', ')}`)
+            t.writeln(`Value must be one of: ${current.values.join(', ')}`)
             valid = false
         }
         else if (this.field && current.validator) {

@@ -11,6 +11,7 @@ export default defineConfig({
       reporters: "verbose",
       globals: true,
       exclude: [ ...configDefaults.exclude, "aatp/*/*" ],
+      setupFiles: "vitest.setup.ts"
   },
   plugins: [
     VitePWA({

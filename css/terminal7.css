@@ -1,6 +1,6 @@
 /*
  * Main colors:
- * dark yellow - #373702
+ * dark yellow - #373702: use var(--dark-border)
  * magenta - #F952F9 use var(--local-border)
  * light blue - #00FAFA: use var(--text-color)
  * green - #00FA00: use var(--inidcator-color)
@@ -15,6 +15,8 @@
     --background: #271D30;
     --text-background: #11051E;
     --text-offline: #004444;
+    --pane-background: black;
+    --dark-border: #373702;
 }
 @font-face {
     font-family: "FiraSans";
@@ -84,14 +86,15 @@ button {
   */
 }
 .text-button, #gates button {
-    display: inline-block;
+    display: flex;
     cursor: pointer;
-    padding: 0.35em 1.2em;
     margin: 0 0.3em 0.3em 0;
     border-color: var(--local-border);
     border-radius: 0.15em;
     font-weight: 300;
     font-size: 20px;
+    justify-content: center;
+    align-items: center;
 } 
 dd { display: visible; }
 .border, .text-button {
@@ -127,7 +130,7 @@ a {
     margin-bottom: 1em;
 }
 .modal nav:not(.navtext) { 
-    border-top: 1px #373702 solid;
+    border-top: 1px var(--dark-border) solid;
 }
 .modal nav { 
     clear: both;
@@ -149,7 +152,7 @@ a {
     margin-right: 1em;
 }
 .keys-help tr {
-    border-bottom: 1px solid #373702;
+    border-bottom: 1px solid var(--dark-border);
 }
 .keys-help tr:last-child {
     border-bottom: none;
@@ -167,8 +170,8 @@ a {
     overflow: hidden;
     -webkit-mask-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAA5JREFUeNpiYGBgAAgwAAAEAAGbA+oJAAAAAElFTkSuQmCC); /* this fixes the overflow:hidden in Chrome/Opera */
     box-sizing: border-box;
-    background-color: black;
-    border: 1px solid #373702;
+    background-color: var(--pane-background);
+    border: 1px solid var(--dark-border);
     border-radius: 6px;
     text-align: left;
 }
@@ -195,7 +198,7 @@ a {
 nav button {
     flex: 1;
     cursor: pointer;
-    border-right: 2px solid #373702;
+    border-right: 2px solid var(--dark-border);
     font-size: 20px;
 }
 nav:not(.navtext) button:last-child {
@@ -220,7 +223,7 @@ nav {
     display: flex;
     align-content: stretch;
     border: 1px solid var(--local-border);
-    background-color: black;
+    background-color: var(--pane-background);
     border-radius: 0 0 12px 12px;
     min-height: min-content;
     overflow-x: auto;
@@ -238,7 +241,7 @@ nav::-webkit-scrollbar {
 }
 .tabbar a {
     flex: 1 0 auto; 
-    border-right: 1px solid #373702;
+    border-right: 1px solid var(--dark-border);
     text-align: center;
     font-size: 18px;
     line-height: 39px;
@@ -250,12 +253,12 @@ nav::-webkit-scrollbar {
 #navbar .on { text-shadow: var(--remote-border) 1px 0 10px; }
 .failed { color: var(--local-border) !important; }
 .warn { color: #FAFA00 !important; }
-.off { color: #373702; }
+.off { color: var(--dark-border); }
 /* vertical align the nav bar buttons */
 .tabbar {
     left: 0; 
     bottom: 51pt;
-    color: #373702;
+    color: var(--dark-border);
     position: fixed;
 }
 .windows-container {
@@ -433,43 +436,47 @@ label {
     left: 0;
     background-color: inherit;
 }
-#log-container {
+#log-minimized {
     width: 1200px;
+    cursor: pointer;
     position: relative;
     margin: 0 auto;
 }
-#log {
+#twr {
     position: absolute;
-    left: 938px;
+    background-color: var(--pane-background);
+    z-index: 5;
+    left: 966px;
     top: 93px;
     margin: 0;
-    padding: 20px;
-    z-index: 5;
-    transition: transform .75s ease, scale .75s ease;
-    opacity: 0.8;
+    padding: 0;
+    width: 42px;
+    height:42px;
+    line-height: 42px;
+    border: 1px solid var(--local-border);
+    border-radius: 3px;
+}
+#log {
+    background-color: var(--pane-background);
+    position: fixed;
+    margin: 2vmax;
+    top: 50%;
+    left: 50%;
+    transform: translate(-54%, -60%);
     overflow: hidden;
-    border: 5px solid var(--local-border);
-    background-color: black;
-    transform: scale(0.18);
-    width: 90%;
-    max-width: 540px;
-    border-radius: 33%;
-    height: 410px;
-    max-height: 80vh;
-    transform-origin: top left;
+    z-index: 5;
+    opacity: 0.8;
+    width: 540px;
+    border: 1px solid var(--local-border);
+    border-radius: 7px;
 }
 #log>div {
-    padding: 0;
+    padding: 0.4em;
     height: 100%;
     width: 100%;
 }
-#log.show {
-    transform: translate(-112.5%,8%) scale(1);
-    border: 1px solid var(--local-border);
-    border-radius: 20%;
-}
 @media (max-width: 600px) {
-    #log.show {
+    #log {
         width: 90vw;
     }
 }
@@ -489,7 +496,7 @@ label {
 }
 #indicators i, #indicators p {
     cursor: pointer;
-    border: 1px solid #373702;
+    border: 1px solid var(--dark-border);
     float: right;
     text-align: center;
     padding: 0.2em;
@@ -678,6 +685,17 @@ audio { display: none; }
     height: 110px;
     float: left;
     padding: 38px 26px;
+    display: flex;
+}
+.gate-name {
+    width: 80%;
+    border-right: 2px solid var(--dark-border);
+}
+.gate-edit {
+    width: 20%;
+    height: 100%;
+    position: relative;
+    padding-right: 20%;
 }
 #map .text-button, .empty-pad div  {
     width: 100%;
@@ -699,8 +717,7 @@ audio { display: none; }
     padding: 0;
     clear: both;
 }
-button.boarding  {
-    font-weight: bold;
+div.boarding  {
     text-shadow: var(--remote-border) 1px 0 10px;
 }
 #changelog {
@@ -740,10 +757,26 @@ button.boarding  {
 	right: 2%;
 	text-decoration: none;
 }
+#title-short {
+  display: none;
+  letter-spacing: 0.1em;
+}
+@media (max-width: 600px) {
+    #title-short {
+        display: block;
+    }
+    #title-long {
+        display: none;
+    }
+}
 .expand-gate {
     display: block;
+    position: absolute;
     float:right;
     text-shadow: none;
+    transform: translate(50%, -50%);
+    top: 50%;
+    pointer-events: none;
 }
 .tabbar-search .not-found {
     position: relative;
@@ -766,5 +799,15 @@ video {
 }
 #capslock-indicator > i {
     font-size: 1em;
+}
+#edit-conf {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--text-background);
+    opacity: 0.8;
+    z-index: 3;
 }
 

@@ -17,7 +17,8 @@ export enum Failure {
     Aborted='Aborted',
     KeyRejected='Key Rejected',
     WrongAddress='Wrong Address',
-    DataChannelLost="Data Channel Lost"
+    DataChannelLost="Data Channel Lost",
+    FailedToConnect="Failed To Connect",
 }
 
 export interface Event {
@@ -43,7 +44,7 @@ export interface Session {
     // for reconnect
     openChannel(id: ChannelID): Promise<Channel>
     // for new channel
-    openChannel(cmd: string, parent?: ChannelID, sx?: number, sy?: number):
+    openChannel(cmd: string | string[], parent?: ChannelID, sx?: number, sy?: number):
         Promise<Channel>
     close(): void
     getPayload(): Promise<string | null>

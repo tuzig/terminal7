@@ -17,14 +17,29 @@ project(':capacitor-clipboard').projectDir = new File('../node_modules/@capacito
 include ':capacitor-device'
 project(':capacitor-device').projectDir = new File('../node_modules/@capacitor/device/android')
 
+include ':capacitor-keyboard'
+project(':capacitor-keyboard').projectDir = new File('../node_modules/@capacitor/keyboard/android')
+
 include ':capacitor-network'
 project(':capacitor-network').projectDir = new File('../node_modules/@capacitor/network/android')
 
-include ':capacitor-storage'
-project(':capacitor-storage').projectDir = new File('../node_modules/@capacitor/storage/android')
+include ':capacitor-preferences'
+project(':capacitor-preferences').projectDir = new File('../node_modules/@capacitor/preferences/android')
+
+include ':capacitor-status-bar'
+project(':capacitor-status-bar').projectDir = new File('../node_modules/@capacitor/status-bar/android')
+
+include ':capgo-capacitor-purchases'
+project(':capgo-capacitor-purchases').projectDir = new File('../node_modules/@capgo/capacitor-purchases/android')
 
 include ':robingenz-capacitor-background-task'
 project(':robingenz-capacitor-background-task').projectDir = new File('../node_modules/@robingenz/capacitor-background-task/android')
 
+include ':capacitor-native-biometric'
+project(':capacitor-native-biometric').projectDir = new File('../node_modules/capacitor-native-biometric/android')
+
+include ':capacitor-rate-app'
+project(':capacitor-rate-app').projectDir = new File('../node_modules/capacitor-rate-app/android')
+
 include ':capacitor-ssh-plugin'
-project(':capacitor-ssh-plugin').projectDir = new File('../../capacitor-ssh-plugin/android')
+project(':capacitor-ssh-plugin').projectDir = new File('../node_modules/capacitor-ssh-plugin/android')

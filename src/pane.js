@@ -5,7 +5,7 @@
  *  License: GPLv3
  */
 import { Cell } from './cell.js'
-import { Terminal } from '@tuzig/xterm'
+import { Terminal } from 'xterm'
 import { Clipboard } from '@capacitor/clipboard'
 import { Preferences } from '@capacitor/preferences'
 import { FitAddon } from 'xterm-addon-fit'
@@ -17,7 +17,7 @@ import { NativeAudio } from '@capacitor-community/native-audio'
 
 import { Failure } from './session'
 
-import XtermWebfont from 'xterm-webfont'
+import XtermWebfont from '@liveconfig/xterm-webfont'
 
 const REGEX_SEARCH = false,
     COPYMODE_BORDER_COLOR = "#F952F9",
@@ -26,7 +26,7 @@ const REGEX_SEARCH = false,
         regex: REGEX_SEARCH,
         wholeWord: false,
         incremental: false,
-        caseSensitive: true
+        caseSensitive: true,
     }
 
 
@@ -43,6 +43,8 @@ export class Pane extends Cell {
         this.cmAtEnd = null
         this.cmCursor = null
         this.cmMarking = false
+        this.cmSelection = null
+        this.cmDecorations = []
         this.dividers = []
         this.flashTimer = null
         this.aLeader = false
@@ -74,6 +76,7 @@ export class Pane extends Cell {
             theme: this.theme,
             rows:24,
             cols:80,
+            allowProposedApi: true,
         })
         this.fitAddon = new FitAddon()
         this.searchAddon = new SearchAddon()
@@ -92,18 +95,16 @@ export class Pane extends Cell {
         this.t.loadAddon(this.fitAddon)
         this.t.loadAddon(this.searchAddon)
         this.t.loadAddon(this.WebLinksAddon)
+        const webGLAddon = new WebglAddon()
+        webGLAddon.onContextLoss(() => {
+            terminal7.log("lost context")
+            webGLAddon.dispose()
+        })
 
         this.createDividers()
         this.t.onSelectionChange(() => this.selectionChanged())
         this.t.loadWebfontAndOpen(con).then(() => {
-            const webGLAddon = new WebglAddon()
-            webGLAddon.onContextLoss(() => {
-                console.log("lost context")
-                  webGLAddon.dispose()
-            })
-            try {
-                this.t.loadAddon(webGLAddon)
-            } catch (e) { console.log("no webgl: " +e.toString()) }
+            this.t.loadAddon(webGLAddon)
             this.t.textarea.tabIndex = -1
             this.t.attachCustomKeyEventHandler(ev => {
                 var toDo = true
@@ -145,6 +146,13 @@ export class Pane extends Cell {
                 } else
                     this.d.send(d)
             })
+            this.t.element.addEventListener('mouseup', () => {
+                if (this.cmSelection) {
+                    this.copySelection()
+                    this.t.clearSelection()
+                    this.cmDecorationsClear()
+                }
+            })
             this.t.onBell(() => NativeAudio.play({ assetId: "bell" }))
             this.resizeObserver.observe(this.e);
             this.fit(pane => { 
@@ -157,7 +165,7 @@ export class Pane extends Cell {
         return this.t
     }
     setTheme(theme) {
-        this.t.setOption("theme", theme)
+        this.t.options.theme = theme
     }
     /*
      * Pane.scale is used to change the pane's font size
@@ -166,7 +174,7 @@ export class Pane extends Cell {
         this.fontSize += by
         if (this.fontSize < 6) this.fontSize = 6
         else if (this.fontSize > 30) this.fontSize = 30
-        this.t.setOption('fontSize', this.fontSize)
+        this.t.options.fontSize = this.fontSize
         this.fit()
     }
 
@@ -218,6 +226,7 @@ export class Pane extends Cell {
      * Returns the new pane.
      */
     split(dir, s) {
+        if (!this.isSplittable(dir)) return
         var sx, sy, xoff, yoff, l
         // if the current dir is `TBD` we can swing it our way
         if (typeof s == "undefined")
@@ -372,6 +381,9 @@ export class Pane extends Cell {
         if (this.copyMode) {
             this.copyMode = false
             this.e.style.borderColor = FOCUSED_BORDER_COLOR
+            this.cmDecorationsClear()
+            this.cmSelection = null
+            this.searchAddon.clearDecorations()
             this.t.clearSelection()
             this.t.scrollToBottom()
             if (this.zoomed)
@@ -397,8 +409,7 @@ export class Pane extends Cell {
         this.t7.log(`Handling meta key ${ev.key}`)
         switch (ev.key) {
         case "c":
-            if (this.t.hasSelection()) 
-                this.copySelection()
+            this.copySelection()
             break
         case "z":
             f = () => this.toggleZoom()
@@ -476,7 +487,7 @@ export class Pane extends Cell {
         const notFound = this.gate.e.querySelector(".not-found")
         if (searchTerm) {
             this.cmAtEnd = null
-            this.t.setOption("selectionStyle", "plain")
+            // this.t.options.selectionStyle = "plain"
             this.searchTerm = searchTerm
         }
 
@@ -486,6 +497,7 @@ export class Pane extends Cell {
             else {
                 notFound.classList.add("hidden")
                 this.enterCopyMode(true)
+                this.markSelection()
             }
         }
     }
@@ -493,7 +505,7 @@ export class Pane extends Cell {
         const notFound = this.gate.e.querySelector(".not-found")
         if (searchTerm) {
             this.cmAtEnd = null
-            this.t.setOption("selectionStyle", "plain")
+            // this.t.options.selectionStyle = "plain"
             this.searchTerm = searchTerm
         }
 
@@ -503,8 +515,17 @@ export class Pane extends Cell {
             else {
                 notFound.classList.add("hidden")
                 this.enterCopyMode(true)
+                this.markSelection()
             }
         }
+    }
+    markSelection() {
+        const selection = this.t.getSelectionPosition()
+        if (!selection)
+            return
+        this.cmCursor = { x: selection.start.x, y: selection.start.y }
+        this.cmSelectionUpdate({ startRow: selection.start.y, endRow: selection.end.y,
+            startColumn: selection.start.x, endColumn: selection.end.x - 1 })
     }
     /*
      * createDividers creates a top and left educationsl dividers.
@@ -579,21 +600,29 @@ export class Pane extends Cell {
     }
     // listening for terminal selection changes
     selectionChanged() {
-        const selection = this.t.getSelectionPosition()
-        if (selection != null) {
-            this.copySelection()
-            this.t.clearSelection()
-        }
+        this.markSelection()
+        return
     }
     copySelection() {
-        const lines = this.t.getSelection().split('\n'),
-            linesFormatted = lines.map(l => l.trimEnd())
-    
-        return Clipboard.write({string: linesFormatted.join('\n')})
+        if (this.t.hasSelection()) {
+            return Clipboard.write({string: this.t.getSelection()})
+        }
+        if (!this.cmSelection)
+            return
+
+        const lines = []
+        for (let line = this.cmSelection.startRow; line <= this.cmSelection.endRow; line++) {
+            const lineText = this.t.buffer.active.getLine(line).translateToString(true)
+            const start = line == this.cmSelection.startRow ? this.cmSelection.startColumn : 0
+            const end = line == this.cmSelection.endRow ? this.cmSelection.endColumn : lineText.length
+            const selectedText = lineText.slice(start, end)
+            lines.push(selectedText)
+        }
+        return Clipboard.write({string: lines.join('\n')})
     }
     handleCMKey(key) {
         var x, y, newX, newY,
-            selection = this.t.getSelectionPosition(),
+            selection = this.cmSelection,
             line
         // chose the x & y we're going to change
         if ((!this.cmMarking) || (selection == null)) {
@@ -690,10 +719,8 @@ export class Pane extends Cell {
                 this.cmSelectionUpdate(selection)
                 break
             case "Enter":
-                if (this.t.hasSelection())
-                    this.copySelection().then(this.exitCopyMode())
-                else
-                    this.exitCopyMode();
+                this.copySelection()
+                this.exitCopyMode();
                 break
             case '/':
                 this.showSearch(true)
@@ -724,7 +751,7 @@ export class Pane extends Cell {
                 break
             case 'ArrowDown':
             case 'j':
-                if (y < this.t.buffer.active.baseY + this.t.rows)
+                if (y < this.t.buffer.active.baseY + this.t.rows - 1)
                     newY = y + 1
                 if (this.cmAtEnd === null)
                     this.cmAtEnd = true
@@ -848,7 +875,9 @@ export class Pane extends Cell {
                     ((newY == selection.endRow)
                      && (newX > selection.endColumn))) {
                     this.cmAtEnd = true
+                    selection.startRow = selection.endRow
                     selection.endRow = newY
+                    selection.startColumn = selection.endColumn
                     selection.endColumn = newX
                 } else {
                     selection.startColumn = newX
@@ -860,35 +889,76 @@ export class Pane extends Cell {
                 (newY < this.t.buffer.active.viewportY)) {
                 let scroll = newY - this.t.buffer.active.viewportY
                 this.t.scrollLines(scroll, true)
-                console.log(scroll, this.t.buffer.active.viewportY, this.t.buffer.active.baseY)
             }
         }
     }
     cmInitCursor() {
-        var selection = this.t.getSelectionPosition()
-        if (selection) {
-            this.cmCursor = {
-                x: this.cmAtEnd?selection.endColumn:selection.startColumn,
-                y: this.cmAtEnd?selection.endRow:selection.startRow
-            }
+        if (this.cmSelection)
             return
-        }
         const buffer = this.t.buffer.active
         this.cmCursor = {x: buffer.cursorX,
                          y: buffer.cursorY + buffer.viewportY}
     }
+    cmMark() {
+        this.cmDecorationsClear()
+        const x1 = this.cmSelection.startColumn,
+            x2 = this.cmSelection.endColumn,
+            y1 = this.cmSelection.startRow,
+            y2 = this.cmSelection.endRow
+        const baseY = this.t.buffer.active.baseY + this.t.buffer.active.cursorY,
+            rowLength = this.t.cols,
+            colors = {
+                backgroundColor: '#D9F505',
+                foregroundColor: '#271D30'
+            }
+        const m1 = this.t.registerMarker(y1 - baseY)
+        if (y1 == y2) {
+            this.cmDecorations.push(this.t.registerDecoration({
+                marker: m1,
+                x: x1,
+                width: x2 - x1 + 1,
+                ...colors
+            }))
+            return
+        }
+        this.cmDecorations.push(this.t.registerDecoration({
+            marker: m1,
+            x: x1,
+            width: rowLength - x1,
+            ...colors,
+        }))
+        for (let i = y1 + 1; i < y2; i++) {
+            const m = this.t.registerMarker(i - baseY)
+            this.cmDecorations.push(this.t.registerDecoration({
+                marker: m,
+                x: 0,
+                width: rowLength,
+                ...colors,
+            }))
+        }
+        const m2 = this.t.registerMarker(y2 - baseY)
+        this.cmDecorations.push(this.t.registerDecoration({
+            marker: m2,
+            x: 0,
+            width: x2 + 1,
+            ...colors,
+        }))
+    }
+    cmDecorationsClear() {
+        this.cmDecorations.forEach(d => d.dispose())
+        this.cmDecorations = []
+    }
     cmSelectionUpdate(selection) {
-        if (this.cmAtEnd == null)
-            this.t.setOption("selectionStyle", "plain")
-        else
-            this.t.setOption("selectionStyle", this.cmAtEnd?"mark-end":"mark-start")
         // maybe it's a cursor
         if (!this.cmMarking) {
             console.log("using selection to draw a cursor at", this.cmCursor)
-            this.t.select(this.cmCursor.x, this.cmCursor.y, 1)
-            return
-        }
-        if (!this.cmAtEnd) {
+            selection = {
+                startRow: this.cmCursor.y,
+                startColumn: this.cmCursor.x,
+                endRow: this.cmCursor.y,
+                endColumn: this.cmCursor.x
+            }
+        } else if (!this.cmAtEnd) {
             if (selection.startRow > selection.endRow) {
                 selection.endRow = selection.startRow
             }
@@ -910,7 +980,10 @@ export class Pane extends Cell {
         const rowLength = this.t.cols
         let selectionLength = rowLength*(selection.endRow - selection.startRow) + selection.endColumn - selection.startColumn
         if (selectionLength == 0) selectionLength = 1
-        this.t.select(selection.startColumn, selection.startRow, selectionLength)
+
+
+        this.cmSelection = selection
+        this.cmMark()
     }
     enableSearchButtons() {
         const se = this.gate.e.querySelector(".search-box")
@@ -953,16 +1026,34 @@ export class Pane extends Cell {
             const v = document.createElement("video");
             this.e.querySelector("div").classList.add("hidden")
             this.e.prepend(v)
-            navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-            .then((stream) => {
-                v.srcObject = stream
-                v.addEventListener("loadedmetadata", () => v.play())
-			})
-			.catch(e => this.t7.log("mediaDevices error", e))
+            navigator.permissions.query({name: 'camera'}).then(result => {
+                if (result.state == "prompt") {
+                    terminal7.log("camera permission prompt")
+                    terminal7.ignoreAppEvents = true
+                }
+                navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+                    .then((stream) => {
+                        v.srcObject = stream
+                        v.addEventListener("loadedmetadata", () => v.play())
+                    })
+                    .catch(e => this.t7.log("mediaDevices error", e))
+            })
 		} else {
             button.classList.remove("on")
             this.e.querySelector("div").classList.remove("hidden")
             this.focus()
         }
     }   
+    /* receives a dir: "topbottom" or "rightleft"
+     * and returns whether or not the pane can be split in the direction
+     */
+    isSplittable(dir) {
+        const min = this.t7.conf.ui.min_pane_size
+        if (this.w.rootLayout.numPanes > this.t7.conf.ui.max_panes)
+            return false
+        else if (dir == "topbottom")
+            return this.sx >= min
+        else if (dir == "rightleft")
+            return this.sy >= min
+    }
 }

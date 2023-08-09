@@ -7,6 +7,12 @@
 	"plugins": {
 		"SplashScreen": {
 			"launchShowDuration": 0
+		},
+		"Keyboard": {
+			"resize": "native"
+		},
+		"CapacitorHttp": {
+			"enabled": true
 		}
 	},
 	"cordova": {

@@ -2,35 +2,33 @@ import { test, expect, Page, BrowserContext } from '@playwright/test'
 import waitPort from 'wait-port'
 import * as redis from 'redis'
 
+import { reloadPage, connectFirstGate, sleep, webexecReset } from '../common/utils'
+
 const url = process.env.LOCALDEV?"http://localhost:3000":"http://terminal7"
 
 test.describe('terminal7 session', ()  => {
 
-    const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
-    const connectGate = async () => {
-        const btns = page.locator('#gates button')
-        await page.screenshot({ path: `/result/zero.png` })
-        await expect(btns).toHaveCount(2)
-        await btns.first().dispatchEvent('pointerdown')
-        await sleep(50)
-        await btns.first().dispatchEvent('pointerup')
-    }
+    let page: Page
+    let context: BrowserContext
 
-    let page: Page,
-        context: BrowserContext
-
-    test.afterAll(async () => await context.close() )
+    test.afterAll(async () => {
+        // delete the user and peer from redis
+        const redisClient = redis.createClient({url: 'redis://redis'})
+        redisClient.on('error', err => console.log('Redis client error', err))
+        await redisClient.connect()
+        await redisClient.flushAll()
+        await redisClient.quit()
+        await context.close()
+    })
     test.beforeAll(async ({ browser }) => {
         context = await browser.newContext()
         page = await context.newPage()
         page.on('console', (msg) => console.log('console log:', msg.text()))
         page.on('pageerror', (err: Error) => console.log('PAGEERROR', err.message))
-        await waitPort({host:'peerbook', port:17777})
         await waitPort({host:'terminal7', port:80})
         const response = await page.goto(url)
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
-        await page.evaluate(async () => {
-            window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
+        await context.addInitScript(async () => {
             localStorage.setItem("CapacitorStorage.dotfile",`
 [theme]
 foreground = "#00FAFA"
@@ -41,9 +39,8 @@ flash = 100
 [exec]
 shell = "bash"
 [net]
-timeout = 3000
+timeout = 8000
 retries = 3
-ice_server = "stun:stun2.l.google.com:19302"
 peerbook = "peerbook:17777"
 [ui]
 quickest_press = 1000
@@ -52,41 +49,55 @@ cut_min_distance = 80
 cut_min_speed = 2.5
 pinch_max_y_velocity = 0.1
 [peerbook]
-email = "joe@example.com"
+user_id = "123456"
 name = "client"
-insecure = true`)
+insecure = true
+`)
         })
+        await reloadPage(page)
+        await page.evaluate(() => localStorage.removeItem("CapacitorStorage.first_gate"))
         // first page session for just for storing the dotfiles
-        await page.reload({waitUntil: "networkidle"})
-        await page.evaluate(async () => {
-            window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
-        })
-        // add terminal7 initializtion and globblas
+        await waitPort({host:'peerbook', port:17777})
         await waitPort({host:'webexec', port:7777})
-
+        await waitPort({host:'revenuecat', port:1080})
         const redisClient = redis.createClient({url: 'redis://redis'})
         redisClient.on('error', err => console.log('Redis client error', err))
         await redisClient.connect()
-        let keys = []
-        while (keys.length < 3) {
-            keys = await redisClient.keys('peer*')
-            sleep(200)
-        }
+        redisClient.hSet("u:123456", "email", "joe@example.com")
+        redisClient.set("id:joe@example.com", "123456")
+        const fp = await page.evaluate(async () => terminal7.getFingerprint())
+        console.log("adding peer to redis", fp)
+        redisClient.hSet(`peer:${fp}`, {
+            verified: "1",
+            name: "foo",
+            kind: "terminal7",
+            fp: fp,
+            user: "123456",
+        })
+        await webexecReset("123456")
+        console.log("waiting for peerbook to update")
+        sleep(2000)
+        const keys = await redisClient.keys('peer*')
+        console.log("keys", keys)
         keys.forEach(async key => {
+            // key is in the template of `peer:${fp}`
             console.log("verifying: " +key)
             await redisClient.hSet(key, 'verified', "1")
+            await redisClient.hSet(key, 'user', "123456")
+            const fp = key.split(':')[1]
+            redisClient.sAdd("user:123456", fp)
         })
-        await page.reload({waitUntil: "networkidle"})
-        await page.evaluate(async () => {
-            window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
-        })
+        await reloadPage(page)
     })
 
     test('connect to gate see help page and hide it', async () => {
         await sleep(1000)
-        connectGate()
+        await page.evaluate(async() => {
+            window.terminal7.map.showLog(true)
+        })
+        // await sleep(1000)
         await page.screenshot({ path: `/result/second.png` })
-        // await expect(page.locator('.pane')).toHaveCount(1)
+        connectFirstGate(page)
         const help  = page.locator('#help-gate')
         await page.screenshot({ path: '/result/3.png' })
         await expect(help).toBeVisible()
@@ -108,19 +119,13 @@ insecure = true`)
             pane.split("topbottom")
         })
         await expect(page.locator('.pane')).toHaveCount(2)
-        await page.evaluate(() => window.terminal7.goHome())
+        // wait for resize to finish
+        await sleep(500)
     })
     test('a gate restores after reload', async() => {
-        await page.reload({waitUntil: "networkidle"})
+        await reloadPage(page)
         await sleep(500)
-        await page.evaluate(async () => {
-            window.terminal7.notify = console.log
-            window.terminal7.conf.net.peerbook = "peerbook:17777"
-            window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
-            await window.terminal7.pbConnect()
-        })
-        await sleep(500)
-        connectGate()
+        connectFirstGate(page)
         await sleep(500)
         await page.screenshot({ path: `/result/second.png` })
         await expect(page.locator('.pane')).toHaveCount(2)
@@ -158,7 +163,7 @@ insecure = true`)
         })
         // connectGate()
         await expect(page.locator('.pane')).toHaveCount(1)
-        await sleep(500)
+        await sleep(1500)
         const lines2 = await page.evaluate(() =>
            window.terminal7.activeG.activeW.activeP.t.buffer.active.length)
         await page.screenshot({ path: `/result/fourth.png` })
@@ -178,7 +183,7 @@ insecure = true`)
         await expect(page.locator('.pane')).toHaveCount(0)
     })
     test.skip('auto restore gate', async() => {
-        connectGate()
+        connectFirstGate(page)
         await expect(page.locator('.pane')).toHaveCount(1)
         await page.screenshot({ path: `/result/6.png` })
         // set auto restore to true
@@ -192,15 +197,7 @@ insecure = true`)
             })
             await localStorage.setItem("CapacitorStorage.dotfile", lines.join("\n"))
         })
-        await page.reload({waitUntil: "networkidle"})
-
-        await page.evaluate(async () => {
-            window.terminal7.notify = console.log
-            window.terminal7.conf.net.peerbook = "peerbook:17777"
-            window.terminal7.conf.peerbook = { email: "joe@example.com", insecure: true }
-            await window.terminal7.pbConnect()
-        })
-        await sleep(1000)
+        await reloadPage(page)
         await page.screenshot({ path: `/result/7.png` })
         const inGate = await page.evaluate(() => window.terminal7.activeG != null)
         expect(inGate).toBeTruthy()

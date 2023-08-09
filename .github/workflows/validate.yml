@@ -18,12 +18,12 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: lint
         run: yarn lint
-      - name: Unit tests
+      - name: Unit Tests
         run: yarn test
-      - name: Acceptance tests
+      - name: Acceptance Tests
         run: bash -x aatp/run
       - name: Upload acceptance test results
-        if: always()
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v3
         with:
           name: aatp-result

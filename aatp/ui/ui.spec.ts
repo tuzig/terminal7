@@ -3,6 +3,8 @@ import { Client } from 'ssh2'
 import * as fs from 'fs'
 import waitPort from 'wait-port'
 
+import { connectFirstGate } from '../common/utils'
+
 
 const local = process.env.LOCALDEV !== undefined,
       url = local?"http://localhost:3000":"http://terminal7"
@@ -10,15 +12,6 @@ const local = process.env.LOCALDEV !== undefined,
 test.describe('terminal7 UI', ()  => {
 
     const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
-    const connectGate = async () => {
-        const btns = page.locator('#gates button')
-        await page.screenshot({ path: `/result/0.png` })
-        await expect(btns).toHaveCount(2)
-        await btns.first().dispatchEvent('pointerdown')
-        await sleep(50)
-        await btns.first().dispatchEvent('pointerup')
-    }
-
     let page: Page,
         context: BrowserContext
 
@@ -45,7 +38,9 @@ test.describe('terminal7 UI', ()  => {
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
         await page.evaluate(async () => {
             window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
-            localStorage.setItem("CapacitorStorage.dotfile","")
+            localStorage.setItem("CapacitorStorage.dotfile",`
+[peerbook]
+insecure=true`)
             localStorage.setItem("CapacitorStorage.gates", JSON.stringify(
                 [{"id":0,
                   "addr":"webexec",
@@ -68,7 +63,7 @@ test.describe('terminal7 UI', ()  => {
     })
 
     test('connect to gate see help page and hide it', async () => {
-        connectGate()
+        await connectFirstGate(page)
         const help  = page.locator('#help-gate')
         await expect(help).toBeVisible()
         await help.click()
@@ -89,12 +84,11 @@ test.describe('terminal7 UI', ()  => {
             window.notifications = []
             window.terminal7.notify = (m) => window.notifications.push(m)
         })
-        connectGate()
-        await sleep(500)
-        await page.screenshot({ path: `/result/2.png` })
+        await connectFirstGate(page)
         await page.locator('.tabbar .reset').click()
         await expect(page.locator('#t0')).toBeVisible()
-        sleep(20)
+        await sleep(500)
+        await page.keyboard.press('ArrowDown')
         await page.keyboard.press('Enter')
         await expect(page.locator('.windows-container')).toBeHidden()
     })
@@ -104,13 +98,12 @@ test.describe('terminal7 UI', ()  => {
             window.notifications = []
             window.terminal7.notify = (m) => window.notifications.push(m)
         })
-        connectGate()
+        await connectFirstGate(page)
         await sleep(500)
         await page.screenshot({ path: `/result/2.png` })
         await page.locator('.tabbar .reset').click()
         await expect(page.locator('#t0')).toBeVisible()
         sleep(20)
-        await page.keyboard.press('ArrowDown')
         await page.keyboard.press('Enter')
         await expect(page.locator('#t0')).toBeHidden()
         await expect(page.locator('.pane')).toHaveCount(1)

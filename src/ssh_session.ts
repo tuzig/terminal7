@@ -5,7 +5,6 @@ import { WebRTCSession }  from './webrtc_session'
 const ACCEPT_CMD = "/usr/local/bin/webexec accept"
 
 export class SSHChannel extends BaseChannel {
-    id: number
     async close(): Promise<void> {
         return SSH.closeChannel({channel: this.id})
     }
@@ -18,11 +17,12 @@ export class SSHChannel extends BaseChannel {
            .catch(e => console.log("error from setPtySize", e))
     }
     handleData(m) {
-        if ('data' in m)
+        if ((m instanceof Object) && ('data' in m))
             this.onMessage(m.data)
         else {
-            this.t7.log("ssh read got error ", m.error)
-            this.onClose(m.error)
+            this.t7.log("ssh read got error ", m)
+            if (this.onClose)
+                this.onClose(m && m.error)
         }
     }
 }
@@ -46,6 +46,7 @@ export class SSHSession extends BaseSession {
         this.onStateChange("connected")
     }
     async connect(marker?:number, publicKey: string, privateKey:string) {
+        terminal7.log("Connecting using SSH", this.address, this.username, this.port)
         SSH.startSessionByKey({
             address: this.address,
             port: this.port,
@@ -55,9 +56,12 @@ export class SSHSession extends BaseSession {
         }).then(args => {
                 this.onSSHSession(args.session)
         }).catch(e => {
-                console.log("SSH key startSession failed", e.toString())
-                if (e.toString().startsWith("Error: UNAUTHORIZED"))
+                const msg = e.toString()
+                terminal7.log("SSH key startSession failed", msg)
+                if (msg.match(/(Error: UNAUTHORIZED|Auth fail)/))
                     this.onStateChange("failed", Failure.KeyRejected)
+                else if (msg.startsWith("Error: Failed to connect"))
+                    this.onStateChange("failed", Failure.FailedToConnect)
                 else
                     this.onStateChange("failed", Failure.Aborted)
            })
@@ -73,11 +77,14 @@ export class SSHSession extends BaseSession {
            .then(args => {
                 this.onSSHSession(args.session)
            }).catch(e => {
-                console.log("SSH pass startSession failed", e.toString())
-                if (e.toString().startsWith("Error: Not imp"))
+                const msg = e.toString()
+                terminal7.log("SSH pass startSession failed", msg)
+                if (msg.startsWith("Error: Not imp"))
                     this.onStateChange("failed", Failure.NotImplemented)
-                else
+                else if (msg.match(/(Error: Wrong password|Auth fail)/))
                     this.onStateChange("failed", Failure.WrongPassword)
+                else
+                    this.onStateChange("failed", Failure.FailedToConnect)
 
            })
     }
@@ -123,6 +130,9 @@ export class SSHSession extends BaseSession {
                 throw e
             }
         }
+    close() {
+        // SSH.closeSession({session: this.id})
+    }
 }
 // HybridSession can run either as SSH or WebRTC bby signalling
 // over SSH

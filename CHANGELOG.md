@@ -6,6 +6,46 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.5.1 - 2023/8/1
+
+### Fixed
+
+- TWR prompt is no longer disappearing 
+- notifications don't interfare with TWR forms
+
+### Added
+
+- links to Privacy policy and ToS
+
+## 1.5.0 - 2023/7/21
+
+### Fixed
+
+- added a reset for out-of-sync peers
+- fixing reconnect failures
+- fixing peerbook disconnections
+- dotfile editor now open inside TWR
+- Terminal7 is now T7 on narrow screens
+
+## 1.4.2 - 2023/1/31
+
+### Fixed
+
+- TWR is not scaled down and the font doesn't turn tiny
+- Improved handling of illegal layouts
+- Greeting is shown only on first activation
+
+## 1.4.1 - 2023/1/26
+
+### Added 
+
+- gate name completion
+
+### Fixed
+
+- A couple of peerbook bugs
+- flaky hourglass
+
 ## 1.4 - 2023/1/14
 
 ### Added

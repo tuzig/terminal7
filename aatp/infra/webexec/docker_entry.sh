@@ -7,7 +7,7 @@ CONF=/conf
 
 
 /etc/init.d/ssh start
-rm -f $HOME/.local/run/webexec.*
+rm -rf $HOME/.local/state/webexec
 mkdir -p $HOME/.config/webexec
 cp -r $CONF/* /home/runner/.config/webexec
 chown -R runner /home/runner
@@ -19,8 +19,8 @@ if [[ $PEERBOOK == "1" ]]
 then
     /scripts/wait-for-it.sh -h peerbook -p 17777
 fi
-su -c "$EXE start --debug" runner &
+su -c "$EXE start --debug" runner
 while true
 do
-    sleep 10
+    sleep 1
 done
