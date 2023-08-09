@@ -23,6 +23,7 @@ export class Terminal {
     notify = vi.fn()
     onData = vi.fn()
     onSelectionChange = vi.fn()
+    onBell = vi.fn()
     open = vi.fn()
     reset = vi.fn()
     scrollToBottom = vi.fn()

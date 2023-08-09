@@ -12,9 +12,8 @@ import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { WebglAddon } from 'xterm-addon-webgl'
 import { WebLinksAddon } from 'xterm-addon-web-links'
-/* restore the bell. commented as it silences all background audio
-import { BELL_SOUND } from './bell.js'
-*/
+import { NativeAudio } from '@capacitor-community/native-audio'
+
 
 import { Failure } from './session'
 
@@ -78,15 +77,14 @@ export class Pane extends Cell {
             rows:24,
             cols:80,
             allowProposedApi: true,
-            /* TODO: restore this. commented because it silences spotify
-            bellStyle: "sound",
-            bellSound: BELL_SOUND, */
         })
         this.fitAddon = new FitAddon()
         this.searchAddon = new SearchAddon()
         this.WebLinksAddon = new WebLinksAddon((MouseEvent, url) => {
             window.open(url, "_blank", "noopener")
         })
+
+        NativeAudio.preload({ assetId: "bell", assetPath: "/media/bell.mp3", isUrl: "false" })
 
         // there's a container div we need to get xtermjs to fit properly
         this.e.appendChild(con)
@@ -155,6 +153,7 @@ export class Pane extends Cell {
                     this.cmDecorationsClear()
                 }
             })
+            this.t.onBell(() => NativeAudio.play({ assetId: "bell" }))
             this.resizeObserver.observe(this.e);
             this.fit(pane => { 
                if (pane != null)
