@@ -48,6 +48,7 @@ export class Gate {
     onlySSH: boolean
     firstConnection: boolean
     keyRejected: boolean
+    connectionFailed: boolean
     constructor (props) {
         // given properties
         this.id = props.id
@@ -198,7 +199,7 @@ export class Gate {
         // KeyRejected and WrongPassword are "light failure"
         const active = this == this.t7.activeG
         const wasSSH = this.session && this.session.isSSH && this.boarding
-        if (!active)
+        if (!active || this.connectionFailed)
             return
         // this.map.showLog(true)
         terminal7.log("handling failure", failure, terminal7.recovering)
@@ -273,12 +274,17 @@ export class Gate {
                 await this.map.shell.onDisconnect(this)
                 return
 
+            case Failure.TimedOut:
+                this.connectionFailed = true
+                break
+
         }
         await this.map.shell.onDisconnect(this, wasSSH)
     }
     reconnect(): Promise<void> {
         if (!this.session)
             return this.connect()
+        this.connectionFailed = false
         const isSSH = this.session.isSSH
         const isNative = Capacitor.isNativePlatform()
         return new Promise((resolve, reject) => {
@@ -328,6 +334,7 @@ export class Gate {
             return
         this.onConnected = onConnected
         this.t7.activeG = this // TODO: move this out of here
+        this.connectionFailed = false
         document.title = `Terminal 7: ${this.name}`
         
         if (this.session) {
