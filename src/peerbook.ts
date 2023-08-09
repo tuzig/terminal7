@@ -15,6 +15,7 @@ import { Failure } from './session'
 import { HTTPWebRTCSession } from './webrtc_session'
 import { Gate } from './gate'
 import { Shell } from './shell'
+import { Capacitor } from '@capacitor/core';
 
 export class PeerbookConnection {
     ws: WebSocket = null
@@ -141,9 +142,12 @@ export class PeerbookConnection {
     }
     async startPurchases() {
         console.log("Starting purchases")
+        const keys = {
+            ios: 'appl_qKHwbgKuoVXokCTMuLRwvukoqkd',
+            android: 'goog_ncGFZWWmIsdzdfkyMRtPqqyNlsx'
+        }
         const props = {
-            // apiKey: 'appl_qKHwbgKuoVXokCTMuLRwvukoqkd',
-            apiKey: 'goog_ncGFZWWmIsdzdfkyMRtPqqyNlsx',
+            apiKey: keys[Capacitor.getPlatform()],
         }
 
         try {
