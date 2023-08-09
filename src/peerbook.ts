@@ -130,8 +130,7 @@ export class PeerbookConnection {
             this.shell.stopWatchdog()
         }
         await CapacitorPurchases.logIn({ appUserID: uid })
-        this.shell.t.writeln(`Validated! User ID is ${uid}`)
-        this.shell.t.writeln("Type `install` to install on a server")
+        this.shell.t.writeln("Validated! Use `install` to install on a server")
         try {
             await this.wsConnect()
         } catch (e) {

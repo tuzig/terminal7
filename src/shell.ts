@@ -489,35 +489,36 @@ export class Shell {
     async offerInstall(gate, firstOption?): Promise<boolean> {
         if (gate.onlySSH)
             return true
-        this.t.writeln("\rInstall WebExec for persistent sessions over WebRTC")
         const install = [
             { prompt: firstOption || "Connect over SSH" },
-            { prompt: "Install" },
-            { prompt: "Always use SSH" },
             { prompt: "Close Gate" },
         ]
+        if (gate.fp && !gate.online) {
+            this.t.writeln("\rTo connect over WebRTC, webexec must be running")
+            this.t.writeln(`Please run \x1B[1mwebexec start\x1B[0m on the server`)
+        } else {
+            this.t.writeln("\rInstall WebExec for persistent sessions over WebRTC")
+            install.splice(1, 0, { prompt: "Install" })
+            install.splice(2, 0, { prompt: "Always use SSH" })
+        }
         const res = await this.runForm(install, "menu")
-        let ret = true
         switch (res) {
             case "Install":
                 gate.close()
                 setTimeout(() => this.runCommand(`install ${gate.name}`), 10)
-                ret = false
-                break
+                return false
             case  "Close Gate":
                 gate.close()
-                ret = false
-                break
+                return false
             case "Always use SSH":
                 gate.onlySSH = true
                 terminal7.storeGates()
                 break
             case "I'm feeling lucky": 
                 gate.focus()
-                ret = false
-                break
+                return false
         }
-        return ret
+        return true
     }
     async offerSub(gate): Promise<boolean> {
         this.t.writeln("\rJoin our subscribers for persistent sessions and WebRTC 🍯")
