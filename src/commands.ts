@@ -561,7 +561,7 @@ async function subscribeCMD(shell: Shell) {
             "TWO_MONTH": "2 Months",
             "THREE_MONTH": "3 Months",
             "SIX_MONTH": "6 Months",
-            "ANNUAL": "Year - Start with a 1 month free trial",
+            "ANNUAL": "Year - Start with a one month free trial",
         }
         const { offerings } = await CapacitorPurchases.getOfferings(),
             offer = offerings.current
@@ -597,6 +597,7 @@ async function subscribeCMD(shell: Shell) {
                 shell.t.writeln("Error restoring purchases, please try again or `support`")
                 return
             }
+            shell.stopWatchdog()
             const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
             if (!customerInfo.entitlements.active.peerbook) {
                 shell.t.writeln("Sorry, no active subscription found")
