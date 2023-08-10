@@ -64,19 +64,20 @@ export class T7Map {
                         this.shell.escape()
                     return false
                 }
+                if ((ev.ctrlKey || ev.metaKey) && ev.key === "v") {
+                    this.shell.paste()
+                    return false
+                }
                 return true
             })
             this.t0.onKey(iev => {
                 this.interruptTTY()
                 const ev = iev.domEvent
+                // TWR is connected to a remote shell (for install)
                 if (this.shell.masterChannel) {
                     return
                 }
                 this.shell.updateCapsLock(ev)
-                if ((ev.ctrlKey || ev.metaKey) && ev.key === "v") {
-                    this.shell.paste()
-                    return
-                }
                 this.shell.keyHandler(ev.key)
                 ev.preventDefault()
             })

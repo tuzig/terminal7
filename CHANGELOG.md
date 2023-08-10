@@ -6,6 +6,27 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.5.3 - 2023/8/10
+
+### Added
+
+- Support for j & k in menus
+- Restore purchases
+- Install menu
+
+## 1.5.2 - 2023/8/4
+
+### Added
+
+- Cmd-V support in TWR 
+
+### Fixed
+
+- Reconnect is more silient 
+- First run permission handling
+- The close command
+- Messaging
+
 ## 1.5.1 - 2023/8/1
 
 ### Fixed

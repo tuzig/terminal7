@@ -34,6 +34,7 @@ describe("TWR commands", function() {
             let shell = {
                 getGate: () => gate,
                 t: new Terminal({}),
+                runForm: vi.fn(() => "Connect & send command"),
             }
             t.pb = {
                 adminCommand: vi.fn(() => "j"),

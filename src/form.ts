@@ -92,13 +92,14 @@ export class Form {
         this.currentField = current
         return new Promise<string>((resolve, reject) => {
             this.reject = reject
-            t.writeln("[Use ⇅ to move, Enter to select]")
+            t.writeln("[Use k & j or ⇅ to move, Enter to select]")
             t.writeln(this.fields.map(f => `  ${f.prompt}`).join('\n'))
             t.write(`\x1B[G\x1B[${len}A`) // move cursor to first field
             t.write(`\x1B[1m  ${this.fields[current].prompt}\x1B[0m\x1B[G`) // bold first field
             this.onKey = key => {
                 switch (key) {
                     case "ArrowUp":
+                    case "k":
                         if (current > 0) {
                             t.write(`  ${this.fields[current].prompt}\x1B[G`)
                             current--
@@ -107,6 +108,7 @@ export class Form {
                         }
                         break
                     case "ArrowDown":
+                    case "j":
                         if (current < enabled.length - 1) {
                             t.write(`  ${this.fields[current].prompt}\x1B[G`)
                             current++

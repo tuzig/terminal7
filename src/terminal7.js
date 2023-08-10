@@ -32,12 +32,14 @@ import { RateApp } from 'capacitor-rate-app'
 
 
 import { PeerbookConnection, PB } from './peerbook'
+import { Failure } from './session';
 
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
 Thanks for choosing Terminal7. This is TWR, a local
 terminal used to control the terminal and log messages.
-Type 'hide' or 'help' to list available commands. 
+Type \`hide\`, \`help\` or \`add\` if you're ready to board. 
+For WebRTC 🍯 please \`subscribe\` to our online service.
 
 Enjoy!
 
@@ -317,6 +319,10 @@ export class Terminal7 {
             const catchConnect = e => {
                 if (e =="Unregistered")
                     this.notify(`${PB} You are unregistered, please \`subscribe\``)
+                else if (e == Failure.NotSupported)
+                    // TODO: this should be changed to a notification
+                    // after we upgrade peerbook
+                    console.log("PB not supported")
                 else if (e != "Unauthorized") {
                     terminal7.log("PB connect failed", e)
                     this.notify(`${PB} Failed to connect, please try \`sub\``)
@@ -354,59 +360,6 @@ export class Terminal7 {
                     this.pb.connect().then(resolve).catch(catchConnect)
             })
         })
-    }
-    async toggleSettings() {
-        var modal   = document.getElementById("settings-modal"),
-            button  = document.getElementById("dotfile-button"),
-            area    =  document.getElementById("edit-conf"),
-            conf    =  (await Preferences.get({key: "dotfile"})).value || DEFAULT_DOTFILE
-
-        area.value = conf
-
-        button.classList.toggle("on")
-        modal.classList.toggle("hidden")
-        if (button.classList.contains("on")) {
-           if (this.confEditor == null) {
-                vimMode(CodeMirror)
-                tomlMode(CodeMirror)
-                dialogAddOn(CodeMirror)
-                CodeMirror.commands.save = () => this.wqConf()
-
-                this.confEditor  = CodeMirror.fromTextArea(area, {
-                   value: conf,
-                   lineNumbers: true,
-                   mode: "toml",
-                   keyMap: "vim",
-                   matchBrackets: true,
-                   showCursorWhenSelecting: true
-                })
-            }
-            this.confEditor.focus()
-        }
-
-    }
-    /*
-     * wqConf saves the configuration and closes the conf editor
-     */
-    wqConf() {
-        var area    =  document.getElementById("edit-conf")
-        document.getElementById("dotfile-button").classList.remove("on")
-        this.confEditor.save()
-        this.loadConf(TOML.parse(area.value))
-        Preferences.set({key: "dotfile", value: area.value})
-        this.cells.forEach(c => {
-            if (typeof(c.setTheme) == "function")
-                c.setTheme(this.conf.theme)
-        })
-        document.getElementById("settings-modal").classList.add("hidden")
-        this.confEditor.toTextArea()
-        this.confEditor = null
-        if (this.pb &&
-            ((this.pb.host != this.conf.net.peerbook) 
-             || (this.pb.insecure != this.conf.peerbook.insecure))) {
-            this.pbClose()
-            this.pbConnect()
-        }
     }
     catchFingers() {
         this.e.addEventListener("pointerdown", ev => this.onPointerDown(ev))
@@ -565,7 +518,8 @@ export class Terminal7 {
                         this.notify(`${PB} timed out, please try \`subscribe\``)
                     gate.stopBoarding()
                 })
-            }
+            } else
+                this.recovering = false
             this.pbConnect().catch(e => this.log("pbConnect failed", e))
                 .finally(() => {
                     if (toReconnect) {
@@ -580,7 +534,7 @@ export class Terminal7 {
         } else {
             if (updateNetPopup)
                 off.remove("hidden")
-            this.disengage().then(() => this.recovering = true)
+            this.disengage().finally(() => this.recovering = true)
         }
     }
     loadConf(conf) {
@@ -1093,15 +1047,16 @@ export class Terminal7 {
             if (typeof(c.setTheme) == "function")
                 c.setTheme(this.conf.theme)
         })
+        terminal7.loadConf(TOML.parse(text))
         if (this.pb &&
             ((this.pb.host != this.conf.net.peerbook) 
              || (this.pb.peerName != this.conf.peerbook.peer_name)
              || (this.pb.insecure != this.conf.peerbook.insecure)
              || (this.pb.email != this.conf.peerbook.email))) {
             this.pbClose()
+            this.pb = null
             this.pbConnect()
         }
-        terminal7.loadConf(TOML.parse(text))
         return Preferences.set({key: "dotfile", value: text})
     }
     async pbVerify() {

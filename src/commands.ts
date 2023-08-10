@@ -273,7 +273,12 @@ async function connectCMD(shell:Shell, args: string[]) {
             }
         } 
         if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH && pbOpen) {
-            const toConnect = await shell.offerInstall(gate)
+            let toConnect: boolean
+            try {
+                toConnect = await shell.offerInstall(gate)
+            } catch (e) {
+                toConnect = true
+            }
             if (!toConnect) {
                 gate.close()
                 done = true
@@ -547,11 +552,11 @@ async function subscribeCMD(shell: Shell) {
     if (!customerInfo.entitlements.active.peerbook) {
         shell.t.writeln("Join PeerBook subscribers and enjoy:")
         shell.t.writeln("")
+        shell.t.writeln("  󰟆  Persistent Sessions")
         shell.t.writeln("    2FA & SRTP Based Encryption")
         shell.t.writeln("  󰴽  WebRTC w/ Direct and Relay Connections")
-        shell.t.writeln("  󰟆  Persistent Sessions")
-        shell.t.writeln("  󰟀  Connecting to Behind-the-NAT Desktops")
-        shell.t.writeln("  󰱱  Connecting to Ephemeral IP Servers")
+        shell.t.writeln("  󰟀  Behind-the-NAT Desktops connections")
+        shell.t.writeln("    Ephemeral IP Servers connections")
         shell.t.write("\t\t\t(\x1B]8;;https://terminal7.dev/privacy\x07Privacy Policy\x1B]8;;\x07 & ")
         shell.t.writeln("\x1B]8;;https://www.apple.com/legal/internet-services/itunes/dev/stdeula/\x07Terms of Service\x1B]8;;\x07)")
         const TYPES = {
@@ -571,6 +576,7 @@ async function subscribeCMD(shell: Shell) {
             return { identifier, prompt }
         })
         const fields: Fields = products.map(p => ({ prompt: p.prompt }))
+        fields.push({ prompt: "Restore Purchases" })
         fields.push({ prompt: "Cancel" })
         let choice
         try {
@@ -580,23 +586,44 @@ async function subscribeCMD(shell: Shell) {
         }
         if (choice == "Cancel")
             return
-        const product = products.find(p => p.prompt == choice)
-        shell.t.writeln("Thank you! directing you to the store")
-        shell.startWatchdog(120000).catch(e => {
-            shell.t.writeln("Sorry, subscribe command timed out")
-            shell.t.writeln("Please try again or `support`")
-            throw e
-        })
-
-        terminal7.ignoreAppEvents = true
-        try {
-            await terminal7.pb.purchase(product.identifier, offer.identifier)
-            shell.stopWatchdog()
-        } catch(e) {
-            shell.stopWatchdog()
-            console.log("purchase error", e)
-            shell.t.writeln("Error purchasing, please try again or `support`")
-            return
+        if (choice == "Restore Purchases") {
+            shell.t.writeln("Restoring purchases")
+            shell.startWatchdog(10000).catch(e => {
+                shell.t.writeln("Sorry, restore command timed out")
+                shell.t.writeln("Please try again or `support`")
+                throw e
+            })
+            try {
+                await CapacitorPurchases.restorePurchases()
+            } catch(e) {
+                shell.stopWatchdog()
+                shell.t.writeln("Error restoring purchases, please try again or `support`")
+                return
+            }
+            const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
+            if (!customerInfo.entitlements.active.peerbook) {
+                shell.t.writeln("Sorry, no active subscription found")
+            } else {
+                shell.t.writeln("Subscription restored")
+            }
+        } else {
+            const product = products.find(p => p.prompt == choice)
+            shell.t.writeln("Thank you! directing you to the store")
+            shell.startWatchdog(120000).catch(e => {
+                shell.t.writeln("Sorry, subscribe command timed out")
+                shell.t.writeln("Please try again or `support`")
+                throw e
+            })
+            terminal7.ignoreAppEvents = true
+            try {
+                await terminal7.pb.purchase(product.identifier, offer.identifier)
+                shell.stopWatchdog()
+            } catch(e) {
+                shell.stopWatchdog()
+                console.log("purchase error", e)
+                shell.t.writeln("Error purchasing, please try again or `support`")
+                return
+            }
         }
     }
     if (!terminal7.pb.isOpen()) {
@@ -632,6 +659,23 @@ export async function installCMD(shell: Shell, args: string[]) {
         shell.t.writeln("Please `subscribe` to PeerBook first")
         return
     }
+
+    let uid: string
+    try {
+        uid  = await terminal7.pb.getUID()
+    } catch(e) {
+        console.log("ping error", e)
+        shell.t.writeln("Error connecting to Peerbook")
+        shell.t.writeln("Please try again or `support`")
+        return
+    }
+    console.log("got uid", uid)
+
+    if (!uid) {
+        shell.t.writeln("You are not subscribed to Peerbook")
+        shell.t.writeln("Please `subscribe`")
+        return
+    }
     let gate: Gate
 
     if (args[0]) {
@@ -657,11 +701,33 @@ export async function installCMD(shell: Shell, args: string[]) {
             gate = shell.getGate(choice)
         }
     }
+
+    const host = terminal7.conf.net.peerbook
+    let cmd = `PEERBOOK_UID=${uid} PEERBOOK_NAME="${gate.name}"`
+    if (host != "api.peerbook.io")
+        cmd += ` PEERBOOK_HOST=${host}`
+    cmd += " \\\nbash <(curl -sL https://get.webexec.sh)"
+
     // Connect to the gate over SSH and install webexec
     let publicKey, privateKey
     let done = false
     let error = false
-
+    const fields: Fields = [
+        { prompt: "Connect & send command" },
+        { prompt: "Copy command to 📋" },
+        { prompt: "Cancel" },
+    ]
+    shell.t.writeln("To Enjoy WebRTC you need Terminal7 agent installed & running")
+    shell.t.writeln("")
+    shell.t.writeln(`$ \x1B[1m${cmd}\x1B[0m`)
+    const choice= await shell.runForm(fields, "menu")
+    if (choice == "Cancel")
+        return
+    if (choice == "Copy command to 📋") {
+        Clipboard.write({ string: cmd })
+        shell.t.writeln("Command copied to clipboard")
+        return
+    }
     const passConnect = async () => {
         let password: string
         try {
@@ -688,10 +754,7 @@ export async function installCMD(shell: Shell, args: string[]) {
         terminal7.log("Install SSH session closed")
     }
     session.onStateChange = async (state, failure?: Failure) => {
-        const host = terminal7.conf.net.peerbook
         let channel: SSHChannel
-        let uid: string
-        let cmd: string
         terminal7.log("Install SSH session got state", state, failure)
         switch (state) {
             case "connecting":
@@ -723,28 +786,6 @@ export async function installCMD(shell: Shell, args: string[]) {
                     error = true
                 }
 
-                try {
-                    uid  = await terminal7.pb.getUID()
-                } catch(e) {
-                    console.log("ping error", e)
-                    shell.t.writeln("Error connecting to Peerbook")
-                    session.close()
-                    channel.close()
-                    return
-                }
-                console.log("got uid", uid)
-
-                if (!uid) {
-                    shell.t.writeln("You are not subscribed to Peerbook")
-                    shell.t.writeln("Please `subscribe`")
-                    session.close()
-                    channel.close()
-                    return
-                }
-                cmd = `PEERBOOK_UID=${uid} PEERBOOK_NAME="${gate.name}"`
-                if (host != "api.peerbook.io")
-                    cmd += ` PEERBOOK_HOST=${host}`
-                cmd += " \\\nbash <(curl -sL https://get.webexec.sh)"
                 channel.send(cmd)
 
                 channel.onMessage = async (msg: string) => {

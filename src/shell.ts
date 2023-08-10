@@ -6,7 +6,6 @@ import { Fields, Form } from './form'
 import { Gate } from "./gate"
 import { T7Map } from './map'
 import { Failure } from "./session"
-import { HTTPWebRTCSession } from './webrtc_session'
 import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
 import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
 import { tomlMode} from '@tuzig/codemirror/mode/toml/toml.js'
@@ -490,44 +489,45 @@ export class Shell {
     async offerInstall(gate, firstOption?): Promise<boolean> {
         if (gate.onlySSH)
             return true
-        this.t.writeln("\rInstall WebExec for persistent sessions over WebRTC")
         const install = [
             { prompt: firstOption || "Connect over SSH" },
-            { prompt: "Install" },
-            { prompt: "Always use SSH" },
             { prompt: "Close Gate" },
         ]
+        if (gate.fp && !gate.online) {
+            this.t.writeln("\rTo connect over WebRTC, webexec must be running")
+            this.t.writeln(`Please run \x1B[1mwebexec start\x1B[0m on the server`)
+        } else {
+            this.t.writeln("\rInstall WebExec for persistent sessions over WebRTC")
+            install.splice(1, 0, { prompt: "Install" })
+            install.splice(2, 0, { prompt: "Always use SSH" })
+        }
         const res = await this.runForm(install, "menu")
-        let ret = true
         switch (res) {
             case "Install":
-                await this.runCommand(`install ${gate.name}`)
-                ret = false
-                break
+                gate.close()
+                setTimeout(() => this.runCommand(`install ${gate.name}`), 10)
+                return false
             case  "Close Gate":
                 gate.close()
-                ret = false
-                break
+                return false
             case "Always use SSH":
                 gate.onlySSH = true
                 terminal7.storeGates()
                 break
             case "I'm feeling lucky": 
                 gate.focus()
-                ret = false
-                break
+                return false
         }
-        return ret
+        return true
     }
     async offerSub(gate): Promise<boolean> {
-        this.t.writeln("")
-        this.t.writeln("\rJoin our subscribers and enjoy persistent sessions over\nWebRTC and more")
+        this.t.writeln("\rJoin our subscribers for persistent sessions and WebRTC 🍯")
         const reconnect = [
             { prompt: "I'm feeling lucky" },
             { prompt: "Learn More" },
             { prompt: "Close Gate" },
         ]
-        const res = await this.runForm(reconnect, "menu", "Please choose")
+        const res = await this.runForm(reconnect, "menu")
         if (res == "Learn More") {
             gate.close()
             await new Promise(r => setTimeout(r, 15))
