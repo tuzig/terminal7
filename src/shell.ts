@@ -497,7 +497,7 @@ export class Shell {
             this.t.writeln("\rTo connect over WebRTC, webexec must be running")
             this.t.writeln(`Please run \x1B[1mwebexec start\x1B[0m on the server`)
         } else {
-            this.t.writeln("\rInstall WebExec for persistent sessions over WebRTC")
+            this.t.writeln("\rInstall WebExec for persistent sessions & WebRTC 🍯")
             install.splice(1, 0, { prompt: "Install" })
             install.splice(2, 0, { prompt: "Always use SSH" })
         }

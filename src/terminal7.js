@@ -39,7 +39,7 @@ const WELCOME=`    🖖 Greetings & Salutations 🖖
 Thanks for choosing Terminal7. This is TWR, a local
 terminal used to control the terminal and log messages.
 Type \`hide\`, \`help\` or \`add\` if you're ready to board. 
-For WebRTC 🍯 please \`subscribe\` to our online service.
+For WebRTC 🍯  please \`subscribe\` to our online service.
 
 Enjoy!
 
