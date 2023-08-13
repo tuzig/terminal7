@@ -436,6 +436,7 @@ async function editCMD (shell:Shell, args: string[]) {
     const gate = shell.getGate(hostname)
     if (!gate)
         return shell.t.writeln(`Host not found: ${hostname}`)
+    const isPB = !!gate.fp
     const fMain = [
         { prompt: "Edit" },
         { prompt: "Connect" },
@@ -447,66 +448,66 @@ async function editCMD (shell:Shell, args: string[]) {
             default: gate.name,
             validator: a => gate.t7.validateHostName(a)
         },
-        { 
-            prompt: "Hostname",
-            default: gate.addr,
-            validator: a => gate.t7.validateHostAddress(a)
-        },
         { prompt: "Username", default: gate.username || ""},
         { prompt: "SSH only", values: ["y", "n"], default: gate.onlySSH?"y":"n" },
     ]
+    const prompt = isPB ? `Delete ${gate.name} from PeerBook?` : `Delete ${gate.name}?`
     const fDel = [{
-        prompt: `Delete ${gate.name}?`,
+        prompt,
         values: ["y", "n"],
         default: "n",
     }]
-    if (typeof(gate.fp) == "string") {
-        gate.notify("Got peer from \uD83D\uDCD6, connect only")
-        return
+    if (isPB) {
+        const schema = terminal7.conf.peerbook.insecure ? "http" : "https",
+            url = `${schema}://${terminal7.conf.net.peerbook}`
+        shell.t.writeln(`You can also edit this peer in the web interface at ${url}`)
+    } else {
+        fFields.splice(1, 0, {
+            prompt: "Hostname",
+            default: gate.addr,
+            validator: a => gate.t7.validateHostAddress(a)
+        })
     }
     let choice, enabled, res
-    try {
-        choice = await shell.runForm(fMain, "menu", "")
-    } catch (e) {
-        return
-    }
+    choice = await shell.runForm(fMain, "menu", "")
     const gateAttrs = ["name", "addr", "username", "onlySSH"]
     switch (choice) {
         case 'Connect':
             await connectCMD(shell, [hostname])
             break
         case 'Edit':
-            try {
-                enabled = await shell.runForm(fFields, "choice", `\x1B[4m${gate.name}\x1B[0m edit`)
-            } catch (e) {
-                return
-            }
+            enabled = await shell.runForm(fFields, "choice", `\x1B[4m${gate.name}\x1B[0m edit`)
             if (!enabled) {
                 await gate.t7.clear()
                 return
             }
             fFields = fFields.filter((_, i) => enabled[i])
-            try {
-                res = await shell.runForm(fFields, "text")
-            } catch (e) {
-                return
-            }
+            res = await shell.runForm(fFields, "text")
             gateAttrs.filter((_, i) => enabled[i])
                      .forEach((k, i) => 
                         gate[k] = (k == 'onlySSH')?res[i] == 'y':res[i])
             gate.t7.storeGates()
+            if (isPB) {
+                await terminal7.pb.adminCommand("rename", gate.fp, gate.name)
+            }
             gate.updateNameE()
             shell.map.showLog(false)
             break
         case "\x1B[31mDelete\x1B[0m":
-            try {
-                res = await shell.runForm(fDel, "text")
-            } catch (e) {
+            res = await shell.runForm(fDel, "text")
+            if (res[0] != "y")
                 return
+            if (isPB) {
+                const otp = await shell.askValue("OTP")
+                try {
+                    await terminal7.pb.adminCommand("delete", gate.fp, otp)
+                } catch (e) {
+                    console.log("Failed to delete host", e)
+                    shell.t.writeln("Failed to delete host")
+                    return
+                }
             }
-            if (res[0] == "y")
-                gate.delete()
-            await gate.t7.clear()
+            gate.delete()
             break
     }
 }

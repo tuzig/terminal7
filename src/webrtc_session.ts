@@ -127,10 +127,6 @@ export class WebRTCSession extends BaseSession {
         }
         this.pc.onicecandidateerror = (ev: RTCPeerConnectionIceErrorEvent) => {
             console.log("icecandidate error", ev.errorCode, ev.errorText)
-            if (ev.errorCode == 401) {
-                this.t7.notify("Getting fresh ICE servers")
-                this.connect()
-            }
         }
         this.pc.onicecandidate = (ev: RTCPeerConnectionIceEvent) => this.onIceCandidate(ev)
 

@@ -8,6 +8,7 @@ export async function reloadPage(page) {
         // window.terminal7.iceServers = []
     })
     await sleep(1000)
+    checkedC = 0
 }
 export function sleep(ms: number) {
     return new Promise(r => setTimeout(r, ms)) 
