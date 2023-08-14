@@ -303,12 +303,6 @@ export class PeerbookConnection {
                 const m = JSON.parse(ev.data)
                 if (m.code >= 400) {
                     console.log("peerbook connect got code", m.code)
-                    if (m.code == 401) {
-                        window.terminal7.notify(`${PB} Terminal7 is unverified`)
-                    } else {
-                        window.terminal7.notify(`${PB} PeerBook connection error ${m.code}`)
-                        this.ws = null
-                    }
                     reject(`PeerBook connection error ${m.code}`)
                     return
                 } 
