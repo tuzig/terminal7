@@ -604,6 +604,7 @@ async function subscribeCMD(shell: Shell) {
             const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
             if (!customerInfo.entitlements.active.peerbook) {
                 shell.t.writeln("Sorry, no active subscription found")
+                return
             } else {
                 shell.t.writeln("Subscription restored")
             }

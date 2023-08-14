@@ -27,7 +27,7 @@ PODS:
     - NMSSHT7 (~> 2.9)
   - CapacitorStatusBar (5.0.6):
     - Capacitor
-  - CapgoCapacitorPurchases (5.1.0):
+  - CapgoCapacitorPurchases (5.0.8):
     - Capacitor
     - PurchasesHybridCommon (= 4.8.0)
     - RevenueCat (>= 4.16.0)
@@ -106,7 +106,7 @@ SPEC CHECKSUMS:
   CapacitorRateApp: 9c63b7a25f281ce24bac929e8e8ed29a5c25252a
   CapacitorSshPlugin: 3facdc2819c40c3ab693c14a463ae7764f3d354f
   CapacitorStatusBar: 565c0a1ebd79bb40d797606a8992b4a105885309
-  CapgoCapacitorPurchases: 7ccfb772c97b42a3246e1ae0d93c2aef1b058bc0
+  CapgoCapacitorPurchases: 8351f236aaa2329c1a172d8f762d7f6faddaaea9
   NMSSHT7: 67f9d8f43b40b997728761b4cf2aa7ea660ba7c2
   PurchasesHybridCommon: bd1e1d3476afd3f95332b0ae160e4ce1bd1efd99
   RevenueCat: c12e14f5e3dc5732db6d5095ac4ce6ff08d7eeb0
