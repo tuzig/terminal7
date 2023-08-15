@@ -12,6 +12,7 @@ import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { WebglAddon } from 'xterm-addon-webgl'
 import { WebLinksAddon } from 'xterm-addon-web-links'
+import { Camera } from '@capacitor/camera'
 /* restore the bell. commented as it silences all background audio
 import { BELL_SOUND } from './bell.js'
 */
@@ -1027,8 +1028,8 @@ export class Pane extends Cell {
             const v = document.createElement("video");
             this.e.querySelector("div").classList.add("hidden")
             this.e.prepend(v)
-            navigator.permissions.query({name: 'camera'}).then(result => {
-                if (result.state == "prompt") {
+            Camera.checkPermissions().then(result => {
+                if (result.camera == "prompt") {
                     terminal7.log("camera permission prompt")
                     terminal7.ignoreAppEvents = true
                 }

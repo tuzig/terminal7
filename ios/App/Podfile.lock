@@ -1,0 +1,116 @@
+PODS:
+  - Capacitor (5.2.2):
+    - CapacitorCordova
+  - CapacitorApp (5.0.6):
+    - Capacitor
+  - CapacitorBrowser (5.0.6):
+    - Capacitor
+  - CapacitorCamera (5.0.6):
+    - Capacitor
+  - CapacitorClipboard (5.0.6):
+    - Capacitor
+  - CapacitorCordova (5.2.2)
+  - CapacitorDevice (5.0.6):
+    - Capacitor
+  - CapacitorKeyboard (5.0.6):
+    - Capacitor
+  - CapacitorNativeBiometric (0.0.1):
+    - Capacitor
+  - CapacitorNetwork (5.0.6):
+    - Capacitor
+  - CapacitorPreferences (5.0.6):
+    - Capacitor
+  - CapacitorRateApp (3.1.0-beta.1):
+    - Capacitor
+  - CapacitorSshPlugin (0.5.3):
+    - Capacitor
+    - NMSSHT7 (~> 2.9)
+  - CapacitorStatusBar (5.0.6):
+    - Capacitor
+  - CapgoCapacitorPurchases (5.0.8):
+    - Capacitor
+    - PurchasesHybridCommon (= 4.8.0)
+    - RevenueCat (>= 4.16.0)
+  - NMSSHT7 (2.9.1)
+  - PurchasesHybridCommon (4.8.0):
+    - RevenueCat (= 4.16.0)
+  - RevenueCat (4.16.0)
+
+DEPENDENCIES:
+  - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
+  - "CapacitorBrowser (from `../../node_modules/@capacitor/browser`)"
+  - "CapacitorCamera (from `../../node_modules/@capacitor/camera`)"
+  - "CapacitorClipboard (from `../../node_modules/@capacitor/clipboard`)"
+  - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorDevice (from `../../node_modules/@capacitor/device`)"
+  - "CapacitorKeyboard (from `../../node_modules/@capacitor/keyboard`)"
+  - CapacitorNativeBiometric (from `../../node_modules/capacitor-native-biometric`)
+  - "CapacitorNetwork (from `../../node_modules/@capacitor/network`)"
+  - "CapacitorPreferences (from `../../node_modules/@capacitor/preferences`)"
+  - CapacitorRateApp (from `../../node_modules/capacitor-rate-app`)
+  - CapacitorSshPlugin (from `../../node_modules/capacitor-ssh-plugin`)
+  - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
+  - "CapgoCapacitorPurchases (from `../../node_modules/@capgo/capacitor-purchases`)"
+
+SPEC REPOS:
+  trunk:
+    - NMSSHT7
+    - PurchasesHybridCommon
+    - RevenueCat
+
+EXTERNAL SOURCES:
+  Capacitor:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorApp:
+    :path: "../../node_modules/@capacitor/app"
+  CapacitorBrowser:
+    :path: "../../node_modules/@capacitor/browser"
+  CapacitorCamera:
+    :path: "../../node_modules/@capacitor/camera"
+  CapacitorClipboard:
+    :path: "../../node_modules/@capacitor/clipboard"
+  CapacitorCordova:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorDevice:
+    :path: "../../node_modules/@capacitor/device"
+  CapacitorKeyboard:
+    :path: "../../node_modules/@capacitor/keyboard"
+  CapacitorNativeBiometric:
+    :path: "../../node_modules/capacitor-native-biometric"
+  CapacitorNetwork:
+    :path: "../../node_modules/@capacitor/network"
+  CapacitorPreferences:
+    :path: "../../node_modules/@capacitor/preferences"
+  CapacitorRateApp:
+    :path: "../../node_modules/capacitor-rate-app"
+  CapacitorSshPlugin:
+    :path: "../../node_modules/capacitor-ssh-plugin"
+  CapacitorStatusBar:
+    :path: "../../node_modules/@capacitor/status-bar"
+  CapgoCapacitorPurchases:
+    :path: "../../node_modules/@capgo/capacitor-purchases"
+
+SPEC CHECKSUMS:
+  Capacitor: 070b18988e0f566728ae9a5eb3a7a974595f1626
+  CapacitorApp: 024e1b1bea5f883d79f6330d309bc441c88ad04a
+  CapacitorBrowser: 6192948e0ce804fd72aaf77f4114a3ad2e08c760
+  CapacitorCamera: 4a95204d13a05b0b726bf9086b44124349ab1952
+  CapacitorClipboard: 77edf49827ea21da2a9c05c690a4a6a4d07199c4
+  CapacitorCordova: 3773395d5331add072300ff6041ca2cf7b93cb0b
+  CapacitorDevice: 2c968f98a1ec4d22357418c1521e7ddc46c675e6
+  CapacitorKeyboard: b978154b024a5f65e044908e37d15b7de58b9d12
+  CapacitorNativeBiometric: b47637a8cd349bdac014424bb4ddcae9ee5d4919
+  CapacitorNetwork: d80b3e79bef6ec37640ee2806c19771f07ff2d0c
+  CapacitorPreferences: f03954bcb0ff09c792909e46bff88e3183c16b10
+  CapacitorRateApp: 9c63b7a25f281ce24bac929e8e8ed29a5c25252a
+  CapacitorSshPlugin: 3facdc2819c40c3ab693c14a463ae7764f3d354f
+  CapacitorStatusBar: 565c0a1ebd79bb40d797606a8992b4a105885309
+  CapgoCapacitorPurchases: 8351f236aaa2329c1a172d8f762d7f6faddaaea9
+  NMSSHT7: 67f9d8f43b40b997728761b4cf2aa7ea660ba7c2
+  PurchasesHybridCommon: bd1e1d3476afd3f95332b0ae160e4ce1bd1efd99
+  RevenueCat: c12e14f5e3dc5732db6d5095ac4ce6ff08d7eeb0
+
+PODFILE CHECKSUM: ade1f161fe406ec0b829d2febee88fb9b125b5ab
+
+COCOAPODS: 1.12.1
