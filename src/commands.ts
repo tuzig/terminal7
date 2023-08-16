@@ -31,7 +31,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             name: "clear",
             help: "Clear the screen",
             usage: "cle[ar]",
-            execute: () => setTimeout(() => shell.t.clear(),10)
+            execute: async () => setTimeout(() => shell.t.clear(),10)
         },
         close: {
             name: "close",
@@ -432,7 +432,7 @@ async function resetCMD(shell: Shell, args: string[]) {
     }
 }
 
-async function editCMD (shell:Shell, args: string[]) {
+async function editCMD(shell:Shell, args: string[]) {
     const hostname = args[0]
     if (!hostname)
         return shell.t.writeln("Missing hostname")
@@ -451,12 +451,16 @@ async function editCMD (shell:Shell, args: string[]) {
             default: gate.name,
             validator: a => gate.t7.validateHostName(a)
         },
+        {
+            prompt: isPB ? "Fallback Hostname" : "Hostname",
+            default: gate.addr,
+            validator: a => gate.t7.validateHostAddress(a)
+        },
         { prompt: "Username", default: gate.username || ""},
         { prompt: "SSH only", values: ["y", "n"], default: gate.onlySSH?"y":"n" },
     ]
-    const prompt = isPB ? `Delete ${gate.name} from PeerBook?` : `Delete ${gate.name}?`
     const fDel = [{
-        prompt,
+        prompt: isPB ? `Delete ${gate.name} from PeerBook?` : `Delete ${gate.name}?`,
         values: ["y", "n"],
         default: "n",
     }]
@@ -464,12 +468,6 @@ async function editCMD (shell:Shell, args: string[]) {
         const schema = terminal7.conf.peerbook.insecure ? "http" : "https",
             url = `${schema}://${terminal7.conf.net.peerbook}`
         shell.t.writeln(`You can also edit this peer in the web interface at ${url}`)
-    } else {
-        fFields.splice(1, 0, {
-            prompt: "Hostname",
-            default: gate.addr,
-            validator: a => gate.t7.validateHostAddress(a)
-        })
     }
     let choice, enabled, res
     choice = await shell.runForm(fMain, "menu", "")
@@ -486,15 +484,18 @@ async function editCMD (shell:Shell, args: string[]) {
             }
             fFields = fFields.filter((_, i) => enabled[i])
             res = await shell.runForm(fFields, "text")
+            if (isPB && enabled[0]) {
+                const code = await terminal7.pb.adminCommand("rename", gate.fp, res[0])
+                if (code != "1") {
+                    shell.t.writeln("Failed to rename host")
+                    res[0] = gate.name
+                }
+            }
             gateAttrs.filter((_, i) => enabled[i])
                      .forEach((k, i) => 
                         gate[k] = (k == 'onlySSH')?res[i] == 'y':res[i])
             gate.t7.storeGates()
-            if (isPB) {
-                await terminal7.pb.adminCommand("rename", gate.fp, gate.name)
-            }
             gate.updateNameE()
-            shell.map.showLog(false)
             break
         case "\x1B[31mDelete\x1B[0m":
             res = await shell.runForm(fDel, "text")

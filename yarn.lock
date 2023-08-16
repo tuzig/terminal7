@@ -1106,10 +1106,8 @@
   resolved "https://registry.yarnpkg.com/@capacitor/status-bar/-/status-bar-5.0.6.tgz#281568a7f7aeacf80777702cb9947c29dc32685c"
   integrity sha512-7od8CxsBnot1XMK3IeOkproFL4hgoKoWAc3pwUvmDOkQsXoxwQm4SR9mLwQavv1XfxtHbFV9Ukd7FwMxOPSViw==
 
-"@capgo/capacitor-purchases@^5.0.0":
-  version "5.0.8"
-  resolved "https://registry.yarnpkg.com/@capgo/capacitor-purchases/-/capacitor-purchases-5.0.8.tgz#b95efec3e0ebbd9a4a398224dd0c95529e13adc8"
-  integrity sha512-/2XA7UNakOekNm9j6e9wSh77qKrUoXtOW0Oz6pe8QWa7YWqhBeoxWEB227lCguooyZ6iFcL9X4BTJhcywZwpzA==
+"@capgo/capacitor-purchases@../capacitor-purchases":
+  version "5.1.0"
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
@@ -2283,9 +2281,9 @@ capacitor-rate-app@^3.1.0-beta.1:
   integrity sha512-86MxZFldb6kG5Kz4C6NrMAmILodVHnkwVwOTs5aeteQ5z3gBSnk/IQO54+rGcWImnwGaZACkn1EFmb4gckBQfA==
 
 capacitor-ssh-plugin@^0.5.0:
-  version "0.5.3"
-  resolved "https://registry.yarnpkg.com/capacitor-ssh-plugin/-/capacitor-ssh-plugin-0.5.3.tgz#7b7dc9b538a927940f62fbe546a3664ae45bc718"
-  integrity sha512-gjUweu/WziZ2cLR8fT2NiKZbW8KoAi0q2WrhBXf6rSQBReR9SzHy7fXMq6DmSFKOs5Q61lrJz0/QSw1WZt1niw==
+  version "0.5.4"
+  resolved "https://registry.yarnpkg.com/capacitor-ssh-plugin/-/capacitor-ssh-plugin-0.5.4.tgz#e1cde8e037cce4e76dbc934c5e38038ecfe665db"
+  integrity sha512-H3srlwwFPE3VpeHf0jpB0NP0f4FyS/dP7oqIgTnQrI43fXNJsN/SnjPsfJNr2VV1ZAdoYYWmXnWuwFvXLx5Rgw==
   dependencies:
     wd "^0.0.26"
 

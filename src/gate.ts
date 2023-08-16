@@ -578,7 +578,8 @@ export class Gate {
     async completeConnect(): void {
         this.keyRejected = false
         const isNative = Capacitor.isNativePlatform()
-        if (this.fp && !this.onlySSH && this.online) {
+        const overPB = this.fp && !this.onlySSH && this.online
+        if (overPB) {
             this.notify("🎌  PeerBook")
             if (!terminal7.pb.isOpen()) 
                 await terminal7.pbConnect()
@@ -598,7 +599,7 @@ export class Gate {
             this.t7.log("TBD: update layout", layout)
         }
         this.t7.log("opening session")
-        if (this.fp && this.online) {
+        if (overPB) {
             try {
                 this.session.connect(this.marker)
             } catch(e) {
