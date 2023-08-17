@@ -285,7 +285,7 @@ nav::-webkit-scrollbar {
     border-color: var(--local-border);
     border-radius: 0 0 12px 12px;
     border-top: 0;
-    transition: transform .75s ease;
+    transition: transform .5s ease;
 }
 
 .search-box.show {
@@ -536,9 +536,6 @@ td {
 .offline {
     color: var(--text-offline);
 }
-.unverified {
-    border-style: dashed;
-}
 .tabbar-names .on::before { content: "❲ "; color: var(--indicator-color);}
 .tabbar-names .on::after { content: " ❳"; color: var(--indicator-color);}
 #offline {
@@ -690,6 +687,13 @@ audio { display: none; }
 .gate-name {
     width: 80%;
     border-right: 2px solid var(--dark-border);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+}
+.peerbook-icon {
+    position: relative;
+    left: 10%;
 }
 .gate-edit {
     width: 20%;

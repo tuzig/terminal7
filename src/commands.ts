@@ -467,7 +467,7 @@ async function editCMD(shell:Shell, args: string[]) {
     if (isPB) {
         const schema = terminal7.conf.peerbook.insecure ? "http" : "https",
             url = `${schema}://${terminal7.conf.net.peerbook}`
-        shell.t.writeln(`You can also edit this peer in the web interface at ${url}`)
+        shell.t.writeln(`You can also edit this peer in the web interface at \n${url}`)
     }
     let choice, enabled, res
     choice = await shell.runForm(fMain, "menu", "")

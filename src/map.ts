@@ -160,25 +160,21 @@ export class T7Map {
         const nameE = b.children[0]
         nameE.innerHTML = name
         const edit = b.children[1]
-        if (peerbook)
-            edit.innerHTML = `<i class="f7-icons expand-gate">book</i>`
-        else
-            edit.innerHTML = `<i class="f7-icons expand-gate">pencil</i>`
+        edit.innerHTML = `<i class="f7-icons expand-gate">pencil</i>`
+        if (peerbook) {
+            if (unverified)
+                nameE.innerHTML += `<i class="f7-icons peerbook-icon warning">lock_shield</i>`
+            else
+                nameE.innerHTML += `<i class="f7-icons peerbook-icon">peerbook</i>`
+        }
         // there's nothing more to update for static hosts
         if (boarding)
             b.classList.add("boarding")
         else
             b.classList.remove("boarding")
 
-        if (unverified)
-            b.classList.add("unverified")
-        else
-            b.classList.remove("unverified")
-
         if (offline)
-            b.classList.add("offline")
-        else
-            b.classList.remove("offline")
+            nameE.querySelector("i").classList.add("offline")
     }
 
     refresh() {
