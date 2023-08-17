@@ -1,4 +1,5 @@
 /* Terminal 7
+
  *  This file contains the code that makes terminal 7 - a webrtc based
  *  touchable terminal multiplexer.
  *
@@ -99,6 +100,7 @@ export class Terminal7 {
         this.certificates = null
         this.confEditor = null
         this.flashTimer = null
+        this.netConnected = true
         this.logBuffer = CyclicArray(settings.logLines || 101)
         this.zoomedE = null
         this.pendingPanes = {}
@@ -496,6 +498,9 @@ export class Terminal7 {
     }
     async updateNetworkStatus (status, updateNetPopup = true) {
         let off = document.getElementById("offline").classList
+        if (this.netConnected == status.connected)
+            return
+        this.netConnected = status.connected
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
             if (updateNetPopup)
