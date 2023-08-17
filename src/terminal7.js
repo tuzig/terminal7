@@ -498,8 +498,15 @@ export class Terminal7 {
     }
     async updateNetworkStatus (status, updateNetPopup = true) {
         let off = document.getElementById("offline").classList
-        if (this.netConnected == status.connected)
+        if (this.netConnected == status.connected) {
+            if (updateNetPopup) {
+                if (this.netConnected)
+                    off.add("hidden")
+                else
+                    off.remove("hidden")
+            }
             return
+        }
         this.netConnected = status.connected
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
@@ -532,8 +539,6 @@ export class Terminal7 {
                     }
                 })
         } else {
-            if (updateNetPopup)
-                off.remove("hidden")
             this.disengage().finally(() => this.recovering = true)
         }
     }
