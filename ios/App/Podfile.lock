@@ -22,7 +22,7 @@ PODS:
     - Capacitor
   - CapacitorRateApp (3.1.0-beta.1):
     - Capacitor
-  - CapacitorSshPlugin (0.5.3):
+  - CapacitorSshPlugin (0.5.4):
     - Capacitor
     - NMSSHT7 (~> 2.9)
   - CapacitorStatusBar (5.0.6):
@@ -104,7 +104,7 @@ SPEC CHECKSUMS:
   CapacitorNetwork: d80b3e79bef6ec37640ee2806c19771f07ff2d0c
   CapacitorPreferences: f03954bcb0ff09c792909e46bff88e3183c16b10
   CapacitorRateApp: 9c63b7a25f281ce24bac929e8e8ed29a5c25252a
-  CapacitorSshPlugin: 3facdc2819c40c3ab693c14a463ae7764f3d354f
+  CapacitorSshPlugin: 79f67cb26d40bd0c07cec6dda93d93d5faf7b614
   CapacitorStatusBar: 565c0a1ebd79bb40d797606a8992b4a105885309
   CapgoCapacitorPurchases: 8351f236aaa2329c1a172d8f762d7f6faddaaea9
   NMSSHT7: 67f9d8f43b40b997728761b4cf2aa7ea660ba7c2

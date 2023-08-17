@@ -1,6 +1,6 @@
 {
   "name": "terminal7",
-  "version": "1.5.4",
+  "version": "1.6.0",
   "description": "A touchable terminal emulator & multiplexer tablet app",
   "main": "src/index.js",
   "homepage": "https://terminal7.dev",
@@ -30,7 +30,7 @@
     "@capacitor/network": "^5.0.0",
     "@capacitor/preferences": "^5.0.0",
     "@capacitor/status-bar": "^5.0.0",
-    "@capgo/capacitor-purchases": "../capacitor-purchases",
+    "@capgo/capacitor-purchases": "^5.0.0",
     "@liveconfig/xterm-webfont": "^2.1.0",
     "@tuzig/codemirror": "5.65.5-mods",
     "@tuzig/toml": "^3.0.0-browser",
