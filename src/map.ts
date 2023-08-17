@@ -233,7 +233,7 @@ export class T7Map {
                 }
             }
         }
-        this.ttyWait = 42
+        this.ttyWait = 25
         _tty(msg)
     }
     interruptTTY() {
