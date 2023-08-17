@@ -333,6 +333,7 @@ export class Pane extends Cell {
         this.searchDown = searchDown || false
         const se = this.gate.e.querySelector(".search-box")
         se.classList.add("show")
+        se.classList.remove("hidden")
         document.getElementById("search-button").classList.add("on")
         // TODO: restore regex search
         let i = se.querySelector("input[name='search-term']")
@@ -398,6 +399,7 @@ export class Pane extends Cell {
     hideSearch() {
         const se = this.gate.e.querySelector(".search-box")
         se.classList.remove("show")
+        setTimeout(() => se.classList.add("hidden"), 500)
         document.getElementById("search-button").classList.remove("on")
         if (this.zoomed)
             this.styleZoomed()
