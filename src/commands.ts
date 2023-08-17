@@ -566,7 +566,7 @@ async function subscribeCMD(shell: Shell) {
             "TWO_MONTH": "2 Months",
             "THREE_MONTH": "3 Months",
             "SIX_MONTH": "6 Months",
-            "ANNUAL": "Year - Start with a one month free trial",
+            "ANNUAL": "Year",
         }
         const { offerings } = await CapacitorPurchases.getOfferings(),
             offer = offerings.current
@@ -574,7 +574,14 @@ async function subscribeCMD(shell: Shell) {
             const identifier = p.identifier,
                 price = p.product.priceString,
                 period = TYPES[p.packageType],
-                prompt = `${price} / ${period}`
+                introPrice = p.product.introPrice
+            let prompt = `${price} / ${period}`
+            if (introPrice) {
+                const price = (introPrice.price == 0)?"Free":introPrice.priceString,
+                    unit = introPrice.periodUnit.toLowerCase(),
+                    period = (introPrice.periodNumberOfUnits == 1)?unit:`${introPrice.periodNumberOfUnits} ${unit}s`
+                prompt += `     🎁 ${price} for the first ${period} 🎁`
+            }
             return { identifier, prompt }
         })
         const fields: Fields = products.map(p => ({ prompt: p.prompt }))
