@@ -469,8 +469,8 @@ async function editCMD(shell:Shell, args: string[]) {
             url = `${schema}://${terminal7.conf.net.peerbook}`
         shell.t.writeln(`You can also edit this peer in the web interface at \n${url}`)
     }
-    let choice, enabled, res
-    choice = await shell.runForm(fMain, "menu", "")
+    const choice = await shell.runForm(fMain, "menu", "")
+    let enabled, res
     const gateAttrs = ["name", "addr", "username", "onlySSH"]
     switch (choice) {
         case 'Connect':
