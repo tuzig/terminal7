@@ -161,7 +161,6 @@ insecure = true
         await page.evaluate(async() => {
             window.terminal7.activeG.connect()
         })
-        // connectGate()
         await expect(page.locator('.pane')).toHaveCount(1)
         await sleep(1500)
         const lines2 = await page.evaluate(() =>

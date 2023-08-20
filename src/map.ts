@@ -132,7 +132,7 @@ export class T7Map {
         container.setAttribute("data-test", "gateButton")
         d.gate = g
         container.innerHTML = `
-            <div class="gate-name" data-test="connectGate">${g.name}</div>
+            <div class="gate-name" data-test="gate-name">${g.name}</div>
             <div class="gate-edit"></div>
         `
         d.appendChild(container)

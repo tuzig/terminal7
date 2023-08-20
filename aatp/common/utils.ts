@@ -14,7 +14,7 @@ export function sleep(ms: number) {
     return new Promise(r => setTimeout(r, ms)) 
 }
 export async function connectFirstGate (page) {
-    const btns = page.locator('[data-test="connectGate"]')
+    const btns = page.locator('[data-test="gate-name"]')
     await btns.first().dispatchEvent('pointerdown')
     await sleep(50)
     await btns.first().dispatchEvent('pointerup')
