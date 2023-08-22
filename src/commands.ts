@@ -517,10 +517,19 @@ async function editCMD(shell:Shell, args: string[]) {
 }
 
 async function hostsCMD(shell: Shell) {
-    let res = ""
-    terminal7.gates.forEach(gate => {
-        res += `\x1B[1m${gate.name}:\x1B[0m ${gate.addr} ${gate.fp || ""}\n`
-    })
+    const attrs = terminal7.gates.map(
+        g => [g.name, `${g.username || "<unset>"}@${g.addr}`, g.fp?.slice(0, 16) || ""])
+    const maxLengths = attrs.reduce((a, b) => [
+        Math.max(a[0], b[0].length),
+        Math.max(a[1], b[1].length),
+    ], [0, 0])
+
+    let res = "\x1B[1m" + "Name".padEnd(maxLengths[0] + 2) +
+        "User@Host".padEnd(maxLengths[1] + 2) +
+        "Fingerprint\x1B[0m\n"
+    res += attrs.map(a => a[0].padEnd(maxLengths[0] + 2) +
+        a[1].padEnd(maxLengths[1] + 2) + a[2]).join("\n") + "\n"
+    
     shell.t.writeln(res)
 }
 
