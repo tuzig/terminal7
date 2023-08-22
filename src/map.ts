@@ -120,6 +120,7 @@ export class T7Map {
                 ev.stopPropagation()
                 ev.preventDefault()
             })
+            setInterval(() => this.updateStats(), 1000)
         })
     }
     add(g: Gate): Element {
@@ -132,7 +133,10 @@ export class T7Map {
         container.setAttribute("data-test", "gateButton")
         d.gate = g
         container.innerHTML = `
+            <div class="gate-status">
             <div class="gate-name" data-test="gate-name">${g.name}</div>
+            <div class="gate-stats"></div>
+            </div>
             <div class="gate-edit"></div>
         `
         d.appendChild(container)
@@ -157,8 +161,10 @@ export class T7Map {
     update({ e, name, boarding, offline, unverified, peerbook }): void {
 
         const b = e.children[0]
-        const nameE = b.children[0]
+        const status = b.children[0]
+        const nameE = status.children[0]
         nameE.innerHTML = name
+        const statsE = status.children[1]
         const edit = b.children[1]
         edit.innerHTML = `<i class="f7-icons expand-gate">pencil</i>`
         if (peerbook) {
@@ -175,6 +181,7 @@ export class T7Map {
 
         if (offline)
             nameE.querySelector("i").classList.add("offline")
+                `<i class="f7-icons">arrow_up_circle</i> ${stats.bytesSent}B`
     }
 
     refresh() {
@@ -193,6 +200,21 @@ export class T7Map {
             e.className = "empty-pad"
             add.after(e)
         }
+    }
+    async updateStats() {
+        const gates = document.querySelectorAll(".gate-pad")
+        gates.forEach(async e => {
+            const g = e.gate
+            if (!g)
+                return
+            const stats = await g.session.getStats()
+            if (!stats)
+                return
+            e.querySelector(".gate-stats").innerHTML =
+                `<i class="f7-icons">arrow_right_arrow_left_circle</i> ${stats.roundTripTime}s ` +
+                `<i class="f7-icons">arrow_down_circle</i> ${stats.bytesReceived}B ` +
+                `<i class="f7-icons">arrow_up_circle</i> ${stats.bytesSent}B`
+        })
     }
     /* 
      * showLog display or hides the notifications.
