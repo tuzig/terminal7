@@ -2,6 +2,12 @@ import { CapacitorHttp } from '@capacitor/core';
 import { BaseChannel, BaseSession, CallbackType, Channel, ChannelID, Failure } from './session';
 
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
+type RTCStats = {
+    timestamp: number,
+    bytesSent: number,
+    bytesReceived: number,
+    roundTripTime: number,
+}
 
 export class WebRTCChannel extends BaseChannel {
     dataChannel: RTCDataChannel
@@ -377,6 +383,23 @@ export class WebRTCSession extends BaseSession {
                 return
             })
         })
+    }
+    async getStats(): Promise<RTCStats | null> {
+        const stats = await this.pc.getStats()
+        let candidatePair
+        stats.forEach(s => {
+            if (s.type == "candidate-pair" && s.state == "succeeded")
+                candidatePair = s
+        })
+        if (!candidatePair)
+            return null
+        const res: RTCStats = {
+            timestamp: Date.now(),
+            bytesSent: candidatePair.bytesSent,
+            bytesReceived: candidatePair.bytesReceived,
+            roundTripTime: candidatePair.currentRoundTripTime,
+        }
+        return res
     }
 }
 

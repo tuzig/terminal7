@@ -684,12 +684,24 @@ audio { display: none; }
     padding: 38px 26px;
     display: flex;
 }
-.gate-name {
+.gate-status {
     width: 80%;
     border-right: 2px solid var(--dark-border);
+}
+.gate-name {
     display: flex;
     flex-direction: row;
     justify-content: space-around;
+    padding-right: 0.5em;
+}
+.gate-stats {
+    font-size: 0.6em;
+    text-align: left;
+    padding-left: 1.5em;
+    text-shadow: none;
+}
+.gate-stats > i {
+    font-size: inherit;
 }
 .peerbook-icon {
     position: relative;

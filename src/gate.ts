@@ -634,7 +634,7 @@ export class Gate {
         this.t7.log("Form error:", err.message)
         this.t7.clearTempGates()
     }
-    updateNameE() {
+    async updateNameE() {
         const e = this.nameE
         // ignores gate with no nameE
         if (!e || (e.children.length < 1))
