@@ -73,7 +73,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             name: "gates",
             help: "List all gates",
             usage: "g[ates]",
-            execute: async () => hostsCMD(shell)
+            execute: async () => gatesCMD(shell)
         },
         help: {
             name: "help",
@@ -516,9 +516,12 @@ async function editCMD(shell:Shell, args: string[]) {
     }
 }
 
-async function hostsCMD(shell: Shell) {
-    const attrs = terminal7.gates.map(
-        g => [g.name, `${g.username || "<unset>"}@${g.addr}`, g.fp?.slice(0, 16) || ""])
+async function gatesCMD(shell: Shell) {
+    const maxWidth = (shell.t.cols - 15) / 2
+    const truncate = (s: string) => s.length > maxWidth ? s.slice(0, maxWidth - 1) + "…" : s,
+        hostAtAddr = (g: Gate) => g.addr ? `${g.username || "TBD"}@${g.addr}` : "",
+        fp = (g: Gate) => g.fp ? `${g.fp.slice(0, 4)}…${g.fp.slice(-4)}` : ""
+    const attrs = terminal7.gates.map(g => [truncate(g.name),truncate(hostAtAddr(g)),fp(g)])
     const maxLengths = attrs.reduce((a, b) => [
         Math.max(a[0], b[0].length),
         Math.max(a[1], b[1].length),
