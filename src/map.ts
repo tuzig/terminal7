@@ -178,10 +178,6 @@ export class T7Map {
             b.classList.add("boarding")
         else
             b.classList.remove("boarding")
-
-        if (offline)
-            nameE.querySelector("i").classList.add("offline")
-                `<i class="f7-icons">arrow_up_circle</i> ${stats.bytesSent}B`
     }
 
     refresh() {
@@ -204,16 +200,26 @@ export class T7Map {
     async updateStats() {
         const gates = document.querySelectorAll(".gate-pad")
         gates.forEach(async e => {
-            const g = e.gate
-            if (!g)
+            const g: Gate = e.gate
+            if (!g || !g.session || !g.session.getStats)
                 return
             const stats = await g.session.getStats()
             if (!stats)
                 return
+
+            const getBytes = (bytes) => {
+                const sizes = ['B', 'KB', 'MB', 'GB']
+                const i = bytes == 0 ? 0 : Math.floor(Math.log(bytes) / Math.log(1024))
+                if (i >= sizes.length)
+                    return "1TB+"
+                return (+(bytes / Math.pow(1024, i)).toFixed(2) + sizes[i])
+            }
+            const pad = (s: string) => s.padEnd(8, 'X').replace(/X/g, '&nbsp;')
+
             e.querySelector(".gate-stats").innerHTML =
-                `<i class="f7-icons">arrow_right_arrow_left_circle</i> ${stats.roundTripTime}s ` +
-                `<i class="f7-icons">arrow_down_circle</i> ${stats.bytesReceived}B ` +
-                `<i class="f7-icons">arrow_up_circle</i> ${stats.bytesSent}B`
+                '<i class="f7-icons">arrow_right_arrow_left_circle</i>' + pad(stats.roundTripTime + 's') +
+                '<i class="f7-icons">arrow_down_circle</i>' + pad(getBytes(stats.bytesReceived)) +
+                ' <i class="f7-icons">arrow_up_circle</i>' + pad(getBytes(stats.bytesSent))
         })
     }
     /* 
