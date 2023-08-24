@@ -701,10 +701,20 @@ audio { display: none; }
     padding-left: 1.5em;
     text-shadow: none;
 }
+.gate > .gate-stats {
+    position: fixed;
+    top: 0;
+    right: 15%;
+    font-size: 75%;
+    color: #fff;
+}
 .gate-stats > i {
     font-size: 160%;
     vertical-align: middle;
     margin-right: 0.2em;
+}
+.gate > .gate-stats > i {
+    font-size: 130%;
 }
 .peerbook-icon {
     position: relative;

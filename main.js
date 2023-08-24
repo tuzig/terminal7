@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             await StatusBar.setStyle({ style: Style.Dark });
             await StatusBar.show();
+            await StatusBar.setOverlaysWebView({ overlay: true });
         } catch(e) {}
         window.terminal7 = new Terminal7()
         terminal7.open()
