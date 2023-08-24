@@ -199,8 +199,7 @@ export class T7Map {
     }
     async updateStats() {
         const gates = document.querySelectorAll(".gate-pad")
-        gates.forEach(async e => {
-            const g: Gate = e.gate
+        terminal7.gates.forEach(async (g: Gate) => {
             if (!g || !g.session || !g.session.getStats)
                 return
             const stats = await g.session.getStats()
@@ -214,12 +213,14 @@ export class T7Map {
                     return "1TB+"
                 return (+(bytes / Math.pow(1024, i)).toFixed(2) + sizes[i])
             }
-            const pad = (s: string) => s.padEnd(8, 'X').replace(/X/g, '&nbsp;')
+            const pad = (s: string, n = 9) => s.padEnd(n, 'X').replace(/X/g, '&nbsp;')
 
-            e.querySelector(".gate-stats").innerHTML =
-                '<i class="f7-icons">arrow_right_arrow_left_circle</i>' + pad(stats.roundTripTime + 's') +
+            const html =
+                '<i class="f7-icons">arrow_right_arrow_left_circle</i>' + pad(stats.roundTripTime + 's', 7) +
                 '<i class="f7-icons">arrow_down_circle</i>' + pad(getBytes(stats.bytesReceived)) +
-                ' <i class="f7-icons">arrow_up_circle</i>' + pad(getBytes(stats.bytesSent))
+                '<i class="f7-icons">arrow_up_circle</i>' + pad(getBytes(stats.bytesSent))
+            g.nameE.querySelector(".gate-stats").innerHTML = html
+            g.e.querySelector(".gate-stats").innerHTML = html
         })
     }
     /* 
