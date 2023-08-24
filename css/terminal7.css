@@ -695,13 +695,16 @@ audio { display: none; }
     padding-right: 0.5em;
 }
 .gate-stats {
-    font-size: 0.6em;
+    font-family: "FiraCode";
+    font-size: 40%;
     text-align: left;
     padding-left: 1.5em;
     text-shadow: none;
 }
 .gate-stats > i {
-    font-size: inherit;
+    font-size: 160%;
+    vertical-align: middle;
+    margin-right: 0.2em;
 }
 .peerbook-icon {
     position: relative;
