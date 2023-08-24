@@ -153,10 +153,9 @@ export class Pane extends Cell {
                     this.d.send(d)
             })
             this.t.element.addEventListener('mouseup', () => {
-                if (this.cmSelection) {
+                if (this.t.hasSelection()) {
                     this.copySelection()
                     this.t.clearSelection()
-                    this.cmDecorationsClear()
                 }
             })
             this.resizeObserver.observe(this.e);

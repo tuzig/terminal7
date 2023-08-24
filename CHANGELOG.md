@@ -10,7 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added 
 
-- terminal image support through sixel
+- Images supported through sixel - requires imgcat 
+- WebRTC real time stats
+
+### Fixed
+
+- `gates` command output is neatly displayed
+- Offline message is back
+- Mark & copy now works even for the first time in a pane
 
 ## 1.6.0 - 2023/8/17
 
