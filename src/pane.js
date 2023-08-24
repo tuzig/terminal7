@@ -12,6 +12,7 @@ import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { WebglAddon } from 'xterm-addon-webgl'
 import { WebLinksAddon } from 'xterm-addon-web-links'
+import { ImageAddon } from 'xterm-addon-image';
 import { Camera } from '@capacitor/camera'
 /* restore the bell. commented as it silences all background audio
 import { BELL_SOUND } from './bell.js'
@@ -88,6 +89,7 @@ export class Pane extends Cell {
         this.WebLinksAddon = new WebLinksAddon((MouseEvent, url) => {
             window.open(url, "_blank", "noopener")
         })
+        this.imageAddon = new ImageAddon()
 
         // there's a container div we need to get xtermjs to fit properly
         this.e.appendChild(con)
@@ -98,6 +100,7 @@ export class Pane extends Cell {
         this.t.loadAddon(this.fitAddon)
         this.t.loadAddon(this.searchAddon)
         this.t.loadAddon(this.WebLinksAddon)
+        this.t.loadAddon(this.imageAddon)
         const webGLAddon = new WebglAddon()
         webGLAddon.onContextLoss(() => {
             terminal7.log("lost context")
