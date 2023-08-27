@@ -59,6 +59,8 @@ export class Terminal7Mock extends Terminal7 {
     <template id="gate-template">
     <div class="windows-container">
     </div>
+    <div class="gate-stats">
+    </div>
     <div class="hidden search-box border">
       <nav class="tabbar-search">
         <button type="button" class="search-up"><i class="f7-icons">arrowtriangle_up</i></button>
