@@ -200,25 +200,26 @@ export class T7Map {
     async updateStats() {
         const gates = document.querySelectorAll(".gate-pad")
         terminal7.gates.forEach(async (g: Gate) => {
-            if (!g || !g.session || !g.session.getStats)
-                return
-            const stats = await g.session.getStats()
-            if (!stats)
-                return
+            let html = ""
+            if (g && g.session && g.session.getStats) {
+                const stats = await g.session.getStats()
+                if (!stats)
+                    return
 
-            const getBytes = (bytes) => {
-                const sizes = ['B', 'KB', 'MB', 'GB']
-                const i = bytes == 0 ? 0 : Math.floor(Math.log(bytes) / Math.log(1024))
-                if (i >= sizes.length)
-                    return "1TB+"
-                return (+(bytes / Math.pow(1024, i)).toFixed(2) + sizes[i])
+                const getBytes = (bytes: number) => {
+                    const sizes = ['B', 'KB', 'MB', 'GB']
+                    const i = bytes == 0 ? 0 : Math.floor(Math.log(bytes) / Math.log(1024))
+                    if (i >= sizes.length)
+                        return "1TB+"
+                    return (+(bytes / Math.pow(1024, i)).toFixed(2) + sizes[i])
+                }
+                const pad = (s: string, n = 9) => s.padEnd(n, 'X').replace(/X/g, '&nbsp;')
+
+                html =
+                    '<i class="f7-icons">arrow_right_arrow_left_circle</i>' + pad(stats.roundTripTime + 'ms', 7) +
+                    '<i class="f7-icons">arrow_down_circle</i>' + pad(getBytes(stats.bytesReceived)) +
+                    '<i class="f7-icons">arrow_up_circle</i>' + pad(getBytes(stats.bytesSent))
             }
-            const pad = (s: string, n = 9) => s.padEnd(n, 'X').replace(/X/g, '&nbsp;')
-
-            const html =
-                '<i class="f7-icons">arrow_right_arrow_left_circle</i>' + pad(stats.roundTripTime + 's', 7) +
-                '<i class="f7-icons">arrow_down_circle</i>' + pad(getBytes(stats.bytesReceived)) +
-                '<i class="f7-icons">arrow_up_circle</i>' + pad(getBytes(stats.bytesSent))
             g.nameE.querySelector(".gate-stats").innerHTML = html
             g.e.querySelector(".gate-stats").innerHTML = html
         })

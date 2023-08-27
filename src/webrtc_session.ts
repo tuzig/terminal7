@@ -397,7 +397,7 @@ export class WebRTCSession extends BaseSession {
             timestamp: Date.now(),
             bytesSent: candidatePair.bytesSent,
             bytesReceived: candidatePair.bytesReceived,
-            roundTripTime: candidatePair.currentRoundTripTime,
+            roundTripTime: candidatePair.currentRoundTripTime * 1000,
         }
         return res
     }
