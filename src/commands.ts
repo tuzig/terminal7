@@ -31,7 +31,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             name: "clear",
             help: "Clear the screen",
             usage: "cle[ar]",
-            execute: async () => setTimeout(() => shell.t.clear(),10)
+            execute: async () => void setTimeout(() => shell.t.clear(),10)
         },
         close: {
             name: "close",
@@ -92,6 +92,12 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             help: "Install webexec",
             usage: "i[nstall] [gatename]",
             execute: async args => installCMD(shell, args)
+        },
+        login: {
+            name: "login",
+            help: "Login to peerbook",
+            usage: "l[ogin]",
+            execute: async () => loginCMD(shell)
         },
         map: {
             name: "map",
@@ -888,5 +894,57 @@ async function configCMD(shell: Shell) {
 async function supportCMD(shell: Shell) {
     shell.t.writeln("https://discord.gg/Puu2afdUtr")
     shell.t.writeln("☝️  Please click to join and get help")
+}
+async function loginCMD(shell: Shell) {
+    if (terminal7.pb.isOpen()) {
+        shell.t.writeln("You are already logged in")
+        return
+    }
+    const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
+    if (customerInfo.entitlements.active.peerbook) {
+        shell.t.writeln("You are already subscribed, please `subscribe` to login")
+        return
+    }
+    const user = await shell.askValue("Please enter your email or UID")
+    const otp = await shell.askValue("OTP")
+    const fp = await terminal7.getFingerprint()
+    console.log("login with", user, otp, fp)
+    let res: Response
+    try {
+        const schema = terminal7.conf.peerbook.insecure ? "http" : "https"
+        res = await fetch(`${schema}://${terminal7.conf.net.peerbook}/login`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ user, otp, fp }),
+        })
+    } catch(e) {
+        console.log("Failed to fetch", e)
+        shell.t.writeln("Failed to login, please try again or `support`")
+        return
+    }
+    if (res.status == 401) {
+        shell.t.writeln("Invalid credentials, please try again or `support`")
+        return
+    }
+    if (res.status != 201) {
+        console.log("Login failed", res.status, await res.text())
+        shell.t.writeln("Failed to login, please try again or `support`")
+        return
+    }
+    shell.t.writeln(`Peerbook response: ${await res.text()}`)
+    try {
+        terminal7.pb.wsConnect()
+    } catch(e) {}
+    let timedOut = false
+    shell.startWatchdog(180000).catch(() => timedOut = true)
+    while (!terminal7.pb.uid && !timedOut)
+        await new Promise(r => setTimeout(r, 200))
+    if (timedOut) {
+        shell.t.writeln("Login timed out, please try again")
+        return
+    }
+    shell.stopWatchdog()
 }
 

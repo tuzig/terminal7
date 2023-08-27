@@ -690,7 +690,11 @@ export class Terminal7 {
     async onPBMessage(m) {
         this.log("got pb message", m)
         if (m["code"] !== undefined) {
-            this.notify(`\uD83D\uDCD6  ${m["text"]}`)
+            if (m["code"] == 200) {
+                this.notify("\uD83D\uDCD6  Logged in")
+                this.pb.uid = m["text"]
+            } else
+                this.notify(`\uD83D\uDCD6  ${m["text"]}`)
             return
         }
         if (m["peers"] !== undefined) {

@@ -6,6 +6,28 @@ import { reloadPage, getTWRBuffer } from '../common/utils'
 
 const url = process.env.LOCALDEV?"http://localhost:3000":"http://terminal7"
 
+const CONF = 
+`[theme]
+foreground = "#00FAFA"
+background = "#000"
+selection = "#D9F505"
+[indicators]
+flash = 100
+[exec]
+shell = "bash"
+[net]
+timeout = 3000
+retries = 3
+peerbook = "peerbook:17777"
+[ui]
+quickest_press = 1000
+max_tabs = 10
+cut_min_distance = 80
+cut_min_speed = 2.5
+pinch_max_y_velocity = 0.1
+[peerbook]
+insecure = true`
+
 test.describe('peerbook administration', ()  => {
 
     const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
@@ -31,29 +53,9 @@ test.describe('peerbook administration', ()  => {
         await waitPort({host:'terminal7', port:80})
         const response = await page.goto(url)
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
-        await page.evaluate(async () => {
-            localStorage.setItem("CapacitorStorage.dotfile",`
-[theme]
-foreground = "#00FAFA"
-background = "#000"
-selection = "#D9F505"
-[indicators]
-flash = 100
-[exec]
-shell = "bash"
-[net]
-timeout = 3000
-retries = 3
-peerbook = "peerbook:17777"
-[ui]
-quickest_press = 1000
-max_tabs = 10
-cut_min_distance = 80
-cut_min_speed = 2.5
-pinch_max_y_velocity = 0.1
-[peerbook]
-insecure = true`)
-        })
+        await page.evaluate(async CONF => {
+            localStorage.setItem("CapacitorStorage.dotfile", CONF)
+        }, CONF)
         // first page session for just for storing the dotfiles
         await reloadPage(page)
         // add terminal7 initializtion and globblas
@@ -142,15 +144,10 @@ insecure = true`)
                 fp = cfp
         }
         const oId = await redisClient.get("uid:foo@bar.com")
-        console.log("abcd1")
         await redisClient.set("uid:foo@bar.com", "123456")
-        console.log("abcd2")
         const secret = await redisClient.hGet(`user:${oId}`, "secret")
-        console.log("abcd3")
         await redisClient.hSet("user:123456", "secret", secret, "email", "foo@bar.com")
-        console.log("abcd4")
         const token = authenticator.generate(secret)
-        console.log("abcd5")
         await sleep(500)
         await page.evaluate(async (fp) => {
             terminal7.pb.verifyFP(fp)
@@ -247,5 +244,102 @@ insecure = true`)
         expect(page.locator('[data-test="gate-name"]')).toHaveCount(1)
         const fromPeerbook = await page.$$('.from-peerbook')
         expect(fromPeerbook.length).toBe(0)
+    })
+    test('try login with an invalid email', async ({ browser }) => {
+        context = await browser.newContext()
+        page = await context.newPage()
+        page.on('console', (msg) => console.log('console log:', msg.text()))
+        page.on('pageerror', (err: Error) => console.trace('PAGEERROR', err))
+        await waitPort({host:'peerbook', port:17777})
+        await waitPort({host:'terminal7', port:80})
+        const response = await page.goto(url)
+        await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
+        await page.evaluate(async CONF => {
+            localStorage.setItem("CapacitorStorage.dotfile", CONF)
+        }, CONF)
+        // first page session for just for storing the dotfiles
+        await reloadPage(page)
+        // add terminal7 initializtion and globblas
+        await waitPort({host:'webexec', port:7777})
+        await waitPort({host:'revenuecat', port:1080})
+
+        redisClient = redis.createClient({url: 'redis://redis'})
+        redisClient.on('error', err => console.log('Redis client error', err))
+        await redisClient.connect()
+        await sleep(500)
+
+        const fp = await page.evaluate(() => terminal7.getFingerprint())
+        expect(await redisClient.exists(`peer:${fp}`)).toBeFalsy()
+        await sleep(100)
+        await page.keyboard.type('login')
+        await page.keyboard.press("Enter")
+        await sleep(100)
+        let twr = await getTWRBuffer(page)
+        await page.screenshot({ path: '/result/1.png' })
+        expect(twr).toMatch(/email/)
+        await page.keyboard.type('invalid@example.com')
+        await page.keyboard.press("Enter")
+        await sleep(100)
+        twr = await getTWRBuffer(page)
+        expect(twr).toMatch(/OTP/)
+        await page.keyboard.type('123456')
+        await page.keyboard.press("Enter")
+        await sleep(100)
+        twr = await getTWRBuffer(page)
+        await page.screenshot({ path: '/result/2.png' })
+        expect(twr).toMatch(/Invalid credentials/)
+    })
+    test('try login with an invalid OTP', async () => {
+        await sleep(100)
+        await page.keyboard.type('login')
+        await page.keyboard.press("Enter")
+        await sleep(100)
+        let twr = await getTWRBuffer(page)
+        expect(twr).toMatch(/email/)
+        await page.keyboard.type('foo@bar.com')
+        await page.keyboard.press("Enter")
+        await sleep(100)
+        twr = await getTWRBuffer(page)
+        expect(twr).toMatch(/OTP/)
+        await page.keyboard.type('123456')
+        await page.keyboard.press("Enter")
+        await sleep(100)
+        twr = await getTWRBuffer(page)
+        await page.screenshot({ path: '/result/3.png' })
+        expect(twr).toMatch(/Invalid credentials/)
+    })
+    test('login with a valid email & OTP', async () => {
+        await sleep(100)
+        await page.keyboard.type('login')
+        await page.keyboard.press("Enter")
+        await sleep(100)
+        let twr = await getTWRBuffer(page)
+        expect(twr).toMatch(/email/)
+        await page.keyboard.type('foo@bar.com')
+        await page.keyboard.press("Enter")
+        await sleep(100)
+        twr = await getTWRBuffer(page)
+        expect(twr).toMatch(/OTP/)
+        const uid = await redisClient.get("uid:foo@bar.com")
+        const secret = await redisClient.hGet(`user:${uid}`, "secret")
+        const token = authenticator.generate(secret)
+        await page.keyboard.type(token)
+        await page.keyboard.press("Enter")
+        await sleep(1000)
+        twr = await getTWRBuffer(page)
+        await page.screenshot({ path: '/result/4.png' })
+        expect(twr).toMatch(/Email sent/)
+    })
+    test('check email', async ({ request }) => {
+        await sleep(200)
+        const res = await request.get('http://smtp:8025/api/v2/messages')
+        const msg = await res.json()
+        console.log("msg", msg)
+        expect(msg.count).toBe(1)
+        const body = msg.items[0].Content.Body
+        console.log("body", body)
+        const url = body.match(/http:\/\/\S+/)[0]
+        console.log("url", url)
+        expect(url).toMatch(/^http:\/\/peerbook:17777\/verify/)
     })
 })

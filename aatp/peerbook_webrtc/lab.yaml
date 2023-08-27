@@ -49,6 +49,9 @@ services:
     environment:
       REDIS_HOST: redis:6379
       REVENUECAT_URL: http://revenuecat:1080
+      PB_SMTP_HOST: smtp
+      PB_SMTP_PORT: 1025
+      PB_HOME_URL: http://peerbook:17777
   redis:
     image: "redis:alpine"
     command: [sh, -c, "rm -f /data/dump.rdb && redis-server"]  # disable persistence
@@ -61,3 +64,9 @@ services:
       - 1080
     volumes:
       - ./aatp/peerbook_webrtc:/config
+  smtp:
+    image: mailhog:local
+    build: https://github.com/mailhog/MailHog.git
+    expose:
+      - 1025
+      - 8025
