@@ -943,6 +943,12 @@ export class Terminal7 {
         this.gates = []
         this.storeGates()
     }
+    async deleteFingerprint() {
+        const db = await openDB("t7", 1)
+        let tx = db.transaction("certificates", "readwrite"),
+            store = tx.objectStore("certificates")
+        await store.clear()
+    }
     async factoryReset() {
         // setting up reset cert events
         return new Promise(resolve => {
@@ -952,13 +958,7 @@ export class Terminal7 {
             const d = TOML.parse(DEFAULT_DOTFILE)
             this.loadConf(d)
             this.pbClose()
-            openDB("t7", 1).then(db => {
-                let tx = db.transaction("certificates", "readwrite"),
-                    store = tx.objectStore("certificates")
-                store.clear().then(() => {
-                    resolve()
-                })
-            })
+            this.deleteFingerprint().then(resolve)
             NativeBiometric.deleteCredentials({ server: "dev.terminal7.default" })
         })
     }

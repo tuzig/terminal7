@@ -10,6 +10,7 @@ import { Capacitor } from '@capacitor/core'
 import { SSHSession, SSHChannel } from './ssh_session'
 import { Failure } from './session'
 import { NativeBiometric } from 'capacitor-native-biometric'
+import { Device } from '@capacitor/device'
 
 declare const terminal7 : Terminal7
 
@@ -415,6 +416,7 @@ async function resetCMD(shell: Shell, args: string[]) {
             break
         case "Fingerprint":
             await CapacitorPurchases.logOut()
+            await terminal7.deleteFingerprint()
             shell.t.writeln("Cleared fingerprint and disconnected from PeerBook")
             terminal7.pbClose()
             await terminal7.pbConnect()
@@ -907,6 +909,7 @@ async function loginCMD(shell: Shell) {
     }
     const user = await shell.askValue("Please enter your email or UID")
     const otp = await shell.askValue("OTP")
+    const name = await shell.askValue("Client name")
     const fp = await terminal7.getFingerprint()
     console.log("login with", user, otp, fp)
     let res: Response
@@ -917,7 +920,7 @@ async function loginCMD(shell: Shell) {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ user, otp, fp, name: "PLACEHOLDER" }),
+            body: JSON.stringify({ user, otp, fp, name }),
         })
     } catch(e) {
         console.log("Failed to fetch", e)
@@ -945,7 +948,7 @@ async function loginCMD(shell: Shell) {
         shell.t.writeln("Login timed out, please try again")
         return
     }
-    shell.t.writeln(`Logged in as user ${terminal7.pb.uid}`)
     shell.stopWatchdog()
+    shell.t.writeln(`Logged in as user ${terminal7.pb.uid}`)
 }
 
