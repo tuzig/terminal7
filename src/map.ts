@@ -164,7 +164,6 @@ export class T7Map {
         const status = b.children[0]
         const nameE = status.children[0]
         nameE.innerHTML = name
-        const statsE = status.children[1]
         const edit = b.children[1]
         edit.innerHTML = `<i class="f7-icons expand-gate">pencil</i>`
         if (peerbook) {
@@ -172,6 +171,8 @@ export class T7Map {
                 nameE.innerHTML += `<i class="f7-icons peerbook-icon warning">lock_shield</i>`
             else
                 nameE.innerHTML += `<i class="f7-icons peerbook-icon">peerbook</i>`
+            if (offline)
+                nameE.classList.add("offline")
         }
         // there's nothing more to update for static hosts
         if (boarding)
@@ -198,7 +199,6 @@ export class T7Map {
         }
     }
     async updateStats() {
-        const gates = document.querySelectorAll(".gate-pad")
         terminal7.gates.forEach(async (g: Gate) => {
             let html = ""
             if (g && g.session && g.session.getStats) {

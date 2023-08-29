@@ -10,7 +10,6 @@ import { Capacitor } from '@capacitor/core'
 import { SSHSession, SSHChannel } from './ssh_session'
 import { Failure } from './session'
 import { NativeBiometric } from 'capacitor-native-biometric'
-import { Device } from '@capacitor/device'
 
 declare const terminal7 : Terminal7
 
