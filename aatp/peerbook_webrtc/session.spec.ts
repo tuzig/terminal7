@@ -63,6 +63,7 @@ insecure = true
         const redisClient = redis.createClient({url: 'redis://redis'})
         redisClient.on('error', err => console.log('Redis client error', err))
         await redisClient.connect()
+        await redisClient.flushAll()
         redisClient.hSet("u:123456", "email", "joe@example.com")
         redisClient.set("id:joe@example.com", "123456")
         const fp = await page.evaluate(async () => terminal7.getFingerprint())

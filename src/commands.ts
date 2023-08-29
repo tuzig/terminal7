@@ -917,7 +917,7 @@ async function loginCMD(shell: Shell) {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ user, otp, fp }),
+            body: JSON.stringify({ user, otp, fp, name: "PLACEHOLDER" }),
         })
     } catch(e) {
         console.log("Failed to fetch", e)
@@ -933,7 +933,7 @@ async function loginCMD(shell: Shell) {
         shell.t.writeln("Failed to login, please try again or `support`")
         return
     }
-    shell.t.writeln(`Peerbook response: ${await res.text()}`)
+    shell.t.writeln(`PeerBook response: ${await res.text()}`)
     try {
         terminal7.pb.wsConnect()
     } catch(e) {}
@@ -945,6 +945,7 @@ async function loginCMD(shell: Shell) {
         shell.t.writeln("Login timed out, please try again")
         return
     }
+    shell.t.writeln(`Logged in as user ${terminal7.pb.uid}`)
     shell.stopWatchdog()
 }
 

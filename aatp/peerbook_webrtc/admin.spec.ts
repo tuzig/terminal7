@@ -40,7 +40,6 @@ test.describe('peerbook administration', ()  => {
         const redisClient = redis.createClient({url: 'redis://redis'})
         redisClient.on('error', err => console.log('Redis client error', err))
         await redisClient.connect()
-        await redisClient.flushAll()
         await redisClient.quit()
         await context.close()
     })
@@ -250,8 +249,6 @@ test.describe('peerbook administration', ()  => {
         page = await context.newPage()
         page.on('console', (msg) => console.log('console log:', msg.text()))
         page.on('pageerror', (err: Error) => console.trace('PAGEERROR', err))
-        await waitPort({host:'peerbook', port:17777})
-        await waitPort({host:'terminal7', port:80})
         const response = await page.goto(url)
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
         await page.evaluate(async CONF => {
@@ -259,10 +256,6 @@ test.describe('peerbook administration', ()  => {
         }, CONF)
         // first page session for just for storing the dotfiles
         await reloadPage(page)
-        // add terminal7 initializtion and globblas
-        await waitPort({host:'webexec', port:7777})
-        await waitPort({host:'revenuecat', port:1080})
-
         redisClient = redis.createClient({url: 'redis://redis'})
         redisClient.on('error', err => console.log('Redis client error', err))
         await redisClient.connect()
@@ -271,6 +264,8 @@ test.describe('peerbook administration', ()  => {
         const fp = await page.evaluate(() => terminal7.getFingerprint())
         expect(await redisClient.exists(`peer:${fp}`)).toBeFalsy()
         await sleep(100)
+        if (await page.locator('[data-test="twr-minimized"]').isVisible())
+            await page.click('[data-test="twr-minimized"]')
         await page.keyboard.type('login')
         await page.keyboard.press("Enter")
         await sleep(100)
@@ -326,6 +321,9 @@ test.describe('peerbook administration', ()  => {
         await page.keyboard.type(token)
         await page.keyboard.press("Enter")
         await sleep(1000)
+        const fp = await page.evaluate(() => terminal7.getFingerprint())
+        console.log("fp", fp)
+        expect(await redisClient.hGet(`peer:${fp}`, "user")).toBe(uid)
         twr = await getTWRBuffer(page)
         await page.screenshot({ path: '/result/4.png' })
         expect(twr).toMatch(/Email sent/)
@@ -337,9 +335,19 @@ test.describe('peerbook administration', ()  => {
         console.log("msg", msg)
         expect(msg.count).toBe(1)
         const body = msg.items[0].Content.Body
-        console.log("body", body)
         const url = body.match(/http:\/\/\S+/)[0]
-        console.log("url", url)
         expect(url).toMatch(/^http:\/\/peerbook:17777\/verify/)
+        await sleep(500)
+        const fp = await page.evaluate(() => terminal7.getFingerprint())
+        console.log("fp", fp)
+        expect(await redisClient.hGet(`peer:${fp}`, "user")).toBe("123456")
+        const res2 = await request.get(url)
+        console.log("res2 body", await res2.status(), await res2.text())
+        expect(res2.ok()).toBeTruthy()
+        await sleep(500)
+        const twr = await getTWRBuffer(page)
+        await page.screenshot({ path: '/result/5.png' })
+        expect(twr).toMatch(/Logged in/)
+
     })
 })
