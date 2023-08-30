@@ -33,13 +33,22 @@ import { Failure } from './session';
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
 Thanks for choosing Terminal7. This is TWR, a local
-terminal used to control the terminal and log messages.
-Type \`hide\`, \`help\` or \`add\` if you're ready to board. 
+terminal used to control the terminal and log messages.`
+const WELCOME_NATIVE=WELCOME+`
+Type \`help\`, \`add\` or \`hide\` if you're ready to board. 
 For WebRTC 🍯  please \`subscribe\` to our online service.
 
 Enjoy!
 
 `
+const WELCOME_OTHER=WELCOME+`
+Type \`help\`, \`install\` or \`hide\` if you're ready to board. 
+If you are one of our PeerBook subscribers, please \`login\`.
+
+Enjoy!
+
+` 
+
 export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 [theme]
 # foreground = "#00FAFA"
@@ -902,7 +911,10 @@ export class Terminal7 {
         const greeted = (await Preferences.get({key: 'greeted'})).value
         if (!greeted) {
             Preferences.set({key: "greeted", value: "yep"})
-            this.map.tty(WELCOME)
+            if (Capacitor.isNativePlatform())
+                this.map.tty(WELCOME_NATIVE)
+            else
+                this.map.tty(WELCOME_OTHER)
         } else {
             this.map.shell.printPrompt()
             if (!((window.matchMedia('(display-mode: standalone)').matches)
@@ -1089,11 +1101,17 @@ export class Terminal7 {
                  terminal7.log("failed to parse gates", value, e)
                 gates = []
             }
-            gates.forEach(g => {
-                g.store = true
-                this.addGate(g).e.classList.add("hidden")
-            })
-            this.map.refresh()
+        } else if (!Capacitor.isNativePlatform()) {
+            gates = [{
+                addr: "localhost",
+                id: "localhost",
+                name: "localhost",
+            }]
         }
+        gates.forEach(g => {
+            g.store = true
+            this.addGate(g).e.classList.add("hidden")
+        })
+        this.map.refresh()
     }
 }
