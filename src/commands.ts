@@ -693,7 +693,7 @@ export async function installCMD(shell: Shell, args: string[]) {
     const native = Capacitor.isNativePlatform()
     if (!native) {
         if (!terminal7.pb?.isOpen()) {
-            shell.t.writeln("If you are subscribe to PeerBook, please `login`")
+            shell.t.writeln("If you are subscribed to PeerBook, please `login`")
             const res = await shell.runForm([
                 { prompt: "Login" },
                 { prompt: "Just install" },
@@ -713,10 +713,8 @@ export async function installCMD(shell: Shell, args: string[]) {
     try {
         uid  = await terminal7.pb.getUID()
     } catch(e) {
-        console.log("get uid error", e)
+        terminal7.log("getUID returned an error", e)
     }
-    console.log("got uid", uid)
-
     if (!uid && native) {
         shell.t.writeln("Error connecting to PeerBook")
         shell.t.writeln("Please try again or `support`")
@@ -735,14 +733,14 @@ export async function installCMD(shell: Shell, args: string[]) {
         if (!gate) {
             if (terminal7.gates.length == 1) {
                 gate = terminal7.gates[0]
-                shell.t.writeln(`Using the only gate: ${gate.name}`)
+                shell.t.writeln(`Installing on the only server: ${gate.name}`)
             } else {
                 const choices = []
                 terminal7.gates.forEach(gate => {
                     choices.push({ prompt: gate.name })
                 })
                 if (choices.length == 0) {
-                    shell.t.writeln("No gates found")
+                    shell.t.writeln("No servers found")
                     shell.t.writeln("Please `add` one and run install again")
                     return
                 }
