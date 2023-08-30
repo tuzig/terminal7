@@ -49,6 +49,8 @@ export class Gate {
     firstConnection: boolean
     keyRejected: boolean
     connectionFailed: boolean
+    layoutWidth: number
+    layoutHeight: number
     constructor (props) {
         // given properties
         this.id = props.id
@@ -392,6 +394,9 @@ export class Gate {
         } else {
             this.t7.log("Setting layout: ", state)
             this.clear()
+            this.layoutWidth = state.width
+            this.layoutHeight = state.height
+            this.scaleContainer()
             state.windows.forEach(w =>  {
                 const win = this.addWindow(w.name)
                 if (w.active) 
@@ -423,6 +428,24 @@ export class Gate {
         }, 400)
         this.focus()
     }
+    scaleContainer() {
+        const width = this.layoutWidth,
+            height = this.layoutHeight
+        if (!width || !height)
+            return
+        const container = this.e.querySelector(".windows-container")
+        const maxWidth = document.body.clientWidth,
+            maxHeight = document.body.clientHeight - 135
+        const sx = maxWidth / width,
+            sy = maxHeight / height
+        const scale = Math.min(sx, sy)
+        container.style.width = `${width}px`
+        container.style.height = `${height}px`
+        container.style.left = "50%"
+        container.style.top = "calc(50% - 45px)"
+        container.style.transform = `scale(${scale}) translate(-50%, -50%)`
+        container.style.transformOrigin = "top left"
+    }
     /*
      * Adds a window, opens it and returns it
      */
@@ -452,11 +475,14 @@ export class Gate {
         this.e.querySelector(".tabbar-names").innerHTML = ""
         this.e.querySelectorAll(".window").forEach(e => e.remove())
         this.e.querySelectorAll(".modal").forEach(e => e.classList.add("hidden"))
+        this.e.querySelector(".windows-container").removeAttribute("style")
         if (this.activeW && this.activeW.activeP.zoomed)
             this.activeW.activeP.unzoom()
         this.windows = []
         this.breadcrumbs = []
         this.msgs = {}
+        this.layoutWidth = 0
+        this.layoutHeight = 0
         this.t7.cells.forEach((c, i, cells) => {
             if (c instanceof Pane && (c.gate == this))
                 cells.splice(i, 1)
@@ -466,7 +492,7 @@ export class Gate {
      * dump dumps the host to a state object
      * */
     dump() {
-        const wins = []
+        const windows = []
         this.windows.forEach(w => {
             const win = {
                 name: w.name,
@@ -474,9 +500,13 @@ export class Gate {
             }
             if (w == this.activeW)
                 win.active = true
-            wins.push(win)
+            windows.push(win)
         })
-        return { windows: wins }
+        if (this.layoutWidth && this.layoutHeight)
+            return {windows, width: this.layoutWidth, height: this.layoutHeight}
+        const width = document.body.clientWidth,
+            height = document.body.clientHeight - 135
+        return { windows, width, height }
     }
     storeState() {
         /* TODO: restore the restore to last state

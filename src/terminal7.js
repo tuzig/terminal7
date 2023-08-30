@@ -282,6 +282,16 @@ export class Terminal7 {
                 }
             })
         )
+        const resizeObserver = new ResizeObserver(() => {
+            const g = this.activeG
+            if (g) {
+                g.scaleContainer()
+                g.fit()
+                if (!g.layoutWidth && !g.layoutHeight)
+                    g.session.setPayload(g.dump())
+            }
+        })
+        resizeObserver.observe(document.body)
     }
     /*
      * restoreState is a future feature that uses local storage to restore
