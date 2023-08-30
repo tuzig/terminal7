@@ -54,6 +54,7 @@ test.describe('peerbook administration', ()  => {
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
         await page.evaluate(async CONF => {
             localStorage.setItem("CapacitorStorage.dotfile", CONF)
+            localStorage.setItem("CapacitorStorage.gates", "[]")
         }, CONF)
         // first page session for just for storing the dotfiles
         await reloadPage(page)
