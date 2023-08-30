@@ -570,7 +570,7 @@ async function copyKeyCMD(shell: Shell) {
 }
 async function subscribeCMD(shell: Shell) {
     const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
-    if (!customerInfo.entitlements.active.peerbook) {
+    if (Capacitor.isNativePlatform() && !customerInfo.entitlements.active.peerbook) {
         shell.t.writeln("Join PeerBook subscribers and enjoy:")
         shell.t.writeln("")
         shell.t.writeln("  󰟆  Persistent Sessions")
@@ -657,6 +657,11 @@ async function subscribeCMD(shell: Shell) {
         }
     }
     if (!terminal7.pb.isOpen()) {
+        if (!Capacitor.isNativePlatform()) {
+            shell.t.writeln("Sorry, you can only subscribe from a native app")
+            shell.t.writeln("If you are already subscribed, please `login`")
+            return
+        }
         try {
             await terminal7.pb.connect(customerInfo.originalAppUserId)
         } catch(e) {
