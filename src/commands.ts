@@ -704,7 +704,7 @@ export async function installCMD(shell: Shell, args: string[]) {
         return
     }
 
-    let uid: string = ""
+    let uid = ""
     try {
         uid  = await terminal7.pb.getUID()
     } catch(e) {
