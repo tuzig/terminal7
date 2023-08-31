@@ -387,11 +387,11 @@ export class Gate {
         } else if (winLen > 0) {
             // TODO: validate the current layout is like the state
             this.t7.log("Restoring with marker, opening channel")
+            this.syncLayout(state)
             this.panes().forEach(p => {
                 if (p.d)
                     p.openChannel({id: p.d.id})
             })
-            this.syncLayout(state)
         } else {
             this.t7.log("Setting layout: ", state)
             this.clear()
@@ -471,7 +471,7 @@ export class Gate {
                 win.name = w.name
                 win.nameE.innerHTML = w.name
             }
-            win.syncLayout(w.layout)
+            win.syncLayout(win.rootLayout, w.layout)
             win.nameE?.setAttribute("href", `#pane-${win.activeP?.id}`)
             if (w.active)
                 win.focus()

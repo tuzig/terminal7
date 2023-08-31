@@ -209,7 +209,33 @@ export class Window {
         else
             bH.classList.add("off")
     }
-    syncLayout(layout, activePane) {
+    syncLayout(thisLayout, thatLayout) {
+        thisLayout.dir = thatLayout.dir
+        thatLayout.cells.forEach((thatCell, i) => {
+            let thisCell = thisLayout.cells[i]
+            if (!thisCell) {
+                if (thatCell.dir) {
+                    thisCell = this.addLayout(thatCell.dir)
+                    thisLayout.cells.push(thisCell)
+                }
+                else
+                    thisCell = thisLayout.addPane(thatCell)
+            }
+            thisCell.sx = thatCell.sx
+            thisCell.sy = thatCell.sy
+            thisCell.xoff = thatCell.xoff
+            thisCell.yoff = thatCell.yoff
 
+            if (thatCell.active)
+                this.activeP = thisCell
+
+            if (thatCell.dir) {
+                if (!thisCell.dir) {
+                    const pane = thisCell.split(thatLayout.dir)
+                    thisCell = pane.layout
+                }
+                this.syncLayout(thisCell, thatCell)
+            }
+        })
     }
 }
