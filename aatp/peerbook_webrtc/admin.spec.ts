@@ -54,6 +54,7 @@ test.describe('peerbook administration', ()  => {
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
         await page.evaluate(async CONF => {
             localStorage.setItem("CapacitorStorage.dotfile", CONF)
+            localStorage.setItem("CapacitorStorage.gates", "[]")
         }, CONF)
         // first page session for just for storing the dotfiles
         await reloadPage(page)
@@ -245,6 +246,7 @@ test.describe('peerbook administration', ()  => {
         expect(fromPeerbook.length).toBe(0)
     })
     test('try login with an invalid email', async ({ browser }) => {
+        // TODO: rename to context2
         context = await browser.newContext()
         page = await context.newPage()
         page.on('console', (msg) => console.log('console log:', msg.text()))
@@ -328,13 +330,12 @@ test.describe('peerbook administration', ()  => {
         await page.keyboard.press("Enter")
         await sleep(1000)
         const fp = await page.evaluate(() => terminal7.getFingerprint())
-        console.log("fp", fp)
         expect(await redisClient.hGet(`peer:${fp}`, "user")).toBe(uid)
         twr = await getTWRBuffer(page)
         await page.screenshot({ path: '/result/4.png' })
         expect(twr).toMatch(/Email sent/)
     })
-    test('check email, click url and ensure client is logged in', async ({ request }) => {
+    test('check email, click url and ensure client is logged in', async ({ request, browser }) => {
         await sleep(200)
         const res = await request.get('http://smtp:8025/api/v2/messages')
         const msg = await res.json()
@@ -347,13 +348,13 @@ test.describe('peerbook administration', ()  => {
         const fp = await page.evaluate(() => terminal7.getFingerprint())
         console.log("fp", fp)
         expect(await redisClient.hGet(`peer:${fp}`, "user")).toBe("123456")
-        const res2 = await request.get(url)
-        console.log("res2 body", await res2.status(), await res2.text())
-        expect(res2.ok()).toBeTruthy()
+        const verifyPage = await (await browser.newContext()).newPage()
+        await verifyPage.goto(url)
+        await verifyPage.screenshot({ path: '/result/6.png' })
+        await verifyPage.click('button[type="submit"]')
         await sleep(500)
         const twr = await getTWRBuffer(page)
         await page.screenshot({ path: '/result/5.png' })
         expect(twr).toMatch(/Logged in/)
-
     })
 })

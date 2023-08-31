@@ -56,6 +56,7 @@ insecure = true
         })
         await reloadPage(page)
         await page.evaluate(() => localStorage.removeItem("CapacitorStorage.first_gate"))
+        await page.evaluate(() => localStorage.setItem("CapacitorStorage.gates", "[]"))
         // first page session for just for storing the dotfiles
         await waitPort({host:'peerbook', port:17777})
         await waitPort({host:'webexec', port:7777})

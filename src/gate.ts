@@ -280,6 +280,11 @@ export class Gate {
                 this.connectionFailed = true
                 break
 
+            case Failure.NotSupported:
+                if (!Capacitor.isNativePlatform())
+                    this.notify("🙁 Please ensure webexec is running")
+                break
+
         }
         await this.map.shell.onDisconnect(this, wasSSH)
     }

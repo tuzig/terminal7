@@ -570,7 +570,7 @@ async function copyKeyCMD(shell: Shell) {
 }
 async function subscribeCMD(shell: Shell) {
     const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
-    if (!customerInfo.entitlements.active.peerbook) {
+    if (Capacitor.isNativePlatform() && !customerInfo.entitlements.active.peerbook) {
         shell.t.writeln("Join PeerBook subscribers and enjoy:")
         shell.t.writeln("")
         shell.t.writeln("  󰟆  Persistent Sessions")
@@ -657,6 +657,11 @@ async function subscribeCMD(shell: Shell) {
         }
     }
     if (!terminal7.pb.isOpen()) {
+        if (!Capacitor.isNativePlatform()) {
+            shell.t.writeln("Sorry, you can only subscribe from a native app")
+            shell.t.writeln("If you are already subscribed, please `login`")
+            return
+        }
         try {
             await terminal7.pb.connect(customerInfo.originalAppUserId)
         } catch(e) {
@@ -685,25 +690,34 @@ async function subscribeCMD(shell: Shell) {
     }
 }
 export async function installCMD(shell: Shell, args: string[]) {
-    if (!terminal7.pb?.isOpen()) {
+    const native = Capacitor.isNativePlatform()
+    if (!native) {
+        if (!terminal7.pb?.isOpen()) {
+            shell.t.writeln("If you are subscribed to PeerBook, please `login`")
+            const res = await shell.runForm([
+                { prompt: "Login" },
+                { prompt: "Just install" },
+                { prompt: "Cancel" },
+            ], "menu")
+            if (res == "Cancel")
+                return
+            if (res == "Login")
+                await loginCMD(shell)
+        }
+    } else if (!terminal7.pb?.isOpen()) {
         shell.t.writeln("Please `subscribe` to PeerBook first")
         return
     }
 
-    let uid: string
+    let uid = ""
     try {
         uid  = await terminal7.pb.getUID()
     } catch(e) {
-        console.log("ping error", e)
-        shell.t.writeln("Error connecting to Peerbook")
-        shell.t.writeln("Please try again or `support`")
-        return
+        terminal7.log("getUID returned an error", e)
     }
-    console.log("got uid", uid)
-
-    if (!uid) {
-        shell.t.writeln("You are not subscribed to Peerbook")
-        shell.t.writeln("Please `subscribe`")
+    if (!uid && native) {
+        shell.t.writeln("Error connecting to PeerBook")
+        shell.t.writeln("Please try again or `support`")
         return
     }
     let gate: Gate
@@ -717,36 +731,46 @@ export async function installCMD(shell: Shell, args: string[]) {
     } else {
         gate = terminal7.activeG
         if (!gate) {
-            const choices = []
-            terminal7.gates.forEach(gate => {
-                choices.push({ prompt: gate.name })
-            })
-            if (choices.length == 0) {
-                shell.t.writeln("No gates found")
-                shell.t.writeln("Please `add` one and run install again")
-                return
+            if (terminal7.gates.length == 1) {
+                gate = terminal7.gates[0]
+                shell.t.writeln(`Installing on the only server: ${gate.name}`)
+            } else {
+                const choices = []
+                terminal7.gates.forEach(gate => {
+                    choices.push({ prompt: gate.name })
+                })
+                if (choices.length == 0) {
+                    shell.t.writeln("No servers found")
+                    shell.t.writeln("Please `add` one and run install again")
+                    return
+                }
+                shell.t.writeln("Please select server to install on:")
+                const choice = await shell.runForm(choices, "menu")
+                gate = shell.getGate(choice)
             }
-            shell.t.writeln("Please select server to install on:")
-            const choice = await shell.runForm(choices, "menu")
-            gate = shell.getGate(choice)
         }
     }
 
     const host = terminal7.conf.net.peerbook
-    let cmd = `PEERBOOK_UID=${uid} PEERBOOK_NAME="${gate.name}"`
-    if (host != "api.peerbook.io")
-        cmd += ` PEERBOOK_HOST=${host}`
-    cmd += " \\\nbash <(curl -sL https://get.webexec.sh)"
+    let cmd = ""
+    if (uid) {
+        cmd = `PEERBOOK_UID=${uid} PEERBOOK_NAME="${gate.name}"`
+        if (host != "api.peerbook.io")
+            cmd += ` PEERBOOK_HOST=${host}`
+        cmd += " \\\n"
+    }
+    cmd += "bash <(curl -sL https://get.webexec.sh)"
 
     // Connect to the gate over SSH and install webexec
     let publicKey, privateKey
     let done = false
     let error = false
     const fields: Fields = [
-        { prompt: "Connect & send command" },
         { prompt: "Copy command to 📋" },
         { prompt: "Cancel" },
     ]
+    if (native)
+        fields.unshift({ prompt: "Connect & send command" })
     shell.t.writeln("To Enjoy WebRTC you need Terminal7 agent installed & running")
     shell.t.writeln("")
     shell.t.writeln(`$ \x1B[1m${cmd}\x1B[0m`)
