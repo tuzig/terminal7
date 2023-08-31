@@ -439,11 +439,16 @@ export class Gate {
         const sx = maxWidth / width,
             sy = maxHeight / height
         const scale = Math.min(sx, sy)
-        container.style.width = `${width}px`
-        container.style.height = `${height}px`
+        const scaledWidth = width * scale,
+            scaledHeight = height * scale
+        this.panes().forEach(p => {
+            p.t.options.fontSize = scale*p.fontSize
+        })
+        container.style.width = `${scaledWidth}px`
+        container.style.height = `${scaledHeight}px`
         container.style.left = "50%"
         container.style.top = "calc(50% - 45px)"
-        container.style.transform = `scale(${scale}) translate(-50%, -50%)`
+        container.style.transform = `translate(-50%, -50%)`
         container.style.transformOrigin = "top left"
     }
     /*
