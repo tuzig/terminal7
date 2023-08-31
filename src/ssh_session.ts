@@ -33,7 +33,7 @@ export class SSHSession extends BaseSession {
     username: string
     port: number
     onStateChange : (state: State, failure?: Failure) => void
-    onPayloadUpdate: (payload: string) => void
+    onCMD: (payload: string) => void
     constructor(address: string, username: string, port=22) {
         super()
         this.username = username
@@ -141,7 +141,7 @@ export class HybridSession extends SSHSession {
     webrtcSession: Session
     sentMessages: Array<string>
     onStateChange : (state: State, failure?: Failure) => void
-    onPayloadUpdate: (payload: string) => void
+    onCMD: (payload: string) => void
     gotREADY: boolean
     constructor(address: string, username: string, port=22) {
         super(address, username, port)

@@ -40,7 +40,7 @@ export interface Channel {
 export interface Session {
     readonly isSSH: boolean
     onStateChange : (state: State, failure?: Failure) => void
-    onPayloadUpdate: (payload: string) => void
+    onCMD: (payload: string) => void
     // for reconnect
     openChannel(id: ChannelID): Promise<Channel>
     // for new channel
@@ -78,7 +78,7 @@ export abstract class BaseSession implements Session {
     t7: Terminal7
     watchdog: number
     onStateChange : (state: State, failure?: Failure) => void
-    onPayloadUpdate: (payload: string) => void
+    onCMD: (payload: string) => void
     constructor() {
         this.t7 = window.terminal7
     }

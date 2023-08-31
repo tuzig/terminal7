@@ -274,7 +274,8 @@ export class WebRTCSession extends BaseSession {
                         else
                             console.log("an ack is unhandled", msg)
                     }
-                }
+                } else if (this.onCMD)
+                    this.onCMD(msg)
             }
        })
     }

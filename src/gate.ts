@@ -391,6 +391,7 @@ export class Gate {
                 if (p.d)
                     p.openChannel({id: p.d.id})
             })
+            this.syncLayout(state)
         } else {
             this.t7.log("Setting layout: ", state)
             this.clear()
@@ -398,7 +399,7 @@ export class Gate {
             this.layoutHeight = state.height
             this.scaleContainer()
             state.windows.forEach(w =>  {
-                const win = this.addWindow(w.name)
+                const win = this.addWindow(w.name, false, w.id)
                 if (w.active) 
                     this.activeW = win
                 win.restoreLayout(w.layout, w.active)
@@ -442,7 +443,7 @@ export class Gate {
         const scaledWidth = width * scale,
             scaledHeight = height * scale
         this.panes().forEach(p => {
-            p.t.options.fontSize = scale*p.fontSize
+            p.t.options.fontSize = Math.floor(scale * p.fontSize)
         })
         container.style.width = `${scaledWidth}px`
         container.style.height = `${scaledHeight}px`
@@ -451,13 +452,30 @@ export class Gate {
         container.style.transform = `translate(-50%, -50%)`
         container.style.transformOrigin = "top left"
     }
+    syncLayout(state: object) {
+        this.layoutWidth = state.width
+        this.layoutHeight = state.height
+        this.scaleContainer()
+        state.windows.forEach(w => {
+            const win = this.windows.find(win => win.id == w.id)
+            if (!win) {
+                // Add window
+                this.t7.log(`Adding window ${w.name}`)
+                const newW = this.addWindow(w.name, false, w.id)
+                newW.restoreLayout(w.layout, w.active)
+                return
+            }
+            // win.syncLayout(w.layout, w.active)
+            win.nameE?.setAttribute("href", `#pane-${win.activeP?.id}`)
+        })
+    }
     /*
      * Adds a window, opens it and returns it
      */
-    addWindow(name, createPane) {
+    addWindow(name, createPane?, id?) {
         this.t7.log(`adding Window: ${name}`)
-        const id = this.windows.length,
-			w = new Window({name:name, gate: this, id: id})
+        id = id || this.windows.length
+		const w = new Window({name:name, gate: this, id: id})
         this.windows.push(w)
         if (this.windows.length >= this.t7.conf.ui.max_tabs)
             this.e.querySelector(".add-tab").classList.add("off")
@@ -501,7 +519,8 @@ export class Gate {
         this.windows.forEach(w => {
             const win = {
                 name: w.name,
-                layout: w.dump()
+                id: w.id,
+                layout: w.dump(),
             }
             if (w == this.activeW)
                 win.active = true
@@ -634,9 +653,10 @@ export class Gate {
             }
         }
         this.session.onStateChange = (state, failure?) => this.onSessionState(state, failure)
-        this.session.onPayloadUpdate = layout => {
-            this.notify("TBD: update new layout")
-            this.t7.log("TBD: update layout", layout)
+        this.session.onCMD = msg => {
+            if (msg.type == "set_payload") {
+                this.setLayout(msg.args.payload)
+            }
         }
         this.t7.log("opening session")
         if (overPB) {

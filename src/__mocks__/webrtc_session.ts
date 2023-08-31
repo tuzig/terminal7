@@ -18,7 +18,7 @@ export class MockChannel implements Channel {
 
 export class HTTPWebRTCSession implements Session {
     onStateChange: (state: State) => void
-    onPayloadUpdate: (payload: string) => void
+    onCMD: (payload: string) => void
     static fail = false
     constructor(address: string, username: string, password: string, port?=22) {
         console.log("New seesion", address, username, password, port)
