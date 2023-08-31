@@ -23,7 +23,7 @@ export class SSHSession implements Session {
     static wrongPassword = false
 
     onStateChange: (state: State) => void
-    onPayloadUpdate: (payload: string) => void
+    onCMD: (payload: string) => void
     constructor(address: string, username: string, password: string, port?=22) {
         console.log("New mocked SSH seesion", address, username, password, port)
     }
@@ -52,7 +52,7 @@ export class SSHSession implements Session {
 
 export class HybridSession implements Session {
     onStateChange: (state: State) => void
-    onPayloadUpdate: (payload: string) => void
+    onCMD: (payload: string) => void
     static fail = false
     static wrongPassword = false
     constructor(address: string, username: string, password: string, port?=22) {

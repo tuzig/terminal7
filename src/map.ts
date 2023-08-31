@@ -173,6 +173,8 @@ export class T7Map {
                 nameE.innerHTML += `<i class="f7-icons peerbook-icon">peerbook</i>`
             if (offline)
                 nameE.classList.add("offline")
+            else
+                nameE.classList.remove("offline")
         }
         // there's nothing more to update for static hosts
         if (boarding)
