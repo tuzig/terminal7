@@ -463,10 +463,18 @@ export class Gate {
                 this.t7.log(`Adding window ${w.name}`)
                 const newW = this.addWindow(w.name, false, w.id)
                 newW.restoreLayout(w.layout, w.active)
+                if (w.active)
+                    newW.focus()
                 return
             }
-            // win.syncLayout(w.layout, w.active)
+            if (win.name != w.name) {
+                win.name = w.name
+                win.nameE.innerHTML = w.name
+            }
+            win.syncLayout(w.layout)
             win.nameE?.setAttribute("href", `#pane-${win.activeP?.id}`)
+            if (w.active)
+                win.focus()
         })
     }
     /*
