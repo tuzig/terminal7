@@ -209,4 +209,7 @@ export class Window {
         else
             bH.classList.add("off")
     }
+    syncLayout(layout, activePane) {
+
+    }
 }
