@@ -102,14 +102,15 @@ export class Layout extends Cell {
     /*
      * Adds a new pane. If the gate is connected the pane will open a
      * new data channel.
+     * If index is given, the pane is replacing the one at that index
      */
-    addPane(props) {
+    addPane(props, index) {
         // CONGRATS! a new pane is born. props must include at keast sx & sy
         let p = props || {}
         p.w = this.w
         p.gate = this.gate
         p.layout = this
-        p.channel_id = props.channel_id
+        p.channelID = props.channelID
         p.id = this.t7.cells.length
         let pane = new Pane(p)
         this.t7.cells.push(pane)
@@ -119,10 +120,13 @@ export class Layout extends Cell {
             this.cells.splice(this.cells.indexOf(props.parent)+1, 0, pane)
             if (props.parent && props.parent.d)
                 parent = props.parent.d.id
-            pane.openTerminal(parent, props.channel_id)
+            pane.openTerminal(parent, props.channelID)
         } else {
-            this.cells.push(pane)
-            pane.openTerminal(null, props.channel_id)
+            if (typeof index == "number")
+                this.cells.splice(index, 1, pane)
+            else
+                this.cells.push(pane)
+            pane.openTerminal(null, props.channelid)
         }
         
         // opening the terminal and the datachannel are heavy so we wait

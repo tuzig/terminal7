@@ -337,6 +337,89 @@ describe("terminal7", function() {
             expect(w.rootLayout.cells[1].dir).to.equal("rightleft")
             expect(w.rootLayout.cells[1].cells.length).to.equal(2)
         })
+        it("can be synced from a single pane to - layout", () => {
+            h = t.addGate()
+            h.open(e)
+            w = h.addWindow("restored")
+            w.restoreLayout({
+                "dir": "topbottom",
+                "cells": [
+                    {
+                        sx: 0.8,
+                        sy: 0.3,
+                        xoff: 0.1,
+                        yoff: 0.2,
+                        channelID: 12
+                    }]}, false)
+            const newLayout = {
+                        dir: "rightleft",
+                        cells: [
+                            {
+                                sx: 0.4,
+                                sy: 0.3,
+                                xoff: 0.1,
+                                yoff: 0.5,
+                                channelID: 1,
+                                zoomed: false
+                            }, {
+                                sx: 0.4,
+                                sy: 0.3,
+                                xoff: 0.5,
+                                yoff: 0.5,
+                                channelID: 2,
+                                zoomed: false
+                            }
+                        ]
+                    }
+            w.syncLayout(w.rootLayout, newLayout)
+            expect(w.rootLayout.dir).to.equal("rightleft")
+            expect(w.rootLayout.cells.length).to.equal(2)
+            expect(w.rootLayout.cells[0].sx).to.equal(0.4)
+            expect(w.rootLayout.cells[0].channelID).to.equal(1)
+            expect(w.rootLayout.cells[1].channelID).to.equal(2)
+        })
+        it("from a double pane to single one", () => {
+            h = t.addGate()
+            h.open(e)
+            w = h.addWindow("restored")
+            w.restoreLayout({
+                "dir": "rightleft",
+                "cells": [
+                    {
+                        sx: 0.4,
+                        sy: 0.3,
+                        xoff: 0.1,
+                        yoff: 0.5,
+                        channelID: 1,
+                        zoomed: false
+                    }, {
+                        sx: 0.4,
+                        sy: 0.3,
+                        xoff: 0.5,
+                        yoff: 0.5,
+                        channelID: 2,
+                        zoomed: false
+                    }
+                ]}, false)
+            const newLayout = {
+                "dir": "rightleft",
+                "cells": [
+                    {
+                        sx: 0.8,
+                        sy: 0.3,
+                        xoff: 0.1,
+                        yoff: 0.5,
+                        channelID: 1,
+                        zoomed: false
+                    }
+                ]}
+            w.syncLayout(w.rootLayout, newLayout)
+            expect(w.rootLayout.dir).to.equal("rightleft")
+            expect(w.rootLayout.cells.length).to.equal(1)
+            expect(w.rootLayout.cells[0].sx).to.equal(0.8)
+            expect(w.rootLayout.cells[0].channelID).to.equal(1)
+        })
+
 
         it("can move a border between panes", function () {
             h = t.addGate()
