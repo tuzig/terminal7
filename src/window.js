@@ -215,11 +215,23 @@ export class Window {
             let thisCell = thisLayout.cells[i]
             if (!thisCell) {
                 if (thatCell.dir) {
-                    thisCell = this.addLayout(thatCell.dir)
+                    thisCell = new Layout(thatCell.dir)
                     thisLayout.cells.push(thisCell)
+                    syncLayout(thisCell, thatCell)
                 }
                 else
-                    thisCell = thisLayout.addPane(thatCell)
+                    thisCell = thisLayout.addPane(thatCell, i)
+            } else if (thatCell.channelID != thisCell.channelID) {
+                // the pane is not the same, replace it
+                console.log("replacing pane", thisCell.id, "with", thatCell.id) 
+                thisCell.layout = null
+                thisCell.close()
+                if (thatCell.dir) {
+                    thisCell = thisLayout.addLayout(thatCell.dir, i)
+                }
+                else
+                    thisCell = thisLayout.addPane(thatCell, i)
+                thisLayout.cells[i] = thisCell
             }
             thisCell.sx = thatCell.sx
             thisCell.sy = thatCell.sy

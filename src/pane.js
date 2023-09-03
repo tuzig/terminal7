@@ -56,6 +56,7 @@ export class Pane extends Cell {
         this.repetition = 0
         this.resizeObserver = new window.ResizeObserver(() => this.fit())
         this.needsResize = false
+        this.channelID = props.channelID
     }
 
     /*
@@ -597,7 +598,7 @@ export class Pane extends Cell {
             fontSize: this.fontSize
         }
         if (this.d)
-            cell.channel_id = this.d.id
+            cell.channelID = this.d.id
         if (this.w.activeP && this == this.w.activeP)
             cell.active = true
         if (this.zoomed)
