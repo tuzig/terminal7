@@ -300,7 +300,7 @@ describe("terminal7", function() {
             expect(d.cells[0].yoff).to.equal(0.2)
             expect(d.cells[1].yoff).to.equal(0.5)
         })
-        it("can be restored from a -| layout", () => {
+        it("can be restored and dumped from a -| layout", () => {
             h = t.addGate()
             h.open(e)
             w = h.addWindow("restored")
@@ -312,7 +312,7 @@ describe("terminal7", function() {
                         sy: 0.3,
                         xoff: 0.1,
                         yoff: 0.2,
-                        pane_id: 12
+                        channelID: 12
                     }, {
                         dir: "rightleft",
                         cells: [
@@ -321,13 +321,13 @@ describe("terminal7", function() {
                                 sy: 0.3,
                                 xoff: 0.1,
                                 yoff: 0.5,
-                                pane_id: -1
+                                channelID: -1
                             }, {
                                 sx: 0.4,
                                 sy: 0.3,
                                 xoff: 0.5,
                                 yoff: 0.5,
-                                pane_id: -1
+                                channelID: -1
                             }
                         ]
                     }
@@ -336,6 +336,11 @@ describe("terminal7", function() {
             expect(w.rootLayout.cells.length).to.equal(2)
             expect(w.rootLayout.cells[1].dir).to.equal("rightleft")
             expect(w.rootLayout.cells[1].cells.length).to.equal(2)
+            const dump = w.rootLayout.dump()
+            expect(dump.dir).to.equal("topbottom")
+            expect(dump.cells.length).to.equal(2)
+            expect(dump.cells[1].dir).to.equal("rightleft")
+            expect(dump.cells[1].cells.length).to.equal(2)
         })
         it("can be synced from a single pane to - layout", () => {
             h = t.addGate()
@@ -371,14 +376,14 @@ describe("terminal7", function() {
                             }
                         ]
                     }
-            w.syncLayout(w.rootLayout, newLayout)
-            expect(w.rootLayout.dir).to.equal("rightleft")
-            expect(w.rootLayout.cells.length).to.equal(2)
-            expect(w.rootLayout.cells[0].sx).to.equal(0.4)
-            expect(w.rootLayout.cells[0].channelID).to.equal(1)
-            expect(w.rootLayout.cells[1].channelID).to.equal(2)
+            const newL = w.syncLayout(newLayout)
+            expect(newL.dir).to.equal("rightleft")
+            expect(newL.cells.length).to.equal(2)
+            expect(newL.cells[0].sx).to.equal(0.4)
+            expect(newL.cells[0].channelID).to.equal(1)
+            expect(newL.cells[1].channelID).to.equal(2)
         })
-        it("from a double pane to single one", () => {
+        it("can be sync from a double pane to single one", () => {
             h = t.addGate()
             h.open(e)
             w = h.addWindow("restored")
@@ -413,12 +418,108 @@ describe("terminal7", function() {
                         zoomed: false
                     }
                 ]}
-            w.syncLayout(w.rootLayout, newLayout)
-            expect(w.rootLayout.dir).to.equal("rightleft")
-            expect(w.rootLayout.cells.length).to.equal(1)
-            expect(w.rootLayout.cells[0].sx).to.equal(0.8)
-            expect(w.rootLayout.cells[0].channelID).to.equal(1)
+            const newL = w.syncLayout(newLayout)
+            expect(newL.dir).to.equal("rightleft")
+            expect(newL.cells.length).to.equal(1)
+            expect(newL.cells[0].sx).to.equal(0.8)
+            expect(newL.cells[0].channelID).to.equal(1)
         })
+        it("can be sync from a double pane to triple one", () => {
+            h = t.addGate()
+            h.open(e)
+            w = h.addWindow("restored")
+            w.restoreLayout({
+                "dir": "topbottom",
+                "cells": [
+                    {
+                        sx: 0.8,
+                        sy: 0.3,
+                        xoff: 0.1,
+                        yoff: 0.1,
+                        channelID: 1,
+                        zoomed: false
+                    }, {
+                        sx: 0.8,
+                        sy: 0.3,
+                        xoff: 0.1,
+                        yoff: 0.4,
+                        channelID: 2,
+                        zoomed: false
+                    }
+                ]}, false)
+            const newLayout = {
+                "dir": "topbottom",
+                "cells": [
+                    {
+                        sx: 0.8,
+                        sy: 0.3,
+                        xoff: 0.1,
+                        yoff: 0.1,
+                        channelID: 1
+                    }, {
+                        dir: "rightleft",
+                        cells: [
+                            {
+                                sx: 0.4,
+                                sy: 0.3,
+                                xoff: 0.1,
+                                yoff: 0.5,
+                                channelID: 2
+                            }, {
+                                sx: 0.4,
+                                sy: 0.3,
+                                xoff: 0.5,
+                                yoff: 0.5,
+                                channelID: 3
+                            }
+                        ]
+                    }
+                ]}
+            const newL = w.syncLayout(newLayout)
+            expect(newL.dir).to.equal("topbottom")
+            expect(newL.cells.length).to.equal(2)
+            expect(newL.cells[0].sx).to.equal(0.8)
+            expect(newL.cells[0].channelID).to.equal(1)
+            const l2 = newL.cells[1]
+            expect(l2.dir).to.equal("rightleft")
+            expect(l2.cells.length).to.equal(2)
+            expect(l2.cells[0].sx).to.equal(0.4)
+            expect(l2.cells[0].channelID).to.equal(2)
+            expect(l2.cells[1].channelID).to.equal(3)
+        })
+        it("can be sync from a double pane to the same layout", () => {
+            h = t.addGate()
+            h.open(e)
+            w = h.addWindow("restored")
+            w.restoreLayout({
+                "dir": "rightleft",
+                "cells": [
+                    {
+                        sx: 0.4,
+                        sy: 0.3,
+                        xoff: 0.1,
+                        yoff: 0.5,
+                        channelID: 1,
+                        zoomed: false
+                    }, {
+                        sx: 0.4,
+                        sy: 0.3,
+                        xoff: 0.5,
+                        yoff: 0.5,
+                        channelID: 2,
+                        zoomed: false
+                    }
+                ]}, false)
+            const dump = w.rootLayout.dump()
+            console.log("dump", dump)
+            const newL = w.syncLayout(dump)
+            expect(newL.dir).to.equal("rightleft")
+            expect(newL.cells.length).to.equal(2)
+            expect(newL.cells[0].sx).to.equal(0.4)
+            expect(newL.cells[0].sy).to.equal(0.3)
+            expect(newL.cells[0].channelID).to.equal(1)
+        })
+
 
 
         it("can move a border between panes", function () {
@@ -530,13 +631,13 @@ describe("terminal7", function() {
                         sy: 0.6,
                         xoff: 0.1,
                         yoff: 0.2,
-                        pane_id: 0
+                        channelID: 0
                     }, {
                         sx: 0.8,
                         sy: 0.6,
                         xoff: 0.1,
                         yoff: 0.2,
-                        pane_id: 1,
+                        channelID: 1,
                         zoomed: true,
                         active: true
                     }

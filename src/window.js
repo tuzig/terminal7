@@ -209,45 +209,56 @@ export class Window {
         else
             bH.classList.add("off")
     }
-    syncLayout(thisLayout, thatLayout) {
-        thisLayout.dir = thatLayout.dir
+    syncLayout(thatLayout, theseCells) {
+        let zoomed
+        if (!theseCells)
+            theseCells = this.rootLayout.allCells()
+        thatLayout.w = this
+        thatLayout.gate = this.gate
+        let newLayout = new Layout(thatLayout.dir, thatLayout)
         thatLayout.cells.forEach((thatCell, i) => {
-            let thisCell = thisLayout.cells[i]
-            if (!thisCell) {
-                if (thatCell.dir) {
-                    thisCell = new Layout(thatCell.dir)
-                    thisLayout.cells.push(thisCell)
-                    syncLayout(thisCell, thatCell)
+            let thisCell = null
+            if (thatCell.dir) {
+                console.log("syncing layout", thatCell)
+                thatCell.w = this
+                thatCell.gate = this.gate
+                thisCell = new Layout(thatCell.dir, thatCell)
+                thisCell = this.syncLayout(thatCell, theseCells)
+                thisCell.layout = newLayout
+                newLayout.cells.push(thisCell)
+            } else {
+                const thisI = theseCells.findIndex(c => c.channelID == thatCell.channelID)
+                if (thisI >= 0) {
+                    console.log("found pane in ", thisI)
+                    // found it, sync it
+                    thisCell = theseCells.splice(thisI, 1)[0]
+                    thisCell.layout = newLayout
+                    newLayout.cells.push(thisCell)
+                } else {
+                    console.log("didn't find pane ", thatCell.channelID)
+                    thisCell = newLayout.addPane(thatCell)
                 }
-                else
-                    thisCell = thisLayout.addPane(thatCell, i)
-            } else if (thatCell.channelID != thisCell.channelID) {
-                // the pane is not the same, replace it
-                console.log("replacing pane", thisCell.id, "with", thatCell.id) 
-                thisCell.layout = null
-                thisCell.close()
-                if (thatCell.dir) {
-                    thisCell = thisLayout.addLayout(thatCell.dir, i)
-                }
-                else
-                    thisCell = thisLayout.addPane(thatCell, i)
-                thisLayout.cells[i] = thisCell
             }
             thisCell.sx = thatCell.sx
             thisCell.sy = thatCell.sy
             thisCell.xoff = thatCell.xoff
             thisCell.yoff = thatCell.yoff
-
-            if (thatCell.active)
-                this.activeP = thisCell
-
-            if (thatCell.dir) {
-                if (!thisCell.dir) {
-                    const pane = thisCell.split(thatLayout.dir)
-                    thisCell = pane.layout
-                }
-                this.syncLayout(thisCell, thatCell)
+            thisCell.fontSize = thatCell.fontSize
+            if (thisCell.t) {
+                thisCell.t.options.fontSize = thatCell.fontSize * this.gate.fontScale
+                thisCell.fit()
             }
+            if (thatCell.active)
+                thisCell.focus()
+            if (thatCell.zoomed) //  && this.activeP == thisCell) 
+                zoomed = thisCell
+
         })
+        if (zoomed) {
+            setTimeout(() => zoomed.zoom(), 100)
+            console.log("will zoom in 100ms")
+        }
+        return newLayout
+
     }
 }
