@@ -40,7 +40,7 @@ export class Pane extends Cell {
         this.catchFingers()
         this.d = null
         this.active = false
-        this.fontSize = props.fontSize || 12
+        this.fontSize = props.fontSize * this.gate.fontScale || 12
         this.theme = props.theme || this.t7.conf.theme
         this.copyMode = false
         this.cmAtEnd = null
@@ -70,14 +70,13 @@ export class Pane extends Cell {
      * Pane.openTerminal opens an xtermjs terminal on our element
      */
     openTerminal(parentID, channelID) {
-        console.log("in OpenTerminal", parentID, channelID)
         if (channelID)
             this.channelID = channelID
         var con = document.createElement("div")
         this.t = new Terminal({
             convertEol: false,
             fontFamily: "FiraCode",
-            fontSize: this.fontSize,
+            fontSize: this.fontSize * this.gate.fontScale,
             rendererType: "canvas",
             theme: this.theme,
             rows:24,
@@ -280,7 +279,6 @@ export class Pane extends Cell {
         }
 
         this.d = channel
-        // in case of new channel, we need to update the channelID
         this.channelID = channel.id
         this.d.onMessage = m => this.onChannelMessage(m)
         this.d.onClose = () => {
