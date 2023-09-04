@@ -287,8 +287,13 @@ export class Terminal7 {
             if (g) {
                 g.scaleContainer()
                 g.fit()
-                if (!g.layoutWidth && !g.layoutHeight)
+                if (g.fitScreen)
                     g.session.setPayload(g.dump())
+                /*
+                else
+                    g.panes().forEach(p => p.needsResize = false)
+                */
+
             }
         })
         resizeObserver.observe(document.body)

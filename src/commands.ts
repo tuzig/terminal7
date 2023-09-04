@@ -352,6 +352,8 @@ async function resetCMD(shell: Shell, args: string[]) {
         if (!gate.onlySSH)
             // Add the connection reset option for webrtc
             fields.splice(0, 0, { prompt: "Reset connection" })
+        if (gate.session)
+            fields.splice(0, 0, { prompt: "Fit my screen" })
         shell.t.writeln(`\x1B[4m${gate.name}\x1B[0m`)
         let choice
         try {
@@ -361,6 +363,11 @@ async function resetCMD(shell: Shell, args: string[]) {
         }
 
         switch (choice) {
+            case "Fit my screen":
+                gate.setFitScreen()
+                gate.map.showLog(false)
+                return
+
             case "Reset connection":
                 // TODO: simplify
                 if (gate.session) {

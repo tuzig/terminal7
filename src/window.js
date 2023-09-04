@@ -216,7 +216,7 @@ export class Window {
         thatLayout.w = this
         thatLayout.gate = this.gate
         let newLayout = new Layout(thatLayout.dir, thatLayout)
-        thatLayout.cells.forEach((thatCell, i) => {
+        thatLayout.cells.forEach(thatCell => {
             let thisCell = null
             if (thatCell.dir) {
                 console.log("syncing layout", thatCell)

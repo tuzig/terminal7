@@ -40,7 +40,7 @@ export class Pane extends Cell {
         this.catchFingers()
         this.d = null
         this.active = false
-        this.fontSize = props.fontSize * this.gate.fontScale || 12
+        this.fontSize = (props.fontSize || 12 ) * this.gate.fontScale
         this.theme = props.theme || this.t7.conf.theme
         this.copyMode = false
         this.cmAtEnd = null
@@ -210,7 +210,7 @@ export class Pane extends Cell {
         }
         this.refreshDividers()
         if (this.t.rows != oldr || this.t.cols != oldc) {
-            if (this.d)
+            if (this.d && this.gate.fitScreen)
                 this.d.resize(this.t.cols, this.t.rows)
             else
                 this.needsResize = true
@@ -271,8 +271,8 @@ export class Pane extends Cell {
         return p
     }
     onChannelConnected(channel) {
-        const reconnect = this.d != null
-        if (reconnect) {
+        const reconnect =  typeof this.channelID == "number"
+        if (this.d) {
             this.d.onMessage = undefined
             this.d.onClose = undefined
             this.d.close()

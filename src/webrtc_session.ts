@@ -177,8 +177,10 @@ export class WebRTCSession extends BaseSession {
         // callbacks are set after the resolve as that's 
         // where caller's onMessage & onClose are set
         dc.onmessage = m => {
-            const data = new Uint8Array(m.data)
-            channel.onMessage(data)
+            if (typeof channel.onMessage == "function") {
+                const data = new Uint8Array(m.data)
+                channel.onMessage(data)
+            }
         }
         dc.onclose = m => {
             this.channels.delete(id)
