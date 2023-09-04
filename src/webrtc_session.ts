@@ -265,7 +265,7 @@ export class WebRTCSession extends BaseSession {
                     this.t7.log("got cdc message:",  msg)
                     if (msg.type == "nack") {
                         if (handlers && (typeof handlers[1] == "function"))
-                            handlers[1](msg.args.body)
+                            handlers[1](msg.desc)
                         else
                             console.log("A nack is unhandled", msg)
                     } else {
