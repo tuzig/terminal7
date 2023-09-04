@@ -392,10 +392,7 @@ export class Gate {
             if (this.activeW && this.activeW.activeP.zoomed)
                 this.activeW.activeP.unzoom()
             this.syncLayout(state)
-            this.panes().forEach(p => {
-                if (p.d)
-                    p.openChannel({id: p.d.id})
-            })
+            this.panes().forEach(p => p.openChannel({id: p.channelID}))
         } else {
             this.t7.log("Setting layout: ", state)
             this.clear()
@@ -561,23 +558,25 @@ export class Gate {
     }
 
     sendState() {
-        if (this.sendStateTask != null)
+        if ((this.sendStateTask != null) || !this.session)
             return
+       this.sendStateTask = setTimeout(() => {
 
-        this.storeState()
-        // send the state only when all panes have a channel
-        if (this.session && (this.panes().every(p => p.d != null)))
-           this.sendStateTask = setTimeout(() => {
-               this.sendStateTask = null
-               if (!this.session)
-                   return
+           this.sendStateTask = null
+
+           if (!this.session)
+               return
+
+            if (this.panes().every(p => p.channelID))
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
                         this.t7.log("Closing gate after updating to empty state")
                         this.close()
                     }
                })
-            }, 100)
+            else
+                this.sendState()
+        }, 100) // TODO: make it run when the update is done and all channels opened
     }
     async onPaneConnected() {
         // hide notifications
