@@ -52,6 +52,7 @@ export class Gate {
     layoutWidth: number
     layoutHeight: number
     fontScale: number
+    fitScreen: boolean
     constructor (props) {
         // given properties
         this.id = props.id
@@ -81,6 +82,7 @@ export class Gate {
         this.onFailure = Function.prototype()
         this.firstConnection = props.firstConnection || false
         this.fontScale = props.fontScale || 1
+        this.fitScreen = true
     }
 
     /*
@@ -380,6 +382,7 @@ export class Gate {
     setLayout(state: object) {
         console.log("in setLayout", state)
         const winLen = this.windows.length
+        this.fontScale = 1
         // got an empty state
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane
@@ -387,8 +390,7 @@ export class Gate {
             this.clear()
             this.activeW = this.addWindow("", true)
         } else if (winLen > 0) {
-            // TODO: validate the current layout is like the state
-            this.t7.log("Restoring with marker, opening channel")
+            this.t7.log("Restoring to an existing layout")
             if (this.activeW && this.activeW.activeP.zoomed)
                 this.activeW.activeP.unzoom()
             this.syncLayout(state)
@@ -396,9 +398,12 @@ export class Gate {
         } else {
             this.t7.log("Setting layout: ", state)
             this.clear()
-            this.layoutWidth = state.width
-            this.layoutHeight = state.height
-            this.scaleContainer()
+            if (this.layoutWidth != state.width || this.layoutHeight != state.height) {
+                this.layoutWidth = state.width
+                this.layoutHeight = state.height
+                this.fitScreen = false
+                this.scaleContainer()
+            }
             state.windows.forEach(w =>  {
                 const win = this.addWindow(w.name, false, w.id)
                 if (w.active) 
@@ -415,7 +420,7 @@ export class Gate {
             let foundNull = false
             this.panes().forEach((p, i) => {
                 if (p.d) {
-                    if (p.needsResize) {
+                    if (p.needsResize && this.fitScreen) {
                     // TODO: fix webexec so there's no need for this
                         this.t7.run(() => p.d.resize(p.t.cols, p.t.rows), i*10)
                         p.needsResize = false
@@ -431,6 +436,8 @@ export class Gate {
         this.focus()
     }
     scaleContainer() {
+        if (this.fitScreen)
+            return
         const width = this.layoutWidth,
             height = this.layoutHeight
         if (!width || !height)
@@ -455,9 +462,12 @@ export class Gate {
         container.style.transformOrigin = "top left"
     }
     syncLayout(state: object) {
-        this.layoutWidth = state.width
-        this.layoutHeight = state.height
-        this.scaleContainer()
+        if (state.width != this.layoutWidth || state.height != this.layoutHeight) {
+            this.layoutWidth = state.width
+            this.layoutHeight = state.height
+            this.scaleContainer()
+            this.fitScreen = false
+        }
         state.windows.forEach(w => {
             const win = this.windows.find(win => win.id == w.id)
             if (!win) {
@@ -536,7 +546,7 @@ export class Gate {
                 win.active = true
             windows.push(win)
         })
-        if (this.layoutWidth && this.layoutHeight)
+        if (!this.fitScreen)
             return {windows, width: this.layoutWidth, height: this.layoutHeight}
         const width = document.body.clientWidth,
             height = document.body.clientHeight - 135
@@ -736,6 +746,13 @@ export class Gate {
             this.session.close()
             this.session = null
         }
+    }
+    setFitScreen() {
+        this.layoutWidth = document.body.clientWidth
+        this.layoutHeight = document.body.clientHeight - 135
+        this.scaleContainer()
+        this.fitScreen = true
+        this.sendState()
     }
 	
 }
