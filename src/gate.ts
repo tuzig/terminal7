@@ -51,6 +51,7 @@ export class Gate {
     connectionFailed: boolean
     layoutWidth: number
     layoutHeight: number
+    fontScale: number
     constructor (props) {
         // given properties
         this.id = props.id
@@ -79,6 +80,7 @@ export class Gate {
         this.onlySSH = props.onlySSH || false
         this.onFailure = Function.prototype()
         this.firstConnection = props.firstConnection || false
+        this.fontScale = props.fontScale || 1
     }
 
     /*
@@ -387,6 +389,8 @@ export class Gate {
         } else if (winLen > 0) {
             // TODO: validate the current layout is like the state
             this.t7.log("Restoring with marker, opening channel")
+            if (this.activeW && this.activeW.activeP.zoomed)
+                this.activeW.activeP.unzoom()
             this.syncLayout(state)
             this.panes().forEach(p => {
                 if (p.d)
@@ -445,6 +449,7 @@ export class Gate {
         this.panes().forEach(p => {
             p.t.options.fontSize = Math.floor(scale * p.fontSize)
         })
+        this.fontScale = scale
         container.style.width = `${scaledWidth}px`
         container.style.height = `${scaledHeight}px`
         container.style.left = "50%"
@@ -471,7 +476,7 @@ export class Gate {
                 win.name = w.name
                 win.nameE.innerHTML = w.name
             }
-            win.syncLayout(win.rootLayout, w.layout)
+            win.rootLayout = win.syncLayout(w.layout)
             win.nameE?.setAttribute("href", `#pane-${win.activeP?.id}`)
             if (w.active)
                 win.focus()

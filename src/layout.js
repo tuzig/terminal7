@@ -126,7 +126,7 @@ export class Layout extends Cell {
                 this.cells.splice(index, 1, pane)
             else
                 this.cells.push(pane)
-            pane.openTerminal(null, props.channelid)
+            pane.openTerminal(null, props.channelID)
         }
         
         // opening the terminal and the datachannel are heavy so we wait
@@ -326,5 +326,16 @@ export class Layout extends Cell {
         if (root)
             return root.findNext(this.layout)
         return null
+    }
+    // Layout.allCells returns all the cells in the layout
+    allCells() {
+        let cells = []
+        this.cells.forEach((c) => {
+            if (c instanceof Layout)
+                cells = cells.concat(c.allCells())
+            else
+                cells.push(c)
+        })
+        return cells
     }
 }

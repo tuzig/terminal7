@@ -70,7 +70,9 @@ export class Pane extends Cell {
      * Pane.openTerminal opens an xtermjs terminal on our element
      */
     openTerminal(parentID, channelID) {
-        console.log("in OpenTerminal")
+        console.log("in OpenTerminal", parentID, channelID)
+        if (channelID)
+            this.channelID = channelID
         var con = document.createElement("div")
         this.t = new Terminal({
             convertEol: false,
@@ -179,8 +181,9 @@ export class Pane extends Cell {
         this.fontSize += by
         if (this.fontSize < 6) this.fontSize = 6
         else if (this.fontSize > 30) this.fontSize = 30
-        this.t.options.fontSize = this.fontSize
+        this.t.options.fontSize = this.fontSize * this.gate.fontScale
         this.fit()
+        this.gate.sendState()
     }
 
     // fit a pane to the display area. If it was resized, the server is updated.
@@ -266,12 +269,19 @@ export class Pane extends Cell {
                        xoff: xoff, yoff: yoff,
                        parent: this})
         p.focus()
-        this.gate.sendState()
         return p
     }
     onChannelConnected(channel) {
         const reconnect = this.d != null
+        if (reconnect) {
+            this.d.onMessage = undefined
+            this.d.onClose = undefined
+            this.d.close()
+        }
+
         this.d = channel
+        // in case of new channel, we need to update the channelID
+        this.channelID = channel.id
         this.d.onMessage = m => this.onChannelMessage(m)
         this.d.onClose = () => {
             this.d = null
@@ -597,8 +607,7 @@ export class Pane extends Cell {
             yoff: this.yoff,
             fontSize: this.fontSize
         }
-        if (this.d)
-            cell.channelID = this.d.id
+        cell.channelID = this.channelID
         if (this.w.activeP && this == this.w.activeP)
             cell.active = true
         if (this.zoomed)
