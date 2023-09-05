@@ -367,7 +367,6 @@ button.rename-close {
     position: absolute;
     top: 128px;
     left: 20px;
-    max-width: 35vw;
     padding: 10px;
     border: 1px dotted;
     border-radius: 4px;
@@ -375,7 +374,7 @@ button.rename-close {
     line-height: 12px;
 }
 #version a {
-    text-decoration: underline;
+    text-decoration: none;
 	cursor: pointer;
 }
 #version ul {
@@ -485,9 +484,29 @@ label {
     height: 100%;
     width: 100%;
 }
+@media (min-width: 600px) {
+    #title-short {
+        display: none;
+    }
+    #title-long {
+        display: block;
+    }
+    #version {
+        width: 11em;
+    }
+}
 @media (max-width: 600px) {
     #log {
         width: 90vw;
+    }
+    #title-short {
+        display: block;
+    }
+    #title-long {
+        display: none;
+    }
+    #version {
+        max-width: 35vw;
     }
 }
 .search-container {
@@ -797,16 +816,7 @@ div.boarding  {
 	text-decoration: none;
 }
 #title-short {
-  display: none;
   letter-spacing: 0.1em;
-}
-@media (max-width: 600px) {
-    #title-short {
-        display: block;
-    }
-    #title-long {
-        display: none;
-    }
 }
 .expand-gate {
     display: block;
