@@ -192,6 +192,11 @@ export class Terminal7 {
                     ev.stopPropagation()
                     ev.preventDefault()
                 })
+        document.getElementById('peerbook-legend').addEventListener(
+            'click', async (ev) => {
+                setTimeout(() => this.map.shell.runCommand('subscribe', []), 50)
+                ev.stopPropagation()
+            })
         // hide the modal on xmark click
         // Handle network events for the indicator
         Network.addListener('networkStatusChange', s => 
@@ -335,12 +340,36 @@ export class Terminal7 {
         }
     }
     async pbConnect() {
+        const statusE = document.getElementById("peerbook-status")
         return new Promise((resolve, reject) => {
+            let i = 0, change = 0.2
+            function callResolve() {
+                spinnerInterval && clearInterval(spinnerInterval)
+                statusE.style.opacity = 1
+                resolve()
+            }
+            function callReject(e, symbol) {
+                spinnerInterval && clearInterval(spinnerInterval)
+                statusE.style.opacity = 1
+                statusE.innerHTML = symbol || "⛔︎"
+                reject(e)
+            }
+            const spinnerInterval = setInterval(() => {
+                i = i + change
+                if (i > 1 || i < 0) {
+                    change = -change
+                    i = i + change
+                } 
+                statusE.style.opacity = i
+            }, 200)
+            statusE.innerHTML = PB
+            statusE.style.opacity = 0
             const catchConnect = e => {
+                let symbol = "⛔︎"
                 if (e =="Unregistered")
                     this.notify(Capacitor.isNativePlatform()?
-                        `${PB} You are unregistered, please \`subscribe\``:
-                        `${PB} You are unregistered, please \`subscribe\` on your tablet`)
+                        `${PB} You need to register, please \`subscribe\``:
+                        `${PB} You need to regisrer, please \`subscribe\` on your tablet`)
                     
                 else if (e == Failure.NotSupported)
                     // TODO: this should be changed to a notification
@@ -352,20 +381,22 @@ export class Terminal7 {
                         `${PB} Failed to connect, please try \`subscribe\``:
                         `${PB} Failed to connect, please try \`login\``)
                     this.notify("If the problem persists, `support`")
-                }
-                reject(e)
+                } else
+                    symbol = "🔒"
+
+                callReject(e, symbol)
             }
 
             // do nothing when no subscription or already connected
             if (this.pb) {
                 if ((this.pb.uid != "TBD")  && (this.pb.uid != "")) {
-                    this.pb.wsConnect().then(resolve).catch(reject)
+                    this.pb.wsConnect().then(callResolve).catch(callReject)
                     return
                 }
                 if (this.pb.isOpen())
-                    resolve()
+                    callResolve()
                 else
-                    this.pb.connect().then(resolve).catch(catchConnect)
+                    this.pb.connect().then(callResolve).catch(catchConnect)
                 return
             }
             this.getFingerprint().then(fp => {
@@ -378,11 +409,11 @@ export class Terminal7 {
                 this.pb.onUpdate = (m) => this.onPBMessage(m)
                 if (!this.purchasesStarted) {
                     this.pb.startPurchases().then(() => 
-                        this.pb.connect().then(resolve).catch(catchConnect)
-                        // this.pb.updateCustomerInfo().then(resolve).catch(reject)
-                    ).catch(reject).finally(() => this.purchasesStarted = true)
+                        this.pb.connect().then(callResolve).catch(catchConnect)
+                        // this.pb.updateCustomerInfo().then(callResolve).catch(callReject)
+                    ).catch(callReject).finally(() => this.purchasesStarted = true)
                 } else
-                    this.pb.connect().then(resolve).catch(catchConnect)
+                    this.pb.connect().then(callResolve).catch(catchConnect)
             })
         })
     }
@@ -548,8 +579,8 @@ export class Terminal7 {
                         gate.notify("Timed out")
                     else
                         this.notify(Capacitor.isNativePlatform()?
-                            `${PB} timed out, please try \`subscribe\``:
-                            `${PB} timed out, please try \`login\``)
+                            `${PB} timed out, please retry with \`subscribe\``:
+                            `${PB} timed out, please retry with \`login\``)
                     gate.stopBoarding()
                 })
             } else
