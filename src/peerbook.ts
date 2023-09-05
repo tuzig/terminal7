@@ -322,7 +322,9 @@ export class PeerbookConnection {
             }
             ws.onclose = (ev) => {
                 window.terminal7.log("peerbook ws closed", ev)
-                window.terminal7.notify(`${PB} Disconnected. Please \`sub\` to reconnect`)
+                window.terminal7.notify(Capacitor.isNativePlatform()?
+                    `${PB} Disconnected. Please \`subscribe\` to reconnect`:
+                    `${PB} Disconnected. Please \`login\` to reconnect`)
                 this.ws = null
             }
             ws.onopen = () => {

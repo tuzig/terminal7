@@ -338,14 +338,19 @@ export class Terminal7 {
         return new Promise((resolve, reject) => {
             const catchConnect = e => {
                 if (e =="Unregistered")
-                    this.notify(`${PB} You are unregistered, please \`subscribe\``)
+                    this.notify(Capacitor.isNativePlatform()?
+                        `${PB} You are unregistered, please \`subscribe\``:
+                        `${PB} You are unregistered, please \`subscribe\` on your tablet`)
+                    
                 else if (e == Failure.NotSupported)
                     // TODO: this should be changed to a notification
                     // after we upgrade peerbook
                     console.log("PB not supported")
                 else if (e != "Unauthorized") {
                     terminal7.log("PB connect failed", e)
-                    this.notify(`${PB} Failed to connect, please try \`sub\``)
+                    this.notify(Capacitor.isNativePlatform()?
+                        `${PB} Failed to connect, please try \`subscribe\``:
+                        `${PB} Failed to connect, please try \`login\``)
                     this.notify("If the problem persists, `support`")
                 }
                 reject(e)
@@ -542,7 +547,9 @@ export class Terminal7 {
                     if (this.pb.isOpen())
                         gate.notify("Timed out")
                     else
-                        this.notify(`${PB} timed out, please try \`subscribe\``)
+                        this.notify(Capacitor.isNativePlatform()?
+                            `${PB} timed out, please try \`subscribe\``:
+                            `${PB} timed out, please try \`login\``)
                     gate.stopBoarding()
                 })
             } else
