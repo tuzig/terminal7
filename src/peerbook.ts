@@ -308,7 +308,6 @@ export class PeerbookConnection {
                 } 
                 if (firstMessage) {
                     firstMessage = false
-                    terminal7.notify(`Connected to ${PB} PeerBook ${PB}`)
                     resolve()
                 }
                 if (this.onUpdate)
@@ -322,9 +321,8 @@ export class PeerbookConnection {
             }
             ws.onclose = (ev) => {
                 window.terminal7.log("peerbook ws closed", ev)
-                window.terminal7.notify(Capacitor.isNativePlatform()?
-                    `${PB} Disconnected. Please \`subscribe\` to reconnect`:
-                    `${PB} Disconnected. Please \`login\` to reconnect`)
+                const statusE = document.getElementById("peerbook-status")
+                statusE.innerHTML = "🙁"
                 this.ws = null
             }
             ws.onopen = () => {

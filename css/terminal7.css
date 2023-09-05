@@ -378,6 +378,16 @@ button.rename-close {
     text-decoration: underline;
 	cursor: pointer;
 }
+#version ul {
+    list-style: none;
+    text-align: left;
+    padding-left: 0;
+
+}
+#version li .status {
+    float: right;
+    padding-left: 0;
+}
 #version footer {
     font-size: 10px;
 }
