@@ -769,5 +769,4 @@ export class Gate {
         this.fit()
         this.sendState()
     }
-	
 }

@@ -190,7 +190,8 @@ export class Pane extends Cell {
     // TODO: make it async
     fit(cb) {
         if (!this.t) {
-            if (cb instanceof Function) cb(this)
+            if (cb instanceof Function)
+                cb(this)
             return
         }
         let oldr = this.t.rows
