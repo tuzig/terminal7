@@ -337,7 +337,6 @@ export class Terminal7 {
     async pbConnect() {
         const statusE = document.getElementById("peerbook-status")
         return new Promise((resolve, reject) => {
-            let i = 0, change = 0.2
             function callResolve() {
                 if (terminal7.pb)
                     terminal7.pb.stopSpinner()

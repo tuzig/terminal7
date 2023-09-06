@@ -281,7 +281,7 @@ export class PeerbookConnection {
     async wsConnect() {
         console.log("peerbook wsConnect called")
         let firstMessage = true
-        return new Promise<void>((resolve, reject) => {
+        return new Promise<void>(resolve => {
             if (this.ws != null) {
                 if (this.isOpen()) {
                     resolve()
