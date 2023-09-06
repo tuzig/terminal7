@@ -21,6 +21,7 @@ import { Preferences } from '@capacitor/preferences'
 
 
 const FAILED_COLOR = "red"// ashort period of time, in milli
+const TOOLBAR_HEIGHT = 135
 /*
  * The gate class abstracts a host connection
  */
@@ -125,6 +126,8 @@ export class Gate {
             */
             this.e.appendChild(t)
         }
+        this.layoutWidth = document.body.clientWidth
+        this.layoutHeight = document.body.clientHeight - TOOLBAR_HEIGHT
     }
     // deletes removes the gate from terminal7 and the map
     delete() {
@@ -436,36 +439,47 @@ export class Gate {
         this.focus()
     }
     scaleContainer() {
-        if (this.fitScreen)
-            return
-        const width = this.layoutWidth,
-            height = this.layoutHeight
-        if (!width || !height)
-            return
         const container = this.e.querySelector(".windows-container")
-        const maxWidth = document.body.clientWidth,
-            maxHeight = document.body.clientHeight - 135
-        const sx = maxWidth / width,
-            sy = maxHeight / height
-        const scale = Math.min(sx, sy)
-        const scaledWidth = width * scale,
-            scaledHeight = height * scale
+        let scale
+
+        if (this.fitScreen) {
+            container.style.width = "100%"
+            container.style.removeProperty("height")
+            scale = 1
+            container.style.left = "0"
+            container.style.top = "22px"
+            container.style.removeProperty("transform")
+        } else {
+
+            const width = this.layoutWidth,
+                height = this.layoutHeight
+            if (!width || !height)
+                return
+            const maxWidth = document.body.clientWidth,
+                maxHeight = document.body.clientHeight - TOOLBAR_HEIGHT
+            const sx = maxWidth / width,
+                sy = maxHeight / height
+            scale = Math.min(sx, sy)
+            const scaledWidth = width * scale,
+                scaledHeight = height * scale
+            container.style.width = `${scaledWidth}px`
+            container.style.height = `${scaledHeight}px`
+            container.style.left = "50%"
+            container.style.top = "calc(50% - 45px)"
+            container.style.transform = `translate(-50%, -50%)`
+            container.style.transformOrigin = "top left"
+        }
         this.panes().forEach(p => {
             p.t.options.fontSize = Math.floor(scale * p.fontSize)
         })
         this.fontScale = scale
-        container.style.width = `${scaledWidth}px`
-        container.style.height = `${scaledHeight}px`
-        container.style.left = "50%"
-        container.style.top = "calc(50% - 45px)"
-        container.style.transform = `translate(-50%, -50%)`
-        container.style.transformOrigin = "top left"
     }
     syncLayout(state: object) {
         if (state.width != this.layoutWidth || state.height != this.layoutHeight) {
             this.layoutWidth = state.width
             this.layoutHeight = state.height
             this.scaleContainer()
+            console.log("setting fitScreen to false")
             this.fitScreen = false
         }
         state.windows.forEach(w => {
@@ -549,7 +563,7 @@ export class Gate {
         if (!this.fitScreen)
             return {windows, width: this.layoutWidth, height: this.layoutHeight}
         const width = document.body.clientWidth,
-            height = document.body.clientHeight - 135
+            height = document.body.clientHeight - TOOLBAR_HEIGHT
         return { windows, width, height }
     }
     storeState() {
@@ -749,9 +763,10 @@ export class Gate {
     }
     setFitScreen() {
         this.layoutWidth = document.body.clientWidth
-        this.layoutHeight = document.body.clientHeight - 135
-        this.scaleContainer()
+        this.layoutHeight = document.body.clientHeight - TOOLBAR_HEIGHT
         this.fitScreen = true
+        this.scaleContainer()
+        this.fit()
         this.sendState()
     }
 	
