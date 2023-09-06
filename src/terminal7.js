@@ -292,13 +292,6 @@ export class Terminal7 {
             if (g) {
                 g.scaleContainer()
                 g.fit()
-                if (g.fitScreen)
-                    g.session.setPayload(g.dump())
-                /*
-                else
-                    g.panes().forEach(p => p.needsResize = false)
-                */
-
             }
         })
         resizeObserver.observe(document.body)
@@ -925,7 +918,8 @@ export class Terminal7 {
             ev.stopPropagation()
             ev.preventDefault()
         } else if (this.gesture) {
-            this.activeG.sendState()
+            if (this.activeG && this.activeG.fitScreen)
+                this.activeG.sendState()
         } else if (this.firstPointer) {
             let deltaT = Date.now() - this.pointer0,
                     x  = ev.pageX,
