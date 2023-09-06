@@ -8,7 +8,6 @@
  */
 
 export const PB = "\uD83D\uDCD6"
-
 import { Device } from '@capacitor/device';
 import { CapacitorPurchases } from '@capgo/capacitor-purchases'
 import { Failure } from './session'
@@ -16,6 +15,7 @@ import { HTTPWebRTCSession } from './webrtc_session'
 import { Gate } from './gate'
 import { Shell } from './shell'
 import { Capacitor } from '@capacitor/core';
+import {ERROR_HTML_SYMBOL, CLOSED_HTML_SYMBOL} from './terminal7'
 
 export class PeerbookConnection {
     ws: WebSocket = null
@@ -30,6 +30,7 @@ export class PeerbookConnection {
     shell: Shell
     uid: string
     updatingStore = false
+    spinnerInterval = null
 
     constructor(props:Map<string, Any>) {
         // copy all props to this
@@ -264,6 +265,7 @@ export class PeerbookConnection {
                     return
                 }
                 else if (state == 'failed') {
+                    this.stopSpinner()
                     this.session = null
                     console.log("PB webrtc connection failed", failure)
                     if (this.uid == "TBD")
@@ -296,17 +298,21 @@ export class PeerbookConnection {
                 }
             }
             const schema = this.insecure?"ws":"wss",
-                  url = encodeURI(`${schema}://${this.host}/ws?fp=${this.fp}`)
-            const ws = new WebSocket(url)
+                  url = encodeURI(`${schema}://${this.host}/ws?fp=${this.fp}`),
+                  statusE = document.getElementById("peerbook-status"),
+                  ws = new WebSocket(url)
             this.ws = ws
             ws.onmessage = ev => {
                 const m = JSON.parse(ev.data)
                 if (m.code >= 400) {
                     console.log("peerbook connect got code", m.code)
-                    reject(`PeerBook connection error ${m.code}`)
+                    this.stopSpinner()
+                    statusE.innerHTML = "洛"
+                    // reject(`PeerBook connection error ${m.code}`)
                     return
                 } 
                 if (firstMessage) {
+                    this.stopSpinner()
                     firstMessage = false
                     resolve()
                 }
@@ -317,13 +323,15 @@ export class PeerbookConnection {
             }
             ws.onerror = ev =>  {
                 window.terminal7.log("peerbook ws error", ev.toString())
-                reject(ev.toString())
+                this.ws = null
+                this.stopSpinner()
+                statusE.innerHTML = ERROR_HTML_SYMBOL
             }
             ws.onclose = (ev) => {
                 window.terminal7.log("peerbook ws closed", ev)
-                const statusE = document.getElementById("peerbook-status")
-                statusE.innerHTML = "🙁"
                 this.ws = null
+                this.stopSpinner()
+                statusE.innerHTML = CLOSED_HTML_SYMBOL
             }
             ws.onopen = () => {
                 console.log("peerbook ws open")
@@ -437,4 +445,26 @@ export class PeerbookConnection {
             })
         })
     }   
+    stopSpinner() {
+        if (this.spinnerInterval) {
+            clearInterval(this.spinnerInterval)
+            this.spinnerInterval = null
+        }
+    }
+    startSpinner() {
+        const statusE = document.getElementById("peerbook-status")
+        let i = 0.1, change = 0.1
+        if (this.spinnerInterval)
+            return
+        this.spinnerInterval = setInterval(() => {
+            i = i + change 
+            if (i > 1 || i < 0) {
+                change = -change
+                i = i + change
+            }
+            statusE.style.opacity = i
+        }, 200)
+        statusE.innerHTML = PB
+        statusE.style.opacity = 0
+    }
 }

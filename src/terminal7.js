@@ -30,6 +30,8 @@ import { RateApp } from 'capacitor-rate-app'
 import { PeerbookConnection, PB } from './peerbook'
 import { Failure } from './session';
 
+export const ERROR_HTML_SYMBOL = "&#x1f915;"
+export const CLOSED_HTML_SYMBOL = "🙁"
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
 Thanks for choosing Terminal7. This is TWR, a local
@@ -337,26 +339,18 @@ export class Terminal7 {
         return new Promise((resolve, reject) => {
             let i = 0, change = 0.2
             function callResolve() {
-                spinnerInterval && clearInterval(spinnerInterval)
+                if (terminal7.pb)
+                    terminal7.pb.stopSpinner()
                 statusE.style.opacity = 1
                 resolve()
             }
             function callReject(e, symbol) {
-                spinnerInterval && clearInterval(spinnerInterval)
+                if (terminal7.pb)
+                    terminal7.pb.stopSpinner()
                 statusE.style.opacity = 1
                 statusE.innerHTML = symbol || "⛔︎"
                 reject(e)
             }
-            const spinnerInterval = setInterval(() => {
-                i = i + change
-                if (i > 1 || i < 0) {
-                    change = -change
-                    i = i + change
-                } 
-                statusE.style.opacity = i
-            }, 200)
-            statusE.innerHTML = PB
-            statusE.style.opacity = 0
             const catchConnect = e => {
                 let symbol = "⛔︎"
                 if (e =="Unregistered")
@@ -374,6 +368,7 @@ export class Terminal7 {
                         `${PB} Failed to connect, please try \`subscribe\``:
                         `${PB} Failed to connect, please try \`login\``)
                     this.notify("If the problem persists, `support`")
+                    symbol = ERROR_HTML_SYMBOL
                 } else
                     symbol = "🔒"
 
@@ -382,6 +377,7 @@ export class Terminal7 {
 
             // do nothing when no subscription or already connected
             if (this.pb) {
+                this.pb.startSpinner()
                 if ((this.pb.uid != "TBD")  && (this.pb.uid != "")) {
                     this.pb.wsConnect().then(callResolve).catch(callReject)
                     return
@@ -399,6 +395,7 @@ export class Terminal7 {
                     insecure: this.conf.peerbook && this.conf.peerbook.insecure,
                     shell: this.map.shell
                 })
+                this.pb.startSpinner()
                 this.pb.onUpdate = (m) => this.onPBMessage(m)
                 if (!this.purchasesStarted) {
                     this.pb.startPurchases().then(() => 
