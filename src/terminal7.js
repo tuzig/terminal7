@@ -295,11 +295,8 @@ export class Terminal7 {
             })
         )
         const resizeObserver = new ResizeObserver(() => {
-            const g = this.activeG
-            if (g) {
-                g.scaleContainer()
-                g.fit()
-            }
+            if (this.activeG)
+                this.activeG.setFitScreen()
         })
         resizeObserver.observe(document.body)
     }
