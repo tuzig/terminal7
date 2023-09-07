@@ -35,17 +35,22 @@ export const CLOSED_HTML_SYMBOL = "🙁"
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
 Thanks for choosing Terminal7. This is TWR, a local
-terminal used to control the terminal and log messages.`
+terminal used to control the terminal and log messages.
+Most screen buttons launch a TWR command so you don't have to
+type \`help\` and learn more.
+When all else fail, please type \`support\` for a discord invitation.`
+
 const WELCOME_NATIVE=WELCOME+`
-Type \`help\`, \`add\` or \`hide\` if you're ready to board. 
-For WebRTC 🍯  please \`subscribe\` to our online service.
+Type \`add\` if you're ready to board.
+For WebRTC 🍯  please \`subscribe\` to enjoy our online service.
 
 Enjoy!
 
 `
 const WELCOME_OTHER=WELCOME+`
-Type \`help\`, \`install\` or \`hide\` if you're ready to board. 
-If you are one of our PeerBook subscribers, please \`login\`.
+Type \`install\` for instruction on how to install the server.
+If you are a PeerBook subscriber, please \`login\`.
+(Sorry, no way to subscribe from here yet)
 
 Enjoy!
 
