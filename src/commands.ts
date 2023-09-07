@@ -349,11 +349,11 @@ async function resetCMD(shell: Shell, args: string[]) {
             { prompt: "Reset connection & Layout" },
             { prompt: "\x1B[31mFactory reset\x1B[0m" },
         ]
+        if (gate.session && !gate.fitScreen)
+            fields.splice(0, 0, { prompt: "Fit my screen" })
         if (!gate.onlySSH)
             // Add the connection reset option for webrtc
             fields.splice(0, 0, { prompt: "Reset connection" })
-        if (gate.session)
-            fields.splice(0, 0, { prompt: "Fit my screen" })
         shell.t.writeln(`\x1B[4m${gate.name}\x1B[0m`)
         let choice
         try {
@@ -371,6 +371,7 @@ async function resetCMD(shell: Shell, args: string[]) {
             case "Reset connection":
                 // TODO: simplify
                 if (gate.session) {
+                    this.session.onStateChange = undefined
                     gate.session.close()
                     gate.session = null
                 }
@@ -669,8 +670,10 @@ async function subscribeCMD(shell: Shell) {
             shell.t.writeln("If you are already subscribed, please `login`")
             return
         }
+        terminal7.pb.startSpinner()
         try {
             await terminal7.pb.connect(customerInfo.originalAppUserId)
+            shell.t.writeln("You are subscribed and registered")
         } catch(e) {
             if (e == "Unregistered") {
                 shell.t.writeln("You are subscribed, please register:")
@@ -686,9 +689,11 @@ async function subscribeCMD(shell: Shell) {
                 shell.t.writeln("Please try again and if persists, `support`")
                 return
             }
+        } finally {
+            terminal7.pb.stopSpinner()
         }
     } else
-        shell.t.writeln("You are already subscribed and registered")
+        shell.t.writeln("You are subscribed and registered \udb81\udd79")
     const uid = await terminal7.pb.getUID()
     const answer = await shell.askValue(`Copy user id to the clipboard? (y/N)`, "n")
     if (answer.toLowerCase() == "y") {

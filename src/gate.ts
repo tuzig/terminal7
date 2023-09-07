@@ -260,7 +260,7 @@ export class Gate {
                     terminal7.log("Cleaned session as failure on recovering")
                     return
                 }
-                this.notify(failure?"Lost Data Channel":"Lost Connection")
+                this.notify(failure?"Lost Data Channel":"Lost Connection" + ", please try `reset`")
                 break
 
             case Failure.KeyRejected:
@@ -279,9 +279,7 @@ export class Gate {
                 return
             case Failure.FailedToConnect:
                 this.notify("Failed to connect")
-                // SSH failed, don't offer install
-                await this.map.shell.onDisconnect(this)
-                return
+                break
 
             case Failure.TimedOut:
                 this.connectionFailed = true
