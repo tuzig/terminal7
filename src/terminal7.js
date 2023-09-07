@@ -129,6 +129,31 @@ export class Terminal7 {
                 document.getElementById('keys-help').classList.remove('hidden')
         }
     }
+    onAppStateChange(state) {
+        const active =  state.isActive
+        if (this.lastActiveState == active) {
+            this.log("app state event on unchanged state ignored")
+            return
+        }
+        this.lastActiveState = active
+        this.log("app state changed", this.ignoreAppEvents)
+        if (!active) {
+            if (this.ignoreAppEvents) {
+                terminal7.log("ignoring benched app event")
+                return
+            }
+            this.updateNetworkStatus({connected: false}, false)
+        } else {
+            // We're back! puts us in recovery mode so that it'll
+            // quietly reconnect to the active gate on failure
+            if (this.ignoreAppEvents) {
+                this.ignoreAppEvents = false
+                return
+            }
+            this.clearTimeouts()
+            Network.getStatus().then(s => this.updateNetworkStatus(s))
+        }
+    }
     /*
      * Terminal7.open opens terminal on the given DOM element,
      * loads the gates from local storage and redirects to home
@@ -234,31 +259,8 @@ export class Terminal7 {
         if (Capacitor.isNativePlatform())  {
             // this is a hack as some operation, like bio verification
             // fire two events
-            App.addListener('appStateChange', state => {
-                const active =  state.isActive
-                if (this.lastActiveState == active) {
-                    this.log("app state event on unchanged state ignored")
-                    return
-                }
-                this.lastActiveState = active
-                console.log("app state changed", this.ignoreAppEvents)
-                if (!active) {
-                    if (this.ignoreAppEvents) {
-                        terminal7.log("ignoring benched app event")
-                        return
-                    }
-                    this.updateNetworkStatus({connected: false}, false)
-                } else {
-                    // We're back! puts us in recovery mode so that it'll
-                    // quietly reconnect to the active gate on failure
-                    if (this.ignoreAppEvents) {
-                        this.ignoreAppEvents = false
-                        return
-                    }
-                    this.clearTimeouts()
-                    Network.getStatus().then(s => this.updateNetworkStatus(s))
-                }
-            })
+            App.addListener('appStateChange', state => this.onAppStateChange(state))
+
         }
 
         e.addEventListener("click", e => { 

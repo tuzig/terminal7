@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -x
-EXE="/usr/local/bin/webexec"
+
 HOME=/home/runner
 CONF=/conf
 
@@ -19,8 +19,4 @@ if [[ $PEERBOOK == "1" ]]
 then
     /scripts/wait-for-it.sh -h peerbook -p 17777
 fi
-su -c "$EXE start --debug" runner
-while true
-do
-    sleep 1
-done
+su - runner -c '/usr/local/bin/webexec start --debug'
