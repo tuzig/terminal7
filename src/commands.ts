@@ -371,7 +371,7 @@ async function resetCMD(shell: Shell, args: string[]) {
             case "Reset connection":
                 // TODO: simplify
                 if (gate.session) {
-                    this.session.onStateChange = undefined
+                    gate.session.onStateChange = undefined
                     gate.session.close()
                     gate.session = null
                 }
