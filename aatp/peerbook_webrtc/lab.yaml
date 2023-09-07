@@ -65,8 +65,7 @@ services:
     volumes:
       - ./aatp/peerbook_webrtc:/config
   smtp:
-    image: mailhog:local
-    build: https://github.com/mailhog/MailHog.git
+    image: jcalonso/mailhog
     expose:
       - 1025
       - 8025

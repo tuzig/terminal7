@@ -144,25 +144,20 @@ insecure = true
         await expect(page.locator('.pane')).toHaveCount(1)
     })
     test('disengage and reconnect', async() => {
-        await page.evaluate(async() => {
-            const gate = window.terminal7.activeG
-            gate.activeW.activeP.d.send("seq 10; sleep 1; seq 10 20\n")
-        })
-        await sleep(100)
-        await page.screenshot({ path: `/result/second.png` })
+        await page.evaluate(async() => 
+            await window.terminal7.activeG.activeW.activeP.d.send(
+                "seq 10; sleep 1; seq 10 20\n"))
+        await page.screenshot({ path: `/result/first.png` })
         const lines1 = await page.evaluate(async() => {
-            const gate = window.terminal7.activeG
-            await gate.disengage().then(() => {
-                window.terminal7.clearTimeouts()
-                window.terminal7.activeG.session = null
-            })
-            return gate.activeW.activeP.t.buffer.active.length
+            const ret = window.terminal7.activeG.activeW.activeP.t.buffer.active.length
+            window.terminal7.onAppStateChange({isActive: false})
+            return ret
         })
+        await page.screenshot({ path: `/result/second.png` })
         await sleep(1000)
         await page.screenshot({ path: `/result/third.png` })
-        await page.evaluate(async() => {
-            window.terminal7.activeG.connect()
-        })
+        await page.evaluate(async() =>
+            window.terminal7.onAppStateChange({isActive: true}))
         await expect(page.locator('.pane')).toHaveCount(1)
         await sleep(1500)
         const lines2 = await page.evaluate(() =>
