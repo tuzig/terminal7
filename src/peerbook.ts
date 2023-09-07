@@ -446,6 +446,8 @@ export class PeerbookConnection {
         })
     }   
     stopSpinner() {
+        const statusE = document.getElementById("peerbook-status")
+        statusE.style.opacity = 1
         if (this.spinnerInterval) {
             clearInterval(this.spinnerInterval)
             this.spinnerInterval = null
@@ -464,7 +466,7 @@ export class PeerbookConnection {
             }
             statusE.style.opacity = i
         }, 200)
-        statusE.innerHTML = PB
+        statusE.innerHTML = "&#x1F4E1;" // it's a sataellite dish
         statusE.style.opacity = 0
     }
 }
