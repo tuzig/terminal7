@@ -457,7 +457,7 @@ export class Gate {
                 maxHeight = document.body.clientHeight - TOOLBAR_HEIGHT
             const sx = maxWidth / width,
                 sy = maxHeight / height
-            scale = Math.min(sx, sy)
+            scale = Math.min(sx, sy, 1)
             const scaledWidth = width * scale,
                 scaledHeight = height * scale
             container.style.width = `${scaledWidth}px`
