@@ -929,7 +929,7 @@ async function configCMD(shell: Shell) {
     await shell.openConfig()
 }
 async function supportCMD(shell: Shell) {
-    shell.t.write("Sorry for the failure, please ")
+    shell.t.write("Sorry things are not working well. Please ")
     shell.t.writeln("\x1B]8;;https://github.com/tuzig/terminal7/issues/new?template=bug_report.md\x07report a bug\x1B]8;;\x07")
     shell.t.writeln("or talk to us on our \x1B]8;;https://discord.gg/Puu2afdUtr\x07discord server\x1B]8;;\x07")
 }
