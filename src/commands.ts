@@ -692,8 +692,8 @@ async function subscribeCMD(shell: Shell) {
         } finally {
             terminal7.pb.stopSpinner()
         }
-    } else
-        shell.t.writeln("You are subscribed and registered \udb81\udd79")
+    }
+    shell.t.writeln("You are subscribed and registered 🙏")
     const uid = await terminal7.pb.getUID()
     const answer = await shell.askValue(`Copy user id to the clipboard? (y/N)`, "n")
     if (answer.toLowerCase() == "y") {
