@@ -19,4 +19,7 @@ if [[ $PEERBOOK == "1" ]]
 then
     /scripts/wait-for-it.sh -h peerbook -p 17777
 fi
-su - runner -c '/usr/local/bin/webexec start --debug'
+while true
+do
+    su - runner -c '/usr/local/bin/webexec start --debug'
+done
