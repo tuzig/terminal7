@@ -374,7 +374,8 @@ button.rename-close {
     line-height: 12px;
 }
 #version a {
-    text-decoration: none;
+    text-decoration-style: dashed;
+    text-decoration-line: underline;
 	cursor: pointer;
 }
 #version ul {
@@ -492,7 +493,7 @@ label {
         display: block;
     }
     #version {
-        width: 11em;
+        max-width: 35vw;
     }
 }
 @media (max-width: 600px) {
