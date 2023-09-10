@@ -148,8 +148,8 @@ insecure = true
             await window.terminal7.activeG.activeW.activeP.d.send(
                 "seq 10; sleep 1; seq 10 20\n"))
         await page.screenshot({ path: `/result/first.png` })
-        const lines1 = await page.evaluate(async() => {
-            const ret = window.terminal7.activeG.activeW.activeP.t.buffer.active.length
+        const y1 = await page.evaluate(async() => {
+            const ret = window.terminal7.activeG.activeW.activeP.t.buffer.active.cursorY
             window.terminal7.onAppStateChange({isActive: false})
             return ret
         })
@@ -160,11 +160,11 @@ insecure = true
             window.terminal7.onAppStateChange({isActive: true}))
         await expect(page.locator('.pane')).toHaveCount(1)
         await sleep(1500)
-        const lines2 = await page.evaluate(() =>
-           window.terminal7.activeG.activeW.activeP.t.buffer.active.length)
+        const y2 = await page.evaluate(() =>
+           window.terminal7.activeG.activeW.activeP.t.buffer.active.cursorY)
         await page.screenshot({ path: `/result/fourth.png` })
-        console.log(lines1, lines2)
-        expect(lines2-lines1).toEqual(11)
+        console.log(y1, y2)
+        expect(y2-y1).toEqual(11)
     })
     test('after disengage & reconnect, a a pane can be close', async() => {
         await page.screenshot({ path: `/result/fifth.png` })
