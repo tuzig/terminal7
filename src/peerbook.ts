@@ -281,7 +281,7 @@ export class PeerbookConnection {
     async wsConnect() {
         console.log("peerbook wsConnect called")
         let firstMessage = true
-        return new Promise<void>(resolve => {
+        return new Promise<void>((resolve, reject) => {
             if (this.ws != null) {
                 if (this.isOpen()) {
                     resolve()
@@ -307,7 +307,7 @@ export class PeerbookConnection {
                 if (m.code >= 400) {
                     console.log("peerbook connect got code", m.code)
                     this.stopSpinner()
-                    statusE.innerHTML = "洛"
+                    statusE.innerHTML = ERROR_HTML_SYMBOL
                     // reject(`PeerBook connection error ${m.code}`)
                     return
                 } 
@@ -326,12 +326,14 @@ export class PeerbookConnection {
                 this.ws = null
                 this.stopSpinner()
                 statusE.innerHTML = ERROR_HTML_SYMBOL
+                reject()
             }
             ws.onclose = (ev) => {
                 window.terminal7.log("peerbook ws closed", ev)
                 this.ws = null
                 this.stopSpinner()
-                statusE.innerHTML = CLOSED_HTML_SYMBOL
+                if (statusE.innerHTML != ERROR_HTML_SYMBOL)
+                    statusE.innerHTML = CLOSED_HTML_SYMBOL
             }
             ws.onopen = () => {
                 console.log("peerbook ws open")
