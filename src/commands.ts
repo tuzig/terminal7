@@ -742,7 +742,7 @@ export async function installCMD(shell: Shell, args: string[]) {
         }
     } else {
         gate = terminal7.activeG
-        if (!gate) {
+        if (!gate && native) {
             if (terminal7.gates.length == 1) {
                 gate = terminal7.gates[0]
                 shell.t.writeln(`Installing on the only server: ${gate.name}`)
@@ -783,9 +783,10 @@ export async function installCMD(shell: Shell, args: string[]) {
     ]
     if (native)
         fields.unshift({ prompt: "Connect & send command" })
-    shell.t.writeln("To Enjoy WebRTC you need Terminal7 agent installed & running")
+    shell.t.writeln("To download and install the agent's binary run:")
     shell.t.writeln("")
-    shell.t.writeln(`$ \x1B[1m${cmd}\x1B[0m`)
+    shell.t.writeln(`\t\x1B[1m${cmd}\x1B[0m`)
+    shell.t.writeln("")
     const choice= await shell.runForm(fields, "menu")
     if (choice == "Cancel")
         return
@@ -913,7 +914,10 @@ export async function installCMD(shell: Shell, args: string[]) {
             .catch(() => timedOut = true)
         while (!gate.fp && ! timedOut)
             await (new Promise(r => setTimeout(r, 100)))
-        shell.t.writeln(`Gate is installed & verified, use \`connect ${gate.name}\``)
+        if (gate.fp)
+            shell.t.writeln(`Gate is installed & verified, use \`connect ${gate.name}\``)
+        else
+            shell.t.writeln("Install failed, please try again or `support`")
         shell.stopWatchdog()
     } else {
         shell.t.writeln("Install failed")
