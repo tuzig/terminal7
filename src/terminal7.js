@@ -30,31 +30,28 @@ import { RateApp } from 'capacitor-rate-app'
 import { PeerbookConnection, PB } from './peerbook'
 import { Failure } from './session';
 
-export const ERROR_HTML_SYMBOL = "&#x1f915;"
+export const ERROR_HTML_SYMBOL = "🤕"
 export const CLOSED_HTML_SYMBOL = "🙁"
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
 Thanks for choosing Terminal7. This is TWR, a local
 terminal used to control the terminal and log messages.
-Most screen buttons launch a TWR command so you don't have to
-type \`help\` and learn more.
-When all else fail, please type \`support\` for a discord invitation.`
+Most buttons launch a TWR command so you don't need to 
+use \`help\`, just \`hide\`.
+If some characters looks off try CTRL-l.`
 
-const WELCOME_NATIVE=WELCOME+`
-Type \`add\` if you're ready to board.
-For WebRTC 🍯  please \`subscribe\` to enjoy our online service.
-
+const WELCOME_FOOTER=`
 Enjoy!
-
+PS - Found a bug? Missing a feature? Please use \`support\`
 `
+const WELCOME_NATIVE=WELCOME+`
+For WebRTC 🍯  please \`subscribe\` to our PeerBook service.
+` + WELCOME_FOOTER
 const WELCOME_OTHER=WELCOME+`
-Type \`install\` for instruction on how to install the server.
+Type \`install\` for instruction on how to install the agent.
 If you are a PeerBook subscriber, please \`login\`.
 (Sorry, no way to subscribe from here yet)
-
-Enjoy!
-
-` 
+`  + WELCOME_FOOTER
 
 export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 [theme]
