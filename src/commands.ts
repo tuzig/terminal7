@@ -673,7 +673,6 @@ async function subscribeCMD(shell: Shell) {
         terminal7.pb.startSpinner()
         try {
             await terminal7.pb.connect(customerInfo.originalAppUserId)
-            shell.t.writeln("You are subscribed and registered")
         } catch(e) {
             if (e == "Unregistered") {
                 shell.t.writeln("You are subscribed, please register:")
