@@ -6,20 +6,11 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [1.8.0] - 2023/9/10
 
 ### Added 
 
 - dashed underline to link on the map - just like in TWR
-
-### Fixed
-
-- clicking the version now extends the version box
-
-## [1.8.0] - 2023/9/7
-
-### Added
-
 - Progressive Web App support 
 - synchronizing layout across all connected client
 - the login command for web clients
