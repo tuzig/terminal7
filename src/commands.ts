@@ -525,6 +525,7 @@ async function editCMD(shell:Shell, args: string[]) {
                     shell.t.writeln("Failed to delete host")
                     return
                 }
+                    shell.t.writeln("Gate deleted")
             }
             gate.delete()
             break
