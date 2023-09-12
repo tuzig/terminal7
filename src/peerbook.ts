@@ -15,7 +15,7 @@ import { HTTPWebRTCSession } from './webrtc_session'
 import { Gate } from './gate'
 import { Shell } from './shell'
 import { Capacitor } from '@capacitor/core';
-import {ERROR_HTML_SYMBOL, CLOSED_HTML_SYMBOL} from './terminal7'
+import {ERROR_HTML_SYMBOL, CLOSED_HTML_SYMBOL, OPEN_HTML_SYMBOL} from './terminal7'
 
 export class PeerbookConnection {
     ws: WebSocket = null
@@ -468,7 +468,7 @@ export class PeerbookConnection {
             }
             statusE.style.opacity = i
         }, 200)
-        statusE.innerHTML = "&#x1F4E1;" // it's a sataellite dish
+        statusE.innerHTML = OPEN_HTML_SYMBOL
         statusE.style.opacity = 0
     }
 }
