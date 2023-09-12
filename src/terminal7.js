@@ -30,8 +30,10 @@ import { RateApp } from 'capacitor-rate-app'
 import { PeerbookConnection, PB } from './peerbook'
 import { Failure } from './session';
 
+export const OPEN_HTML_SYMBOL = "📡"
 export const ERROR_HTML_SYMBOL = "🤕"
 export const CLOSED_HTML_SYMBOL = "🙁"
+export const LOCK_HTML_SYMBOL = "🔒"
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
 Thanks for choosing Terminal7. This is TWR, a local
@@ -370,7 +372,7 @@ export class Terminal7 {
                     this.notify("If the problem persists, `support`")
                     symbol = ERROR_HTML_SYMBOL
                 } else
-                    symbol = "🔒"
+                    symbol = LOCK_HTML_SYMBOL
 
                 callReject(e, symbol)
             }
@@ -740,12 +742,14 @@ export class Terminal7 {
     }
     // handle incomming peerbook messages (coming over sebsocket)
     async onPBMessage(m) {
+        const statusE = document.getElementById("peerbook-status")
         this.log("got pb message", m)
         if (m["code"] !== undefined) {
             if (m["code"] == 200) {
-                this.notify("\uD83D\uDCD6  Logged in")
+                statusE.innerHTML = OPEN_HTML_SYMBOL
                 this.pb.uid = m["text"]
             } else
+                // TODO: update statusE
                 this.notify(`\uD83D\uDCD6  ${m["text"]}`)
             return
         }
