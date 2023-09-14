@@ -80,7 +80,7 @@ test.describe('peerbook administration', ()  => {
         expect(pbOpen).toBeFalsy()
     })
     test('purchase update with an active subscription and bad otp', async () => {
-        await sleep(500)
+        await page.keyboard.press("Enter")
         await redisClient.set("tempid:$ValidBearer", "1")
         await sleep(1500)
         await page.evaluate(async () => {

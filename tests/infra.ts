@@ -6,6 +6,7 @@ import { vi } from "vitest";
 import { Terminal } from "xterm"
 
 vi.mock("xterm");
+vi.mock('@revenuecat/purchases-capacitor')
 
 export class resizeObs {
     constructor(cb) {

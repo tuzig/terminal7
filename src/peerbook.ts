@@ -9,12 +9,12 @@
 
 export const PB = "\uD83D\uDCD6"
 import { Device } from '@capacitor/device';
-import { CapacitorPurchases } from '@capgo/capacitor-purchases'
+import { Purchases } from '@revenuecat/purchases-capacitor'
 import { Failure } from './session'
 import { HTTPWebRTCSession } from './webrtc_session'
 import { Gate } from './gate'
 import { Shell } from './shell'
-import { Capacitor } from '@capacitor/core';
+import { Capacitor } from '@capacitor/core'
 import {ERROR_HTML_SYMBOL, CLOSED_HTML_SYMBOL, OPEN_HTML_SYMBOL} from './terminal7'
 
 export class PeerbookConnection {
@@ -32,7 +32,7 @@ export class PeerbookConnection {
     updatingStore = false
     spinnerInterval = null
 
-    constructor(props:Map<string, Any>) {
+    constructor(props:Map<string, any>) {
         // copy all props to this
         Object.assign(this, props)
         this.pending = []
@@ -131,7 +131,7 @@ export class PeerbookConnection {
         } finally {
             this.shell.stopWatchdog()
         }
-        await CapacitorPurchases.logIn({ appUserID: uid })
+        await Purchases.logIn({ appUserID: uid })
         this.shell.t.writeln("Validated! Use `install` to install on a server")
         try {
             await this.wsConnect()
@@ -143,6 +143,7 @@ export class PeerbookConnection {
     }
     async startPurchases() {
         console.log("Starting purchases")
+        await Purchases.setMockWebResults({ shouldMockWebResults: true })
         const keys = {
             ios: 'appl_qKHwbgKuoVXokCTMuLRwvukoqkd',
             android: 'goog_ncGFZWWmIsdzdfkyMRtPqqyNlsx'
@@ -152,8 +153,7 @@ export class PeerbookConnection {
         }
 
         try {
-            await CapacitorPurchases.setDebugLogsEnabled({ enabled: true }) 
-            await CapacitorPurchases.setup(props)
+            await Purchases.configure(props)
         } catch (e) {
             terminal7.log("Failed to setup purchases", e)
             return
@@ -164,9 +164,9 @@ export class PeerbookConnection {
      * gets customer info from revenuecat and act on it
     */
     async updateCustomerInfo() {
-        let data: CapacitorPurchases.PurchasesUpdatedPurchaserInfo
+        let data: Purchases.PurchasesUpdatedPurchaserInfo
         try {
-            data = await CapacitorPurchases.getCustomerInfo()
+            data = await Purchases.getCustomerInfo()
         } catch (e) {
             terminal7.log("Failed to get customer info", e)
             return
@@ -184,14 +184,6 @@ export class PeerbookConnection {
         const active = data.customerInfo.entitlements.active
         this.close()
         if (!active.peerbook) {
-            // log out to clear the cache
-            /*
-            try {
-                CapacitorPurchases.logOut()
-            } catch (e) {
-                terminal7.log("Failed to log out", e)
-            }
-            */
             this.updatingStore = false
             return
         }
@@ -254,7 +246,7 @@ export class PeerbookConnection {
                             terminal7.log("Got TBD as uid")
                             reject("Unregistered")
                         } else {
-                            CapacitorPurchases.logIn({ appUserID: uid })
+                            Purchases.logIn({ appUserID: uid })
                             this.wsConnect().then(resolve).catch(reject)
                         }
                     }).catch(e => {
@@ -433,13 +425,10 @@ export class PeerbookConnection {
                 this.echo("Invalid OTP, please try again")
         }
     }
-    purchase(id, offeringId): Promise<void> {
+    purchase(aPackage): Promise<void> {
         return new Promise((resolve, reject) => {
             // ensure there's only one listener
-            CapacitorPurchases.purchasePackage({
-                identifier: id,
-                offeringIdentifier: offeringId,
-            }).then(customerInfo => {
+            Purchases.purchasePackage({ aPackage }).then(customerInfo => {
                 this.onPurchasesUpdate(customerInfo).then(resolve).catch(reject)
             }).catch(e => {
                 console.log("purchase failed", e)

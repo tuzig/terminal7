@@ -1,4 +1,4 @@
-import { CapacitorPurchases } from '@capgo/capacitor-purchases'
+import { Purchases } from '@revenuecat/purchases-capacitor'
 import { Clipboard } from '@capacitor/clipboard'
 import { Shell } from "./shell"
 import { Preferences } from "@capacitor/preferences"
@@ -6,7 +6,6 @@ import { DEFAULT_DOTFILE, Terminal7 } from "./terminal7"
 import { Fields } from "./form"
 import fortuneURL from "../resources/fortune.txt"
 import { Gate } from './gate'
-import { Capacitor } from '@capacitor/core'
 import { SSHSession, SSHChannel } from './ssh_session'
 import { Failure } from './session'
 import { NativeBiometric } from 'capacitor-native-biometric'
@@ -422,7 +421,7 @@ async function resetCMD(shell: Shell, args: string[]) {
             shell.t.writeln("dotfile back to default")
             break
         case "Fingerprint":
-            await CapacitorPurchases.logOut()
+            await Purchases.logOut()
             await terminal7.deleteFingerprint()
             shell.t.writeln("Cleared fingerprint and disconnected from PeerBook")
             terminal7.pbClose()
@@ -578,7 +577,7 @@ async function copyKeyCMD(shell: Shell) {
     return shell.t.writeln(`${publicKey}\n☝️ copied to 📋`)
 }
 async function subscribeCMD(shell: Shell) {
-    const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
+    const { customerInfo } = await Purchases.getCustomerInfo()
     if (Capacitor.isNativePlatform() && !customerInfo.entitlements.active.peerbook) {
         shell.t.writeln("Join PeerBook subscribers and enjoy:")
         shell.t.writeln("")
@@ -596,9 +595,9 @@ async function subscribeCMD(shell: Shell) {
             "SIX_MONTH": "6 Months",
             "ANNUAL": "Year",
         }
-        const { offerings } = await CapacitorPurchases.getOfferings(),
+        const offerings = await Purchases.getOfferings(),
             offer = offerings.current
-        const products = offer.availablePackages.map(p => {
+        const packages = offer.availablePackages.map(p => {
             const identifier = p.identifier,
                 price = p.product.priceString,
                 period = TYPES[p.packageType],
@@ -610,9 +609,9 @@ async function subscribeCMD(shell: Shell) {
                     period = (introPrice.periodNumberOfUnits == 1)?unit:`${introPrice.periodNumberOfUnits} ${unit}s`
                 prompt += `     🎁 ${price} for the first ${period} 🎁`
             }
-            return { identifier, prompt }
+            return { prompt, p }
         })
-        const fields: Fields = products.map(p => ({ prompt: p.prompt }))
+        const fields: Fields = packages.map(p => ({ prompt: p.prompt }))
         fields.push({ prompt: "Restore Purchases" })
         fields.push({ prompt: "Cancel" })
         let choice
@@ -631,14 +630,14 @@ async function subscribeCMD(shell: Shell) {
                 throw e
             })
             try {
-                await CapacitorPurchases.restorePurchases()
+                await Purchases.restorePurchases()
             } catch(e) {
                 shell.stopWatchdog()
                 shell.t.writeln("Error restoring purchases, please try again or `support`")
                 return
             }
             shell.stopWatchdog()
-            const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
+            const { customerInfo } = await Purchases.getCustomerInfo()
             if (!customerInfo.entitlements.active.peerbook) {
                 shell.t.writeln("Sorry, no active subscription found")
                 return
@@ -646,7 +645,7 @@ async function subscribeCMD(shell: Shell) {
                 shell.t.writeln("Subscription restored")
             }
         } else {
-            const product = products.find(p => p.prompt == choice)
+            const p = packages.find(p => p.prompt == choice)
             shell.t.writeln("Thank you! directing you to the store")
             shell.startWatchdog(120000).catch(e => {
                 shell.t.writeln("Sorry, subscribe command timed out")
@@ -655,7 +654,7 @@ async function subscribeCMD(shell: Shell) {
             })
             terminal7.ignoreAppEvents = true
             try {
-                await terminal7.pb.purchase(product.identifier, offer.identifier)
+                await terminal7.pb.purchase(p.p)
                 shell.stopWatchdog()
             } catch(e) {
                 shell.stopWatchdog()
@@ -942,7 +941,7 @@ async function loginCMD(shell: Shell) {
         shell.t.writeln("You are already logged in")
         return
     }
-    const { customerInfo } = await CapacitorPurchases.getCustomerInfo()
+    const { customerInfo } = await Purchases.getCustomerInfo()
     if (customerInfo.entitlements.active.peerbook) {
         shell.t.writeln("You are already subscribed, please `subscribe` to login")
         return
