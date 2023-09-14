@@ -16,6 +16,7 @@ import { HTTPWebRTCSession } from '../src/webrtc_session'
 import { Terminal } from 'xterm'
 
 vi.mock('xterm')
+vi.mock('@revenuecat/purchases-capacitor')
 vi.mock('../src/webrtc_session.ts')
 vi.mock('../src/ssh_session.ts')
 

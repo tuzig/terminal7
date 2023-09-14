@@ -27,14 +27,13 @@ PODS:
     - NMSSHT7 (~> 2.9)
   - CapacitorStatusBar (5.0.6):
     - Capacitor
-  - CapgoCapacitorPurchases (5.0.8):
-    - Capacitor
-    - PurchasesHybridCommon (= 4.8.0)
-    - RevenueCat (>= 4.16.0)
   - NMSSHT7 (2.9.1)
-  - PurchasesHybridCommon (4.8.0):
-    - RevenueCat (= 4.16.0)
-  - RevenueCat (4.16.0)
+  - PurchasesHybridCommon (6.1.2):
+    - RevenueCat (= 4.25.9)
+  - RevenueCat (4.25.9)
+  - RevenuecatPurchasesCapacitor (6.0.0-beta.2):
+    - Capacitor
+    - PurchasesHybridCommon (= 6.1.2)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
@@ -51,7 +50,7 @@ DEPENDENCIES:
   - CapacitorRateApp (from `../../node_modules/capacitor-rate-app`)
   - CapacitorSshPlugin (from `../../node_modules/capacitor-ssh-plugin`)
   - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
-  - "CapgoCapacitorPurchases (from `../../node_modules/@capgo/capacitor-purchases`)"
+  - "RevenuecatPurchasesCapacitor (from `../../node_modules/@revenuecat/purchases-capacitor`)"
 
 SPEC REPOS:
   trunk:
@@ -88,8 +87,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/capacitor-ssh-plugin"
   CapacitorStatusBar:
     :path: "../../node_modules/@capacitor/status-bar"
-  CapgoCapacitorPurchases:
-    :path: "../../node_modules/@capgo/capacitor-purchases"
+  RevenuecatPurchasesCapacitor:
+    :path: "../../node_modules/@revenuecat/purchases-capacitor"
 
 SPEC CHECKSUMS:
   Capacitor: 1ac9165943bc4f2137642d218c5ba05df811de69
@@ -106,11 +105,11 @@ SPEC CHECKSUMS:
   CapacitorRateApp: 9c63b7a25f281ce24bac929e8e8ed29a5c25252a
   CapacitorSshPlugin: 79f67cb26d40bd0c07cec6dda93d93d5faf7b614
   CapacitorStatusBar: 565c0a1ebd79bb40d797606a8992b4a105885309
-  CapgoCapacitorPurchases: 8351f236aaa2329c1a172d8f762d7f6faddaaea9
   NMSSHT7: 67f9d8f43b40b997728761b4cf2aa7ea660ba7c2
-  PurchasesHybridCommon: bd1e1d3476afd3f95332b0ae160e4ce1bd1efd99
-  RevenueCat: c12e14f5e3dc5732db6d5095ac4ce6ff08d7eeb0
+  PurchasesHybridCommon: b7c4205b6d2479cdd8914084a2b536e5e5b1445f
+  RevenueCat: 4160d04575059fc1edbb973981f541b705ddebef
+  RevenuecatPurchasesCapacitor: 228864675bd71151c4782635952251470dc4bf5b
 
-PODFILE CHECKSUM: 7f20a3e80e15e2ca5b3df08ab41181174d379136
+PODFILE CHECKSUM: 4e9654adb0765b7ee27622f314473ebfafd489a8
 
 COCOAPODS: 1.12.1

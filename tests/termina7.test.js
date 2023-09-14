@@ -17,6 +17,7 @@ import { expect, vi } from 'vitest'
 import { HTTPWebRTCSession } from '../src/webrtc_session'
 
 vi.mock('xterm')
+vi.mock('@revenuecat/purchases-capacitor')
 vi.mock('../src/ssh_session.ts')
 vi.mock('../src/webrtc_session.ts')
 

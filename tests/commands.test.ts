@@ -13,6 +13,7 @@ import { T7Map } from '../src/map'
 let out = ""
 
 vi.mock('xterm')
+vi.mock('@revenuecat/purchases-capacitor')
 vi.mock('../src/ssh_session.ts')
 vi.mock('../src/webrtc_session.ts')
 

@@ -14,6 +14,7 @@ import { Preferences } from '@capacitor/preferences'
 import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest'
 
 vi.mock('xterm')
+vi.mock('@revenuecat/purchases-capacitor')
 
 describe("pane", () => {
     var t, e, h, w, p0

@@ -12,6 +12,7 @@ import { T7Map } from '../src/map'
 import { IDisposable } from 'xterm'
 
 vi.mock('xterm')
+vi.mock('@revenuecat/purchases-capacitor')
 
 describe("form", () => {
     let word

@@ -36,8 +36,8 @@
 		"classpath": "com.capacitorjs.plugins.statusbar.StatusBarPlugin"
 	},
 	{
-		"pkg": "@capgo/capacitor-purchases",
-		"classpath": "ee.forgr.plugin.capacitor_purchases.CapacitorPurchasesPlugin"
+		"pkg": "@revenuecat/purchases-capacitor",
+		"classpath": "com.revenuecat.purchases.capacitor.PurchasesPlugin"
 	},
 	{
 		"pkg": "capacitor-native-biometric",

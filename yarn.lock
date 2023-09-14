@@ -1080,11 +1080,6 @@
   resolved "https://registry.yarnpkg.com/@capacitor/status-bar/-/status-bar-5.0.6.tgz#281568a7f7aeacf80777702cb9947c29dc32685c"
   integrity sha512-7od8CxsBnot1XMK3IeOkproFL4hgoKoWAc3pwUvmDOkQsXoxwQm4SR9mLwQavv1XfxtHbFV9Ukd7FwMxOPSViw==
 
-"@capgo/capacitor-purchases@^5.0.0":
-  version "5.0.8"
-  resolved "https://registry.yarnpkg.com/@capgo/capacitor-purchases/-/capacitor-purchases-5.0.8.tgz#b95efec3e0ebbd9a4a398224dd0c95529e13adc8"
-  integrity sha512-/2XA7UNakOekNm9j6e9wSh77qKrUoXtOW0Oz6pe8QWa7YWqhBeoxWEB227lCguooyZ6iFcL9X4BTJhcywZwpzA==
-
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
   resolved "https://registry.yarnpkg.com/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz#00629c35a688e05a88b1cda684fb9d5e73f000a1"
@@ -1452,6 +1447,18 @@
   dependencies:
     "@xml-tools/parser" "^1.0.11"
     prettier ">=2.4.0"
+
+"@revenuecat/purchases-capacitor@^6.0.0-beta.2":
+  version "6.0.0-beta.2"
+  resolved "https://registry.yarnpkg.com/@revenuecat/purchases-capacitor/-/purchases-capacitor-6.0.0-beta.2.tgz#54d2396fc1606ff4c2730beffecd5cd90950a10a"
+  integrity sha512-TqRZHlkgf82Heqnf5aF2AWSFoTzIieWUaPSpNG2Wuk90i/M5gdKWH31cYGA50+sufC8Js7H3omQdajiphr95nw==
+  dependencies:
+    "@revenuecat/purchases-typescript-internal-esm" "6.1.2"
+
+"@revenuecat/purchases-typescript-internal-esm@6.1.2":
+  version "6.1.2"
+  resolved "https://registry.yarnpkg.com/@revenuecat/purchases-typescript-internal-esm/-/purchases-typescript-internal-esm-6.1.2.tgz#3ef1f5cd54a24b471ec9678a9a94a9c572076583"
+  integrity sha512-nXAOb2KJM1OVr8tuStq2nwbpCvBorCa6lHSm/JFe3cxvx78KJWRJwxKHVPY9papJY+8w2R9dvXUrOYayQYK5cA==
 
 "@rollup/plugin-babel@^5.2.0":
   version "5.3.1"

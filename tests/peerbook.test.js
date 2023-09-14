@@ -11,6 +11,7 @@ import { PeerbookConnection } from '../src/peerbook.ts'
 import { sleep } from './infra'
 
 vi.mock('xterm')
+vi.mock('@revenuecat/purchases-capacitor')
 vi.mock('../src/ssh_session.ts')
 vi.mock('../src/webrtc_session.ts')
 
