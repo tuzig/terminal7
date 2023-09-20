@@ -31,7 +31,10 @@ jobs:
       - name: Unit Tests
         run: yarn test
       - name: Acceptance Tests
-        run: PEERBOOK_REF="${{ github.event.inputs.pbRef }}" WEBEXEC_REF="${{ github.event.inputs.weRef }}" bash -x aatp/run
+        run: >
+            PEERBOOK_REF="${{ github.event.inputs.pbRef }}"
+            WEBEXEC_REF="${{ github.event.inputs.weRef }}"
+            bash -x aatp/run
       - name: Upload acceptance test results
         if: ${{ failure() }}
         uses: actions/upload-artifact@v3
