@@ -4,7 +4,7 @@
  *  Copyright: (c) 2021 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Cell } from './cell.js'
+import { Cell } from './cell'
 import { Terminal } from 'xterm'
 import { Clipboard } from '@capacitor/clipboard'
 import { Preferences } from '@capacitor/preferences'
@@ -15,7 +15,7 @@ import { WebLinksAddon } from 'xterm-addon-web-links'
 import { ImageAddon } from 'xterm-addon-image';
 import { Camera } from '@capacitor/camera'
 /* restore the bell. commented as it silences all background audio
-import { BELL_SOUND } from './bell.js'
+import { BELL_SOUND } from './bell'
 */
 
 import { Failure } from './session'
@@ -32,30 +32,47 @@ const REGEX_SEARCH = false,
         caseSensitive: true,
     }
 
-
 export class Pane extends Cell {
+    active = false
+    aLeader = false
+    buffer = []
+    channelID: number
+    cmAtEnd?: boolean
+    cmCursor?: {x: number, y:number}
+    cmDecorations = []
+    cmMarking = false
+    cmSelection: {
+        startRow: number,
+        startColumn: number,
+        endRow: number,
+        endColumn: number
+    }
+    copyMode = false
+    d = null
+    dividers = []
+    flashTimer? = null
+    fitAddon: FitAddon
+    fontSize: number
+    imageAddon: ImageAddon
+    lastKey: string = ''
+    needsResize = false
+    searchAddon: SearchAddon
+    searchDown = false
+    searchTerm: string = ''
+    t: Terminal
+    theme: string
+    repetition = 0
+    retries = 0
+    WebLinksAddon: WebLinksAddon
+
+
     constructor(props) {
         props.className = "pane"
         super(props)
         this.catchFingers()
-        this.d = null
-        this.active = false
         this.fontSize = (props.fontSize || 12 ) * this.gate.fontScale
         this.theme = props.theme || this.t7.conf.theme
-        this.copyMode = false
-        this.cmAtEnd = null
-        this.cmCursor = null
-        this.cmMarking = false
-        this.cmSelection = null
-        this.cmDecorations = []
-        this.dividers = []
-        this.flashTimer = null
-        this.aLeader = false
-        this.retries = 0
-        this.lastKey = ''
-        this.repetition = 0
         this.resizeObserver = new window.ResizeObserver(() => this.fit())
-        this.needsResize = false
         this.channelID = props.channelID
     }
 
@@ -72,7 +89,7 @@ export class Pane extends Cell {
     openTerminal(parentID, channelID) {
         if (channelID)
             this.channelID = channelID
-        var con = document.createElement("div")
+        let con = document.createElement("div")
         this.t = new Terminal({
             convertEol: false,
             fontFamily: "FiraCode",
@@ -115,9 +132,9 @@ export class Pane extends Cell {
             this.t.loadAddon(webGLAddon)
             this.t.textarea.tabIndex = -1
             this.t.attachCustomKeyEventHandler(ev => {
-                var toDo = true
+                let toDo = true
                 // ctrl c is a special case 
-                if (ev.ctrlKey && (ev.key == "c") && (this.d != null)) {
+                if (ev.ctrlKey && (ev.keyCode === KEY_CODES.c) && (this.d != null)) {
                     this.d.send(String.fromCharCode(3))
                     toDo = false
                 }
@@ -188,7 +205,7 @@ export class Pane extends Cell {
     // fit a pane to the display area. If it was resized, the server is updated.
     // returns true is size was changed
     // TODO: make it async
-    fit(cb) {
+    fit(cb = null) {
         if (!this.t) {
             if (cb instanceof Function)
                 cb(this)
@@ -233,12 +250,10 @@ export class Pane extends Cell {
      * and the relative size (0-1) of the area left for us.
      * Returns the new pane.
      */
-    split(dir, s) {
+    split(dir, s = 0.5) {
         if (!this.isSplittable(dir)) return
-        var sx, sy, xoff, yoff, l
+        let sx, sy, xoff, yoff, l
         // if the current dir is `TBD` we can swing it our way
-        if (typeof s == "undefined")
-            s = 0.5
         if ((this.layout.dir == "TBD") || (this.layout.cells.length == 1))
             this.layout.dir = dir
         // if we need to create a new layout do it and add us and new pane as cells
@@ -300,13 +315,13 @@ export class Pane extends Cell {
             this.buffer = []
             if (opts.id) {
                 this.gate.session.openChannel(opts.id)
-                .then((channel, id) =>this.onChannelConnected(channel, id))
+                .then((channel, id) =>this.onChannelConnected(channel))
                 .then(resolve)
                 .catch(m => console.log(m))
             } else {
                 this.gate.session.openChannel(
                     this.t7.conf.exec.shell, opts.parent, this.t.cols, this.t.rows)
-                .then((channel, id) =>this.onChannelConnected(channel, id))
+                .then((channel, id) =>this.onChannelConnected(channel))
                 .then(resolve)
                 .catch(m => console.log(m))
             }
@@ -340,9 +355,9 @@ export class Pane extends Cell {
         }
     }
 
-    showSearch(searchDown) {
+    showSearch(searchDown = false) {
         // show the search field
-        this.searchDown = searchDown || false
+        this.searchDown = searchDown
         const se = this.gate.e.querySelector(".search-box")
         se.classList.add("show")
         se.classList.remove("hidden")
@@ -373,7 +388,7 @@ export class Pane extends Cell {
         })
         i.focus()
     }
-    enterCopyMode(marking) {
+    enterCopyMode(marking = false) {
         if (marking)
             this.cmMarking = true
         if (!this.copyMode) {
@@ -452,7 +467,7 @@ export class Pane extends Cell {
             f = () => this.split("rightleft")
             break
         case "[":
-   
+
             f = () => this.enterCopyMode()
             break
         case "f":
@@ -552,9 +567,9 @@ export class Pane extends Cell {
      * */
     createDividers() {
         // create the dividers
-        var t = document.getElementById("divider-template")
+        let t = document.getElementById("divider-template")
         if (t) {
-            var d = [t.content.cloneNode(true),
+            let d = [t.content.cloneNode(true),
                      t.content.cloneNode(true)]
             d.forEach((e, i) => {
                 this.w.e.prepend(e)
@@ -570,7 +585,7 @@ export class Pane extends Cell {
      * moved or resized
      */
     refreshDividers() {
-        var W = this.w.e.offsetWidth,
+        let W = this.w.e.offsetWidth,
             H = this.w.e.offsetHeight,
             d = this.dividers[0]
         if (this.xoff > 0.001 & this.sy * H > 50) {
@@ -601,12 +616,15 @@ export class Pane extends Cell {
         super.close()
     }
     dump() {
-        var cell = {
+        let cell = {
             sx: this.sx,
             sy: this.sy,
             xoff: this.xoff,
             yoff: this.yoff,
-            fontSize: this.fontSize
+            fontSize: this.fontSize,
+            channelID: null,
+            active: false,
+            zoomed: false
         }
         cell.channelID = this.channelID
         if (this.w.activeP && this == this.w.activeP)
@@ -638,7 +656,7 @@ export class Pane extends Cell {
         return Clipboard.write({string: lines.join('\n')})
     }
     handleCMKey(key) {
-        var x, y, newX, newY,
+        let x, y, newX, newY,
             selection = this.cmSelection,
             line
         // chose the x & y we're going to change

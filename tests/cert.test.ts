@@ -3,7 +3,7 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Terminal7Mock } from './infra.ts'
+import { Terminal7Mock } from './infra'
 import { assert } from "chai"
 import { deleteDB } from 'idb'
 

@@ -3,7 +3,7 @@ import "./css/xterm.css"
 import "./css/framework7-icons.css"
 import "./css/codemirror.css"
 import "./css/dialog.css"
-import { Terminal7 } from "./src/terminal7.js"
+import { Terminal7 } from "./src/terminal7"
 import { registerSW } from "virtual:pwa-register";
 import { StatusBar, Style } from '@capacitor/status-bar';
 

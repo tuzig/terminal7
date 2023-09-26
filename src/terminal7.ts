@@ -6,8 +6,8 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Gate } from './gate.ts'
-import { T7Map } from './map.ts'
+import { Gate } from './gate'
+import { T7Map } from './map'
 import { CyclicArray } from './cyclic.js'
 import * as TOML from '@tuzig/toml'
 import { formatDate } from './utils.js'
