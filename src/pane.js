@@ -30,6 +30,34 @@ const REGEX_SEARCH = false,
         wholeWord: false,
         incremental: false,
         caseSensitive: true,
+    },
+    KEY_CODES = {
+        'esc': 27,
+        'left': 37,
+        'up': 38,
+        'right': 39,
+        'down': 40,
+        '0': 48,
+        '1': 49,
+        '9': 57,
+        c: 67,
+        d: 68,
+        f: 70,
+        l: 76,
+        p: 80,
+        r: 82,
+        t: 84,
+        z: 90,
+        '0_numpad': 96,
+        '1_numpad': 97,
+        '9_numpad': 105,
+        '-_numpad': 109,
+        '=': 187,
+        ',': 188,
+        '-': 189,
+        '[': 219,
+        '\\': 220,
+        "'": 222,
     }
 
 
@@ -117,7 +145,7 @@ export class Pane extends Cell {
             this.t.attachCustomKeyEventHandler(ev => {
                 var toDo = true
                 // ctrl c is a special case 
-                if (ev.ctrlKey && (ev.key == "c") && (this.d != null)) {
+                if (ev.ctrlKey && (ev.keyCode === KEY_CODES.c) && (this.d != null)) {
                     this.d.send(String.fromCharCode(3))
                     toDo = false
                 }
@@ -421,71 +449,74 @@ export class Pane extends Cell {
         this.exitCopyMode();
     }
     handleMetaKey(ev) {
-        var f = null
-        this.t7.log(`Handling meta key ${ev.key}`)
-        switch (ev.key) {
-        case "c":
+        let f = null
+        this.t7.log(`Handling meta key ${ev.keyCode}`)
+        switch (ev.keyCode) {
+        case KEY_CODES.c:
             this.copySelection()
             break
-        case "z":
+        case KEY_CODES.z:
             f = () => this.toggleZoom()
             break
-        case ",":
+        case KEY_CODES[',']:
             f = () => this.w.rename()
             break
-        case "d":
+        case KEY_CODES.d:
             f = () => this.close()
             break
-        case "0":
+        case KEY_CODES["0"]:
+        case KEY_CODES["0_numpad"]:
             f = () => this.scale(12 - this.fontSize)
             break
-        case "=":
+        case KEY_CODES['=']:
                 f = () => this.scale(1)
             break
-        case "-":
+        case KEY_CODES['-']:
             f = () => this.scale(-1)
             break
-        case "\\":
+        case KEY_CODES['\\']:
             f = () => this.split("topbottom")
             break
-        case "'":
+        case KEY_CODES["'"]:
             f = () => this.split("rightleft")
             break
-        case "[":
-   
+        case KEY_CODES['[']:
             f = () => this.enterCopyMode()
             break
-        case "f":
+        case KEY_CODES.f:
             f = () => this.showSearch()
             break
         // next two keys are on the gate level
-        case "t":
+        case KEY_CODES.t:
             f = () => this.gate.newTab()
             break
-        case "r":
+        case KEY_CODES.r:
             f = () => this.gate.reset()
             break
         // this key is at terminal level
-        case "l":
+        case KEY_CODES.l:
             f = () => this.t7.map.showLog()
             break
-        case "ArrowLeft":
+        case KEY_CODES.left:
             f = () => this.w.moveFocus("left")
             break
-        case "ArrowRight":
+        case KEY_CODES.right:
             f = () => this.w.moveFocus("right")
             break
-        case "ArrowUp":
+        case KEY_CODES.up:
             f = () => this.w.moveFocus("up")
             break
-        case "ArrowDown":
+        case KEY_CODES.down:
             f = () => this.w.moveFocus("down")
             break
-        case "p":
+        case KEY_CODES.p:
             f = () => this.t7.dumpLog()
             break
         default:
-            if (ev.key >= "1" && ev.key <= "9") {
+            if (
+                (ev.key >= KEY_CODES['1'] && ev.keyCode <= KEY_CODES['9']) ||
+                (ev.key >= KEY_CODES['1_numpad'] && ev.keyCode <= KEY_CODES['9_numpad'])
+            ) {
                 const win = this.gate.windows[ev.key - 1]
                 if (this.zoomed)
                     this.toggleZoom()
