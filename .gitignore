@@ -27,3 +27,6 @@ aatp/**/authorized_fingerprints
 
 # Local Netlify folder
 .netlify
+
+# idea
+.idea/
