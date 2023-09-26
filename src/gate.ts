@@ -7,7 +7,7 @@
  */
 import { Clipboard } from '@capacitor/clipboard'
 
-import { Pane } from './pane.js'
+import { Pane } from './pane'
 import { T7Map } from './map'
 import { Failure, Session } from './session'
 import { PB } from './peerbook'
@@ -16,7 +16,7 @@ import { Terminal7 } from './terminal7'
 
 import { Capacitor } from '@capacitor/core'
 import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
-import { Window } from './window.js'
+import { Window } from './window'
 import { Preferences } from '@capacitor/preferences'
 
 

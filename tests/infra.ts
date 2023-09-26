@@ -1,5 +1,5 @@
 import { RTSession, RTChannel } from "../src//rtsession.ts"
-import { Terminal7 } from "../src/terminal7.js"
+import { Terminal7 } from "../src/terminal7"
 import { Gate } from "../src/gate"
 import { T7Map } from "../src/map"
 import { vi } from "vitest";
