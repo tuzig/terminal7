@@ -488,7 +488,7 @@ export class Pane extends Cell {
             if (ev.key >= "1" && ev.key <= "9") {
                 const win = this.gate.windows[ev.key - 1]
                 if (this.zoomed)
-                    this.toggleZoom();
+                    this.toggleZoom()
                 if (win)
                     win.focus()
             }
