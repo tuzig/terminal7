@@ -5,8 +5,8 @@
  *  Copyright: (c) 2021 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Cell } from './cell.js'
-import { Pane } from './pane.js'
+import { Cell } from './cell'
+import { Pane } from './pane'
 
 const  ABIT                = 10
 
