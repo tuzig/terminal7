@@ -134,7 +134,7 @@ export class Pane extends Cell {
             this.t.attachCustomKeyEventHandler(ev => {
                 let toDo = true
                 // ctrl c is a special case 
-                if (ev.ctrlKey && (ev.keyCode === KEY_CODES.c) && (this.d != null)) {
+                if (ev.ctrlKey && (ev.key == "c") && (this.d != null)) {
                     this.d.send(String.fromCharCode(3))
                     toDo = false
                 }
