@@ -54,11 +54,11 @@ export class Pane extends Cell {
     fitAddon: FitAddon
     fontSize: number
     imageAddon: ImageAddon
-    lastKey: string = ''
+    lastKey = ''
     needsResize = false
     searchAddon: SearchAddon
     searchDown = false
-    searchTerm: string = ''
+    searchTerm = ''
     t: Terminal
     theme: string
     repetition = 0
@@ -89,7 +89,7 @@ export class Pane extends Cell {
     openTerminal(parentID, channelID) {
         if (channelID)
             this.channelID = channelID
-        let con = document.createElement("div")
+        const con = document.createElement("div")
         this.t = new Terminal({
             convertEol: false,
             fontFamily: "FiraCode",
@@ -211,8 +211,8 @@ export class Pane extends Cell {
                 cb(this)
             return
         }
-        let oldr = this.t.rows
-        let oldc = this.t.cols
+        const oldr = this.t.rows
+        const oldc = this.t.cols
 
         // there's no point in fitting when in the middle of a restore
         //  it happens in the eend anyway
@@ -280,7 +280,7 @@ export class Pane extends Cell {
         this.fit()
 
         // add the new pane
-        let p = l.addPane({sx: sx, sy: sy, 
+        const p = l.addPane({sx: sx, sy: sy, 
                        xoff: xoff, yoff: yoff,
                        parent: this})
         p.focus()
@@ -315,13 +315,13 @@ export class Pane extends Cell {
             this.buffer = []
             if (opts.id) {
                 this.gate.session.openChannel(opts.id)
-                .then((channel, id) =>this.onChannelConnected(channel))
+                .then((channel) =>this.onChannelConnected(channel))
                 .then(resolve)
                 .catch(m => console.log(m))
             } else {
                 this.gate.session.openChannel(
                     this.t7.conf.exec.shell, opts.parent, this.t.cols, this.t.rows)
-                .then((channel, id) =>this.onChannelConnected(channel))
+                .then((channel) =>this.onChannelConnected(channel))
                 .then(resolve)
                 .catch(m => console.log(m))
             }
@@ -363,7 +363,7 @@ export class Pane extends Cell {
         se.classList.remove("hidden")
         document.getElementById("search-button").classList.add("on")
         // TODO: restore regex search
-        let i = se.querySelector("input[name='search-term']")
+        const i = se.querySelector("input[name='search-term']")
         this.disableSearchButtons()
         i.setAttribute("placeholder", "search string here")
         if (this.searchTerm)
@@ -436,7 +436,7 @@ export class Pane extends Cell {
         this.exitCopyMode();
     }
     handleMetaKey(ev) {
-        var f = null
+        let f = null
         this.t7.log(`Handling meta key ${ev.key}`)
         switch (ev.key) {
         case "c":
@@ -567,9 +567,9 @@ export class Pane extends Cell {
      * */
     createDividers() {
         // create the dividers
-        let t = document.getElementById("divider-template")
+        const t = document.getElementById("divider-template")
         if (t) {
-            let d = [t.content.cloneNode(true),
+            const d = [t.content.cloneNode(true),
                      t.content.cloneNode(true)]
             d.forEach((e, i) => {
                 this.w.e.prepend(e)
@@ -585,9 +585,9 @@ export class Pane extends Cell {
      * moved or resized
      */
     refreshDividers() {
-        let W = this.w.e.offsetWidth,
-            H = this.w.e.offsetHeight,
-            d = this.dividers[0]
+        const W = this.w.e.offsetWidth,
+            H = this.w.e.offsetHeight
+        let d = this.dividers[0]
         if (this.xoff > 0.001 & this.sy * H > 50) {
             // refresh left divider position
             d.style.left = `${this.xoff * W - 4 - 20 }px`
@@ -616,7 +616,7 @@ export class Pane extends Cell {
         super.close()
     }
     dump() {
-        let cell = {
+        const cell = {
             sx: this.sx,
             sy: this.sy,
             xoff: this.xoff,
@@ -687,7 +687,7 @@ export class Pane extends Cell {
             if (key.match(/\d/))
                 this.repetition = 10 * this.repetition + parseInt(key)
             else {
-                let temp = this.repetition
+                const temp = this.repetition
                 this.repetition = 0
                 for (let i = 0; i < temp; i++) {
                     this.handleCMKey(key)
@@ -922,7 +922,7 @@ export class Pane extends Cell {
             this.cmSelectionUpdate(selection)
             if ((newY >= this.t.buffer.active.viewportY + this.t.rows) ||
                 (newY < this.t.buffer.active.viewportY)) {
-                let scroll = newY - this.t.buffer.active.viewportY
+                const scroll = newY - this.t.buffer.active.viewportY
                 this.t.scrollLines(scroll, true)
             }
         }
@@ -1022,14 +1022,14 @@ export class Pane extends Cell {
     }
     enableSearchButtons() {
         const se = this.gate.e.querySelector(".search-box")
-        let up = se.querySelector(".search-up"),
+        const up = se.querySelector(".search-up"),
             down = se.querySelector(".search-down")
         up.classList.remove("off")
         down.classList.remove("off")
     }
     disableSearchButtons() {
         const se = this.gate.e.querySelector(".search-box")
-        let up = se.querySelector(".search-up"),
+        const up = se.querySelector(".search-up"),
             down = se.querySelector(".search-down")
         up.classList.add("off")
         down.classList.add("off")
@@ -1038,7 +1038,7 @@ export class Pane extends Cell {
         startIndex = startIndex || 0
         let match = -1
         str.replace(regex, (...args) => {
-            let i = args.find(x => typeof(x) == "number")
+            const i = args.find(x => typeof(x) == "number")
             if (match == -1 && i > startIndex)
                 match = i
         })

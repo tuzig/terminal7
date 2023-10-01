@@ -598,8 +598,7 @@ async function subscribeCMD(shell: Shell) {
         const offerings = await Purchases.getOfferings(),
             offer = offerings.current
         const packages = offer.availablePackages.map(p => {
-            const identifier = p.identifier,
-                price = p.product.priceString,
+            const price = p.product.priceString,
                 period = TYPES[p.packageType],
                 introPrice = p.product.introPrice
             let prompt = `${price} / ${period}`

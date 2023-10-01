@@ -10,13 +10,13 @@ export function CyclicArray(n) {
 
 CyclicArray.prototype.get = function (i) {
   if (i >= this.length) return
-  var j = (this.head + i) % this.capacity
+  const j = (this.head + i) % this.capacity
   return this.list[j]
 }
 
-CyclicArray.prototype.push = function () {
-  for (var i = 0; i < arguments.length; i++) {
-    this.list[this.tail] = arguments[i]
+CyclicArray.prototype.push = function (...args) {
+  for (let i = 0; i < args.length; i++) {
+    this.list[this.tail] = args[i]
     this.tail = (this.tail + 1) % this.capacity
     if (this.length == this.capacity)
       this.head = this.tail
@@ -27,8 +27,8 @@ CyclicArray.prototype.push = function () {
 
 CyclicArray.prototype.pop = function () {
   if (!this.length) return
-  var tail = (this.tail - 1 + this.capacity) % this.capacity
-  var item = this.list[tail]
+  const tail = (this.tail - 1 + this.capacity) % this.capacity
+  const item = this.list[tail]
   this.tail = tail
   this.length--
   return item
@@ -36,15 +36,15 @@ CyclicArray.prototype.pop = function () {
 
 CyclicArray.prototype.shift = function () {
   if (!this.length) return
-  var item = this.list[this.head]
+  const item = this.list[this.head]
   this.head = (this.head + 1) % this.capacity
   this.length--
   return item
 }
 
 CyclicArray.prototype.forEach = function (fn, context) {
-  for (var i = 0; i < this.length; i++) {
-    var j = (this.head + i) % this.capacity
+  for (let i = 0; i < this.length; i++) {
+    const j = (this.head + i) % this.capacity
     fn.call(context, this.list[j], i, this)
   }
 }
