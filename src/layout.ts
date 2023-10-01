@@ -70,7 +70,7 @@ export class Layout extends Cell {
             }
             this.e.remove()
         } else {
-            let i = this.cells.indexOf(c), 
+            const i = this.cells.indexOf(c), 
                 p = (i > 0)?this.cells[i-1]:this.cells[1]
             // if no peer it means we're removing the last pane in the window
             if (p === undefined) {
@@ -106,13 +106,13 @@ export class Layout extends Cell {
      */
     addPane(props, index) {
         // CONGRATS! a new pane is born. props must include at keast sx & sy
-        let p = props || {}
+        const p = props || {}
         p.w = this.w
         p.gate = this.gate
         p.layout = this
         p.channelID = props.channelID
         p.id = this.t7.cells.length
-        let pane = new Pane(p)
+        const pane = new Pane(p)
         this.t7.cells.push(pane)
 
         if (props.parent instanceof Cell) {
@@ -171,7 +171,7 @@ export class Layout extends Cell {
     // Layout.dump dumps the layout to an object
     dump() {
         // r is the text the function returns
-        let d = {
+        const d = {
             dir: this.dir,
             sx: this.sx,
             sy: this.sy,
@@ -192,7 +192,7 @@ export class Layout extends Cell {
      * the layout's direction.
      */
     set sx(val) {
-        let oldS = this.sx,
+        const oldS = this.sx,
             r = val/oldS
         this.e.style.width = String(val * 100) + "%"
         if (isNaN(r) || this.cells == undefined || this.cells.length == 0)
@@ -200,7 +200,7 @@ export class Layout extends Cell {
         let off = this.cells[0].xoff
         this.cells.forEach((c) => {
             if (this.dir == "topbottom") {
-                let oldS = c.sx,
+                const oldS = c.sx,
                     s = oldS * r
                 c.xoff = off
                 c.sx = s
@@ -216,7 +216,7 @@ export class Layout extends Cell {
      * the layout's direction.
      */
     set sy(val) {
-        let oldS = this.sy,
+        const oldS = this.sy,
             r = val/oldS
         this.e.style.height = String(val * 100) + "%"
         if (isNaN(r) || this.cells == undefined || this.cells.length == 0)
@@ -224,7 +224,7 @@ export class Layout extends Cell {
         let off = this.cells[0].yoff
         this.cells.forEach((c) => {
             if (this.dir == "rightleft") {
-                let oldS = c.sy,
+                const oldS = c.sy,
                     s = oldS * r
                 c.yoff = off
                 c.sy = s
@@ -271,18 +271,18 @@ export class Layout extends Cell {
             })
     }
     prevCell(c) {
-        var i = this.cells.indexOf(c) - 1
+        const i = this.cells.indexOf(c) - 1
         return (i >= 0)?this.cells[i]:null
     }
     nextCell(c) {
-        var i = this.cells.indexOf(c) + 1
+        const i = this.cells.indexOf(c) + 1
         return (i < this.cells.length)?this.cells[i]:null
     }
     /*
      * Layout.moveBorder moves a pane's border
      */
     moveBorder(pane, border, dest) {
-        var s, off
+        let s, off
         let p0 = null,
             p1 = null
         // first, check if it's a horizontal or vertical border we're moving
@@ -308,10 +308,10 @@ export class Layout extends Cell {
             this.layout && this.layout.moveBorder(this, border, dest)
             return
         }
-        let max = this.findNext(p1)
+        const max = this.findNext(p1)
         dest = Math.max(dest, p0[off] + 0.02)
         dest = Math.min(dest, (max?.[off] || 1) - 0.02)
-        let by = p1[off] - dest
+        const by = p1[off] - dest
         p0[s] -= by
         p1[s] += by
         p1[off] = dest
@@ -322,7 +322,7 @@ export class Layout extends Cell {
     findNext(c) {
         if (this.nextCell(c))
             return this.nextCell(c)
-        let root = this.layout?.layout
+        const root = this.layout?.layout
         if (root)
             return root.findNext(this.layout)
         return null

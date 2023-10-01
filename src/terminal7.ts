@@ -158,7 +158,7 @@ export class Terminal7 {
      * loads the gates from local storage and redirects to home
      */
     async open() {
-        let e = document.getElementById('terminal7')
+        const e = document.getElementById('terminal7')
         this.log("in open")
         this.lastActiveState = true
         this.e = e
@@ -316,7 +316,7 @@ export class Terminal7 {
                     reject()
                 else {
                     const state = JSON.parse(value)
-                    let gate = this.gates[state.gateId]
+                    const gate = this.gates[state.gateId]
                     if (!gate) {
                         console.log("Invalid restore state. Starting fresh", state)
                         this.notify("Invalid restore state. Starting fresh")
@@ -422,10 +422,10 @@ export class Terminal7 {
      */
     // TOFO: add onMap to props
     addGate(props, onMap = true) {
-        let p = props || {}
+        const p = props || {}
         // add the id
         p.id = p.fp || p.name
-        let g = new Gate(p)
+        const g = new Gate(p)
         g.onlySSH = p.onlySSH
         this.gates.push(g)
         g.open(this.e)
@@ -436,10 +436,10 @@ export class Terminal7 {
         return g
     }
     async storeGates() { 
-        let out = []
+        const out = []
         this.gates.forEach(g => {
             if (g.store) {
-                let ws = []
+                const ws = []
                 g.windows.forEach((w) => ws.push(w.id))
                 out.push({id: g.id, addr: g.addr, user: g.user, secret: g.secret,
                     name:g.name, windows: ws, store: true, verified: g.verified,
@@ -504,7 +504,7 @@ export class Terminal7 {
             this.map.showLog(true)
     }
     run(cb, delay) {
-        var i = this.timeouts.length,
+        const i = this.timeouts.length,
             r = window.setTimeout(ev => {
                 this.timeouts.splice(i, 1)
                 cb(ev)
@@ -522,7 +522,7 @@ export class Terminal7 {
     disengage() {
         return new Promise(resolve => {
             this.pbClose()
-            var count = 0
+            let count = 0
             if (this.activeG && this.activeG.boarding)
                 this.notify("🌜 Benched", true)
             if (this.gates.length > 0) {
@@ -535,7 +535,7 @@ export class Terminal7 {
                     }
                 })
             }
-            let callCB = () => terminal7.run(() => {
+            const callCB = () => terminal7.run(() => {
                 if (count == 0)
                     resolve()
                  else 
@@ -545,7 +545,7 @@ export class Terminal7 {
         })
     }
     async updateNetworkStatus (status, updateNetPopup = true) {
-        let off = document.getElementById("offline").classList
+        const off = document.getElementById("offline").classList
         if (this.netConnected == status.connected) {
             if (updateNetPopup) {
                 if (this.netConnected)
@@ -656,7 +656,7 @@ export class Terminal7 {
                             autoIncrement: true})
                     },
             }).then(db => {
-                let tx = db.transaction("certificates"),
+                const tx = db.transaction("certificates"),
                     store = tx.objectStore("certificates")
                  store.getAll().then(certificates => {
                      if (certificates.length == 0) {
@@ -710,7 +710,7 @@ export class Terminal7 {
                             autoIncrement: true})
                     },
             }).then(db => {
-                let tx = db.transaction("certificates", "readwrite"),
+                const tx = db.transaction("certificates", "readwrite"),
                     store = tx.objectStore("certificates"),
                     c = this.certificates[0]
                 c.id = 1
@@ -730,7 +730,7 @@ export class Terminal7 {
         // var helpId = (this.activeG)? "help-gate":"help-home",
         // var helpId = (this.activeG && this.activeG.activeW.activeP.copyMode)?
         // "help-copymode":"help-gate",
-        var helpId = "help-gate",
+        const helpId = "help-gate",
             ecl = document.getElementById(helpId).classList,
             bcl = document.getElementById("help-button").classList
             
@@ -798,19 +798,19 @@ export class Terminal7 {
             return
         }
         if (m.answer !== undefined ) {
-            var answer = JSON.parse(atob(m.answer))
+            const answer = JSON.parse(atob(m.answer))
             g.session.peerAnswer(answer)
             return
         }
     }
     log (...args) {
-        var line = ""
+        let line = ""
         args.forEach(a => line += JSON.stringify(a) + " ")
         console.log(line)
         this.logBuffer.push(line)
     }
     async dumpLog() {
-        var data = ""
+        let data = ""
         while (this.logBuffer.length > 0) {
             data += this.logBuffer.shift() + "\n"
         }
@@ -874,7 +874,7 @@ export class Terminal7 {
         this.log(`identified: ${this.gesture}`)
     } 
     onPointerMove(ev) {
-        let x  = ev.pageX,
+        const x  = ev.pageX,
             y  = ev.pageY
 
         /*
@@ -883,7 +883,7 @@ export class Terminal7 {
             */
 
         if (this.gesture) {
-            let where = this.gesture.where,
+            const where = this.gesture.where,
                 dest = Math.min(1.0, (where == "top")
                     ? y / document.querySelector('.windows-container').offsetHeight
                     : x / document.body.offsetWidth)
@@ -893,7 +893,7 @@ export class Terminal7 {
         }
     }
     async onPointerUp(ev) {
-        let e = ev.target,
+        const e = ev.target,
             gatePad = e.closest(".gate-pad")
 
         if (!this.pointer0)
@@ -904,7 +904,7 @@ export class Terminal7 {
             if (!gate)
                 return
             else {
-                let deltaT = Date.now() - this.pointer0
+                const deltaT = Date.now() - this.pointer0
                 clearTimeout(this.longPressGate)
                 this.longPressGate = null
                 if (deltaT < this.conf.ui.quickest_press) {
@@ -922,7 +922,7 @@ export class Terminal7 {
             if (this.activeG && this.activeG.fitScreen)
                 this.activeG.sendState()
         } else if (this.firstPointer) {
-            let deltaT = Date.now() - this.pointer0,
+            const deltaT = Date.now() - this.pointer0,
                     x  = ev.pageX,
                     y  = ev.pageY,
                     dx = this.firstPointer.pageX - x,
@@ -935,7 +935,7 @@ export class Terminal7 {
                 const minS = (dx > dy)?this.conf.ui.cutMinSpeedY:this.conf.ui.cutMinSpeedX
                 if  (s > minS) {
                     // it's a cut!!
-                    let cell = ev.target.closest(".cell"),
+                    const cell = ev.target.closest(".cell"),
                         pane = (cell != null)?cell.cell:undefined
                     if (pane && !pane.zoomed)  {
                         if (r < 1.0)
@@ -1005,7 +1005,7 @@ export class Terminal7 {
     }
     async deleteFingerprint() {
         const db = await openDB("t7", 1)
-        let tx = db.transaction("certificates", "readwrite"),
+        const tx = db.transaction("certificates", "readwrite"),
             store = tx.objectStore("certificates")
         await store.clear()
     }

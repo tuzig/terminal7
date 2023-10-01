@@ -32,7 +32,7 @@ export class PeerbookConnection {
     updatingStore = false
     spinnerInterval = null
 
-    constructor(props:Map<string, any>) {
+    constructor(props:Map<string, unknown>) {
         // copy all props to this
         Object.assign(this, props)
         this.pending = []
