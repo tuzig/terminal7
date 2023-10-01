@@ -514,8 +514,8 @@ export class Pane extends Cell {
             break
         default:
             if (
-                (ev.key >= KEY_CODES['1'] && ev.keyCode <= KEY_CODES['9']) ||
-                (ev.key >= KEY_CODES['1_numpad'] && ev.keyCode <= KEY_CODES['9_numpad'])
+                (ev.keyCode >= KEY_CODES['1'] && ev.keyCode <= KEY_CODES['9']) ||
+                (ev.keyCode >= KEY_CODES['1_numpad'] && ev.keyCode <= KEY_CODES['9_numpad'])
             ) {
                 const win = this.gate.windows[ev.key - 1]
                 if (this.zoomed)
