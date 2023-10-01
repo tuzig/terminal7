@@ -56,7 +56,7 @@ export class Cell {
      * If an element is not passed in, `this.e` is used
      */
     catchFingers(elem) {
-        let e = (typeof elem == 'undefined')?this.e:elem,
+        const e = (typeof elem == 'undefined')?this.e:elem,
             h = new Hammer.Manager(e, {}),
         // h.options.domEvents=true; // enable dom events
             singleTap = new Hammer.Tap({event: "tap"}),
@@ -160,7 +160,7 @@ export class Cell {
         this.t7.run(() => this.focus(), ABIT)
     }
     zoom() {
-        let c = document.createElement('div'),
+        const c = document.createElement('div'),
             e = document.createElement('div'),
             te = this.e.removeChild(this.e.children[0])
         c.classList.add("zoomed")
@@ -181,7 +181,7 @@ export class Cell {
             this.resizeObserver.disconnect()
             this.resizeObserver = null
         }
-        let te = this.t7.zoomedE.children[0].children[0]
+        const te = this.t7.zoomedE.children[0].children[0]
         this.e.appendChild(te)
         document.body.removeChild(this.t7.zoomedE)
         this.t7.zoomedE = null

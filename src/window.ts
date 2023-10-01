@@ -32,12 +32,12 @@ export class Window {
         e.appendChild(this.e)
 
         // Add the name with link to tab bar
-        let a = document.createElement('a')
+        const a = document.createElement('a')
         a.id = this.e.id+'-name'
         a.w = this
         a.innerHTML = this.name
         // Add gestures on the window name for rename and drag to trash
-        let h = new Hammer.Manager(a, {})
+        const h = new Hammer.Manager(a, {})
         h.options.domEvents=true; // enable dom events
         h.add(new Hammer.Press({event: "rename", pointers: 1}))
         h.add(new Hammer.Tap({event: "switch", pointers: 1}))
@@ -52,7 +52,7 @@ export class Window {
      */
     focus() {
         // turn off the current active
-        let a = this.gate.activeW
+        const a = this.gate.activeW
         if (a) {
             a.nameE.classList.remove("on")
             a.e.classList.add("hidden")
@@ -69,7 +69,7 @@ export class Window {
             this.activeP.focus()
     }
     addLayout(dir, basedOn) {
-        let l = new Layout(dir, basedOn)
+        const l = new Layout(dir, basedOn)
         l.id = this.t7.cells.length
         this.t7.cells.push(l)
         if (this.rootLayout == null)
@@ -80,7 +80,7 @@ export class Window {
      * restoreLayout restores a layout, creating the panes and layouts as needed
      */
     restoreLayout(layout, activeWindow) {
-        var l = this.addLayout(layout.dir, {
+        const l = this.addLayout(layout.dir, {
             w: this,
             gate: this.gate,
             sx: layout.sx || null,
@@ -106,7 +106,7 @@ export class Window {
         return l
     }
     dump() {
-        let r = this.rootLayout.dump()
+        const r = this.rootLayout.dump()
         if (this.active)
             r.active = true
         return r
@@ -162,11 +162,11 @@ export class Window {
             this.rootLayout.fit()
     }
     moveFocus(where) {
-        var a = this.activeP,
+        const a = this.activeP,
             b = a.t.buffer.active,
             x = a.xoff + b.cursorX * a.sx / a.t.cols,
-            y = a.yoff + b.cursorY * a.sy / a.t.rows,
-            match = null,
+            y = a.yoff + b.cursorY * a.sy / a.t.rows
+        let match = null,
             nextPane = null
         switch(where) {
             case "left":
@@ -198,8 +198,8 @@ export class Window {
         }
     }
     updateDivideButtons() {
-        let bV = document.getElementById("divide-v")
-        let bH = document.getElementById("divide-h")
+        const bV = document.getElementById("divide-v")
+        const bH = document.getElementById("divide-h")
         if (this.activeP.isSplittable("topbottom"))
             bV.classList.remove("off")
         else
@@ -215,7 +215,7 @@ export class Window {
             theseCells = this.rootLayout.allCells()
         thatLayout.w = this
         thatLayout.gate = this.gate
-        let newLayout = new Layout(thatLayout.dir, thatLayout)
+        const newLayout = new Layout(thatLayout.dir, thatLayout)
         thatLayout.cells.forEach(thatCell => {
             let thisCell = null
             if (thatCell.dir) {
