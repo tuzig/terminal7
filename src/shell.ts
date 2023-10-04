@@ -133,7 +133,7 @@ export class Shell {
         this.active = false
         try {
             await exec(args)
-        } catch (e) {}
+        } catch (e) {/* continue regardless of error */}
         this.active = true
     }
 
