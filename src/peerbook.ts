@@ -7,15 +7,35 @@
  *  License: GPLv3
  */
 
+import { CustomerInfo } from "@revenuecat/purchases-typescript-internal-esm"
+
 export const PB = "\uD83D\uDCD6"
-import { Device } from '@capacitor/device';
+import { Device } from '@capacitor/device'
 import { Purchases } from '@revenuecat/purchases-capacitor'
-import { Failure } from './session'
 import { HTTPWebRTCSession } from './webrtc_session'
 import { Gate } from './gate'
 import { Shell } from './shell'
 import { Capacitor } from '@capacitor/core'
 import {ERROR_HTML_SYMBOL, CLOSED_HTML_SYMBOL, OPEN_HTML_SYMBOL} from './terminal7'
+
+interface PeerbookProps {
+    fp: string,
+    host: string,
+    insecure: boolean,
+    shell: Shell
+}
+
+interface Peer {
+    name: string
+    user: string
+    kind: string
+    verified: boolean
+    created_on: number
+    verified_on: number
+    last_connected: number
+    online: boolean
+    auth_token?: string
+}
 
 export class PeerbookConnection {
     ws: WebSocket = null
@@ -31,8 +51,9 @@ export class PeerbookConnection {
     uid: string
     updatingStore = false
     spinnerInterval = null
+    headers: Map<string,string>
 
-    constructor(props:Map<string, unknown>) {
+    constructor(props:PeerbookProps) {
         // copy all props to this
         Object.assign(this, props)
         this.pending = []
@@ -41,7 +62,7 @@ export class PeerbookConnection {
         this.uid = ""
     }
 
-    async adminCommand(cmd: string, ...args: string[]) {
+    async adminCommand(cmd: string, ...args: string[]): Promise<string> {
         const c = args?[cmd, ...args]:[cmd]
         if (!this.session) {
             console.log("Admin command with no session")
@@ -49,7 +70,7 @@ export class PeerbookConnection {
                 await this.connect()
             } catch (e) {
                 console.log("Failed to connect to peerbook", e)
-                throw new Failure("Failed to connect")
+                throw new Error("Failed to connect")
             }
         }   
 
@@ -61,7 +82,7 @@ export class PeerbookConnection {
                     terminal7.log(`cmd ${cmd} ${args} closed with: ${ret}`)
                     resolve(ret)
                 }
-                channel.onMessage = (data) => {
+                channel.onMessage = (data: Uint8Array) => {
                     reply.push(...data)
                 }
             }).catch(reject)
@@ -110,10 +131,10 @@ export class PeerbookConnection {
         this.echo("and use it to generate a One Time Password")
         // verify ourselves - it's the first time and we were approved thanks 
         // to the revenuecat's user id
-        this.shell.startWatchdog().catch(() => {
+        this.shell.startWatchdog(3000).catch(() => {
             this.shell.t.writeln("Timed out waiting for OTP")
             this.shell.printPrompt()
-        }, 3000)
+        })
         try {
             fp = await terminal7.getFingerprint()
         } catch (e) {
@@ -164,7 +185,9 @@ export class PeerbookConnection {
      * gets customer info from revenuecat and act on it
     */
     async updateCustomerInfo() {
-        let data: Purchases.PurchasesUpdatedPurchaserInfo
+        let data: {
+            customerInfo: CustomerInfo;
+        }
         try {
             data = await Purchases.getCustomerInfo()
         } catch (e) {
@@ -314,14 +337,14 @@ export class PeerbookConnection {
                     terminal7.log("got ws message but no onUpdate", m)
             }
             ws.onerror = ev =>  {
-                window.terminal7.log("peerbook ws error", ev.toString())
+                terminal7.log("peerbook ws error", ev.toString())
                 this.ws = null
                 this.stopSpinner()
                 statusE.innerHTML = ERROR_HTML_SYMBOL
                 reject()
             }
             ws.onclose = (ev) => {
-                window.terminal7.log("peerbook ws closed", ev)
+                terminal7.log("peerbook ws closed", ev)
                 this.ws = null
                 this.stopSpinner()
                 if (statusE.innerHTML != ERROR_HTML_SYMBOL)
@@ -396,7 +419,7 @@ export class PeerbookConnection {
         })
         return ret
     }
-    async verifyFP(fp: string, prompt: string) {
+    async verifyFP(fp: string, prompt?: string) {
         let validated = false
         // TODO:gAdd biometrics verification
         while (!validated) {
@@ -437,8 +460,8 @@ export class PeerbookConnection {
         })
     }   
     stopSpinner() {
-        const statusE = document.getElementById("peerbook-status")
-        statusE.style.opacity = 1
+        const statusE = document.getElementById("peerbook-status") as HTMLElement
+        statusE.style.opacity = "1"
         if (this.spinnerInterval) {
             clearInterval(this.spinnerInterval)
             this.spinnerInterval = null
@@ -455,9 +478,9 @@ export class PeerbookConnection {
                 change = -change
                 i = i + change
             }
-            statusE.style.opacity = i
+            statusE.style.opacity = String(i)
         }, 200)
         statusE.innerHTML = OPEN_HTML_SYMBOL
-        statusE.style.opacity = 0
+        statusE.style.opacity = "0"
     }
 }

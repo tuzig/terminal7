@@ -8,14 +8,15 @@
  */
 import { Gate } from './gate'
 import { T7Map } from './map'
-import { CyclicArray } from './cyclic.js'
+import CyclicArray from './cyclic'
 import * as TOML from '@tuzig/toml'
-import { formatDate } from './utils.js'
+import { formatDate } from './utils'
 import { openDB } from 'idb'
 import { marked } from 'marked'
+// @ts-ignore
 import changelogURL  from '../CHANGELOG.md?url'
-import ssh from 'ed25519-keygen/ssh';
-import { randomBytes } from 'ed25519-keygen/utils';
+import ssh from 'ed25519-keygen/ssh'
+import { randomBytes } from 'ed25519-keygen/utils'
 
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
@@ -28,7 +29,11 @@ import { RateApp } from 'capacitor-rate-app'
 
 
 import { PeerbookConnection, PB } from './peerbook'
-import { Failure } from './session';
+import { Failure } from './session'
+import { Cell } from "./cell"
+import { Pane } from "./pane"
+import { PeerbookSession } from "./webrtc_session"
+import { aw } from "vitest/dist/reporters-2ff87305"
 
 export const OPEN_HTML_SYMBOL = "📡"
 export const ERROR_HTML_SYMBOL = "🤕"
@@ -93,13 +98,75 @@ function compactCert(cert) {
     const ret = cert.getFingerprints()[0].value.toUpperCase().replaceAll(":", "")
     return ret
 }
+
+declare global {
+    let terminal7: Terminal7
+    interface Window {
+        terminal7: Terminal7
+    }
+}
+
+export interface IceServers {
+    credential: string,
+    credentialType: "password" | string,
+    urls: string[],
+    username?: string
+}
+
 export class Terminal7 {
+    gates: Gate[]
+    cells: Cell[]
+    timeouts: number[]
+    activeG?: Gate
+    scrollLingers4: number
+    shortestLongPress: number
+    borderHotSpotSize: number
+    certificates?: RTCCertificate[] = null
+    netConnected = true
+    logBuffer: CyclicArray
+    zoomedE?: HTMLDivElement
+    pendingPanes
+    pb?: PeerbookConnection = null
+    ignoreAppEvents = false
+    purchasesStarted = false
+    iceServers?: IceServers[]
+    recovering?: boolean
+    metaPressStart: number
+    map: T7Map
+    lastActiveState: boolean
+    e: HTMLDivElement
+    conf:{
+        theme
+        exec
+        net
+        ui
+        peerbook?
+        retries?: number
+    }
+    longPressGate: number
+    gesture?: {
+        where: "left" | "top",
+        pane: Pane
+    }
+    pointer0: number
+    firstPointer: {
+        pageX: number,
+        pageY: number
+    }
+    lastIdVerify: number
+    keys: {publicKey: string, privateKey: string}
+
     DEFAULT_KEY_TAG = "dev.terminal7.keys.default"
     /*
      * Terminal7 constructor, all properties should be initiated here
      */
-    constructor(settings) {
-        settings = settings || {}
+    constructor(settings: {
+        scrollLingers4?: number,
+        shortestLongPress?: number,
+        borderHotSpotSize?: number,
+        logLines?: number,
+        iceServers?: IceServers[]
+    } = {}) {
         this.gates = []
         this.cells = []
         this.timeouts = []
@@ -108,16 +175,11 @@ export class Terminal7 {
         this.scrollLingers4     = settings.scrollLingers4 || 2000
         this.shortestLongPress  = settings.shortestLongPress || 1000
         this.borderHotSpotSize  = settings.borderHotSpotSize || 30
-        this.certificates = null
-        this.confEditor = null
-        this.flashTimer = null
-        this.netConnected = true
-        this.logBuffer = CyclicArray(settings.logLines || 101)
+
+        this.logBuffer = new CyclicArray(settings.logLines || 101)
         this.zoomedE = null
         this.pendingPanes = {}
-        this.pb = null
-        this.ignoreAppEvents = false
-        this.purchasesStarted = false
+
         this.iceServers = settings.iceServers || null
     }
     showKeyHelp () {
@@ -161,7 +223,7 @@ export class Terminal7 {
         const e = document.getElementById('terminal7')
         this.log("in open")
         this.lastActiveState = true
-        this.e = e
+        this.e = e as HTMLDivElement
         await Preferences.migrate()
         // reading conf
         let d = {},
@@ -177,7 +239,7 @@ export class Terminal7 {
             this.run(() =>
                 this.notify(
                     `Using default conf as parsing the dotfile failed:\n ${err}`, 
-                10))
+                true), 10)
 
         }
         this.loadConf(d)
@@ -305,7 +367,7 @@ export class Terminal7 {
      * restoreState is a future feature that uses local storage to restore
      * terminal7 to it's last state
      */
-    restoreState() {
+    restoreState(): Promise<void> {
         return new Promise((resolve, reject) => {
             if (!this.conf.ui.autoRestore) {
                 reject()
@@ -337,20 +399,20 @@ export class Terminal7 {
             this.pb.close()
         }
     }
-    async pbConnect() {
-        const statusE = document.getElementById("peerbook-status")
+    async pbConnect(): Promise<void> {
+        const statusE = document.getElementById("peerbook-status") as HTMLSpanElement
         return new Promise((resolve, reject) => {
             function callResolve() {
                 if (terminal7.pb)
                     terminal7.pb.stopSpinner()
-                statusE.style.opacity = 1
+                statusE.style.opacity = "1"
                 resolve()
             }
-            function callReject(e, symbol) {
+            function callReject(e, symbol = "") {
                 if (terminal7.pb)
                     terminal7.pb.stopSpinner()
-                statusE.style.opacity = 1
-                statusE.innerHTML = symbol || "⛔︎"
+                statusE.style.opacity = "1"
+                statusE.innerHTML = symbol
                 reject(e)
             }
             const catchConnect = e => {
@@ -412,7 +474,7 @@ export class Terminal7 {
     catchFingers() {
         this.e.addEventListener("pointerdown", ev => this.onPointerDown(ev))
         this.e.addEventListener("pointerup", ev => this.onPointerUp(ev))
-        this.e.addEventListener("pointercancel", ev => this.onPointerCancel(ev))
+        this.e.addEventListener("pointercancel", () => this.onPointerCancel())
         this.e.addEventListener("pointermove", ev => this.onPointerMove(ev))
     }
     /*
@@ -462,7 +524,7 @@ export class Terminal7 {
         await this.map.shell.escapeActiveForm()
     }
     async goHome() {
-        Preferences.remove({key: "last_state"}) 
+        await Preferences.remove({key: "last_state"})
         const s = document.getElementById('map-button')
         s.classList.add('off')
         if (this.activeG) {
@@ -519,7 +581,7 @@ export class Terminal7 {
     /*
      * disengage gets each active gate to disengae
      */
-    disengage() {
+    disengage(): Promise<void> {
         return new Promise(resolve => {
             this.pbClose()
             let count = 0
@@ -643,7 +705,7 @@ export class Terminal7 {
     }
 
     // gets the will formatted fingerprint from the current certificate
-    getFingerprint() {
+    getFingerprint(): Promise<string> {
         // gets the certificate from indexDB. If they are not there, create them
         return new Promise((resolve, reject) => {
             if (this.certificates) {
@@ -688,6 +750,7 @@ export class Terminal7 {
             this.log('generating the certificate')
             RTCPeerConnection.generateCertificate({
               name: "ECDSA",
+                // @ts-ignore
               namedCurve: "P-256",
               expires: 31536000000
             }).then(cert => {
@@ -702,7 +765,7 @@ export class Terminal7 {
             })
         })
     }
-    storeCertificate() {
+    storeCertificate(): Promise<RTCCertificate | void> {
         return new Promise((resolve, reject) => {
             openDB("t7", 1, { 
                     upgrade(db) {
@@ -712,7 +775,7 @@ export class Terminal7 {
             }).then(db => {
                 const tx = db.transaction("certificates", "readwrite"),
                     store = tx.objectStore("certificates"),
-                    c = this.certificates[0]
+                    c = this.certificates[0] as RTCCertificate & {id:number}
                 c.id = 1
                 store.add(c).then(() => {
                     db.close()
@@ -786,7 +849,7 @@ export class Terminal7 {
             g.online = m.peer_update.online
             g.verified = m.peer_update.verified
             g.fp = m.source_fp
-            g.updateNameE()
+            await g.updateNameE()
             return
         }
         if (!g.session) {
@@ -794,12 +857,12 @@ export class Terminal7 {
             return
         }
         if (m.candidate !== undefined) {
-            g.session.peerCandidate(m.candidate)
+            (g.session as PeerbookSession).peerCandidate(m.candidate)
             return
         }
         if (m.answer !== undefined ) {
-            const answer = JSON.parse(atob(m.answer))
-            g.session.peerAnswer(answer)
+            const answer = JSON.parse(atob(m.answer));
+            (g.session as PeerbookSession).peerAnswer(answer)
             return
         }
     }
@@ -814,7 +877,7 @@ export class Terminal7 {
         while (this.logBuffer.length > 0) {
             data += this.logBuffer.shift() + "\n"
         }
-        Clipboard.write({string: data})
+        await Clipboard.write({string: data})
         this.notify("Log copied to clipboard")
         /* TODO: wwould be nice to store log to file, problme is 
          * Preferences pluging failes
@@ -832,7 +895,6 @@ export class Terminal7 {
     onPointerCancel() {
         this.pointer0 = null
         this.firstPointer = null
-        this.lastT = null
         this.gesture = null
         if (this.longPressGate) {
             clearTimeout(this.longPressGate)
@@ -885,7 +947,7 @@ export class Terminal7 {
         if (this.gesture) {
             const where = this.gesture.where,
                 dest = Math.min(1.0, (where == "top")
-                    ? y / document.querySelector('.windows-container').offsetHeight
+                    ? y / (document.querySelector('.windows-container') as HTMLDivElement).offsetHeight
                     : x / document.body.offsetWidth)
             this.gesture.pane.layout.moveBorder(this.gesture.pane, where, dest)
             ev.stopPropagation()
@@ -958,7 +1020,7 @@ export class Terminal7 {
     async showGreetings() {
         const greeted = (await Preferences.get({key: 'greeted'})).value
         if (!greeted) {
-            Preferences.set({key: "greeted", value: "yep"})
+            await Preferences.set({key: "greeted", value: "yep"})
             if (Capacitor.isNativePlatform())
                 this.map.tty(WELCOME_NATIVE)
             else
@@ -967,10 +1029,13 @@ export class Terminal7 {
             this.map.shell.printPrompt()
             if (!((window.matchMedia('(display-mode: standalone)').matches)
                 || (window.matchMedia('(display-mode: fullscreen)').matches)
+                // @ts-ignore
                 || window.navigator.standalone
                 || (Capacitor.getPlatform() != "web")
                 || document.referrer.includes('android-app://')))
-                if (navigator.getInstalledRelatedApps) 
+                // @ts-ignore
+                if (navigator.getInstalledRelatedApps)
+                    // @ts-ignore
                     navigator.getInstalledRelatedApps().then(relatedApps => {
                         if (relatedApps.length > 0)
                             this.map.tty("PWA installed, better use it\n")
@@ -1029,7 +1094,7 @@ export class Terminal7 {
 		e.innerHTML = marked.parse(changelog)
 		// add prefix to all ids to avoid conflicts
         e.querySelectorAll("[id]").forEach(e => e.id = "changelog-" + e.id)
-        document.querySelectorAll("a[href]").forEach(e => {
+        document.querySelectorAll("a[href]").forEach((e: HTMLAnchorElement) => {
             e.addEventListener("click", ev => {
                 ev.stopPropagation()
                 ev.preventDefault()
@@ -1038,7 +1103,7 @@ export class Terminal7 {
         })
 	}
     // if show is undefined the change log view state is toggled
-	showChangelog(show) {
+	showChangelog(show = undefined) {
 		const e = document.getElementById("changelog")
         if (show === undefined)
             // if show is undefined toggle current state
@@ -1052,7 +1117,7 @@ export class Terminal7 {
     /*
      * collects the default id and returns a { publicKet, privateKey
      */
-    async readId() {
+    async readId(): Promise<{publicKey: string, privateKey: string}> {
         const now = Date.now()
         if (this.keys && (now - this.lastIdVerify  < this.conf.ui.verificationTTL))
             return this.keys
@@ -1103,24 +1168,28 @@ export class Terminal7 {
     }
     saveDotfile(text) {
         this.cells.forEach(c => {
+            // @ts-ignore
             if (typeof(c.setTheme) == "function")
-                c.setTheme(this.conf.theme)
+                (c as unknown as Pane).setTheme(this.conf.theme)
         })
         terminal7.loadConf(TOML.parse(text))
         if (this.pb &&
-            ((this.pb.host != this.conf.net.peerbook) 
+            ((this.pb.host != this.conf.net.peerbook)
+                // TODO: is bug?
+                // @ts-ignore
              || (this.pb.peerName != this.conf.peerbook.peer_name)
              || (this.pb.insecure != this.conf.peerbook.insecure)
+                // @ts-ignore
              || (this.pb.email != this.conf.peerbook.email))) {
             this.pbClose()
             this.pb = null
-            this.pbConnect()
+            this.pbConnect().then()
         }
         return Preferences.set({key: "dotfile", value: text})
     }
     async pbVerify() {
         const fp = await this.getFingerprint()
-        const schema = this.insecure?"http":"https"
+        const schema = this.pb.insecure?"http":"https"
         let response
         try {
             response = await fetch(`${schema}://${this.conf.net.peerbook}/verify`, {

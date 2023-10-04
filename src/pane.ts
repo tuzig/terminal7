@@ -5,24 +5,28 @@
  *  License: GPLv3
  */
 import { Cell } from './cell'
-import { Terminal } from 'xterm'
+import { ITheme, Terminal } from 'xterm'
 import { Clipboard } from '@capacitor/clipboard'
 import { Preferences } from '@capacitor/preferences'
 import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { WebglAddon } from 'xterm-addon-webgl'
 import { WebLinksAddon } from 'xterm-addon-web-links'
-import { ImageAddon } from 'xterm-addon-image';
+import { ImageAddon } from 'xterm-addon-image'
 import { Camera } from '@capacitor/camera'
 /* restore the bell. commented as it silences all background audio
 import { BELL_SOUND } from './bell'
 */
 
-import { Failure } from './session'
+import { Channel, Failure } from './session'
 
 import XtermWebfont from '@liveconfig/xterm-webfont'
+import * as Hammer from "hammerjs"
+import { Manager } from "hammerjs"
+import { TerminalWithAddons } from "./map"
 
-const REGEX_SEARCH = false,
+const ABIT = 10,
+    REGEX_SEARCH = false,
     COPYMODE_BORDER_COLOR = "#F952F9",
     FOCUSED_BORDER_COLOR = "#F4DB53",
     SEARCH_OPTS = {
@@ -48,7 +52,7 @@ export class Pane extends Cell {
         endColumn: number
     }
     copyMode = false
-    d = null
+    d?: Channel = null
     dividers = []
     flashTimer? = null
     fitAddon: FitAddon
@@ -59,12 +63,13 @@ export class Pane extends Cell {
     searchAddon: SearchAddon
     searchDown = false
     searchTerm = ''
-    t: Terminal
-    theme: string
+    t: TerminalWithAddons
+    theme: ITheme
     repetition = 0
     retries = 0
     WebLinksAddon: WebLinksAddon
-
+    resizeObserver: ResizeObserver
+    mc: HammerManager
 
     constructor(props) {
         props.className = "pane"
@@ -94,7 +99,6 @@ export class Pane extends Cell {
             convertEol: false,
             fontFamily: "FiraCode",
             fontSize: this.fontSize * this.gate.fontScale,
-            rendererType: "canvas",
             theme: this.theme,
             rows:24,
             cols:80,
@@ -102,7 +106,7 @@ export class Pane extends Cell {
             /* TODO: restore this. commented because it silences spotify
             bellStyle: "sound",
             bellSound: BELL_SOUND, */
-        })
+        }) as TerminalWithAddons
         this.fitAddon = new FitAddon()
         this.searchAddon = new SearchAddon()
         this.WebLinksAddon = new WebLinksAddon((MouseEvent, url) => {
@@ -177,7 +181,7 @@ export class Pane extends Cell {
                     this.t.clearSelection()
                 }
             })
-            this.resizeObserver.observe(this.e);
+            this.resizeObserver.observe(this.e)
             this.fit(pane => { 
                if (pane != null)
                   pane.openChannel({parent: parentID, id: channelID})
@@ -202,6 +206,95 @@ export class Pane extends Cell {
         this.gate.sendState()
     }
 
+    /*
+ * Catches gestures on an elment using hammerjs.
+ * If an element is not passed in, `this.e` is used
+ */
+    catchFingers(elem = undefined) {
+        const e = (typeof elem == 'undefined')?this.e:elem,
+            h = new Manager(e, {}),
+            // h.options.domEvents=true; // enable dom events
+            singleTap = new Hammer.Tap({event: "tap"}),
+            doubleTap = new Hammer.Tap({event: "doubletap", taps: 2}),
+            pinch = new Hammer.Pinch({event: "pinch"})
+
+        h.add([singleTap,
+            doubleTap,
+            pinch,
+            new Hammer.Tap({event: "twofingerstap", pointers: 2})])
+
+        h.on('tap', () => {
+            if (this.w.activeP != this as unknown as Pane) {
+                this.focus()
+                this.gate.sendState()
+            }
+        })
+        h.on('twofingerstap', () => {
+            this.toggleZoom()
+        })
+        h.on('doubletap', () => {
+            this.toggleZoom()
+        })
+
+        h.on('pinch', (e: HammerInput) => {
+            // @ts-ignore additionalEvent is not in the .d.ts
+            this.t7.log(e.additionalEvent, e.distance, e.velocityX, e.velocityY, e.direction, e.isFinal)
+            if (e.deltaTime < this.lastEventT)
+                this.lastEventT = 0
+            if ((e.deltaTime - this.lastEventT < 200) ||
+                (e.velocityY > this.t7.conf.ui.pinchMaxYVelocity))
+                return
+            this.lastEventT = e.deltaTime
+
+            // @ts-ignore additionalEvent is not in the .d.ts
+            if (e.additionalEvent == "pinchout")
+                this.scale(1)
+            else
+                this.scale(-1)
+        })
+        this.mc = h
+    }
+
+    zoom() {
+        const c = document.createElement('div'),
+            e = document.createElement('div'),
+            te = this.e.removeChild(this.e.children[0])
+        c.classList.add("zoomed")
+        e.classList.add("pane", "focused")
+        e.style.borderColor = FOCUSED_BORDER_COLOR
+        e.appendChild(te)
+        c.appendChild(e)
+        this.catchFingers(e)
+        document.body.appendChild(c)
+        this.t7.zoomedE = c
+        this.w.e.classList.add("hidden")
+        this.resizeObserver = new window.ResizeObserver(() => this.styleZoomed(e))
+        this.resizeObserver.observe(e)
+        this.zoomed = true
+    }
+    unzoom() {
+        if (this.resizeObserver != null) {
+            this.resizeObserver.disconnect()
+            this.resizeObserver = null
+        }
+        const te = this.t7.zoomedE.children[0].children[0]
+        this.e.appendChild(te)
+        document.body.removeChild(this.t7.zoomedE)
+        this.t7.zoomedE = null
+        this.w.e.classList.remove("hidden")
+        this.zoomed = false
+    }
+
+    toggleZoom() {
+        if (this.zoomed)
+            this.unzoom()
+        else
+            this.zoom()
+        this.gate.sendState()
+        this.t7.run(() => this.focus(), ABIT)
+
+        this.fit()
+    }
     // fit a pane to the display area. If it was resized, the server is updated.
     // returns true is size was changed
     // TODO: make it async
@@ -270,7 +363,7 @@ export class Pane extends Cell {
             this.sy -= sy
             yoff = this.yoff + this.sy
         }
-        else  {
+        else {
             sy = this.sy
             sx = this.sx * (1 - s)
             yoff = this.yoff
@@ -341,10 +434,6 @@ export class Pane extends Cell {
         this.flashIndicator()
         this.write(m)
     }
-    toggleZoom() {
-        super.toggleZoom()
-        this.fit()
-    }
     toggleSearch() {
         const se = this.gate.e.querySelector(".search-box")
         if (!se.classList.contains("show"))
@@ -363,7 +452,7 @@ export class Pane extends Cell {
         se.classList.remove("hidden")
         document.getElementById("search-button").classList.add("on")
         // TODO: restore regex search
-        const i = se.querySelector("input[name='search-term']")
+        const i = se.querySelector("input[name='search-term']") as HTMLInputElement
         this.disableSearchButtons()
         i.setAttribute("placeholder", "search string here")
         if (this.searchTerm)
@@ -388,6 +477,19 @@ export class Pane extends Cell {
         })
         i.focus()
     }
+    styleZoomed(e = null) {
+        e = e || this.t7.zoomedE.querySelector(".pane")
+        const se = this.gate.e.querySelector(".search-box")
+        let style
+        if (se.classList.contains("show"))
+            style = `${(document.querySelector('.windows-container') as HTMLDivElement).offsetHeight - 22}px`
+        else
+            style = `${document.body.offsetHeight - 36}px`
+        e.style.height = style
+        e.style.top = "0px"
+        e.style.width = "100%"
+        this.fit()
+    }
     enterCopyMode(marking = false) {
         if (marking)
             this.cmMarking = true
@@ -396,7 +498,7 @@ export class Pane extends Cell {
             this.cmInitCursor()
             this.cmAtEnd = null
             if (this.zoomed)
-                this.t7.zoomedE.children[0].style.borderColor = COPYMODE_BORDER_COLOR
+                (this.t7.zoomedE.children[0] as HTMLElement).style.borderColor = COPYMODE_BORDER_COLOR
             else
                 this.e.style.borderColor = COPYMODE_BORDER_COLOR
             Preferences.get({key: "first_copymode"}).then(v => {
@@ -417,7 +519,7 @@ export class Pane extends Cell {
             this.t.clearSelection()
             this.t.scrollToBottom()
             if (this.zoomed)
-                this.t7.zoomedE.children[0].style.borderColor = FOCUSED_BORDER_COLOR
+                (this.t7.zoomedE.children[0] as HTMLElement).style.borderColor = FOCUSED_BORDER_COLOR
             else
                 this.e.style.borderColor = FOCUSED_BORDER_COLOR
             this.focus()
@@ -432,8 +534,8 @@ export class Pane extends Cell {
             this.styleZoomed()
     }
     exitSearch() {
-        this.hideSearch();
-        this.exitCopyMode();
+        this.hideSearch()
+        this.exitCopyMode()
     }
     handleMetaKey(ev) {
         let f = null
@@ -516,25 +618,13 @@ export class Pane extends Cell {
         }
         return true
     }
-    findNext(searchTerm) {
-        const notFound = this.gate.e.querySelector(".not-found")
-        if (searchTerm) {
-            this.cmAtEnd = null
-            // this.t.options.selectionStyle = "plain"
-            this.searchTerm = searchTerm
-        }
-
-        if (this.searchTerm) {
-            if (!this.searchAddon.findNext(this.searchTerm, SEARCH_OPTS))
-                notFound.classList.remove("hidden")
-            else {
-                notFound.classList.add("hidden")
-                this.enterCopyMode(true)
-                this.markSelection()
-            }
-        }
+    findNext(searchTerm = '') {
+        this.find(searchTerm, (st) => this.searchAddon.findNext(st, SEARCH_OPTS))
     }
-    findPrev(searchTerm) {
+    findPrev(searchTerm = '') {
+        this.find(searchTerm, (st) => this.searchAddon.findPrevious(st, SEARCH_OPTS))
+    }
+    private find(searchTerm: string, findFunc: (string) => boolean): void {
         const notFound = this.gate.e.querySelector(".not-found")
         if (searchTerm) {
             this.cmAtEnd = null
@@ -543,7 +633,7 @@ export class Pane extends Cell {
         }
 
         if (this.searchTerm) {
-            if (!this.searchAddon.findPrevious(this.searchTerm, SEARCH_OPTS))
+            if (!findFunc(this.searchTerm))
                 notFound.classList.remove("hidden")
             else {
                 notFound.classList.add("hidden")
@@ -567,13 +657,13 @@ export class Pane extends Cell {
      * */
     createDividers() {
         // create the dividers
-        const t = document.getElementById("divider-template")
+        const t = document.getElementById("divider-template") as HTMLTemplateElement
         if (t) {
             const d = [t.content.cloneNode(true),
                      t.content.cloneNode(true)]
-            d.forEach((e, i) => {
+            d.forEach((e: HTMLElement & {pane?: Pane}, i) => {
                 this.w.e.prepend(e)
-                e = this.w.e.children[0]
+                e = this.w.e.children[0] as HTMLElement
                 e.classList.add((i==0)?"left-divider":"top-divider")
                 e.pane = this
                 this.dividers.push(e)
@@ -588,7 +678,7 @@ export class Pane extends Cell {
         const W = this.w.e.offsetWidth,
             H = this.w.e.offsetHeight
         let d = this.dividers[0]
-        if (this.xoff > 0.001 & this.sy * H > 50) {
+        if (this.xoff > 0.001 && this.sy * H > 50) {
             // refresh left divider position
             d.style.left = `${this.xoff * W - 4 - 20 }px`
             d.style.top = `${(this.yoff + this.sy/2)* H - 22 - 40}px`
@@ -596,7 +686,7 @@ export class Pane extends Cell {
         } else
             d.classList.add("hidden")
         d = this.dividers[1]
-        if (this.yoff > 0.001 & this.sx * W > 50) {
+        if (this.yoff > 0.001 && this.sx * W > 50) {
             // refresh top divider position
             d.style.top = `${this.yoff * H - 25 - 20 }px`
             d.style.left = `${(this.xoff + this.sx/2)* W - 22 - 40}px`
@@ -606,16 +696,18 @@ export class Pane extends Cell {
     }
     close() {
         try {
-            this.resizeObserver.unobserve(this.e);
+            this.resizeObserver.unobserve(this.e)
         } catch (e) {}
 
         if (this.d)
             this.d.close()
         this.dividers.forEach(d => d.classList.add("hidden"))
         document.querySelector('.add-tab').classList.remove("off")
+        if (this.zoomed)
+            this.unzoom()
         super.close()
     }
-    dump() {
+    dump(): this {
         const cell = {
             sx: this.sx,
             sy: this.sy,
@@ -631,7 +723,7 @@ export class Pane extends Cell {
             cell.active = true
         if (this.zoomed)
             cell.zoomed = true
-        return cell
+        return cell as this
     }
     // listening for terminal selection changes
     selectionChanged() {
@@ -665,7 +757,7 @@ export class Pane extends Cell {
             if (!this.cmCursor)
                 this.cmInitCursor()
             x = this.cmCursor.x
-            y =  this.cmCursor.y; 
+            y =  this.cmCursor.y
             selection = {
                 startColumn: x,
                 endColumn: x,
@@ -675,11 +767,11 @@ export class Pane extends Cell {
         }
         else if (this.cmAtEnd) {
             x = selection.endColumn
-            y = selection.endRow; 
+            y = selection.endRow
         }
         else {
             x = selection.startColumn
-            y = selection.startRow; 
+            y = selection.startRow
         }
         newX = x
         newY = y
@@ -755,7 +847,7 @@ export class Pane extends Cell {
                 break
             case "Enter":
                 this.copySelection()
-                this.exitCopyMode();
+                this.exitCopyMode()
                 break
             case '/':
                 this.showSearch(true)
@@ -889,7 +981,7 @@ export class Pane extends Cell {
         if ((newY != y) || (newX != x)) {
             if (!this.cmMarking) {
                 this.cmCursor.x = newX
-                this.cmCursor.y = newY; 
+                this.cmCursor.y = newY
             }
             else if (this.cmAtEnd) {
                 if ((newY < selection.startRow) || 
@@ -923,7 +1015,7 @@ export class Pane extends Cell {
             if ((newY >= this.t.buffer.active.viewportY + this.t.rows) ||
                 (newY < this.t.buffer.active.viewportY)) {
                 const scroll = newY - this.t.buffer.active.viewportY
-                this.t.scrollLines(scroll, true)
+                this.t.scrollLines(scroll)
             }
         }
     }
@@ -1046,7 +1138,7 @@ export class Pane extends Cell {
     }
     // showVideo replace the terminal with a video and vice versa
     // if `show` is undefined the video is toggled
-    showVideo(show) {
+    showVideo(show = undefined) {
         const video = document.querySelector("video")
         if (show === undefined)
             show = video === null
@@ -1058,7 +1150,7 @@ export class Pane extends Cell {
         if (show) {
             // first remove all videos
             button.classList.add("on")
-            const v = document.createElement("video");
+            const v = document.createElement("video")
             this.e.querySelector("div").classList.add("hidden")
             this.e.prepend(v)
             Camera.checkPermissions().then(result => {

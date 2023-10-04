@@ -1,14 +1,13 @@
-import { Channel } from "./session"
+import { Channel, Failure } from "./session"
 import { Clipboard } from "@capacitor/clipboard"
 import { Terminal } from 'xterm'
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
 import { Gate } from "./gate"
 import { T7Map } from './map'
-import { Failure } from "./session"
 import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
 import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
-import { tomlMode} from '@tuzig/codemirror/mode/toml/toml.js'
+import { tomlMode } from '@tuzig/codemirror/mode/toml/toml.js'
 import { dialogAddOn } from '@tuzig/codemirror/addon/dialog/dialog.js'
 
 export class Shell {
@@ -31,7 +30,7 @@ export class Shell {
     historyIndex = 0
     confEditor: CodeMirror.EditorFromTextArea
     exitConf: () => void
-    lineAboveForm: 0
+    lineAboveForm = 0
 
     constructor(map: T7Map) {
         this.map = map
@@ -201,7 +200,7 @@ export class Shell {
         if (!this.watchdog) return
         this.stopWatchdog()
         if (terminal7.activeG)
-            terminal7.activeG.onFailure("Overrun")
+            terminal7.activeG.onFailure(Failure.Overrun)
         await new Promise(r => setTimeout(r, 100))
         this.printPrompt()
     }
@@ -339,7 +338,7 @@ export class Shell {
     async openConfig() {
         const modal   = document.getElementById("settings"),
             button  = document.getElementById("dotfile-button"),
-            area    =  document.getElementById("edit-conf"),
+            area    =  document.getElementById("edit-conf") as HTMLTextAreaElement,
             conf    =  await terminal7.getDotfile()
 
         area.value = conf
@@ -371,7 +370,7 @@ export class Shell {
     }
 
     closeConfig(save = false) {
-        const area = document.getElementById("edit-conf")
+        const area = document.getElementById("edit-conf") as HTMLTextAreaElement
         document.getElementById("dotfile-button").classList.remove("on")
         if (save) {
             this.confEditor.save()

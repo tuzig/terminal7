@@ -3,15 +3,14 @@
  * copied from : https://stackoverflow.com/a/14638191/66595
  * used as in: `x.innerHTML = formatDate(d, "dddd h:mmtt d MMM yyyy")`
  */
-export function formatDate(date, format, utc) {
+export function formatDate(date, format, utc = false) {
     const MMMM = ["\x00", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
     const MMM = ["\x01", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     const dddd = ["\x02", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
     const ddd = ["\x03", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
-    function ii(i, len) {
+    function ii(i, len = 2) {
         let s = i + ""
-        len = len || 2
         while (s.length < len) s = "0" + s
         return s
     }
