@@ -268,7 +268,7 @@ async function connectCMD(shell:Shell, args: string[]) {
                 let res = ""
                 try {
                     res = await shell.runForm(keyForm, "menu")
-                } catch (e) {}
+                } catch (e) {/* continue regardless of error */}
                 switch(res) {
                     case "Copy command to clipboard":
                         Clipboard.write({ string: cmd })
@@ -973,7 +973,7 @@ async function loginCMD(shell: Shell) {
     shell.t.writeln(`PeerBook response: ${await res.text()}`)
     try {
         terminal7.pb.wsConnect()
-    } catch(e) {}
+    } catch(e) {/* continue regardless of error */}
     let timedOut = false
     shell.startWatchdog(180000).catch(() => timedOut = true)
     while (!terminal7.pb.uid && !timedOut)
