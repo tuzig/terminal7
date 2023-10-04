@@ -697,7 +697,7 @@ export class Pane extends Cell {
     close() {
         try {
             this.resizeObserver.unobserve(this.e)
-        } catch (e) {}
+        } catch (e) {/* continue regardless of error */}
 
         if (this.d)
             this.d.close()

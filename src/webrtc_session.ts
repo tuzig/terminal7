@@ -87,7 +87,7 @@ export class WebRTCSession extends BaseSession {
         return false
     }
 
-    async connect(marker?: number, noCDC?: boolean | string, privateKey: string = null): Promise<void> {
+    async connect(marker?: number, noCDC?: boolean | string, privateKey?: string): Promise<void> {
         console.log("in connect", marker, noCDC)
 
         if (this.t7.iceServers == null) {

@@ -33,7 +33,6 @@ import { Failure } from './session'
 import { Cell } from "./cell"
 import { Pane } from "./pane"
 import { PeerbookSession } from "./webrtc_session"
-import { aw } from "vitest/dist/reporters-2ff87305"
 
 export const OPEN_HTML_SYMBOL = "📡"
 export const ERROR_HTML_SYMBOL = "🤕"
