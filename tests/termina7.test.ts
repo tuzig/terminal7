@@ -6,8 +6,8 @@
  *  License: GPLv3
  */
 import * as TOML from '@tuzig/toml'
-import { Layout } from '../src/layout.js'
-import { Cell } from '../src/cell.js'
+import { Layout } from '../src/layout'
+import { Cell } from '../src/cell'
 import { Gate } from '../src/gate'
 import { T7Map } from '../src/map'
 import { Terminal7Mock, sleep } from './infra'
@@ -31,7 +31,7 @@ describe("terminal7", function() {
         console.log("before each")
         t = new Terminal7Mock()
         e = document.getElementById("t7")
-        window.terminal7=t
+        terminal7=t
         t.open(e)
     })
     afterEach(() => t && t.clearTimeouts())

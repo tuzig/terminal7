@@ -6,14 +6,10 @@
  *  License: GPLv3
  */
 import { vi, describe, beforeAll, afterEach, it, expect } from 'vitest'
-import { Layout } from '../src/layout'
-import { Cell } from '../src/cell'
 import { T7Map } from '../src/map'
 import { Terminal7Mock, sleep } from './infra'
 import { Preferences } from '@capacitor/preferences'
-import { Gate } from '../src/gate'
 import { HTTPWebRTCSession } from '../src/webrtc_session'
-import { Terminal } from 'xterm'
 
 vi.mock('xterm')
 vi.mock('@revenuecat/purchases-capacitor')
@@ -26,7 +22,7 @@ describe("gate", () => {
         await Preferences.clear()
         t = new Terminal7Mock()
         e = document.getElementById("t7")
-        window.terminal7 = t
+        terminal7 = t
         t.open(e)
     })
     afterEach(() => {

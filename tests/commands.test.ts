@@ -25,7 +25,7 @@ describe("TWR commands", function() {
     beforeEach(async () => {
         t = new Terminal7Mock()
         e = document.getElementById("t7")
-        window.terminal7=t
+        terminal7=t
         t.open(e)
     })
     afterEach(() => t && t.clearTimeouts())

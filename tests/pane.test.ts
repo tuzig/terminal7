@@ -5,11 +5,8 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Layout } from '../src/layout.js'
-import { Cell } from '../src/cell.js'
 import { Gate } from '../src/gate'
-import { Terminal7Mock } from './infra.ts'
-import { assert } from "chai"
+import { Terminal7Mock } from './infra'
 import { Preferences } from '@capacitor/preferences'
 import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest'
 
@@ -26,7 +23,7 @@ describe("pane", () => {
         }
         t = new Terminal7Mock()
         e = document.getElementById("t7")
-        window.terminal7=t
+        terminal7=t
         t.open(e)
         h = t.addGate()
         h.open(e)
@@ -37,7 +34,7 @@ describe("pane", () => {
         w.activeP.yoff = 0.2
         p0 = w.activeP
         await p0.fit()
-        Preferences.set({ key: 'first_copymode', value: 1 })
+        Preferences.set({ key: 'first_copymode', value: "1" })
     })
     afterEach(() => t && t.clearTimeouts())
     it("can forward jump words in copy mode", () => {
