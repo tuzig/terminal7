@@ -189,16 +189,20 @@
       </div>
   </div>
   <nav id="navbar" class="bar">
-          <button type="button" id="map-button" class="off"><i class="f7-icons">map</i></button>
-          <button type="button" id="log-button"><i class="f7-icons">greaterthan</i></button>
-          <button type="button" id="trash-button" class="pane-buttons off"><i class="f7-icons">rectangle_fill_badge_xmark</i></button>
-          <button type="button" id="divide-h" class="pane-buttons off"><i class="f7-icons">divide</i></button>
-          <button type="button" id="divide-v" class="pane-buttons off">
+          <button type="button" id="map-button" class="off" title="Map"><i class="f7-icons">map</i></button>
+          <button type="button" id="log-button" title="Log"><i class="f7-icons">greaterthan</i></button>
+          <button type="button" id="trash-button" class="pane-buttons off" title="Close pane">
+              <i class="f7-icons">rectangle_fill_badge_xmark</i></button>
+          <button type="button" id="divide-h" class="pane-buttons off" title="Split horizontally">
+              <i class="f7-icons">divide</i></button>
+          <button type="button" id="divide-v" class="pane-buttons off" title="Split vertically">
               <i class="f7-icons" style="display: inline-block; transform: rotate(90deg);">divide</i></button>
-          <button type="button" id="search-button" class="pane-buttons off"><i class="f7-icons">doc_text_search</i></button>
-          <button type="button" id="video-button" class="pane-buttons off"><i class="f7-icons">videocam</i></button>
-          <button type="button" id="help-button"><i class="f7-icons">question</i></button>
-          <button type="button" id="dotfile-button"><i class="f7-icons">gear</i></button>
+          <button type="button" id="search-button" class="pane-buttons off" title="Search">
+              <i class="f7-icons">doc_text_search</i></button>
+          <button type="button" id="video-button" class="pane-buttons off" title="Video">
+              <i class="f7-icons">videocam</i></button>
+          <button type="button" id="help-button"><i class="f7-icons" title="Help">question</i></button>
+          <button type="button" id="dotfile-button"><i class="f7-icons" title="Dotfile config">gear</i></button>
   </nav>
 
     <template id="lose-state-template">
@@ -265,11 +269,11 @@
         </div>
     </template>
     <nav class="tabbar">
-          <button type="button" class="add-tab"><i class="f7-icons">
+          <button type="button" class="add-tab" title="Add pane"><i class="f7-icons">
                   plus</i></button>
           <nav class="tabbar-names">
           </nav>
-          <button type="button" class="reset"><i class="f7-icons">
+          <button type="button" class="reset" title="Reset connection"><i class="f7-icons">
                   arrow_2_circlepath</i></button>
     </nav>
 </template>
