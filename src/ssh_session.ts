@@ -1,5 +1,5 @@
 import { SSH, SSHSessionID, StartByPasswd, StartByKey} from 'capacitor-ssh-plugin'
-import { Channel, BaseChannel, BaseSession, Failure, Session, State, ChannelID }  from './session' 
+import { BaseChannel, BaseSession, Failure, Session, ChannelID }  from './session'
 import { WebRTCSession }  from './webrtc_session'
 
 const ACCEPT_CMD = "/usr/local/bin/webexec accept"
@@ -8,7 +8,8 @@ export class SSHChannel extends BaseChannel {
     async close(): Promise<void> {
         return SSH.closeChannel({channel: this.id})
     }
-    send(data: string): void {
+    send(data: string | ArrayBuffer): void {
+        //@ts-ignore the field is actually called "message" not "s"
         SSH.writeToChannel({channel: this.id, message: data})
            .catch(e => console.log("error from writeToChannel", e))
     }
@@ -26,14 +27,12 @@ export class SSHChannel extends BaseChannel {
         }
     }
 }
-// SSHSession is an implmentation of a real time session over ssh
+// SSHSession is an implementation of a real time session over ssh
 export class SSHSession extends BaseSession {
     id: SSHSessionID
     address: string
     username: string
     port: number
-    onStateChange : (state: State, failure?: Failure) => void
-    onCMD: (payload: string) => void
     constructor(address: string, username: string, port=22) {
         super()
         this.username = username
@@ -45,12 +44,13 @@ export class SSHSession extends BaseSession {
         this.id = session
         this.onStateChange("connected")
     }
-    async connect(marker?:number, publicKey: string, privateKey:string) {
+    async connect(marker?:number, publicKey?: string | boolean, privateKey?: string): Promise<void> {
         terminal7.log("Connecting using SSH", this.address, this.username, this.port)
         SSH.startSessionByKey({
             address: this.address,
             port: this.port,
             username: this.username,
+            // @ts-ignore
             publicKey: publicKey,
             privateKey: privateKey
         }).then(args => {
@@ -75,6 +75,7 @@ export class SSHSession extends BaseSession {
         }
         SSH.startSessionByPasswd(args)
            .then(args => {
+               //@ts-ignore bug in .d.ts?
                 this.onSSHSession(args.session)
            }).catch(e => {
                 const msg = e.toString()
@@ -90,21 +91,21 @@ export class SSHSession extends BaseSession {
     }
 
     openChannel(cmd: unknown, parent?: ChannelID, sx?: number, sy?: number):
-         Promise<Channel> {
+         Promise<SSHChannel> {
         return new Promise((resolve, reject) => {
             const channel = new SSHChannel()
             SSH.newChannel({session: this.id})
                .then(({ id }) => {
                    console.log("got new channel with id ", id)
                 channel.id = id
-                SSH.startShell({channel: id, command: cmd}, m => channel.handleData(m))
+                SSH.startShell({channel: id, command: cmd as string}, m => channel.handleData(m))
                    .then(callbackID => {
                         console.log("got from startShell: ", callbackID)
-                        resolve(channel, id)
+                        resolve(channel)
                         SSH.setPtySize({channel: id, width: sx, height: sy})
                            .then(() => {
                             console.log("after setting size")
-                            resolve(channel, id)
+                            resolve(channel)
                            })
 
                     }).catch(e => {
@@ -140,8 +141,6 @@ export class HybridSession extends SSHSession {
     candidate: string
     webrtcSession: Session
     sentMessages: Array<string>
-    onStateChange : (state: State, failure?: Failure) => void
-    onCMD: (payload: string) => void
     gotREADY: boolean
     constructor(address: string, username: string, port=22) {
         super(address, username, port)
@@ -153,11 +152,13 @@ export class HybridSession extends SSHSession {
      * connect must recieve either password or tag to choose
      * whether to use password or identity key based authentication 
      */
-    async connect(marker?:number, publicKey: string, privateKey:string) {
+    async connect(marker?:number, publicKey?: string, privateKey?:string) {
+
         const args: StartByKey = {
             address: this.address,
             port: this.port,
             username: this.username,
+            // @ts-ignore
             publicKey: publicKey,
             privateKey: privateKey
         }
@@ -180,6 +181,7 @@ export class HybridSession extends SSHSession {
             password: password,
         }
         SSH.startSessionByPasswd(args)
+            //@ts-ignore bug in .d.ts?
            .then(async ({ session }) => {
                 this.t7.log("Got ssh session", session)
                 this.id = session
@@ -213,7 +215,6 @@ export class HybridSession extends SSHSession {
             .split("\r\n")
             .filter(line => line.length > 0)
             .forEach(async line => {
-            let c = {}
             this.t7.log("line webexec accept: ", line)
             if (line.startsWith("READY")) {
                 try {
@@ -228,6 +229,7 @@ export class HybridSession extends SSHSession {
             }
             this.candidate += line
             // ignore echo
+            let c: unknown = {}
             if (this.sentMessages.indexOf(this.candidate) != -1) {
                 this.t7.log("igonring message: "+this.candidate)
                 this.candidate = ""
@@ -240,16 +242,16 @@ export class HybridSession extends SSHSession {
             this.candidate = ""
             if (c == null) 
                 return
-            if (c.candidate)
+            if ((c as {candidate?}).candidate)
                 try {
-                    await this.webrtcSession.pc.addIceCandidate(c)
+                    await (this.webrtcSession as WebRTCSession).pc.addIceCandidate(c)
                 } catch(e) { 
                     this.t7.log("failed the add ice candidate", e.message, c)
                     return
                 }
             else
                 try {
-                    await this.webrtcSession.pc.setRemoteDescription(c)
+                    await (this.webrtcSession as WebRTCSession).pc.setRemoteDescription(c as RTCSessionDescriptionInit)
                 } catch(e) { this.t7.log("got error setting remote desc:", e.message, c) }
         })
     }
@@ -270,30 +272,32 @@ export class HybridSession extends SSHSession {
                 else if (state == "failed")
                     reject()
             }
-            this.webrtcSession.onIceCandidate = e => {
+            (this.webrtcSession as WebRTCSession).onIceCandidate = e => {
                 const candidate = JSON.stringify(e.candidate)
                 this.sentMessages.push(candidate)
+                //@ts-ignore bug in the .d.ts
                 SSH.writeToChannel({channel: channelId, message: candidate + "\n"})
             }
-            this.webrtcSession.onNegotiationNeeded = () => {
-                this.t7.log("on negotiation needed")
-                this.webrtcSession.pc.createOffer().then(d => {
-                    const offer = JSON.stringify(d)
-                    this.webrtcSession.pc.setLocalDescription(d)
+            (this.webrtcSession as WebRTCSession).onNegotiationNeeded = () => {
+                this.t7.log("on negotiation needed");
+                (this.webrtcSession as WebRTCSession).pc.createOffer().then(d => {
+                    const offer = JSON.stringify(d);
+                    (this.webrtcSession as WebRTCSession).pc.setLocalDescription(d)
                     this.sentMessages.push(offer)
+                    //@ts-ignore a .d.ts bug
                     SSH.writeToChannel({channel: channelId, message: offer + "\n"})
                 })
             }
             this.webrtcSession.connect(marker)
         })
     } 
-    async openChannel(cmd: unknown, parent?: ChannelID, sx?: number, sy?: number) {
+    async openChannel(cmd: number | string | string[], parent?: number, sx?: number, sy?: number): Promise<SSHChannel> {
 
         if (!this.webrtcSession) {
             return super.openChannel(cmd, parent, sx, sy)
         } else
             // start webrtc data channel
-            return this.webrtcSession.openChannel(cmd, parent, sx, sy)
+            return this.webrtcSession.openChannel(cmd, parent, sx, sy) as unknown as SSHChannel
     }
 
     async reconnect(marker?: number, publicKey?: string, privateKey?: string) {
@@ -307,7 +311,7 @@ export class HybridSession extends SSHSession {
             return this.webrtcSession.close() 
     }
 
-    getPayload(): Promise<string> {
+    getPayload(): Promise<unknown | void> {
         if (this.webrtcSession)
             return this.webrtcSession.getPayload() 
         else
@@ -319,7 +323,7 @@ export class HybridSession extends SSHSession {
         else
             return super.setPayload(payload)
     }
-    disconnect(): Promise<void> {
+    disconnect(): Promise<number | void> {
         if (this.webrtcSession)
             return this.webrtcSession.disconnect() 
         else

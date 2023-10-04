@@ -15,13 +15,20 @@ import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
 import { Capacitor } from '@capacitor/core'
-import { HTTPWebRTCSession, PeerbookSession } from './webrtc_session'
+import { HTTPWebRTCSession, PeerbookSession, WebRTCSession } from './webrtc_session'
 import { Window } from './window'
 import { Preferences } from '@capacitor/preferences'
 
 
 const FAILED_COLOR = "red"// ashort period of time, in milli
 const TOOLBAR_HEIGHT = 135
+
+interface LayoutState {
+    height: number
+    width: number
+    windows: Window[]
+}
+
 /*
  * The gate class abstracts a host connection
  */
@@ -29,12 +36,12 @@ export class Gate {
     activeW: Window
     addr: string
     boarding: boolean
-    e: Element
+    e: HTMLDivElement
     id: string
     marker: number
     name: string
     secret: string
-    session: Session | null
+    session: PeerbookSession | SSHSession | HTTPWebRTCSession | WebRTCSession | Session | null
     user: string
     username: string
     nameE: Element
@@ -54,6 +61,10 @@ export class Gate {
     layoutHeight: number
     fontScale: number
     fitScreen: boolean
+    windows: Window[]
+    breadcrumbs: Window[]
+    sendStateTask?: number = null
+    lastDisconnect?: number
     constructor (props) {
         // given properties
         this.id = props.id
@@ -69,14 +80,13 @@ export class Gate {
         // 
         this.windows = []
         this.boarding = false
-        this.lastMsgId = 0
-        // a mapping of refrence number to function called on received ack
+        // a mapping of reference number to function called on received ack
         this.breadcrumbs = []
-        this.sendStateTask  = null
-        this.timeoutID = null
+
+
         this.fp = props.fp
         // TODO: move t7 & map into props
-        this.t7 = window.terminal7
+        this.t7 = terminal7
         this.map = this.t7.map
         this.session = null
         this.onlySSH = props.onlySSH || false
@@ -93,13 +103,13 @@ export class Gate {
         // create the gate element - holding the tabs, windows and tab bar
         this.e = document.createElement('div')
         this.e.className = "gate hidden"
-        this.e.style.zIndex = 2
+        this.e.style.zIndex = "2"
         this.e.id = `gate-${this.id}`
         e.appendChild(this.e)
         // add the tab bar
-        let t = document.getElementById("gate-template")
+        let t = document.getElementById("gate-template") as HTMLTemplateElement
         if (t) {
-            t = t.content.cloneNode(true)
+            t = t.content.cloneNode(true) as HTMLTemplateElement
             t.querySelector(".reset").addEventListener('click', ev => {
                 this.t7.map.shell.runCommand("reset", [this.name])
                 ev.preventDefault()
@@ -156,7 +166,7 @@ export class Gate {
         this.updateNameE()
     }
     setIndicatorColor(color) {
-            this.e.querySelector(".tabbar-names").style.setProperty(
+            (this.e.querySelector(".tabbar-names") as HTMLElement).style.setProperty(
                 "--indicator-color", color)
     }
     /*
@@ -183,7 +193,7 @@ export class Gate {
             // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR)
             if (terminal7.recovering)  {
-                this.session.msgHandlers.forEach(v => {
+                (this.session as WebRTCSession).msgHandlers.forEach(v => {
                     v[1]("Disconnected")
                 })
                 setTimeout(() => this.reconnect(), 10)
@@ -225,7 +235,7 @@ export class Gate {
                     this.onFailure(failure)
                     return 
                 }
-                this.session.passConnect(this.marker, password)
+                (this.session as SSHSession).passConnect(this.marker, password)
                 return
             case Failure.BadRemoteDescription:
                 this.session.close()
@@ -273,9 +283,10 @@ export class Gate {
                     return 
                 }
                 firstGate = (await Preferences.get({key: "first_gate"})).value
-                if (firstGate)
+                if (firstGate) {
                     terminal7.ignoreAppEvents = true
-                this.session.passConnect(this.marker, password)
+                }
+                (this.session as SSHSession).passConnect(this.marker, password)
                 return
             case Failure.FailedToConnect:
                 this.notify("Failed to connect")
@@ -302,7 +313,7 @@ export class Gate {
         return new Promise((resolve, reject) => {
             if (!isSSH && !isNative) {
                 this.session.reconnect(this.marker).then(layout => {
-                    this.setLayout(layout)
+                    this.setLayout(layout as LayoutState)
                     resolve()
                 }).catch(() => {
                     if (this.session) {
@@ -314,25 +325,24 @@ export class Gate {
                 })
                 return
             }
-            this.t7.readId().then(({publicKey, privateKey}) => {
-                this.session.reconnect(this.marker, publicKey, privateKey).then(layout => {
-                    this.setLayout(layout)
-                    resolve()
-                }).catch(e => {
-                    if (this.session && !this.session.isSSH) {
-                        this.session.close()
-                        this.session = null
-                    }
-                    terminal7.log("reconnect failed, calling the shell to handle it", isSSH, e)
-                    this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
-                })
-            }).catch((e) => {
-                this.t7.log("failed to read id", e)
+            const closeSessionAndDisconnect = () => {
                 if (this.session && !this.session.isSSH) {
                     this.session.close()
                     this.session = null
                 }
                 this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
+            }
+            this.t7.readId().then(({publicKey, privateKey}) => {
+                this.session.reconnect(this.marker, publicKey, privateKey).then(layout => {
+                    this.setLayout(layout as LayoutState)
+                    resolve()
+                }).catch(e => {
+                    closeSessionAndDisconnect()
+                    this.t7.log("reconnect failed, calling the shell to handle it", isSSH, e)
+                })
+            }).catch((e) => {
+                this.t7.log("failed to read id", e)
+                closeSessionAndDisconnect()
                 resolve()
             })
         })
@@ -380,7 +390,7 @@ export class Gate {
     reset() {
         this.t7.map.shell.runCommand("reset", [this.name])
     }
-    setLayout(state: object) {
+    setLayout(state: LayoutState = null) {
         console.log("in setLayout", state)
         const winLen = this.windows.length
         this.fontScale = 1
@@ -437,7 +447,7 @@ export class Gate {
         this.focus()
     }
     scaleContainer() {
-        const container = this.e.querySelector(".windows-container")
+        const container = this.e.querySelector(".windows-container") as HTMLDivElement
         let scale
 
         if (this.fitScreen) {
@@ -472,7 +482,7 @@ export class Gate {
         })
         this.fontScale = scale
     }
-    syncLayout(state: object) {
+    syncLayout(state: LayoutState) {
         if (state.width != this.layoutWidth || state.height != this.layoutHeight) {
             this.layoutWidth = state.width
             this.layoutHeight = state.height
@@ -535,7 +545,6 @@ export class Gate {
             this.activeW.activeP.unzoom()
         this.windows = []
         this.breadcrumbs = []
-        this.msgs = {}
         this.layoutWidth = 0
         this.layoutHeight = 0
         this.t7.cells.forEach((c, i, cells) => {
@@ -549,11 +558,11 @@ export class Gate {
     dump() {
         const windows = []
         this.windows.forEach(w => {
-            const win = {
+            const win: Window = {
                 name: w.name,
                 id: w.id,
                 layout: w.dump(),
-            }
+            } as unknown as Window
             if (w == this.activeW)
                 win.active = true
             windows.push(win)
@@ -582,7 +591,8 @@ export class Gate {
     sendState() {
         if ((this.sendStateTask != null) || !this.session)
             return
-       this.sendStateTask = setTimeout(() => {
+       // @ts-ignore
+        this.sendStateTask = setTimeout(() => {
 
            this.sendStateTask = null
 
@@ -598,7 +608,7 @@ export class Gate {
                })
             else
                 this.sendState()
-        }, 100) // TODO: make it run when the update is done and all channels opened
+        }, 100)// TODO: make it run when the update is done and all channels opened
     }
     async onPaneConnected() {
         // hide notifications
@@ -625,7 +635,7 @@ export class Gate {
      * It first sends a mark request and on it's ack store the restore marker
      * and closes the peer connection.
      */
-    disengage() {
+    disengage(): Promise<void> {
         return new Promise((resolve, reject) => { 
             this.t7.log(`disengaging. boarding is ${this.boarding}`)
             if (!this.session) {
@@ -633,7 +643,7 @@ export class Gate {
                 return
             }
             return this.session.disconnect().then(marker => {
-                this.marker = marker
+                this.marker = marker as number
                 resolve()
             }).catch(() => {
                 resolve()
@@ -651,6 +661,7 @@ export class Gate {
         }
     }
     async copyFingerprint() {
+        const fp = await this.t7.getFingerprint()
         const cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
         const fpForm = [{ 
             prompt: `\n  ${this.addr} refused our fingerprint.
@@ -668,15 +679,15 @@ export class Gate {
             this.connect(this.onConnected)
         }
     }
-    async completeConnect(): void {
+    async completeConnect(): Promise<void> {
         this.keyRejected = false
         const isNative = Capacitor.isNativePlatform()
         const overPB = this.fp && !this.onlySSH && this.online
         if (overPB) {
             this.notify("🎌  PeerBook")
-            if (!terminal7.pb.isOpen()) 
+            if (!terminal7.pb.isOpen())
                 await terminal7.pbConnect()
-            this.session = new PeerbookSession(this.fp, this.t7.pb)
+            this.session = new PeerbookSession(this.fp)
         } else {
             if (isNative)  {
                 this.session = new SSHSession(this.addr, this.username)
@@ -705,9 +716,10 @@ export class Gate {
                 try {
                     const {publicKey, privateKey} = await this.t7.readId()
                     const firstGate = (await Preferences.get({key: "first_gate"})).value
-                    if (firstGate)
+                    if (firstGate) {
                         terminal7.ignoreAppEvents = true
-                    this.session.connect(this.marker, publicKey, privateKey)
+                    }
+                    (this.session as SSHSession).connect(this.marker, publicKey, privateKey)
                 } catch(e) {
                     terminal7.log("error connecting with keys", e)
                     this.handleFailure(Failure.KeyRejected)
@@ -720,7 +732,7 @@ export class Gate {
         this.t7.log("loading gate")
         this.session.getPayload().then(layout => {
             console.log("got payload", layout)
-            this.setLayout(layout)
+            this.setLayout(layout as LayoutState)
         })
         document.getElementById("map").classList.add("hidden")
     }

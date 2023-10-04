@@ -11,6 +11,9 @@ import { Pane } from './pane'
 const  ABIT                = 10
 
 export class Layout extends Cell {
+    cells?: Cell[]
+    dir: "TBD" | string
+    active?: boolean
     /*
      * Layout contructor creates a `Layout` object based on a cell.
      * The new object wraps the `basedOn` cell and makes it his first son
@@ -48,7 +51,7 @@ export class Layout extends Cell {
     }
 
     fit() {
-        this.cells.forEach(c => c.fit())
+        this.cells.forEach(c => (c as unknown as Pane).fit())
     }
     focus() {
         this.cells[0].focus()
@@ -104,7 +107,7 @@ export class Layout extends Cell {
      * new data channel.
      * If index is given, the pane is replacing the one at that index
      */
-    addPane(props, index) {
+    addPane(props, index = null) {
         // CONGRATS! a new pane is born. props must include at keast sx & sy
         const p = props || {}
         p.w = this.w
@@ -159,19 +162,27 @@ export class Layout extends Cell {
             if (c == this)
                 this.t7.log("ERROR: layout shouldn't have `this` in his cells")
             // TODO: remove this workaround - `c != this`
-            if ((c != this) && (typeof c.toText == "function"))
+            if ((c != this) && c instanceof Layout && (typeof c.toText == "function"))
                 r += c.toText()
             else
-                r += `,${c.id || c.d.id}`
+                r += `,${c.id || (c as Pane).d.id}`
         })
         r += (this.dir=="rightleft")?"]":"}"
         return r
     }
 
     // Layout.dump dumps the layout to an object
-    dump() {
+    dump(): this {
         // r is the text the function returns
-        const d = {
+        const d: {
+            dir: string,
+            sx: number,
+            sy: number,
+            xoff: number,
+            yoff: number,
+            cells: Cell[],
+            active?: boolean
+        } = {
             dir: this.dir,
             sx: this.sx,
             sy: this.sy,
@@ -181,7 +192,7 @@ export class Layout extends Cell {
         }
         // get the dimensions of all the cell, recurse if a layout is found
         this.cells.forEach(c => d.cells.push(c.dump()))
-        return d
+        return d as unknown as this
     }
 
     get sx() {

@@ -1,5 +1,6 @@
-import { CapacitorHttp } from '@capacitor/core';
-import { BaseChannel, BaseSession, CallbackType, Channel, ChannelID, Failure } from './session';
+import { CapacitorHttp, HttpHeaders } from '@capacitor/core';
+import { BaseChannel, BaseSession, Channel, ChannelID, Failure } from './session';
+import { IceServers } from "./terminal7"
 
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
 type RTCStats = {
@@ -12,17 +13,13 @@ type RTCStats = {
 export class WebRTCChannel extends BaseChannel {
     dataChannel: RTCDataChannel
     session: WebRTCSession
-    id: number
-    createdOn: number
-    onMessage : CallbackType
-    constructor(session: BaseSession,
+    constructor(session: WebRTCSession,
                 id: number,
                 dc: RTCDataChannel) {
         super()
         this.id = id
         this.session = session
         this.dataChannel = dc
-        this.createdOn = session.lastMarker
     }
     // readyState can be one of the four underlying states:
     //   "connecting", "open", "closing", closed"
@@ -72,7 +69,7 @@ export class WebRTCSession extends BaseSession {
     channels: Map<number, WebRTCChannel>
     pendingCDCMsgs: Array<object>
     pendingChannels: Map<ChannelID, ChannelOpenedCB>
-    msgHandlers: Map<ChannelID, Array<()=>void>>
+    msgHandlers: Map<ChannelID, Array<(unknown)=>void>>
     cdc: RTCDataChannel
     pc: RTCPeerConnection
     lastMsgId: number
@@ -84,12 +81,13 @@ export class WebRTCSession extends BaseSession {
         this.msgHandlers = new Map()
         this.lastMsgId = 0
     }
-    onIceCandidate(e: RTCPeerConnectionIceEvent): void
-    onNegotiationNeeded(ev: Event): void
+    onIceCandidate(e: RTCPeerConnectionIceEvent): void { throw new Error("Unimplemented method onIceCandidate()") }
+    onNegotiationNeeded(ev: Event): void { throw new Error("Unimplemented method onNegotiationNeeded()") }
     public get isSSH() {
         return false
     }
-    async connect(marker=null, noCDC?: boolean): Promise<void> {
+
+    async connect(marker?: number, noCDC?: boolean | string, privateKey: string = null): Promise<void> {
         console.log("in connect", marker, noCDC)
 
         if (this.t7.iceServers == null) {
@@ -114,7 +112,7 @@ export class WebRTCSession extends BaseSession {
         this.pc.onconnectionstatechange = () => {
             const state = this.pc.connectionState
             console.log("new connection state", state, marker)
-            if ((state == "connected") && (marker != null)) {
+            if ((state === "connected") && (marker != null)) {
                 this.sendCTRLMsg({
                     type: "restore",
                     args: { marker }},
@@ -125,7 +123,7 @@ export class WebRTCSession extends BaseSession {
                     this.onStateChange("failed", Failure.BadMarker)
                 })
             } else  {
-                if (state == 'failed')
+                if (state === 'failed')
                     this.closeChannels()
                 if (this.onStateChange)
                     this.onStateChange(state)
@@ -193,7 +191,7 @@ export class WebRTCSession extends BaseSession {
         return new Promise((resolve, reject) => {
             let msgID: number
             if (sx !== undefined) {
-                if (typeof cmdorid == "string")
+                if (typeof cmdorid === "string")
                     cmdorid = [cmdorid] 
                 msgID = this.sendCTRLMsg({
                     type: "add_pane", 
@@ -215,7 +213,7 @@ export class WebRTCSession extends BaseSession {
             this.pendingChannels[msgID] = (dc: RTCDataChannel, id: ChannelID) => {
                 clearTimeout(watchdog)
                 const channel = this.onDCOpened(dc, id)
-                resolve(channel, id)
+                resolve(channel)
             }
         })
     }
@@ -238,7 +236,7 @@ export class WebRTCSession extends BaseSession {
         // stop listening for messages
        if (this.cdc)
            this.cdc.onmessage = undefined
-       // TODO: improve error handling and add areject
+       // TODO: improve error handling and add a reject
        return new Promise((resolve) => {
            console.log(">>> opening cdc")
             const cdc = this.pc.createDataChannel('%')
@@ -246,7 +244,7 @@ export class WebRTCSession extends BaseSession {
             cdc.onopen = () => {
                 this.t7.log(">>> cdc opened")
                 if (this.pendingCDCMsgs.length > 0)
-                    // TODO: why the time out? why 100mili?
+                    // TODO: why the time out? why 100milli?
                     this.t7.run(() => {
                         this.t7.log("sending pending messages")
                         this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m[0], m[1], m[2]))
@@ -290,7 +288,7 @@ export class WebRTCSession extends BaseSession {
             msg.time = Date.now()
         this.msgHandlers.set(msg.message_id, [resolve, reject])
         if (!this.cdc || this.cdc.readyState != "open")
-            // message stays frozen when restrting
+            // message stays frozen when restarting
             this.pendingCDCMsgs.push([msg, resolve, reject])
         else {
             const s = msg.payload || JSON.stringify(msg)
@@ -305,7 +303,7 @@ export class WebRTCSession extends BaseSession {
         }
         return msg.message_id
     }
-    getPayload(): Promise<string | null>{
+    getPayload(): Promise<unknown | void>{
         return new Promise((resolve, reject) => 
             this.sendCTRLMsg({
                 type: "get_payload",
@@ -313,7 +311,7 @@ export class WebRTCSession extends BaseSession {
             }, resolve, reject)
         )
     }
-    setPayload(payload: string): Promise<void>{
+    setPayload(payload): Promise<void>{
         return new Promise((resolve, reject) =>
             this.sendCTRLMsg({
                 type: "set_payload",
@@ -354,7 +352,7 @@ export class WebRTCSession extends BaseSession {
             this.pc = null
         }
     }
-    getIceServers() {
+    getIceServers(): Promise<IceServers[]> {
         return new Promise((resolve, reject) => {
             const ctrl = new AbortController(),
                   tId = setTimeout(() => ctrl.abort(), 1000),
@@ -425,16 +423,16 @@ export class PeerbookSession extends WebRTCSession {
             const offer = btoa(JSON.stringify(d))
             this.pc.setLocalDescription(d)
             terminal7.log("got offer", offer)
-            if (!terminal7.pb)
+            if (!this.t7.pb)
                 console.log("no peerbook")
             else
-                terminal7.pb.send({target: this.fp, offer: offer})
+                this.t7.pb.send({target: this.fp, offer: offer})
         })
     }
     peerAnswer(offer) {
         const sd = new RTCSessionDescription(offer)
         if (this.pc.signalingState == "stable") {
-            terminal7.log("got an answer but we're stable")
+            this.t7.log("got an answer but we're stable")
             return
         }
         this.pc.setRemoteDescription(sd)
@@ -454,8 +452,7 @@ export class PeerbookSession extends WebRTCSession {
 // SSHSession is an implmentation of a real time session over ssh
 export class HTTPWebRTCSession extends WebRTCSession {
     address: string
-    fetchTimeout: number
-    headers: CapacitorHttp.HttpHeaders
+    headers: HttpHeaders
     constructor(address: string, headers?: Map<string, string>) {
         super()
         this.address = address
@@ -468,8 +465,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
     onNegotiationNeeded(e) {
         this.t7.log("over HTTP on negotiation needed", e)
         this.pc.createOffer().then(offer => {
-            this.pc.setLocalDescription(offer)
-
+            this.pc.setLocalDescription(offer).then()
         })
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {

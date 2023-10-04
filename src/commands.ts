@@ -4,13 +4,13 @@ import { Shell } from "./shell"
 import { Preferences } from "@capacitor/preferences"
 import { DEFAULT_DOTFILE, Terminal7 } from "./terminal7"
 import { Fields } from "./form"
+//@ts-ignore
 import fortuneURL from "../resources/fortune.txt"
 import { Gate } from './gate'
 import { SSHSession, SSHChannel } from './ssh_session'
 import { Failure } from './session'
 import { NativeBiometric } from 'capacitor-native-biometric'
-
-declare const terminal7 : Terminal7
+import { Capacitor } from "@capacitor/core"
 
 export type Command = {
     name: string
@@ -54,7 +54,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             name: "copykey",
             help: "Copy the public key",
             usage: "copy[key]",
-            execute: async args => copyKeyCMD(shell, args)
+            execute: async () => copyKeyCMD(shell)
         },
         edit: {
             name: "edit",
@@ -814,10 +814,6 @@ export async function installCMD(shell: Shell, args: string[]) {
 
     const session = new SSHSession(gate.addr, gate.username)
 
-    session.onClose = () => {
-        // TODO: handle close without installation
-        terminal7.log("Install SSH session closed")
-    }
     session.onStateChange = async (state, failure?: Failure) => {
         let channel: SSHChannel
         terminal7.log("Install SSH session got state", state, failure)

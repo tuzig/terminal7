@@ -12,18 +12,23 @@ import { Gate } from './gate'
 import { WebLinksAddon } from 'xterm-addon-web-links'
 import { FitAddon } from "xterm-addon-fit"
 import { WebglAddon } from 'xterm-addon-webgl'
-import { ImageAddon } from 'xterm-addon-image';
+import { ImageAddon } from 'xterm-addon-image'
 import XtermWebfont from '@liveconfig/xterm-webfont'
 
 import { Shell } from './shell'
 import { Capacitor } from '@capacitor/core'
+import { WebRTCSession } from "./webrtc_session"
+
+export declare interface TerminalWithAddons extends Terminal {
+    loadWebfontAndOpen(element): Promise<this>
+}
 
 export class T7Map {
-    t0: Terminal
+    t0: TerminalWithAddons
     ttyWait: number
     shell: Shell
     fitAddon: FitAddon
-    open() {
+    open(): Promise<void> {
         return new Promise(resolve => {
             this.t0 = new Terminal({
                 cursorBlink: true,
@@ -31,7 +36,6 @@ export class T7Map {
                 theme: window.terminal7?.conf.theme,
                 fontFamily: "FiraCode",
                 fontSize: 14,
-                rendererType: "canvas",
                 convertEol: true,
                 rows: 20,
                 cols: 55,
@@ -40,7 +44,7 @@ export class T7Map {
                         window.open(url, "_blank", "noopener")
                     }
                 }
-            })
+            }) as TerminalWithAddons
             this.shell = new Shell(this)
             const e = document.getElementById("t0")
             this.fitAddon = new FitAddon()
@@ -94,7 +98,7 @@ export class T7Map {
             this.t0.loadWebfontAndOpen(e).then(() => {
                 if (Capacitor.getPlatform() === "android") {
                     // hack for android spacebar & virtual keyboard
-                    this.t0.element.addEventListener("input", ev => {
+                    this.t0.element.addEventListener("input", (ev: Event & {data?}) => {
                         if (ev.data)
                             this.shell.keyHandler(ev.data)
                     })
@@ -124,7 +128,7 @@ export class T7Map {
         })
     }
     add(g: Gate): Element {
-        const d = document.createElement('div')
+        const d = (document.createElement('div') as HTMLDivElement & {gate: Gate})
         const container = document.createElement('div')
         d.className = "gate-pad"
         if (g.fp)
@@ -200,8 +204,8 @@ export class T7Map {
     async updateStats() {
         terminal7.gates.forEach(async (g: Gate) => {
             let html = ""
-            if (g && g.session && g.session.getStats) {
-                const stats = await g.session.getStats()
+            if (g && g.session && (g.session as WebRTCSession).getStats) {
+                const stats = await (g.session as WebRTCSession).getStats()
                 if (!stats)
                     return
 
@@ -225,9 +229,9 @@ export class T7Map {
     }
     /* 
      * showLog display or hides the notifications.
-     * if the parameters in udefined the function toggles the displays
+     * if the parameters in undefined the function toggles the displays
      */
-    showLog(show) {
+    showLog(show = undefined) {
         const log = document.getElementById("log")
         const minimized = document.getElementById("log-minimized")
         if (show === undefined)

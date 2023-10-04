@@ -22,8 +22,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             await StatusBar.show();
             await StatusBar.setOverlaysWebView({ overlay: true });
         } catch(e) {}
-        window.terminal7 = new Terminal7()
-        terminal7.open()
+        terminal7 = new Terminal7()
+        await terminal7.open()
     }
 })
 window.addEventListener('beforeinstallprompt', e => {

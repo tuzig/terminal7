@@ -8,10 +8,22 @@
 import { Layout } from './layout'
 import { Pane } from './pane'
 import * as Hammer from 'hammerjs'
+import { Gate } from "./gate"
+import { Terminal7 } from "./terminal7"
 
 const ABIT = 10
 
 export class Window {
+    gate: Gate
+    id: number
+    name: string
+    rootLayout: Layout
+    e?: HTMLElement
+    activeP?: Pane
+    t7: Terminal7
+    nameE: HTMLAnchorElement
+    active: boolean
+    layout: Layout
     constructor(props) {
         this.gate = props.gate
         this.id = props.id
@@ -19,7 +31,7 @@ export class Window {
         this.rootLayout = null
         this.e = null
         this.activeP = null
-        this.t7 = window.terminal7
+        this.t7 = terminal7
     }
     /*
      * Window.open opens creates the window's element and the first layout and
@@ -32,13 +44,12 @@ export class Window {
         e.appendChild(this.e)
 
         // Add the name with link to tab bar
-        const a = document.createElement('a')
+        const a = document.createElement('a') as HTMLAnchorElement & {w: Window}
         a.id = this.e.id+'-name'
         a.w = this
         a.innerHTML = this.name
         // Add gestures on the window name for rename and drag to trash
-        const h = new Hammer.Manager(a, {})
-        h.options.domEvents=true; // enable dom events
+        const h = new Hammer.Manager(a, {domEvents:true}) // enable dom events
         h.add(new Hammer.Press({event: "rename", pointers: 1}))
         h.add(new Hammer.Tap({event: "switch", pointers: 1}))
         h.on("rename", () => this.rename())
@@ -118,7 +129,7 @@ export class Window {
     rename() {
         const e = this.nameE,
               se = this.gate.e.querySelector(".rename-box"),
-              textbox = this.gate.e.querySelector("#name-input")
+              textbox = this.gate.e.querySelector("#name-input") as HTMLInputElement
 
         se.classList.remove("hidden")
         textbox.value = e.innerHTML
@@ -209,7 +220,7 @@ export class Window {
         else
             bH.classList.add("off")
     }
-    syncLayout(thatLayout, theseCells) {
+    syncLayout(thatLayout, theseCells = null) {
         let zoomed
         if (!theseCells)
             theseCells = this.rootLayout.allCells()
@@ -233,7 +244,7 @@ export class Window {
                     // found it, sync it
                     thisCell = theseCells.splice(thisI, 1)[0]
                     thisCell.layout = newLayout
-                    newLayout.cells.push(thisCell)
+                    newLayout.cells?.push(thisCell)
                 } else {
                     console.log("didn't find pane ", thatCell.channelID)
                     thisCell = newLayout.addPane(thatCell)
