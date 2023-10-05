@@ -2,7 +2,7 @@ import { Purchases } from '@revenuecat/purchases-capacitor'
 import { Clipboard } from '@capacitor/clipboard'
 import { Shell } from "./shell"
 import { Preferences } from "@capacitor/preferences"
-import { DEFAULT_DOTFILE, Terminal7 } from "./terminal7"
+import { DEFAULT_DOTFILE } from "./terminal7"
 import { Fields } from "./form"
 //@ts-ignore
 import fortuneURL from "../resources/fortune.txt"
