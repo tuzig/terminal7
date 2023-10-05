@@ -228,11 +228,12 @@ export class Gate {
                 this.notify("Sorry, wrong password")
                 try {
                     password = await this.map.shell.askPass()
-                } catch (e) { 
+                } catch (e) {
                     this.onFailure(failure)
                     return 
                 }
-                (this.session as SSHSession).passConnect(this.marker, password)
+                const s = this.session as SSHSession
+                s.passConnect(this.marker, password)
                 return
             case Failure.BadRemoteDescription:
                 this.session.close()
