@@ -10,6 +10,16 @@ import { Pane } from './pane'
 
 const  ABIT                = 10
 
+export interface SerializedLayout {
+    dir: string,
+    sx: number,
+    sy: number,
+    xoff: number,
+    yoff: number,
+    cells: Cell[],
+    active?: boolean
+}
+
 export class Layout extends Cell {
     cells?: Cell[]
     dir: "TBD" | string
@@ -51,7 +61,7 @@ export class Layout extends Cell {
     }
 
     fit() {
-        this.cells.forEach(c => (c as unknown as Pane).fit())
+        this.cells.forEach(c => c.fit())
     }
     focus() {
         this.cells[0].focus()
@@ -59,8 +69,8 @@ export class Layout extends Cell {
     /*
      * On a cell going away, resize the other elements
      */
-    onClose(c) {
-        if (c.zoomed)
+    onClose(c: Cell) {
+        if (c instanceof Pane && c.zoomed)
             c.unzoom()
         this.t7.cells.splice(this.t7.cells.indexOf(c), 1)
         // if this is the only pane in the layout, close the layout
@@ -108,7 +118,7 @@ export class Layout extends Cell {
      * If index is given, the pane is replacing the one at that index
      */
     addPane(props, index = null) {
-        // CONGRATS! a new pane is born. props must include at keast sx & sy
+        // CONGRATS! a new pane is born. props must include at least sx & sy
         const p = props || {}
         p.w = this.w
         p.gate = this.gate
@@ -172,17 +182,9 @@ export class Layout extends Cell {
     }
 
     // Layout.dump dumps the layout to an object
-    dump(): this {
+    dump(): SerializedLayout {
         // r is the text the function returns
-        const d: {
-            dir: string,
-            sx: number,
-            sy: number,
-            xoff: number,
-            yoff: number,
-            cells: Cell[],
-            active?: boolean
-        } = {
+        const d: SerializedLayout = {
             dir: this.dir,
             sx: this.sx,
             sy: this.sy,
@@ -192,7 +194,7 @@ export class Layout extends Cell {
         }
         // get the dimensions of all the cell, recurse if a layout is found
         this.cells.forEach(c => d.cells.push(c.dump()))
-        return d as unknown as this
+        return d
     }
 
     get sx() {

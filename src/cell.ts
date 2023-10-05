@@ -17,7 +17,6 @@ export abstract class Cell {
     w: Window
     id?: number
     layout?: Layout
-    zoomed = false
     t7: Terminal7
     e: HTMLDivElement & {cell?: Cell}
     lastEventT: number
@@ -62,9 +61,11 @@ export abstract class Cell {
         this.w.nameE.setAttribute("href", `#pane-${this.id}`)
     }
 
-    abstract dump(): this
+    abstract dump()
 
     abstract refreshDividers()
+
+    abstract fit()
 
     get sx(){
         return parseFloat(this.e.style.width.slice(0,-1)) / 100.0

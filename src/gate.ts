@@ -16,17 +16,18 @@ import { Terminal7 } from './terminal7'
 
 import { Capacitor } from '@capacitor/core'
 import { HTTPWebRTCSession, PeerbookSession, WebRTCSession } from './webrtc_session'
-import { Window } from './window'
+import { SerializedWindow, Window } from './window'
 import { Preferences } from '@capacitor/preferences'
 
 
 const FAILED_COLOR = "red"// ashort period of time, in milli
 const TOOLBAR_HEIGHT = 135
 
-interface LayoutState {
+interface ServerPayload {
     height: number
     width: number
-    windows: Window[]
+    windows: SerializedWindow[]
+    active?: boolean
 }
 
 /*
@@ -80,10 +81,7 @@ export class Gate {
         // 
         this.windows = []
         this.boarding = false
-        // a mapping of reference number to function called on received ack
         this.breadcrumbs = []
-
-
         this.fp = props.fp
         // TODO: move t7 & map into props
         this.t7 = terminal7
@@ -166,8 +164,8 @@ export class Gate {
         this.updateNameE()
     }
     setIndicatorColor(color) {
-            (this.e.querySelector(".tabbar-names") as HTMLElement).style.setProperty(
-                "--indicator-color", color)
+            const e = this.e.querySelector(".tabbar-names") as HTMLElement
+            e.style.setProperty("--indicator-color", color)
     }
     /*
      * onSessionState(state) is called when the connection
@@ -192,10 +190,9 @@ export class Gate {
             this.lastDisconnect = Date.now()
             // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR)
-            if (terminal7.recovering)  {
-                (this.session as WebRTCSession).msgHandlers.forEach(v => {
-                    v[1]("Disconnected")
-                })
+            if (terminal7.recovering) {
+                const session = this.session as WebRTCSession
+                session.msgHandlers.forEach(v => v[1]("Disconnected"))
                 setTimeout(() => this.reconnect(), 10)
                 return
             }
@@ -283,10 +280,10 @@ export class Gate {
                     return 
                 }
                 firstGate = (await Preferences.get({key: "first_gate"})).value
-                if (firstGate) {
+                if (firstGate)
                     terminal7.ignoreAppEvents = true
-                }
-                (this.session as SSHSession).passConnect(this.marker, password)
+                const session = this.session as SSHSession
+                session.passConnect(this.marker, password)
                 return
             case Failure.FailedToConnect:
                 this.notify("Failed to connect")
@@ -313,7 +310,7 @@ export class Gate {
         return new Promise((resolve, reject) => {
             if (!isSSH && !isNative) {
                 this.session.reconnect(this.marker).then(layout => {
-                    this.setLayout(layout as LayoutState)
+                    this.setLayout(layout as ServerPayload)
                     resolve()
                 }).catch(() => {
                     if (this.session) {
@@ -334,7 +331,7 @@ export class Gate {
             }
             this.t7.readId().then(({publicKey, privateKey}) => {
                 this.session.reconnect(this.marker, publicKey, privateKey).then(layout => {
-                    this.setLayout(layout as LayoutState)
+                    this.setLayout(layout as ServerPayload)
                     resolve()
                 }).catch(e => {
                     closeSessionAndDisconnect()
@@ -390,7 +387,7 @@ export class Gate {
     reset() {
         this.t7.map.shell.runCommand("reset", [this.name])
     }
-    setLayout(state: LayoutState = null) {
+    setLayout(state: ServerPayload = null) {
         console.log("in setLayout", state)
         const winLen = this.windows.length
         this.fontScale = 1
@@ -482,7 +479,7 @@ export class Gate {
         })
         this.fontScale = scale
     }
-    syncLayout(state: LayoutState) {
+    syncLayout(state: ServerPayload) {
         if (state.width != this.layoutWidth || state.height != this.layoutHeight) {
             this.layoutWidth = state.width
             this.layoutHeight = state.height
@@ -558,11 +555,11 @@ export class Gate {
     dump() {
         const windows = []
         this.windows.forEach(w => {
-            const win: Window = {
+            const win: SerializedWindow = {
                 name: w.name,
                 id: w.id,
                 layout: w.dump(),
-            } as unknown as Window
+            }
             if (w == this.activeW)
                 win.active = true
             windows.push(win)
@@ -732,7 +729,7 @@ export class Gate {
         this.t7.log("loading gate")
         this.session.getPayload().then(layout => {
             console.log("got payload", layout)
-            this.setLayout(layout as LayoutState)
+            this.setLayout(layout as ServerPayload)
         })
         document.getElementById("map").classList.add("hidden")
     }
