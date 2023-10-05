@@ -5,13 +5,20 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Layout } from './layout'
+import { Layout, SerializedLayout } from './layout'
 import { Pane } from './pane'
 import * as Hammer from 'hammerjs'
 import { Gate } from "./gate"
 import { Terminal7 } from "./terminal7"
 
 const ABIT = 10
+
+export interface SerializedWindow {
+    name: string
+    id: number
+    layout: SerializedLayout
+    active?: boolean
+}
 
 export class Window {
     gate: Gate
@@ -23,7 +30,6 @@ export class Window {
     t7: Terminal7
     nameE: HTMLAnchorElement
     active: boolean
-    layout: Layout
     constructor(props) {
         this.gate = props.gate
         this.id = props.id

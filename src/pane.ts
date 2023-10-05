@@ -70,6 +70,7 @@ export class Pane extends Cell {
     WebLinksAddon: WebLinksAddon
     resizeObserver: ResizeObserver
     mc: HammerManager
+    zoomed = false
 
     constructor(props) {
         props.className = "pane"
@@ -707,7 +708,7 @@ export class Pane extends Cell {
             this.unzoom()
         super.close()
     }
-    dump(): this {
+    dump() {
         const cell = {
             sx: this.sx,
             sy: this.sy,
