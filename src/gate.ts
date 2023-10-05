@@ -703,7 +703,7 @@ export class Gate {
         this.t7.log("opening session")
         if (overPB) {
             try {
-                this.session.connect(this.marker)
+                await this.session.connect(this.marker)
             } catch(e) {
                 this.t7.log("error connecting", e)
                 this.notify(`${PB} Connection failed: ${e}`)
@@ -713,16 +713,17 @@ export class Gate {
                 try {
                     const {publicKey, privateKey} = await this.t7.readId()
                     const firstGate = (await Preferences.get({key: "first_gate"})).value
-                    if (firstGate) {
+                    if (firstGate)
                         terminal7.ignoreAppEvents = true
-                    }
-                    (this.session as SSHSession).connect(this.marker, publicKey, privateKey)
+
+                    const session = this.session as SSHSession
+                    await session.connect(this.marker, publicKey, privateKey)
                 } catch(e) {
                     terminal7.log("error connecting with keys", e)
                     this.handleFailure(Failure.KeyRejected)
                 }
             } else
-                this.session.connect(this.marker)
+                await this.session.connect(this.marker)
         }
     }
     load() {
