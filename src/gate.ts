@@ -23,7 +23,7 @@ import { Preferences } from '@capacitor/preferences'
 const FAILED_COLOR = "red"// ashort period of time, in milli
 const TOOLBAR_HEIGHT = 135
 
-interface ServerPayload {
+export interface ServerPayload {
     height: number
     width: number
     windows: SerializedWindow[]
@@ -553,7 +553,7 @@ export class Gate {
     /*
      * dump dumps the host to a state object
      * */
-    dump() {
+    dump(): ServerPayload {
         const windows = []
         this.windows.forEach(w => {
             const win: SerializedWindow = {

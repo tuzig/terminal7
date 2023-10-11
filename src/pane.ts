@@ -69,7 +69,6 @@ export class Pane extends Cell {
     retries = 0
     WebLinksAddon: WebLinksAddon
     resizeObserver: ResizeObserver
-    mc: HammerManager
     zoomed = false
 
     constructor(props) {
@@ -208,9 +207,9 @@ export class Pane extends Cell {
     }
 
     /*
- * Catches gestures on an elment using hammerjs.
- * If an element is not passed in, `this.e` is used
- */
+    * Catches gestures on an element using hammerjs.
+    * If an element is not passed in, `this.e` is used
+    */
     catchFingers(elem = undefined) {
         const e = (typeof elem == 'undefined')?this.e:elem,
             h = new Manager(e, {}),
@@ -253,7 +252,6 @@ export class Pane extends Cell {
             else
                 this.scale(-1)
         })
-        this.mc = h
     }
 
     zoom() {
