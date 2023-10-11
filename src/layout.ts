@@ -22,10 +22,10 @@ export interface SerializedLayout {
 
 export class Layout extends Cell {
     cells?: Cell[]
-    dir: "TBD" | string
+    dir: "TBD" | "topbottom" | "rightleft"
     active?: boolean
     /*
-     * Layout contructor creates a `Layout` object based on a cell.
+     * Layout constructor creates a `Layout` object based on a cell.
      * The new object wraps the `basedOn` cell and makes it his first son
      */
     constructor(dir, basedOn) {

@@ -1,6 +1,7 @@
 import { CapacitorHttp, HttpHeaders } from '@capacitor/core';
 import { BaseChannel, BaseSession, Channel, ChannelID, Failure } from './session';
 import { IceServers } from "./terminal7"
+import { ServerPayload } from "./gate"
 
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
 type RTCStats = {
@@ -186,7 +187,7 @@ export class WebRTCSession extends BaseSession {
         }
         return channel
     }
-    openChannel(cmdorid: string | string[], parent?: ChannelID, sx?: number, sy?: number):
+    openChannel(cmdorid: number | string | string[], parent?: ChannelID, sx?: number, sy?: number):
          Promise<Channel> {
         return new Promise((resolve, reject) => {
             let msgID: number
@@ -311,7 +312,7 @@ export class WebRTCSession extends BaseSession {
             }, resolve, reject)
         )
     }
-    setPayload(payload): Promise<void>{
+    setPayload(payload: string | ServerPayload): Promise<void>{
         return new Promise((resolve, reject) =>
             this.sendCTRLMsg({
                 type: "set_payload",
@@ -465,7 +466,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
     onNegotiationNeeded(e) {
         this.t7.log("over HTTP on negotiation needed", e)
         this.pc.createOffer().then(offer => {
-            this.pc.setLocalDescription(offer).then()
+            this.pc.setLocalDescription(offer)
         })
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
