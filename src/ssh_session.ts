@@ -9,6 +9,7 @@ export class SSHChannel extends BaseChannel {
         return SSH.closeChannel({channel: this.id})
     }
     send(data: string | ArrayBuffer): void {
+        //TODO: remove next line when fixed - https://github.com/tuzig/capacitor-ssh-plugin/issues/15
         //@ts-ignore the field is actually called "message" not "s"
         SSH.writeToChannel({channel: this.id, message: data})
            .catch(e => console.log("error from writeToChannel", e))
@@ -139,7 +140,7 @@ export class SSHSession extends BaseSession {
 // over SSH
 export class HybridSession extends SSHSession {
     candidate: string
-    webrtcSession: Session
+    webrtcSession: WebRTCSession
     sentMessages: Array<string>
     gotREADY: boolean
     constructor(address: string, username: string, port=22) {
@@ -244,14 +245,14 @@ export class HybridSession extends SSHSession {
                 return
             if ((c as {candidate?}).candidate)
                 try {
-                    await (this.webrtcSession as WebRTCSession).pc.addIceCandidate(c)
+                    await this.webrtcSession.pc.addIceCandidate(c)
                 } catch(e) { 
                     this.t7.log("failed the add ice candidate", e.message, c)
                     return
                 }
             else
                 try {
-                    await (this.webrtcSession as WebRTCSession).pc.setRemoteDescription(c as RTCSessionDescriptionInit)
+                    await this.webrtcSession.pc.setRemoteDescription(c as RTCSessionDescriptionInit)
                 } catch(e) { this.t7.log("got error setting remote desc:", e.message, c) }
         })
     }
@@ -272,17 +273,17 @@ export class HybridSession extends SSHSession {
                 else if (state == "failed")
                     reject()
             }
-            (this.webrtcSession as WebRTCSession).onIceCandidate = e => {
+            this.webrtcSession.onIceCandidate = e => {
                 const candidate = JSON.stringify(e.candidate)
                 this.sentMessages.push(candidate)
                 //@ts-ignore bug in the .d.ts
                 SSH.writeToChannel({channel: channelId, message: candidate + "\n"})
             }
-            (this.webrtcSession as WebRTCSession).onNegotiationNeeded = () => {
+            this.webrtcSession.onNegotiationNeeded = () => {
                 this.t7.log("on negotiation needed");
-                (this.webrtcSession as WebRTCSession).pc.createOffer().then(d => {
+                this.webrtcSession.pc.createOffer().then(d => {
                     const offer = JSON.stringify(d);
-                    (this.webrtcSession as WebRTCSession).pc.setLocalDescription(d)
+                    this.webrtcSession.pc.setLocalDescription(d)
                     this.sentMessages.push(offer)
                     //@ts-ignore a .d.ts bug
                     SSH.writeToChannel({channel: channelId, message: offer + "\n"})

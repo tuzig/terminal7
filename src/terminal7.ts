@@ -34,6 +34,22 @@ import { Cell } from "./cell"
 import { Pane } from "./pane"
 import { PeerbookSession } from "./webrtc_session"
 
+declare type NavType = {
+    standalone?: boolean
+    getInstalledRelatedApps(): Promise<{
+        id?: string,
+        platform: "chrome_web_store" | "play" | "chromeos_play" | "webapp" | "windows" | "f-droid" | "amazon",
+        url?: string,
+        version?: string,
+    }[]>
+} & Navigator
+
+declare let window: {
+    navigator: NavType
+} & Window
+
+declare let navigator: NavType
+
 export const OPEN_HTML_SYMBOL = "📡"
 export const ERROR_HTML_SYMBOL = "🤕"
 export const CLOSED_HTML_SYMBOL = "🙁"
@@ -855,13 +871,14 @@ export class Terminal7 {
             console.log("session is close ignoring message", m)
             return
         }
+        const session = g.session as PeerbookSession
         if (m.candidate !== undefined) {
-            (g.session as PeerbookSession).peerCandidate(m.candidate)
+            session.peerCandidate(m.candidate)
             return
         }
         if (m.answer !== undefined ) {
-            const answer = JSON.parse(atob(m.answer));
-            (g.session as PeerbookSession).peerAnswer(answer)
+            const answer = JSON.parse(atob(m.answer))
+            session.peerAnswer(answer)
             return
         }
     }
@@ -1028,13 +1045,10 @@ export class Terminal7 {
             this.map.shell.printPrompt()
             if (!((window.matchMedia('(display-mode: standalone)').matches)
                 || (window.matchMedia('(display-mode: fullscreen)').matches)
-                // @ts-ignore
                 || window.navigator.standalone
                 || (Capacitor.getPlatform() != "web")
                 || document.referrer.includes('android-app://')))
-                // @ts-ignore
                 if (navigator.getInstalledRelatedApps)
-                    // @ts-ignore
                     navigator.getInstalledRelatedApps().then(relatedApps => {
                         if (relatedApps.length > 0)
                             this.map.tty("PWA installed, better use it\n")
@@ -1167,9 +1181,8 @@ export class Terminal7 {
     }
     saveDotfile(text) {
         this.cells.forEach(c => {
-            // @ts-ignore
-            if (typeof(c.setTheme) == "function")
-                (c as unknown as Pane).setTheme(this.conf.theme)
+            if (c instanceof Pane)
+                c.setTheme(this.conf.theme)
         })
         terminal7.loadConf(TOML.parse(text))
         if (this.pb &&
@@ -1182,7 +1195,7 @@ export class Terminal7 {
              || (this.pb.email != this.conf.peerbook.email))) {
             this.pbClose()
             this.pb = null
-            this.pbConnect().then()
+            this.pbConnect()
         }
         return Preferences.set({key: "dotfile", value: text})
     }
