@@ -424,27 +424,27 @@ export class PeerbookSession extends WebRTCSession {
             const offer = btoa(JSON.stringify(d))
             this.pc.setLocalDescription(d)
             terminal7.log("got offer", offer)
-            if (!this.t7.pb)
+            if (!terminal7.pb)
                 console.log("no peerbook")
             else
-                this.t7.pb.send({target: this.fp, offer: offer})
+                terminal7.pb.send({target: this.fp, offer: offer})
         })
     }
     peerAnswer(offer) {
         const sd = new RTCSessionDescription(offer)
         if (this.pc.signalingState == "stable") {
-            this.t7.log("got an answer but we're stable")
+            terminal7.log("got an answer but we're stable")
             return
         }
         this.pc.setRemoteDescription(sd)
             .catch (e => {
-                this.t7.log(`Failed to set remote description: ${e}`)
+                terminal7.log(`Failed to set remote description: ${e}`)
                 this.onStateChange("failed", Failure.BadRemoteDescription)
             })
     }
     peerCandidate(candidate) {
         this.pc.addIceCandidate(candidate).catch(e =>
-            this.t7.log(`ICE candidate error: ${e}`))
+            terminal7.log(`ICE candidate error: ${e}`))
         return
     }
 }
