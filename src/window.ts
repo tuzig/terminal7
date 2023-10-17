@@ -262,8 +262,33 @@ export class Window {
             thisCell.yoff = thatCell.yoff
             thisCell.fontSize = thatCell.fontSize
             if (thisCell.t) {
-                thisCell.t.options.fontSize = thatCell.fontSize * this.gate.fontScale
-                thisCell.fit()
+                console.log(`font size ${thatCell.fontSize} font scale ${this.gate.fontScale}`)
+                const hasFraction = String(thatCell.fontSize * this.gate.fontScale).includes('.')
+                thisCell.t.options.fontSize = Math.floor(thatCell.fontSize * this.gate.fontScale) + (hasFraction ? .5 : 0)
+                console.log('font size: ' + thisCell.t.options.fontSize)
+                // thisCell.fit()
+                // core._renderService.clear();
+                // this._terminal.resize(dims.cols, dims.rows);
+                console.log(`resizing to cols ${thatCell.cols} rows ${thatCell.rows}`)
+                if (thisCell.fitAddon.proposeDimensions) {
+                    const dims = thisCell.fitAddon.proposeDimensions()
+                    console.log(`proposed cols ${dims.cols} rows ${dims.rows}`)
+                    if (dims && (dims.cols !== thatCell.cols || dims.rows !== thatCell.rows)) {
+                        thisCell.t.options.fontSize -= .5
+                    }
+                }
+                thisCell.t._core._renderService.clear()
+                thisCell.t.resize(thatCell.cols, thatCell.rows)
+                setTimeout(() => {
+                    if (thisCell instanceof Pane) {
+                        const paneContentHeight = thisCell.e.children[0].clientHeight
+                        const terminalHeight = thisCell.e.querySelector('.xterm-viewport').clientHeight
+                        if (terminalHeight - paneContentHeight > 3) {
+                            console.log(`terminal height ${terminalHeight}, pane height ${paneContentHeight}`)
+                            thisCell.t.options.fontSize -= 0.5
+                        }
+                    }
+                }, 0)
             }
             if (thatCell.active)
                 thisCell.focus()
@@ -275,6 +300,7 @@ export class Window {
             setTimeout(() => zoomed.zoom(), 100)
             console.log("will zoom in 100ms")
         }
+        newLayout.refreshDividers()
         return newLayout
 
     }

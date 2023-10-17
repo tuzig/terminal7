@@ -376,7 +376,7 @@ export class Gate {
     /*
      * returns an array of panes
      */
-    panes() {
+    panes(): Pane[] {
         const r = []
         this.t7.cells.forEach(c => {
             if (c instanceof Pane && (c.gate == this))
@@ -391,7 +391,7 @@ export class Gate {
     setLayout(state: ServerPayload = null) {
         console.log("in setLayout", state)
         const winLen = this.windows.length
-        this.fontScale = 1
+        if(this.fitScreen) this.fontScale = 1
         // got an empty state
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane
@@ -476,7 +476,9 @@ export class Gate {
             container.style.transformOrigin = "top left"
         }
         this.panes().forEach(p => {
-            p.t.options.fontSize = Math.floor(scale * p.fontSize)
+            const hasFraction = String(p.fontSize * scale).includes('.')
+            p.t.options.fontSize = Math.floor(p.fontSize * scale) + (hasFraction ? .5 : 0)
+            p.e.style.padding = scale === 1 ? '' : Math.round(scale * 4) + 'px'
         })
         this.fontScale = scale
     }

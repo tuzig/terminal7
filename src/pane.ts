@@ -201,7 +201,8 @@ export class Pane extends Cell {
         this.fontSize += by
         if (this.fontSize < 6) this.fontSize = 6
         else if (this.fontSize > 30) this.fontSize = 30
-        this.t.options.fontSize = this.fontSize * this.gate.fontScale
+        const hasFraction = String(this.fontSize * this.gate.fontScale).includes('.')
+        this.t.options.fontSize = Math.floor(this.fontSize * this.gate.fontScale) + (hasFraction ? .5 : 0)
         this.fit()
         this.gate.sendState()
     }
@@ -298,6 +299,8 @@ export class Pane extends Cell {
     // returns true is size was changed
     // TODO: make it async
     fit(cb = null) {
+        if (!this.gate?.fitScreen) return;
+        console.log('in pane fit')
         if (!this.t) {
             if (cb instanceof Function)
                 cb(this)
@@ -715,14 +718,16 @@ export class Pane extends Cell {
             fontSize: this.fontSize,
             channelID: null,
             active: false,
-            zoomed: false
+            zoomed: false,
+            rows: this.t.rows,
+            cols: this.t.cols
         }
         cell.channelID = this.channelID
         if (this.w.activeP && this == this.w.activeP)
             cell.active = true
         if (this.zoomed)
             cell.zoomed = true
-        return cell as this
+        return cell as any
     }
     // listening for terminal selection changes
     selectionChanged() {
