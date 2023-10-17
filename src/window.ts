@@ -262,17 +262,10 @@ export class Window {
             thisCell.yoff = thatCell.yoff
             thisCell.fontSize = thatCell.fontSize
             if (thisCell.t) {
-                console.log(`font size ${thatCell.fontSize} font scale ${this.gate.fontScale}`)
                 const hasFraction = String(thatCell.fontSize * this.gate.fontScale).includes('.')
                 thisCell.t.options.fontSize = Math.floor(thatCell.fontSize * this.gate.fontScale) + (hasFraction ? .5 : 0)
-                console.log('font size: ' + thisCell.t.options.fontSize)
-                // thisCell.fit()
-                // core._renderService.clear();
-                // this._terminal.resize(dims.cols, dims.rows);
-                console.log(`resizing to cols ${thatCell.cols} rows ${thatCell.rows}`)
                 if (thisCell.fitAddon.proposeDimensions) {
                     const dims = thisCell.fitAddon.proposeDimensions()
-                    console.log(`proposed cols ${dims.cols} rows ${dims.rows}`)
                     if (dims && (dims.cols !== thatCell.cols || dims.rows !== thatCell.rows)) {
                         thisCell.t.options.fontSize -= .5
                     }
@@ -284,7 +277,6 @@ export class Window {
                         const paneContentHeight = thisCell.e.children[0].clientHeight
                         const terminalHeight = thisCell.e.querySelector('.xterm-viewport').clientHeight
                         if (terminalHeight - paneContentHeight > 3) {
-                            console.log(`terminal height ${terminalHeight}, pane height ${paneContentHeight}`)
                             thisCell.t.options.fontSize -= 0.5
                         }
                     }

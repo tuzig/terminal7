@@ -36,6 +36,19 @@ const ABIT = 10,
         caseSensitive: true,
     }
 
+export interface SerializedPane {
+    sx: number,
+    sy: number,
+    xoff: number,
+    yoff: number,
+    fontSize: number,
+    channelID: number,
+    active: boolean,
+    zoomed: boolean,
+    rows: number,
+    cols: number
+}
+
 export class Pane extends Cell {
     active = false
     aLeader = false
@@ -709,7 +722,7 @@ export class Pane extends Cell {
             this.unzoom()
         super.close()
     }
-    dump() {
+    dump(): SerializedPane {
         const cell = {
             sx: this.sx,
             sy: this.sy,
@@ -727,7 +740,7 @@ export class Pane extends Cell {
             cell.active = true
         if (this.zoomed)
             cell.zoomed = true
-        return cell as any
+        return cell
     }
     // listening for terminal selection changes
     selectionChanged() {
