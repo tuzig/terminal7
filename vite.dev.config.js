@@ -16,7 +16,7 @@ export default defineConfig({
   plugins: [
     VitePWA({
       strategies: 'injectManifest',
-      includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],  
+      includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png', 'virtual-webgl2.js'],
       manifest: {
         name: 'Terminal7',
         short_name: 'The web-age terminal',
