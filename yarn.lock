@@ -1448,17 +1448,17 @@
     "@xml-tools/parser" "^1.0.11"
     prettier ">=2.4.0"
 
-"@revenuecat/purchases-capacitor@^6.0.0-beta.2":
-  version "6.0.0-beta.2"
-  resolved "https://registry.yarnpkg.com/@revenuecat/purchases-capacitor/-/purchases-capacitor-6.0.0-beta.2.tgz#54d2396fc1606ff4c2730beffecd5cd90950a10a"
-  integrity sha512-TqRZHlkgf82Heqnf5aF2AWSFoTzIieWUaPSpNG2Wuk90i/M5gdKWH31cYGA50+sufC8Js7H3omQdajiphr95nw==
+"@revenuecat/purchases-capacitor@^7.0.0":
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/@revenuecat/purchases-capacitor/-/purchases-capacitor-7.0.0.tgz#1828b34e3d354f0b94eb937815a1cacde2a3358d"
+  integrity sha512-rVOyugeZl7SyvluJU2M8xcSWCRDlF/V/1yzGh0W5rN7bNLJIefNHu3I5u28bNp47DeNW1wYH658x0SEBRWcvig==
   dependencies:
-    "@revenuecat/purchases-typescript-internal-esm" "6.1.2"
+    "@revenuecat/purchases-typescript-internal-esm" "7.0.0"
 
-"@revenuecat/purchases-typescript-internal-esm@6.1.2":
-  version "6.1.2"
-  resolved "https://registry.yarnpkg.com/@revenuecat/purchases-typescript-internal-esm/-/purchases-typescript-internal-esm-6.1.2.tgz#3ef1f5cd54a24b471ec9678a9a94a9c572076583"
-  integrity sha512-nXAOb2KJM1OVr8tuStq2nwbpCvBorCa6lHSm/JFe3cxvx78KJWRJwxKHVPY9papJY+8w2R9dvXUrOYayQYK5cA==
+"@revenuecat/purchases-typescript-internal-esm@7.0.0":
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/@revenuecat/purchases-typescript-internal-esm/-/purchases-typescript-internal-esm-7.0.0.tgz#f751b72eaaf08b8bb4296a59891174c1e14bbf03"
+  integrity sha512-f4Py3SrXsgFAPDU+33+ceq5zg3zjSfyHpxkpMDlLFXtb1eE3XK64UCzAO5nHV5n0hLswMPvzJfVJxWLOz2S/TQ==
 
 "@rollup/plugin-babel@^5.2.0":
   version "5.3.1"
