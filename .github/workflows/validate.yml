@@ -11,7 +11,7 @@ jobs:
       - name: Node setup
         uses: actions/setup-node@v3
         with:
-          node-version: latest
+          node-version: lts
       - name: Install yarn
         run: npm install --global yarn
       - name: Install dependecies

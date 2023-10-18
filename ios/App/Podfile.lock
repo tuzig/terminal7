@@ -28,12 +28,12 @@ PODS:
   - CapacitorStatusBar (5.0.6):
     - Capacitor
   - NMSSHT7 (2.9.1)
-  - PurchasesHybridCommon (6.1.2):
-    - RevenueCat (= 4.25.9)
-  - RevenueCat (4.25.9)
-  - RevenuecatPurchasesCapacitor (6.0.0-beta.2):
+  - PurchasesHybridCommon (7.0.0):
+    - RevenueCat (= 4.27.0)
+  - RevenueCat (4.27.0)
+  - RevenuecatPurchasesCapacitor (7.0.0):
     - Capacitor
-    - PurchasesHybridCommon (= 6.1.2)
+    - PurchasesHybridCommon (= 7.0.0)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
@@ -106,10 +106,10 @@ SPEC CHECKSUMS:
   CapacitorSshPlugin: 79f67cb26d40bd0c07cec6dda93d93d5faf7b614
   CapacitorStatusBar: 565c0a1ebd79bb40d797606a8992b4a105885309
   NMSSHT7: 67f9d8f43b40b997728761b4cf2aa7ea660ba7c2
-  PurchasesHybridCommon: b7c4205b6d2479cdd8914084a2b536e5e5b1445f
-  RevenueCat: 4160d04575059fc1edbb973981f541b705ddebef
-  RevenuecatPurchasesCapacitor: 228864675bd71151c4782635952251470dc4bf5b
+  PurchasesHybridCommon: af3b2413f9cb999bc1fdca44770bdaf39dfb89fa
+  RevenueCat: 84fbe2eb9bbf63e1abf346ccd3ff9ee45d633e3b
+  RevenuecatPurchasesCapacitor: c0de310959a58b3217acd7ec5ce981175bb050b1
 
 PODFILE CHECKSUM: 4e9654adb0765b7ee27622f314473ebfafd489a8
 
-COCOAPODS: 1.12.1
+COCOAPODS: 1.11.3
