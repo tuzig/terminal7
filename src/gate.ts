@@ -391,7 +391,8 @@ export class Gate {
     setLayout(state: ServerPayload = null) {
         console.log("in setLayout", state)
         const winLen = this.windows.length
-        if(this.fitScreen) this.fontScale = 1
+        if(this.fitScreen)
+            this.fontScale = 1
         // got an empty state
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane

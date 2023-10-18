@@ -313,7 +313,6 @@ export class Pane extends Cell {
     // TODO: make it async
     fit(cb = null) {
         if (!this.gate?.fitScreen) return;
-        console.log('in pane fit')
         if (!this.t) {
             if (cb instanceof Function)
                 cb(this)
