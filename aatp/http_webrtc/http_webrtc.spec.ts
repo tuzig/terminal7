@@ -120,7 +120,7 @@ pinch_max_y_velocity = 0.1`
         await page.screenshot({ path: `/result/second.png` })
         const lines = await page.evaluate(() =>
            window.terminal7.activeG.activeW.activeP.t.buffer.active.length)
-        expect(lines).toEqual(38)
+        await expect(lines).toEqual(38)
         await page.evaluate(async() => {
             const gate = window.terminal7.activeG
             gate.disengage().then(() => {

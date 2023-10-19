@@ -388,7 +388,7 @@ export class Gate {
     reset() {
         this.t7.map.shell.runCommand("reset", [this.name])
     }
-    setLayout(state: ServerPayload = null) {
+    setLayout(state: ServerPayload = null, fromPresenter = false) {
         console.log("in setLayout", state)
         const winLen = this.windows.length
         if(this.fitScreen)
@@ -411,7 +411,7 @@ export class Gate {
             if (this.layoutWidth != state.width || this.layoutHeight != state.height) {
                 this.layoutWidth = state.width
                 this.layoutHeight = state.height
-                this.fitScreen = false
+                if (fromPresenter) this.fitScreen = false
                 this.scaleContainer()
             }
             state.windows.forEach(w =>  {
@@ -701,7 +701,7 @@ export class Gate {
         this.session.onStateChange = (state, failure?) => this.onSessionState(state, failure)
         this.session.onCMD = msg => {
             if (msg.type == "set_payload") {
-                this.setLayout(msg.args.payload)
+                this.setLayout(msg.args.payload, true)
             }
         }
         this.t7.log("opening session")

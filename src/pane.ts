@@ -312,8 +312,7 @@ export class Pane extends Cell {
     // returns true is size was changed
     // TODO: make it async
     fit(cb = null) {
-        if (!this.gate?.fitScreen) return;
-        if (!this.t) {
+        if (!this.t || !this.gate?.fitScreen) {
             if (cb instanceof Function)
                 cb(this)
             return
@@ -322,7 +321,7 @@ export class Pane extends Cell {
         const oldc = this.t.cols
 
         // there's no point in fitting when in the middle of a restore
-        //  it happens in the eend anyway
+        //  it happens in the end anyway
         try {
             this.fitAddon.fit()
         } catch (e) {
