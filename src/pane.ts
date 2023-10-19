@@ -214,8 +214,8 @@ export class Pane extends Cell {
         this.fontSize += by
         if (this.fontSize < 6) this.fontSize = 6
         else if (this.fontSize > 30) this.fontSize = 30
-        const hasFraction = String(this.fontSize * this.gate.fontScale).includes('.')
-        this.t.options.fontSize = Math.floor(this.fontSize * this.gate.fontScale) + (hasFraction ? .5 : 0)
+        const fontSize = this.fontSize * this.gate.fontScale
+        this.t.options.fontSize = Math.floor(fontSize) + (String(fontSize).includes('.') ? .5 : 0)
         this.fit()
         this.gate.sendState()
     }
