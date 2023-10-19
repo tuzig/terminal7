@@ -477,9 +477,9 @@ export class Gate {
             container.style.transformOrigin = "top left"
         }
         this.panes().forEach(p => {
-            const hasFraction = String(p.fontSize * scale).includes('.')
-            p.t.options.fontSize = Math.floor(p.fontSize * scale) + (hasFraction ? .5 : 0)
-            p.e.style.padding = scale === 1 ? '' : Math.round(scale * 4) + 'px'
+            // NOTE: the step of changing the font size is 0.5, there is no visual change when doing smaller steps
+            const fontSize = p.fontSize * scale
+            p.t.options.fontSize = Math.floor(fontSize) + (String(fontSize).includes('.') ? .5 : 0)
         })
         this.fontScale = scale
     }
