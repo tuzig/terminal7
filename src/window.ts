@@ -262,10 +262,11 @@ export class Window {
             thisCell.yoff = thatCell.yoff
             thisCell.fontSize = thatCell.fontSize
             if (thisCell.t) {
-                const hasFraction = String(thatCell.fontSize * this.gate.fontScale).includes('.')
-                thisCell.t.options.fontSize = Math.floor(thatCell.fontSize * this.gate.fontScale) + (hasFraction ? .5 : 0)
+                // NOTE: the step of changing the font size is 0.5, there is no visual change when doing smaller steps
+                const fontSize = thatCell.fontSize * this.gate.fontScale
+                thisCell.t.options.fontSize = Math.floor(fontSize) + (String(fontSize).includes('.') ? .5 : 0)
 
-                const availableHeight = thisCell.t.element.parentElement.clientHeight;
+                const availableHeight = thisCell.t.element.parentElement.clientHeight
                 const availableWidth = thisCell.t.element.parentElement.clientWidth
 
                 const adjustFontSize = (availableWidth: number, availableHeight: number) => {
