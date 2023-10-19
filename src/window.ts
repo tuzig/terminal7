@@ -10,7 +10,6 @@ import { Pane } from './pane'
 import * as Hammer from 'hammerjs'
 import { Gate } from "./gate"
 import { Terminal7 } from "./terminal7"
-import { IDimensions } from "xterm/src/browser/renderer/shared/Types"
 
 const ABIT = 10
 
@@ -270,7 +269,7 @@ export class Window {
                 const availableWidth = thisCell.t.element.parentElement.clientWidth
 
                 const adjustFontSize = (availableWidth: number, availableHeight: number) => {
-                    const charDims: IDimensions = thisCell.t._core._renderService.dimensions.css.cell
+                    const charDims: { width: number, height: number } = thisCell.t._core._renderService.dimensions.css.cell
                     if (charDims.width * thatCell.cols > availableWidth || charDims.height * thatCell.rows > availableHeight) {
                         thisCell.t.options.fontSize -= .5
                         adjustFontSize(availableWidth, availableHeight)
