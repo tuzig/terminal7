@@ -10,6 +10,7 @@ import { Pane } from './pane'
 import * as Hammer from 'hammerjs'
 import { Gate } from "./gate"
 import { Terminal7 } from "./terminal7"
+import { IDimensions } from "xterm/src/browser/renderer/shared/Types"
 
 const ABIT = 10
 
@@ -264,23 +265,19 @@ export class Window {
             if (thisCell.t) {
                 const hasFraction = String(thatCell.fontSize * this.gate.fontScale).includes('.')
                 thisCell.t.options.fontSize = Math.floor(thatCell.fontSize * this.gate.fontScale) + (hasFraction ? .5 : 0)
-                if (thisCell.fitAddon.proposeDimensions) {
-                    const dims = thisCell.fitAddon.proposeDimensions()
-                    if (dims && (dims.cols !== thatCell.cols || dims.rows !== thatCell.rows)) {
+
+                const availableHeight = thisCell.t.element.parentElement.clientHeight;
+                const availableWidth = thisCell.t.element.parentElement.clientWidth
+
+                const adjustFontSize = (availableWidth: number, availableHeight: number) => {
+                    const charDims: IDimensions = thisCell.t._core._renderService.dimensions.css.cell
+                    if (charDims.width * thatCell.cols > availableWidth || charDims.height * thatCell.rows > availableHeight) {
                         thisCell.t.options.fontSize -= .5
+                        adjustFontSize(availableWidth, availableHeight)
                     }
                 }
-                thisCell.t._core._renderService.clear()
+                adjustFontSize(availableWidth, availableHeight)
                 thisCell.t.resize(thatCell.cols, thatCell.rows)
-                setTimeout(() => {
-                    if (thisCell instanceof Pane) {
-                        const paneContentHeight = thisCell.e.children[0].clientHeight
-                        const terminalHeight = thisCell.e.querySelector('.xterm-viewport').clientHeight
-                        if (terminalHeight - paneContentHeight > 3) {
-                            thisCell.t.options.fontSize -= 0.5
-                        }
-                    }
-                }, 0)
             }
             if (thatCell.active)
                 thisCell.focus()
