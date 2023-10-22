@@ -499,7 +499,13 @@ async function editCMD(shell:Shell, args: string[]) {
             fFields = fFields.filter((_, i) => enabled[i])
             res = await shell.runForm(fFields, "text")
             if (isPB && enabled[0]) {
-                const code = await terminal7.pb.adminCommand("rename", gate.fp, res[0])
+                const code = await terminal7.pb.adminCommand({
+                    type: "rename",
+                    args: {
+                       target: gate.fp,
+                       otp: res[0]
+                    }
+                })
                 if (code != "1") {
                     shell.t.writeln("Failed to rename host")
                     res[0] = gate.name
@@ -518,7 +524,13 @@ async function editCMD(shell:Shell, args: string[]) {
             if (isPB) {
                 const otp = await shell.askValue("OTP")
                 try {
-                    await terminal7.pb.adminCommand("delete", gate.fp, otp)
+                    await terminal7.pb.adminCommand({
+                        type: "delete",
+                        args: {
+                            target: gate.fp,
+                            otp: otp
+                        }
+                    })
                 } catch (e) {
                     console.log("Failed to delete host", e)
                     shell.t.writeln("Failed to delete host")

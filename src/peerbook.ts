@@ -62,8 +62,9 @@ export class PeerbookConnection {
         this.uid = ""
     }
 
-    async adminCommand(cmd: string, ...args: string[]): Promise<string> {
-        const c = args?[cmd, ...args]:[cmd]
+    async adminCommand(cmd: unknown): Promise<string> {
+        const m = JSON.stringify(cmd)
+
         if (!this.session) {
             console.log("Admin command with no session")
             try {
@@ -73,19 +74,8 @@ export class PeerbookConnection {
                 throw new Error("Failed to connect")
             }
         }   
-
         return new Promise((resolve, reject) => {
-            const reply = []
-            this.session.openChannel(c, 0, 80, 24).then(channel  => {
-                channel.onClose = () => {
-                    const ret =  new TextDecoder().decode(new Uint8Array(reply))
-                    terminal7.log(`cmd ${cmd} ${args} closed with: ${ret}`)
-                    resolve(ret)
-                }
-                channel.onMessage = (data: Uint8Array) => {
-                    reply.push(...data)
-                }
-            }).catch(reject)
+            this.session.sendCTRLMsg(m, resolve, reject)
         })
     }
 
@@ -107,7 +97,13 @@ export class PeerbookConnection {
             return
         }
         try {
-            repStr = await this.adminCommand("register", email, peerName)
+            repStr = await this.adminCommand({
+                type: "register",
+                args: {
+                     email: email,
+                     peer_name: peerName
+                }
+            })
         } catch (e) {
             this.shell.t.writeln(`${PB} Registration failed\n    Please try again and if persists, \`support\``)
             this.shell.printPrompt()
@@ -236,10 +232,10 @@ export class PeerbookConnection {
                 reject("No session")
                 return
             }
-            this.adminCommand("ping").then((uid: string) => {
+            this.session.sendCTRLMsg({type: "ping"}, (uid: string) => {
                 this.uid = uid
                 resolve(uid)
-            }).catch(reject)
+            }, reject)
         })
     }
             
@@ -436,7 +432,13 @@ export class PeerbookConnection {
             }
             let data
             try {
-                data = await this.adminCommand("verify", fp, otp)
+                data = await this.adminCommand({
+                    type: "verify",
+                    args: {
+                        target: fp, 
+                        otp: otp
+                    }
+                })
             } catch(e) {
                 console.log("verifyFP: failed to verify", e.toString())
                 this.echo("Failed to verify, please try again")
