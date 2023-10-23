@@ -458,7 +458,7 @@ export class Terminal7 {
             if (this.pb) {
                 this.pb.startSpinner()
                 if ((this.pb.uid != "TBD")  && (this.pb.uid != "")) {
-                    this.pb.wsConnect().then(callResolve).catch(callReject)
+                    callResolve()
                     return
                 }
                 if (this.pb.isOpen())

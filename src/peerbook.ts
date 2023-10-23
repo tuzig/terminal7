@@ -148,12 +148,6 @@ export class PeerbookConnection {
         }
         await Purchases.logIn({ appUserID: uid })
         this.shell.t.writeln("Validated! Use `install` to install on a server")
-        try {
-            await this.wsConnect()
-        } catch (e) {
-            this.shell.t.writeln("Failed to connect to PeerBook")
-            console.log("Failed to connect to PeerBook", e)
-        }
         this.shell.printPrompt()
     }
     async startPurchases() {
@@ -264,7 +258,7 @@ export class PeerbookConnection {
                             reject("Unregistered")
                         } else {
                             Purchases.logIn({ appUserID: uid })
-                            this.wsConnect().then(resolve).catch(reject)
+                            resolve()
                         }
                     }).catch(e => {
                         this.session = null
@@ -275,6 +269,8 @@ export class PeerbookConnection {
                 }
                 else if (state == 'failed') {
                     this.stopSpinner()
+                    // TODO: retry connection
+                    // symbol = ERROR_HTML_SYMBOL
                     this.session = null
                     console.log("PB webrtc connection failed", failure)
                     if (this.uid == "TBD")
@@ -285,77 +281,6 @@ export class PeerbookConnection {
                 }
             }
             session.connect()
-        })
-    }
-    async wsConnect() {
-        console.log("peerbook wsConnect called")
-        let firstMessage = true
-        return new Promise<void>((resolve, reject) => {
-            if (this.ws != null) {
-                if (this.isOpen()) {
-                    resolve()
-                    return
-                }
-                this.ws.onopen = undefined
-                this.ws.onmessage = undefined
-                this.ws.onerror = undefined
-                this.ws.onclose = undefined
-                try {
-                    this.ws.close()
-                } catch (e) {
-                    terminal7.log("ws close failed", e)
-                }
-            }
-            const schema = this.insecure?"ws":"wss",
-                  url = encodeURI(`${schema}://${this.host}/ws?fp=${this.fp}`),
-                  statusE = document.getElementById("peerbook-status"),
-                  ws = new WebSocket(url)
-            this.ws = ws
-            ws.onmessage = ev => {
-                const m = JSON.parse(ev.data)
-                if (m.code >= 400) {
-                    console.log("peerbook connect got code", m.code)
-                    this.stopSpinner()
-                    statusE.innerHTML = ERROR_HTML_SYMBOL
-                    // reject(`PeerBook connection error ${m.code}`)
-                    return
-                } 
-                if (firstMessage) {
-                    this.stopSpinner()
-                    firstMessage = false
-                    resolve()
-                }
-                if (this.onUpdate)
-                    this.onUpdate(m)
-                else
-                    terminal7.log("got ws message but no onUpdate", m)
-            }
-            ws.onerror = ev =>  {
-                terminal7.log("peerbook ws error", ev.toString())
-                this.ws = null
-                this.stopSpinner()
-                statusE.innerHTML = ERROR_HTML_SYMBOL
-                reject()
-            }
-            ws.onclose = (ev) => {
-                terminal7.log("peerbook ws closed", ev)
-                this.ws = null
-                this.stopSpinner()
-                if (statusE.innerHTML != ERROR_HTML_SYMBOL)
-                    statusE.innerHTML = CLOSED_HTML_SYMBOL
-            }
-            ws.onopen = () => {
-                console.log("peerbook ws open")
-                if ((this.pbSendTask == null) && (this.pending.length > 0))
-                    this.pbSendTask = setTimeout(() => {
-                        this.pending.forEach(m => {
-                            console.log("sending ", m)
-                            ws.send(JSON.stringify(m))
-                        })
-                        this.pbSendTask = null
-                        this.pending = []
-                    }, 10)
-            }
         })
     }
     send(m) {
@@ -430,7 +355,7 @@ export class PeerbookConnection {
             }
             let data
             try {
-                data = await this.adminCommand({
+                await this.adminCommand({
                     type: "verify",
                     args: {
                         target: fp, 
@@ -446,6 +371,14 @@ export class PeerbookConnection {
                     this.echo("Failed to verify, please try again")
                 } 
             }
+        } 
+        const gate = terminal7.gates.find(g => g.fp === fp) 
+        if (gate) {
+            gate.verified = true
+            gate.updateNameE()
+        } else {
+            terminal7.log("Failed to update gate status as it wasn't found")
+            terminal7.gates.forEach((g,i: number) => terminal7.log(`gate ${i}:`, g.fp))
         }
     }
     purchase(aPackage): Promise<void> {
