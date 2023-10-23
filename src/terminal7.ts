@@ -863,7 +863,10 @@ export class Terminal7 {
         if (m["peer_update"] !== undefined) {
             g.online = m.peer_update.online
             g.verified = m.peer_update.verified
-            g.fp = m.source_fp
+            if (g.name != m.peer_update.name) {
+                g.name = m.peer_update.name
+                this.storeGates()
+            }
             await g.updateNameE()
             return
         }

@@ -62,9 +62,7 @@ export class PeerbookConnection {
         this.uid = ""
     }
 
-    async adminCommand(cmd: unknown): Promise<string> {
-        const m = JSON.stringify(cmd)
-
+    async adminCommand(msg: unknown): Promise<string> {
         if (!this.session) {
             console.log("Admin command with no session")
             try {
@@ -75,7 +73,7 @@ export class PeerbookConnection {
             }
         }   
         return new Promise((resolve, reject) => {
-            this.session.sendCTRLMsg(m, resolve, reject)
+            this.session.sendCTRLMsg(msg, resolve, reject)
         })
     }
 
@@ -439,15 +437,15 @@ export class PeerbookConnection {
                         otp: otp
                     }
                 })
+                validated = true
             } catch(e) {
-                console.log("verifyFP: failed to verify", e.toString())
-                this.echo("Failed to verify, please try again")
-                continue
+                if (e.toString().match(/invalid/i)) 
+                    this.echo("Invalid OTP, please try again")
+                else {
+                    console.log("verifyFP: failed to verify", e.toString())
+                    this.echo("Failed to verify, please try again")
+                } 
             }
-            console.log("Got verify reply", data[0])
-            validated = data[0] == "1"
-            if (!validated)
-                this.echo("Invalid OTP, please try again")
         }
     }
     purchase(aPackage): Promise<void> {

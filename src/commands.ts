@@ -503,7 +503,7 @@ async function editCMD(shell:Shell, args: string[]) {
                     type: "rename",
                     args: {
                        target: gate.fp,
-                       otp: res[0]
+                       name: res[0]
                     }
                 })
                 if (code != "1") {
