@@ -280,18 +280,12 @@ export class PeerbookConnection {
                     return
                 }
             }
+            session.onCMD = (msg) => {
+                console.log("got CMD withtypeof", typeof msg)
+                terminal7.onPBMessage(msg)
+            }
             session.connect()
         })
-    }
-    send(m) {
-        // null message are used to trigger connection, ignore them
-        const state = this.ws ? this.ws.readyState : WebSocket.CLOSED
-        if (state == WebSocket.OPEN) {
-            this.ws.send(JSON.stringify(m))
-        } else {
-            terminal7.log("peerbook send called with state", state)
-            this.pending.push(m)
-        }
     }
     close() {
         if (this.ws) {
@@ -309,7 +303,8 @@ export class PeerbookConnection {
         }
     }
     isOpen() {
-        return (this.ws ? this.ws.readyState === WebSocket.OPEN : false)
+        // TODO: improve this
+        return (this.session != null)
     }
     syncPeers(gates: Array<Gate>, nPeers: Array<Peer>) {
         const ret = []

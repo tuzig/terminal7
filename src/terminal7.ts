@@ -475,7 +475,6 @@ export class Terminal7 {
                     shell: this.map.shell
                 })
                 this.pb.startSpinner()
-                this.pb.onUpdate = (m) => this.onPBMessage(m)
                 if (!this.purchasesStarted) {
                     this.pb.startPurchases().then(() => 
                         this.pb.connect().then(callResolve).catch(catchConnect)
