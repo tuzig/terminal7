@@ -499,23 +499,17 @@ async function editCMD(shell:Shell, args: string[]) {
             fFields = fFields.filter((_, i) => enabled[i])
             res = await shell.runForm(fFields, "text")
             if (isPB && enabled[0]) {
-                const code = await terminal7.pb.adminCommand({
+                await terminal7.pb.adminCommand({
                     type: "rename",
                     args: {
                        target: gate.fp,
                        name: res[0]
                     }
                 })
-                if (code != "1") {
-                    shell.t.writeln("Failed to rename host")
-                    res[0] = gate.name
-                }
             }
             gateAttrs.filter((_, i) => enabled[i])
                      .forEach((k, i) => 
                         gate[k] = (k == 'onlySSH')?res[i] == 'y':res[i])
-            gate.t7.storeGates()
-            gate.updateNameE()
             break
         case "\x1B[31mDelete\x1B[0m":
             res = await shell.runForm(fDel, "text")
