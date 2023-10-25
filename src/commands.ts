@@ -977,13 +977,14 @@ async function loginCMD(shell: Shell) {
         return
     }
     shell.t.writeln(`PeerBook response: ${await res.text()}`)
-    try {
-        terminal7.pb.wsConnect()
-    } catch(e) {}
     let timedOut = false
     shell.startWatchdog(180000).catch(() => timedOut = true)
-    while (!terminal7.pb.uid && !timedOut)
-        await new Promise(r => setTimeout(r, 200))
+    while (!terminal7.pb.uid && !timedOut) {
+        await new Promise(r => setTimeout(r, 2000))
+        try {
+            await terminal7.pb.connect()
+        } catch(e) {}
+    }
     if (timedOut) {
         shell.t.writeln("Login timed out, please try again")
         return
