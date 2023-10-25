@@ -413,7 +413,11 @@ export class PeerbookSession extends WebRTCSession {
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate && this.t7.pb) {
-            this.t7.pb.send({target: this.fp, candidate: ev.candidate})
+            this.t7.pb.adminCommand({type: "candidate",
+                                     args: {
+                                         target: this.fp,
+                                         sdp: ev.candidate
+                                    }})
         } else {
             terminal7.log("ignoring ice candidate", JSON.stringify(ev.candidate))
         }
@@ -427,7 +431,11 @@ export class PeerbookSession extends WebRTCSession {
             if (!terminal7.pb)
                 console.log("no peerbook")
             else
-                terminal7.pb.send({target: this.fp, offer: offer})
+                terminal7.pb.adminCommand({type: "offer",
+                                          args: {
+                                              target: this.fp,
+                                              sdp: offer
+                                          }})
         })
     }
     peerAnswer(offer) {
