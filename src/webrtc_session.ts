@@ -337,9 +337,11 @@ export class WebRTCSession extends BaseSession {
                     type: "mark",
                     args: null
                 }, (payload) => {
-                this.t7.log("got a marker", payload)
+                const marker = parseInt(payload)
+
+                this.t7.log("got a marker", marker)
                 this.closeChannels()
-                resolve(payload)
+                resolve(marker)
             }, reject)
         })
     }

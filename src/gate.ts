@@ -309,11 +309,13 @@ export class Gate {
         const isSSH = this.session.isSSH
         const isNative = Capacitor.isNativePlatform()
         return new Promise((resolve, reject) => {
+            const handleLauout = (layout) => {
+                this.setLayout(JSON.parse(layout as string) as ServerPayload)
+                resolve()
+            }
             if (!isSSH && !isNative) {
-                this.session.reconnect(this.marker).then(layout => {
-                    this.setLayout(layout as ServerPayload)
-                    resolve()
-                }).catch(() => {
+                this.session.reconnect(this.marker).then(layout => handleLauout(layout))
+                .catch(() => {
                     if (this.session) {
                         this.session.close()
                         this.session = null
@@ -331,10 +333,8 @@ export class Gate {
                 this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
             }
             this.t7.readId().then(({publicKey, privateKey}) => {
-                this.session.reconnect(this.marker, publicKey, privateKey).then(layout => {
-                    this.setLayout(layout as ServerPayload)
-                    resolve()
-                }).catch(e => {
+                this.session.reconnect(this.marker).then(layout => handleLauout(layout))
+                .catch(e => {
                     closeSessionAndDisconnect()
                     this.t7.log("reconnect failed, calling the shell to handle it", isSSH, e)
                 })
