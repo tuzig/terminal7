@@ -328,7 +328,9 @@ test.describe('peerbook administration', ()  => {
         await page.keyboard.press("Enter")
         await page.keyboard.type('testclient')
         await page.keyboard.press("Enter")
-        await sleep(1000)
+        // TODO: optimize this sleep. 5 second is the max time it takes for the
+        // client to be logged in. We should have a retry loop instead.
+        await sleep(5000)
         const fp = await page.evaluate(() => terminal7.getFingerprint())
         expect(await redisClient.hGet(`peer:${fp}`, "user")).toBe(uid)
         twr = await getTWRBuffer(page)
