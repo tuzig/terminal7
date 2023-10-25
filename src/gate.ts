@@ -732,9 +732,13 @@ export class Gate {
     }
     load() {
         this.t7.log("loading gate")
-        this.session.getPayload().then(layout => {
+        this.session.getPayload().then((payload: string) => {
+            let layout: ServerPayload | null = null
+            try {
+                layout = JSON.parse(payload)
+            } catch(e) {}
             console.log("got payload", layout)
-            this.setLayout(layout as ServerPayload)
+            this.setLayout(layout)
         })
         document.getElementById("map").classList.add("hidden")
     }
