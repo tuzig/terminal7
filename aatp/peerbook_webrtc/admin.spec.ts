@@ -346,7 +346,7 @@ test.describe('peerbook administration', ()  => {
         expect(url).toMatch(/^http:\/\/peerbook:17777\/verify/)
         await sleep(500)
         const fp = await page.evaluate(() => terminal7.getFingerprint())
-        console.log("fp", fp)
+        console.log("new client's fp", fp)
         expect(await redisClient.hGet(`peer:${fp}`, "user")).toBe("123456")
         const verifyPage = await (await browser.newContext()).newPage()
         await verifyPage.goto(url)
