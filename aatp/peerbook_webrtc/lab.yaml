@@ -53,7 +53,9 @@ services:
       PB_SMTP_PORT: 1025
       PB_HOME_URL: http://peerbook:17777
   redis:
-    image: "redis:alpine"
+    build:
+      context: .
+      dockerfile: ./aatp/infra/redis/Dockerfile
   revenuecat:
     image: "mockserver/mockserver"
     environment:

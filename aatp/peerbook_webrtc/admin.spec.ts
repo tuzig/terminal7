@@ -352,7 +352,9 @@ test.describe('peerbook administration', ()  => {
         await verifyPage.goto(url)
         await verifyPage.screenshot({ path: '/result/6.png' })
         await verifyPage.click('button[type="submit"]')
-        await sleep(500)
+        // TODO: optimize this sleep. 5 second is the max time it takes for the
+        // client to be logged in. We should have a retry loop instead.
+        await sleep(5000)
         const twr = await getTWRBuffer(page)
         await page.screenshot({ path: '/result/5.png' })
         expect(twr).toMatch(/Logged in/)
