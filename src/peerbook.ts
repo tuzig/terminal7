@@ -232,7 +232,7 @@ export class PeerbookConnection {
     }
             
 
-    async connect(token?: string) {
+    async connect(token?: string, count = 0) {
         return new Promise<void>((resolve, reject) =>{
             if (this.session) {
                 if (this.uid == "TBD")
@@ -267,16 +267,23 @@ export class PeerbookConnection {
                     })
                     return
                 }
-                else if (state == 'failed') {
-                    this.stopSpinner()
+                else if (state == 'disconnected' || state == 'failed' || state == 'closed') {
                     // TODO: retry connection
                     // symbol = ERROR_HTML_SYMBOL
+                    this.session.close()
                     this.session = null
-                    console.log("PB webrtc connection failed", failure)
+                    console.log("PB webrtc connection failed", failure, this.uid)
                     if (this.uid == "TBD")
                         reject("Unregistered")
-                    else
-                        reject(failure)
+                    else {
+                        if  (count > 3)
+                            reject(failure)
+                        else {
+                            setTimeout(() => {
+                                this.connect(token, count+1).then(resolve).catch(reject)
+                            }, 100)
+                        }
+                    }
                     return
                 }
             }
