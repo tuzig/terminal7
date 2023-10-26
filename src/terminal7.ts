@@ -273,6 +273,8 @@ export class Terminal7 {
                    this.activeG && this.activeG.activeW.activeP.toggleSearch())
         document.getElementById("help-gate")
                 .addEventListener("click", () => this.toggleHelp())
+        document.getElementById("keys-help")
+                .addEventListener("click", () => this.toggleHelp())
         document.getElementById("help-button")
                 .addEventListener("click", () => this.toggleHelp())
         const dH = document.getElementById("divide-h")
@@ -307,14 +309,6 @@ export class Terminal7 {
         // setting up edit host events
         document.getElementById("edit-unverified-pbhost").addEventListener(
             "click", async() => await this.clear())
-        // keyboard
-        document.addEventListener("keydown", ev => {
-            if ((ev.key == "Meta") && (Capacitor.getPlatform() != "ios")) {
-                this.metaPressStart = Date.now()
-                this.run(() => this.showKeyHelp(), terminal7.conf.ui.quickest_press)
-            } else
-                this.metaPressStart = Number.MAX_VALUE
-        })
         document.addEventListener("keyup", async ev => {
             // hide the modals when releasing the meta key
             if ((ev.key == "Meta") &&
@@ -788,19 +782,100 @@ export class Terminal7 {
         })
     }
     toggleHelp() {
-        // TODO: add help for home & copy-mode
-        // var helpId = (this.activeG)? "help-gate":"help-home",
-        // var helpId = (this.activeG && this.activeG.activeW.activeP.copyMode)?
-        // "help-copymode":"help-gate",
-        const helpId = "help-gate",
-            ecl = document.getElementById(helpId).classList,
-            bcl = document.getElementById("help-button").classList
-            
-        ecl.toggle("show")
-        bcl.toggle("on")
-        if (!ecl.contains("show"))
-            this.focus()
-        // TODO: When at home remove the "on" from the home butto
+        if (!this.buttonToolTips)
+            this.createToolTips()
+        this.buttonToolTips.forEach(btt => {
+            btt.classList.toggle('hidden')
+        })
+        document.getElementById('keys-help').classList.toggle('hidden')
+        this.activeG?.activeW?.activeP?.hideSearch()
+    }
+
+    private buttonToolTips: HTMLDivElement[];
+
+    private createToolTips() {
+        const buttons = document.querySelectorAll('button[aria-label]')
+        const tooltips: HTMLDivElement[] = [];
+        buttons.forEach((b: HTMLButtonElement) => {
+            const tt = document.createElement('div')
+            if (b.dataset.sc) {
+                const shortCut = document.createElement('div')
+                shortCut.innerHTML = b.dataset.sc
+                tt.appendChild(shortCut)
+            }
+            const text = document.createElement('div')
+            text.innerHTML = b.ariaLabel
+            tt.className = 'tooltip-text hidden'
+            tt.appendChild(text)
+            b.appendChild(tt)
+            tooltips.push(tt)
+        })
+        this.buttonToolTips = tooltips
+    }
+
+    // handle incomming peerbook messages (coming over sebsocket)
+    async onPBMessage(m) {
+        const statusE = document.getElementById("peerbook-status")
+        this.log("got pb message", m)
+        if (m["code"] !== undefined) {
+            if (m["code"] == 200) {
+                statusE.innerHTML = OPEN_HTML_SYMBOL
+                this.pb.uid = m["text"]
+            } else
+                // TODO: update statusE
+                this.notify(`\uD83D\uDCD6  ${m["text"]}`)
+            return
+        }
+        if (m["peers"] !== undefined) {
+            this.gates = this.pb.syncPeers(this.gates, m.peers)
+            this.map.refresh()
+            return
+        }
+        if (m["verified"] !== undefined) {
+            if (!m["verified"])
+                this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
+            return
+        }
+        const fp = m.source_fp
+        // look for a gate where g.fp == fp
+        const myFP = await this.getFingerprint()
+        if (fp == myFP) {
+            return
+        }
+        let lookup =  this.gates.filter(g => g.fp == fp)
+
+        if (!lookup || (lookup.length != 1)) {
+            if (m["peer_update"] !== undefined) {
+                lookup =  this.gates.filter(g => g.name == m.peer_update.name)
+            }
+            if (!lookup || (lookup.length != 1)) {
+                terminal7.log("Got a pb message with unknown peer: ", fp)
+                return
+            }
+        }
+        const g = lookup[0]
+
+        if (m["peer_update"] !== undefined) {
+            g.online = m.peer_update.online
+            g.verified = m.peer_update.verified
+            g.fp = m.source_fp
+            await g.updateNameE()
+            return
+        }
+        if (!g.session) {
+            console.log("session is close ignoring message", m)
+            return
+        }
+        const session = g.session as PeerbookSession
+        if (m.candidate !== undefined) {
+            session.peerCandidate(m.candidate)
+            return
+        }
+        if (m.answer !== undefined ) {
+            const answer = JSON.parse(atob(m.answer))
+            session.peerAnswer(answer)
+            return
+        }
     }
     log (...args) {
         let line = ""
