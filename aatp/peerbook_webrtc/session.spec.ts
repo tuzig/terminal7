@@ -100,7 +100,7 @@ insecure = true
         // await sleep(1000)
         await page.screenshot({ path: `/result/second.png` })
         connectFirstGate(page)
-        const help  = page.locator('#help-gate')
+        const help  = page.locator('#keys-help')
         await page.screenshot({ path: '/result/3.png' })
         await expect(help).toBeVisible()
         await help.click()

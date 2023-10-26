@@ -70,7 +70,7 @@ pinch_max_y_velocity = 0.1`
     test('connect to gate see help page and hide it', async () => {
         connectFirstGate(page)
         await page.screenshot({ path: `/result/second.png` })
-        const help  = page.locator('#help-gate')
+        const help = page.locator('#keys-help')
         await expect(help).toBeVisible()
         await help.click()
         await expect(help).toBeHidden()
