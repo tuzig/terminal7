@@ -283,6 +283,7 @@ export class Shell {
     }
 
     updateCapsLock(ev: KeyboardEvent) {
+        if (!(ev instanceof KeyboardEvent)) return;
         let capsOn = ev.getModifierState("CapsLock")
         if (ev.key == "CapsLock") // if the key is CapsLock the state is not updated yet
             capsOn = !capsOn

@@ -49,7 +49,7 @@ body {
 }
 body {
   scrollbar-width: thin;
-  scrollbar-color: var(--local-border) var(--backgeound);
+  scrollbar-color: var(--local-border) var(--background);
 }
 * {box-sizing: border-box; }
 *:focus { outline: none; } 
@@ -115,7 +115,7 @@ a {
     background-color: var(--background);
     padding: 2%;
     position: fixed;
-    bottom: 90px;
+    bottom: 180px;
     left: 50%;
     transform: translate(-50%, 0);
     width: 40em;
@@ -200,6 +200,36 @@ nav button {
     cursor: pointer;
     border-right: 2px solid var(--dark-border);
     font-size: 20px;
+    position: relative;
+}
+nav button .tooltip-text {
+    font-size: 1rem;
+    font-weight: bold;
+    background-color: rgba(200,200,200,.7);
+    color: #000;
+    text-align: center;
+    padding: 5px 0;
+    border-radius: 6px;
+
+    position: absolute;
+    z-index: 5;
+
+    width: 120px;
+    bottom: 290%;
+    left: 50%;
+    margin-left: -60px;
+}
+.tooltip-text::after {
+    content: " ";
+    position: absolute;
+    bottom: -60px;
+    left: 50%;
+    margin-left: -10px;
+    border-width: 10px;
+    transform: scale(1,5);
+    border-style: solid;
+    border-color: rgba(200,200,200,.7) transparent transparent transparent;
+
 }
 nav:not(.navtext) button:last-child {
     border: none;
@@ -212,6 +242,7 @@ nav {
     margin: 0;
     width: 100%;
     background-color: var(--background);
+    z-index: 3;
 }
 .tabbar button {
     flex: 1 0 10%;
@@ -274,22 +305,17 @@ nav::-webkit-scrollbar {
     display: inline-block;
     box-sizing: border-box;
     background-color: var(--background);
-    z-index: 2;
+    z-index: 5;
     margin: 0 auto;
     padding: 6px;
     bottom: 51pt;
     left: 50%;
     width: 80%;
     max-width: 96%;
-    transform: translate(-50%, -100%);
+    transform: translate(-50%, 0);
     border-color: var(--local-border);
     border-radius: 0 0 12px 12px;
     border-top: 0;
-    transition: transform .5s ease;
-}
-
-.search-box.show {
-    transform: translate(-50%, 0);
 }
 
 .rename-box {

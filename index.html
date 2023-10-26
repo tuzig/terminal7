@@ -156,15 +156,15 @@
           <table><tbody>
         <tr> <td>Toggle Fullscreen</td> <td>⌘&nbsp;Z</td> </tr>
         <tr> <td>Move Focus</td> <td>⌘&nbsp;&larr;&uarr;&darr;&rarr;</td> </tr>
-        <tr> <td>Search Pane Buffer</td> <td>⌘&nbsp;/</td> </tr>
+        <tr> <td>Search Pane Buffer</td> <td>⌘&nbsp;F</td> </tr>
         <tr class="copy_mode"> <td>Enter Copy Mode</td> <td>⌘&nbsp;[</td> </tr>
         <tr> <td>Bigger Font</td> <td>⌘&nbsp;+</td> </tr>
         <tr> <td>Smaller Font</td> <td>⌘&nbsp;-</td> </tr>
         <tr> <td>Reset Font</td> <td>⌘&nbsp;0</td> </tr>
-        <tr> <td>Split Top to Bottom</td> <td>⌘&nbsp;%</td> </tr>
+        <tr> <td>Split Top to Bottom</td> <td>⌘&nbsp;\</td> </tr>
           </tbody></table>
           <table><tbody>
-        <tr> <td>Split Right to Left</td> <td>⌘&nbsp;"</td> </tr>
+        <tr> <td>Split Right to Left</td> <td>⌘&nbsp;'</td> </tr>
         <tr> <td>Rename Tab</td> <td>⌘&nbsp;,</td> </tr>
         <tr> <td>New Tab</td> <td>⌘&nbsp;T</td> </tr>
         <tr> <td>Toggle Log</td> <td>⌘&nbsp;L</td> </tr>
@@ -189,16 +189,16 @@
       </div>
   </div>
   <nav id="navbar" class="bar">
-          <button type="button" id="map-button" class="off"><i class="f7-icons">map</i></button>
-          <button type="button" id="log-button"><i class="f7-icons">greaterthan</i></button>
-          <button type="button" id="trash-button" class="pane-buttons off"><i class="f7-icons">rectangle_fill_badge_xmark</i></button>
-          <button type="button" id="divide-h" class="pane-buttons off"><i class="f7-icons">divide</i></button>
-          <button type="button" id="divide-v" class="pane-buttons off">
+          <button type="button" aria-label="Map" id="map-button" class="off"><i class="f7-icons">map</i></button>
+          <button type="button" aria-label="Toggle Log" data-sc="⌘ L" id="log-button"><i class="f7-icons">greaterthan</i></button>
+          <button type="button" aria-label="Close Pane" data-sc="⌘ D" id="trash-button" class="pane-buttons off"><i class="f7-icons">rectangle_badge_xmark</i></button>
+          <button type="button" aria-label="Split Right to Left" data-sc="⌘ '" id="divide-h" class="pane-buttons off"><i class="f7-icons">divide</i></button>
+          <button type="button" aria-label="Split Top to Bottom" data-sc="⌘ \" id="divide-v" class="pane-buttons off">
               <i class="f7-icons" style="display: inline-block; transform: rotate(90deg);">divide</i></button>
-          <button type="button" id="search-button" class="pane-buttons off"><i class="f7-icons">doc_text_search</i></button>
-          <button type="button" id="video-button" class="pane-buttons off"><i class="f7-icons">videocam</i></button>
-          <button type="button" id="help-button"><i class="f7-icons">question</i></button>
-          <button type="button" id="dotfile-button"><i class="f7-icons">gear</i></button>
+          <button type="button" aria-label="Search Pane Buffer" data-sc="⌘ F" id="search-button" class="pane-buttons off"><i class="f7-icons">doc_text_search</i></button>
+          <button type="button" aria-label="Video" id="video-button" class="pane-buttons off"><i class="f7-icons">videocam</i></button>
+          <button type="button" aria-label="Help" id="help-button"><i class="f7-icons">question</i></button>
+          <button type="button" aria-label="Config" id="dotfile-button"><i class="f7-icons">gear</i></button>
   </nav>
 
     <template id="lose-state-template">
@@ -265,11 +265,11 @@
         </div>
     </template>
     <nav class="tabbar">
-          <button type="button" class="add-tab"><i class="f7-icons">
+          <button type="button" aria-label="New Tab" data-sc="⌘ T" class="add-tab"><i class="f7-icons">
                   plus</i></button>
           <nav class="tabbar-names">
           </nav>
-          <button type="button" class="reset"><i class="f7-icons">
+          <button type="button" aria-label="Reset Connection" data-sc="⌘ R" class="reset"><i class="f7-icons">
                   arrow_2_circlepath</i></button>
     </nav>
 </template>

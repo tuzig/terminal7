@@ -474,6 +474,7 @@ export class Pane extends Cell {
                 this.disableSearchButtons()
             }
         })
+        i.addEventListener('click', e => e.stopPropagation())
         i.focus()
     }
     styleZoomed(e = null) {
@@ -527,7 +528,7 @@ export class Pane extends Cell {
     hideSearch() {
         const se = this.gate.e.querySelector(".search-box")
         se.classList.remove("show")
-        setTimeout(() => se.classList.add("hidden"), 500)
+        se.classList.add("hidden")
         document.getElementById("search-button").classList.remove("on")
         if (this.zoomed)
             this.styleZoomed()

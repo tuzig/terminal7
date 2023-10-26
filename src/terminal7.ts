@@ -279,6 +279,8 @@ export class Terminal7 {
                    this.activeG && this.activeG.activeW.activeP.toggleSearch())
         document.getElementById("help-gate")
                 .addEventListener("click", () => this.toggleHelp())
+        document.getElementById("keys-help")
+                .addEventListener("click", () => this.toggleHelp())
         document.getElementById("help-button")
                 .addEventListener("click", () => this.toggleHelp())
         const dH = document.getElementById("divide-h")
@@ -313,14 +315,6 @@ export class Terminal7 {
         // setting up edit host events
         document.getElementById("edit-unverified-pbhost").addEventListener(
             "click", async() => await this.clear())
-        // keyboard
-        document.addEventListener("keydown", ev => {
-            if ((ev.key == "Meta") && (Capacitor.getPlatform() != "ios")) {
-                this.metaPressStart = Date.now()
-                this.run(() => this.showKeyHelp(), terminal7.conf.ui.quickest_press)
-            } else
-                this.metaPressStart = Number.MAX_VALUE
-        })
         document.addEventListener("keyup", async ev => {
             // hide the modals when releasing the meta key
             if ((ev.key == "Meta") &&
@@ -804,20 +798,37 @@ export class Terminal7 {
         })
     }
     toggleHelp() {
-        // TODO: add help for home & copy-mode
-        // var helpId = (this.activeG)? "help-gate":"help-home",
-        // var helpId = (this.activeG && this.activeG.activeW.activeP.copyMode)?
-        // "help-copymode":"help-gate",
-        const helpId = "help-gate",
-            ecl = document.getElementById(helpId).classList,
-            bcl = document.getElementById("help-button").classList
-            
-        ecl.toggle("show")
-        bcl.toggle("on")
-        if (!ecl.contains("show"))
-            this.focus()
-        // TODO: When at home remove the "on" from the home butto
+        if (!this.buttonToolTips)
+            this.createToolTips()
+        this.buttonToolTips.forEach(btt => {
+            btt.classList.toggle('hidden')
+        })
+        document.getElementById('keys-help').classList.toggle('hidden')
+        this.activeG?.activeW?.activeP?.hideSearch()
     }
+
+    private buttonToolTips: HTMLDivElement[];
+
+    private createToolTips() {
+        const buttons = document.querySelectorAll('button[aria-label]')
+        const tooltips: HTMLDivElement[] = [];
+        buttons.forEach((b: HTMLButtonElement) => {
+            const tt = document.createElement('div')
+            if (b.dataset.sc) {
+                const shortCut = document.createElement('div')
+                shortCut.innerHTML = b.dataset.sc
+                tt.appendChild(shortCut)
+            }
+            const text = document.createElement('div')
+            text.innerHTML = b.ariaLabel
+            tt.className = 'tooltip-text hidden'
+            tt.appendChild(text)
+            b.appendChild(tt)
+            tooltips.push(tt)
+        })
+        this.buttonToolTips = tooltips
+    }
+
     // handle incomming peerbook messages (coming over sebsocket)
     async onPBMessage(m) {
         const statusE = document.getElementById("peerbook-status")
