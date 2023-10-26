@@ -418,7 +418,7 @@ export class PeerbookSession extends WebRTCSession {
             this.t7.pb.adminCommand({type: "candidate",
                                      args: {
                                          target: this.fp,
-                                         sdp: ev.candidate
+                                         sdp: JSON.stringify(ev.candidate)
                                     }})
         } else {
             terminal7.log("ignoring ice candidate", JSON.stringify(ev.candidate))
