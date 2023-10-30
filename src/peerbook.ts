@@ -10,13 +10,14 @@
 import { CustomerInfo } from "@revenuecat/purchases-typescript-internal-esm"
 
 export const PB = "\uD83D\uDCD6"
+import { Capacitor } from '@capacitor/core'
 import { Device } from '@capacitor/device'
 import { Purchases } from '@revenuecat/purchases-capacitor'
 import { HTTPWebRTCSession } from './webrtc_session'
 import { Gate } from './gate'
+import { PeerbookSession } from "./webrtc_session"
 import { Shell } from './shell'
-import { Capacitor } from '@capacitor/core'
-import {ERROR_HTML_SYMBOL, CLOSED_HTML_SYMBOL, OPEN_HTML_SYMBOL} from './terminal7'
+import {OPEN_HTML_SYMBOL} from './terminal7'
 
 interface PeerbookProps {
     fp: string,
@@ -273,8 +274,8 @@ export class PeerbookConnection {
                     this.session.close()
                     this.session = null
                     console.log("PB webrtc connection failed", failure, this.uid)
-                    if (this.uid == "TBD")
-                        reject("Unregistered")
+                    if (failure == "Unauthorized")
+                        reject(failure)
                     else {
                         if  (count > 3)
                             reject(failure)
@@ -287,10 +288,7 @@ export class PeerbookConnection {
                     return
                 }
             }
-            session.onCMD = (msg) => {
-                console.log("got CMD withtypeof", typeof msg)
-                terminal7.onPBMessage(msg)
-            }
+            session.onCMD = (msg) => this.onMessage(msg)
             session.connect()
         })
     }
@@ -417,5 +415,73 @@ export class PeerbookConnection {
         }, 200)
         statusE.innerHTML = OPEN_HTML_SYMBOL
         statusE.style.opacity = "0"
+    }
+    // handle incomming peerbook messages
+    async onMessage(m) {
+        const statusE = document.getElementById("peerbook-status")
+        terminal7.log("got pb message", m)
+        if (m["code"] !== undefined) {
+            if (m["code"] == 200) {
+                statusE.innerHTML = OPEN_HTML_SYMBOL
+                this.uid = m["text"]
+            } else
+                // TODO: update statusE
+                terminal7.notify(`{PB}  ${m["text"]}`)
+            return
+        }
+        if (m["peers"] !== undefined) {
+            terminal7.gates = this.syncPeers(terminal7.gates, m.peers)
+            terminal7.map.refresh()
+            return
+        }
+        // TODO: is this needed?
+        if (m["verified"] !== undefined) {
+            if (!m["verified"])
+                temrinal7.notify(`${PB} Unverified client. Please check you email.`)
+            return
+        }
+        const fp = m.source_fp
+        // look for a gate where g.fp == fp
+        const myFP = await terminal7.getFingerprint()
+        if (fp == myFP) {
+            return
+        }
+        let lookup =  terminal7.gates.filter(g => g.fp == fp)
+
+        if (!lookup || (lookup.length != 1)) {
+            if (m["peer_update"] !== undefined) {
+                lookup =  terminal7.gates.filter(g => g.name == m.peer_update.name)
+            }
+            if (!lookup || (lookup.length != 1)) {
+                terminal7.log("Got a pb message with unknown peer: ", fp)
+                return
+            }
+        }
+        const g = lookup[0]
+
+        if (m["peer_update"] !== undefined) {
+            g.online = m.peer_update.online
+            g.verified = m.peer_update.verified
+            if (g.name != m.peer_update.name) {
+                g.name = m.peer_update.name
+                terminal7.storeGates()
+            }
+            await g.updateNameE()
+            return
+        }
+        if (!g.session) {
+            console.log("session is close ignoring message", m)
+            return
+        }
+        const session = g.session as PeerbookSession
+        if (m.candidate !== undefined) {
+            session.peerCandidate(m.candidate)
+            return
+        }
+        if (m.answer !== undefined ) {
+            const answer = JSON.parse(atob(m.answer))
+            session.peerAnswer(answer)
+            return
+        }
     }
 }
