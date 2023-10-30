@@ -32,7 +32,6 @@ import { PeerbookConnection, PB } from './peerbook'
 import { Failure } from './session'
 import { Cell } from "./cell"
 import { Pane } from "./pane"
-import { PeerbookSession } from "./webrtc_session"
 
 declare type NavType = {
     standalone?: boolean
@@ -816,73 +815,6 @@ export class Terminal7 {
         if (!ecl.contains("show"))
             this.focus()
         // TODO: When at home remove the "on" from the home butto
-    }
-    // handle incomming peerbook messages (coming over sebsocket)
-    async onPBMessage(m) {
-        const statusE = document.getElementById("peerbook-status")
-        this.log("got pb message", m)
-        if (m["code"] !== undefined) {
-            if (m["code"] == 200) {
-                statusE.innerHTML = OPEN_HTML_SYMBOL
-                this.pb.uid = m["text"]
-            } else
-                // TODO: update statusE
-                this.notify(`\uD83D\uDCD6  ${m["text"]}`)
-            return
-        }
-        if (m["peers"] !== undefined) {
-            this.gates = this.pb.syncPeers(this.gates, m.peers)
-            this.map.refresh()
-            return
-        }
-        if (m["verified"] !== undefined) {
-            if (!m["verified"])
-                this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
-            return
-        }
-        const fp = m.source_fp
-        // look for a gate where g.fp == fp
-        const myFP = await this.getFingerprint()
-        if (fp == myFP) {
-            return
-        }
-        let lookup =  this.gates.filter(g => g.fp == fp)
-
-        if (!lookup || (lookup.length != 1)) {
-            if (m["peer_update"] !== undefined) {
-                lookup =  this.gates.filter(g => g.name == m.peer_update.name)
-            }
-            if (!lookup || (lookup.length != 1)) {
-                terminal7.log("Got a pb message with unknown peer: ", fp)
-                return
-            }
-        }
-        const g = lookup[0]
-
-        if (m["peer_update"] !== undefined) {
-            g.online = m.peer_update.online
-            g.verified = m.peer_update.verified
-            if (g.name != m.peer_update.name) {
-                g.name = m.peer_update.name
-                this.storeGates()
-            }
-            await g.updateNameE()
-            return
-        }
-        if (!g.session) {
-            console.log("session is close ignoring message", m)
-            return
-        }
-        const session = g.session as PeerbookSession
-        if (m.candidate !== undefined) {
-            session.peerCandidate(m.candidate)
-            return
-        }
-        if (m.answer !== undefined ) {
-            const answer = JSON.parse(atob(m.answer))
-            session.peerAnswer(answer)
-            return
-        }
     }
     log (...args) {
         let line = ""
