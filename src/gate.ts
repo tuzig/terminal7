@@ -9,7 +9,7 @@ import { Clipboard } from '@capacitor/clipboard'
 
 import { Pane } from './pane'
 import { T7Map } from './map'
-import { Failure, Session } from './session'
+import { Failure, Session, Marker } from './session'
 import { PB } from './peerbook'
 import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
@@ -39,7 +39,7 @@ export class Gate {
     boarding: boolean
     e: HTMLDivElement
     id: string
-    marker: number
+    marker: Marker
     name: string
     secret: string
     session: PeerbookSession | SSHSession | HTTPWebRTCSession | WebRTCSession | Session | null
@@ -332,16 +332,10 @@ export class Gate {
                 }
                 this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
             }
-            this.t7.readId().then(({publicKey, privateKey}) => {
-                this.session.reconnect(this.marker).then(layout => handleLauout(layout))
-                .catch(e => {
-                    closeSessionAndDisconnect()
-                    this.t7.log("reconnect failed, calling the shell to handle it", isSSH, e)
-                })
-            }).catch((e) => {
-                this.t7.log("failed to read id", e)
+            this.session.reconnect(this.marker).then(layout => handleLauout(layout))
+            .catch(e => {
                 closeSessionAndDisconnect()
-                resolve()
+                this.t7.log("reconnect failed, calling the shell to handle it", isSSH, e)
             })
         })
     }
@@ -644,7 +638,7 @@ export class Gate {
                 return
             }
             return this.session.disconnect().then(marker => {
-                this.marker = marker as number
+                this.marker = marker
                 resolve()
             }).catch(() => {
                 resolve()

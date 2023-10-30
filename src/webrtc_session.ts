@@ -1,5 +1,5 @@
 import { CapacitorHttp, HttpHeaders } from '@capacitor/core';
-import { BaseChannel, BaseSession, Channel, ChannelID, Failure } from './session';
+import { BaseChannel, BaseSession, Channel, ChannelID, Failure, Marker } from './session';
 import { IceServers } from "./terminal7"
 import { ServerPayload } from "./gate"
 
@@ -82,13 +82,16 @@ export class WebRTCSession extends BaseSession {
         this.msgHandlers = new Map()
         this.lastMsgId = 0
     }
+    // eslint-disable-next-line
     onIceCandidate(e: RTCPeerConnectionIceEvent): void { throw new Error("Unimplemented method onIceCandidate()") }
+    // eslint-disable-next-line
     onNegotiationNeeded(ev: Event): void { throw new Error("Unimplemented method onNegotiationNeeded()") }
     public get isSSH() {
         return false
     }
 
-    async connect(marker?: number, noCDC?: boolean | string, privateKey?: string): Promise<void> {
+    // eslint-disable-next-line
+    async connect(marker?: Marker, noCDC?: boolean | string, privateKey?: string): Promise<void> {
         console.log("in connect", marker, noCDC)
 
         if (this.t7.iceServers == null) {
@@ -218,7 +221,7 @@ export class WebRTCSession extends BaseSession {
             }
         })
     }
-    async reconnect(marker?: number, publicKey?: string, privateKey?: string): Promise<void> {
+    async reconnect(marker?: Marker , publicKey?: string, privateKey?: string): Promise<void> {
         return new Promise((resolve, reject) => { 
             console.log("in reconnect", this.cdc, this.cdc.readyState)
             if (!this.pc)
@@ -326,10 +329,10 @@ export class WebRTCSession extends BaseSession {
     }
     // disconnect disconnects from all channels, requests a mark and resolve with
     // the new marker
-    disconnect(): Promise<void> {
+    disconnect(): Promise<number | null> {
         return new Promise((resolve, reject) => {
             if (!this.pc) {
-                resolve()
+                resolve(null)
                 return
             }
             this.closeChannels()

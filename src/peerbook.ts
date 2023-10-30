@@ -353,7 +353,6 @@ export class PeerbookConnection {
                 console.log("verifyFP: creating new session")
                 await this.connect()
             }
-            let data
             try {
                 await this.adminCommand({
                     type: "verify",
@@ -437,7 +436,7 @@ export class PeerbookConnection {
         // TODO: is this needed?
         if (m["verified"] !== undefined) {
             if (!m["verified"])
-                temrinal7.notify(`${PB} Unverified client. Please check you email.`)
+                terminal7.notify(`${PB} Unverified client. Please check you email.`)
             return
         }
         const fp = m.source_fp

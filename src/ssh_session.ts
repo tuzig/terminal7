@@ -1,5 +1,5 @@
 import { SSH, SSHSessionID, StartByPasswd, StartByKey} from 'capacitor-ssh-plugin'
-import { BaseChannel, BaseSession, Failure, Session, ChannelID }  from './session'
+import { BaseChannel, BaseSession, Failure, Session, ChannelID, Marker }  from './session'
 import { WebRTCSession }  from './webrtc_session'
 
 const ACCEPT_CMD = "/usr/local/bin/webexec accept"
@@ -199,7 +199,7 @@ export class HybridSession extends SSHSession {
 
            })
     }
-    async onAcceptData(channelId, marker: number, message) {
+    async onAcceptData(channelId, marker: Marker, message) {
         // null message indicates connect
         if (!message)
             return
@@ -324,7 +324,7 @@ export class HybridSession extends SSHSession {
         else
             return super.setPayload(payload)
     }
-    disconnect(): Promise<number | void> {
+    disconnect(): Promise<number | null> {
         if (this.webrtcSession)
             return this.webrtcSession.disconnect() 
         else
