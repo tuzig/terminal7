@@ -45,7 +45,7 @@ export class SSHSession extends BaseSession {
         this.id = session
         this.onStateChange("connected")
     }
-    async connect(marker?:number, publicKey?: string | boolean, privateKey?: string): Promise<void> {
+    async connect(marker?:Marker, publicKey?: string | boolean, privateKey?: string): Promise<void> {
         terminal7.log("Connecting using SSH", this.address, this.username, this.port)
         SSH.startSessionByKey({
             address: this.address,
@@ -67,7 +67,7 @@ export class SSHSession extends BaseSession {
                     this.onStateChange("failed", Failure.Aborted)
            })
     }
-    passConnect(marker?:number, password?: string) {
+    passConnect(marker?:Marker, password?: string) {
         const args: StartByPasswd = {
             address: this.address,
             port: this.port,
@@ -153,7 +153,7 @@ export class HybridSession extends SSHSession {
      * connect must recieve either password or tag to choose
      * whether to use password or identity key based authentication 
      */
-    async connect(marker?:number, publicKey?: string, privateKey?:string) {
+    async connect(marker?:Marker, publicKey?: string, privateKey?:string) {
 
         const args: StartByKey = {
             address: this.address,
@@ -174,7 +174,7 @@ export class HybridSession extends SSHSession {
                 this.fail(Failure.KeyRejected)
            })
     }
-    passConnect(marker?:number, password?: string) {
+    passConnect(marker?:Marker, password?: string) {
         const args: StartByPasswd = {
             address: this.address,
             port: this.port,
@@ -301,7 +301,7 @@ export class HybridSession extends SSHSession {
             return this.webrtcSession.openChannel(cmd, parent, sx, sy) as unknown as SSHChannel
     }
 
-    async reconnect(marker?: number, publicKey?: string, privateKey?: string) {
+    async reconnect(marker?: Marker, publicKey?: string, privateKey?: string) {
         if (this.webrtcSession)
             return this.webrtcSession.reconnect(marker, privateKey, publicKey)
         else
