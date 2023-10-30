@@ -64,7 +64,7 @@ insecure=true`)
 
     test('connect to gate see help page and hide it', async () => {
         await connectFirstGate(page)
-        const help  = page.locator('#help-gate')
+        const help = page.locator('#keys-help')
         await expect(help).toBeVisible()
         await help.click()
         await expect(help).toBeHidden()
