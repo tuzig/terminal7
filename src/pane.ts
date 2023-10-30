@@ -36,6 +36,19 @@ const ABIT = 10,
         caseSensitive: true,
     }
 
+export interface SerializedPane {
+    sx: number,
+    sy: number,
+    xoff: number,
+    yoff: number,
+    fontSize: number,
+    channelID: number,
+    active: boolean,
+    zoomed: boolean,
+    rows: number,
+    cols: number
+}
+
 export class Pane extends Cell {
     active = false
     aLeader = false
@@ -201,7 +214,8 @@ export class Pane extends Cell {
         this.fontSize += by
         if (this.fontSize < 6) this.fontSize = 6
         else if (this.fontSize > 30) this.fontSize = 30
-        this.t.options.fontSize = this.fontSize * this.gate.fontScale
+        const fontSize = this.fontSize * this.gate.fontScale
+        this.t.options.fontSize = Math.floor(fontSize) + (String(fontSize).includes('.') ? .5 : 0)
         this.fit()
         this.gate.sendState()
     }
@@ -298,7 +312,7 @@ export class Pane extends Cell {
     // returns true is size was changed
     // TODO: make it async
     fit(cb = null) {
-        if (!this.t) {
+        if (!this.t || !this.gate?.fitScreen) {
             if (cb instanceof Function)
                 cb(this)
             return
@@ -307,7 +321,7 @@ export class Pane extends Cell {
         const oldc = this.t.cols
 
         // there's no point in fitting when in the middle of a restore
-        //  it happens in the eend anyway
+        //  it happens in the end anyway
         try {
             this.fitAddon.fit()
         } catch (e) {
@@ -706,7 +720,7 @@ export class Pane extends Cell {
             this.unzoom()
         super.close()
     }
-    dump() {
+    dump(): SerializedPane {
         const cell = {
             sx: this.sx,
             sy: this.sy,
@@ -715,14 +729,16 @@ export class Pane extends Cell {
             fontSize: this.fontSize,
             channelID: null,
             active: false,
-            zoomed: false
+            zoomed: false,
+            rows: this.t.rows,
+            cols: this.t.cols
         }
         cell.channelID = this.channelID
         if (this.w.activeP && this == this.w.activeP)
             cell.active = true
         if (this.zoomed)
             cell.zoomed = true
-        return cell as this
+        return cell
     }
     // listening for terminal selection changes
     selectionChanged() {

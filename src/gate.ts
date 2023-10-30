@@ -376,7 +376,7 @@ export class Gate {
     /*
      * returns an array of panes
      */
-    panes() {
+    panes(): Pane[] {
         const r = []
         this.t7.cells.forEach(c => {
             if (c instanceof Pane && (c.gate == this))
@@ -388,10 +388,11 @@ export class Gate {
     reset() {
         this.t7.map.shell.runCommand("reset", [this.name])
     }
-    setLayout(state: ServerPayload = null) {
+    setLayout(state: ServerPayload = null, fromPresenter = false) {
         console.log("in setLayout", state)
         const winLen = this.windows.length
-        this.fontScale = 1
+        if(this.fitScreen)
+            this.fontScale = 1
         // got an empty state
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane
@@ -410,7 +411,7 @@ export class Gate {
             if (this.layoutWidth != state.width || this.layoutHeight != state.height) {
                 this.layoutWidth = state.width
                 this.layoutHeight = state.height
-                this.fitScreen = false
+                if (fromPresenter) this.fitScreen = false
                 this.scaleContainer()
             }
             state.windows.forEach(w =>  {
@@ -476,7 +477,9 @@ export class Gate {
             container.style.transformOrigin = "top left"
         }
         this.panes().forEach(p => {
-            p.t.options.fontSize = Math.floor(scale * p.fontSize)
+            // NOTE: the step of changing the font size is 0.5, there is no visual change when doing smaller steps
+            const fontSize = p.fontSize * scale
+            p.t.options.fontSize = Math.floor(fontSize) + (String(fontSize).includes('.') ? .5 : 0)
         })
         this.fontScale = scale
     }
@@ -698,7 +701,7 @@ export class Gate {
         this.session.onStateChange = (state, failure?) => this.onSessionState(state, failure)
         this.session.onCMD = msg => {
             if (msg.type == "set_payload") {
-                this.setLayout(msg.args.payload)
+                this.setLayout(msg.args.payload, true)
             }
         }
         this.t7.log("opening session")

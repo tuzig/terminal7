@@ -9,6 +9,10 @@ export class Terminal {
     }
     element = {
         addEventListener: vi.fn(),
+        parentElement: {
+            clientHeight: 480,
+            clientWidth: 640
+        }
     }
     constructor (props) {
         this.out = ""
@@ -61,6 +65,19 @@ export class Terminal {
     pressKey(key) {
         const ev = new KeyboardEvent("keydown", { key })
         this.keyHandler( { domEvent: ev } )
+    }
+    resize:(columns: number, rows: number) => void = vi.fn();
+    _core = {
+        _renderService: {
+            dimensions: {
+                css: {
+                    cell: {
+                        width: 5,
+                        height: 11
+                    }
+                }
+            }
+        }
     }
 }
 
