@@ -86,7 +86,7 @@ test.describe('peerbook administration', ()  => {
         await page.evaluate(async () => {
             terminal7.pb.close()
             try {
-                await terminal7.pb.connect("$ValidBearer")
+                await terminal7.pb.connect({token: "$ValidBearer"})
             } catch (e) {
                 console.log("pb.connect failed", e)
                 if (e == "Unregistered")
