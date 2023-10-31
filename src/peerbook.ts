@@ -38,6 +38,11 @@ interface Peer {
     auth_token?: string
 }
 
+interface ConnectParams {
+    token?: string  // used as the Bearer token
+    firstMsg?: unknown  // first message to send, before all the pending ones
+    count?: number  // internal use for retrying
+}
 export class PeerbookConnection {
     ws: WebSocket = null
     host: string
@@ -47,7 +52,6 @@ export class PeerbookConnection {
     onUpdate: (r: string) => void
     pending: Array<string>
     session: HTTPWebRTCSession | null = null
-    token: string
     shell: Shell
     uid: string
     updatingStore = false
@@ -58,7 +62,6 @@ export class PeerbookConnection {
         // copy all props to this
         Object.assign(this, props)
         this.pending = []
-        this.token = ""
         this.headers = new Map<string, string>()
         this.uid = ""
     }
@@ -67,11 +70,12 @@ export class PeerbookConnection {
         if (!this.session) {
             console.log("Admin command with no session")
             try {
-                await this.connect()
+                await this.connect({firstMsg: msg})
             } catch (e) {
                 console.log("Failed to connect to peerbook", e)
                 throw new Error("Failed to connect")
             }
+            return ""
         }   
         return new Promise((resolve, reject) => {
             this.session.sendCTRLMsg(msg, resolve, reject)
@@ -188,9 +192,8 @@ export class PeerbookConnection {
 
     async onPurchasesUpdate(data) {
         console.log("onPurchasesUpdate", data)
-            // intialize the http headers with the bearer token
         if (this.updatingStore) {
-            terminal7.log("got anotyher evenm while updatingStore")
+            terminal7.log("got another event while updatingStore")
             return
         }
         const active = data.customerInfo.entitlements.active
@@ -203,7 +206,7 @@ export class PeerbookConnection {
         const uid = data.customerInfo.originalAppUserId
         terminal7.log("Subscribed to PB, uid: ", uid)
         try {
-            await this.connect(uid)
+            await this.connect({token: uid})
         } catch (e) {
             terminal7.log("Failed to connect", e)
         } finally {
@@ -231,9 +234,8 @@ export class PeerbookConnection {
             }, reject)
         })
     }
-            
 
-    async connect(token?: string, count = 0) {
+    async connect(params?: ConnectParams) {
         return new Promise<void>((resolve, reject) =>{
             if (this.session) {
                 if (this.uid == "TBD") {
@@ -247,13 +249,14 @@ export class PeerbookConnection {
                 this.session.close()
                 this.session = null
             }
-            // connect to admin over webrtc
             const schema = terminal7.conf.peerbook.insecure? "http" : "https"
             const url = `${schema}://${terminal7.conf.net.peerbook}/we`
-            if (token)
-                this.headers.set("Authorization", `Bearer ${token}`)
+            if (params?.token)
+                this.headers.set("Authorization", `Bearer ${params.token}`)
             const session = new HTTPWebRTCSession(url, this.headers)
             this.session = session
+            if (params?.firstMsg)
+                session.sendCTRLMsg(params.firstMsg, resolve, reject)
             session.onStateChange = (state, failure?) => {
                 if (state == 'connected') {
                     terminal7.log("Connected PB webrtc connection")
@@ -282,13 +285,16 @@ export class PeerbookConnection {
                     if (failure == "Unauthorized")
                         reject(failure)
                     else {
-                        if  (count > 3)
+                        if (!params?.count)
+                            params.count = 0
+                        else if  (params?.count > 2) {
                             reject(failure)
-                        else {
-                            setTimeout(() => {
-                                this.connect(token, count+1).then(resolve).catch(reject)
-                            }, 100)
+                            return
                         }
+                        setTimeout(() => {
+                            params.count++
+                            this.connect(params).then(resolve).catch(reject)
+                        }, 100)
                     }
                     return
                 }
@@ -352,10 +358,6 @@ export class PeerbookConnection {
                 otp = await this.shell.askValue(prompt || "Enter OTP to verify gate")
             } catch(e) {
                 return
-            }
-            if (!this.session) {
-                console.log("verifyFP: creating new session")
-                await this.connect()
             }
             try {
                 await this.adminCommand({
