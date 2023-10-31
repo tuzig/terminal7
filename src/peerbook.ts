@@ -236,11 +236,16 @@ export class PeerbookConnection {
     async connect(token?: string, count = 0) {
         return new Promise<void>((resolve, reject) =>{
             if (this.session) {
-                if (this.uid == "TBD")
+                if (this.uid == "TBD") {
                     reject("Unregistered")
-                else
+                    return
+                } else if (this.isOpen()) {
                     resolve()
-                return
+                    return
+                }
+                console.log("Closing existing session connection state:", this.session.pc.connectionState)
+                this.session.close()
+                this.session = null
             }
             // connect to admin over webrtc
             const schema = terminal7.conf.peerbook.insecure? "http" : "https"
@@ -308,8 +313,7 @@ export class PeerbookConnection {
         }
     }
     isOpen() {
-        // TODO: improve this
-        return (this.session != null)
+        return (this.session && this.session.isOpen())
     }
     syncPeers(gates: Array<Gate>, nPeers: Array<Peer>) {
         const ret = []

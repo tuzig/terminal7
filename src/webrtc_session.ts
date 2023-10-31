@@ -433,14 +433,17 @@ export class PeerbookSession extends WebRTCSession {
             const offer = btoa(JSON.stringify(d))
             this.pc.setLocalDescription(d)
             terminal7.log("got offer", offer)
-            if (!terminal7.pb)
-                console.log("no peerbook")
-            else
+            try {
                 terminal7.pb.adminCommand({type: "offer",
                                           args: {
                                               target: this.fp,
                                               sdp: offer
                                           }})
+            } catch(e) {
+                terminal7.log("failed to send offer", e)
+                terminal7.notify("Failed to connect, please try again")
+            }
+
         })
     }
     peerAnswer(offer) {
@@ -529,6 +532,9 @@ export class HTTPWebRTCSession extends WebRTCSession {
                     this.fail(Failure.NotSupported)
             })
         })
+    }
+    isOpen(): boolean {
+        return this.pc != null && this.pc.connectionState == "connected"
     }
 }
 
