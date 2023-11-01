@@ -698,6 +698,8 @@ export class Gate {
         this.session.onCMD = msg => {
             if (msg.type == "set_payload") {
                 this.setLayout(msg.args.payload, true)
+            } else {
+                this.t7.log(`got unknown message ${msg}`)
             }
         }
         this.t7.log("opening session")

@@ -285,7 +285,9 @@ export class PeerbookConnection {
                     if (failure == "Unauthorized")
                         reject(failure)
                     else {
-                        if (!params?.count)
+                        if (!params)
+                            params = {}
+                        if (!params.count)
                             params.count = 0
                         else if  (params?.count > 2) {
                             reject(failure)
@@ -484,8 +486,7 @@ export class PeerbookConnection {
             return
         }
         if (m.answer !== undefined ) {
-            const answer = JSON.parse(atob(m.answer))
-            session.peerAnswer(answer)
+            session.peerAnswer(m.answer)
             return
         }
     }

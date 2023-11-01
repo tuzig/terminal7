@@ -421,7 +421,7 @@ export class PeerbookSession extends WebRTCSession {
             this.t7.pb.adminCommand({type: "candidate",
                                      args: {
                                          target: this.fp,
-                                         sdp: JSON.stringify(ev.candidate)
+                                         sdp: ev.candidate
                                     }})
         } else {
             terminal7.log("ignoring ice candidate", JSON.stringify(ev.candidate))
@@ -430,14 +430,12 @@ export class PeerbookSession extends WebRTCSession {
     onNegotiationNeeded(e) {
         terminal7.log("on negotiation needed", e)
         this.pc.createOffer().then(d => {
-            const offer = btoa(JSON.stringify(d))
             this.pc.setLocalDescription(d)
-            terminal7.log("got offer", offer)
             try {
                 terminal7.pb.adminCommand({type: "offer",
                                           args: {
                                               target: this.fp,
-                                              sdp: offer
+                                              sdp: d
                                           }})
             } catch(e) {
                 terminal7.log("failed to send offer", e)
