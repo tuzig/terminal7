@@ -279,7 +279,8 @@ export class PeerbookConnection {
                 else if (state == 'disconnected' || state == 'failed' || state == 'closed') {
                     // TODO: retry connection
                     // symbol = ERROR_HTML_SYMBOL
-                    this.session.close()
+                    if (this.session)
+                        this.session.close()
                     this.session = null
                     console.log("PB webrtc connection failed", failure, this.uid)
                     if (failure == "Unauthorized")
