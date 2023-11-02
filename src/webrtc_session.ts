@@ -468,67 +468,117 @@ export class PeerbookSession extends WebRTCSession {
 export class HTTPWebRTCSession extends WebRTCSession {
     address: string
     headers: HttpHeaders
+    sessionUrl: string | null
     constructor(address: string, headers?: Map<string, string>) {
         super()
         this.address = address
-        this.headers = { "Content-Type": "application/json" }
+        this.headers = { "Content-Type": "application/sdp" }
         if (headers)
             headers.forEach((v, k) => this.headers[k] =  v)
+        this.sessionUrl = null
         console.log("new http webrtc session", address, JSON.stringify(this.headers))
     }
 
+    sendOffer(offer: RTCSessionDescriptionInit) {
+        let headers = this.headers
+        headers['Content-Type'] = 'application/sdp'
+        CapacitorHttp.post({
+            url: this.address, 
+            headers: headers,
+            readTimeout: 3000,
+            connectTimeout: 3000,
+            data: offer
+            // webFetchExtra: { mode: 'no-cors' }
+        }).then(response => {
+            if (response.status == 401)
+                this.fail(Failure.Unauthorized)
+            else if (response.status >= 300) {
+                console.log("failed to post to PB", response)
+                if (response.status == 404)
+                    this.fail(Failure.NotSupported)
+                else
+                    this.fail()
+            } else if (response.status == 201) {
+                this.sessionUrl = response.headers['location']
+                return response.data
+            }
+            return null
+        }).then(data => {
+            if (!data)
+                return
+            // TODO move this to the last line of the last then
+            const answer = data
+            const sd = new RTCSessionDescription(answer)
+            if (this.pc)
+                this.pc.setRemoteDescription(sd).catch (() => { 
+                    this.fail(Failure.BadRemoteDescription)
+                })
+        }).catch(error => {
+            console.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
+            if (error.message == 'unauthorized')
+                this.fail(Failure.Unauthorized)
+            else
+                this.fail(Failure.NotSupported)
+        })
+    }
     onNegotiationNeeded(e) {
         this.t7.log("over HTTP on negotiation needed", e)
         this.pc.createOffer().then(offer => {
             this.pc.setLocalDescription(offer)
+            this.sendOffer(offer)
+        })
+    }
+    sendCandidate(fp: string, ev: RTCPeerConnectionIceEvent) {
+        CapacitorHttp.patch({
+            url: this.sessionUrl, 
+            headers: this.headers,
+            readTimeout: 3000,
+            connectTimeout: 3000,
+            data: ev.candidate,
+            // webFetchExtra: { mode: 'no-cors' }
+        }).then(response => {
+            if (response.status == 401)
+                this.fail(Failure.Unauthorized)
+            else if (response.status >= 300) {
+                console.log("failed to post to PB", response)
+                if (response.status == 404)
+                    this.fail(Failure.NotSupported)
+                else
+                    this.fail()
+            } else
+                return response.data
+            return null
+        }).then(data => {
+            if (!data)
+                return
+            // TODO move this to the last line of the last then
+            const answer = JSON.parse(atob(data))
+            const sd = new RTCSessionDescription(answer)
+            if (this.pc)
+                this.pc.setRemoteDescription(sd).catch (() => { 
+                    this.fail(Failure.BadRemoteDescription)
+                })
+        }).catch(error => {
+            console.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
+            if (error.message == 'unauthorized')
+                this.fail(Failure.Unauthorized)
+            else
+                this.fail(Failure.NotSupported)
         })
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         console.log("got ice candidate", ev)
-        if (ev.candidate != null)
-            return
-        this.t7.getFingerprint().then(fp => {
-            const encodedO = btoa(JSON.stringify(this.pc.localDescription))
-            console.log("sending offer with headers ", this.headers, fp)
-            CapacitorHttp.post({
-                url: this.address, 
-                headers: this.headers,
+        if (ev.candidate == null) {
+            // DELETE the session
+            CapacitorHttp.delete({
+                url: this.sessionUrl,
                 readTimeout: 3000,
                 connectTimeout: 3000,
-                data: {api_version: 0,
-                    offer: encodedO,
-                    fingerprint: fp,
-                },
-                // webFetchExtra: { mode: 'no-cors' }
-            }).then(response => {
-                if (response.status == 401)
-                    this.fail(Failure.Unauthorized)
-                else if (response.status >= 300) {
-                    console.log("failed to post to PB", response)
-                    if (response.status == 404)
-                        this.fail(Failure.NotSupported)
-                    else
-                        this.fail()
-                } else
-                    return response.data
-                return null
-            }).then(data => {
-                if (!data)
-                    return
-                // TODO move this to the last line of the last then
-                const answer = JSON.parse(atob(data))
-                const sd = new RTCSessionDescription(answer)
-                if (this.pc)
-                    this.pc.setRemoteDescription(sd).catch (() => { 
-                        this.fail(Failure.BadRemoteDescription)
-                    })
-            }).catch(error => {
-                console.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
-                if (error.message == 'unauthorized')
-                    this.fail(Failure.Unauthorized)
-                else
-                    this.fail(Failure.NotSupported)
             })
+            return
+        }
+        this.t7.getFingerprint().then(fp => {
+            this.sendCandidate(fp, ev)
         })
     }
     isOpen(): boolean {
