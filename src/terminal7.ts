@@ -795,12 +795,13 @@ export class Terminal7 {
 
     private createToolTips() {
         const buttons = document.querySelectorAll('button[aria-label]')
-        const tooltips: HTMLDivElement[] = [];
+        const tooltips: HTMLDivElement[] = []
+        const metaKey = this.getModifierKey()
         buttons.forEach((b: HTMLButtonElement) => {
             const tt = document.createElement('div')
             if (b.dataset.sc) {
                 const shortCut = document.createElement('div')
-                shortCut.innerHTML = b.dataset.sc
+                shortCut.innerHTML = `${metaKey} ${b.dataset.sc}`
                 tt.appendChild(shortCut)
             }
             const text = document.createElement('div')
@@ -811,6 +812,17 @@ export class Terminal7 {
             tooltips.push(tt)
         })
         this.buttonToolTips = tooltips
+    }
+
+    private getModifierKey() {
+        let modifierKeyPrefix = "CTRL-A";
+        if (
+            navigator.platform.indexOf("Mac") === 0 ||
+            navigator.platform === "iPhone"
+        ) {
+            modifierKeyPrefix = "⌘";
+        }
+        return modifierKeyPrefix
     }
 
     // handle incomming peerbook messages (coming over sebsocket)

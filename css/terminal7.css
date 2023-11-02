@@ -17,6 +17,7 @@
     --text-offline: #004444;
     --pane-background: black;
     --dark-border: #373702;
+    --help-bubble-bg-color: rgba(200, 200, 200, .7);
 }
 @font-face {
     font-family: "FiraSans";
@@ -115,7 +116,7 @@ a {
     background-color: var(--background);
     padding: 2%;
     position: fixed;
-    bottom: 180px;
+    bottom: 90px;
     left: 50%;
     transform: translate(-50%, 0);
     width: 40em;
@@ -137,6 +138,9 @@ a {
     width: 100%; 
     margin: 1.5em auto 0;
     padding-top: 2%;
+}
+.keys-help.modal {
+    bottom: 180px;
 }
 .keys-help>div {
     width: 100%;
@@ -204,8 +208,7 @@ nav button {
 }
 nav button .tooltip-text {
     font-size: 1rem;
-    font-weight: bold;
-    background-color: rgba(200,200,200,.7);
+    background-color: var(--help-bubble-bg-color);
     color: #000;
     text-align: center;
     padding: 5px 0;
@@ -215,7 +218,7 @@ nav button .tooltip-text {
     z-index: 5;
 
     width: 120px;
-    bottom: 290%;
+    bottom: 320%;
     left: 50%;
     margin-left: -60px;
 }
@@ -228,7 +231,7 @@ nav button .tooltip-text {
     border-width: 10px;
     transform: scale(1,5);
     border-style: solid;
-    border-color: rgba(200,200,200,.7) transparent transparent transparent;
+    border-color: var(--help-bubble-bg-color) transparent transparent transparent;
 
 }
 nav:not(.navtext) button:last-child {
