@@ -690,7 +690,7 @@ export class Gate {
                 this.session = new SSHSession(this.addr, this.username)
             } else {
                 this.notify("🎌  WebExec HTTP server")
-                const addr = `http://${this.addr}:7777/connect`
+                const addr = `http://${this.addr}:7777/offer`
                 this.session = new HTTPWebRTCSession(addr)
             }
         }
