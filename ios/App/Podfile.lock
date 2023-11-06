@@ -1,15 +1,15 @@
 PODS:
-  - Capacitor (5.3.0):
+  - Capacitor (5.5.1):
     - CapacitorCordova
   - CapacitorApp (5.0.6):
     - Capacitor
-  - CapacitorBrowser (5.0.6):
+  - CapacitorBrowser (5.1.0):
     - Capacitor
   - CapacitorCamera (5.0.7):
     - Capacitor
   - CapacitorClipboard (5.0.6):
     - Capacitor
-  - CapacitorCordova (5.3.0)
+  - CapacitorCordova (5.5.1)
   - CapacitorDevice (5.0.6):
     - Capacitor
   - CapacitorKeyboard (5.0.6):
@@ -91,12 +91,12 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@revenuecat/purchases-capacitor"
 
 SPEC CHECKSUMS:
-  Capacitor: 1ac9165943bc4f2137642d218c5ba05df811de69
+  Capacitor: 9da0a2415e3b6098511f8b5ffdb578d91ee79f8f
   CapacitorApp: 024e1b1bea5f883d79f6330d309bc441c88ad04a
-  CapacitorBrowser: 6192948e0ce804fd72aaf77f4114a3ad2e08c760
+  CapacitorBrowser: 7a0fb6a1011abfaaf2dfedfd8248f942a8eda3d6
   CapacitorCamera: 084b0b228bba7d00587910337b1c89e93b1d32ab
   CapacitorClipboard: 77edf49827ea21da2a9c05c690a4a6a4d07199c4
-  CapacitorCordova: b9374d68e63ce29e96ab5db994cf14fbefd722c9
+  CapacitorCordova: e128cc7688c070ca0bfa439898a5f609da8dbcfe
   CapacitorDevice: 2c968f98a1ec4d22357418c1521e7ddc46c675e6
   CapacitorKeyboard: b978154b024a5f65e044908e37d15b7de58b9d12
   CapacitorNativeBiometric: b47637a8cd349bdac014424bb4ddcae9ee5d4919
@@ -110,6 +110,6 @@ SPEC CHECKSUMS:
   RevenueCat: 84fbe2eb9bbf63e1abf346ccd3ff9ee45d633e3b
   RevenuecatPurchasesCapacitor: c0de310959a58b3217acd7ec5ce981175bb050b1
 
-PODFILE CHECKSUM: 4e9654adb0765b7ee27622f314473ebfafd489a8
+PODFILE CHECKSUM: b1f79f7d62e59482e73924f44c49c50186ac72be
 
-COCOAPODS: 1.12.1
+COCOAPODS: 1.11.3

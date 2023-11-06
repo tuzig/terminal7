@@ -73,13 +73,12 @@
     "start": "npm run dev",
     "dev": "vite",
     "stage": "vite build --sourcemap && vite preview",
-    "run": "cap run ios",
+    "run": "vite build -c vite.dev.config.js && cap run ios",
     "test": "vitest",
     "build": "vite build -c vite.dev.config.js",
     "clean": "rm -rf dist ios/App/App/public/*",
     "aatp": "bash ./aatp/run",
-    "lint": "npx eslint aatp src --ext .js,.ts && npx tsc --noEmit --target es2022 --moduleResolution node src/*.ts",
-    "capacitor:copy:before": "npm run build"
+    "lint": "npx eslint aatp src --ext .js,.ts && npx tsc --noEmit --target es2022 --moduleResolution node src/*.ts"
   },
   "repository": {
     "type": "git",
