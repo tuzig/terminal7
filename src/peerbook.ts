@@ -250,7 +250,7 @@ export class PeerbookConnection {
                 this.session = null
             }
             const schema = terminal7.conf.peerbook.insecure? "http" : "https"
-            const url = `${schema}://${terminal7.conf.net.peerbook}/we`
+            const url = `${schema}://${terminal7.conf.net.peerbook}/offer`
             if (params?.token)
                 this.headers.set("Authorization", `Bearer ${params.token}`)
             const session = new HTTPWebRTCSession(url, this.headers)
