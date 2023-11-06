@@ -26,6 +26,8 @@ services:
       dockerfile: ./aatp/infra/webexec/Dockerfile
       args:
         REF: ${WEBEXEC_REF-master}
+    environment:
+      WEBEXEC_SERVER_URL: http://webexec:7777
     volumes:
       - ./aatp/ui/webexec_conf:/conf
       - webexec_auth:/auth

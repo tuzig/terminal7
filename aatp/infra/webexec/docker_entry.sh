@@ -20,6 +20,7 @@ then
     /scripts/wait-for-it.sh -h peerbook -p 17777
 fi
 while true
+env 
 do
-    su - runner -c '/usr/local/bin/webexec start --debug'
+    su - runner -c "WEBEXEC_SERVER_URL=$WEBEXEC_SERVER_URL /usr/local/bin/webexec start --debug"
 done
