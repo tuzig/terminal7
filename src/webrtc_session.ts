@@ -469,10 +469,11 @@ export class HTTPWebRTCSession extends WebRTCSession {
     address: string
     headers: HttpHeaders
     sessionUrl: string | null
+    pendingCandidates: Array<RTCIceCandidate>
     constructor(address: string, headers?: Map<string, string>) {
         super()
         this.address = address
-        this.headers = { "Content-Type": "application/sdp" }
+        this.headers = { "Content-Type": "application/json" }
         if (headers)
             headers.forEach((v, k) => this.headers[k] =  v)
         this.sessionUrl = null
@@ -480,8 +481,9 @@ export class HTTPWebRTCSession extends WebRTCSession {
     }
 
     sendOffer(offer: RTCSessionDescriptionInit) {
-        let headers = this.headers
-        headers['Content-Type'] = 'application/sdp'
+        const headers = this.headers
+        this.pendingCandidates = []
+        headers['Content-Type'] = 'application/json'
         CapacitorHttp.post({
             url: this.address, 
             headers: headers,
@@ -499,7 +501,11 @@ export class HTTPWebRTCSession extends WebRTCSession {
                 else
                     this.fail()
             } else if (response.status == 201) {
-                this.sessionUrl = response.headers['location']
+                this.sessionUrl = response.headers['location'] || response.headers['Location']
+                console.log("got a session url", this.sessionUrl)
+                console.log("waiting candidates", this.pendingCandidates.length)
+                this.pendingCandidates.forEach(c => this.sendCandidate(c))
+                this.pendingCandidates = []
                 return response.data
             }
             return null
@@ -507,12 +513,10 @@ export class HTTPWebRTCSession extends WebRTCSession {
             if (!data)
                 return
             // TODO move this to the last line of the last then
-            const answer = data
-            const sd = new RTCSessionDescription(answer)
+
             if (this.pc)
-                this.pc.setRemoteDescription(sd).catch (() => { 
-                    this.fail(Failure.BadRemoteDescription)
-                })
+                this.pc.setRemoteDescription({type: "answer", sdp: data})
+                    .catch (() => this.fail(Failure.BadRemoteDescription))
         }).catch(error => {
             console.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
             if (error.message == 'unauthorized')
@@ -528,13 +532,18 @@ export class HTTPWebRTCSession extends WebRTCSession {
             this.sendOffer(offer)
         })
     }
-    sendCandidate(fp: string, ev: RTCPeerConnectionIceEvent) {
+    sendCandidate(candidate: RTCIceCandidate) {
+        if (this.sessionUrl == null) {
+            console.log("waiting for session url, queuing candidate")
+            this.pendingCandidates.push(candidate)
+            return
+        }
         CapacitorHttp.patch({
             url: this.sessionUrl, 
             headers: this.headers,
             readTimeout: 3000,
             connectTimeout: 3000,
-            data: ev.candidate,
+            data: candidate.toJSON(),
             // webFetchExtra: { mode: 'no-cors' }
         }).then(response => {
             if (response.status == 401)
@@ -548,18 +557,8 @@ export class HTTPWebRTCSession extends WebRTCSession {
             } else
                 return response.data
             return null
-        }).then(data => {
-            if (!data)
-                return
-            // TODO move this to the last line of the last then
-            const answer = JSON.parse(atob(data))
-            const sd = new RTCSessionDescription(answer)
-            if (this.pc)
-                this.pc.setRemoteDescription(sd).catch (() => { 
-                    this.fail(Failure.BadRemoteDescription)
-                })
         }).catch(error => {
-            console.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
+            console.log(`FAILED: PATCH to ${this.address} with ${JSON.stringify(this.headers)}`, error)
             if (error.message == 'unauthorized')
                 this.fail(Failure.Unauthorized)
             else
@@ -569,20 +568,22 @@ export class HTTPWebRTCSession extends WebRTCSession {
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         console.log("got ice candidate", ev)
         if (ev.candidate == null) {
+            if ((this.sessionUrl != null) && (this.pendingCandidates.length == 0)) {
             // DELETE the session
-            CapacitorHttp.delete({
-                url: this.sessionUrl,
-                readTimeout: 3000,
-                connectTimeout: 3000,
-            })
+                CapacitorHttp.delete({
+                    url: this.sessionUrl,
+                    readTimeout: 3000,
+                    connectTimeout: 3000,
+                })
+                this.sessionURL = null
+            }
+            else
+                setTimeout(() => this.onIceCandidate(new RTCPeerConnectionIceEvent("candidate", {candidate: null})), 1000)
             return
         }
-        this.t7.getFingerprint().then(fp => {
-            this.sendCandidate(fp, ev)
-        })
+        this.sendCandidate(ev.candidate)
     }
     isOpen(): boolean {
         return this.pc != null && this.pc.connectionState == "connected"
     }
 }
-
