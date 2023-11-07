@@ -418,11 +418,16 @@ export class PeerbookSession extends WebRTCSession {
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate && this.t7.pb) {
-            this.t7.pb.adminCommand({type: "candidate",
-                                     args: {
-                                         target: this.fp,
-                                         sdp: ev.candidate
-                                    }})
+            try {
+                this.t7.pb.adminCommand({type: "candidate",
+                                         args: {
+                                             target: this.fp,
+                                             sdp: ev.candidate
+                                        }})
+            } catch(e) {
+                terminal7.log("failed to send candidate", e)
+                terminal7.notify("Failed to connect, please try again")
+            }
         } else {
             terminal7.log("ignoring ice candidate", JSON.stringify(ev.candidate))
         }
