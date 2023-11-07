@@ -99,6 +99,9 @@ insecure=true`)
         await page.reload({waitUntil: "networkidle"})
         await page.evaluate(async () => {
             window.notifications = []
+            while (!window.terminal7) {
+                await new Promise(r => setTimeout(r, 100))
+            }
             window.terminal7.notify = (m) => window.notifications.push(m)
         })
         await connectFirstGate(page)
