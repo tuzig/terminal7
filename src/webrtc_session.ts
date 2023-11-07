@@ -475,6 +475,8 @@ export class HTTPWebRTCSession extends WebRTCSession {
     headers: HttpHeaders
     sessionUrl: string | null
     pendingCandidates: Array<RTCIceCandidate>
+    // storing the setTimeout id so we can cancel it
+    retryDelete: number | null = null
     constructor(address: string, headers?: Map<string, string>) {
         super()
         this.address = address
@@ -581,14 +583,31 @@ export class HTTPWebRTCSession extends WebRTCSession {
                     connectTimeout: 3000,
                 })
                 this.sessionURL = null
+                // cancel the retry
+                if (this.retryDelete) {
+                    clearTimeout(this.retryDelete)
+                    this.retryDelete = null
+                }
             }
             else
-                setTimeout(() => this.onIceCandidate(new RTCPeerConnectionIceEvent("candidate", {candidate: null})), 1000)
+                this.retryDelete = setTimeout(() => this.onIceCandidate(new RTCPeerConnectionIceEvent("candidate", {candidate: null})), 1000)
             return
         }
         this.sendCandidate(ev.candidate)
     }
     isOpen(): boolean {
         return this.pc != null && this.pc.connectionState == "connected"
+    }
+    close(): void {
+        clearTimeout(this.retryDelete)
+        super.close()
+        if (this.sessionUrl != null) {
+            CapacitorHttp.delete({
+                url: this.sessionUrl,
+                readTimeout: 3000,
+                connectTimeout: 3000,
+            })
+            this.sessionURL = null
+        }
     }
 }
