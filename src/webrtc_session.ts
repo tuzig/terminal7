@@ -165,6 +165,9 @@ export class WebRTCSession extends BaseSession {
             return
         this.openCDC()
     }
+    isOpen(): boolean {
+        return this.pc != null && this.pc.connectionState == "connected"
+    }
 
     // dcOpened is called when a data channel has been opened
     onDCOpened(dc: RTCDataChannel, id: number):  WebRTCChannel {
@@ -224,7 +227,7 @@ export class WebRTCSession extends BaseSession {
     async reconnect(marker?: Marker , publicKey?: string, privateKey?: string): Promise<void> {
         return new Promise((resolve, reject) => { 
             console.log("in reconnect", this.cdc, this.cdc.readyState)
-            if (!this.pc)
+            if (!this.isOpen())
                 return this.connect(marker, publicKey, privateKey)
             
             if (!this.cdc || this.cdc.readyState != "open")
@@ -594,9 +597,6 @@ export class HTTPWebRTCSession extends WebRTCSession {
             return
         }
         this.sendCandidate(ev.candidate)
-    }
-    isOpen(): boolean {
-        return this.pc != null && this.pc.connectionState == "connected"
     }
     close(): void {
         clearTimeout(this.retryDelete)
