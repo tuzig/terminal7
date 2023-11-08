@@ -335,6 +335,8 @@ async function addCMD(shell: Shell) {
 }
 
 async function resetCMD(shell: Shell, args: string[]) {
+    terminal7.recovering = false
+    terminal7.ignoreAppEvents = false
     let gate: Gate
     if (args[0]) {
         gate = shell.getGate(args[0])
