@@ -638,11 +638,6 @@ export class Gate {
                 resolve()
             }).catch(() => {
                 resolve()
-                /*
-            }).finally(() => {
-                this.session.close()
-                this.session = null
-                */
             })
         })
     }
@@ -680,11 +675,15 @@ export class Gate {
         const isNative = Capacitor.isNativePlatform()
         const overPB = this.fp && !this.onlySSH && this.online
         if (overPB) {
-            if (!terminal7.pb.isOpen()) {
-                this.notify(`${PB} Connecting`)
-                await terminal7.pbConnect()
-            }
             this.notify("🎌  PeerBook")
+            if (!terminal7.pb.isOpen()) {
+                try {
+                    await terminal7.pbConnect()
+                } catch(e) {
+                    this.notify(`${PB} Connection failed: ${e}`)
+                    return
+                }
+            }
             this.session = new PeerbookSession(this.fp)
         } else {
             if (isNative)  {
