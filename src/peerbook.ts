@@ -67,12 +67,12 @@ export class PeerbookConnection {
     }
 
     async adminCommand(msg: unknown): Promise<string> {
-        if (!this.session) {
-            console.log("Admin command with no session")
-            await this.connect({firstMsg: msg})
-        }   
         return new Promise((resolve, reject) => {
-            this.session.sendCTRLMsg(msg, resolve, reject)
+            if (!this.session) {
+                console.log("Admin command with no session")
+                this.connect({firstMsg: msg}).then(resolve).catch(reject)
+            } else
+                this.session.sendCTRLMsg(msg, resolve, reject)
         })
     }
 

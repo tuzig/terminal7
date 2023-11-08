@@ -300,9 +300,11 @@ async function connectCMD(shell:Shell, args: string[]) {
         })
         done = true
     })
+    terminal7.ignoreAppEvents = true
     while (!done) {
         await new Promise(r => setTimeout(r, 100))
     }
+    terminal7.ignoreAppEvents = false
 }
 
 async function addCMD(shell: Shell) {
@@ -660,13 +662,15 @@ async function subscribeCMD(shell: Shell) {
             terminal7.ignoreAppEvents = true
             try {
                 await terminal7.pb.purchase(p.p)
-                shell.stopWatchdog()
             } catch(e) {
-                shell.stopWatchdog()
                 console.log("purchase error", e)
                 shell.t.writeln("Error purchasing, please try again or `support`")
                 return
+            } finally {
+                terminal7.ignoreAppEvents = false
+                shell.stopWatchdog()
             }
+
         }
     }
     if (!terminal7.pb.isOpen()) {
