@@ -656,6 +656,7 @@ export class Terminal7 {
                             .finally(() =>  {
                                 this.recovering = false
                                 this.map.shell.stopWatchdog()
+                                this.map.shell.printPrompt()
                             })
                     }
                 })
