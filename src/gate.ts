@@ -222,7 +222,6 @@ export class Gate {
         this.stopBoarding()
         this.map.shell.stopWatchdog()
         let password: string
-        let firstGate: string | null
         switch ( failure ) {
             case Failure.WrongPassword:
                 this.notify("Sorry, wrong password")
@@ -280,9 +279,6 @@ export class Gate {
                     this.onFailure(Failure.Aborted)
                     return 
                 }
-                firstGate = (await Preferences.get({key: "first_gate"})).value
-                if (firstGate)
-                    terminal7.ignoreAppEvents = true
                 const session = this.session as SSHSession
                 session.passConnect(this.marker, password)
                 return
@@ -642,6 +638,11 @@ export class Gate {
                 resolve()
             }).catch(() => {
                 resolve()
+                /*
+            }).finally(() => {
+                this.session.close()
+                this.session = null
+                */
             })
         })
     }
@@ -714,10 +715,6 @@ export class Gate {
             if (this.session.isSSH) {
                 try {
                     const {publicKey, privateKey} = await this.t7.readId()
-                    const firstGate = (await Preferences.get({key: "first_gate"})).value
-                    if (firstGate)
-                        terminal7.ignoreAppEvents = true
-
                     const session = this.session as SSHSession
                     await session.connect(this.marker, publicKey, privateKey)
                 } catch(e) {

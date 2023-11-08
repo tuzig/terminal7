@@ -212,19 +212,15 @@ export class Terminal7 {
         }
         this.lastActiveState = active
         this.log("app state changed", this.ignoreAppEvents)
+        if (this.ignoreAppEvents) {
+            terminal7.log("ignoring benched app event")
+            return
+        }
         if (!active) {
-            if (this.ignoreAppEvents) {
-                terminal7.log("ignoring benched app event")
-                return
-            }
             this.updateNetworkStatus({connected: false}, false)
         } else {
             // We're back! puts us in recovery mode so that it'll
             // quietly reconnect to the active gate on failure
-            if (this.ignoreAppEvents) {
-                this.ignoreAppEvents = false
-                return
-            }
             this.clearTimeouts()
             Network.getStatus().then(s => this.updateNetworkStatus(s))
         }
@@ -1068,8 +1064,8 @@ export class Terminal7 {
         const now = Date.now()
         if (this.keys && (now - this.lastIdVerify  < this.conf.ui.verificationTTL))
             return this.keys
-        this.ignoreAppEvents = true
         let verified
+        this.ignoreAppEvents = true
         try {
             verified = await NativeBiometric.verifyIdentity({
                 reason: "Use private key to connect",
@@ -1077,14 +1073,12 @@ export class Terminal7 {
             })
         } catch(e) {
             this.notify(`Biometric failed: ${e.message}`)
-            this.ignoreAppEvents = false
             throw "Biometric failed: " + e.message
+        } finally {
+            this.ignoreAppEvents = false
         }
         console.log("Got biometric verified ", verified)
         this.lastActiveState = false
-        // wait for the app events to bring the ignoreAppEvents to false
-        while (this.ignoreAppEvents)
-            await (() => { return new Promise(r => setTimeout(r, 50)) })()
 
         let publicKey
         let privateKey
