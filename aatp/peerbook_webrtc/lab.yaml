@@ -52,6 +52,7 @@ services:
       PB_SMTP_HOST: smtp
       PB_SMTP_PORT: 1025
       PB_HOME_URL: http://peerbook:17777
+      WEBEXEC_SERVER_URL: http://peerbook:17777
   redis:
     build:
       context: .
