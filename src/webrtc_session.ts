@@ -483,7 +483,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
     constructor(address: string, headers?: Map<string, string>) {
         super()
         this.address = address
-        this.headers = { "Content-Type": "application/json" }
+        this.headers = {}
         if (headers)
             headers.forEach((v, k) => this.headers[k] =  v)
         this.sessionUrl = null
@@ -493,13 +493,13 @@ export class HTTPWebRTCSession extends WebRTCSession {
     sendOffer(offer: RTCSessionDescriptionInit) {
         const headers = this.headers
         this.pendingCandidates = []
-        headers['Content-Type'] = 'application/json'
+        headers['Content-Type'] = 'application/sdp'
         CapacitorHttp.post({
             url: this.address, 
             headers: headers,
             readTimeout: 3000,
             connectTimeout: 3000,
-            data: offer
+            data: offer.sdp,
             // webFetchExtra: { mode: 'no-cors' }
         }).then(response => {
             if (response.status == 401)
@@ -548,9 +548,12 @@ export class HTTPWebRTCSession extends WebRTCSession {
             this.pendingCandidates.push(candidate)
             return
         }
+        const headers = {}
+        Object.assign(headers, this.headers)
+        headers['Content-Type'] = 'application/json'
         CapacitorHttp.patch({
             url: this.sessionUrl, 
-            headers: this.headers,
+            headers: headers,
             readTimeout: 3000,
             connectTimeout: 3000,
             data: candidate.toJSON(),
