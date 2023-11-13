@@ -194,10 +194,12 @@ export class Gate {
                 const session = this.session as WebRTCSession
                 session.msgHandlers.forEach(v => v[1]("Disconnected"))
                 setTimeout(() => this.reconnect(), 10)
+                terminal7.recovering = false
                 return
             }
         } else if (state == "failed")  {
             if (terminal7.recovering)  {
+                terminal7.recovering = false
                 terminal7.log("failure while recovering")
                 if (this.session?.isSSH) { // if ssh, try again
                     setTimeout(() => this.completeConnect(), 100)
@@ -340,8 +342,10 @@ export class Gate {
      */
     async connect(onConnected = () => this.load()) {
         
+        /*
         if (!terminal7.netConnected)
             return
+            */
         this.onConnected = onConnected
         this.t7.activeG = this // TODO: move this out of here
         this.connectionFailed = false

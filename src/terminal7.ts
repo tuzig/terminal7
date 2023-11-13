@@ -634,7 +634,7 @@ export class Terminal7 {
                 off.add("hidden")
             const gate = this.activeG
             const firstGate = (await Preferences.get({key: "first_gate"})).value
-            const toReconnect = gate && gate.boarding && (firstGate == "nope")
+            const toReconnect = gate && gate.boarding && (firstGate == "nope") && this.recovering
             console.log("toReconnect", toReconnect, "firstGate", firstGate)
             if (toReconnect ) {
                 this.notify("🌞 Recovering")
