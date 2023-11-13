@@ -435,22 +435,27 @@ export class PeerbookSession extends WebRTCSession {
             terminal7.log("ignoring ice candidate", JSON.stringify(ev.candidate))
         }
     }
-    onNegotiationNeeded(e) {
+    async onNegotiationNeeded(e) {
         terminal7.log("on negotiation needed", e)
-        this.pc.createOffer().then(d => {
-            this.pc.setLocalDescription(d)
-            try {
-                terminal7.pb.adminCommand({type: "offer",
-                                          args: {
-                                              target: this.fp,
-                                              sdp: d
-                                          }})
-            } catch(e) {
-                terminal7.log("failed to send offer", e)
-                terminal7.notify("Failed to connect, please try again")
-            }
-
-        })
+        let d: RTCSessionDescriptionInit
+        try {
+            d = await this.pc.createOffer()
+        } catch(e) {
+            terminal7.log("failed to create offer", e)
+            this.onStateChange("failed", Failure.InternalError)
+            return
+        }
+        this.pc.setLocalDescription(d)
+        try {
+            await terminal7.pb.adminCommand({type: "offer",
+                                      args: {
+                                          target: this.fp,
+                                          sdp: d
+                                      }})
+        } catch(e) {
+            terminal7.log("failed to send offer", e)
+            this.onStateChange("failed", e)
+        }
     }
     peerAnswer(offer) {
         const sd = new RTCSessionDescription(offer)
@@ -581,8 +586,8 @@ export class HTTPWebRTCSession extends WebRTCSession {
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         console.log("got ice candidate", ev)
         if (ev.candidate == null) {
+            /*TODO: DELETE the session
             if ((this.sessionUrl != null) && (this.pendingCandidates.length == 0)) {
-            // DELETE the session
                 CapacitorHttp.delete({
                     url: this.sessionUrl,
                     readTimeout: 3000,
@@ -597,6 +602,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
             }
             else
                 this.retryDelete = setTimeout(() => this.onIceCandidate(new RTCPeerConnectionIceEvent("candidate", {candidate: null})), 1000)
+                */
             return
         }
         this.sendCandidate(ev.candidate)

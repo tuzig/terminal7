@@ -423,6 +423,7 @@ export class Terminal7 {
                     terminal7.pb.stopSpinner()
                 statusE.style.opacity = "1"
                 statusE.innerHTML = symbol
+                console.log("pbConnect failed", e)
                 reject(e)
             }
             const catchConnect = e => {
@@ -648,18 +649,24 @@ export class Terminal7 {
                 })
             } else
                 this.recovering = false
-            this.pbConnect().catch(e => this.log("pbConnect failed", e))
-                .finally(() => {
-                    if (toReconnect) {
-                        gate.reconnect()
-                            .catch(() => this.map.shell.runCommand("reset", [gate.name]))
-                            .finally(() =>  {
-                                this.recovering = false
-                                this.map.shell.stopWatchdog()
-                                this.map.shell.printPrompt()
-                            })
-                    }
-                })
+            if (toReconnect) {
+                try {
+                    await gate.reconnect()
+                } catch(e) {
+                    console.log("recoonect failed", e)
+                    this.map.shell.runCommand("reset", [gate.name])
+                } finally {
+                        this.recovering = false
+                        this.map.shell.stopWatchdog()
+                        this.map.shell.printPrompt()
+                }
+            } else {
+                try {
+                    await this.pbConnect()
+                } catch(e) {
+                    this.log("pbConnect failed", e)
+                }
+            }
         } else {
             this.disengage().finally(() => this.recovering = true)
         }

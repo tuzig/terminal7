@@ -23,6 +23,7 @@ export enum Failure {
     DataChannelLost="Data Channel Lost",
     FailedToConnect="Failed To Connect",
     Overrun='Overrun',
+    InternalError='Internal Error',
 }
 
 export interface Event {

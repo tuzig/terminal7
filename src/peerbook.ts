@@ -12,10 +12,11 @@ import { CustomerInfo } from "@revenuecat/purchases-typescript-internal-esm"
 export const PB = "\uD83D\uDCD6"
 import { Capacitor } from '@capacitor/core'
 import { Device } from '@capacitor/device'
-import { Purchases } from '@revenuecat/purchases-capacitor'
-import { HTTPWebRTCSession } from './webrtc_session'
+import { Failure } from './session'
 import { Gate } from './gate'
+import { HTTPWebRTCSession } from './webrtc_session'
 import { PeerbookSession } from "./webrtc_session"
+import { Purchases } from '@revenuecat/purchases-capacitor'
 import { Shell } from './shell'
 import {OPEN_HTML_SYMBOL} from './terminal7'
 
@@ -66,13 +67,19 @@ export class PeerbookConnection {
         this.uid = ""
     }
 
-    async adminCommand(msg: unknown): Promise<string> {
+    async adminCommand(cmd: unknown): Promise<string> {
         return new Promise((resolve, reject) => {
             if (!this.session) {
-                console.log("Admin command with no session")
-                this.connect({firstMsg: msg}).then(resolve).catch(reject)
+                console.log("Admin command with no session", cmd)
+                this.connect({firstMsg: cmd}).then(() => {
+                    console.log("Connected, resolving")
+                    resolve()
+                }).catch(e => {
+                    console.log("Failed to connect")
+                    reject(e)
+                })
             } else
-                this.session.sendCTRLMsg(msg, resolve, reject)
+                this.session.sendCTRLMsg(cmd, resolve, reject)
         })
     }
 
@@ -277,9 +284,9 @@ export class PeerbookConnection {
                         this.session.close()
                     this.session = null
                     console.log("PB webrtc connection failed", failure, this.uid)
-                    if (failure == "Unauthorized")
+                    if (failure == Failure.Unauthorized) {
                         reject(failure)
-                    else {
+                    } else {
                         if (!params)
                             params = {}
                         if (!params.count)
@@ -302,6 +309,9 @@ export class PeerbookConnection {
                 reject(e)
             })
         })
+    }
+    notify(msg: string) {
+        terminal7.notify(PB + " " + msg)
     }
     close() {
         if (this.ws) {
@@ -431,7 +441,7 @@ export class PeerbookConnection {
                 this.uid = m["text"]
             } else
                 // TODO: update statusE
-                terminal7.notify(`{PB}  ${m["text"]}`)
+                this.notify(`${m["text"]}`)
             return
         }
         if (m["peers"] !== undefined) {
@@ -442,7 +452,7 @@ export class PeerbookConnection {
         // TODO: is this needed?
         if (m["verified"] !== undefined) {
             if (!m["verified"])
-                terminal7.notify(`${PB} Unverified client. Please check you email.`)
+                this.notify(`Unverified client. Please check you email.`)
             return
         }
         const fp = m.source_fp

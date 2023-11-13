@@ -290,6 +290,7 @@ export class Pane extends Cell {
             this.resizeObserver.disconnect()
             this.resizeObserver = null
         }
+        // TODO: recover from zoomedE is null
         const te = this.t7.zoomedE.children[0].children[0]
         this.e.appendChild(te)
         document.body.removeChild(this.t7.zoomedE)
