@@ -30,6 +30,7 @@ services:
         REF: ${WEBEXEC_REF-master}
     environment:
       PEERBOOK: 1
+      WEBEXEC_SERVER_URL: http://webexec:7777
     depends_on:
       - peerbook
     volumes:
