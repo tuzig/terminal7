@@ -118,6 +118,9 @@ export class Shell {
     async execute(cmd: string, args: string[]) {
         if (!cmd)
             return
+        // just in case - these flags can get us stuck
+        terminal7.recovering = false
+        terminal7.ignoreAppEvents = false
         this.t.write("\x1B[K") // clear line
         let exec = null
         for (const c of this.commands) {

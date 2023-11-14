@@ -328,11 +328,13 @@ test.describe('peerbook administration', ()  => {
         await page.keyboard.press("Enter")
         await page.keyboard.type('testclient')
         await page.keyboard.press("Enter")
-        // TODO: optimize this sleep. 5 second is the max time it takes for the
-        // client to be logged in. We should have a retry loop instead.
-        await sleep(5000)
         const fp = await page.evaluate(() => terminal7.getFingerprint())
-        expect(await redisClient.hGet(`peer:${fp}`, "user")).toBe(uid)
+        let peerUID = await redisClient.hGet(`peer:${fp}`, "user")
+        while (!peerUID) {
+            await sleep(100)
+            peerUID = await redisClient.hGet(`peer:${fp}`, "user")
+        }
+        expect(peerUID).toBe(uid)
         twr = await getTWRBuffer(page)
         await page.screenshot({ path: '/result/4.png' })
         expect(twr).toMatch(/Email sent/)
@@ -356,7 +358,7 @@ test.describe('peerbook administration', ()  => {
         await verifyPage.click('button[type="submit"]')
         // TODO: optimize this sleep. 5 second is the max time it takes for the
         // client to be logged in. We should have a retry loop instead.
-        await sleep(5000)
+        await sleep(2000)
         const twr = await getTWRBuffer(page)
         await page.screenshot({ path: '/result/5.png' })
         expect(twr).toMatch(/Logged in/)

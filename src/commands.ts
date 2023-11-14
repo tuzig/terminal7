@@ -335,8 +335,6 @@ async function addCMD(shell: Shell) {
 }
 
 async function resetCMD(shell: Shell, args: string[]) {
-    terminal7.recovering = false
-    terminal7.ignoreAppEvents = false
     let gate: Gate
     if (args[0]) {
         gate = shell.getGate(args[0])
@@ -514,6 +512,8 @@ async function editCMD(shell:Shell, args: string[]) {
             gateAttrs.filter((_, i) => enabled[i])
                      .forEach((k, i) => 
                         gate[k] = (k == 'onlySSH')?res[i] == 'y':res[i])
+            gate.t7.storeGates()
+            gate.updateNameE()
             break
         case "\x1B[31mDelete\x1B[0m":
             res = await shell.runForm(fDel, "text")
@@ -989,7 +989,10 @@ async function loginCMD(shell: Shell) {
         await new Promise(r => setTimeout(r, 2000))
         try {
             await terminal7.pb.connect()
-        } catch(e) {}
+        } catch(e) {
+            terminal7.log("Failed to connect to PeerBook", e)
+        }
+
     }
     if (timedOut) {
         shell.t.writeln("Login timed out, please try again")
