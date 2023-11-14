@@ -410,6 +410,12 @@ export class Shell {
      * onDisconnect is called when a gate disconnects.
      */
     async onDisconnect(gate: Gate, wasSSH?: boolean) {
+        const retry = async () => {
+            terminal7.recovering = false
+            terminal7.log("retrying...")
+            this.startWatchdog(terminal7.conf.net.timeout).catch(e => gate.handleFailure(e))
+            await gate.reconnect()
+        }
         console.log("onDisconnect", gate)
         this.stopWatchdog()
         if (wasSSH) {
@@ -432,7 +438,11 @@ export class Shell {
             this.printPrompt()
             return
         } 
-        if (!terminal7.netConnected || terminal7.recovering ||
+        if (terminal7.recovering) {
+            retry()
+            return
+        }
+        if (!terminal7.netConnected ||
             ((terminal7.activeG != null) && (gate != terminal7.activeG)))
             return
 
