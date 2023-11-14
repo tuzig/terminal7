@@ -181,6 +181,7 @@ export class Gate {
             this.marker = null
             this.notify(`🥂  over ${this.session.isSSH?"SSH":"WebRTC"}`)
             this.setIndicatorColor("unset")
+            this.map.shell.stopWatchdog()
             // first onConnected is special if it's a new gate but once
             // connected, we're back to loading the gate
             this.onConnected()
@@ -190,26 +191,10 @@ export class Gate {
             this.lastDisconnect = Date.now()
             // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR)
-            if (terminal7.recovering) {
-                const session = this.session as WebRTCSession
-                session.msgHandlers.forEach(v => v[1]("Disconnected"))
-                setTimeout(() => this.reconnect(), 10)
-                terminal7.recovering = false
-                return
-            }
-        } else if (state == "failed")  {
-            if (terminal7.recovering)  {
-                terminal7.recovering = false
-                terminal7.log("failure while recovering")
-                if (this.session?.isSSH) { // if ssh, try again
-                    setTimeout(() => this.completeConnect(), 100)
-                    return
-                }
-                this.session.close()
-                this.session = null
-                this.reconnect()
-            } else
+            if (terminal7.recovering)
                 this.handleFailure(failure)
+        } else if (state == "failed")  {
+            this.handleFailure(failure)
         }
     }
     // handle connection failures
@@ -266,11 +251,9 @@ export class Gate {
                     this.session.close()
                     this.session = null
                 }
-                if (terminal7.recovering)  {
-                    terminal7.log("Cleaned session as failure on recovering")
-                    return
+                if (!terminal7.recovering)  {
+                    this.notify(failure?"Lost Data Channel":"Lost Connection" + ", please try `reset`")
                 }
-                this.notify(failure?"Lost Data Channel":"Lost Connection" + ", please try `reset`")
                 break
 
             case Failure.KeyRejected:
