@@ -114,6 +114,8 @@ export class WebRTCSession extends BaseSession {
             iceServers: this.t7.iceServers,
             certificates: this.t7.certificates})
         this.pc.onconnectionstatechange = () => {
+            if (!this.pc)
+                return
             const state = this.pc.connectionState
             console.log("new connection state", state, marker)
             if ((state === "connected") && (marker != null)) {
@@ -481,7 +483,7 @@ export class PeerbookSession extends WebRTCSession {
 export class HTTPWebRTCSession extends WebRTCSession {
     address: string
     headers: HttpHeaders
-    sessionUrl: string | null
+    sessionURL: string | null
     pendingCandidates: Array<RTCIceCandidate>
     // storing the setTimeout id so we can cancel it
     retryDelete: number | null = null
@@ -491,7 +493,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
         this.headers = {}
         if (headers)
             headers.forEach((v, k) => this.headers[k] =  v)
-        this.sessionUrl = null
+        this.sessionURL = null
         console.log("new http webrtc session", address, JSON.stringify(this.headers))
     }
 
@@ -516,8 +518,8 @@ export class HTTPWebRTCSession extends WebRTCSession {
                 else
                     this.fail()
             } else if (response.status == 201) {
-                this.sessionUrl = response.headers['location'] || response.headers['Location']
-                console.log("got a session url", this.sessionUrl)
+                this.sessionURL = response.headers['location'] || response.headers['Location']
+                console.log("got a session url", this.sessionURL)
                 console.log("waiting candidates", this.pendingCandidates.length)
                 this.pendingCandidates.forEach(c => this.sendCandidate(c))
                 this.pendingCandidates = []
@@ -548,7 +550,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
         })
     }
     sendCandidate(candidate: RTCIceCandidate) {
-        if (this.sessionUrl == null) {
+        if (this.sessionURL == null) {
             console.log("waiting for session url, queuing candidate")
             this.pendingCandidates.push(candidate)
             return
@@ -557,7 +559,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
         Object.assign(headers, this.headers)
         headers['Content-Type'] = 'application/json'
         CapacitorHttp.patch({
-            url: this.sessionUrl, 
+            url: this.sessionURL, 
             headers: headers,
             readTimeout: 3000,
             connectTimeout: 3000,
@@ -587,9 +589,9 @@ export class HTTPWebRTCSession extends WebRTCSession {
         console.log("got ice candidate", ev)
         if (ev.candidate == null) {
             /*TODO: DELETE the session
-            if ((this.sessionUrl != null) && (this.pendingCandidates.length == 0)) {
+            if ((this.sessionURL != null) && (this.pendingCandidates.length == 0)) {
                 CapacitorHttp.delete({
-                    url: this.sessionUrl,
+                    url: this.sessionURL,
                     readTimeout: 3000,
                     connectTimeout: 3000,
                 })
@@ -610,9 +612,9 @@ export class HTTPWebRTCSession extends WebRTCSession {
     close(): void {
         clearTimeout(this.retryDelete)
         super.close()
-        if (this.sessionUrl != null) {
+        if (this.sessionURL != null) {
             CapacitorHttp.delete({
-                url: this.sessionUrl,
+                url: this.sessionURL,
                 readTimeout: 3000,
                 connectTimeout: 3000,
             })

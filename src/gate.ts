@@ -224,6 +224,7 @@ export class Gate {
         this.stopBoarding()
         this.map.shell.stopWatchdog()
         let password: string
+        let firstGate: string | null
         switch ( failure ) {
             case Failure.WrongPassword:
                 this.notify("Sorry, wrong password")
@@ -281,6 +282,9 @@ export class Gate {
                     this.onFailure(Failure.Aborted)
                     return 
                 }
+                firstGate = (await Preferences.get({key: "first_gate"})).value
+                if (firstGate)
+                    terminal7.ignoreAppEvents = true
                 const session = this.session as SSHSession
                 session.passConnect(this.marker, password)
                 return
@@ -312,7 +316,8 @@ export class Gate {
                 resolve()
             }
             if (!isSSH && !isNative) {
-                this.session.reconnect(this.marker).then(layout => handleLauout(layout))
+                this.session.reconnect(this.marker)
+                .then(layout => handleLauout(layout))
                 .catch(() => {
                     if (this.session) {
                         this.session.close()
@@ -330,10 +335,19 @@ export class Gate {
                 }
                 this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
             }
-            this.session.reconnect(this.marker).then(layout => handleLauout(layout))
-            .catch(e => {
+            this.t7.readId().then(({publicKey, privateKey}) => {
+                this.session.reconnect(this.marker, publicKey, privateKey)
+                .then(layout => handleLauout(layout))
+                .catch(e => {
+                    closeSessionAndDisconnect()
+                    this.t7.log("reconnect failed, calling the shell to handle it", isSSH, e)
+                    reject(e)
+                })
+            }).catch((e) => {
+                this.t7.log("failed to read id", e)
                 closeSessionAndDisconnect()
                 this.t7.log("reconnect failed, calling the shell to handle it", isSSH, e)
+                reject(e)
             })
         })
     }
@@ -342,10 +356,6 @@ export class Gate {
      */
     async connect(onConnected = () => this.load()) {
         
-        /*
-        if (!terminal7.netConnected)
-            return
-            */
         this.onConnected = onConnected
         this.t7.activeG = this // TODO: move this out of here
         this.connectionFailed = false
@@ -718,6 +728,10 @@ export class Gate {
             if (this.session.isSSH) {
                 try {
                     const {publicKey, privateKey} = await this.t7.readId()
+                    const firstGate = (await Preferences.get({key: "first_gate"})).value
+                    if (firstGate)
+                        terminal7.ignoreAppEvents = true
+
                     const session = this.session as SSHSession
                     await session.connect(this.marker, publicKey, privateKey)
                 } catch(e) {
@@ -734,7 +748,10 @@ export class Gate {
             let layout: ServerPayload | null = null
             try {
                 layout = JSON.parse(payload)
-            } catch(e) {}
+            } catch(e) {
+                this.notify("Failed to load layout")
+                layout = null
+            }
             console.log("got payload", layout)
             this.setLayout(layout)
         })

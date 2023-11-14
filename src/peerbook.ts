@@ -73,7 +73,7 @@ export class PeerbookConnection {
                 console.log("Admin command with no session", cmd)
                 this.connect({firstMsg: cmd}).then(() => {
                     console.log("Connected, resolving")
-                    resolve()
+                    resolve("")
                 }).catch(e => {
                     console.log("Failed to connect")
                     reject(e)
