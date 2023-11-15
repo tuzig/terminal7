@@ -282,11 +282,9 @@ export class Terminal7 {
         document.getElementById("keys-help")
                 .addEventListener("click", () => this.toggleHelp())
         document.getElementById("help-button")
-                .addEventListener("click", () => this.toggleHelp())
+            .addEventListener("pointerdown", () => this.toggleHelp(true))
         document.getElementById("help-button")
-            .addEventListener("touchstart", () => this.toggleHelp(true))
-        document.getElementById("help-button")
-            .addEventListener("touchend", () => this.toggleHelp(false))
+            .addEventListener("pointerup", () => this.toggleHelp(false))
         const dH = document.getElementById("divide-h")
         const dV = document.getElementById("divide-v")
         dH.addEventListener("click", () =>  {
