@@ -283,6 +283,10 @@ export class Terminal7 {
                 .addEventListener("click", () => this.toggleHelp())
         document.getElementById("help-button")
                 .addEventListener("click", () => this.toggleHelp())
+        document.getElementById("help-button")
+            .addEventListener("touchstart", () => this.toggleHelp(true))
+        document.getElementById("help-button")
+            .addEventListener("touchend", () => this.toggleHelp(false))
         const dH = document.getElementById("divide-h")
         const dV = document.getElementById("divide-v")
         dH.addEventListener("click", () =>  {
@@ -797,37 +801,49 @@ export class Terminal7 {
             })
         })
     }
-    toggleHelp() {
-        if (!this.buttonToolTips)
-            this.createToolTips()
-        this.buttonToolTips.forEach(btt => {
-            btt.classList.toggle('hidden')
+
+    toggleHelp(doShow: boolean = null) {
+        if (doShow == null) {
+            this.isHelpShown = !this.isHelpShown
+        } else {
+            this.isHelpShown = doShow
+        }
+        const isPaneShown = !document.querySelector('.gate')?.classList.contains('hidden')
+        if (!this.buttonHelpBubbles)
+            this.createHelpBubbles()
+        const funcName = this.isHelpShown ? 'remove' : 'add'
+        this.buttonHelpBubbles.forEach(bhb => {
+            if ((!isPaneShown && !bhb.parentElement.classList.contains('off')) || isPaneShown || funcName === 'add')
+                bhb.classList[funcName]('hidden')
         })
-        document.getElementById('keys-help').classList.toggle('hidden')
+        if (isPaneShown)
+            document.getElementById('keys-help').classList[funcName]('hidden')
         this.activeG?.activeW?.activeP?.hideSearch()
     }
 
-    private buttonToolTips: HTMLDivElement[];
+    private isHelpShown = false
 
-    private createToolTips() {
-        const buttons = document.querySelectorAll('button[aria-label]')
-        const tooltips: HTMLDivElement[] = []
+    private buttonHelpBubbles: HTMLDivElement[]
+
+    private createHelpBubbles() {
+        const buttons = document.querySelectorAll('.has-help[aria-label]')
+        const helpBubbles: HTMLDivElement[] = []
         const metaKey = this.getModifierKey()
-        buttons.forEach((b: HTMLButtonElement) => {
-            const tt = document.createElement('div')
-            if (b.dataset.sc) {
+        buttons.forEach((c: HTMLElement) => {
+            const hb = document.createElement('div')
+            if (c.dataset.sc) {
                 const shortCut = document.createElement('div')
-                shortCut.innerHTML = `${metaKey} ${b.dataset.sc}`
-                tt.appendChild(shortCut)
+                shortCut.innerHTML = `${metaKey} ${c.dataset.sc}`
+                hb.appendChild(shortCut)
             }
             const text = document.createElement('div')
-            text.innerHTML = b.ariaLabel
-            tt.className = 'tooltip-text hidden'
-            tt.appendChild(text)
-            b.appendChild(tt)
-            tooltips.push(tt)
+            text.innerHTML = c.ariaLabel
+            hb.className = 'help-bubble-text hidden'
+            hb.appendChild(text)
+            c.appendChild(hb)
+            helpBubbles.push(hb)
         })
-        this.buttonToolTips = tooltips
+        this.buttonHelpBubbles = helpBubbles
     }
 
     private getModifierKey() {

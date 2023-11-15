@@ -204,10 +204,14 @@ nav button {
     cursor: pointer;
     border-right: 2px solid var(--dark-border);
     font-size: 20px;
+}
+.has-help {
     position: relative;
 }
-nav button .tooltip-text {
+
+.help-bubble-text {
     font-size: 1rem;
+    font-family: 'FiraSans', serif;
     background-color: var(--help-bubble-bg-color);
     color: #000;
     text-align: center;
@@ -218,11 +222,11 @@ nav button .tooltip-text {
     z-index: 5;
 
     width: 120px;
-    bottom: 320%;
+    bottom: 80px;
     left: 50%;
     margin-left: -60px;
 }
-.tooltip-text::after {
+.help-bubble-text::after {
     content: " ";
     position: absolute;
     bottom: -60px;
