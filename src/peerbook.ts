@@ -45,7 +45,6 @@ interface ConnectParams {
     count?: number  // internal use for retrying
 }
 export class PeerbookConnection {
-    ws: WebSocket = null
     host: string
     insecure = false
     fp: string
@@ -69,17 +68,11 @@ export class PeerbookConnection {
 
     async adminCommand(cmd: unknown): Promise<string> {
         return new Promise((resolve, reject) => {
-            if (!this.session) {
-                console.log("Admin command with no session", cmd)
-                this.connect({firstMsg: cmd}).then(() => {
-                    console.log("Connected, resolving")
-                    resolve("")
-                }).catch(e => {
-                    console.log("Failed to connect")
-                    reject(e)
-                })
-            } else
-                this.session.sendCTRLMsg(cmd, resolve, reject)
+            const complete = () => this.session.sendCTRLMsg(cmd, resolve, reject)
+            if (!this.session)
+                terminal7.pbConnect().then(complete).catch(reject)
+            else
+                complete()
         })
     }
 
@@ -224,21 +217,22 @@ export class PeerbookConnection {
                 resolve(this.uid)
                 return
             }
-            if (!this.session) {
-                console.log("get UID with No session")
-                reject("No session")
-                return
-            }
-            this.session.sendCTRLMsg({type: "ping"}, (uid: string) => {
+            this.adminCommand({type: "ping"}).then((uid: string) => {
                 this.uid = uid
                 resolve(uid)
-            }, reject)
+            }).catch(reject)
         })
     }
 
     async connect(params?: ConnectParams) {
         return new Promise<void>((resolve, reject) =>{
             if (this.session) {
+                const state = this.session.pc.connectionState
+                // check is connection in progress 
+                if ((state == "new") || (state == "connecting")) {
+                    resolve()
+                    return
+                }
                 if (this.uid == "TBD") {
                     reject("Unregistered")
                     return
@@ -250,6 +244,7 @@ export class PeerbookConnection {
                 this.session.close()
                 this.session = null
             }
+            this.startSpinner()
             const schema = terminal7.conf.peerbook.insecure? "http" : "https"
             const url = `${schema}://${terminal7.conf.net.peerbook}/offer`
             if (params?.token)
@@ -267,14 +262,14 @@ export class PeerbookConnection {
                             terminal7.log("Got TBD as uid")
                             reject("Unregistered")
                         } else {
-                            Purchases.logIn({ appUserID: uid })
+                            terminal7.run(() => Purchases.logIn({ appUserID: uid }), 10)
                             resolve()
                         }
                     }).catch(e => {
                         this.session = null
                         terminal7.log("Failed to get user id", e.toString())
                         resolve()
-                    })
+                    }).finally(() => this.stopSpinner())
                     return
                 }
                 else if (state == 'disconnected' || state == 'failed' || state == 'closed') {
@@ -283,21 +278,24 @@ export class PeerbookConnection {
                     if (this.session)
                         this.session.close()
                     this.session = null
-                    console.log("PB webrtc connection failed", failure, this.uid)
+                    this.stopSpinner()
+                    terminal7.log("PB webrtc connection failed", failure, this.uid)
                     if (failure == Failure.Unauthorized) {
                         reject(failure)
                     } else {
-                        if (!params)
-                            params = {}
-                        if (!params.count)
-                            params.count = 0
-                        else if  (params?.count > 2) {
+                        let np = {}
+                        if (params)
+                            // make a copy of params
+                            np = {...params}
+                        if (!np.count)
+                            np.count = 0
+                        else if (np?.count > 2) {
                             reject(failure)
                             return
                         }
                         setTimeout(() => {
-                            params.count++
-                            this.connect(params).then(resolve).catch(reject)
+                            np.count++
+                            this.connect(np).then(resolve).catch(reject)
                         }, 100)
                     }
                     return
@@ -314,14 +312,6 @@ export class PeerbookConnection {
         terminal7.notify(PB + " " + msg)
     }
     close() {
-        if (this.ws) {
-            this.ws.onopen = undefined
-            this.ws.onmessage = undefined
-            this.ws.onerror = undefined
-            this.ws.onclose = undefined
-            this.ws.close()
-            this.ws = null
-        }
         if (this.session) {
             this.session.onStateChange = undefined
             this.session.close()
