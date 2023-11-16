@@ -72,7 +72,7 @@ export class Pane extends Cell {
     fontSize: number
     imageAddon: ImageAddon
     lastKey = ''
-    needsResize = false
+    needsResize: boolean
     searchAddon: SearchAddon
     searchDown = false
     searchTerm = ''
@@ -92,6 +92,7 @@ export class Pane extends Cell {
         this.theme = props.theme || this.t7.conf.theme
         this.resizeObserver = new window.ResizeObserver(() => this.fit())
         this.channelID = props.channelID
+        this.needsResize = false
     }
 
     /*
@@ -113,8 +114,8 @@ export class Pane extends Cell {
             fontFamily: "FiraCode",
             fontSize: this.fontSize * this.gate.fontScale,
             theme: this.theme,
-            rows:24,
-            cols:80,
+            rows:4,
+            cols:4,
             allowProposedApi: true,
             /* TODO: restore this. commented because it silences spotify
             bellStyle: "sound",
@@ -337,7 +338,7 @@ export class Pane extends Cell {
         if (this.t.rows != oldr || this.t.cols != oldc) {
             if (this.d && this.gate.fitScreen)
                 this.d.resize(this.t.cols, this.t.rows)
-            else
+            else if ((oldr != 4) && (oldc != 4))
                 this.needsResize = true
         }
         if (cb instanceof Function) cb(this)
