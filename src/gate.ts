@@ -375,7 +375,7 @@ export class Gate {
     reset() {
         this.t7.map.shell.runCommand("reset", [this.name])
     }
-    setLayout(state: ServerPayload = null, fromPresenter = false) {
+    setLayout(state: ServerPayload | null = null, fromPresenter = false) {
         console.log("in setLayout", state)
         const winLen = this.windows.length
         if(this.fitScreen)
