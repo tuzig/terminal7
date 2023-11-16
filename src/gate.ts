@@ -252,7 +252,7 @@ export class Gate {
                     this.session = null
                 }
                 if (!terminal7.recovering)  {
-                    this.notify(failure?"Lost Data Channel":"Lost Connection" + ", please try `reset`")
+                    this.notify(failure?"Lost Data Channel":"Lost Connection")
                 }
                 break
 
