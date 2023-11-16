@@ -359,7 +359,7 @@ export class Terminal7 {
                     RateApp.requestReview()
            }, 100)
         })
-        this.pbConnect().finally(() =>
+        this.pbConnect().catch(e => this.log(e)).finally(() =>
             Network.getStatus().then(s => {
                 this.updateNetworkStatus(s)
                 if (!s.connected) {
@@ -413,30 +413,28 @@ export class Terminal7 {
         const statusE = document.getElementById("peerbook-status") as HTMLSpanElement
         return new Promise((resolve, reject) => {
             function callResolve() {
-                if (terminal7.pb)
-                    terminal7.pb.stopSpinner()
                 statusE.style.opacity = "1"
                 resolve()
             }
             function callReject(e, symbol = "") {
-                if (terminal7.pb)
-                    terminal7.pb.stopSpinner()
                 statusE.style.opacity = "1"
                 statusE.innerHTML = symbol
                 console.log("pbConnect failed", e)
                 reject(e)
             }
-            const catchConnect = e => {
-                let symbol = "⛔︎"
+            function catchConnect(e) {
+                let symbol = LOCK_HTML_SYMBOL
                 if (e =="Unregistered")
                     this.notify(Capacitor.isNativePlatform()?
                         `${PB} You need to register, please \`subscribe\``:
                         `${PB} You need to regisrer, please \`subscribe\` on your tablet`)
                     
-                else if (e == Failure.NotSupported)
+                else if (e == Failure.NotSupported) {
                     // TODO: this should be changed to a notification
                     // after we upgrade peerbook
+                    symbol = "⛔︎"
                     console.log("PB not supported")
+                }
                 else if (e != "Unauthorized") {
                     terminal7.log("PB connect failed", e)
                     this.notify(Capacitor.isNativePlatform()?
@@ -445,40 +443,36 @@ export class Terminal7 {
                     this.notify("If the problem persists, `support`")
                     symbol = ERROR_HTML_SYMBOL
                 } else
-                    symbol = LOCK_HTML_SYMBOL
 
                 callReject(e, symbol)
             }
 
-            // do nothing when no subscription or already connected
+            const complete = () => this.pb.connect()
+                .then(callResolve)
+                .catch(catchConnect)
             if (this.pb) {
-                this.pb.startSpinner()
-                if ((this.pb.uid != "TBD")  && (this.pb.uid != "")) {
-                    callResolve()
-                    return
-                }
                 if (this.pb.isOpen())
                     callResolve()
                 else
-                    this.pb.connect().then(callResolve).catch(catchConnect)
+                    complete()
                 return
-            }
-            this.getFingerprint().then(fp => {
-                this.pb = new PeerbookConnection({
-                    fp: fp,
-                    host: this.conf.net.peerbook,
-                    insecure: this.conf.peerbook && this.conf.peerbook.insecure,
-                    shell: this.map.shell
+            } else {
+                this.getFingerprint().then(fp => {
+                    this.pb = new PeerbookConnection({
+                        fp: fp,
+                        host: this.conf.net.peerbook,
+                        insecure: this.conf.peerbook && this.conf.peerbook.insecure,
+                        shell: this.map.shell
+                    })
+                    if (!this.purchasesStarted) {
+                        this.pb.startPurchases()
+                            .then(complete) 
+                            .catch(callReject)
+                            .finally(() => this.purchasesStarted = true)
+                    } else
+                        complete()
                 })
-                this.pb.startSpinner()
-                if (!this.purchasesStarted) {
-                    this.pb.startPurchases().then(() => 
-                        this.pb.connect().then(callResolve).catch(catchConnect)
-                        // this.pb.updateCustomerInfo().then(callResolve).catch(callReject)
-                    ).catch(callReject).finally(() => this.purchasesStarted = true)
-                } else
-                    this.pb.connect().then(callResolve).catch(catchConnect)
-            })
+            }
         })
     }
     catchFingers() {

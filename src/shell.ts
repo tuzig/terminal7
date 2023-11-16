@@ -413,10 +413,19 @@ export class Shell {
         const retry = async () => {
             terminal7.recovering = false
             terminal7.log("retrying...")
-            this.startWatchdog(terminal7.conf.net.timeout).catch(e => gate.handleFailure(e))
-            await gate.reconnect()
+            this.startWatchdog(terminal7.conf.net.timeout).catch(e => gate.handleFailure(Failure.TimedOut))
+            try {
+                await gate.reconnect()
+            } catch (e) {
+                terminal7.log("reconnect failed", e)
+                if (e == Failure.Unauthorized) {
+                    terminal7.pb.notify("Unauthorized, please `subscribe`")
+                    return
+                } else
+                    gate.notify("Reconnect failed")
+            }
         }
-        console.log("onDisconnect", gate)
+        terminal7.log("onDisconnect", gate.name)
         this.stopWatchdog()
         if (wasSSH) {
             this.escapeActiveForm()

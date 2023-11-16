@@ -674,12 +674,7 @@ export class Gate {
         if (overPB) {
             this.notify("🎌  PeerBook")
             if (!terminal7.pb.isOpen()) {
-                try {
-                    await terminal7.pbConnect()
-                } catch(e) {
-                    this.notify(`${PB} Connection failed: ${e}`)
-                    return
-                }
+                await terminal7.pbConnect()
             }
             this.session = new PeerbookSession(this.fp)
         } else {
