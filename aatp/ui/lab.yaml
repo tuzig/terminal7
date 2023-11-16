@@ -31,5 +31,41 @@ services:
     volumes:
       - ./aatp/ui/webexec_conf:/conf
       - webexec_auth:/auth
+  peerbook:
+    build:
+      context: .
+      dockerfile: ./aatp/infra/peerbook/Dockerfile
+      args:
+        REF: ${PEERBOOK_REF-master}
+    expose:
+      - 17777
+    depends_on:
+      - redis
+      - revenuecat
+    environment:
+      REDIS_HOST: redis:6379
+      REVENUECAT_URL: http://revenuecat:1080
+      PB_SMTP_HOST: smtp
+      PB_SMTP_PORT: 1025
+      PB_HOME_URL: http://peerbook:17777
+      WEBEXEC_SERVER_URL: http://peerbook:17777
+  redis:
+    build:
+      context: .
+      dockerfile: ./aatp/infra/redis/Dockerfile
+  revenuecat:
+    image: "mockserver/mockserver"
+    environment:
+      MOCKSERVER_INITIALIZATION_JSON_PATH: /config/revenuecat_double.json
+      MOCKSERVER_LOG_LEVEL: WARN
+    expose:
+      - 1080
+    volumes:
+      - ./aatp/peerbook_webrtc:/config
+  smtp:
+    image: jcalonso/mailhog
+    expose:
+      - 1025
+      - 8025
 volumes:
   webexec_auth:
