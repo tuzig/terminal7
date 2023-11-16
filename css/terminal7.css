@@ -72,6 +72,9 @@ h3 { margin: 0.2em; color: var(--local-border); }
     -webkit-user-select: none;
 	overflow-x: auto;
 }
+#terminal7 * {
+    user-select: none;
+}
 button {
     border: 0;
     padding:0;
@@ -198,6 +201,9 @@ a {
     bottom: 0;
     padding: 18px 0;
     position: fixed;
+}
+#navbar * {
+    user-select: none;
 }
 nav button {
     flex: 1;
