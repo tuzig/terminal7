@@ -413,7 +413,7 @@ export class Shell {
         const retry = async () => {
             terminal7.recovering = false
             terminal7.log("retrying...")
-            this.startWatchdog(terminal7.conf.net.timeout).catch(e => gate.handleFailure(Failure.TimedOut))
+            this.startWatchdog(terminal7.conf.net.timeout).catch(e => gate.handleFailure(e))
             try {
                 await gate.reconnect()
             } catch (e) {
@@ -423,7 +423,10 @@ export class Shell {
                     return
                 } else
                     gate.notify("Reconnect failed")
+            } finally {
+                this.stopWatchdog()
             }
+
         }
         terminal7.log("onDisconnect", gate.name)
         this.stopWatchdog()
