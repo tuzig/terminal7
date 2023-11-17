@@ -142,7 +142,6 @@ export class Terminal7 {
     pendingPanes
     pb?: PeerbookConnection = null
     ignoreAppEvents = false
-    purchasesStarted = false
     iceServers?: IceServers[]
     recovering?: boolean
     metaPressStart: number
@@ -213,12 +212,12 @@ export class Terminal7 {
         this.lastActiveState = active
         this.log("app state changed", this.ignoreAppEvents)
         if (this.ignoreAppEvents) {
-            terminal7.log("ignoring benched app event")
+            terminal7.log("ignoring app event", active)
             return
         }
-        if (!active) {
+        if (!active)
             this.updateNetworkStatus({connected: false}, false)
-        } else {
+        else {
             // We're back! puts us in recovery mode so that it'll
             // quietly reconnect to the active gate on failure
             this.clearTimeouts()
@@ -359,14 +358,15 @@ export class Terminal7 {
                     RateApp.requestReview()
            }, 100)
         })
-        this.pbConnect().catch(e => this.log(e)).finally(() =>
+        this.pbConnect()
+            .catch(e => this.log("pbConnect failed", e))
+            .finally(() =>
             Network.getStatus().then(s => {
                 this.updateNetworkStatus(s)
                 if (!s.connected) {
                     this.goHome()
                 }
-            })
-        )
+            }))
         const resizeObserver = new ResizeObserver(() => {
             if (this.activeG)
                 this.activeG.setFitScreen()
@@ -432,7 +432,7 @@ export class Terminal7 {
                 else if (e == Failure.NotSupported) {
                     // TODO: this should be changed to a notification
                     // after we upgrade peerbook
-                    symbol = "⛔︎"
+                    symbol = "🚱"
                     console.log("PB not supported")
                 }
                 else if (e != "Unauthorized") {
@@ -464,13 +464,9 @@ export class Terminal7 {
                         insecure: this.conf.peerbook && this.conf.peerbook.insecure,
                         shell: this.map.shell
                     })
-                    if (!this.purchasesStarted) {
-                        this.pb.startPurchases()
-                            .then(complete) 
-                            .catch(callReject)
-                            .finally(() => this.purchasesStarted = true)
-                    } else
-                        complete()
+                    this.pb.startPurchases()
+                        .then(complete) 
+                        .catch(callReject)
                 })
             }
         })

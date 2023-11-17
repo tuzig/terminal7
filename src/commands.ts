@@ -666,12 +666,13 @@ async function subscribeCMD(shell: Shell) {
                 await terminal7.pb.purchase(p.p)
             } catch(e) {
                 console.log("purchase error", e)
+                shell.stopWatchdog()
                 shell.t.writeln("Error purchasing, please try again or `support`")
                 return
             } finally {
                 terminal7.ignoreAppEvents = false
-                shell.stopWatchdog()
             }
+            shell.stopWatchdog()
 
         }
     }
@@ -988,7 +989,7 @@ async function loginCMD(shell: Shell) {
     while (!terminal7.pb.uid && !timedOut) {
         await new Promise(r => setTimeout(r, 2000))
         try {
-            await terminal7.pb.connect()
+            await terminal7.pbConnect()
         } catch(e) {
             terminal7.log("Failed to connect to PeerBook", e)
         }
