@@ -410,24 +410,6 @@ export class Shell {
      * onDisconnect is called when a gate disconnects.
      */
     async onDisconnect(gate: Gate, wasSSH?: boolean) {
-        const retry = async () => {
-            terminal7.recovering = false
-            terminal7.log("retrying...")
-            this.startWatchdog(terminal7.conf.net.timeout).catch(e => gate.handleFailure(e))
-            try {
-                await gate.reconnect()
-            } catch (e) {
-                terminal7.log("reconnect failed", e)
-                if (e == Failure.Unauthorized) {
-                    terminal7.pb.notify("Unauthorized, please `subscribe`")
-                    return
-                } else
-                    gate.notify("Reconnect failed")
-            } finally {
-                this.stopWatchdog()
-            }
-
-        }
         terminal7.log("onDisconnect", gate.name)
         this.stopWatchdog()
         if (wasSSH) {
@@ -451,8 +433,22 @@ export class Shell {
             return
         } 
         if (terminal7.recovering) {
-            retry()
-            return
+            terminal7.log("retrying...")
+            terminal7.recovering = false
+            this.startWatchdog(terminal7.conf.net.timeout).catch(e => gate.handleFailure(e))
+            try {
+                await gate.reconnect()
+            } catch (e) {
+                terminal7.log("reconnect failed", e)
+                if (e == Failure.Unauthorized) {
+                    terminal7.pb.notify("Unauthorized, please `subscribe`")
+                    return
+                } else
+                    gate.notify("Reconnect failed")
+            } finally {
+                this.stopWatchdog()
+            }
+
         }
         if (!terminal7.netConnected ||
             ((terminal7.activeG != null) && (gate != terminal7.activeG)))

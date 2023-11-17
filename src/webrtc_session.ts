@@ -431,7 +431,6 @@ export class PeerbookSession extends WebRTCSession {
                                         }})
             } catch(e) {
                 terminal7.log("failed to send candidate", e)
-                terminal7.notify("Failed to connect, please try again")
             }
         } else {
             terminal7.log("ignoring ice candidate", JSON.stringify(ev.candidate))
@@ -482,18 +481,15 @@ export class PeerbookSession extends WebRTCSession {
 // SSHSession is an implmentation of a real time session over ssh
 export class HTTPWebRTCSession extends WebRTCSession {
     address: string
-    headers: HttpHeaders
-    sessionURL: string | null
+    headers: HttpHeaders = {}
+    sessionURL: string | null = null
     pendingCandidates: Array<RTCIceCandidate>
     // storing the setTimeout id so we can cancel it
-    retryDelete: number | null = null
     constructor(address: string, headers?: Map<string, string>) {
         super()
         this.address = address
-        this.headers = {}
         if (headers)
             headers.forEach((v, k) => this.headers[k] =  v)
-        this.sessionURL = null
         console.log("new http webrtc session", address, JSON.stringify(this.headers))
     }
 
@@ -520,7 +516,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
             } else if (response.status == 201) {
                 this.sessionURL = response.headers['location'] || response.headers['Location']
                 console.log("got a session url", this.sessionURL)
-                console.log("waiting candidates", this.pendingCandidates.length)
+                console.log("--> penfing candidates", this.pendingCandidates)
                 this.pendingCandidates.forEach(c => this.sendCandidate(c))
                 this.pendingCandidates = []
                 return response.data
@@ -587,38 +583,12 @@ export class HTTPWebRTCSession extends WebRTCSession {
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         console.log("got ice candidate", ev)
-        if (ev.candidate == null) {
-            /*TODO: DELETE the session
-            if ((this.sessionURL != null) && (this.pendingCandidates.length == 0)) {
-                CapacitorHttp.delete({
-                    url: this.sessionURL,
-                    readTimeout: 3000,
-                    connectTimeout: 3000,
-                })
-                this.sessionURL = null
-                // cancel the retry
-                if (this.retryDelete) {
-                    clearTimeout(this.retryDelete)
-                    this.retryDelete = null
-                }
-            }
-            else
-                this.retryDelete = setTimeout(() => this.onIceCandidate(new RTCPeerConnectionIceEvent("candidate", {candidate: null})), 1000)
-                */
-            return
+        if (ev.candidate != null) {
+            this.sendCandidate(ev.candidate)
         }
-        this.sendCandidate(ev.candidate)
     }
     close(): void {
-        clearTimeout(this.retryDelete)
         super.close()
-        if (this.sessionURL != null) {
-            CapacitorHttp.delete({
-                url: this.sessionURL,
-                readTimeout: 3000,
-                connectTimeout: 3000,
-            })
-            this.sessionURL = null
-        }
+        this.sessionURL = null
     }
 }

@@ -57,6 +57,7 @@ export class PeerbookConnection {
     updatingStore = false
     spinnerInterval = null
     headers: Map<string,string>
+    purchasesStarted = false
 
     constructor(props:PeerbookProps) {
         // copy all props to this
@@ -150,7 +151,12 @@ export class PeerbookConnection {
         this.shell.printPrompt()
     }
     async startPurchases() {
+        /*
+        if (this.purchasesStarted)
+            return
+            */
         console.log("Starting purchases")
+        
         await Purchases.setMockWebResults({ shouldMockWebResults: true })
         const keys = {
             ios: 'appl_qKHwbgKuoVXokCTMuLRwvukoqkd',
@@ -166,6 +172,7 @@ export class PeerbookConnection {
             terminal7.log("Failed to setup purchases", e)
             return
         }
+        this.purchasesStarted = true
     }
 
     /*
@@ -283,7 +290,7 @@ export class PeerbookConnection {
                     if (failure == Failure.Unauthorized) {
                         reject(failure)
                     } else {
-                        let np: ConnectParams
+                        let np: ConnectParams = {}
                         if (params)
                             // make a copy of params
                             np = {...params}
