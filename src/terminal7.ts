@@ -411,6 +411,7 @@ export class Terminal7 {
     }
     async pbConnect(): Promise<void> {
         const statusE = document.getElementById("peerbook-status") as HTMLSpanElement
+        // TODO: refactor this to an sync function
         return new Promise((resolve, reject) => {
             function callResolve() {
                 statusE.style.opacity = "1"
@@ -450,6 +451,7 @@ export class Terminal7 {
             const complete = () => this.pb.connect()
                 .then(callResolve)
                 .catch(catchConnect)
+
             if (this.pb) {
                 if (this.pb.isOpen())
                     callResolve()

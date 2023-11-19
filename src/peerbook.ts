@@ -70,10 +70,10 @@ export class PeerbookConnection {
     async adminCommand(cmd: unknown): Promise<string> {
         return new Promise((resolve, reject) => {
             const complete = () => this.session.sendCTRLMsg(cmd, resolve, reject)
-            if (!this.session)
-                terminal7.pbConnect().then(complete).catch(reject)
-            else
+            if (this.session)
                 complete()
+            else
+                terminal7.pbConnect().then(complete).catch(reject)
         })
     }
 
@@ -217,17 +217,12 @@ export class PeerbookConnection {
         this.shell.t.writeln(data)
     }
 
-    getUID() {
-        return new Promise<string>((resolve, reject) => {
+    async getUID(): Promise<string> {
             if ((this.uid != "TBD") && (this.uid != "")) {
-                resolve(this.uid)
-                return
+                return(this.uid)
             }
-            this.adminCommand({type: "ping"}).then((uid: string) => {
-                this.uid = uid
-                resolve(uid)
-            }).catch(reject)
-        })
+            this.uid = await this.adminCommand({type: "ping"})
+            return(this.uid)
     }
 
     async connect(params?: ConnectParams) {
@@ -274,7 +269,7 @@ export class PeerbookConnection {
                     }).catch(e => {
                         this.session = null
                         terminal7.log("Failed to get user id", e.toString())
-                        resolve()
+                        reject(e)
                     }).finally(() => this.stopSpinner())
                     return
                 }
