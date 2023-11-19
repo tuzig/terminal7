@@ -9,7 +9,7 @@ import { Clipboard } from '@capacitor/clipboard'
 
 import { Pane } from './pane'
 import { T7Map } from './map'
-import { Failure, Session } from './session'
+import { Failure, Session, Marker } from './session'
 import { PB } from './peerbook'
 import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
@@ -39,7 +39,7 @@ export class Gate {
     boarding: boolean
     e: HTMLDivElement
     id: string
-    marker: number
+    marker: Marker
     name: string
     secret: string
     session: PeerbookSession | SSHSession | HTTPWebRTCSession | WebRTCSession | Session | null
@@ -181,6 +181,7 @@ export class Gate {
             this.marker = null
             this.notify(`🥂  over ${this.session.isSSH?"SSH":"WebRTC"}`)
             this.setIndicatorColor("unset")
+            this.map.shell.stopWatchdog()
             // first onConnected is special if it's a new gate but once
             // connected, we're back to loading the gate
             this.onConnected()
@@ -190,24 +191,10 @@ export class Gate {
             this.lastDisconnect = Date.now()
             // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR)
-            if (terminal7.recovering) {
-                const session = this.session as WebRTCSession
-                session.msgHandlers.forEach(v => v[1]("Disconnected"))
-                setTimeout(() => this.reconnect(), 10)
-                return
-            }
-        } else if (state == "failed")  {
-            if (terminal7.recovering)  {
-                terminal7.log("failure while recovering")
-                if (this.session?.isSSH) { // if ssh, try again
-                    setTimeout(() => this.completeConnect(), 100)
-                    return
-                }
-                this.session.close()
-                this.session = null
-                this.reconnect()
-            } else
+            if (terminal7.recovering)
                 this.handleFailure(failure)
+        } else if (state == "failed")  {
+            this.handleFailure(failure)
         }
     }
     // handle connection failures
@@ -264,11 +251,9 @@ export class Gate {
                     this.session.close()
                     this.session = null
                 }
-                if (terminal7.recovering)  {
-                    terminal7.log("Cleaned session as failure on recovering")
-                    return
+                if (!terminal7.recovering)  {
+                    this.notify(failure?"Lost Data Channel":"Lost Connection")
                 }
-                this.notify(failure?"Lost Data Channel":"Lost Connection" + ", please try `reset`")
                 break
 
             case Failure.KeyRejected:
@@ -309,11 +294,14 @@ export class Gate {
         const isSSH = this.session.isSSH
         const isNative = Capacitor.isNativePlatform()
         return new Promise((resolve, reject) => {
+            const handleLauout = (layout) => {
+                this.setLayout(JSON.parse(layout as string) as ServerPayload)
+                resolve()
+            }
             if (!isSSH && !isNative) {
-                this.session.reconnect(this.marker).then(layout => {
-                    this.setLayout(layout as ServerPayload)
-                    resolve()
-                }).catch(() => {
+                this.session.reconnect(this.marker)
+                .then(layout => handleLauout(layout))
+                .catch(() => {
                     if (this.session) {
                         this.session.close()
                         this.session = null
@@ -331,17 +319,18 @@ export class Gate {
                 this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
             }
             this.t7.readId().then(({publicKey, privateKey}) => {
-                this.session.reconnect(this.marker, publicKey, privateKey).then(layout => {
-                    this.setLayout(layout as ServerPayload)
-                    resolve()
-                }).catch(e => {
+                this.session.reconnect(this.marker, publicKey, privateKey)
+                .then(layout => handleLauout(layout))
+                .catch(e => {
                     closeSessionAndDisconnect()
                     this.t7.log("reconnect failed, calling the shell to handle it", isSSH, e)
+                    reject(e)
                 })
             }).catch((e) => {
                 this.t7.log("failed to read id", e)
                 closeSessionAndDisconnect()
-                resolve()
+                this.t7.log("reconnect failed, calling the shell to handle it", isSSH, e)
+                reject(e)
             })
         })
     }
@@ -350,8 +339,6 @@ export class Gate {
      */
     async connect(onConnected = () => this.load()) {
         
-        if (!terminal7.netConnected)
-            return
         this.onConnected = onConnected
         this.t7.activeG = this // TODO: move this out of here
         this.connectionFailed = false
@@ -388,7 +375,7 @@ export class Gate {
     reset() {
         this.t7.map.shell.runCommand("reset", [this.name])
     }
-    setLayout(state: ServerPayload = null, fromPresenter = false) {
+    setLayout(state: ServerPayload | null = null, fromPresenter = false) {
         console.log("in setLayout", state)
         const winLen = this.windows.length
         if(this.fitScreen)
@@ -644,7 +631,7 @@ export class Gate {
                 return
             }
             return this.session.disconnect().then(marker => {
-                this.marker = marker as number
+                this.marker = marker
                 resolve()
             }).catch(() => {
                 resolve()
@@ -686,15 +673,16 @@ export class Gate {
         const overPB = this.fp && !this.onlySSH && this.online
         if (overPB) {
             this.notify("🎌  PeerBook")
-            if (!terminal7.pb.isOpen())
+            if (!terminal7.pb.isOpen()) {
                 await terminal7.pbConnect()
+            }
             this.session = new PeerbookSession(this.fp)
         } else {
             if (isNative)  {
                 this.session = new SSHSession(this.addr, this.username)
             } else {
                 this.notify("🎌  WebExec HTTP server")
-                const addr = `http://${this.addr}:7777/connect`
+                const addr = `http://${this.addr}:7777/offer`
                 this.session = new HTTPWebRTCSession(addr)
             }
         }
@@ -702,6 +690,8 @@ export class Gate {
         this.session.onCMD = msg => {
             if (msg.type == "set_payload") {
                 this.setLayout(msg.args.payload, true)
+            } else {
+                this.t7.log(`got unknown message ${msg}`)
             }
         }
         this.t7.log("opening session")
@@ -732,9 +722,16 @@ export class Gate {
     }
     load() {
         this.t7.log("loading gate")
-        this.session.getPayload().then(layout => {
+        this.session.getPayload().then((payload: string) => {
+            let layout: ServerPayload | null = null
+            try {
+                layout = JSON.parse(payload)
+            } catch(e) {
+                this.notify("Failed to load layout")
+                layout = null
+            }
             console.log("got payload", layout)
-            this.setLayout(layout as ServerPayload)
+            this.setLayout(layout)
         })
         document.getElementById("map").classList.add("hidden")
     }

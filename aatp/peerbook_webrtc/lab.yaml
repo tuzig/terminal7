@@ -30,6 +30,7 @@ services:
         REF: ${WEBEXEC_REF-master}
     environment:
       PEERBOOK: 1
+      WEBEXEC_SERVER_URL: http://webexec:7777
     depends_on:
       - peerbook
     volumes:
@@ -52,8 +53,11 @@ services:
       PB_SMTP_HOST: smtp
       PB_SMTP_PORT: 1025
       PB_HOME_URL: http://peerbook:17777
+      WEBEXEC_SERVER_URL: http://peerbook:17777
   redis:
-    image: "redis:alpine"
+    build:
+      context: .
+      dockerfile: ./aatp/infra/redis/Dockerfile
   revenuecat:
     image: "mockserver/mockserver"
     environment:

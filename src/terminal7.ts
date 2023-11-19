@@ -32,7 +32,6 @@ import { PeerbookConnection, PB } from './peerbook'
 import { Failure } from './session'
 import { Cell } from "./cell"
 import { Pane } from "./pane"
-import { PeerbookSession } from "./webrtc_session"
 
 declare type NavType = {
     standalone?: boolean
@@ -143,7 +142,6 @@ export class Terminal7 {
     pendingPanes
     pb?: PeerbookConnection = null
     ignoreAppEvents = false
-    purchasesStarted = false
     iceServers?: IceServers[]
     recovering?: boolean
     metaPressStart: number
@@ -213,19 +211,15 @@ export class Terminal7 {
         }
         this.lastActiveState = active
         this.log("app state changed", this.ignoreAppEvents)
-        if (!active) {
-            if (this.ignoreAppEvents) {
-                terminal7.log("ignoring benched app event")
-                return
-            }
+        if (this.ignoreAppEvents) {
+            terminal7.log("ignoring app event", active)
+            return
+        }
+        if (!active)
             this.updateNetworkStatus({connected: false}, false)
-        } else {
+        else {
             // We're back! puts us in recovery mode so that it'll
             // quietly reconnect to the active gate on failure
-            if (this.ignoreAppEvents) {
-                this.ignoreAppEvents = false
-                return
-            }
             this.clearTimeouts()
             Network.getStatus().then(s => this.updateNetworkStatus(s))
         }
@@ -364,14 +358,15 @@ export class Terminal7 {
                     RateApp.requestReview()
            }, 100)
         })
-        this.pbConnect().finally(() =>
+        this.pbConnect()
+            .catch(e => this.log("pbConnect failed", e))
+            .finally(() =>
             Network.getStatus().then(s => {
                 this.updateNetworkStatus(s)
                 if (!s.connected) {
                     this.goHome()
                 }
-            })
-        )
+            }))
         const resizeObserver = new ResizeObserver(() => {
             if (this.activeG)
                 this.activeG.setFitScreen()
@@ -418,29 +413,28 @@ export class Terminal7 {
         const statusE = document.getElementById("peerbook-status") as HTMLSpanElement
         return new Promise((resolve, reject) => {
             function callResolve() {
-                if (terminal7.pb)
-                    terminal7.pb.stopSpinner()
                 statusE.style.opacity = "1"
                 resolve()
             }
             function callReject(e, symbol = "") {
-                if (terminal7.pb)
-                    terminal7.pb.stopSpinner()
                 statusE.style.opacity = "1"
                 statusE.innerHTML = symbol
+                console.log("pbConnect failed", e)
                 reject(e)
             }
-            const catchConnect = e => {
-                let symbol = "⛔︎"
+            function catchConnect(e) {
+                let symbol = LOCK_HTML_SYMBOL
                 if (e =="Unregistered")
                     this.notify(Capacitor.isNativePlatform()?
                         `${PB} You need to register, please \`subscribe\``:
                         `${PB} You need to regisrer, please \`subscribe\` on your tablet`)
                     
-                else if (e == Failure.NotSupported)
+                else if (e == Failure.NotSupported) {
                     // TODO: this should be changed to a notification
                     // after we upgrade peerbook
+                    symbol = "🚱"
                     console.log("PB not supported")
+                }
                 else if (e != "Unauthorized") {
                     terminal7.log("PB connect failed", e)
                     this.notify(Capacitor.isNativePlatform()?
@@ -449,41 +443,32 @@ export class Terminal7 {
                     this.notify("If the problem persists, `support`")
                     symbol = ERROR_HTML_SYMBOL
                 } else
-                    symbol = LOCK_HTML_SYMBOL
 
                 callReject(e, symbol)
             }
 
-            // do nothing when no subscription or already connected
+            const complete = () => this.pb.connect()
+                .then(callResolve)
+                .catch(catchConnect)
             if (this.pb) {
-                this.pb.startSpinner()
-                if ((this.pb.uid != "TBD")  && (this.pb.uid != "")) {
-                    this.pb.wsConnect().then(callResolve).catch(callReject)
-                    return
-                }
                 if (this.pb.isOpen())
                     callResolve()
                 else
-                    this.pb.connect().then(callResolve).catch(catchConnect)
+                    complete()
                 return
-            }
-            this.getFingerprint().then(fp => {
-                this.pb = new PeerbookConnection({
-                    fp: fp,
-                    host: this.conf.net.peerbook,
-                    insecure: this.conf.peerbook && this.conf.peerbook.insecure,
-                    shell: this.map.shell
+            } else {
+                this.getFingerprint().then(fp => {
+                    this.pb = new PeerbookConnection({
+                        fp: fp,
+                        host: this.conf.net.peerbook,
+                        insecure: this.conf.peerbook && this.conf.peerbook.insecure,
+                        shell: this.map.shell
+                    })
+                    this.pb.startPurchases()
+                        .then(complete) 
+                        .catch(callReject)
                 })
-                this.pb.startSpinner()
-                this.pb.onUpdate = (m) => this.onPBMessage(m)
-                if (!this.purchasesStarted) {
-                    this.pb.startPurchases().then(() => 
-                        this.pb.connect().then(callResolve).catch(catchConnect)
-                        // this.pb.updateCustomerInfo().then(callResolve).catch(callReject)
-                    ).catch(callReject).finally(() => this.purchasesStarted = true)
-                } else
-                    this.pb.connect().then(callResolve).catch(catchConnect)
-            })
+            }
         })
     }
     catchFingers() {
@@ -639,7 +624,7 @@ export class Terminal7 {
                 off.add("hidden")
             const gate = this.activeG
             const firstGate = (await Preferences.get({key: "first_gate"})).value
-            const toReconnect = gate && gate.boarding && (firstGate == "nope")
+            const toReconnect = gate && gate.boarding && (firstGate == "nope") && this.recovering
             console.log("toReconnect", toReconnect, "firstGate", firstGate)
             if (toReconnect ) {
                 this.notify("🌞 Recovering")
@@ -654,17 +639,24 @@ export class Terminal7 {
                 })
             } else
                 this.recovering = false
-            this.pbConnect().catch(e => this.log("pbConnect failed", e))
-                .finally(() => {
-                    if (toReconnect) {
-                        gate.reconnect()
-                            .catch(() => this.map.shell.runCommand("reset", [gate.name]))
-                            .finally(() =>  {
-                                this.recovering = false
-                                this.map.shell.stopWatchdog()
-                            })
-                    }
-                })
+            if (toReconnect) {
+                try {
+                    await gate.reconnect()
+                } catch(e) {
+                    console.log("recoonect failed", e)
+                    this.map.shell.runCommand("reset", [gate.name])
+                } finally {
+                        this.recovering = false
+                        this.map.shell.stopWatchdog()
+                        this.map.shell.printPrompt()
+                }
+            } else {
+                try {
+                    await this.pbConnect()
+                } catch(e) {
+                    this.log("pbConnect failed", e)
+                }
+            }
         } else {
             this.disengage().finally(() => this.recovering = true)
         }
@@ -817,70 +809,6 @@ export class Terminal7 {
         if (!ecl.contains("show"))
             this.focus()
         // TODO: When at home remove the "on" from the home butto
-    }
-    // handle incomming peerbook messages (coming over sebsocket)
-    async onPBMessage(m) {
-        const statusE = document.getElementById("peerbook-status")
-        this.log("got pb message", m)
-        if (m["code"] !== undefined) {
-            if (m["code"] == 200) {
-                statusE.innerHTML = OPEN_HTML_SYMBOL
-                this.pb.uid = m["text"]
-            } else
-                // TODO: update statusE
-                this.notify(`\uD83D\uDCD6  ${m["text"]}`)
-            return
-        }
-        if (m["peers"] !== undefined) {
-            this.gates = this.pb.syncPeers(this.gates, m.peers)
-            this.map.refresh()
-            return
-        }
-        if (m["verified"] !== undefined) {
-            if (!m["verified"])
-                this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
-            return
-        }
-        const fp = m.source_fp
-        // look for a gate where g.fp == fp
-        const myFP = await this.getFingerprint()
-        if (fp == myFP) {
-            return
-        }
-        let lookup =  this.gates.filter(g => g.fp == fp)
-
-        if (!lookup || (lookup.length != 1)) {
-            if (m["peer_update"] !== undefined) {
-                lookup =  this.gates.filter(g => g.name == m.peer_update.name)
-            }
-            if (!lookup || (lookup.length != 1)) {
-                terminal7.log("Got a pb message with unknown peer: ", fp)
-                return
-            }
-        }
-        const g = lookup[0]
-
-        if (m["peer_update"] !== undefined) {
-            g.online = m.peer_update.online
-            g.verified = m.peer_update.verified
-            g.fp = m.source_fp
-            await g.updateNameE()
-            return
-        }
-        if (!g.session) {
-            console.log("session is close ignoring message", m)
-            return
-        }
-        const session = g.session as PeerbookSession
-        if (m.candidate !== undefined) {
-            session.peerCandidate(m.candidate)
-            return
-        }
-        if (m.answer !== undefined ) {
-            const answer = JSON.parse(atob(m.answer))
-            session.peerAnswer(answer)
-            return
-        }
     }
     log (...args) {
         let line = ""
@@ -1134,8 +1062,8 @@ export class Terminal7 {
         const now = Date.now()
         if (this.keys && (now - this.lastIdVerify  < this.conf.ui.verificationTTL))
             return this.keys
-        this.ignoreAppEvents = true
         let verified
+        this.ignoreAppEvents = true
         try {
             verified = await NativeBiometric.verifyIdentity({
                 reason: "Use private key to connect",
@@ -1143,14 +1071,12 @@ export class Terminal7 {
             })
         } catch(e) {
             this.notify(`Biometric failed: ${e.message}`)
-            this.ignoreAppEvents = false
             throw "Biometric failed: " + e.message
+        } finally {
+            this.ignoreAppEvents = false
         }
         console.log("Got biometric verified ", verified)
         this.lastActiveState = false
-        // wait for the app events to bring the ignoreAppEvents to false
-        while (this.ignoreAppEvents)
-            await (() => { return new Promise(r => setTimeout(r, 50)) })()
 
         let publicKey
         let privateKey

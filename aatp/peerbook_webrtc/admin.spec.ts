@@ -86,7 +86,7 @@ test.describe('peerbook administration', ()  => {
         await page.evaluate(async () => {
             terminal7.pb.close()
             try {
-                await terminal7.pb.connect("$ValidBearer")
+                await terminal7.pb.connect({token: "$ValidBearer"})
             } catch (e) {
                 console.log("pb.connect failed", e)
                 if (e == "Unregistered")
@@ -328,9 +328,13 @@ test.describe('peerbook administration', ()  => {
         await page.keyboard.press("Enter")
         await page.keyboard.type('testclient')
         await page.keyboard.press("Enter")
-        await sleep(1000)
         const fp = await page.evaluate(() => terminal7.getFingerprint())
-        expect(await redisClient.hGet(`peer:${fp}`, "user")).toBe(uid)
+        let peerUID = await redisClient.hGet(`peer:${fp}`, "user")
+        while (!peerUID) {
+            await sleep(100)
+            peerUID = await redisClient.hGet(`peer:${fp}`, "user")
+        }
+        expect(peerUID).toBe(uid)
         twr = await getTWRBuffer(page)
         await page.screenshot({ path: '/result/4.png' })
         expect(twr).toMatch(/Email sent/)
@@ -346,13 +350,15 @@ test.describe('peerbook administration', ()  => {
         expect(url).toMatch(/^http:\/\/peerbook:17777\/verify/)
         await sleep(500)
         const fp = await page.evaluate(() => terminal7.getFingerprint())
-        console.log("fp", fp)
+        console.log("new client's fp", fp)
         expect(await redisClient.hGet(`peer:${fp}`, "user")).toBe("123456")
         const verifyPage = await (await browser.newContext()).newPage()
         await verifyPage.goto(url)
         await verifyPage.screenshot({ path: '/result/6.png' })
         await verifyPage.click('button[type="submit"]')
-        await sleep(500)
+        // TODO: optimize this sleep. 5 second is the max time it takes for the
+        // client to be logged in. We should have a retry loop instead.
+        await sleep(2000)
         const twr = await getTWRBuffer(page)
         await page.screenshot({ path: '/result/5.png' })
         expect(twr).toMatch(/Logged in/)

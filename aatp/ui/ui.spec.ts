@@ -39,6 +39,8 @@ test.describe('terminal7 UI', ()  => {
         await page.evaluate(async () => {
             window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
             localStorage.setItem("CapacitorStorage.dotfile",`
+[net]
+peerbook = "peerbook:17777"
 [peerbook]
 insecure=true`)
             localStorage.setItem("CapacitorStorage.gates", JSON.stringify(
@@ -82,12 +84,16 @@ insecure=true`)
         await page.reload({waitUntil: "networkidle"})
         await page.evaluate(async () => {
             window.notifications = []
+            while (!window.terminal7) {
+                await new Promise(r => setTimeout(r, 100))
+            }
             window.terminal7.notify = (m) => window.notifications.push(m)
         })
         await connectFirstGate(page)
+        await sleep(500)
         await page.locator('.tabbar .reset').click()
         await expect(page.locator('#t0')).toBeVisible()
-        await sleep(500)
+        await sleep(100)
         await page.keyboard.press('ArrowDown')
         await page.keyboard.press('Enter')
         await expect(page.locator('.windows-container')).toBeHidden()
@@ -96,6 +102,9 @@ insecure=true`)
         await page.reload({waitUntil: "networkidle"})
         await page.evaluate(async () => {
             window.notifications = []
+            while (!window.terminal7) {
+                await new Promise(r => setTimeout(r, 100))
+            }
             window.terminal7.notify = (m) => window.notifications.push(m)
         })
         await connectFirstGate(page)
@@ -103,8 +112,9 @@ insecure=true`)
         await page.screenshot({ path: `/result/2.png` })
         await page.locator('.tabbar .reset').click()
         await expect(page.locator('#t0')).toBeVisible()
-        await sleep(20)
+        await sleep(100)
         await page.keyboard.press('Enter')
+        await sleep(100)
         await expect(page.locator('#t0')).toBeHidden()
         await expect(page.locator('.pane')).toHaveCount(1)
         await expect(page.locator('.windows-container')).toBeVisible()

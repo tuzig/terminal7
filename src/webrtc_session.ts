@@ -1,5 +1,5 @@
 import { CapacitorHttp, HttpHeaders } from '@capacitor/core';
-import { BaseChannel, BaseSession, Channel, ChannelID, Failure } from './session';
+import { BaseChannel, BaseSession, Channel, ChannelID, Failure, Marker } from './session';
 import { IceServers } from "./terminal7"
 import { ServerPayload } from "./gate"
 
@@ -82,13 +82,16 @@ export class WebRTCSession extends BaseSession {
         this.msgHandlers = new Map()
         this.lastMsgId = 0
     }
+    // eslint-disable-next-line
     onIceCandidate(e: RTCPeerConnectionIceEvent): void { throw new Error("Unimplemented method onIceCandidate()") }
+    // eslint-disable-next-line
     onNegotiationNeeded(ev: Event): void { throw new Error("Unimplemented method onNegotiationNeeded()") }
     public get isSSH() {
         return false
     }
 
-    async connect(marker?: number, noCDC?: boolean | string, privateKey?: string): Promise<void> {
+    // eslint-disable-next-line
+    async connect(marker?: Marker, noCDC?: boolean | string, privateKey?: string): Promise<void> {
         console.log("in connect", marker, noCDC)
 
         if (this.t7.iceServers == null) {
@@ -111,6 +114,8 @@ export class WebRTCSession extends BaseSession {
             iceServers: this.t7.iceServers,
             certificates: this.t7.certificates})
         this.pc.onconnectionstatechange = () => {
+            if (!this.pc)
+                return
             const state = this.pc.connectionState
             console.log("new connection state", state, marker)
             if ((state === "connected") && (marker != null)) {
@@ -161,6 +166,9 @@ export class WebRTCSession extends BaseSession {
         if (noCDC)
             return
         this.openCDC()
+    }
+    isOpen(): boolean {
+        return this.pc != null && this.pc.connectionState == "connected"
     }
 
     // dcOpened is called when a data channel has been opened
@@ -218,10 +226,10 @@ export class WebRTCSession extends BaseSession {
             }
         })
     }
-    async reconnect(marker?: number, publicKey?: string, privateKey?: string): Promise<void> {
+    async reconnect(marker?: Marker , publicKey?: string, privateKey?: string): Promise<void> {
         return new Promise((resolve, reject) => { 
             console.log("in reconnect", this.cdc, this.cdc.readyState)
-            if (!this.pc)
+            if (!this.isOpen())
                 return this.connect(marker, publicKey, privateKey)
             
             if (!this.cdc || this.cdc.readyState != "open")
@@ -266,7 +274,7 @@ export class WebRTCSession extends BaseSession {
                     this.t7.log("got cdc message:",  msg)
                     if (msg.type == "nack") {
                         if (handlers && (typeof handlers[1] == "function"))
-                            handlers[1](msg.desc)
+                            handlers[1](msg.args.desc)
                         else
                             console.log("A nack is unhandled", msg)
                     } else {
@@ -326,10 +334,10 @@ export class WebRTCSession extends BaseSession {
     }
     // disconnect disconnects from all channels, requests a mark and resolve with
     // the new marker
-    disconnect(): Promise<void> {
+    disconnect(): Promise<number | null> {
         return new Promise((resolve, reject) => {
             if (!this.pc) {
-                resolve()
+                resolve(null)
                 return
             }
             this.closeChannels()
@@ -337,9 +345,11 @@ export class WebRTCSession extends BaseSession {
                     type: "mark",
                     args: null
                 }, (payload) => {
-                this.t7.log("got a marker", payload)
+                const marker = parseInt(payload)
+
+                this.t7.log("got a marker", marker)
                 this.closeChannels()
-                resolve(payload)
+                resolve(marker)
             }, reject)
         })
     }
@@ -413,22 +423,40 @@ export class PeerbookSession extends WebRTCSession {
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate && this.t7.pb) {
-            this.t7.pb.send({target: this.fp, candidate: ev.candidate})
+            try {
+                this.t7.pb.adminCommand({type: "candidate",
+                                         args: {
+                                             target: this.fp,
+                                             sdp: ev.candidate
+                                        }})
+            } catch(e) {
+                terminal7.log("failed to send candidate", e)
+            }
         } else {
             terminal7.log("ignoring ice candidate", JSON.stringify(ev.candidate))
         }
     }
-    onNegotiationNeeded(e) {
+    async onNegotiationNeeded(e) {
         terminal7.log("on negotiation needed", e)
-        this.pc.createOffer().then(d => {
-            const offer = btoa(JSON.stringify(d))
-            this.pc.setLocalDescription(d)
-            terminal7.log("got offer", offer)
-            if (!terminal7.pb)
-                console.log("no peerbook")
-            else
-                terminal7.pb.send({target: this.fp, offer: offer})
-        })
+        let d: RTCSessionDescriptionInit
+        try {
+            d = await this.pc.createOffer()
+        } catch(e) {
+            terminal7.log("failed to create offer", e)
+            this.onStateChange("failed", Failure.InternalError)
+            return
+        }
+        this.pc.setLocalDescription(d)
+        try {
+            await terminal7.pb.adminCommand({type: "offer",
+                                      args: {
+                                          target: this.fp,
+                                          sdp: d
+                                      }})
+        } catch(e) {
+            terminal7.log("failed to send offer", e)
+            this.onStateChange("failed", e)
+        }
     }
     peerAnswer(offer) {
         const sd = new RTCSessionDescription(offer)
@@ -453,69 +481,114 @@ export class PeerbookSession extends WebRTCSession {
 // SSHSession is an implmentation of a real time session over ssh
 export class HTTPWebRTCSession extends WebRTCSession {
     address: string
-    headers: HttpHeaders
+    headers: HttpHeaders = {}
+    sessionURL: string | null = null
+    pendingCandidates: Array<RTCIceCandidate>
+    // storing the setTimeout id so we can cancel it
     constructor(address: string, headers?: Map<string, string>) {
         super()
         this.address = address
-        this.headers = { "Content-Type": "application/json" }
         if (headers)
             headers.forEach((v, k) => this.headers[k] =  v)
         console.log("new http webrtc session", address, JSON.stringify(this.headers))
     }
 
+    sendOffer(offer: RTCSessionDescriptionInit) {
+        const headers = this.headers
+        this.pendingCandidates = []
+        headers['Content-Type'] = 'application/sdp'
+        CapacitorHttp.post({
+            url: this.address, 
+            headers: headers,
+            readTimeout: 3000,
+            connectTimeout: 3000,
+            data: offer.sdp,
+            // webFetchExtra: { mode: 'no-cors' }
+        }).then(response => {
+            if (response.status == 401)
+                this.fail(Failure.Unauthorized)
+            else if (response.status >= 300) {
+                console.log("failed to post to PB", response)
+                if (response.status == 404)
+                    this.fail(Failure.NotSupported)
+                else
+                    this.fail()
+            } else if (response.status == 201) {
+                this.sessionURL = response.headers['location'] || response.headers['Location']
+                console.log("got a session url", this.sessionURL)
+                console.log("--> penfing candidates", this.pendingCandidates)
+                this.pendingCandidates.forEach(c => this.sendCandidate(c))
+                this.pendingCandidates = []
+                return response.data
+            }
+            return null
+        }).then(data => {
+            if (!data)
+                return
+            // TODO move this to the last line of the last then
+
+            if (this.pc)
+                this.pc.setRemoteDescription({type: "answer", sdp: data})
+                    .catch (() => this.fail(Failure.BadRemoteDescription))
+        }).catch(error => {
+            console.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
+            if (error.message == 'unauthorized')
+                this.fail(Failure.Unauthorized)
+            else
+                this.fail(Failure.NotSupported)
+        })
+    }
     onNegotiationNeeded(e) {
         this.t7.log("over HTTP on negotiation needed", e)
         this.pc.createOffer().then(offer => {
             this.pc.setLocalDescription(offer)
+            this.sendOffer(offer)
+        })
+    }
+    sendCandidate(candidate: RTCIceCandidate) {
+        if (this.sessionURL == null) {
+            console.log("waiting for session url, queuing candidate")
+            this.pendingCandidates.push(candidate)
+            return
+        }
+        const headers = {}
+        Object.assign(headers, this.headers)
+        headers['Content-Type'] = 'application/json'
+        CapacitorHttp.patch({
+            url: this.sessionURL, 
+            headers: headers,
+            readTimeout: 3000,
+            connectTimeout: 3000,
+            data: candidate.toJSON(),
+            // webFetchExtra: { mode: 'no-cors' }
+        }).then(response => {
+            if (response.status == 401)
+                this.fail(Failure.Unauthorized)
+            else if (response.status >= 300) {
+                console.log("failed to post to PB", response)
+                if (response.status == 404)
+                    this.fail(Failure.NotSupported)
+                else
+                    this.fail()
+            } else
+                return response.data
+            return null
+        }).catch(error => {
+            console.log(`FAILED: PATCH to ${this.address} with ${JSON.stringify(this.headers)}`, error)
+            if (error.message == 'unauthorized')
+                this.fail(Failure.Unauthorized)
+            else
+                this.fail(Failure.NotSupported)
         })
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         console.log("got ice candidate", ev)
-        if (ev.candidate != null)
-            return
-        this.t7.getFingerprint().then(fp => {
-            const encodedO = btoa(JSON.stringify(this.pc.localDescription))
-            console.log("sending offer with headers ", this.headers, fp)
-            CapacitorHttp.post({
-                url: this.address, 
-                headers: this.headers,
-                readTimeout: 3000,
-                connectTimeout: 3000,
-                data: {api_version: 0,
-                    offer: encodedO,
-                    fingerprint: fp,
-                },
-                // webFetchExtra: { mode: 'no-cors' }
-            }).then(response => {
-                if (response.status == 401)
-                    this.fail(Failure.Unauthorized)
-                else if (response.status >= 300) {
-                    console.log("failed to post to PB", response)
-                    if (response.status == 404)
-                        this.fail(Failure.NotSupported)
-                    else
-                        this.fail()
-                } else
-                    return response.data
-                return null
-            }).then(data => {
-                if (!data)
-                    return
-                // TODO move this to the last line of the last then
-                const answer = JSON.parse(atob(data))
-                const sd = new RTCSessionDescription(answer)
-                if (this.pc)
-                    this.pc.setRemoteDescription(sd).catch (() => { 
-                        this.fail(Failure.BadRemoteDescription)
-                    })
-            }).catch(error => {
-                console.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
-                if (error.message == 'unauthorized')
-                    this.fail(Failure.Unauthorized)
-                else
-                    this.fail(Failure.NotSupported)
-            })
-        })
+        if (ev.candidate != null) {
+            this.sendCandidate(ev.candidate)
+        }
+    }
+    close(): void {
+        super.close()
+        this.sessionURL = null
     }
 }
-

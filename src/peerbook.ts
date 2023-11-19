@@ -10,13 +10,15 @@
 import { CustomerInfo } from "@revenuecat/purchases-typescript-internal-esm"
 
 export const PB = "\uD83D\uDCD6"
-import { Device } from '@capacitor/device'
-import { Purchases } from '@revenuecat/purchases-capacitor'
-import { HTTPWebRTCSession } from './webrtc_session'
-import { Gate } from './gate'
-import { Shell } from './shell'
 import { Capacitor } from '@capacitor/core'
-import {ERROR_HTML_SYMBOL, CLOSED_HTML_SYMBOL, OPEN_HTML_SYMBOL} from './terminal7'
+import { Device } from '@capacitor/device'
+import { Failure } from './session'
+import { Gate } from './gate'
+import { HTTPWebRTCSession } from './webrtc_session'
+import { PeerbookSession } from "./webrtc_session"
+import { Purchases } from '@revenuecat/purchases-capacitor'
+import { Shell } from './shell'
+import {OPEN_HTML_SYMBOL} from './terminal7'
 
 interface PeerbookProps {
     fp: string,
@@ -37,8 +39,12 @@ interface Peer {
     auth_token?: string
 }
 
+interface ConnectParams {
+    token?: string  // used as the Bearer token
+    firstMsg?: unknown  // first message to send, before all the pending ones
+    count?: number  // internal use for retrying
+}
 export class PeerbookConnection {
-    ws: WebSocket = null
     host: string
     insecure = false
     fp: string
@@ -46,46 +52,28 @@ export class PeerbookConnection {
     onUpdate: (r: string) => void
     pending: Array<string>
     session: HTTPWebRTCSession | null = null
-    token: string
     shell: Shell
     uid: string
     updatingStore = false
     spinnerInterval = null
     headers: Map<string,string>
+    purchasesStarted = false
 
     constructor(props:PeerbookProps) {
         // copy all props to this
         Object.assign(this, props)
         this.pending = []
-        this.token = ""
         this.headers = new Map<string, string>()
         this.uid = ""
     }
 
-    async adminCommand(cmd: string, ...args: string[]): Promise<string> {
-        const c = args?[cmd, ...args]:[cmd]
-        if (!this.session) {
-            console.log("Admin command with no session")
-            try {
-                await this.connect()
-            } catch (e) {
-                console.log("Failed to connect to peerbook", e)
-                throw new Error("Failed to connect")
-            }
-        }   
-
+    async adminCommand(cmd: unknown): Promise<string> {
         return new Promise((resolve, reject) => {
-            const reply = []
-            this.session.openChannel(c, 0, 80, 24).then(channel  => {
-                channel.onClose = () => {
-                    const ret =  new TextDecoder().decode(new Uint8Array(reply))
-                    terminal7.log(`cmd ${cmd} ${args} closed with: ${ret}`)
-                    resolve(ret)
-                }
-                channel.onMessage = (data: Uint8Array) => {
-                    reply.push(...data)
-                }
-            }).catch(reject)
+            const complete = () => this.session.sendCTRLMsg(cmd, resolve, reject)
+            if (!this.session)
+                terminal7.pbConnect().then(complete).catch(reject)
+            else
+                complete()
         })
     }
 
@@ -107,7 +95,13 @@ export class PeerbookConnection {
             return
         }
         try {
-            repStr = await this.adminCommand("register", email, peerName)
+            repStr = await this.adminCommand({
+                type: "register",
+                args: {
+                     email: email,
+                     peer_name: peerName
+                }
+            })
         } catch (e) {
             this.shell.t.writeln(`${PB} Registration failed\n    Please try again and if persists, \`support\``)
             this.shell.printPrompt()
@@ -154,16 +148,14 @@ export class PeerbookConnection {
         }
         await Purchases.logIn({ appUserID: uid })
         this.shell.t.writeln("Validated! Use `install` to install on a server")
-        try {
-            await this.wsConnect()
-        } catch (e) {
-            this.shell.t.writeln("Failed to connect to PeerBook")
-            console.log("Failed to connect to PeerBook", e)
-        }
         this.shell.printPrompt()
     }
     async startPurchases() {
+        if (this.purchasesStarted)
+            return
+        this.purchasesStarted = true
         console.log("Starting purchases")
+        
         await Purchases.setMockWebResults({ shouldMockWebResults: true })
         const keys = {
             ios: 'appl_qKHwbgKuoVXokCTMuLRwvukoqkd',
@@ -177,6 +169,7 @@ export class PeerbookConnection {
             await Purchases.configure(props)
         } catch (e) {
             terminal7.log("Failed to setup purchases", e)
+            this.purchasesStarted = false
             return
         }
     }
@@ -199,9 +192,8 @@ export class PeerbookConnection {
 
     async onPurchasesUpdate(data) {
         console.log("onPurchasesUpdate", data)
-            // intialize the http headers with the bearer token
         if (this.updatingStore) {
-            terminal7.log("got anotyher evenm while updatingStore")
+            terminal7.log("got another event while updatingStore")
             return
         }
         const active = data.customerInfo.entitlements.active
@@ -214,7 +206,7 @@ export class PeerbookConnection {
         const uid = data.customerInfo.originalAppUserId
         terminal7.log("Subscribed to PB, uid: ", uid)
         try {
-            await this.connect(uid)
+            await this.connect({token: uid})
         } catch (e) {
             terminal7.log("Failed to connect", e)
         } finally {
@@ -231,35 +223,42 @@ export class PeerbookConnection {
                 resolve(this.uid)
                 return
             }
-            if (!this.session) {
-                console.log("get UID with No session")
-                reject("No session")
-                return
-            }
-            this.adminCommand("ping").then((uid: string) => {
+            this.adminCommand({type: "ping"}).then((uid: string) => {
                 this.uid = uid
                 resolve(uid)
             }).catch(reject)
         })
     }
-            
 
-    async connect(token?: string) {
+    async connect(params?: ConnectParams) {
         return new Promise<void>((resolve, reject) =>{
             if (this.session) {
-                if (this.uid == "TBD")
-                    reject("Unregistered")
-                else
+                const state = this.session.pc.connectionState
+                // check is connection in progress 
+                if ((state == "new") || (state == "connecting")) {
                     resolve()
-                return
+                    return
+                }
+                if (this.uid == "TBD") {
+                    reject("Unregistered")
+                    return
+                } else if (this.isOpen()) {
+                    resolve()
+                    return
+                }
+                console.log("Closing existing session connection state:", this.session.pc.connectionState)
+                this.session.close()
+                this.session = null
             }
-            // connect to admin over webrtc
+            this.startSpinner()
             const schema = terminal7.conf.peerbook.insecure? "http" : "https"
-            const url = `${schema}://${terminal7.conf.net.peerbook}/we`
-            if (token)
-                this.headers.set("Authorization", `Bearer ${token}`)
+            const url = `${schema}://${terminal7.conf.net.peerbook}/offer`
+            if (params?.token)
+                this.headers.set("Authorization", `Bearer ${params.token}`)
             const session = new HTTPWebRTCSession(url, this.headers)
             this.session = session
+            if (params?.firstMsg)
+                session.sendCTRLMsg(params.firstMsg, resolve, reject)
             session.onStateChange = (state, failure?) => {
                 if (state == 'connected') {
                     terminal7.log("Connected PB webrtc connection")
@@ -269,120 +268,56 @@ export class PeerbookConnection {
                             terminal7.log("Got TBD as uid")
                             reject("Unregistered")
                         } else {
-                            Purchases.logIn({ appUserID: uid })
-                            this.wsConnect().then(resolve).catch(reject)
+                            terminal7.run(() => Purchases.logIn({ appUserID: uid }), 10)
+                            resolve()
                         }
                     }).catch(e => {
                         this.session = null
                         terminal7.log("Failed to get user id", e.toString())
                         resolve()
-                    })
+                    }).finally(() => this.stopSpinner())
                     return
                 }
-                else if (state == 'failed') {
-                    this.stopSpinner()
+                else if (state == 'disconnected' || state == 'failed' || state == 'closed') {
+                    // TODO: retry connection
+                    // symbol = ERROR_HTML_SYMBOL
+                    if (this.session)
+                        this.session.close()
                     this.session = null
-                    console.log("PB webrtc connection failed", failure)
-                    if (this.uid == "TBD")
-                        reject("Unregistered")
-                    else
+                    this.stopSpinner()
+                    terminal7.log("PB webrtc connection failed", failure, this.uid)
+                    if (failure == Failure.Unauthorized) {
                         reject(failure)
+                    } else {
+                        let np: ConnectParams = {}
+                        if (params)
+                            // make a copy of params
+                            np = {...params}
+                        if (!np.count)
+                            np.count = 0
+                        else if (np?.count > 2) {
+                            reject(failure)
+                            return
+                        }
+                        setTimeout(() => {
+                            np.count++
+                            this.connect(np).then(resolve).catch(reject)
+                        }, 100)
+                    }
                     return
                 }
             }
-            session.connect()
+            session.onCMD = (msg) => this.onMessage(msg)
+            session.connect().catch(e => {
+                console.log("Failed to connect", e)
+                reject(e)
+            })
         })
     }
-    async wsConnect() {
-        console.log("peerbook wsConnect called")
-        let firstMessage = true
-        return new Promise<void>((resolve, reject) => {
-            if (this.ws != null) {
-                if (this.isOpen()) {
-                    resolve()
-                    return
-                }
-                this.ws.onopen = undefined
-                this.ws.onmessage = undefined
-                this.ws.onerror = undefined
-                this.ws.onclose = undefined
-                try {
-                    this.ws.close()
-                } catch (e) {
-                    terminal7.log("ws close failed", e)
-                }
-            }
-            const schema = this.insecure?"ws":"wss",
-                  url = encodeURI(`${schema}://${this.host}/ws?fp=${this.fp}`),
-                  statusE = document.getElementById("peerbook-status"),
-                  ws = new WebSocket(url)
-            this.ws = ws
-            ws.onmessage = ev => {
-                const m = JSON.parse(ev.data)
-                if (m.code >= 400) {
-                    console.log("peerbook connect got code", m.code)
-                    this.stopSpinner()
-                    statusE.innerHTML = ERROR_HTML_SYMBOL
-                    // reject(`PeerBook connection error ${m.code}`)
-                    return
-                } 
-                if (firstMessage) {
-                    this.stopSpinner()
-                    firstMessage = false
-                    resolve()
-                }
-                if (this.onUpdate)
-                    this.onUpdate(m)
-                else
-                    terminal7.log("got ws message but no onUpdate", m)
-            }
-            ws.onerror = ev =>  {
-                terminal7.log("peerbook ws error", ev.toString())
-                this.ws = null
-                this.stopSpinner()
-                statusE.innerHTML = ERROR_HTML_SYMBOL
-                reject()
-            }
-            ws.onclose = (ev) => {
-                terminal7.log("peerbook ws closed", ev)
-                this.ws = null
-                this.stopSpinner()
-                if (statusE.innerHTML != ERROR_HTML_SYMBOL)
-                    statusE.innerHTML = CLOSED_HTML_SYMBOL
-            }
-            ws.onopen = () => {
-                console.log("peerbook ws open")
-                if ((this.pbSendTask == null) && (this.pending.length > 0))
-                    this.pbSendTask = setTimeout(() => {
-                        this.pending.forEach(m => {
-                            console.log("sending ", m)
-                            ws.send(JSON.stringify(m))
-                        })
-                        this.pbSendTask = null
-                        this.pending = []
-                    }, 10)
-            }
-        })
-    }
-    send(m) {
-        // null message are used to trigger connection, ignore them
-        const state = this.ws ? this.ws.readyState : WebSocket.CLOSED
-        if (state == WebSocket.OPEN) {
-            this.ws.send(JSON.stringify(m))
-        } else {
-            terminal7.log("peerbook send called with state", state)
-            this.pending.push(m)
-        }
+    notify(msg: string) {
+        terminal7.notify(PB + " " + msg)
     }
     close() {
-        if (this.ws) {
-            this.ws.onopen = undefined
-            this.ws.onmessage = undefined
-            this.ws.onerror = undefined
-            this.ws.onclose = undefined
-            this.ws.close()
-            this.ws = null
-        }
         if (this.session) {
             this.session.onStateChange = undefined
             this.session.close()
@@ -390,7 +325,7 @@ export class PeerbookConnection {
         }
     }
     isOpen() {
-        return (this.ws ? this.ws.readyState === WebSocket.OPEN : false)
+        return (this.session && this.session.isOpen())
     }
     syncPeers(gates: Array<Gate>, nPeers: Array<Peer>) {
         const ret = []
@@ -430,22 +365,31 @@ export class PeerbookConnection {
             } catch(e) {
                 return
             }
-            if (!this.session) {
-                console.log("verifyFP: creating new session")
-                await this.connect()
-            }
-            let data
             try {
-                data = await this.adminCommand("verify", fp, otp)
+                await this.adminCommand({
+                    type: "verify",
+                    args: {
+                        target: fp, 
+                        otp: otp
+                    }
+                })
+                validated = true
             } catch(e) {
-                console.log("verifyFP: failed to verify", e.toString())
-                this.echo("Failed to verify, please try again")
-                continue
+                if (e.toString().match(/invalid/i)) 
+                    this.echo("Invalid OTP, please try again")
+                else {
+                    console.log("verifyFP: failed to verify", e.toString())
+                    this.echo("Failed to verify, please try again")
+                } 
             }
-            console.log("Got verify reply", data[0])
-            validated = data[0] == "1"
-            if (!validated)
-                this.echo("Invalid OTP, please try again")
+        } 
+        const gate = terminal7.gates.find(g => g.fp === fp) 
+        if (gate) {
+            gate.verified = true
+            gate.updateNameE()
+        } else {
+            terminal7.log("Failed to update gate status as it wasn't found")
+            terminal7.gates.forEach((g,i: number) => terminal7.log(`gate ${i}:`, g.fp))
         }
     }
     purchase(aPackage): Promise<void> {
@@ -482,5 +426,72 @@ export class PeerbookConnection {
         }, 200)
         statusE.innerHTML = OPEN_HTML_SYMBOL
         statusE.style.opacity = "0"
+    }
+    // handle incomming peerbook messages
+    async onMessage(m) {
+        const statusE = document.getElementById("peerbook-status")
+        terminal7.log("got pb message", m)
+        if (m["code"] !== undefined) {
+            if (m["code"] == 200) {
+                statusE.innerHTML = OPEN_HTML_SYMBOL
+                this.uid = m["text"]
+            } else
+                // TODO: update statusE
+                this.notify(`${m["text"]}`)
+            return
+        }
+        if (m["peers"] !== undefined) {
+            terminal7.gates = this.syncPeers(terminal7.gates, m.peers)
+            terminal7.map.refresh()
+            return
+        }
+        // TODO: is this needed?
+        if (m["verified"] !== undefined) {
+            if (!m["verified"])
+                this.notify(`Unverified client. Please check you email.`)
+            return
+        }
+        const fp = m.source_fp
+        // look for a gate where g.fp == fp
+        const myFP = await terminal7.getFingerprint()
+        if (fp == myFP) {
+            return
+        }
+        let lookup =  terminal7.gates.filter(g => g.fp == fp)
+
+        if (!lookup || (lookup.length != 1)) {
+            if (m["peer_update"] !== undefined) {
+                lookup =  terminal7.gates.filter(g => g.name == m.peer_update.name)
+            }
+            if (!lookup || (lookup.length != 1)) {
+                terminal7.log("Got a pb message with unknown peer: ", fp)
+                return
+            }
+        }
+        const g = lookup[0]
+
+        if (m["peer_update"] !== undefined) {
+            g.online = m.peer_update.online
+            g.verified = m.peer_update.verified
+            if (g.name != m.peer_update.name) {
+                g.name = m.peer_update.name
+                terminal7.storeGates()
+            }
+            await g.updateNameE()
+            return
+        }
+        if (!g.session) {
+            console.log("session is close ignoring message", m)
+            return
+        }
+        const session = g.session as PeerbookSession
+        if (m.candidate !== undefined) {
+            session.peerCandidate(m.candidate)
+            return
+        }
+        if (m.answer !== undefined ) {
+            session.peerAnswer(m.answer)
+            return
+        }
     }
 }

@@ -300,9 +300,11 @@ async function connectCMD(shell:Shell, args: string[]) {
         })
         done = true
     })
+    terminal7.ignoreAppEvents = true
     while (!done) {
         await new Promise(r => setTimeout(r, 100))
     }
+    terminal7.ignoreAppEvents = false
 }
 
 async function addCMD(shell: Shell) {
@@ -499,11 +501,13 @@ async function editCMD(shell:Shell, args: string[]) {
             fFields = fFields.filter((_, i) => enabled[i])
             res = await shell.runForm(fFields, "text")
             if (isPB && enabled[0]) {
-                const code = await terminal7.pb.adminCommand("rename", gate.fp, res[0])
-                if (code != "1") {
-                    shell.t.writeln("Failed to rename host")
-                    res[0] = gate.name
-                }
+                await terminal7.pb.adminCommand({
+                    type: "rename",
+                    args: {
+                       target: gate.fp,
+                       name: res[0]
+                    }
+                })
             }
             gateAttrs.filter((_, i) => enabled[i])
                      .forEach((k, i) => 
@@ -518,7 +522,13 @@ async function editCMD(shell:Shell, args: string[]) {
             if (isPB) {
                 const otp = await shell.askValue("OTP")
                 try {
-                    await terminal7.pb.adminCommand("delete", gate.fp, otp)
+                    await terminal7.pb.adminCommand({
+                        type: "delete",
+                        args: {
+                            target: gate.fp,
+                            otp: otp
+                        }
+                    })
                 } catch (e) {
                     console.log("Failed to delete host", e)
                     shell.t.writeln("Failed to delete host")
@@ -654,13 +664,16 @@ async function subscribeCMD(shell: Shell) {
             terminal7.ignoreAppEvents = true
             try {
                 await terminal7.pb.purchase(p.p)
-                shell.stopWatchdog()
             } catch(e) {
-                shell.stopWatchdog()
                 console.log("purchase error", e)
+                shell.stopWatchdog()
                 shell.t.writeln("Error purchasing, please try again or `support`")
                 return
+            } finally {
+                terminal7.ignoreAppEvents = false
             }
+            shell.stopWatchdog()
+
         }
     }
     if (!terminal7.pb.isOpen()) {
@@ -671,7 +684,7 @@ async function subscribeCMD(shell: Shell) {
         }
         terminal7.pb.startSpinner()
         try {
-            await terminal7.pb.connect(customerInfo.originalAppUserId)
+            await terminal7.pb.connect({token: customerInfo.originalAppUserId})
         } catch(e) {
             if (e == "Unregistered") {
                 shell.t.writeln("You are subscribed, please register:")
@@ -971,13 +984,17 @@ async function loginCMD(shell: Shell) {
         return
     }
     shell.t.writeln(`PeerBook response: ${await res.text()}`)
-    try {
-        terminal7.pb.wsConnect()
-    } catch(e) {}
     let timedOut = false
     shell.startWatchdog(180000).catch(() => timedOut = true)
-    while (!terminal7.pb.uid && !timedOut)
-        await new Promise(r => setTimeout(r, 200))
+    while (!terminal7.pb.uid && !timedOut) {
+        await new Promise(r => setTimeout(r, 2000))
+        try {
+            await terminal7.pbConnect()
+        } catch(e) {
+            terminal7.log("Failed to connect to PeerBook", e)
+        }
+
+    }
     if (timedOut) {
         shell.t.writeln("Login timed out, please try again")
         return

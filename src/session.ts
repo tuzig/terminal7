@@ -5,6 +5,8 @@ export type ChannelID = number
 export type State = "new" | "connecting" | "connected" | "reconnected" | "disconnected" | "failed" |
     "unauthorized" | "wrong password" | "closed"
 
+export type Marker = number | null
+
 // possible reasons for a failure
 export enum Failure {
     NotImplemented='Not Implemented',
@@ -21,6 +23,7 @@ export enum Failure {
     DataChannelLost="Data Channel Lost",
     FailedToConnect="Failed To Connect",
     Overrun='Overrun',
+    InternalError='Internal Error',
 }
 
 export interface Event {
@@ -48,10 +51,10 @@ export interface Session {
     close(): void
     getPayload(): Promise<unknown | void>
     setPayload(payload: unknown): Promise<void>
-    reconnect(marker?: number, publicKey?: string, privateKey?: string): Promise<unknown | void>
-    disconnect(): Promise<number | void>
-    connect(marker?: number, publicKey?: string, privateKey?: string): Promise<void>
-    connect(marker?: number, noCDC?: boolean): Promise<void>
+    reconnect(marker?: Marker, publicKey?: string, privateKey?: string): Promise<unknown | void>
+    disconnect(): Promise<number | null>
+    connect(marker?: Marker, publicKey?: string, privateKey?: string): Promise<void>
+    connect(marker?: Marker, noCDC?: boolean): Promise<void>
     fail(failure?: Failure): void
 }
 
@@ -89,15 +92,17 @@ export abstract class BaseSession implements Session {
         return null
     }
     // TODO: get it to throw "Not Implemented"
+    // eslint-disable-next-line
     async setPayload(payload) {
         console.log(`ignoring set payload: ${JSON.stringify(payload)}`)
     }
-    async reconnect(marker?: number, publicKey?: string, privateKey?: string): Promise<unknown | void> {
+    // eslint-disable-next-line
+    async reconnect(marker?: Marker, publicKey?: string, privateKey?: string): Promise<unknown | void> {
         throw "Not Implemented"
     }
 
     // base disconnect is rejected as it's not supported
-    disconnect(): Promise<void | number> {
+    disconnect(): Promise<null | number> {
         return new Promise((resolve, reject) => {
             reject()
         })
@@ -112,7 +117,7 @@ export abstract class BaseSession implements Session {
     // for reconnect
     abstract openChannel(id: number | string | string[], parent?: number, sx?: number, sy?: number): Promise<Channel>
 
-    abstract connect(marker?: number, publicKey?: string, privateKey?: string): Promise<void>
-    abstract connect(marker?: number, noCDC?: boolean): Promise<void>
+    abstract connect(marker?: Marker, publicKey?: string, privateKey?: string): Promise<void>
+    abstract connect(marker?: Marker, noCDC?: boolean): Promise<void>
 
 }
