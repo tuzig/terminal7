@@ -151,10 +151,8 @@ export class PeerbookConnection {
         this.shell.printPrompt()
     }
     async startPurchases() {
-        /*
         if (this.purchasesStarted)
             return
-            */
         console.log("Starting purchases")
         
         await Purchases.setMockWebResults({ shouldMockWebResults: true })
