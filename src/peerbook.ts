@@ -153,6 +153,7 @@ export class PeerbookConnection {
     async startPurchases() {
         if (this.purchasesStarted)
             return
+        this.purchasesStarted = true
         console.log("Starting purchases")
         
         await Purchases.setMockWebResults({ shouldMockWebResults: true })
@@ -168,9 +169,9 @@ export class PeerbookConnection {
             await Purchases.configure(props)
         } catch (e) {
             terminal7.log("Failed to setup purchases", e)
+            this.purchasesStarted = false
             return
         }
-        this.purchasesStarted = true
     }
 
     /*
