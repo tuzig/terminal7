@@ -290,6 +290,11 @@ export class PeerbookConnection {
                     if (failure == Failure.Unauthorized) {
                         reject(failure)
                     } else {
+                        if (!terminal7.lastActiveState) {
+                            reject(failure)
+                            return
+                        }
+
                         let np: ConnectParams = {}
                         if (params)
                             // make a copy of params

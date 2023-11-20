@@ -433,11 +433,13 @@ export class Shell {
             return
         } 
         if (terminal7.recovering) {
-            terminal7.log("retrying...")
+            terminal7.log("recovering...", gate.name)
             terminal7.recovering = false
             this.startWatchdog(terminal7.conf.net.timeout).catch(e => gate.handleFailure(e))
             try {
                 await gate.reconnect()
+                console.log("reconnect succeeded")
+                return
             } catch (e) {
                 terminal7.log("reconnect failed", e)
                 if (e == Failure.Unauthorized) {
