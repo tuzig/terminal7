@@ -410,7 +410,7 @@ export class Shell {
      * onDisconnect is called when a gate disconnects.
      */
     async onDisconnect(gate: Gate, wasSSH?: boolean) {
-        terminal7.log("onDisconnect", gate.name)
+        terminal7.log("onDisconnect", gate.name, wasSSH)
         this.stopWatchdog()
         if (wasSSH) {
             this.escapeActiveForm()
@@ -420,6 +420,7 @@ export class Shell {
                 toConnect = terminal7.pb.isOpen()?await this.offerInstall(gate, "I'm feeling lucky"):
                     await this.offerSub(gate)
             } catch(e) {
+                terminal7.log("offer & connect failed", e)
                 return
             }
             if (toConnect) {
@@ -438,6 +439,7 @@ export class Shell {
             this.startWatchdog(terminal7.conf.net.timeout).catch(e => gate.handleFailure(e))
             try {
                 await gate.reconnect()
+                return
             } catch (e) {
                 terminal7.log("reconnect failed", e)
                 if (e == Failure.Unauthorized) {

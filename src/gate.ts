@@ -300,8 +300,10 @@ export class Gate {
             }
             if (!isSSH && !isNative) {
                 this.session.reconnect(this.marker)
-                .then(layout => handleLauout(layout))
-                .catch(() => {
+                .then(layout => {
+                    handleLauout(layout)
+                     resolve()
+                }).catch(() => {
                     if (this.session) {
                         this.session.close()
                         this.session = null
@@ -316,6 +318,7 @@ export class Gate {
                     this.session.close()
                     this.session = null
                 }
+                this.t7.log("reconnect failed, calling the shell to handle it", isSSH)
                 this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
             }
             this.t7.readId().then(({publicKey, privateKey}) => {
@@ -323,8 +326,7 @@ export class Gate {
                 .then(layout => handleLauout(layout))
                 .catch(e => {
                     closeSessionAndDisconnect()
-                    this.t7.log("reconnect failed, calling the shell to handle it", isSSH, e)
-                    reject(e)
+                    return
                 })
             }).catch((e) => {
                 this.t7.log("failed to read id", e)
@@ -595,6 +597,7 @@ export class Gate {
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
                         this.t7.log("Closing gate after updating to empty state")
+                        this.marker = null
                         this.close()
                     }
                })
@@ -677,9 +680,12 @@ export class Gate {
         const overPB = this.fp && !this.onlySSH && this.online
         if (overPB) {
             this.notify("🎌  PeerBook")
+            /*
             if (!terminal7.pb.isOpen()) {
                 await terminal7.pbConnect()
-            }
+            } */
+            if (this.session)
+                this.session.close()
             this.session = new PeerbookSession(this.fp)
         } else {
             if (isNative)  {

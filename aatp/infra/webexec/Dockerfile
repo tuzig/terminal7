@@ -11,4 +11,4 @@ ENV GOBIN=/usr/local/bin
 RUN go install -v github.com/tuzig/webexec@$REF
 RUN mkdir /auth && chown runner:runner /auth
 WORKDIR /home/runner
-ENTRYPOINT ["bash", "-x", "/scripts/docker_entry.sh"]
+ENTRYPOINT ["bash", "/scripts/docker_entry.sh"]

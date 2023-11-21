@@ -118,22 +118,10 @@ export class WebRTCSession extends BaseSession {
                 return
             const state = this.pc.connectionState
             console.log("new connection state", state, marker)
-            if ((state === "connected") && (marker != null)) {
-                this.sendCTRLMsg({
-                    type: "restore",
-                    args: { marker }},
-                () => {
-                    this.onStateChange("connected")
-                },
-                () => {
-                    this.onStateChange("failed", Failure.BadMarker)
-                })
-            } else  {
-                if (state === 'failed')
-                    this.closeChannels()
-                if (this.onStateChange)
-                    this.onStateChange(state)
-            }
+            if (state === 'failed')
+                this.closeChannels()
+            if ((state !== "connected") || (marker == null))
+                this.onStateChange(state)
         }
         this.pc.onicecandidateerror = (ev: RTCPeerConnectionIceErrorEvent) => {
             console.log("icecandidate error", ev.errorCode, ev.errorText)
@@ -165,7 +153,14 @@ export class WebRTCSession extends BaseSession {
         }
         if (noCDC)
             return
-        this.openCDC()
+
+        if (marker != null) {
+            this.sendCTRLMsg({ type: "restore", args: { marker }},
+                () => this.onStateChange("connected"),
+                () => this.onStateChange("failed", Failure.BadMarker)
+            )
+        }
+        await this.openCDC()
     }
     isOpen(): boolean {
         return this.pc != null && this.pc.connectionState == "connected"
@@ -229,16 +224,16 @@ export class WebRTCSession extends BaseSession {
     async reconnect(marker?: Marker , publicKey?: string, privateKey?: string): Promise<void> {
         return new Promise((resolve, reject) => { 
             console.log("in reconnect", this.cdc, this.cdc.readyState)
-            if (!this.isOpen())
-                return this.connect(marker, publicKey, privateKey)
-            
-            if (!this.cdc || this.cdc.readyState != "open")
-                this.openCDC()
             if (marker != null) {
                 this.sendCTRLMsg({ type: "restore", args: { marker }}, resolve,
                                  () => reject("Restore failed"))
-            } else
-                this.getPayload().then(resolve).catch(reject)
+            }
+            if (!this.isOpen())
+                return this.connect(marker, publicKey, privateKey)
+            else if (!this.cdc || this.cdc.readyState != "open")
+                this.openCDC()
+            this.getPayload().then(resolve).catch(reject)
+            
         })
     }
     openCDC(): Promise<void> {
@@ -251,7 +246,7 @@ export class WebRTCSession extends BaseSession {
             const cdc = this.pc.createDataChannel('%')
             this.cdc = cdc
             cdc.onopen = () => {
-                this.t7.log(">>> cdc opened")
+                this.t7.log(">>> cdc opened", this.pendingCDCMsgs.length)
                 if (this.pendingCDCMsgs.length > 0)
                     // TODO: why the time out? why 100milli?
                     this.t7.run(() => {
@@ -259,7 +254,7 @@ export class WebRTCSession extends BaseSession {
                         this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m[0], m[1], m[2]))
                         this.pendingCDCMsgs = []
                         resolve()
-                    }, 500)
+                    }, 10)
                 else
                     resolve()
             }
