@@ -210,7 +210,7 @@ export class Terminal7 {
             return
         }
         this.lastActiveState = active
-        this.log("app state changed", this.ignoreAppEvents)
+        this.log("app state changed", this.lastActiveState, this.ignoreAppEvents)
         if (this.ignoreAppEvents) {
             terminal7.log("ignoring app event", active)
             return
@@ -639,8 +639,7 @@ export class Terminal7 {
                             `${PB} timed out, please retry with \`login\``)
                     gate.stopBoarding()
                 })
-            } else
-                this.recovering = false
+            }
             if (toReconnect) {
                 try {
                     await gate.reconnect()

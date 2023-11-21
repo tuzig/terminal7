@@ -255,8 +255,8 @@ export class PeerbookConnection {
             if (params?.firstMsg)
                 session.sendCTRLMsg(params.firstMsg, resolve, reject)
             session.onStateChange = (state, failure?) => {
+                terminal7.log("New PB connection state", state, failure)
                 if (state == 'connected') {
-                    terminal7.log("Connected PB webrtc connection")
                     // send a ping to get the uid
                     this.getUID().then(uid => {
                         if (uid == "TBD") {
@@ -274,8 +274,6 @@ export class PeerbookConnection {
                     return
                 }
                 else if (state == 'disconnected' || state == 'failed' || state == 'closed') {
-                    // TODO: retry connection
-                    // symbol = ERROR_HTML_SYMBOL
                     if (this.session)
                         this.session.close()
                     this.session = null
@@ -286,11 +284,10 @@ export class PeerbookConnection {
                     } else {
                         let np: ConnectParams = {}
                         if (params)
-                            // make a copy of params
                             np = {...params}
                         if (!np.count)
-                            np.count = 0
-                        else if (np?.count > 2) {
+                            np.count = 1
+                        else if (np?.count > this.conf.net.retries) {
                             reject(failure)
                             return
                         }
