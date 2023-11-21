@@ -655,7 +655,7 @@ async function subscribeCMD(shell: Shell) {
             }
         } else {
             const p = packages.find(p => p.prompt == choice)
-            shell.t.writeln("Thank you! directing you to the store")
+            shell.t.writeln("Thank you 🙏 directing you to the store")
             shell.startWatchdog(120000).catch(e => {
                 shell.t.writeln("Sorry, subscribe command timed out")
                 shell.t.writeln("Please try again or `support`")
