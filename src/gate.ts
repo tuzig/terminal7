@@ -340,19 +340,23 @@ export class Gate {
     async connect(onConnected = () => this.load()) {
         
         this.onConnected = onConnected
-        this.t7.activeG = this // TODO: move this out of here
         this.connectionFailed = false
-        document.title = `Terminal 7: ${this.name}`
+        document.title = `${this.name} :: Terminal7`
         
         if (this.session) {
             // TODO: check session's status
-            // hide the tower if needed
             onConnected()
             return
         }
-        this.updateNameE()
-        return this.completeConnect()
-
+        try {
+            await this.completeConnect()
+        } catch(e) {
+            this.notify(`${PB} Connection failed: ${e}`)
+            return
+        } finally {
+            this.updateNameE()
+        }
+        this.t7.activeG = this // TODO: move this out of here
     }
 
     notify(message) {
