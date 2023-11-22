@@ -187,12 +187,12 @@ insecure = true
         await expect(pane).toBeVisible()
         await page.evaluate(async() => 
             await window.terminal7.activeG.activeW.activeP.d.send(
-                "seq 10; sleep 1; seq 10 20\n"))
+                "seq 10; sleep 1; seq 10 200\n"))
         await page.evaluate(async() =>
             window.terminal7.onAppStateChange({isActive: false}))
-        context.setOffline(false)
-        await sleep(7000)
         context.setOffline(true)
+        await sleep(7000)
+        context.setOffline(false)
         await page.evaluate(async() =>
             window.terminal7.onAppStateChange({isActive: true}))
         await expect(page.locator('.pane')).toHaveCount(1)
