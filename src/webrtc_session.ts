@@ -441,7 +441,6 @@ export class PeerbookSession extends WebRTCSession {
             this.onStateChange("failed", Failure.InternalError)
             return
         }
-        this.pc.setLocalDescription(d)
         try {
             await terminal7.pb.adminCommand({type: "offer",
                                       args: {
@@ -451,7 +450,9 @@ export class PeerbookSession extends WebRTCSession {
         } catch(e) {
             terminal7.log("failed to send offer", e)
             this.onStateChange("failed", e)
+            return
         }
+        this.pc.setLocalDescription(d)
     }
     peerAnswer(offer) {
         const sd = new RTCSessionDescription(offer)
