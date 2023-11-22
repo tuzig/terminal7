@@ -287,7 +287,7 @@ export class PeerbookConnection {
                             np = {...params}
                         if (!np.count)
                             np.count = 1
-                        else if (np?.count > this.conf.net.retries) {
+                        else if (np?.count > terminal7.conf.net.retries) {
                             reject(failure)
                             return
                         }

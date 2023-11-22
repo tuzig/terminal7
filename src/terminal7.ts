@@ -585,7 +585,6 @@ export class Terminal7 {
      */
     disengage(): Promise<void> {
         return new Promise(resolve => {
-            this.pbClose()
             let count = 0
             if (this.activeG && this.activeG.boarding)
                 this.notify("🌜 Benched", true)
@@ -629,7 +628,7 @@ export class Terminal7 {
             const toReconnect = gate && gate.boarding && (firstGate == "nope") && this.recovering
             console.log("toReconnect", toReconnect, "firstGate", firstGate)
             if (toReconnect ) {
-                this.notify("🌞 Recovering")
+                this.notify("🌞 Reconnecting")
                 this.map.shell.startWatchdog().catch(() => {
                     if (this.pb.isOpen())
                         gate.notify("Timed out")
@@ -639,8 +638,6 @@ export class Terminal7 {
                             `${PB} timed out, please retry with \`login\``)
                     gate.stopBoarding()
                 })
-            }
-            if (toReconnect) {
                 try {
                     await gate.reconnect()
                 } catch(e) {
@@ -651,13 +648,7 @@ export class Terminal7 {
                         this.map.shell.stopWatchdog()
                         this.map.shell.printPrompt()
                 }
-            } else {
-                try {
-                    await this.pbConnect()
-                } catch(e) {
-                    this.log("pbConnect failed", e)
-                }
-            }
+            } 
         } else {
             this.disengage().finally(() => this.recovering = true)
         }

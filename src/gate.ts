@@ -202,6 +202,7 @@ export class Gate {
         // KeyRejected and WrongPassword are "light failure"
         const active = this == this.t7.activeG
         const wasSSH = this.session && this.session.isSSH && this.boarding
+        const noChannels = (this.session as PeerbookSession).channels?.size === 0
         if (!active || this.connectionFailed)
             return
         // this.map.showLog(true)
@@ -245,8 +246,12 @@ export class Gate {
                 this.connect(this.onConnected)
                 return
 
-            case undefined:
             case Failure.DataChannelLost:
+                // do nothing if we're being benched
+                if (noChannels) {
+                    return
+                }
+            case undefined:
                 if (this.session) {
                     this.session.close()
                     this.session = null
@@ -680,10 +685,6 @@ export class Gate {
         const overPB = this.fp && !this.onlySSH && this.online
         if (overPB) {
             this.notify("🎌  PeerBook")
-            /*
-            if (!terminal7.pb.isOpen()) {
-                await terminal7.pbConnect()
-            } */
             if (this.session)
                 this.session.close()
             this.session = new PeerbookSession(this.fp)
