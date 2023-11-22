@@ -329,7 +329,7 @@ export class Gate {
             this.t7.readId().then(({publicKey, privateKey}) => {
                 this.session.reconnect(this.marker, publicKey, privateKey)
                 .then(layout => handleLauout(layout))
-                .catch(e => {
+                .catch(() => {
                     closeSessionAndDisconnect()
                     return
                 })
