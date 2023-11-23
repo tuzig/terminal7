@@ -71,4 +71,20 @@ exit\n`)
         })
     })
 }
-
+// getLines returns an array of lines from the active pane
+// it accepts two optional arguments, start and end, which are
+// the line numbers to start and end at. If start is not provided,
+// it defulat to -1 (the line before the cursor). If end is not
+// provided, it defaults to -1 (the line before the cursor).
+export async function getLines(page, start = -1, end = -1): Array<string> {
+    return await page.evaluate(({start, end}) => {
+        const buffer = window.terminal7.activeG.activeW.activeP.t.buffer.active
+        const ret: Array<string> = []
+        const b = buffer.cursorY + buffer.viewportY
+        for (let i = b+start; i <= b+end; i++) {
+            const line = buffer.getLine(i).translateToString()
+            ret.push(line)
+        }
+        return ret
+    }, {start, end})
+}

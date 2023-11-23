@@ -1,7 +1,7 @@
 import { test, expect, Page, BrowserContext } from '@playwright/test'
 import * as fs from 'fs'
 import waitPort from 'wait-port'
-import { connectFirstGate, reloadPage, sleep } from '../common/utils'
+import { connectFirstGate, reloadPage, getLines, sleep } from '../common/utils'
 
 
 const local = process.env.LOCALDEV !== undefined,
@@ -112,15 +112,18 @@ pinch_max_y_velocity = 0.1`
         await expect(page.locator('.pane')).toHaveCount(1)
     })
     test('disengage and reconnect', async() => {
+
+        await reloadPage(page)
+        await connectFirstGate(page)
+        await sleep(500)
         await page.evaluate(async() => {
             const gate = window.terminal7.activeG
             gate.activeW.activeP.d.send("seq 10; sleep 1; seq 10 100\n")
         })
         await sleep(500)
         await page.screenshot({ path: `/result/second.png` })
-        const lines = await page.evaluate(() =>
-           window.terminal7.activeG.activeW.activeP.t.buffer.active.length)
-        await expect(lines).toEqual(38)
+        let lastLine = (await getLines(page, -1, -1))[0]
+        expect(lastLine).toMatch(/^10 *$/)
         await page.evaluate(async() => {
             const gate = window.terminal7.activeG
             gate.disengage().then(() => {
@@ -136,19 +139,8 @@ pinch_max_y_velocity = 0.1`
         // connectFirstGate()
         await expect(page.locator('.pane')).toHaveCount(1)
         await sleep(500)
-        const lines2 = await page.evaluate(() => {
-           const buffer = window.terminal7.activeG.activeW.activeP.t.buffer.active,
-                 ret = buffer.length
-            console.log(">>> -------  start of buffeer --------")
-           for (let i=0; i<ret; i++)
-               console.log(buffer.getLine(i).translateToString
-())
-            console.log(">>> -------  end of buffeer --------")
-            return (ret)
-        })
-        await page.screenshot({ path: `/result/fourth.png` })
-        // TODO: expect(lines2).toEqual(103)
-        expect(lines2).toBeGreaterThan(100)
+        lastLine = (await getLines(page, -1, -1))[0]
+        expect(lastLine).toMatch(/^100 *$/)
     })
     test('after disengage & reconnect, a a pane can be close', async() => {
         await page.screenshot({ path: `/result/fifth.png` })
