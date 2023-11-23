@@ -206,10 +206,14 @@ async function connectCMD(shell:Shell, args: string[]) {
             shell.t.writeln("Host is offline, better try another host")
             return
         }
-    }
-    if (Capacitor.isNativePlatform())  {
-        if (!gate.fp && !gate.username) {
-            try {
+    } else {
+        if (Capacitor.isNativePlatform())  {
+            let dirty = false
+            if (!gate.addr) {
+                gate.addr = await shell.askValue("Host address")
+                dirty = true
+            }
+            if (!gate.username) {
                 gate.username = await shell.askValue("Username")
             } catch (e) {
                 gate.notify("Failed to get username")
