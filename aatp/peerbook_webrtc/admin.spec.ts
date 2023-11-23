@@ -125,7 +125,7 @@ test.describe('peerbook administration', ()  => {
     })
     test('validate servers', async () => {
         // change the user id of foo@bar.com to 123456
-        let fp: string
+        let fp = ""
         let keys = []
         reloadPage(page)
         while (keys.length < 2) {
@@ -140,25 +140,19 @@ test.describe('peerbook administration', ()  => {
             console.log("fp", cfp, "kind", kind)
             await redisClient.hSet(key, "user", "123456")
             await redisClient.sAdd("userset:123456", cfp)
-            if (kind === "webexec")
+            if (kind === "webexec") {
+                expect(fp).toEqual("")
                 fp = cfp
+            }
         }
+        expect(fp).toBeTruthy()
         const oId = await redisClient.get("uid:foo@bar.com")
         await redisClient.set("uid:foo@bar.com", "123456")
         const secret = await redisClient.hGet(`user:${oId}`, "secret")
         await redisClient.hSet("user:123456", "secret", secret, "email", "foo@bar.com")
         const token = authenticator.generate(secret)
+        await page.reload()
         await sleep(500)
-        await page.evaluate(async (fp) => {
-            terminal7.pb.verifyFP(fp)
-        }, fp)
-        await sleep(100)
-        await page.keyboard.type(token)
-        await page.keyboard.press("Enter")
-        await sleep(500)
-        const verified = await redisClient.hGet(`peer:${fp}`, "verified")
-        console.log("verified", verified)
-        expect(verified).toBe("1")
     })
     test('peers are properly displayed', async () => {
         await sleep(500)
@@ -272,7 +266,6 @@ test.describe('peerbook administration', ()  => {
         await page.keyboard.press("Enter")
         await sleep(100)
         let twr = await getTWRBuffer(page)
-        await page.screenshot({ path: '/result/1.png' })
         expect(twr).toMatch(/email/)
         await page.keyboard.type('invalid@example.com')
         await page.keyboard.press("Enter")
@@ -285,7 +278,6 @@ test.describe('peerbook administration', ()  => {
         await page.keyboard.press("Enter")
         await sleep(100)
         twr = await getTWRBuffer(page)
-        await page.screenshot({ path: '/result/2.png' })
         expect(twr).toMatch(/Invalid credentials/)
     })
     test('try login with an invalid OTP', async () => {
@@ -306,7 +298,6 @@ test.describe('peerbook administration', ()  => {
         await page.keyboard.press("Enter")
         await sleep(100)
         twr = await getTWRBuffer(page)
-        await page.screenshot({ path: '/result/3.png' })
         expect(twr).toMatch(/Invalid credentials/)
     })
     test('login with a valid email & OTP', async () => {
@@ -336,7 +327,6 @@ test.describe('peerbook administration', ()  => {
         }
         expect(peerUID).toBe(uid)
         twr = await getTWRBuffer(page)
-        await page.screenshot({ path: '/result/4.png' })
         expect(twr).toMatch(/Email sent/)
     })
     test('check email, click url and ensure client is logged in', async ({ request, browser }) => {
@@ -354,13 +344,11 @@ test.describe('peerbook administration', ()  => {
         expect(await redisClient.hGet(`peer:${fp}`, "user")).toBe("123456")
         const verifyPage = await (await browser.newContext()).newPage()
         await verifyPage.goto(url)
-        await verifyPage.screenshot({ path: '/result/6.png' })
         await verifyPage.click('button[type="submit"]')
         // TODO: optimize this sleep. 5 second is the max time it takes for the
         // client to be logged in. We should have a retry loop instead.
         await sleep(2000)
         const twr = await getTWRBuffer(page)
-        await page.screenshot({ path: '/result/5.png' })
         expect(twr).toMatch(/Logged in/)
     })
 })

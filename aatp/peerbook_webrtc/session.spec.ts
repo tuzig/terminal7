@@ -126,9 +126,8 @@ insecure = true
     })
     test('a gate restores after reload', async() => {
         await reloadPage(page)
-        await sleep(500)
         connectFirstGate(page)
-        await sleep(500)
+        await sleep(1000)
         await page.screenshot({ path: `/result/second.png` })
         await expect(page.locator('.pane')).toHaveCount(2)
         await expect(page.locator('.windows-container')).toBeVisible()
