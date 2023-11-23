@@ -67,13 +67,12 @@ h3 { margin: 0.2em; color: var(--local-border); }
 
 #terminal7 {
     height: 100%; 
+	overflow-x: auto;
+}
+#terminal7 *, #navbar * {
     user-select: none;
     -ms-user-select: none;
     -webkit-user-select: none;
-	overflow-x: auto;
-}
-#terminal7 * {
-    user-select: none;
 }
 button {
     border: 0;
@@ -201,9 +200,6 @@ a {
     bottom: 0;
     padding: 18px 0;
     position: fixed;
-}
-#navbar * {
-    user-select: none;
 }
 nav button {
     flex: 1;
