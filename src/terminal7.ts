@@ -798,8 +798,9 @@ export class Terminal7 {
             if ((!isPaneShown && !bhb.parentElement?.classList.contains('off')) || isPaneShown || funcName === 'add')
                 bhb.classList[funcName]('hidden')
         })
-        if (isPaneShown)
-            document.getElementById('keys-help').classList[funcName]('hidden')
+        if (isPaneShown) {
+            this.focus()
+        }
         this.activeG?.activeW?.activeP?.hideSearch()
     }
 
@@ -1256,10 +1257,11 @@ export class Terminal7 {
                 name: "localhost",
             }]
         }
-        gates.forEach(g => {
-            g.store = true
-            this.addGate(g).e.classList.add("hidden")
-        })
+        if (gates)
+            gates.forEach(g => {
+                g.store = true
+                this.addGate(g).e.classList.add("hidden")
+            })
         this.map.refresh()
     }
 }
