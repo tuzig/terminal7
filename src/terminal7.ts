@@ -795,7 +795,7 @@ export class Terminal7 {
             this.createHelpBubbles()
         const funcName = this.isHelpShown ? 'remove' : 'add'
         this.buttonHelpBubbles.forEach(bhb => {
-            if ((!isPaneShown && !bhb.parentElement.classList.contains('off')) || isPaneShown || funcName === 'add')
+            if ((!isPaneShown && !bhb.parentElement?.classList.contains('off')) || isPaneShown || funcName === 'add')
                 bhb.classList[funcName]('hidden')
         })
         if (isPaneShown)
