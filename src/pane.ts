@@ -554,51 +554,50 @@ export class Pane extends Cell {
     }
     handleMetaKey(ev) {
         let f = null
-        this.t7.log(`Handling meta key ${ev.key}`)
-        switch (ev.key) {
-        case "c":
+        this.t7.log(`Handling meta key ${ev.code}`)
+        switch (ev.code) {
+        case "KeyC":
             this.copySelection()
             break
-        case "z":
+        case "KeyZ":
             f = () => this.toggleZoom()
             break
-        case ",":
+        case "Comma":
             f = () => this.w.rename()
             break
-        case "d":
+        case "KeyD":
             f = () => this.close()
             break
-        case "0":
+        case "Digit0":
             f = () => this.scale(12 - this.fontSize)
             break
-        case "=":
+        case "Equal":
                 f = () => this.scale(1)
             break
-        case "-":
+        case "Minus":
             f = () => this.scale(-1)
             break
-        case "\\":
+        case "Backslash":
             f = () => this.split("topbottom")
             break
-        case "'":
+        case "Quote":
             f = () => this.split("rightleft")
             break
-        case "[":
-
+        case "BracketLeft":
             f = () => this.enterCopyMode()
             break
-        case "f":
+        case "KeyF":
             f = () => this.showSearch()
             break
         // next two keys are on the gate level
-        case "t":
+        case "KeyT":
             f = () => this.gate.newTab()
             break
-        case "r":
+        case "KeyR":
             f = () => this.gate.reset()
             break
         // this key is at terminal level
-        case "l":
+        case "KeyL":
             f = () => this.t7.map.showLog()
             break
         case "ArrowLeft":
@@ -613,16 +612,17 @@ export class Pane extends Cell {
         case "ArrowDown":
             f = () => this.w.moveFocus("down")
             break
-        case "p":
+        case "KeyP":
             f = () => this.t7.dumpLog()
             break
         default:
-            if (ev.key >= "1" && ev.key <= "9") {
+            if (ev.code >= "Digit1" && ev.code <= "Digit9") {
                 const win = this.gate.windows[ev.key - 1]
                 if (this.zoomed)
                     this.toggleZoom()
                 if (win)
                     win.focus()
+                ev.preventDefault()
             }
             break
         }
