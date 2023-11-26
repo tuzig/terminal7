@@ -276,6 +276,10 @@ export class Gate {
                 break
 
             case Failure.TimedOut:
+                if (this.session) {
+                    this.session.close()
+                    this.session = null
+                }
                 this.connectionFailed = true
                 break
 
