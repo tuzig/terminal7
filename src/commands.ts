@@ -210,14 +210,22 @@ async function connectCMD(shell:Shell, args: string[]) {
         if (Capacitor.isNativePlatform())  {
             let dirty = false
             if (!gate.addr) {
-                gate.addr = await shell.askValue("Host address")
+                try {
+                    gate.addr = await shell.askValue("Host address")
+                } catch (e) {
+                    shell.t.writeln("Failed to get host address")
+                    return  
+                }
                 dirty = true
             }
             if (!gate.username) {
-                gate.username = await shell.askValue("Username")
-            } catch (e) {
-                gate.notify("Failed to get username")
-                return
+                try {
+                    gate.username = await shell.askValue("Username")
+                } catch (e) {
+                    shell.t.writeln("Failed to get username")
+                    return
+                }
+                dirty = true
             }
         }
     }
