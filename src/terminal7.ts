@@ -629,9 +629,7 @@ export class Terminal7 {
                     if (this.pb.isOpen())
                         gate.notify("Timed out")
                     else
-                        this.notify(Capacitor.isNativePlatform()?
-                            `${PB} timed out, please retry with \`subscribe\``:
-                            `${PB} timed out, please retry with \`login\``)
+                        this.notify(`${PB} timed out, retrying...`)
                     gate.stopBoarding()
                 })
                 try {
