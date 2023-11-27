@@ -69,11 +69,16 @@ pinch_max_y_velocity = 0.1`
 
     test('connect to gate see help page and hide it', async () => {
         connectFirstGate(page)
-        await page.screenshot({ path: `/result/second.png` })
-        const help = page.locator('#keys-help')
-        await expect(help).toBeVisible()
-        await help.click()
-        await expect(help).toBeHidden()
+        const twrHelp = page.locator('#twr .help-bubble-text')
+        await expect(twrHelp).toBeHidden()
+        const splitHelp = page.locator('#divide-h .help-bubble-text')
+        await expect(splitHelp).toBeVisible()
+        const helpButton = page.locator('#help-button')
+        await helpButton.dispatchEvent('pointerdown')
+        await sleep(50)
+        await helpButton.dispatchEvent('pointerup')
+        await sleep(100)
+        await expect(splitHelp).toBeHidden()
     })
     test('pane is visible and session is open', async () => {
         await expect(page.locator('.pane')).toHaveCount(1)

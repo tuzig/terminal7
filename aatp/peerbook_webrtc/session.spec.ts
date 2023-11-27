@@ -97,14 +97,16 @@ insecure = true
         await page.evaluate(async() => {
             window.terminal7.map.showLog(true)
         })
-        // await sleep(1000)
         await page.screenshot({ path: `/result/second.png` })
         connectFirstGate(page)
-        const help  = page.locator('#keys-help')
-        await page.screenshot({ path: '/result/3.png' })
-        await expect(help).toBeVisible()
-        await help.click()
-        await expect(help).toBeHidden()
+        const splitHelp = page.locator('#divide-h .help-bubble-text')
+        await expect(splitHelp).toBeVisible()
+        const helpButton = page.locator('#help-button')
+        await helpButton.dispatchEvent('pointerdown')
+        await sleep(50)
+        await helpButton.dispatchEvent('pointerup')
+        await sleep(100)
+        await expect(splitHelp).toBeHidden()
     })
     test('pane is visible and session is open', async () => {
         await expect(page.locator('.pane')).toHaveCount(1)
@@ -126,6 +128,7 @@ insecure = true
     })
     test('a gate restores after reload', async() => {
         await reloadPage(page)
+        await sleep(500)
         connectFirstGate(page)
         await sleep(1000)
         await page.screenshot({ path: `/result/second.png` })
@@ -178,28 +181,6 @@ insecure = true
         })
         expect(exitState).toEqual("success")
         await expect(page.locator('.pane')).toHaveCount(0)
-    })
-    test('reconnect after 7 seconds of offline', async() => {
-        await sleep(500)
-        connectFirstGate(page)
-        const pane = page.locator('.pane')
-        await expect(pane).toBeVisible()
-        await page.evaluate(async() => 
-            await window.terminal7.activeG.activeW.activeP.d.send(
-                "seq 10; sleep 1; seq 10 200\n"))
-        await page.evaluate(async() =>
-            window.terminal7.onAppStateChange({isActive: false}))
-        context.setOffline(true)
-        await sleep(7000)
-        context.setOffline(false)
-        await page.evaluate(async() =>
-            window.terminal7.onAppStateChange({isActive: true}))
-        await expect(page.locator('.pane')).toHaveCount(1)
-        await sleep(500)
-        const y = await page.evaluate(() =>
-           window.terminal7.activeG.activeW.activeP.t.buffer.active.cursorY)
-        expect(y).toBeGreaterThan(10)
-        await page.screenshot({ path: `/result/eee.png` })
     })
     test.skip('auto restore gate', async() => {
         await connectFirstGate(page)

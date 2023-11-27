@@ -543,9 +543,13 @@ export class Pane extends Cell {
     }
     hideSearch() {
         const se = this.gate.e.querySelector(".search-box")
-        se.classList.remove("show")
-        se.classList.add("hidden")
-        document.getElementById("search-button").classList.remove("on")
+        if (se) {
+            se.classList.remove("show")
+            se.classList.add("hidden")
+        }
+        const sb =  document.getElementById("search-button")
+        if (sb)
+            sb.classList.remove("on")
         if (this.zoomed)
             this.styleZoomed()
     }

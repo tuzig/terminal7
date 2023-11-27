@@ -247,15 +247,10 @@ export class WebRTCSession extends BaseSession {
             this.cdc = cdc
             cdc.onopen = () => {
                 this.t7.log(">>> cdc opened", this.pendingCDCMsgs.length)
-                if (this.pendingCDCMsgs.length > 0)
-                    // TODO: why the time out? why 100milli?
-                    this.t7.run(() => {
-                        this.t7.log("sending pending messages")
-                        this.pendingCDCMsgs.forEach((m) => this.sendCTRLMsg(m[0], m[1], m[2]))
-                        this.pendingCDCMsgs = []
-                        resolve()
-                    }, 10)
-                else
+                    while (this.pendingCDCMsgs.length > 0) {    
+                        const msg = this.pendingCDCMsgs.shift()
+                        this.sendCTRLMsg(msg[0], msg[1], msg[2])
+                    }
                     resolve()
             }
             cdc.onmessage = m => {
@@ -291,12 +286,13 @@ export class WebRTCSession extends BaseSession {
         if (msg.time == undefined)
             msg.time = Date.now()
         this.msgHandlers.set(msg.message_id, [resolve, reject])
-        if (!this.cdc || this.cdc.readyState != "open")
+        if (!this.cdc || this.cdc.readyState != "open") {
             // message stays frozen when restarting
+            console.log("cdc not open, queuing message", msg)
             this.pendingCDCMsgs.push([msg, resolve, reject])
-        else {
+        } else {
             const s = msg.payload || JSON.stringify(msg)
-            this.t7.log("sending ctrl message ", s)
+            this.t7.log("cdc open sending msg", msg)
             msg.payload = s
 
             try {
@@ -412,6 +408,7 @@ export class WebRTCSession extends BaseSession {
 
 export class PeerbookSession extends WebRTCSession {
     fp: string
+    offer: RTCSessionDescriptionInit
     constructor(fp: string) {
         super()
         this.fp = fp
@@ -419,6 +416,7 @@ export class PeerbookSession extends WebRTCSession {
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate && this.t7.pb) {
             try {
+                console.log("sending candidate")
                 this.t7.pb.adminCommand({type: "candidate",
                                          args: {
                                              target: this.fp,
@@ -441,8 +439,22 @@ export class PeerbookSession extends WebRTCSession {
             this.onStateChange("failed", Failure.InternalError)
             return
         }
+        const pb = terminal7.pb
+        // set local desscription only after offer is queued so candidates will be aftyer the offer
+        function setLocalDescription(d: RTCSessionDescriptionInit) {
+            if (pb.session?.pendingCDCMsgs.length > 0)
+                this.pc.setLocalDescription(d)
+            else
+                terminal7.run(() => setLocalDescription(d), 2)
+        }
+        if (pb?.session)
+            this.pc.setLocalDescription(d)
+        else
+           this.offer = d
+
         try {
-            await terminal7.pb.adminCommand({type: "offer",
+            console.log("sending offer", Date.now())
+            await pb.adminCommand({type: "offer",
                                       args: {
                                           target: this.fp,
                                           sdp: d
@@ -452,19 +464,20 @@ export class PeerbookSession extends WebRTCSession {
             this.onStateChange("failed", e)
             return
         }
-        this.pc.setLocalDescription(d)
     }
-    peerAnswer(offer) {
+    async peerAnswer(offer) {
         const sd = new RTCSessionDescription(offer)
         if (this.pc.signalingState == "stable") {
-            terminal7.log("got an answer but we're stable")
-            return
+            terminal7.log("got an answer but we're stable, setting remote description")
+            await this.pc.setLocalDescription(this.offer)
+            terminal7.log("current signaling state", this.pc.signalingState)
         }
-        this.pc.setRemoteDescription(sd)
-            .catch (e => {
-                terminal7.log(`Failed to set remote description: ${e}`)
-                this.onStateChange("failed", Failure.BadRemoteDescription)
-            })
+        try {
+            await this.pc.setRemoteDescription(sd)
+        } catch (e) {
+            terminal7.log(`Failed to set remote description: ${e}`)
+            this.onStateChange("failed", Failure.BadRemoteDescription)
+        }
     }
     peerCandidate(candidate) {
         this.pc.addIceCandidate(candidate).catch(e =>
@@ -521,8 +534,6 @@ export class HTTPWebRTCSession extends WebRTCSession {
         }).then(data => {
             if (!data)
                 return
-            // TODO move this to the last line of the last then
-
             if (this.pc)
                 this.pc.setRemoteDescription({type: "answer", sdp: data})
                     .catch (() => this.fail(Failure.BadRemoteDescription))

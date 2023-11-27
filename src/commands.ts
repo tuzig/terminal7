@@ -308,7 +308,7 @@ async function connectCMD(shell:Shell, args: string[]) {
                 setTimeout(() => {
                     Preferences.set({key: "first_gate", value: "nope"})
                     terminal7.toggleHelp()
-                }, 1000)
+                }, 200)
         })
         done = true
     })
