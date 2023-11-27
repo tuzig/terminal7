@@ -788,7 +788,7 @@ export class Terminal7 {
         } else {
             this.isHelpShown = doShow
         }
-        const isPaneShown = !document.querySelector('.gate')?.classList.contains('hidden')
+        const isPaneShown = terminal7.activeG?.boarding
         if (!this.buttonHelpBubbles)
             this.createHelpBubbles()
         const funcName = this.isHelpShown ? 'remove' : 'add'
@@ -797,6 +797,7 @@ export class Terminal7 {
                 bhb.classList[funcName]('hidden')
         })
         if (isPaneShown) {
+            document.getElementById('help-gate').classList[funcName]('hidden')
             this.focus()
         }
         this.activeG?.activeW?.activeP?.hideSearch()
