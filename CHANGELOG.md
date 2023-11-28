@@ -6,11 +6,13 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [1.9.0] - 2023/11/28
 
 ### Fixed
 
 - Using only WebRTC to connect to PeerBook
+- Help is more conventional
+- Total pane limit increased
 
 ## [1.8.1] - 2023/9/14
 

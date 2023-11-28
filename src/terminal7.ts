@@ -413,13 +413,13 @@ export class Terminal7 {
                 statusE.style.opacity = "1"
                 resolve()
             }
-            function callReject(e, symbol = "") {
+            function callReject(e, symbol = ERROR_HTML_SYMBOL) {
                 statusE.style.opacity = "1"
                 statusE.innerHTML = symbol
                 console.log("pbConnect failed", e)
                 reject(e)
             }
-            function catchConnect(e) {
+            function catchConnect(e: string) {
                 let symbol = LOCK_HTML_SYMBOL
                 if (e =="Unregistered")
                     this.notify(Capacitor.isNativePlatform()?
@@ -439,8 +439,7 @@ export class Terminal7 {
                         `${PB} Failed to connect, please try \`login\``)
                     this.notify("If the problem persists, `support`")
                     symbol = ERROR_HTML_SYMBOL
-                } else
-
+                }
                 callReject(e, symbol)
             }
 
