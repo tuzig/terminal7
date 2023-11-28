@@ -621,6 +621,7 @@ td {
     z-index: 5;
     background-color: black;
     border: 1px solid var(--local-border);
+    border-radius: 50px;
 }
 #help-gate img {
     object-fit: contain;
