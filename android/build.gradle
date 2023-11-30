@@ -15,6 +15,7 @@ buildscript {
     }
 }
 
+
 apply from: "variables.gradle"
 
 allprojects {
