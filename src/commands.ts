@@ -227,6 +227,10 @@ async function connectCMD(shell:Shell, args: string[]) {
                 }
                 dirty = true
             }
+            if (dirty) {
+                gate.store = true
+                terminal7.storeGates()
+            }
         }
     }
     let done = false

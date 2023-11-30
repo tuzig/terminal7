@@ -443,13 +443,6 @@ export class PeerbookSession extends WebRTCSession {
             return
         }
         const pb = terminal7.pb
-        // set local desscription only after offer is queued so candidates will be aftyer the offer
-        function setLocalDescription(d: RTCSessionDescriptionInit) {
-            if (pb.session?.pendingCDCMsgs.length > 0)
-                this.pc.setLocalDescription(d)
-            else
-                terminal7.run(() => setLocalDescription(d), 2)
-        }
         if (pb?.session)
             this.pc.setLocalDescription(d)
         else

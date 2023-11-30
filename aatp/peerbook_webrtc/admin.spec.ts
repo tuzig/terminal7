@@ -150,7 +150,6 @@ test.describe('peerbook administration', ()  => {
         await redisClient.set("uid:foo@bar.com", "123456")
         const secret = await redisClient.hGet(`user:${oId}`, "secret")
         await redisClient.hSet("user:123456", "secret", secret, "email", "foo@bar.com")
-        const token = authenticator.generate(secret)
         await page.reload()
         await sleep(500)
     })

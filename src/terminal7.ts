@@ -29,6 +29,7 @@ import { RateApp } from 'capacitor-rate-app'
 
 
 import { PeerbookConnection, PB } from './peerbook'
+import { PeerbookSession } from './webrtc_session'
 import { Failure } from './session'
 import { Cell } from "./cell"
 import { Pane } from "./pane"
