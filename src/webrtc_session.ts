@@ -247,10 +247,13 @@ export class WebRTCSession extends BaseSession {
             this.cdc = cdc
             cdc.onopen = () => {
                 this.t7.log(">>> cdc opened", this.pendingCDCMsgs.length)
-                    while (this.pendingCDCMsgs.length > 0) {    
-                        const msg = this.pendingCDCMsgs.shift()
-                        this.sendCTRLMsg(msg[0], msg[1], msg[2])
-                    }
+                    // This needs a bit of timeout or messages are not sent
+                    this.t7.run(() => {
+                        while (this.pendingCDCMsgs.length > 0) {    
+                            const msg = this.pendingCDCMsgs.shift()
+                            this.sendCTRLMsg(msg[0], msg[1], msg[2])
+                        }
+                    }, 100)
                     resolve()
             }
             cdc.onmessage = m => {

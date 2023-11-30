@@ -436,7 +436,6 @@ export class Shell {
         } 
         if (terminal7.recovering) {
             terminal7.log("retrying...")
-            terminal7.recovering = false
             this.startWatchdog(terminal7.conf.net.timeout).catch(e => gate.handleFailure(e))
             try {
                 await gate.reconnect()
@@ -449,6 +448,7 @@ export class Shell {
                 } else
                     gate.notify("Reconnect failed")
             } finally {
+                terminal7.recovering = false
                 this.stopWatchdog()
             }
 

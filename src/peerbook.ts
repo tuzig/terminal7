@@ -92,7 +92,7 @@ export class PeerbookConnection {
             console.log("Registration Cancelled", e)
             this.shell.t.writeln("Cancelled. Use `subscribe` to try again")
             await this.shell.escapeActiveForm()
-            return
+            throw new Error("Cancelled")
         }
         try {
             repStr = await this.adminCommand({
@@ -105,7 +105,7 @@ export class PeerbookConnection {
         } catch (e) {
             this.shell.t.writeln(`${PB} Registration failed\n    Please try again and if persists, \`support\``)
             this.shell.printPrompt()
-            return
+            throw new Error("Failed")
         }
             
         try {
@@ -113,7 +113,7 @@ export class PeerbookConnection {
         } catch (e) {
             this.shell.t.writeln(`${PB} Registration failed\n    Please try again and if persists, \`support\``)
             this.shell.printPrompt()
-            return
+            throw new Error("Failed")
         }
         const QR = userData.QR
         const uid = userData.ID
@@ -134,7 +134,7 @@ export class PeerbookConnection {
         } catch (e) {
             this.shell.t.writeln("Failed to get fingerprint")
             this.shell.printPrompt()
-            return
+            throw new Error("Failed")
         }
         try {
             await this.verifyFP(fp, "OTP")
@@ -142,7 +142,7 @@ export class PeerbookConnection {
             console.log("error verifying OTP", e.toString())
             this.shell.t.writeln("Failed to verify OTP")
             this.shell.printPrompt()
-            return
+            throw new Error("ORP Verification failed")
         } finally {
             this.shell.stopWatchdog()
         }
@@ -209,6 +209,15 @@ export class PeerbookConnection {
             await this.connect({token: uid})
         } catch (e) {
             terminal7.log("Failed to connect", e)
+            if (e == "Unregistered") {
+                this.echo("You are subscribed, please register:")
+                try {
+                    await this.register()
+                } catch(e) {
+                    this.echo("Failed to connect to PeerBook, please try again or `support`")
+                    return
+                }
+            }
         } finally {
             this.updatingStore = false
         }

@@ -158,7 +158,7 @@ export class Gate {
         this.activeW.focus()
         this.storeState()
     }
-    // stops all communication 
+    // stops all communication null
     stopBoarding() {
         this.boarding = false
         this.updateNameE()
@@ -201,26 +201,18 @@ export class Gate {
     async handleFailure(failure: Failure) {
         // KeyRejected and WrongPassword are "light failure"
         const active = this == this.t7.activeG
-        const wasSSH = this.session && this.session.isSSH && this.boarding
+        const wasSSH = this.session?.isSSH && this.boarding
+        const firstGate = (await Preferences.get({key: "first_gate"})).value === null
         if (!active || this.connectionFailed)
             return
         // this.map.showLog(true)
         terminal7.log("handling failure", failure, terminal7.recovering)
         this.stopBoarding()
         this.map.shell.stopWatchdog()
-        let password: string
-        let firstGate: string | null
         switch ( failure ) {
             case Failure.WrongPassword:
                 this.notify("Sorry, wrong password")
-                try {
-                    password = await this.map.shell.askPass()
-                } catch (e) {
-                    this.onFailure(failure)
-                    return 
-                }
-                const s = this.session as SSHSession
-                s.passConnect(this.marker, password)
+                await this.sshPassConnect()
                 return
             case Failure.BadRemoteDescription:
                 this.session.close()
@@ -259,20 +251,15 @@ export class Gate {
             case Failure.KeyRejected:
                 this.notify("🔑 Rejected")
                 this.keyRejected = true
-                try {
-                    password = await this.map.shell.askPass()
-                } catch (e) { 
-                    this.onFailure(Failure.Aborted)
-                    return 
-                }
-                firstGate = (await Preferences.get({key: "first_gate"})).value
-                if (firstGate)
-                    terminal7.ignoreAppEvents = true
-                const session = this.session as SSHSession
-                session.passConnect(this.marker, password)
+                await this.sshPassConnect()
                 return
             case Failure.FailedToConnect:
-                this.notify("Failed to connect")
+                if (firstGate && this.session?.isSSH) {
+                    await this.sshPassConnect()
+                    return
+                } else {
+                    this.notify("Failed to connect")
+                }
                 break
 
             case Failure.TimedOut:
@@ -339,6 +326,17 @@ export class Gate {
                 reject(e)
             })
         })
+    }
+    async sshPassConnect() {
+        let password: string
+        try {
+            password = await this.map.shell.askPass()
+        } catch (e) { 
+            this.onFailure(Failure.Aborted)
+            return 
+        }
+        const session = this.session as SSHSession
+        session.passConnect(this.marker, password)
     }
     /*
      * connect connects to the gate

@@ -700,7 +700,11 @@ async function subscribeCMD(shell: Shell) {
         } catch(e) {
             if (e == "Unregistered") {
                 shell.t.writeln("You are subscribed, please register:")
-                await terminal7.pb.register()
+                try {
+                    await terminal7.pb.register()
+                } catch (e) {
+                    return
+                }
             } else if (e == "Unauthorized") {
                 shell.t.writeln("Failed to connect to PeerBook, please try again or `support`")
                 return
@@ -716,8 +720,12 @@ async function subscribeCMD(shell: Shell) {
             terminal7.pb.stopSpinner()
         }
     }
-    shell.t.writeln("You are subscribed and registered 🙏")
     const uid = await terminal7.pb.getUID()
+    if (uid === "TBD") {
+        await terminal7.pb.register()
+        return
+    }
+    shell.t.writeln("You are subscribed and registered" )
     const answer = await shell.askValue(`Copy user id to the clipboard? (y/N)`, "n")
     if (answer.toLowerCase() == "y") {
         Clipboard.write({ string: uid })
