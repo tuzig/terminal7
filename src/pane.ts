@@ -105,17 +105,17 @@ export class Pane extends Cell {
     /*
      * Pane.openTerminal opens an xtermjs terminal on our element
      */
-    openTerminal(parentID, channelID) {
-        if (channelID)
-            this.channelID = channelID
+    openTerminal(parentID, props = {}) {
+        const channelID = props["channelID"] || null
+        this.channelID = channelID
         const con = document.createElement("div")
         this.t = new Terminal({
             convertEol: false,
             fontFamily: "FiraCode",
             fontSize: this.fontSize * this.gate.fontScale,
             theme: this.theme,
-            rows:4,
-            cols:4,
+            rows: props["rows"] | 24,
+            cols: props["cols"] | 80,
             allowProposedApi: true,
             /* TODO: restore this. commented because it silences spotify
             bellStyle: "sound",

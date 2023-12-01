@@ -133,13 +133,13 @@ export class Layout extends Cell {
             this.cells.splice(this.cells.indexOf(props.parent)+1, 0, pane)
             if (props.parent && props.parent.d)
                 parent = props.parent.d.id
-            pane.openTerminal(parent, props.channelID)
+            pane.openTerminal(parent, props)
         } else {
             if (typeof index == "number")
                 this.cells.splice(index, 1, pane)
             else
                 this.cells.push(pane)
-            pane.openTerminal(null, props.channelID)
+            pane.openTerminal(null, props)
         }
         
         // opening the terminal and the datachannel are heavy so we wait
