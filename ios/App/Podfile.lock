@@ -53,7 +53,7 @@ DEPENDENCIES:
   - "RevenuecatPurchasesCapacitor (from `../../node_modules/@revenuecat/purchases-capacitor`)"
 
 SPEC REPOS:
-  trunk:
+  https://github.com/CocoaPods/Specs.git:
     - NMSSHT7
     - PurchasesHybridCommon
     - RevenueCat
@@ -110,6 +110,6 @@ SPEC CHECKSUMS:
   RevenueCat: c1e33f4e1f1fd239ba461652f02928e220becc31
   RevenuecatPurchasesCapacitor: 03f2bdeeb445b37fcdd5ee9407ed650e1936d947
 
-PODFILE CHECKSUM: b1f79f7d62e59482e73924f44c49c50186ac72be
+PODFILE CHECKSUM: 9d20a52ec9a52a18c609e7ef9ac6ae176898b657
 
 COCOAPODS: 1.14.3
