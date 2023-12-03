@@ -207,7 +207,7 @@ async function connectCMD(shell:Shell, args: string[]) {
             return
         }
     } else {
-        if (Capacitor.isNativePlatform() && !terminal7.pb?.isOpen())  {
+        if (Capacitor.isNativePlatform())  {
             let dirty = false
             if (!gate.addr) {
                 try {
