@@ -528,7 +528,7 @@ export class Shell {
         switch (res) {
             case "Install":
                 gate.close()
-                setTimeout(() => this.runCommand(`install ${gate.name}`), 10)
+                setTimeout(() => this.runCommand(`install ${gate.name}`), 50)
                 return false
             case  "Close Gate":
                 gate.close()
