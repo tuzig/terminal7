@@ -114,8 +114,8 @@ export class Pane extends Cell {
             fontFamily: "FiraCode",
             fontSize: this.fontSize * this.gate.fontScale,
             theme: this.theme,
-            rows: props["rows"] | 24,
-            cols: props["cols"] | 80,
+            rows: props["rows"] || 24,
+            cols: props["cols"] || 80,
             allowProposedApi: true,
             /* TODO: restore this. commented because it silences spotify
             bellStyle: "sound",
