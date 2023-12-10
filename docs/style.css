@@ -1,0 +1,21 @@
+:root {
+    --indicator-color: #00FA00;
+    --local-border: #F952F9;
+    --text-color: #01FAFA;
+    --remote-border: #F4DB53;
+    --warning: #F4DB53;
+    --background: #271D30;
+    --text-background: #11051E;
+    --text-offline: #004444;
+    --pane-background: black;
+    --dark-border: #373702;
+    --help-bubble-bg-color: rgba(55, 55, 2, .7);
+}
+body, h1, h2, h3, .bg-primary {
+    background-color: var(--background) !important;
+    color: var(--text-color);
+}
+code {
+    background-color: var(--text-background);
+    color: var(--text-color);
+}

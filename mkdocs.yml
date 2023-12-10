@@ -1,0 +1,5 @@
+site_name: Terminal7's Documentation
+theme:
+  name: material
+  palette:
+    scheme: slate
