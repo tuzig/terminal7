@@ -30,3 +30,5 @@ aatp/**/authorized_fingerprints
 
 # idea
 .idea/
+# doc site
+site/

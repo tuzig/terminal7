@@ -30,7 +30,7 @@ implmentation in go - [pion/webrtc](https://github.com/pion/webrtc) -
 that we use as a base for our server's agent.
 
 We welcome new contributors and happy to help in our discord channel.
-Onboarding is pretty simple and well documented at https://docs.terminal7.dev .
+Onboarding is pretty simple and well documented at https://dev.terminal7.dev .
 
 ## WebRTC
 
