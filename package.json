@@ -49,7 +49,7 @@
     "xterm-addon-image": "^0.4.0",
     "xterm-addon-search": "^0.11.0",
     "xterm-addon-web-links": "^0.8.0",
-    "xterm-addon-webgl": "^0.14.0"
+    "xterm-addon-webgl": "^0.16.0"
   },
   "devDependencies": {
     "@capacitor/assets": "^2.0.4",
