@@ -66,6 +66,7 @@ export class Gate {
   breadcrumbs: Window[]
   sendStateTask?: number | null = null
   lastDisconnect?: number
+  sshPort?: number
   constructor(props) {
     // given properties
     this.id = props.id
@@ -92,6 +93,7 @@ export class Gate {
     this.firstConnection = props.firstConnection || false
     this.fontScale = props.fontScale || 1
     this.fitScreen = true
+    this.sshPort = props.sshPort || 22
   }
 
   /*
@@ -689,7 +691,7 @@ export class Gate {
       this.session = new PeerbookSession(this.fp)
     } else {
       if (isNative) {
-        this.session = new SSHSession(this.addr, this.username)
+        this.session = new SSHSession(this.addr, this.username, this.sshPort)
       } else {
         this.notify("🎌  WebExec HTTP server")
         const addr = `http://${this.addr}:7777/offer`
