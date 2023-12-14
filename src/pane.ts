@@ -122,7 +122,7 @@ export class Pane extends Cell {
       bellSound: BELL_SOUND, */
     }
 
-    terminal7.log("openeing an xterm with props", terminalProps)
+    terminal7.log("openeing an xterm with props", this.fontSize, terminalProps.fontSize)
     this.t = new Terminal(terminalProps) as TerminalWithAddons
     this.fitAddon = new FitAddon()
     this.searchAddon = new SearchAddon()

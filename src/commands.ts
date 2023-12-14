@@ -494,7 +494,7 @@ async function editCMD(shell: Shell, args: string[]) {
       default: String(gate.sshPort || 22),
       validator: a => {
         const port = parseInt(a)
-        return isNaN(port) || port < 65536 ? "Port must be a 16bit number" : ""
+        return (isNaN(port) || port > 65536 || port < 1) ? "Port must be a 16 bit number" : ""
       }
     },
     { prompt: "SSH only", values: ["y", "n"], default: gate.onlySSH ? "y" : "n" },
@@ -511,7 +511,7 @@ async function editCMD(shell: Shell, args: string[]) {
   }
   const choice = await shell.runForm(fMain, "menu", "")
   let enabled, res
-  const gateAttrs = ["name", "addr", "username", , "sshPort", "onlySSH"]
+  const gateAttrs = ["name", "addr", "username", "sshPort", "onlySSH"]
   switch (choice) {
     case 'Connect':
       await connectCMD(shell, [hostname])
