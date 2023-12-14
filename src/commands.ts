@@ -325,15 +325,18 @@ async function connectCMD(shell: Shell, args: string[]) {
 
 async function addCMD(shell: Shell) {
   const f = [
-    { prompt: "Enter destination (ip or domain)" }
+    { prompt: "Enter destination (ip or domain[:port])" }
   ]
-  let hostname: string
+  let destination: string
   try {
-    hostname = (await shell.runForm(f, "text"))[0]
+    destination = (await shell.runForm(f, "text"))[0]
   } catch (e) {
     console.log("got error", e)
     return
   }
+  const parts = destination.split(":")
+  const hostname = parts[0]
+  const sshPort = parseInt(parts[1] || "22")
 
   if (shell.getGate(hostname)) {
     shell.t.writeln(`${hostname} already exists, connecting...`)
@@ -345,6 +348,7 @@ async function addCMD(shell: Shell) {
     id: hostname,
     firstConnection: true,
     store: true,
+    sshPort: sshPort,
   })
   terminal7.storeGates()
   return connectCMD(shell, [gate.name])
