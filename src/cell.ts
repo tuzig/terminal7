@@ -12,6 +12,14 @@ import { Pane } from "./pane"
 const FOCUSED_BORDER_COLOR = "#F4DB53",
       UNFOCUSED_BORDER_COLOR = "#373702"
 
+export interface SerializedCell {
+  sx: number,
+  sy: number,
+  xoff: number,
+  yoff: number,
+  zoomed: boolean,
+}
+
 export abstract class Cell {
     gate?: Gate
     w: Window
@@ -107,4 +115,10 @@ export abstract class Cell {
             this.layout.onClose(this)
         this.gate.sendState()
     }
+    adjustDimensions(target: SerializedCell) {
+        this.sx = target.sx
+        this.sy = target.sy
+        this.xoff = target.xoff
+        this.yoff = target.yoff
+  }
 }

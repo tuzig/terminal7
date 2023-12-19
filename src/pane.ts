@@ -4,7 +4,7 @@
  *  Copyright: (c) 2021 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Cell } from './cell'
+import { Cell, SerializedCell  } from './cell'
 import { ITheme, Terminal } from 'xterm'
 import { Clipboard } from '@capacitor/clipboard'
 import { Preferences } from '@capacitor/preferences'
@@ -36,17 +36,12 @@ const ABIT = 10,
         caseSensitive: true,
     }
 
-export interface SerializedPane {
-    sx: number,
-    sy: number,
-    xoff: number,
-    yoff: number,
-    fontSize: number,
-    channelID: number,
-    active: boolean,
-    zoomed: boolean,
-    rows: number,
-    cols: number
+export interface SerializedPane extends SerializedCell {
+  fontSize: number,
+  channelID: number,
+  active: boolean,
+  rows: number,
+  cols: number
 }
 
 export class Pane extends Cell {
@@ -1207,5 +1202,27 @@ export class Pane extends Cell {
             return this.sx >= min
         else if (dir == "rightleft")
             return this.sy >= min
+    }
+    adjustDimensions(target: SerializedPane): void {
+        super.adjustDimensions(target)
+        if (!this.t) return
+
+        this.fontSize = target.fontSize
+        // NOTE: the step of changing the font size is 0.5, there is no visual change when doing smaller steps
+        const fontSize = target.fontSize * this.gate.fontScale
+        if (this.t.rows != target.rows || this.t.cols != target.cols) {
+            this.t.options.fontSize = Math.floor(fontSize) + (String(fontSize).includes('.') ? .5 : 0)
+            this.t.resize(target.cols, target.rows)
+        }
+        if (target.active)
+            this.focus()
+        if (target.zoomed && !this.zoomed) {
+            setTimeout(() => this.zoom(), 100)
+            console.log("will zoom in 100ms")
+        }
+        if (!target.zoomed && this.zoomed) {
+            setTimeout(() => this.unzoom(), 100)
+            console.log("will zoom in 100ms")
+        }
     }
 }
