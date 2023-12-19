@@ -224,7 +224,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nexport LANG=en_US.UTF-8\ncd ../..\n/usr/local/bin/npx cap sync ios\n";
+			shellScript = "export LANG=en_US.UTF-8\ncd ../..\n/usr/local/bin/npx cap sync ios\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
