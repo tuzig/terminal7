@@ -9,10 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Fixed
+
 - lazyvim caused the terminal to flicker. Luckily, xterm's WebGl render already had a fix.
+
 ### Added
 
-- a troubleshooting page an a dev site - https://dev.terminal7.dev
+- A troubleshooting page an a dev site - https://dev.terminal7.dev
 
 ### Fixed
 
