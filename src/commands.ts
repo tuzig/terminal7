@@ -504,7 +504,7 @@ async function editCMD(shell:Shell, args: string[]) {
             default: String(gate.sshPort || 22),
             validator: a => {
                 const port = parseInt(a)
-                return (isNaN(port) || port > 65536 || port < 1) ? "Port must be a 16 bit number" : ""
+                return (isNaN(port) || port > 65535 || port < 1) ? "Port must be a 16 bit number" : ""
             }
         },
         { prompt: "SSH only", values: ["y", "n"], default: gate.onlySSH ? "y" : "n" },
