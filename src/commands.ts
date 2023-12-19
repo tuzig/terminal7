@@ -327,16 +327,22 @@ async function addCMD(shell: Shell) {
     const f = [
         { prompt: "Enter destination (ip or domain[:port])" }
     ]
-    let destination: string
-    try {
-        destination = (await shell.runForm(f, "text"))[0]
-    } catch (e) {
-        console.log("got error", e)
-        return
+    let destination: string,
+        hostname: string,
+        sshPort = NaN
+    while (isNaN(sshPort) || sshPort < 1 || sshPort > 65535) {
+        try {
+            destination = (await shell.runForm(f, "text"))[0]
+        } catch (e) {
+            console.log("got error", e)
+            return
+        }
+        const parts = destination.split(":")
+        hostname = parts[0]
+        sshPort = parts[1] ? parseInt(parts[1], 10) : 22
+        if (isNaN(sshPort) || sshPort < 1 || sshPort > 65535)
+            shell.t.writeln("Port must be a 16 bit number")
     }
-    const parts = destination.split(":")
-    const hostname = parts[0]
-    const sshPort = parseInt(parts[1] || "22")
 
     if (shell.getGate(hostname)) {
         shell.t.writeln(`${hostname} already exists, connecting...`)
