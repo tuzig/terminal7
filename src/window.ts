@@ -227,7 +227,6 @@ export class Window {
             bH.classList.add("off")
     }
     syncLayout(thatLayout, theseCells = null) {
-        let zoomed
         if (!theseCells)
             theseCells = this.rootLayout.allCells()
         thatLayout.w = this
