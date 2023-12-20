@@ -29,7 +29,11 @@ communications. WebRTC is UDP based with wide support and a great
 implmentation in go - [pion/webrtc](https://github.com/pion/webrtc) -
 that we use as a base for our server's agent.
 
-We welcome new contributors and happy to help in our discord channel.
+If you're having problems with your first connection, please refer to our 
+[troubleshooting guide](https://github.com/tuzig/terminal7/blob/master/docs/troubleshooting.md)
+
+We welcome new contributors and happy to help, talk to us on our
+[discord server](https://discord.com/invite/rDBj8k4tUE).
 Onboarding is pretty simple and well documented at https://dev.terminal7.dev .
 
 ## WebRTC
