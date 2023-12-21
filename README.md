@@ -3,7 +3,7 @@
 <img width="1559" alt="Screen Shot 2022-01-06 at 22 31 04"
 src="https://user-images.githubusercontent.com/36852/148447779-959c7c92-d542-4737-9161-bfe009dc746a.png">  
 
-![Test](https://github.com/tuzig/terminal7/workflows/Terminal7-Tests/badge.svg)
+![Test](https://github.com/tuzig/terminal7/actions/workflows/validate.yml/badge.svg)
 ![License](https://img.shields.io/badge/license-GPL-green)
 ![Platform](https://img.shields.io/badge/platform-web-blue)
 ![Languages](https://img.shields.io/github/languages/top/tuzig/terminal7)
@@ -29,7 +29,11 @@ communications. WebRTC is UDP based with wide support and a great
 implmentation in go - [pion/webrtc](https://github.com/pion/webrtc) -
 that we use as a base for our server's agent.
 
-We welcome new contributors and happy to help in our discord channel.
+If you're having problems with your first connection, please refer to our 
+[troubleshooting guide](https://github.com/tuzig/terminal7/blob/master/docs/troubleshooting.md)
+
+We welcome new contributors and happy to help, talk to us on our
+[discord server](https://discord.com/invite/rDBj8k4tUE).
 Onboarding is pretty simple and well documented at https://dev.terminal7.dev .
 
 ## WebRTC

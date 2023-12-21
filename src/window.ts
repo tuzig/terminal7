@@ -227,7 +227,6 @@ export class Window {
             bH.classList.add("off")
     }
     syncLayout(thatLayout, theseCells = null) {
-        let zoomed
         if (!theseCells)
             theseCells = this.rootLayout.allCells()
         thatLayout.w = this
@@ -256,41 +255,9 @@ export class Window {
                     thisCell = newLayout.addPane(thatCell)
                 }
             }
-            thisCell.sx = thatCell.sx
-            thisCell.sy = thatCell.sy
-            thisCell.xoff = thatCell.xoff
-            thisCell.yoff = thatCell.yoff
-            thisCell.fontSize = thatCell.fontSize
-            if (thisCell.t) {
-                // NOTE: the step of changing the font size is 0.5, there is no visual change when doing smaller steps
-                const fontSize = thatCell.fontSize * this.gate.fontScale
-                thisCell.t.options.fontSize = Math.floor(fontSize) + (String(fontSize).includes('.') ? .5 : 0)
-
-                const availableHeight = thisCell.t.element.parentElement.clientHeight
-                const availableWidth = thisCell.t.element.parentElement.clientWidth
-
-                const adjustFontSize = (availableWidth: number, availableHeight: number) => {
-                    const charDims: { width: number, height: number } = thisCell.t._core._renderService.dimensions.css.cell
-                    if (charDims.width * thatCell.cols > availableWidth || charDims.height * thatCell.rows > availableHeight) {
-                        thisCell.t.options.fontSize -= .5
-                        adjustFontSize(availableWidth, availableHeight)
-                    }
-                }
-                adjustFontSize(availableWidth, availableHeight)
-                thisCell.t.resize(thatCell.cols, thatCell.rows)
-            }
-            if (thatCell.active)
-                thisCell.focus()
-            if (thatCell.zoomed) //  && this.activeP == thisCell) 
-                zoomed = thisCell
-
+            thisCell.adjustDimensions(thatCell)
         })
-        if (zoomed) {
-            setTimeout(() => zoomed.zoom(), 100)
-            console.log("will zoom in 100ms")
-        }
         newLayout.refreshDividers()
         return newLayout
-
     }
 }

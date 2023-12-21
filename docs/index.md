@@ -4,6 +4,8 @@ Welcome to Terminal7's docs.
 Terminal7 is an open source terminal emulator and touchable multiplexer running over SSH & WebRTC.
 You can run Terminal7 either as an android/iOS app or in the browser.
 
+Feel free to reach out and talk to us on our [discord server](https://discord.com/invite/rDBj8k4tUE).
+
 
 ## Getting Started
 We welcome bug reports, ideas for new features and pull requests.
