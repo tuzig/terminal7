@@ -981,13 +981,13 @@ async function configCMD(shell: Shell) {
     await shell.openConfig()
 }
 async function supportCMD(shell: Shell) {
-    shell.t.write("Appologies. Have you tried reseting the App?\n")
+    shell.t.write("Apologies. Have you tried resetting the App?\n")
     shell.t.writeln("If that doesn't work, please send us a log of the error.")
     const insecure = terminal7.conf.peerbook.insecure,
-    schema = insecure?"http":"https",
+    schema = insecure?"http":"https"
     
     // ask for email address + check validity
-    email : string = terminal7.conf.peerbook.email ? terminal7.conf.peerbook.email : (await shell.askValue("Enter your email address:"))
+    const email = terminal7.conf.peerbook.email ? terminal7.conf.peerbook.email : (await shell.askValue("Enter your email address:"))
     if (!email.includes("@")) {
         shell.t.writeln("Invalid email address")
         return
@@ -1006,7 +1006,7 @@ async function supportCMD(shell: Shell) {
     })
 
     // check the response
-    if (res.status == 200) {
+    if (res.ok) {
         shell.t.writeln("Thank you for your feedback")
     }
     else {
