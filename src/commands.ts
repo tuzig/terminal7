@@ -712,7 +712,7 @@ async function subscribeCMD(shell: Shell) {
     }
     if (!terminal7.pb.isOpen()) {
         if (!Capacitor.isNativePlatform()) {
-            loginCMD(shell);
+            await loginCMD(shell);
             return
         }
         terminal7.pb.startSpinner()
