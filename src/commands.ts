@@ -981,9 +981,37 @@ async function configCMD(shell: Shell) {
     await shell.openConfig()
 }
 async function supportCMD(shell: Shell) {
-    shell.t.write("Sorry things are not working well. Please ")
-    shell.t.writeln("\x1B]8;;https://github.com/tuzig/terminal7/issues/new?template=bug_report.md\x07report a bug\x1B]8;;\x07")
-    shell.t.writeln("or talk to us on our \x1B]8;;https://discord.gg/Puu2afdUtr\x07discord server\x1B]8;;\x07")
+    shell.t.write("Appologies. Have you tried reseting the App?\n")
+    shell.t.writeln("If that doesn't work, please send us a log of the error.")
+    const insecure = terminal7.conf.peerbook.insecure,
+    schema = insecure?"http":"https",
+    
+    // ask for email address + check validity
+    email : string = terminal7.conf.peerbook.email ? terminal7.conf.peerbook.email : (await shell.askValue("Enter your email address:"))
+    if (!email.includes("@")) {
+        shell.t.writeln("Invalid email address")
+        return
+    }
+
+    // Saving the log to the clipboard
+    terminal7.dumpLog()
+
+    // send the log to the server
+    const res = await fetch(`${schema}://${terminal7.conf.net.peerbook}/support`, {
+        method: "POST",
+        body: JSON.stringify({
+            email,
+            log: (await Clipboard.read()).value,
+        }),        
+    })
+
+    // check the response
+    if (res.status == 200) {
+        shell.t.writeln("Thank you for your feedback")
+    }
+    else {
+        shell.t.writeln("Error sending feedback")
+    }
 }
 async function loginCMD(shell: Shell) {
     if (terminal7.pb.isOpen()) {
