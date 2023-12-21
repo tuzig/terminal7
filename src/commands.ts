@@ -30,7 +30,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             name: "clear",
             help: "Clear the screen",
             usage: "cle[ar]",
-            execute: async () => void setTimeout(() => shell.t.clear(),10)
+            execute: async () => void setTimeout(() => shell.t.clear(), 10)
         },
         close: {
             name: "close",
@@ -92,12 +92,12 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             usage: "i[nstall] [gatename]",
             execute: async args => installCMD(shell, args)
         },
-        login: {
-            name: "login",
-            help: "Login to peerbook",
-            usage: "l[ogin]",
-            execute: async () => loginCMD(shell)
-        },
+        // login: {
+        //     name: "login",
+        //     help: "Login to peerbook",
+        //     usage: "l[ogin]",
+        //     execute: async () => loginCMD(shell)
+        // },
         map: {
             name: "map",
             help: "Back to the map",
@@ -140,7 +140,7 @@ async function helpCMD(shell: Shell, args: string[]) {
         const command = shell.commands.get(args[0])
         if (!command) {
             if (args[0] == "copymode") {
-                help +=`
+                help += `
 Copy mode let's you navigate, search mark & copy
 the active pane's buffer. Here's are the supported keys:
   hjkl & arrows:  Move
@@ -179,7 +179,7 @@ async function fortuneCMD(shell: Shell) {
     shell.t.writeln(abages[Math.floor(Math.random() * abages.length)].trim())
 }
 
-async function connectCMD(shell:Shell, args: string[]) {
+async function connectCMD(shell: Shell, args: string[]) {
     const hostname = args[0]
     if (!hostname) {
         shell.t.writeln("Missing hostname")
@@ -207,14 +207,14 @@ async function connectCMD(shell:Shell, args: string[]) {
             return
         }
     } else {
-        if (Capacitor.isNativePlatform())  {
+        if (Capacitor.isNativePlatform()) {
             let dirty = false
             if (!gate.addr) {
                 try {
                     gate.addr = await shell.askValue("Host address")
                 } catch (e) {
                     shell.t.writeln("Failed to get host address")
-                    return  
+                    return
                 }
                 dirty = true
             }
@@ -235,7 +235,7 @@ async function connectCMD(shell:Shell, args: string[]) {
     }
     let done = false
     gate.onFailure = reason => {
-        terminal7.log(`Connect command got failure ${reason}`) 
+        terminal7.log(`Connect command got failure ${reason}`)
         shell.stopWatchdog()
         gate.close()
         terminal7.storeGates()
@@ -245,7 +245,7 @@ async function connectCMD(shell:Shell, args: string[]) {
         gate.focus()
         return
     }
-    const  firstGate = (await Preferences.get({key: "first_gate"})).value
+    const firstGate = (await Preferences.get({ key: "first_gate" })).value
     const timeout = (firstGate == "nope") ? undefined : 10000
 
     shell.startWatchdog(timeout).catch(e => gate.handleFailure(e))
@@ -272,7 +272,7 @@ async function connectCMD(shell:Shell, args: string[]) {
                 { prompt: "Just let me in" },
                 { prompt: "Copy command to clipboard" },
             ]
-            let publicKey = ""  
+            let publicKey = ""
             try {
                 publicKey = (await terminal7.readId()).publicKey
             } catch (e) {
@@ -284,15 +284,15 @@ async function connectCMD(shell:Shell, args: string[]) {
                 let res = ""
                 try {
                     res = await shell.runForm(keyForm, "menu")
-                } catch (e) {}
-                switch(res) {
+                } catch (e) { }
+                switch (res) {
                     case "Copy command to clipboard":
                         Clipboard.write({ string: cmd })
                         clipboardFilled = true
                         break
                 }
             }
-        } 
+        }
         if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH && pbOpen) {
             let toConnect: boolean
             try {
@@ -307,10 +307,10 @@ async function connectCMD(shell:Shell, args: string[]) {
             }
         }
         gate.load()
-        Preferences.get({key: "first_gate"}).then(v => {
+        Preferences.get({ key: "first_gate" }).then(v => {
             if (v.value != "nope")
                 setTimeout(() => {
-                    Preferences.set({key: "first_gate", value: "nope"})
+                    Preferences.set({ key: "first_gate", value: "nope" })
                     terminal7.toggleHelp()
                 }, 200)
         })
@@ -406,7 +406,7 @@ async function resetCMD(shell: Shell, args: string[]) {
                 terminal7.pbClose()
                 try {
                     await shell.runCommand("connect", [gate.name])
-                } catch(e) {
+                } catch (e) {
                     shell.t.writeln("Failed to connect. Please try again and if it keeps failing, close and connect fresh.")
                     shell.t.writeln("  Please take the time to write your flow\n  in ##🪳bugs🪳at https://discord.com/invite/rDBj8k4tUE")
                 }
@@ -443,7 +443,7 @@ async function resetCMD(shell: Shell, args: string[]) {
     }]
     const res = await shell.runForm(reset, "menu", "What do you want to reset?")
     let ans
-    switch(res) {
+    switch (res) {
         case "Dotfile":
             terminal7.saveDotfile(DEFAULT_DOTFILE)
             shell.t.writeln("dotfile back to default")
@@ -474,7 +474,7 @@ async function resetCMD(shell: Shell, args: string[]) {
     }
 }
 
-async function editCMD(shell:Shell, args: string[]) {
+async function editCMD(shell: Shell, args: string[]) {
     const hostname = args[0]
     if (!hostname)
         return shell.t.writeln("Missing hostname")
@@ -538,20 +538,20 @@ async function editCMD(shell:Shell, args: string[]) {
                 await terminal7.pb.adminCommand({
                     type: "rename",
                     args: {
-                       target: gate.fp,
-                       name: res[0]
+                        target: gate.fp,
+                        name: res[0]
                     }
                 })
             }
             gateAttrs.filter((_, i) => enabled[i])
-                     .forEach((k, i) =>  {
-                         let v = res[i]
-                         if (k == "sshPort")
-                             v = parseInt(v)
-                         if (k == "onlySSH")
-                             v = v == "y"
-                         gate[k] = v
-                    })
+                .forEach((k, i) => {
+                    let v = res[i]
+                    if (k == "sshPort")
+                        v = parseInt(v)
+                    if (k == "onlySSH")
+                        v = v == "y"
+                    gate[k] = v
+                })
             gate.t7.storeGates()
             gate.updateNameE()
             break
@@ -574,7 +574,7 @@ async function editCMD(shell:Shell, args: string[]) {
                     shell.t.writeln("Failed to delete host")
                     return
                 }
-                    shell.t.writeln("Gate deleted")
+                shell.t.writeln("Gate deleted")
             }
             gate.delete()
             break
@@ -586,7 +586,7 @@ async function gatesCMD(shell: Shell) {
     const truncate = (s: string) => s.length > maxWidth ? s.slice(0, maxWidth - 1) + "…" : s,
         hostAtAddr = (g: Gate) => g.addr ? `${g.username || "TBD"}@${g.addr}` : "",
         fp = (g: Gate) => g.fp ? `${g.fp.slice(0, 4)}…${g.fp.slice(-4)}` : ""
-    const attrs = terminal7.gates.map(g => [truncate(g.name),truncate(hostAtAddr(g)),fp(g)])
+    const attrs = terminal7.gates.map(g => [truncate(g.name), truncate(hostAtAddr(g)), fp(g)])
     const maxLengths = attrs.reduce((a, b) => [
         Math.max(a[0], b[0].length),
         Math.max(a[1], b[1].length),
@@ -597,7 +597,7 @@ async function gatesCMD(shell: Shell) {
         "Fingerprint\x1B[0m\n"
     res += attrs.map(a => a[0].padEnd(maxLengths[0] + 2) +
         a[1].padEnd(maxLengths[1] + 2) + a[2]).join("\n") + "\n"
-    
+
     shell.t.writeln(res)
 }
 
@@ -619,7 +619,7 @@ async function copyKeyCMD(shell: Shell) {
     try {
         const ret = await terminal7.readId()
         publicKey = ret.publicKey
-    } catch(e) {
+    } catch (e) {
         terminal7.log("readId error", e)
         return shell.t.writeln("Error reading key")
     }
@@ -653,9 +653,9 @@ async function subscribeCMD(shell: Shell) {
                 introPrice = p.product.introPrice
             let prompt = `${price} / ${period}`
             if (introPrice) {
-                const price = (introPrice.price == 0)?"Free":introPrice.priceString,
+                const price = (introPrice.price == 0) ? "Free" : introPrice.priceString,
                     unit = introPrice.periodUnit.toLowerCase(),
-                    period = (introPrice.periodNumberOfUnits == 1)?unit:`${introPrice.periodNumberOfUnits} ${unit}s`
+                    period = (introPrice.periodNumberOfUnits == 1) ? unit : `${introPrice.periodNumberOfUnits} ${unit}s`
                 prompt += `     🎁 ${price} for the first ${period} 🎁`
             }
             return { prompt, p }
@@ -666,7 +666,7 @@ async function subscribeCMD(shell: Shell) {
         let choice
         try {
             choice = await shell.runForm(fields, "menu")
-        } catch(e) {
+        } catch (e) {
             return
         }
         if (choice == "Cancel")
@@ -680,7 +680,7 @@ async function subscribeCMD(shell: Shell) {
             })
             try {
                 await Purchases.restorePurchases()
-            } catch(e) {
+            } catch (e) {
                 shell.stopWatchdog()
                 shell.t.writeln("Error restoring purchases, please try again or `support`")
                 return
@@ -704,7 +704,7 @@ async function subscribeCMD(shell: Shell) {
             terminal7.ignoreAppEvents = true
             try {
                 await terminal7.pb.purchase(p.p)
-            } catch(e) {
+            } catch (e) {
                 console.log("purchase error", e)
                 shell.stopWatchdog()
                 shell.t.writeln("Error purchasing, please try again or `support`")
@@ -718,14 +718,15 @@ async function subscribeCMD(shell: Shell) {
     }
     if (!terminal7.pb.isOpen()) {
         if (!Capacitor.isNativePlatform()) {
-            shell.t.writeln("Sorry, you can only subscribe from a native app")
-            shell.t.writeln("If you are already subscribed, please `login`")
+            // shell.t.writeln("Sorry, you can only subscribe from a native app")
+            // shell.t.writeln("If you are already subscribed, please `login`")
+            loginCMD(shell);
             return
         }
         terminal7.pb.startSpinner()
         try {
-            await terminal7.pb.connect({token: customerInfo.originalAppUserId})
-        } catch(e) {
+            await terminal7.pb.connect({ token: customerInfo.originalAppUserId })
+        } catch (e) {
             if (e == "Unregistered") {
                 shell.t.writeln("You are subscribed, please register:")
                 try {
@@ -753,7 +754,7 @@ async function subscribeCMD(shell: Shell) {
         await terminal7.pb.register()
         return
     }
-    shell.t.writeln("You are subscribed and registered" )
+    shell.t.writeln("You are subscribed and registered")
     const answer = await shell.askValue(`Copy user id to the clipboard? (y/N)`, "n")
     if (answer.toLowerCase() == "y") {
         Clipboard.write({ string: uid })
@@ -782,8 +783,8 @@ export async function installCMD(shell: Shell, args: string[]) {
 
     let uid = ""
     try {
-        uid  = await terminal7.pb.getUID()
-    } catch(e) {
+        uid = await terminal7.pb.getUID()
+    } catch (e) {
         terminal7.log("getUID returned an error", e)
     }
     if (!uid && native) {
@@ -846,7 +847,7 @@ export async function installCMD(shell: Shell, args: string[]) {
     shell.t.writeln("")
     shell.t.writeln(`\t\x1B[1m${cmd}\x1B[0m`)
     shell.t.writeln("")
-    const choice= await shell.runForm(fields, "menu")
+    const choice = await shell.runForm(fields, "menu")
     if (choice == "Cancel")
         return
     if (choice == "Copy command to 📋") {
@@ -858,7 +859,7 @@ export async function installCMD(shell: Shell, args: string[]) {
         let password: string
         try {
             password = await shell.askPass()
-        } catch(e) {
+        } catch (e) {
             error = true
             return
         }
@@ -869,7 +870,7 @@ export async function installCMD(shell: Shell, args: string[]) {
         const ids = await terminal7.readId()
         publicKey = ids.publicKey
         privateKey = ids.privateKey
-    } catch(e) {
+    } catch (e) {
         console.log("readId error", e)
     }
 
@@ -927,7 +928,7 @@ export async function installCMD(shell: Shell, args: string[]) {
                             // will throw exception if not verified
                             try {
                                 await terminal7.pb.verifyFP(fp, "Finished install, enter OTP to verify")
-                            } catch(e) {
+                            } catch (e) {
                                 shell.t.writeln("Verification failed")
                                 error = true
                                 return
@@ -936,7 +937,7 @@ export async function installCMD(shell: Shell, args: string[]) {
                             // TODO: resolve the command that started it all
                         }, 1000)
                     }
-                }   
+                }
                 break
             case "failed":
                 if (failure == Failure.KeyRejected) {
@@ -960,14 +961,14 @@ export async function installCMD(shell: Shell, args: string[]) {
     } else {
         await passConnect()
     }
-    while (!done && !error) 
+    while (!done && !error)
         await (new Promise(r => setTimeout(r, 100)))
     if (done) {
         // wait for the gate to get an fp
         let timedOut = false
         shell.startWatchdog(terminal7.conf.net.timeout)
             .catch(() => timedOut = true)
-        while (!gate.fp && ! timedOut)
+        while (!gate.fp && !timedOut)
             await (new Promise(r => setTimeout(r, 100)))
         if (gate.fp)
             shell.t.writeln(`Gate is installed & verified, use \`connect ${gate.name}\``)
@@ -1017,7 +1018,7 @@ async function loginCMD(shell: Shell) {
             },
             body: JSON.stringify({ user, otp, fp, name }),
         })
-    } catch(e) {
+    } catch (e) {
         console.log("Failed to fetch", e)
         shell.t.writeln("Failed to login, please try again or `support`")
         return
@@ -1038,7 +1039,7 @@ async function loginCMD(shell: Shell) {
         await new Promise(r => setTimeout(r, 2000))
         try {
             await terminal7.pbConnect()
-        } catch(e) {
+        } catch (e) {
             terminal7.log("Failed to connect to PeerBook", e)
         }
 
