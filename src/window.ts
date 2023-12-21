@@ -24,16 +24,16 @@ export class Window {
     gate: Gate
     id: number
     name: string
-    rootLayout: Layout | null
-    e: HTMLElement | null
-    activeP?: Pane | null
+    rootLayout: Layout
+    e?: HTMLElement
+    activeP?: Pane
     t7: Terminal7
     nameE: HTMLAnchorElement
     active: boolean
     constructor(props) {
         this.gate = props.gate
         this.id = props.id
-        this.name = props.name || `Tab ${this.id + 1}`
+        this.name = props.name || `Tab ${this.id+1}`
         this.rootLayout = null
         this.e = null
         this.activeP = null
@@ -50,18 +50,18 @@ export class Window {
         e.appendChild(this.e)
 
         // Add the name with link to tab bar
-        const a = document.createElement('a') as HTMLAnchorElement & { w: Window }
-        a.id = this.e.id + '-name'
+        const a = document.createElement('a') as HTMLAnchorElement & {w: Window}
+        a.id = this.e.id+'-name'
         a.w = this
         a.innerHTML = this.name
         // Add gestures on the window name for rename and drag to trash
-        const h = new Hammer.Manager(a, { domEvents: true }) // enable dom events
-        h.add(new Hammer.Press({ event: "rename", pointers: 1 }))
-        h.add(new Hammer.Tap({ event: "switch", pointers: 1 }))
+        const h = new Hammer.Manager(a, {domEvents:true}) // enable dom events
+        h.add(new Hammer.Press({event: "rename", pointers: 1}))
+        h.add(new Hammer.Tap({event: "switch", pointers: 1}))
         h.on("rename", () => this.rename())
         h.on("switch", () => this.focus())
         this.nameE = a
-        this.gate.e.querySelector(".tabbar-names").appendChild(a);
+        this.gate.e.querySelector(".tabbar-names").appendChild(a)
     }
     /*
      * Change the active window, all other windows and
@@ -134,8 +134,8 @@ export class Window {
      */
     rename() {
         const e = this.nameE,
-            se = this.gate.e.querySelector(".rename-box"),
-            textbox = this.gate.e.querySelector("#name-input") as HTMLInputElement
+              se = this.gate.e.querySelector(".rename-box"),
+              textbox = this.gate.e.querySelector("#name-input") as HTMLInputElement
 
         se.classList.remove("hidden")
         textbox.value = e.innerHTML
@@ -185,22 +185,22 @@ export class Window {
             y = a.yoff + b.cursorY * a.sy / a.t.rows
         let match = null,
             nextPane = null
-        switch (where) {
+        switch(where) {
             case "left":
                 match = p => ((Math.abs(p.xoff + p.sx - a.xoff) < 0.00001)
-                    && (p.yoff <= y) && (p.yoff + p.sy >= y))
+                    && (p.yoff <= y) && (p.yoff+p.sy >= y))
                 break
             case "right":
                 match = p => ((Math.abs(a.xoff + a.sx - p.xoff) < 0.00001)
-                    && (p.yoff <= y) && (p.yoff + p.sy >= y))
+                    && (p.yoff <= y) && (p.yoff+p.sy >= y))
                 break
             case "up":
                 match = p => ((Math.abs(p.yoff + p.sy - a.yoff) < 0.00001)
-                    && (p.xoff <= x) && (p.xoff + p.sx >= x))
+                    && (p.xoff <= x) && (p.xoff+p.sx >= x))
                 break
             case "down":
                 match = p => ((Math.abs(a.yoff + a.sy - p.yoff) < 0.00001)
-                    && (p.xoff <= x) && (p.xoff + p.sx >= x))
+                    && (p.xoff <= x) && (p.xoff+p.sx >= x))
                 break
         }
         this.t7.cells.forEach(c => {
