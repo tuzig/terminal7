@@ -7,6 +7,7 @@ function generateCacheBuster(): string {
   }
   // Generate a cache buster value based on the current timestamp
     const currentTimestamp: number = Math.floor(Date.now() / 1000);
+    // Divide by 3600 to create a cache buster value that updates every hour
     const cacheBusterValue: number = Math.floor(currentTimestamp / 3600);
     return `?v=${cacheBusterValue}`;
   }
