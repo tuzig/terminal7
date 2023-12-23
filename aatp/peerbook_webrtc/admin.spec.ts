@@ -238,7 +238,7 @@ test.describe('peerbook administration', ()  => {
         const fromPeerbook = await page.$$('.from-peerbook')
         expect(fromPeerbook.length).toBe(0)
     })
-    test('try login with an invalid email', async ({ browser }) => {
+    test('try subcribe with an invalid email', async ({ browser }) => {
         // TODO: rename to context2
         context = await browser.newContext()
         page = await context.newPage()
@@ -261,7 +261,7 @@ test.describe('peerbook administration', ()  => {
         await sleep(100)
         if (await page.locator('[data-test="twr-minimized"]').isVisible())
             await page.click('[data-test="twr-minimized"]')
-        await page.keyboard.type('login')
+        await page.keyboard.type('subcribe')
         await page.keyboard.press("Enter")
         await sleep(100)
         let twr = await getTWRBuffer(page)
@@ -279,9 +279,9 @@ test.describe('peerbook administration', ()  => {
         twr = await getTWRBuffer(page)
         expect(twr).toMatch(/Invalid credentials/)
     })
-    test('try login with an invalid OTP', async () => {
+    test('try subcribe with an invalid OTP', async () => {
         await sleep(100)
-        await page.keyboard.type('login')
+        await page.keyboard.type('subcribe')
         await page.keyboard.press("Enter")
         await sleep(100)
         let twr = await getTWRBuffer(page)
@@ -299,9 +299,9 @@ test.describe('peerbook administration', ()  => {
         twr = await getTWRBuffer(page)
         expect(twr).toMatch(/Invalid credentials/)
     })
-    test('login with a valid email & OTP', async () => {
+    test('subcribe with a valid email & OTP', async () => {
         await sleep(100)
-        await page.keyboard.type('login')
+        await page.keyboard.type('subcribe')
         await page.keyboard.press("Enter")
         await sleep(100)
         let twr = await getTWRBuffer(page)
