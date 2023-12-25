@@ -1008,11 +1008,11 @@ async function supportCMD(shell: Shell) {
 
     // check the response
     if (res.ok) {
-        shell.t.writeln("Thank you for your feedback")
+        shell.t.writeln("Thank you for your feedback.")
     }
     else {
-        shell.t.writeln("Error sending feedback")
-        shell.t.writeln("Please send us a message in discord")
+        shell.t.writeln("Error sending feedback.")
+        shell.t.writeln("Please send us a message in discord.")
     }
 }
 async function loginCMD(shell: Shell) {
