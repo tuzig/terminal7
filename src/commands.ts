@@ -1005,7 +1005,7 @@ async function supportCMD(shell: Shell) {
     // Check the choice and perform the action
     if (choice == "Copy log to clipboard") {
         // Saving the log to the clipboard
-        let log = terminal7.dumpLog()
+        const log = terminal7.dumpLog()
         await Clipboard.write({string: (await log).toString()})
         shell.t.writeln("Log copied to clipboard.")
         shell.t.writeln("Please paste into discord support channel.")

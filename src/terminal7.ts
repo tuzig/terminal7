@@ -20,7 +20,6 @@ import { randomBytes } from 'ed25519-keygen/utils'
 
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
-import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Preferences } from '@capacitor/preferences'
 import { Device } from '@capacitor/device'
