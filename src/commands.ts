@@ -987,11 +987,12 @@ async function supportCMD(shell: Shell) {
     schema = insecure?"http":"https"
     
     // ask for email address + check validity
-    const email = terminal7.conf.peerbook.email ? terminal7.conf.peerbook.email : (await shell.askValue("Enter your email address:"))
-    if (!email.includes("@")) {
+    var email = terminal7.conf.peerbook.email || (await shell.askValue("Enter your email address:"))
+    while (!email.includes("@")) {
         shell.t.writeln("Invalid email address")
-        return
+        email = await shell.askValue("Enter your email address:")
     }
+
 
     // Saving the log to the clipboard
     terminal7.dumpLog()
@@ -1011,6 +1012,7 @@ async function supportCMD(shell: Shell) {
     }
     else {
         shell.t.writeln("Error sending feedback")
+        shell.t.writeln("Please send us a message in discord")
     }
 }
 async function loginCMD(shell: Shell) {
