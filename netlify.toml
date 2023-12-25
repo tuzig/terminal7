@@ -1,0 +1,4 @@
+[[headers]]
+for = "/path/to/your/file.html"
+[headers.values]
+Cache-Control = "public, max-age=86400"
