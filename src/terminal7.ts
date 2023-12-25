@@ -916,8 +916,7 @@ export class Terminal7 {
         while (this.logBuffer.length > 0) {
             data += this.logBuffer.shift() + "\n"
         }
-        await Clipboard.write({string: data})
-        this.notify("Log copied to clipboard")
+        return data
         /* TODO: wwould be nice to store log to file, problme is 
          * Preferences pluging failes
         try { 
