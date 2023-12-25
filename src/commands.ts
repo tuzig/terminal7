@@ -993,12 +993,27 @@ async function supportCMD(shell: Shell) {
         email = await shell.askValue("Enter your email address")
     }
 
+    // Menu to ask user if they want to send the log or Post it to mail
+    const fields = [
+        {prompt: "Copy log to clipboard"},
+        {prompt: "Send log to support"}
+    ]
 
-    // Saving the log to the clipboard
-    terminal7.dumpLog()
+    // Ask user for choice
+    let choice = await shell.runForm(fields,"menu" , "Choose an option")
 
-    // send the log to the server
-    const res = await fetch(`${schema}://${terminal7.conf.net.peerbook}/support`, {
+    // Check the choice and perform the action
+    if (choice == "Copy log to clipboard") {
+        // Saving the log to the clipboard
+        let log = terminal7.dumpLog()
+        await Clipboard.write({string: (await log).toString()})
+        shell.t.writeln("Log copied to clipboard.")
+        shell.t.writeln("Please paste into discord support channel.")
+    }
+    // Send log to support
+    else if (choice == "Send log to support") {
+     shell.t.writeln("Sending log to support...")
+     const res = await fetch(`${schema}://${terminal7.conf.net.peerbook}/support`, {
         method: "POST",
         body: JSON.stringify({
             email,
@@ -1007,13 +1022,14 @@ async function supportCMD(shell: Shell) {
     })
 
     // check the response
-    if (res.ok) {
+     if (res.ok) {
         shell.t.writeln("Thank you for your feedback.")
     }
-    else {
+     else {
         shell.t.writeln("Error sending feedback.")
-        shell.t.writeln("Please send us a message in discord.")
+        shell.t.writeln("Please send us a message in discord support channel.")
     }
+ }
 }
 async function loginCMD(shell: Shell) {
     if (terminal7.pb.isOpen()) {
