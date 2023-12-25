@@ -987,7 +987,7 @@ async function supportCMD(shell: Shell) {
     schema = insecure?"http":"https"
     
     // ask for email address + check validity
-    var email = terminal7.conf.peerbook.email || (await shell.askValue("Enter your email address"))
+    let email = terminal7.conf.peerbook.email || (await shell.askValue("Enter your email address"))
     while (!email.includes("@")) {
         shell.t.writeln("Invalid email address")
         email = await shell.askValue("Enter your email address")
