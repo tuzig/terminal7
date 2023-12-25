@@ -1007,7 +1007,7 @@ async function supportCMD(shell: Shell) {
         // Saving the log to the clipboard
         const log = terminal7.dumpLog()
         await Clipboard.write({string: (await log).toString()})
-        shell.t.writeln("Log copied to clipboard.")
+        terminal7.notify("Log copied to clipboard.")
         shell.t.writeln("Please paste into discord support channel.")
     }
     // Send log to support
