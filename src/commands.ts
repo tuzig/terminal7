@@ -1000,7 +1000,7 @@ async function supportCMD(shell: Shell) {
     ]
 
     // Ask user for choice
-    let choice = await shell.runForm(fields,"menu" , "Choose an option")
+    const choice = await shell.runForm(fields,"menu" , "Choose an option")
 
     // Check the choice and perform the action
     if (choice == "Copy log to clipboard") {
