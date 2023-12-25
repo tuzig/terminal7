@@ -996,41 +996,42 @@ async function supportCMD(shell: Shell) {
     // Menu to ask user if they want to send the log or Post it to mail
     const fields = [
         {prompt: "Copy log to clipboard"},
-        {prompt: "Send log to support"}
+        {prompt: "Send log to support"},
+        {prompt: "Cancel"}
     ]
 
     // Ask user for choice
     const choice = await shell.runForm(fields,"menu" , "Choose an option")
 
-    // Check the choice and perform the action
-    if (choice == "Copy log to clipboard") {
-        // Saving the log to the clipboard
-        const log = terminal7.dumpLog()
-        await Clipboard.write({string: (await log).toString()})
-        terminal7.notify("Log copied to clipboard.")
-        shell.t.writeln("Please paste into discord support channel.")
-    }
-    // Send log to support
-    else if (choice == "Send log to support") {
-     shell.t.writeln("Sending log to support...")
-     const res = await fetch(`${schema}://${terminal7.conf.net.peerbook}/support`, {
-        method: "POST",
-        body: JSON.stringify({
-            email,
-            log: (await Clipboard.read()).value,
-        }),        
-    })
-
-    // check the response
-     if (res.ok) {
-        shell.t.writeln("Thank you for your feedback.")
-    }
-     else {
-        shell.t.writeln("Error sending feedback.")
-        shell.t.writeln("Please send us a message in discord support channel.")
+    // Switch case to handle user choice
+    switch (choice) {
+        case "Copy log to clipboard":
+            // Saving the log to the clipboard
+            const log = terminal7.dumpLog()
+            await Clipboard.write({string: (await log).toString()})
+            terminal7.notify("Log copied to clipboard.")
+            shell.t.writeln("Please paste into discord support channel.")
+            break
+        case "Send log to support":
+            shell.t.writeln("Sending log to support...")
+            const res = await fetch(`${schema}://${terminal7.conf.net.peerbook}/support`, {
+                method: "POST",
+                body: JSON.stringify({
+                    email,
+                    log: (await Clipboard.read()).value,
+                }),
+            })
+            if (res.ok) {
+                shell.t.writeln("Log sent to support.")
+            } else {
+                shell.t.writeln("Failed to send log to support.")
+                shell.t.writeln("Please send us a message in discord support channel.")
+            }
+            break
+        case "Cancel":
+            break
     }
  }
-}
 async function loginCMD(shell: Shell) {
     if (terminal7.pb.isOpen()) {
         shell.t.writeln("You are already logged in")
