@@ -16,6 +16,7 @@ def capacitor_pods
   pod 'CapacitorCamera', :path => '../../node_modules/@capacitor/camera'
   pod 'CapacitorClipboard', :path => '../../node_modules/@capacitor/clipboard'
   pod 'CapacitorDevice', :path => '../../node_modules/@capacitor/device'
+  pod 'CapacitorFilesystem', :path => '../../node_modules/@capacitor/filesystem'
   pod 'CapacitorKeyboard', :path => '../../node_modules/@capacitor/keyboard'
   pod 'CapacitorNetwork', :path => '../../node_modules/@capacitor/network'
   pod 'CapacitorPreferences', :path => '../../node_modules/@capacitor/preferences'
