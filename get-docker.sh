@@ -735,7 +735,7 @@ do_install() {
 			exit 1
 			;;
 	esac
-	exit 1
+	exit 0
 }
 
 # wrapped up in a function so that we have some protection against only getting

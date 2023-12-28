@@ -1018,7 +1018,7 @@ async function supportCMD(shell: Shell) {
             shell.t.writeln("Please paste into discord support channel.")
             break
         case "Send log to support":
-            let description = await shell.askValue("please describe the issue")
+            const description = await shell.askValue("please describe the issue")
             shell.t.writeln("Sending log to support...")
             const res = await fetch(`${schema}://${terminal7.conf.net.peerbook}/support`, {
                 method: "POST",
@@ -1041,8 +1041,8 @@ async function supportCMD(shell: Shell) {
             // Works only on ios and android
             if(Capacitor.isNativePlatform()) {
                 try{
-                    Filesystem.requestPermissions()
-                    Filesystem.checkPermissions()
+                    await Filesystem.requestPermissions()
+                    await Filesystem.checkPermissions()
                     await Filesystem.writeFile({
                         path: "log-" + Date.now().toString() +".txt",
                         data: (await log2).toString(),
@@ -1052,8 +1052,8 @@ async function supportCMD(shell: Shell) {
                 } catch(e) {
                     terminal7.log(e)
                 }
-            // Works only on desktop
             }
+            break
         case "Cancel":
             break
     }
