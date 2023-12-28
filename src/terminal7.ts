@@ -916,18 +916,6 @@ export class Terminal7 {
             data += this.logBuffer.shift() + "\n"
         }
         return data
-        /* TODO: wwould be nice to store log to file, problme is 
-         * Preferences pluging failes
-        try { 
-            await Filesystem.writeFile({
-                path: path,
-                data: data,
-                directory: FilesystemDirectory.Documents
-            })i
-        } catch(e) { 
-            terminal7.log(e)
-        }
-        */
     }
     onPointerCancel() {
         this.pointer0 = null

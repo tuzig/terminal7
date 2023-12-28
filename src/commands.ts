@@ -11,6 +11,9 @@ import { SSHSession, SSHChannel } from './ssh_session'
 import { Failure } from './session'
 import { NativeBiometric } from 'capacitor-native-biometric'
 import { Capacitor } from "@capacitor/core"
+import { Filesystem, Directory , Encoding} from '@capacitor/filesystem'
+import { Platform } from '@capacitor/assets/dist/definitions'
+
 
 export type Command = {
     name: string
@@ -988,20 +991,22 @@ async function supportCMD(shell: Shell) {
     
     // ask for email address + check validity
     let email = terminal7.conf.peerbook.email || (await shell.askValue("Enter your email address"))
-    while (!email.includes("@")) {
+    while (!email.match(/^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/)) {
         shell.t.writeln("Invalid email address")
         email = await shell.askValue("Enter your email address")
     }
 
     // Menu to ask user if they want to send the log or Post it to mail
-    const fields = [
+    const fieldsNative = [
         {prompt: "Copy log to clipboard"},
         {prompt: "Send log to support"},
+        {prompt: "Save log to file"},
         {prompt: "Cancel"}
     ]
 
     // Ask user for choice
-    const choice = await shell.runForm(fields,"menu" , "Choose an option")
+    !Capacitor.isNativePlatform() ? fieldsNative.splice(2,1) : fieldsNative
+    const choice = await shell.runForm(fieldsNative,"menu" , "Choose an option")
 
     // Switch case to handle user choice
     switch (choice) {
@@ -1013,12 +1018,14 @@ async function supportCMD(shell: Shell) {
             shell.t.writeln("Please paste into discord support channel.")
             break
         case "Send log to support":
+            let description = await shell.askValue("please describe the issue")
             shell.t.writeln("Sending log to support...")
             const res = await fetch(`${schema}://${terminal7.conf.net.peerbook}/support`, {
                 method: "POST",
                 body: JSON.stringify({
                     email,
                     log: (await Clipboard.read()).value,
+                    description
                 }),
             })
             if (res.ok) {
@@ -1028,6 +1035,25 @@ async function supportCMD(shell: Shell) {
                 shell.t.writeln("Please send us a message in discord support channel.")
             }
             break
+        case "Save log to file":
+            shell.t.writeln("Saving log to file...")
+            const log2 = terminal7.dumpLog()
+            // Works only on ios and android
+            if(Capacitor.isNativePlatform()) {
+                try{
+                    Filesystem.requestPermissions()
+                    Filesystem.checkPermissions()
+                    await Filesystem.writeFile({
+                        path: "log-" + Date.now().toString() +".txt",
+                        data: (await log2).toString(),
+                        directory: Directory.Documents,
+                        encoding: Encoding.UTF8
+                })
+                } catch(e) {
+                    terminal7.log(e)
+                }
+            // Works only on desktop
+            }
         case "Cancel":
             break
     }

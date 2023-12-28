@@ -350,4 +350,12 @@ test.describe('peerbook administration', ()  => {
         const twr = await getTWRBuffer(page)
         expect(twr).toMatch(/Logged in/)
     })
+    test('test the support command', async () => {
+        await sleep(100)
+        await page.keyboard.type('support')
+        await page.keyboard.press("Enter")
+        await sleep(100)
+        const twr = await getTWRBuffer(page)
+        expect(twr).toMatch(/address:$/)
+    })
 })
