@@ -109,7 +109,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
         support: {
             name: "support",
             help: "Get support",
-            usage: "sup[port]",
+            sage: "sup[port]",
             execute: async () => supportCMD(shell)
         },
         subscribe: {
