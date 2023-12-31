@@ -12,7 +12,6 @@ import { Failure } from './session'
 import { NativeBiometric } from 'capacitor-native-biometric'
 import { Capacitor } from "@capacitor/core"
 import { Filesystem, Directory , Encoding} from '@capacitor/filesystem'
-import { Platform } from '@capacitor/assets/dist/definitions'
 
 
 export type Command = {
