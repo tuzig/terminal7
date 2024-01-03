@@ -996,7 +996,7 @@ async function supportCMD(shell: Shell) {
     }
 
     // Menu to ask user if they want to send the log or Post it to mail
-    let fieldsNative = [
+    const fieldsNative = [
         {prompt: "Copy log to clipboard"},
         {prompt: "Send log to support"},
         {prompt: "Save log to file"},
@@ -1004,8 +1004,9 @@ async function supportCMD(shell: Shell) {
     ]
 
     // Ask user for choice
-    fieldsNative = !Capacitor.isNativePlatform() ? fieldsNative.splice(2,1) : fieldsNative
-    const choice = await shell.runForm(fieldsNative,"menu" , "Choose an option")    // Switch case to handle user choice
+    !Capacitor.isNativePlatform() ? fieldsNative.splice(2,1) : fieldsNative
+    const choice = await shell.runForm(fieldsNative,"menu" , "Choose an option")
+   // Switch case to handle user choice
     switch (choice) {
         case "Copy log to clipboard":
             // Saving the log to the clipboard
