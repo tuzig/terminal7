@@ -13,7 +13,6 @@ import { NativeBiometric } from 'capacitor-native-biometric'
 import { Capacitor } from "@capacitor/core"
 import { Filesystem, Directory , Encoding} from '@capacitor/filesystem'
 
-
 export type Command = {
     name: string
     help: string
