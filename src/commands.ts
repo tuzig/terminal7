@@ -1021,7 +1021,7 @@ async function supportCMD(shell: Shell) {
                 method: "POST",
                 body: JSON.stringify({
                     email,
-                    log: (await Clipboard.read()).value,
+                    log: await terminal7.dumpLog(),
                     description
                 }),
             })
