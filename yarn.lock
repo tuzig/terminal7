@@ -1063,6 +1063,11 @@
   resolved "https://registry.yarnpkg.com/@capacitor/device/-/device-5.0.6.tgz#11322a9c737196f2df8f82abbe6d1a5b32e35fb7"
   integrity sha512-tmjK0H8IKbDLMcmzZzJPbV+9yLkKJ76QOdz4A7fZAOYx2GnFHsFngxldq/wKotGAJuDX/ih3ZzHNrzVguzlv2g==
 
+"@capacitor/filesystem@^5.2.0":
+  version "5.2.0"
+  resolved "https://registry.yarnpkg.com/@capacitor/filesystem/-/filesystem-5.2.0.tgz#6e4529eb059c85869ecc68643f25123dbe38768f"
+  integrity sha512-fyv+yWVFfglobPPveIRm4+ryMGI8vW27vjX63HDwB7K5fscSYajid+ie3qfwl2wkbPhlX8KTPes7IPij0lCmQg==
+
 "@capacitor/ios@^5.0.0":
   version "5.5.1"
   resolved "https://registry.yarnpkg.com/@capacitor/ios/-/ios-5.5.1.tgz#e07d0752b8934215a9defc2d22a537060f2dd7f7"
