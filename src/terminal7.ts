@@ -20,7 +20,6 @@ import { randomBytes } from 'ed25519-keygen/utils'
 
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
-import { Clipboard } from '@capacitor/clipboard'
 import { Network } from '@capacitor/network'
 import { Preferences } from '@capacitor/preferences'
 import { Device } from '@capacitor/device'
@@ -916,20 +915,7 @@ export class Terminal7 {
         while (this.logBuffer.length > 0) {
             data += this.logBuffer.shift() + "\n"
         }
-        await Clipboard.write({string: data})
-        this.notify("Log copied to clipboard")
-        /* TODO: wwould be nice to store log to file, problme is 
-         * Preferences pluging failes
-        try { 
-            await Filesystem.writeFile({
-                path: path,
-                data: data,
-                directory: FilesystemDirectory.Documents
-            })i
-        } catch(e) { 
-            terminal7.log(e)
-        }
-        */
+        return data
     }
     onPointerCancel() {
         this.pointer0 = null
