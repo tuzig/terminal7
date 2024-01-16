@@ -368,10 +368,16 @@ test.describe('peerbook administration', ()  => {
         expect(twr).toMatch(/issue:$/)
         await page.keyboard.type('test issue')
         await page.keyboard.press('Enter')
-        await sleep(100)
-        const res = await request.get('http://smtp:8025/api/v2/messages')
-        const msg = await res.json()
-        expect(msg.count).toBe(1)
+
+        let count = 0
+        let msg
+        while (count < 2) {
+            await sleep(100)
+            const res = await request.get('http://smtp:8025/api/v2/messages')
+            msg = await res.json()
+            count = msg.count
+        }
+        expect(msg.count).toBe(2)
         const body = msg.items[0].Content.Body
         expect(body).toMatch(/test issue/)
         expect(body).toMatch(/log line/)
