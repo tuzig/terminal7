@@ -202,11 +202,8 @@ export class Gate {
     // handle connection failures
     async handleFailure(failure: Failure) {
         // KeyRejected and WrongPassword are "light failure"
-        const active = this == this.t7.activeG
         const wasSSH = this.session?.isSSH && this.boarding
         const firstGate = (await Preferences.get({key: "first_gate"})).value === null
-        if (!active || this.connectionFailed)
-            return
         // this.map.showLog(true)
         terminal7.log("handling failure", failure, terminal7.recovering)
         this.stopBoarding()
@@ -271,10 +268,11 @@ export class Gate {
                 }
                 this.connectionFailed = true
                 break
-
             case Failure.NotSupported:
-                if (!Capacitor.isNativePlatform())
-                    this.notify("🙁 Please ensure webexec is running")
+                if (this.session) {
+                    this.session.close()
+                    this.session = null
+                }
                 break
 
         }
@@ -362,12 +360,11 @@ export class Gate {
         } finally {
             this.updateNameE()
         }
-        this.t7.activeG = this // TODO: move this out of here
     }
 
     notify(message) {
-        if (!this.firstConnection)
-            message = `\x1B[4m${this.name}\x1B[0m: ${message}`
+        const prefix = this.name || this.addr || ""
+        message = `\x1B[4m${prefix}\x1B[0m: ${message}`
         this.t7.notify(message)
     }
     /*
@@ -787,5 +784,8 @@ export class Gate {
         this.scaleContainer()
         this.fit()
         this.sendState()
+    }
+    blur() {
+        this.e.classList.add("hidden")
     }
 }

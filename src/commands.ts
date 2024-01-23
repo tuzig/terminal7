@@ -244,17 +244,24 @@ async function connectCMD(shell:Shell, args: string[]) {
     const timeout = (firstGate == "nope") ? undefined : 10000
 
     shell.startWatchdog(timeout).catch(e => gate.handleFailure(e))
+    if (terminal7.activeG) {
+        terminal7.activeG.stopBoarding()
+        terminal7.activeG.blur()
+    }
+    terminal7.activeG = gate
     gate.connect(async () => {
         shell.stopWatchdog()
         if (gate.firstConnection) {
-            const fields: Fields = [{
-                prompt: "Gate's name",
-                validator: (a) => gate.t7.validateHostName(a),
-            }]
-            fields[0].default = gate.addr
-            const res = await shell.runForm(fields, "text")
-            const name = res[0]
-            gate.name = name
+            if (!gate.name) {
+                const fields: Fields = [{
+                    prompt: "Gate's name",
+                    validator: (a) => gate.t7.validateHostName(a),
+                    default: gate.addr,
+                }]
+                const res = await shell.runForm(fields, "text")
+                const name = res[0]
+                gate.name = name
+            }
             gate.verified = true
             gate.updateNameE()
             gate.store = true

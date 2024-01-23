@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test'
 import { Client } from 'ssh2'
 let checkedC = 0
 export async function reloadPage(page) {
@@ -92,4 +93,72 @@ export async function getLines(page, start = -1, end = -1): Array<string> {
         }
         return ret
     }, { start, end })
+}
+export async function waitForTWROutput(page, expected: string | RegExp , timeout: number = 1000) {
+    const start = Date.now()
+    let compare = (a, b) => a === b
+    if (expected instanceof RegExp) {
+        compare = (a, b) => a.match(b)
+    } else if (typeof expected === "string") {
+        compare = (a, b) => a.includes(b)
+    } else {
+        throw new Error("Expected must be either string or regex")
+    }
+    let buffer: string
+    while (Date.now() - start < timeout) {
+        buffer = await getTWRBuffer(page)
+        if (compare(buffer, expected)) {
+            return
+        }
+        await sleep(100)
+    }
+    throw new Error(`Timeout waiting for TWR output. Expected: ${expected}, got: ${buffer}`)
+}
+export async function runSSHCommand(connConfig = {
+      host: 'webexec',
+      port: 22,
+      username: 'runner',
+      password: 'webexec'
+    }, command) {
+    let sshC, stream
+    try {
+        sshC = await new Promise((resolve, reject) => {
+            const conn = new Client()
+            conn.on('error', e => reject(e))
+            conn.on('ready', () => resolve(conn))
+            conn.connect(connConfig)
+        })
+    } catch(e) { expect(e).toBeNull() }
+    // log key SSH events
+    sshC.on('error', e => console.log("ssh error", e))
+    sshC.on('close', e => {
+        console.log("ssh closed", e)
+    })
+    sshC.on('end', e => console.log("ssh ended", e))
+    sshC.on('keyboard-interactive', e => console.log("ssh interaction", e))
+    // shorten the net timeout for a shorter run time
+    try {
+        stream = await new Promise((resolve, reject) => {
+            sshC.exec(command, {}, async (err, s) => {
+                if (err)
+                    reject(err)
+                else
+                    resolve(s)
+            })
+        })
+    } catch(e) { expect(e).toBeNull() }
+    try {
+        await new Promise<void>((resolve, reject) => {
+            stream.on('close', (code, signal) => {
+                console.log(`closed with ${signal}`)
+                sshC.end()
+                reject()
+            }).on('data', async (data) => {
+                const b = Buffer.from(data)
+                const s = b.toString()
+                console.log("ssh data", s)
+                resolve()
+            })
+        })
+    } catch(e) { expect(e).toBeNull() }
 }
