@@ -503,7 +503,8 @@ export class Terminal7 {
                 out.push({
                     id: g.id, addr: g.addr, user: g.user, secret: g.secret,
                     name: g.name, windows: ws, store: true, verified: g.verified,
-                    sshPort: g.sshPort || 22, username: g.username, onlySSH: g.onlySSH
+                    sshPort: g.sshPort || 22, username: g.username, onlySSH: g.onlySSH,
+                    firstConnection: g.firstConnection,
                 })
             }
         })
@@ -527,7 +528,7 @@ export class Terminal7 {
         const s = document.getElementById('map-button')
         s.classList.add('off')
         if (this.activeG) {
-            this.activeG.e.classList.add("hidden")
+            this.activeG.blur()
             this.activeG = null
         }
         // hide the modals
@@ -1241,13 +1242,16 @@ export class Terminal7 {
                 addr: "localhost",
                 id: "localhost",
                 name: "localhost",
+                firstConnection: true,
             }]
         }
-        if (gates)
+        if (gates) {
             gates.forEach(g => {
                 g.store = true
                 this.addGate(g).e.classList.add("hidden")
             })
+            this.storeGates()
+        }
         this.map.refresh()
     }
 }

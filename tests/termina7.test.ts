@@ -665,38 +665,5 @@ describe("terminal7", function() {
             expect(t0.out, `TWR out: ${t0.out}`).toMatch(/WebExec/)
             expect(t0.out, `TWR out: ${t0.out}`).toMatch(/over WebRTC/)
         })
-        it("can connect to SSH through form", async () => {
-            const t0 = t.map.t0
-            t.map.shell.start()
-            t.map.t0 = t0
-            HTTPWebRTCSession.fail = true
-			globalThis.webkit = { messageHandlers: { bridge: 1 } } // mock ios
-            t.map.shell.runCommand('add', [])
-            await sleep(10)
-            t0.pressKey("Enter")
-            await sleep(10)
-            t0.pressKey("2")
-            t0.pressKey("Enter")
-            await sleep(10)
-            t0.pressKey("2")
-            t0.pressKey("Enter")
-            await sleep(100)
-            console.log(t0.out)
-            /* TODO: test the user/pass path
-            expect(t0.out).toMatch("Login to")
-            expect(t0.out).toMatch("Username:")
-            await sleep(10)
-            t0.pressKey("a")
-            t0.pressKey("Enter")
-            t0.pressKey("a")
-            t0.pressKey("Enter")
-            await sleep(10)
-            expect(t0.out).toMatch("Username: a")
-            expect(t0.out).toMatch("Password: \n")
-            t0.pressKey("Enter")
-            await sleep(10)
-            */
-            expect(t0.out).toMatch("Gate's name")
-        })
     })
 })

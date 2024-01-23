@@ -3,7 +3,7 @@ import { Client } from 'ssh2'
 import * as fs from 'fs'
 import waitPort from 'wait-port'
 
-import { connectFirstGate } from '../common/utils'
+import { connectFirstGate, waitForTWROutput, runSSHCommand } from '../common/utils'
 
 
 const local = process.env.LOCALDEV !== undefined,
@@ -12,21 +12,15 @@ const local = process.env.LOCALDEV !== undefined,
 test.describe('terminal7 UI', ()  => {
 
     const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
+    const webexecSSHConfig = {
+          host: 'webexec',
+          port: 22,
+          username: 'runner',
+          password: 'webexec'
+    }
     let page: Page,
         context: BrowserContext
 
-    async function getTWRBuffer() {
-        return await page.evaluate(() => {
-            const t = window.terminal7.map.t0
-            const b = t.buffer.active
-            let ret = ""
-            for (let i = 0; i < b.length; i++) {
-                const line = b.getLine(i).translateToString()
-                ret += line
-            }
-            return ret
-        })
-    }
     test.afterAll(async () => await context.close())
     test.beforeAll(async ({ browser }) => {
         context = await browser.newContext()
@@ -49,6 +43,7 @@ insecure=true`)
                   "name":"foo",
                   "windows":[],
                   "store":true,
+                  "firstConnection":true,
                 }]
             ))
         })
@@ -131,7 +126,7 @@ insecure=true`)
         const btn = btns.first()
         const editBtn = btn.locator('.gate-edit')
         await editBtn.click()
-        await sleep(100)
+        await waitForTWROutput(page, "Delete", 1000)
         await page.keyboard.press("ArrowDown")
         await page.keyboard.press("ArrowDown")
         await page.keyboard.press("Enter")
@@ -141,7 +136,7 @@ insecure=true`)
         await sleep(100)
         await page.keyboard.type("edit bar")
         await page.keyboard.press("Enter")
-        await sleep(100)
+        await waitForTWROutput(page, "Delete", 1000)
         await page.keyboard.press("ArrowDown")
         await page.keyboard.press("ArrowDown")
         await page.keyboard.press("Enter")
@@ -153,6 +148,31 @@ insecure=true`)
         expect(numOfGates).toEqual(1)
         await page.keyboard.type("hide")
         await page.keyboard.press("Enter")
+    })
+    test('connect to gate with no webexec', async () => {
+        await runSSHCommand(webexecSSHConfig, "webexec stop")
+        await connectFirstGate(page)
+        await sleep(1000)
+        await expect(page.locator('#t0')).toBeVisible()
+        await waitForTWROutput(page, 'Does the address', 1000)
+        await page.keyboard.press('Enter')
+        await waitForTWROutput(page, 'webexec', 1000)
+        await page.keyboard.press('Enter')
+        await waitForTWROutput(page, 'install', 1000)
+        await page.keyboard.press('ArrowDown')
+        await page.keyboard.press('Enter')
+        await waitForTWROutput(page, 'Copy command', 1000)
+        await page.keyboard.press('Enter')
+        await page.keyboard.type("hide")
+        await page.keyboard.press("Enter")
+        /* TODO: find a way to access the clipboard
+        const cb = await page.evaluate(async () => await navigator.clipboard.readText())
+
+        expect(cb).toMatch(/^bash </)
+        */
+        // await expect(page.locator('.windows-container')).toBeHidden()
+        await runSSHCommand(webexecSSHConfig, "bash -c 'WEBEXEC_SERVER_URL=http://webexec:7777 webexec start'")
+        await sleep(3000)
     })
     test('connect to gate see help page and hide it', async () => {
         await connectFirstGate(page)
@@ -177,22 +197,18 @@ insecure=true`)
         expect(paneState).toEqual("open")
     })
     test('a pane can be closed', async () => {
-        await page.reload({waitUntil: "networkidle"})
-        await page.evaluate(async () => {
-            window.notifications = []
-            while (!window.terminal7) {
-                await new Promise(r => setTimeout(r, 100))
-            }
-            window.terminal7.notify = (m) => window.notifications.push(m)
-        })
-        await connectFirstGate(page, "foo")
-        await sleep(500)
-        await page.locator('.tabbar .reset').click()
+        await page.locator('.tabbar .reset').locator('visible=true').click()
         await expect(page.locator('#t0')).toBeVisible()
-        await sleep(100)
+        await waitForTWROutput(page, 'Close', 1000)
         await page.keyboard.press('ArrowDown')
         await page.keyboard.press('Enter')
-        await expect(page.locator('.windows-container')).toBeHidden()
+        // all gates should be hidden
+        const containers = page.locator('.windows-container')
+        const count = await containers.count()
+        expect(count).toEqual(3)
+        for (let i = 0; i < count; i++)
+            await expect(containers.nth(i)).toBeHidden()
+
     })
     test('a pane can be reseted', async () => {
         await page.reload({waitUntil: "networkidle"})
@@ -207,71 +223,28 @@ insecure=true`)
         await sleep(500)
         await page.locator('.tabbar .reset').click()
         await expect(page.locator('#t0')).toBeVisible()
+        await waitForTWROutput(page, 'Close', 1000)
         await sleep(100)
         await page.keyboard.press('Enter')
         await sleep(100)
         await expect(page.locator('#t0')).toBeHidden()
         await expect(page.locator('.pane')).toHaveCount(1)
         await expect(page.locator('.windows-container')).toBeVisible()
-        /* TODO: Fix getTWRBuffer
-        await sleep(6000)
-        expect(await getTWRBuffer()).toMatch(/foo.*: Connected\s+$/)
-        */
+        await waitForTWROutput(page, /foo:.* over WebRTC/, 1000)
     })
     test('how a gate handles disconnect', async() => {
-        let sshC, stream
-        await page.evaluate(() => window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg))
-        try {
-            sshC = await new Promise((resolve, reject) => {
-                const conn = new Client()
-                conn.on('error', e => reject(e))
-                conn.on('ready', () => resolve(conn))
-                conn.connect({
-                  host: 'webexec',
-                  port: 22,
-                  username: 'runner',
-                  password: 'webexec'
-                })
-            })
-        } catch(e) { expect(e).toBeNull() }
-        // log key SSH events
-        sshC.on('error', e => console.log("ssh error", e))
-        sshC.on('close', e => {
-            console.log("ssh closed", e)
-        })
-        sshC.on('end', e => console.log("ssh ended", e))
-        sshC.on('keyboard-interactive', e => console.log("ssh interaction", e))
-        // shorten the net timeout for a shorter run time
-        await page.evaluate(async () => window.terminal7.conf.net.timeout = 1000)
-        try {
-            stream = await new Promise((resolve, reject) => {
-                sshC.exec("webexec stop", { }, async (err, s) => {
-                    if (err)
-                        reject(err)
-                    else
-                        resolve(s)
-                })
-            })
-        } catch(e) { expect(e).toBeNull() }
-        try {
-            await new Promise<void>((resolve, reject) => {
-                stream.on('close', (code, signal) => {
-                    console.log(`closed with ${signal}`)
-                    sshC.end()
-                    reject()
-                }).on('data', async (data) => {
-                    const b = new Buffer.from(data)
-                    const s = b.toString()
-                    expect(s).toMatch("SIGINT")
-                    resolve()
-                })
-            })
-        } catch(e) { expect(e).toBeNull() }
+        await page.evaluate(async () => 
+            window.terminal7.conf.net.timeout = 1000)
+        await runSSHCommand({
+          host: 'webexec',
+          port: 22,
+          username: 'runner',
+          password: 'webexec'
+        }, "webexec stop")
         // TODO: sleep and verify TWR came up while the windows-container
         // remained visible
         await sleep(15000)
         await expect(page.locator('#t0')).toBeVisible()
-        const twr = await getTWRBuffer()
-        expect(twr).toMatch(/Reconnect\s+Close\s*$/)
+        await waitForTWROutput(page, "Reconnect", 1000)
     })
 })

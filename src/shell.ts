@@ -411,7 +411,7 @@ export class Shell {
      * onDisconnect is called when a gate disconnects.
      */
     async onDisconnect(gate: Gate, wasSSH?: boolean) {
-        terminal7.log("onDisconnect", gate.name, wasSSH)
+        terminal7.log("onDisconnect", gate.name, wasSSH, gate.firstConnection)
         this.stopWatchdog()
         if (wasSSH) {
             this.escapeActiveForm()
@@ -453,8 +453,7 @@ export class Shell {
             }
 
         }
-        if (!terminal7.netConnected ||
-            ((terminal7.activeG != null) && (gate != terminal7.activeG)))
+        if (!terminal7.netConnected || (gate != terminal7.activeG))
             return
 
         if (gate.firstConnection) {
@@ -473,8 +472,24 @@ export class Shell {
             if (ans == "n") {
                 gate.delete()
                 setTimeout(() => this.handleLine("add"), 100)
+                // return gate.onFailure(Failure.WrongAddress)
+            }
+            const installForm = [{
+                prompt: "Do you have webexec running on the server?",
+                    values: ["y", "n"],
+                    default: "n"
+            }]
+            try {
+                ans = (await this.runForm(installForm, "text"))[0]
+            } catch(e) {
                 return gate.onFailure(Failure.WrongAddress)
             }
+
+            if (ans == "n") {
+                setTimeout(() => this.handleLine("install "+gate.name), 100)
+                return
+            }
+
         }
 
         const reconnectForm = [
