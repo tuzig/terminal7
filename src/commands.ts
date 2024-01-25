@@ -992,15 +992,8 @@ async function supportCMD(shell: Shell) {
     shell.t.write("Apologies. Have you tried resetting the App?\n")
     shell.t.writeln("If that doesn't work, please send us a log of the error.")
     const insecure = terminal7.conf.peerbook.insecure,
-    schema = insecure?"http":"https"
-    
+          schema = insecure?"http":"https"
     // ask for email address + check validity
-    let email = terminal7.conf.peerbook.email || (await shell.askValue("Enter your email address"))
-    while (!email.match(/^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/)) {
-        shell.t.writeln("Invalid email address")
-        email = await shell.askValue("Enter your email address")
-    }
-
     // Menu to ask user if they want to send the log or Post it to mail
     const fieldsNative = [
         {prompt: "Copy log to clipboard"},
@@ -1022,8 +1015,20 @@ async function supportCMD(shell: Shell) {
             shell.t.writeln("Please paste into discord support channel.")
             break
         case "Send log to support":
+            const sendFailed = () => {
+                shell.t.writeln("Failed to send log to support.")
+                shell.t.writeln("Please send us a message our discord server")
+                shell.t.writeln("https://discord.com/invite/rDBj8k4tUE")
+            }
+
+            let email = terminal7.conf.peerbook.email || (await shell.askValue("Enter your email address"))
+            while (!email.match(/^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/)) {
+                shell.t.writeln("Invalid email address")
+                email = await shell.askValue("Enter your email address")
+            }
             const description = await shell.askValue("please describe the issue")
-            shell.t.writeln("Sending log to support...")
+            shell.t.writeln("Sending to support...")
+            shell.startWatchdog(30000).catch(() => sendFailed())
             const res = await fetch(`${schema}://${terminal7.conf.net.peerbook}/support`, {
                 method: "POST",
                 body: JSON.stringify({
@@ -1032,12 +1037,11 @@ async function supportCMD(shell: Shell) {
                     description
                 }),
             })
+            shell.stopWatchdog()
             if (res.ok) {
                 shell.t.writeln("Log sent to support.")
-            } else {
-                shell.t.writeln("Failed to send log to support.")
-                shell.t.writeln("Please send us a message in discord support channel.")
-            }
+            } else
+                sendFailed()
             break
         case "Save log to file":
             shell.t.writeln("Saving log to file...")
