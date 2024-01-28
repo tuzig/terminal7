@@ -94,7 +94,7 @@ export async function getLines(page, start = -1, end = -1): Array<string> {
         return ret
     }, { start, end })
 }
-export async function waitForTWROutput(page, expected: string | RegExp , timeout: number = 1000) {
+export async function waitForTWROutput(page, expected: string | RegExp , timeout = 1000) {
     const start = Date.now()
     let compare = (a, b) => a === b
     if (expected instanceof RegExp) {

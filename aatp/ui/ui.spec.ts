@@ -1,5 +1,4 @@
 import { test, expect, Page, BrowserContext } from '@playwright/test'
-import { Client } from 'ssh2'
 import * as fs from 'fs'
 import waitPort from 'wait-port'
 
