@@ -409,17 +409,17 @@ export class Terminal7 {
         const statusE = document.getElementById("peerbook-status") as HTMLSpanElement
         // TODO: refactor this to an sync function
         return new Promise((resolve, reject) => {
-            function callResolve() {
+            const callResolve = () => {
                 statusE.style.opacity = "1"
                 resolve()
             }
-            function callReject(e, symbol = ERROR_HTML_SYMBOL) {
+            const callReject = (e, symbol = ERROR_HTML_SYMBOL) => {
                 statusE.style.opacity = "1"
                 statusE.innerHTML = symbol
                 console.log("pbConnect failed", e)
                 reject(e)
             }
-            function catchConnect(e: string) {
+            const catchConnect = (e: string) => {
                 let symbol = LOCK_HTML_SYMBOL
                 if (e =="Unregistered")
                     this.notify(Capacitor.isNativePlatform()?
