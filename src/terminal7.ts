@@ -93,6 +93,7 @@ export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 
 [ui]
 # leader = "a"
+# scrollback = 10000
 # quickest_press = 1000
 # max_tabs = 10
 # max_panes = 7
@@ -666,6 +667,7 @@ export class Terminal7 {
         this.conf.ui.autoRestore = this.conf.ui.auto_restore || false
         this.conf.ui.verificationTTL = this.conf.ui.verification_ttl || 15 * 60 * 1000
         this.conf.ui.subscribeTimeout = this.conf.ui.subscribe_timeout || 60 * 1000
+        this.conf.ui.scrollback = this.conf.ui.scrollback || 10000
 
         this.conf.net = this.conf.net || {}
         this.conf.net.iceServer = this.conf.net.ice_server || []
