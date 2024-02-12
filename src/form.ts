@@ -221,6 +221,10 @@ export class Form {
             def = values.map(v => v == def ? v.toUpperCase() : v).join('/')
         if (def)
             def = ` [${def}]`
-        t.write(`${this.fields[this.currentField].prompt}${def || ''}: `)
+        const prompt = this.fields[this.currentField].prompt
+        if (prompt.endsWith('\n'))
+            t.write(prompt)
+        else
+            t.write(`${prompt}${def || ''}: `)
     }
 }

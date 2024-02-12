@@ -996,8 +996,8 @@ async function supportCMD(shell: Shell) {
     // ask for email address + check validity
     // Menu to ask user if they want to send the log or Post it to mail
     const fieldsNative = [
-        {prompt: "Copy log to clipboard"},
         {prompt: "Send log to support"},
+        {prompt: "Copy log to clipboard"},
         {prompt: "Save log to file"},
         {prompt: "Cancel"}
     ]
@@ -1026,9 +1026,9 @@ async function supportCMD(shell: Shell) {
                 shell.t.writeln("Invalid email address")
                 email = await shell.askValue("Enter your email address")
             }
-            const description = await shell.askValue("please describe the issue")
-            shell.t.writeln("Sending to support...")
-            shell.startWatchdog(30000).catch(() => sendFailed())
+            const description = await shell.askValue("Please explain how to recreate the issue: \n")
+            shell.t.writeln("Sending...")
+            shell.startWatchdog(5000).catch(() => sendFailed())
             const res = await fetch(`${schema}://${terminal7.conf.net.peerbook}/support`, {
                 method: "POST",
                 body: JSON.stringify({
@@ -1039,12 +1039,12 @@ async function supportCMD(shell: Shell) {
             })
             shell.stopWatchdog()
             if (res.ok) {
-                shell.t.writeln("Log sent to support.")
+                shell.t.writeln("Report sent 🙏")
             } else
                 sendFailed()
             break
         case "Save log to file":
-            shell.t.writeln("Saving log to file...")
+            shell.t.writeln("Saving log to file")
             const log2 = terminal7.dumpLog()
             // Works only on ios and android
             if(Capacitor.isNativePlatform()) {

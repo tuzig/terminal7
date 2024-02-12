@@ -355,7 +355,6 @@ test.describe('peerbook administration', ()  => {
         await page.keyboard.type('support')
         await page.keyboard.press('Enter')
         await sleep(100)
-        await page.keyboard.press('ArrowDown')
         await page.evaluate(() => { terminal7.log('log line')})
         await page.keyboard.press('Enter')
         await sleep(100)
