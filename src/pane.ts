@@ -112,6 +112,7 @@ export class Pane extends Cell {
             rows: props["rows"] || 24,
             cols: props["cols"] || 80,
             allowProposedApi: true,
+            scrollback: terminal7.conf.ui.scrollback,
             /* TODO: restore this. commented because it silences spotify
             bellStyle: "sound",
             bellSound: BELL_SOUND, */

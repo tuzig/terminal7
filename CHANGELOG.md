@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - support command to send the logs to the server
+- 9000 more lines of scrollback and a new setting to control it
 
 ### Fixed
 
