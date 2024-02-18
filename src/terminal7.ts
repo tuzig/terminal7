@@ -448,6 +448,9 @@ export class Terminal7 {
                 .then(callResolve)
                 .catch(catchConnect)
 
+            if (!this.netConnected)
+                callReject("No network")
+
             if (this.pb) {
                 if (this.pb.isOpen())
                     callResolve()
