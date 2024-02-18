@@ -92,7 +92,7 @@ export class WebRTCSession extends BaseSession {
 
     // eslint-disable-next-line
     async connect(marker?: Marker, noCDC?: boolean | string, privateKey?: string): Promise<void> {
-        console.log("in connect", marker, noCDC)
+        terminal7.log("in connect", marker, noCDC)
 
         if (this.t7.iceServers == null) {
             try {
@@ -106,7 +106,7 @@ export class WebRTCSession extends BaseSession {
         try {
             await this.t7.getFingerprint()
         } catch (e) {
-            console.log("failed to get fingerprint", e)
+            terminal7.log("failed to get fingerprint", e)
             this.t7.certificates = undefined
             return
         }
@@ -117,22 +117,22 @@ export class WebRTCSession extends BaseSession {
             if (!this.pc)
                 return
             const state = this.pc.connectionState
-            console.log("new connection state", state, marker)
+            terminal7.log("new connection state", state, marker)
             if (state === 'failed')
                 this.closeChannels()
             if ((state !== "connected") || (marker == null))
                 this.onStateChange(state)
         }
         this.pc.onicecandidateerror = (ev: RTCPeerConnectionIceErrorEvent) => {
-            console.log("icecandidate error", ev.errorCode, ev.errorText)
+            terminal7.log("icecandidate error", ev.errorCode, ev.errorText)
         }
         this.pc.onicecandidate = (ev: RTCPeerConnectionIceEvent) => this.onIceCandidate(ev)
 
         this.pc.onnegotiationneeded = e => this.onNegotiationNeeded(e)
         this.pc.ondatachannel = e => {
-            console.log(">> opening dc", e.channel.label)
+            terminal7.log(">> opening dc", e.channel.label)
             e.channel.onopen = () => {
-                console.log(">> onopen dc", e.channel.label)
+                terminal7.log(">> onopen dc", e.channel.label)
                 const l = e.channel.label,
                       m = l.split(":"),
                       msgID = parseInt(m[0]),
@@ -146,7 +146,7 @@ export class WebRTCSession extends BaseSession {
                     if (typeof resolve == "function")
                         resolve(e.channel, channelID)
                     else
-                        console.log("Go a surprising new channel", e.channel)
+                        terminal7.log("Go a surprising new channel", e.channel)
                     this.pendingChannels.delete(msgID)
                 }
             }
@@ -207,7 +207,7 @@ export class WebRTCSession extends BaseSession {
                     }
                 }, Function.prototype(), Function.prototype())
             } else {
-                console.log("reconnect pane", cmdorid)
+                terminal7.log("reconnect pane", cmdorid)
                 msgID = this.sendCTRLMsg({
                     type: "reconnect_pane", 
                     args: { id: cmdorid }
@@ -223,7 +223,7 @@ export class WebRTCSession extends BaseSession {
     }
     async reconnect(marker?: Marker , publicKey?: string, privateKey?: string): Promise<void> {
         return new Promise((resolve, reject) => { 
-            console.log("in reconnect", this.cdc, this.cdc.readyState)
+            terminal7.log("in reconnect", this.cdc, this.cdc.readyState)
             if (marker != null) {
                 this.sendCTRLMsg({ type: "restore", args: { marker }}, resolve,
                                  () => reject("Restore failed"))
@@ -242,7 +242,7 @@ export class WebRTCSession extends BaseSession {
            this.cdc.onmessage = undefined
        // TODO: improve error handling and add a reject
        return new Promise((resolve) => {
-           console.log(">>> opening cdc")
+           terminal7.log(">>> opening cdc")
             const cdc = this.pc.createDataChannel('%')
             this.cdc = cdc
             cdc.onopen = () => {
@@ -269,12 +269,12 @@ export class WebRTCSession extends BaseSession {
                         if (handlers && (typeof handlers[1] == "function"))
                             handlers[1](msg.args.desc)
                         else
-                            console.log("A nack is unhandled", msg)
+                            terminal7.log("A nack is unhandled", msg)
                     } else {
                         if (handlers && (typeof handlers[0] == "function"))
                             handlers[0](msg.args.body)
                         else
-                            console.log("an ack is unhandled", msg)
+                            terminal7.log("an ack is unhandled", msg)
                     }
                 } else if (this.onCMD)
                     this.onCMD(msg)
@@ -291,7 +291,7 @@ export class WebRTCSession extends BaseSession {
         this.msgHandlers.set(msg.message_id, [resolve, reject])
         if (!this.cdc || this.cdc.readyState != "open") {
             // message stays frozen when restarting
-            console.log("cdc not open, queuing message", msg)
+            terminal7.log("cdc not open, queuing message", msg)
             this.pendingCDCMsgs.push([msg, resolve, reject])
         } else {
             const s = msg.payload || JSON.stringify(msg)
@@ -419,7 +419,7 @@ export class PeerbookSession extends WebRTCSession {
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate && this.t7.pb) {
             try {
-                console.log("sending candidate")
+                terminal7.log("sending candidate")
                 this.t7.pb.adminCommand({type: "candidate",
                                          args: {
                                              target: this.fp,
@@ -449,7 +449,7 @@ export class PeerbookSession extends WebRTCSession {
            this.offer = d
 
         try {
-            console.log("sending offer", Date.now())
+            terminal7.log("sending offer", Date.now())
             await pb.adminCommand({type: "offer",
                                       args: {
                                           target: this.fp,
@@ -476,14 +476,17 @@ export class PeerbookSession extends WebRTCSession {
         }
     }
     peerCandidate(candidate) {
-        this.pc.addIceCandidate(candidate).catch(e =>
-            terminal7.log(`ICE candidate error: ${e}`))
+        this.pc.addIceCandidate(candidate).catch(e => {
+            terminal7.log(`ICE candidate error: ${e}`)
+            if (e.errorCode == 701)
+                this.onStateChange("failed", Failure.BadRemoteDescription)
+        })
         return
     }
 }
 
 
-// SSHSession is an implmentation of a real time session over ssh
+// HTTPWebRTCSession is a WebRTCSession that connects to a WHIP server
 export class HTTPWebRTCSession extends WebRTCSession {
     address: string
     headers: HttpHeaders = {}
@@ -495,7 +498,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
         this.address = address
         if (headers)
             headers.forEach((v, k) => this.headers[k] =  v)
-        console.log("new http webrtc session", address, JSON.stringify(this.headers))
+        terminal7.log("new http webrtc session", address, JSON.stringify(this.headers))
     }
 
     sendOffer(offer: RTCSessionDescriptionInit) {
@@ -513,15 +516,15 @@ export class HTTPWebRTCSession extends WebRTCSession {
             if (response.status == 401)
                 this.fail(Failure.Unauthorized)
             else if (response.status >= 300) {
-                console.log("failed to post to PB", response)
+                terminal7.log("failed to post to PB", response)
                 if (response.status == 404)
                     this.fail(Failure.NotSupported)
                 else
                     this.fail()
             } else if (response.status == 201) {
                 this.sessionURL = response.headers['location'] || response.headers['Location']
-                console.log("got a session url", this.sessionURL)
-                console.log("--> penfing candidates", this.pendingCandidates)
+                terminal7.log("got a session url", this.sessionURL)
+                terminal7.log("--> penfing candidates", this.pendingCandidates)
                 this.pendingCandidates.forEach(c => this.sendCandidate(c))
                 this.pendingCandidates = []
                 return response.data
@@ -534,7 +537,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
                 this.pc.setRemoteDescription({type: "answer", sdp: data})
                     .catch (() => this.fail(Failure.BadRemoteDescription))
         }).catch(error => {
-            console.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
+            terminal7.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
             if (error.message == 'unauthorized')
                 this.fail(Failure.Unauthorized)
             else
@@ -550,7 +553,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
     }
     sendCandidate(candidate: RTCIceCandidate) {
         if (this.sessionURL == null) {
-            console.log("waiting for session url, queuing candidate")
+            terminal7.log("waiting for session url, queuing candidate")
             this.pendingCandidates.push(candidate)
             return
         }
@@ -568,7 +571,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
             if (response.status == 401)
                 this.fail(Failure.Unauthorized)
             else if (response.status >= 300) {
-                console.log("failed to post to PB", response)
+                terminal7.log("failed to post to PB", response)
                 if (response.status == 404)
                     this.fail(Failure.NotSupported)
                 else
@@ -577,7 +580,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
                 return response.data
             return null
         }).catch(error => {
-            console.log(`FAILED: PATCH to ${this.address} with ${JSON.stringify(this.headers)}`, error)
+            terminal7.log(`FAILED: PATCH to ${this.address} with ${JSON.stringify(this.headers)}`, error)
             if (error.message == 'unauthorized')
                 this.fail(Failure.Unauthorized)
             else
@@ -585,7 +588,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
         })
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
-        console.log("got ice candidate", ev)
+        terminal7.log("got ice candidate", ev)
         if (ev.candidate != null) {
             this.sendCandidate(ev.candidate)
         }
