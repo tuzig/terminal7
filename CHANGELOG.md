@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - PWA first time user now get an offer to install
+- Reconnect failure after a log sleep
+- Endless reconnect loop when network is down
+
 
 ## [1.9.1] - 2023/12/20
 
