@@ -226,7 +226,7 @@ export class Gate {
                 break
             case Failure.Unauthorized:
                 // TODO: handle HTTP based authorization failure
-                this.copyFingerprint()
+                this.map.shell.onUnauthorized(this)
                 return
             case Failure.BadMarker:
                 this.notify("Sync Error. Starting fresh")
@@ -654,25 +654,6 @@ export class Gate {
             const w = this.addWindow("", true)
             this.breadcrumbs.push(w)
             w.focus()
-        }
-    }
-    async copyFingerprint() {
-        const fp = await this.t7.getFingerprint()
-        const cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
-        const fpForm = [{ 
-            prompt: `\n  ${this.addr} refused our fingerprint.
-  \n\x1B[1m${cmd}\x1B[0m\n
-  Copy to clipboard and connect with SSH?`,
-            values: ["y", "n"],
-            default: "y"
-        }]
-        let ans: string
-        try {
-            ans = (await this.map.shell.runForm(fpForm, "text"))[0]
-        } catch(e) { this.onFormError(e) }
-        if (ans == "y") {
-            Clipboard.write({ string: cmd })
-            this.connect(this.onConnected)
         }
     }
     async completeConnect(): Promise<void> {

@@ -838,7 +838,7 @@ export async function installCMD(shell: Shell, args: string[]) {
     let done = false
     let error = false
     const fields: Fields = [
-        { prompt: "Copy command to 📋" },
+        { prompt: "Copy command" },
         { prompt: "Cancel" },
     ]
     if (native)
@@ -850,7 +850,7 @@ export async function installCMD(shell: Shell, args: string[]) {
     const choice= await shell.runForm(fields, "menu")
     if (choice == "Cancel")
         return
-    if (choice == "Copy command to 📋") {
+    if (choice == "Copy command") {
         Clipboard.write({ string: cmd })
         shell.t.writeln("Command copied to clipboard")
         return

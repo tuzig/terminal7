@@ -32,6 +32,11 @@ export class Shell {
     exitConf: () => void
     lineAboveForm = 0
 
+    reconnectForm = [
+        { prompt: "Reconnect" },
+        { prompt: "Close" }
+    ]
+
     constructor(map: T7Map) {
         this.map = map
         this.t = map.t0
@@ -406,6 +411,36 @@ export class Shell {
         }
         return maybes[0]
     }
+    async onUnauthorized(gate: Gate) {
+        const fp = await terminal7.getFingerprint()
+        const suffix = Capacitor.isNativePlatform()?" and connect with SSH?":"?"
+        const cmd = `webexec client add ${fp}`
+        const fpForm = [{ 
+            prompt: `\n  ${this.addr} refused client's fingerprint. To add it run:
+  \n\x1B[1m    ${cmd}\x1B[0m\n
+  Copy to clipboard${suffix}`,
+            values: ["y", "n"],
+            default: "y"
+        }]
+        let ans: string
+        try {
+            ans = (await this.map.shell.runForm(fpForm, "text"))[0]
+        } catch(e) { this.onFormError(e) }
+        if (ans != "y")
+            return
+        Clipboard.write({ string: cmd })
+        this.t.writeln("Fingerprint copied to clipboard. Please paste it in the server's terminal and reconnect.")
+        let res
+        try {
+            res = await this.runForm(self.reconnectForm, "menu")
+        } catch (err) {
+            gate.onFailure(Failure.Aborted)
+        }
+        if (res == "Reconnect")
+            await gate.connect()
+        this.map.showLog(false)
+
+    }
 
     /*
      * onDisconnect is called when a gate disconnects.
@@ -492,26 +527,22 @@ export class Shell {
 
         }
 
-        const reconnectForm = [
-            { prompt: "Reconnect" },
-            { prompt: "Close" }
-        ]
-
         if (gate.session) {
             gate.session.close()
             gate.session = null
         }
         let res
         try {
-            res = await this.runForm(reconnectForm, "menu")
+            res = await this.runForm(self.reconnectForm, "menu")
         } catch (err) {
             gate.onFailure(Failure.Aborted)
         }
-        // TODO: needs refactoring
-        if (res == "Close")
-            gate.onFailure(Failure.Aborted)
         if (res == "Reconnect")
-            await this.runCommand("connect", [gate.name])
+            await gate.connect()
+        else {
+            gate.close()
+            this.map.showLog(false)
+        }
     }
     
     async askPass(): Promise<string> {
