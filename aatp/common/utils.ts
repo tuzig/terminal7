@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test'
 import { Client } from 'ssh2'
+import * as fs from 'fs'
 let checkedC = 0
 export async function reloadPage(page) {
     console.log("-- Reloading Page --")
@@ -161,4 +162,10 @@ export async function runSSHCommand(connConfig = {
             })
         })
     } catch(e) { expect(e).toBeNull() }
+}
+export async function authorizeFingerprint(page) {
+    const fp = await page.evaluate(async () => {
+        return await window.terminal7.getFingerprint()
+    })
+    fs.writeFileSync('/webexec_config/authorized_fingerprints', fp + '\n')
 }

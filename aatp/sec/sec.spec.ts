@@ -1,8 +1,7 @@
 import { test, expect, Page, BrowserContext } from '@playwright/test'
 import waitPort from 'wait-port'
 
-import { connectFirstGate, waitForTWROutput, runSSHCommand,
-    authorizeFingerprint, getTWRBuffer } from '../common/utils'
+import { connectFirstGate, authorizeFingerprint, getTWRBuffer } from '../common/utils'
 
 
 const local = process.env.LOCALDEV !== undefined,
@@ -10,7 +9,6 @@ const local = process.env.LOCALDEV !== undefined,
 
 test.describe('terminal7 UI', ()  => {
 
-    const sleep = (ms) => { return new Promise(r => setTimeout(r, ms)) }
     let page: Page,
         context: BrowserContext
 
@@ -50,7 +48,7 @@ insecure=true`)
         await connectFirstGate(page)
         await page.screenshot({path: '/result/1.png'})
         await expect(page.locator('#t0')).toBeVisible()
-        let twr = await getTWRBuffer(page)
+        const twr = await getTWRBuffer(page)
         expect(twr).toMatch(/webexec client add/)
     })
     test('authorizing a client happens ASAP', async () => {

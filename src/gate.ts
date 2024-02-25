@@ -5,8 +5,6 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Clipboard } from '@capacitor/clipboard'
-
 import { Pane } from './pane'
 import { T7Map } from './map'
 import { Failure, Session, Marker } from './session'
