@@ -77,6 +77,11 @@ then
 else
     for arg in $@
     do
+        if [ ! -f $arg/lab.yaml ]
+        then
+            echo ">>> $arg is not a valid test suite"
+            exit 4
+        fi
         build_n_run $arg/lab.yaml
         if [ $? -ne 0 ]
         then
