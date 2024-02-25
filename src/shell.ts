@@ -1,6 +1,8 @@
-import { Channel, Failure } from "./session"
+import { Capacitor } from '@capacitor/core'
 import { Clipboard } from "@capacitor/clipboard"
 import { Terminal } from 'xterm'
+
+import { Channel, Failure } from "./session"
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
 import { Gate } from "./gate"
@@ -412,7 +414,7 @@ export class Shell {
         const suffix = Capacitor.isNativePlatform()?" and connect with SSH?":"?"
         const cmd = `webexec client add ${fp}`
         const fpForm = [{ 
-            prompt: `\n  ${this.addr} refused client's fingerprint. To add it run:
+            prompt: `\n  ${gate.name || gate.addr} refused client's fingerprint. To add it run:
   \n\x1B[1m    ${cmd}\x1B[0m\n
   Copy to clipboard${suffix}`,
             values: ["y", "n"],
@@ -425,7 +427,7 @@ export class Shell {
 
         let ans: string
         try {
-            ans = (await this.map.shell.runForm(fpForm, "text"))[0]
+            ans = (await this.runForm(fpForm, "text"))[0]
         } catch(e) { this.onFormError(e) }
         if (ans != "y")
             return

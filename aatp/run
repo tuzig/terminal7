@@ -86,7 +86,7 @@ else
         if [ $? -ne 0 ]
         then
              echo ">>> $arg FAILED"
-             exit 4
+             exit 5
         fi
         echo ">>> $arg tests PASSED"
     done
