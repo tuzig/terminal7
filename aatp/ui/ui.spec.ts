@@ -28,7 +28,7 @@ test.describe('terminal7 UI', ()  => {
         page.on('pageerror', (err: Error) => console.log('PAGEERROR', err.message))
         await waitPort({host:'terminal7', port:80})
         const response = await page.goto(url)
-        await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
+        expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
         await page.evaluate(async () => {
             window.terminal7.notify = (msg: string) => console.log("NOTIFY: "+msg)
             localStorage.setItem("CapacitorStorage.dotfile",`
