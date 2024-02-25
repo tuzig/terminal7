@@ -32,11 +32,6 @@ export class Shell {
     exitConf: () => void
     lineAboveForm = 0
 
-    reconnectForm = [
-        { prompt: "Reconnect" },
-        { prompt: "Close" }
-    ]
-
     constructor(map: T7Map) {
         this.map = map
         this.t = map.t0
@@ -256,6 +251,7 @@ export class Shell {
 
     printBelowForm(text: string, returnToForm = false) {
         if (!this.activeForm) return
+        console.log("printBelowForm", this.activeForm.fields)
         this.t.write(`\x1B[s\x1B[${this.activeForm.fields.length-this.activeForm.currentField}B\n\x1B[K${text}`)
         if (returnToForm)
             this.t.write(`\x1B[u`)
@@ -422,6 +418,11 @@ export class Shell {
             values: ["y", "n"],
             default: "y"
         }]
+        const reconnectForm = [
+            { prompt: "Reconnect" },
+            { prompt: "Close" }
+        ]
+
         let ans: string
         try {
             ans = (await this.map.shell.runForm(fpForm, "text"))[0]
@@ -432,7 +433,7 @@ export class Shell {
         this.t.writeln("Fingerprint copied to clipboard. Please paste it in the server's terminal and reconnect.")
         let res
         try {
-            res = await this.runForm(self.reconnectForm, "menu")
+            res = await this.runForm(reconnectForm, "menu")
         } catch (err) {
             gate.onFailure(Failure.Aborted)
         }
@@ -533,7 +534,10 @@ export class Shell {
         }
         let res
         try {
-            res = await this.runForm(self.reconnectForm, "menu")
+            res = await this.runForm([
+                { prompt: "Reconnect" },
+                { prompt: "Close" }
+            ], "menu")
         } catch (err) {
             gate.onFailure(Failure.Aborted)
         }
