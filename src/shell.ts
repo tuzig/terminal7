@@ -1,13 +1,14 @@
 import { Capacitor } from '@capacitor/core'
 import { Clipboard } from "@capacitor/clipboard"
 import { Terminal } from 'xterm'
+import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
+import Bowser from "bowser";
 
 import { Channel, Failure } from "./session"
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
 import { Gate } from "./gate"
 import { T7Map } from './map'
-import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
 import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
 import { tomlMode } from '@tuzig/codemirror/mode/toml/toml.js'
 import { dialogAddOn } from '@tuzig/codemirror/addon/dialog/dialog.js'
@@ -412,7 +413,9 @@ export class Shell {
     async onUnauthorized(gate: Gate) {
         const fp = await terminal7.getFingerprint()
         const suffix = Capacitor.isNativePlatform()?" and connect with SSH?":"?"
-        const cmd = `webexec client add ${fp}`
+        const browser = Bowser.getParser(window.navigator.userAgent)
+        const base = browser.getOS().name+"_"+browser.getBrowserName()
+        const cmd = `webexec client add ${fp} ${base}_terminal7`
         const fpForm = [{ 
             prompt: `\n  ${gate.name || gate.addr} refused client's fingerprint. To add it run:
   \n\x1B[1m    ${cmd}\x1B[0m\n
@@ -432,7 +435,7 @@ export class Shell {
         if (ans != "y")
             return
         Clipboard.write({ string: cmd })
-        this.t.writeln("Fingerprint copied to clipboard. Please paste it in the server's terminal and reconnect.")
+        this.t.writeln("Command copied. Please paste in a server's terminal and reconnect.")
         let res
         try {
             res = await this.runForm(reconnectForm, "menu")

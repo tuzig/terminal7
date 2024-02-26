@@ -224,6 +224,8 @@ export class Gate {
                 break
             case Failure.Unauthorized:
                 // TODO: handle HTTP based authorization failure
+                this.session.close()
+                this.session = null
                 this.map.shell.onUnauthorized(this)
                 return
             case Failure.BadMarker:
