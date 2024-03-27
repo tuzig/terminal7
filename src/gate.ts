@@ -13,6 +13,7 @@ import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
 import { Capacitor } from '@capacitor/core'
+import { Clipboard } from '@capacitor/clipboard'
 import { HTTPWebRTCSession, PeerbookSession, WebRTCSession } from './webrtc_session'
 import { SerializedWindow, Window } from './window'
 import { Preferences } from '@capacitor/preferences'
@@ -676,10 +677,37 @@ export class Gate {
         }
         this.session.onStateChange = (state, failure?) => this.onSessionState(state, failure)
         this.session.onCMD = msg => {
-            if (msg.type == "set_payload") {
-                this.setLayout(msg.args.payload, true)
-            } else {
-                this.t7.log(`got unknown message ${msg}`)
+            switch (msg.type) {
+                case "set_payload":
+                    this.setLayout(msg.args.payload, true)
+                    break
+                case "get_clipboard":
+                    Clipboard.read().then(cb => {
+                        if (cb.type != 'text/plain') {
+                            this.t7.log("clipboard is not text")
+                            return
+                        }
+                        this.session.sendCTRLMsg({
+                            type: "ack",
+                            args: {
+                                ref: msg.message_id,
+                                body: cb.value,
+                            }
+                        })
+                    })
+                    break
+                case "set_clipboard":
+                    Clipboard.write({string: msg.args.text})
+                    this.session.sendCTRLMsg({
+                        type: "ack",
+                        args: {
+                            ref: msg.message_id,
+                            body: "",
+                        }
+                    })
+                    break
+                default:
+                    this.t7.log('got unknown message', msg)
             }
         }
         this.t7.log("opening session")

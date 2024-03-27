@@ -10,6 +10,11 @@ type RTCStats = {
     bytesReceived: number,
     roundTripTime: number,
 }
+type ControlMessage = {
+    message_id: number,
+    time: number,
+    args: object,
+}
 
 export class WebRTCChannel extends BaseChannel {
     dataChannel: RTCDataChannel
@@ -281,7 +286,7 @@ export class WebRTCSession extends BaseSession {
             }
        })
     }
-    sendCTRLMsg(msg, resolve, reject) {
+    sendCTRLMsg(msg: ControlMessage, resolve, reject) {
         // helps us ensure every message gets only one Id
         if (msg.message_id === undefined) 
             msg.message_id = this.lastMsgId++
