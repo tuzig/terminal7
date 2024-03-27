@@ -93,6 +93,12 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             usage: "i[nstall] [gatename]",
             execute: async args => installCMD(shell, args)
         },
+        login: {
+            name: "login",
+            help: "Login to an existing PeerBook account",
+            usage: "l[ogin]",
+            execute: async () => loginCMD(shell)
+        },
         map: {
             name: "map",
             help: "Back to the map",
@@ -113,7 +119,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
         },
         subscribe: {
             name: "subscribe",
-            help: "Subscripte to peerbook",
+            help: "Subscripte to PeerBook",
             usage: "sub[scribe]",
             execute: async () => subscribeCMD(shell)
         },
