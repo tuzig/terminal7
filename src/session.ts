@@ -38,7 +38,7 @@ export interface Channel {
     onMessage : CallbackType
     close(): void
     send(data: ArrayBuffer | string): void
-    resize(sx: number, sy: number): Promise<void>
+    resize(sx: number, sy: number): Promise<string|void>
     readonly readyState: string
 }
 
@@ -49,8 +49,8 @@ export interface Session {
     // for reconnect
     openChannel(id: ChannelID | string | string[], parent?: ChannelID, sx?: number, sy?: number): Promise<Channel>
     close(): void
-    getPayload(): Promise<unknown | void>
-    setPayload(payload: unknown): Promise<void>
+    getPayload(): Promise<string>
+    setPayload(payload: string): Promise<string>
     reconnect(marker?: Marker, publicKey?: string, privateKey?: string): Promise<unknown | void>
     disconnect(): Promise<number | null>
     connect(marker?: Marker, publicKey?: string, privateKey?: string): Promise<void>
@@ -65,7 +65,7 @@ export abstract class BaseChannel implements Channel {
     onMessage : CallbackType
     abstract close(): void
     abstract send(data: ArrayBuffer): void
-    abstract resize(sx: number, sy: number): Promise<void>
+    abstract resize(sx: number, sy: number): Promise<string | void>
 
     constructor() {
         this.onMessage = () => void 0
@@ -88,13 +88,14 @@ export abstract class BaseSession implements Session {
     get isSSH(): boolean {
         throw new Error("Not implemented")
     }
-    async getPayload(): Promise<unknown | void> {
-        return null
+    async getPayload(): Promise<string> {
+        return ""
     }
     // TODO: get it to throw "Not Implemented"
     // eslint-disable-next-line
-    async setPayload(payload) {
+    async setPayload(payload: string): Promise<string>{
         console.log(`ignoring set payload: ${JSON.stringify(payload)}`)
+        return ""
     }
     // eslint-disable-next-line
     async reconnect(marker?: Marker, publicKey?: string, privateKey?: string): Promise<unknown | void> {

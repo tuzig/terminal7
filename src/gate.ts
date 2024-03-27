@@ -14,7 +14,7 @@ import { Terminal7 } from './terminal7'
 
 import { Capacitor } from '@capacitor/core'
 import { Clipboard } from '@capacitor/clipboard'
-import { HTTPWebRTCSession, PeerbookSession, WebRTCSession } from './webrtc_session'
+import { HTTPWebRTCSession, PeerbookSession, WebRTCSession, ControlMessage } from './webrtc_session'
 import { SerializedWindow, Window } from './window'
 import { Preferences } from '@capacitor/preferences'
 
@@ -676,7 +676,12 @@ export class Gate {
             }
         }
         this.session.onStateChange = (state, failure?) => this.onSessionState(state, failure)
-        this.session.onCMD = msg => {
+        this.session.onCMD = (msg: ControlMessage) => {
+            // cast session to WebRTCSession
+            //
+            // @ts-ignore
+            // eslint-disable-next-line
+            let session: WebRTCSession = this.session
             switch (msg.type) {
                 case "set_payload":
                     this.setLayout(msg.args.payload, true)
@@ -687,24 +692,13 @@ export class Gate {
                             this.t7.log("clipboard is not text")
                             return
                         }
-                        this.session.sendCTRLMsg({
-                            type: "ack",
-                            args: {
-                                ref: msg.message_id,
-                                body: cb.value,
-                            }
-                        })
+                        session.sendCTRLMsg(
+                            new ControlMessage("ack", {ref: msg.message_id, body: cb.value}))
                     })
                     break
                 case "set_clipboard":
                     Clipboard.write({string: msg.args.text})
-                    this.session.sendCTRLMsg({
-                        type: "ack",
-                        args: {
-                            ref: msg.message_id,
-                            body: "",
-                        }
-                    })
+                    session.sendCTRLMsg(new ControlMessage("ack", {ref: msg.message_id}))
                     break
                 default:
                     this.t7.log('got unknown message', msg)
