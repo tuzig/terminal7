@@ -388,7 +388,6 @@ export class Gate {
         const winLen = this.windows.length
         if(this.fitScreen)
             this.fontScale = 1
-        // got an empty state
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
@@ -595,7 +594,7 @@ export class Gate {
            if (!this.session)
                return
 
-            if (this.panes().every(p => p.channelID))
+           if (this.panes().every(p => p.channelID))
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
                         this.t7.log("Closing gate after updating to empty state")
@@ -684,7 +683,7 @@ export class Gate {
             let session: WebRTCSession = this.session
             switch (msg.type) {
                 case "set_payload":
-                    this.setLayout(msg.args.payload, true)
+                    this.setLayout(msg.args["payload"], true)
                     break
                 case "get_clipboard":
                     Clipboard.read().then(cb => {
@@ -697,7 +696,7 @@ export class Gate {
                     })
                     break
                 case "set_clipboard":
-                    Clipboard.write({string: msg.args.text})
+                    Clipboard.write({string: msg.args["text"]})
                     session.sendCTRLMsg(new ControlMessage("ack", {ref: msg.message_id}))
                     break
                 default:

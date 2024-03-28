@@ -19,9 +19,6 @@ export class ControlMessage {
         if (args)
             this.args = args
     }
-    toJSON() {
-        return JSON.stringify(this)
-    }
 }
 
 export class WebRTCChannel extends BaseChannel {
@@ -302,7 +299,7 @@ export class WebRTCSession extends BaseSession {
     getPayload(): Promise<string>{
         return this.sendCTRLMsg(new ControlMessage("get_payload"))
     }
-    setPayload(payload: string): Promise<string>{
+    setPayload(payload: string | object): Promise<string>{
         return this.sendCTRLMsg(new ControlMessage("set_payload", { Payload: payload }))
     }
     closeChannels(): void {

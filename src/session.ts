@@ -50,7 +50,7 @@ export interface Session {
     openChannel(id: ChannelID | string | string[], parent?: ChannelID, sx?: number, sy?: number): Promise<Channel>
     close(): void
     getPayload(): Promise<string>
-    setPayload(payload: string): Promise<string>
+    setPayload(payload: string|object): Promise<string>
     reconnect(marker?: Marker, publicKey?: string, privateKey?: string): Promise<unknown | void>
     disconnect(): Promise<number | null>
     connect(marker?: Marker, publicKey?: string, privateKey?: string): Promise<void>
@@ -93,7 +93,7 @@ export abstract class BaseSession implements Session {
     }
     // TODO: get it to throw "Not Implemented"
     // eslint-disable-next-line
-    async setPayload(payload: string): Promise<string>{
+    async setPayload(payload: string|object): Promise<string>{
         console.log(`ignoring set payload: ${JSON.stringify(payload)}`)
         return ""
     }
