@@ -81,7 +81,7 @@
     "build": "vite build -c vite.dev.config.js",
     "clean": "rm -rf dist ios/App/App/public/*",
     "aatp": "bash ./aatp/run",
-    "lint": "npx eslint aatp src --ext .js,.ts && npx tsc --skipLibCheck --noEmit --target es2022 --moduleResolution node src/*.ts"
+    "lint": "npx eslint aatp src --ext .js,.ts && npx tsc --noEmit"
   },
   "repository": {
     "type": "git",
@@ -100,6 +100,9 @@
   "eslintConfig": {
     "root": true,
     "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "project": "./tsconfig.json"
+    },
     "plugins": [
       "@typescript-eslint/eslint-plugin"
     ],
