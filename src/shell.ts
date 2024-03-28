@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core'
 import { Clipboard } from "@capacitor/clipboard"
 import { Terminal } from 'xterm'
 import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
-import Bowser from "bowser"
+import * as Bowser from "bowser"
 
 import { Channel, Failure } from "./session"
 import { Command, loadCommands } from './commands'
