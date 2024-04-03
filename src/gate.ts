@@ -696,7 +696,10 @@ export class Gate {
                     })
                     break
                 case "set_clipboard":
-                    Clipboard.write({string: msg.args["text"]})
+                    if (msg.args["mimetype"].startsWith("text"))
+                        Clipboard.write({string: msg.args["data"]})
+                    else
+                        Clipboard.write({image: msg.args["data"]})
                     session.sendCTRLMsg(new ControlMessage("ack", {ref: msg.message_id}))
                     break
                 default:
