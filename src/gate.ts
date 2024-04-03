@@ -693,7 +693,8 @@ export class Gate {
                         }
                         session.sendCTRLMsg(
                             new ControlMessage("ack", {ref: msg.message_id, body: cb.value}))
-                    })
+                    }).catch(e => session.sendCTRLMsg(
+                            new ControlMessage("nack", {ref: msg.message_id, body: e.message})))
                     break
                 case "set_clipboard":
                     if (msg.args["mimetype"].startsWith("text"))
