@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - support for webexec clipboard commands, e.g. use `webexec copy < file.txt` to copy a file to the client's clipboard
 
-## [1.9.2] - 2023/3/17
+## [1.9.2] - 2023/3/18
 
 ### Added
 
