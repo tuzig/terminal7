@@ -415,7 +415,7 @@ export class Shell {
         const suffix = Capacitor.isNativePlatform()?" and connect with SSH?":"?"
         const browser = Bowser.getParser(window.navigator.userAgent)
         const base = browser.getOS().name+"_"+browser.getBrowserName()
-        const cmd = `webexec client add ${fp} ${base}_terminal7`
+        const cmd = `webexec client add "${fp} ${base}_terminal7"`
         const fpForm = [{ 
             prompt: `\n  ${gate.name || gate.addr} refused client's fingerprint. To add it run:
   \n\x1B[1m    ${cmd}\x1B[0m\n
