@@ -724,7 +724,6 @@ audio { display: none; }
     display: block;
     margin: 0 auto;
     height: 370px;
-    height: fit-content;
     background: right no-repeat url("/map/top.png");
     
 }
