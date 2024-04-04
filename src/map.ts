@@ -217,9 +217,10 @@ export class T7Map {
                     return (+(bytes / Math.pow(1024, i)).toFixed(2) + sizes[i])
                 }
                 const pad = (s: string, n = 9) => s.padEnd(n, 'X').replace(/X/g, '&nbsp;')
+                const extraClass = stats.roundTripTime > 400 ? "error" : stats.roundTripTime > 100 ? "warning" : ""
 
                 html =
-                    '<i class="f7-icons">arrow_right_arrow_left_circle</i>' + pad(stats.roundTripTime + 'ms', 7) +
+                    `<i class="f7-icons ${extraClass}">arrow_right_arrow_left_circle</i><span class=${extraClass}>` + pad(stats.roundTripTime + 'ms', 7) + '</span>' +
                     '<i class="f7-icons">arrow_down_circle</i>' + pad(getBytes(stats.bytesReceived)) +
                     '<i class="f7-icons">arrow_up_circle</i>' + pad(getBytes(stats.bytesSent))
             }

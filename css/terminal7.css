@@ -12,6 +12,7 @@
     --text-color: #01FAFA;
     --remote-border: #F4DB53;
     --warning: #F4DB53;
+    --error: #F54545;
     --background: #271D30;
     --text-background: #11051E;
     --text-offline: #004444;
@@ -700,6 +701,9 @@ footer pre { font-size: 14px; }
 }
 .warning {
     color: var(--warning);
+}
+.error {
+    color: var(--error);
 }
 .lose-state p {
     text-align: left;
