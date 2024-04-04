@@ -211,7 +211,6 @@ nav button {
 .has-help {
     position: relative;
 }
-
 .help-bubble-text {
     font-size: 1rem;
     font-family: 'FiraSans', serif;
@@ -220,10 +219,8 @@ nav button {
     text-align: center;
     padding: 5px 0;
     border-radius: 6px;
-
     position: absolute;
     z-index: 5;
-
     width: 120px;
     bottom: 80px;
     left: 50%;
@@ -239,7 +236,6 @@ nav button {
     transform: scale(1,5);
     border-style: solid;
     border-color: var(--help-bubble-bg-color) transparent transparent transparent;
-
 }
 nav:not(.navtext) button:last-child {
     border: none;
@@ -268,17 +264,17 @@ nav {
     border-radius: 0 0 12px 12px;
     min-height: min-content;
     overflow-x: auto;
-     -ms-overflow-style: none;
-     overflow: -moz-scrollbars-none;
-     flex-wrap: nowrap;
-     position: relative;
-     align-items: flex-end;
- }
+    -ms-overflow-style: none;
+    overflow: -moz-scrollbars-none;
+    flex-wrap: nowrap;
+    position: relative;
+    align-items: flex-end;
+}
 .home-topbar {
     align-content: space-between;
 }
 nav::-webkit-scrollbar {
-     display: none; /*Safari and Chrome*/
+    display: none; /*Safari and Chrome*/
 }
 .tabbar a {
     flex: 1 0 auto; 
@@ -729,10 +725,7 @@ audio { display: none; }
     margin: 0 auto;
     height: 370px;
     background: right no-repeat url("/map/top.png");
-    
 }
-
-
 .gate-pad, .empty-pad {
     width: 25%;
     height: 110px;
@@ -756,7 +749,6 @@ audio { display: none; }
     text-align: left;
     padding-left: 1.5em;
     text-shadow: none;
-    position: absolute;
     z-index: 20;
     border-bottom: 1px rgba(255, 255, 255, 0.7) solid;
     border-right: 0;
@@ -768,7 +760,7 @@ audio { display: none; }
 }
 
 .gate > .gate-stats {
-
+    position: absolute;
     top: 0;
     right: 0;
     font-size: 75%;
@@ -896,9 +888,6 @@ video {
     opacity: 0.8;
     z-index: 3;
 }
-
-/* media queries - max width 600px */
-
 @media (max-width: 600px) {
     #log {
         width: 90vw;
@@ -912,9 +901,4 @@ video {
     #version {
         max-width: 35vw;
     }
-
-    #map {
-        max-width: 90vw;
-    }
-
 }
