@@ -219,9 +219,7 @@ export class T7Map {
                 const pad = (s: string, n = 9) => s.padEnd(n, 'X').replace(/X/g, '&nbsp;')
 
                 html =
-                    '<i class="f7-icons">arrow_right_arrow_left_circle</i>' + pad(stats.roundTripTime + 'ms', 7) +
-                    '<i class="f7-icons">arrow_down_circle</i>' + pad(getBytes(stats.bytesReceived)) +
-                    '<i class="f7-icons">arrow_up_circle</i>' + pad(getBytes(stats.bytesSent))
+                    '<i class="f7-icons">arrow_right_arrow_left_circle</i>' + pad(stats.roundTripTime + 'ms', 7) 
             }
             g.nameE.querySelector(".gate-stats").innerHTML = html
             g.e.querySelector(".gate-stats").innerHTML = html
