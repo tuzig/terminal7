@@ -448,6 +448,7 @@ export class Gate {
             container.style.removeProperty("height")
             scale = 1
             container.style.left = "0"
+            container.style.top = "0"
             container.style.removeProperty("transform")
         } else {
 
