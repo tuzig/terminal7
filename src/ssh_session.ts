@@ -273,6 +273,7 @@ export class HybridSession extends SSHSession {
                 else if (state == "failed")
                     reject()
             }
+            
             this.webrtcSession.onIceCandidate = e => {
                 const candidate = JSON.stringify(e.candidate)
                 this.sentMessages.push(candidate)
@@ -312,13 +313,13 @@ export class HybridSession extends SSHSession {
             return this.webrtcSession.close() 
     }
 
-    getPayload(): Promise<unknown | void> {
+    getPayload(): Promise<string> {
         if (this.webrtcSession)
             return this.webrtcSession.getPayload() 
         else
             return super.getPayload()
     }
-    setPayload(payload: string): Promise<void>{
+    setPayload(payload: string): Promise<string>{
         if (this.webrtcSession)
             return this.webrtcSession.setPayload(payload) 
         else

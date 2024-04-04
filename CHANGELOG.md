@@ -6,11 +6,17 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- Support for webexec clipboard commands, e.g. use `webexec copy < file.txt` to copy a file to the client's clipboard
+
 ## [1.9.2] - 2023/3/18
 
 ### Added
 
-- support command to send the logs to the server
+- Support command to send the logs to the server
 - 9000 more lines of scrollback and a new setting to control it
 
 ### Fixed

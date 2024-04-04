@@ -5,8 +5,6 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Clipboard } from '@capacitor/clipboard'
-
 import { Pane } from './pane'
 import { T7Map } from './map'
 import { Failure, Session, Marker } from './session'
@@ -15,7 +13,8 @@ import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
 import { Capacitor } from '@capacitor/core'
-import { HTTPWebRTCSession, PeerbookSession, WebRTCSession } from './webrtc_session'
+import { Clipboard } from '@capacitor/clipboard'
+import { HTTPWebRTCSession, PeerbookSession, WebRTCSession, ControlMessage } from './webrtc_session'
 import { SerializedWindow, Window } from './window'
 import { Preferences } from '@capacitor/preferences'
 
@@ -226,7 +225,9 @@ export class Gate {
                 break
             case Failure.Unauthorized:
                 // TODO: handle HTTP based authorization failure
-                this.copyFingerprint()
+                this.session.close()
+                this.session = null
+                this.map.shell.onUnauthorized(this)
                 return
             case Failure.BadMarker:
                 this.notify("Sync Error. Starting fresh")
@@ -387,7 +388,6 @@ export class Gate {
         const winLen = this.windows.length
         if(this.fitScreen)
             this.fontScale = 1
-        // got an empty state
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
@@ -593,7 +593,7 @@ export class Gate {
            if (!this.session)
                return
 
-            if (this.panes().every(p => p.channelID))
+           if (this.panes().every(p => p.channelID))
                this.session.setPayload(this.dump()).then(() => {
                     if ((this.windows.length == 0) && (this.session != null)) {
                         this.t7.log("Closing gate after updating to empty state")
@@ -655,25 +655,6 @@ export class Gate {
             w.focus()
         }
     }
-    async copyFingerprint() {
-        const fp = await this.t7.getFingerprint()
-        const cmd = `echo "${fp}" >> ~/.config/webexec/authorized_fingerprints`
-        const fpForm = [{ 
-            prompt: `\n  ${this.addr} refused our fingerprint.
-  \n\x1B[1m${cmd}\x1B[0m\n
-  Copy to clipboard and connect with SSH?`,
-            values: ["y", "n"],
-            default: "y"
-        }]
-        let ans: string
-        try {
-            ans = (await this.map.shell.runForm(fpForm, "text"))[0]
-        } catch(e) { this.onFormError(e) }
-        if (ans == "y") {
-            Clipboard.write({ string: cmd })
-            this.connect(this.onConnected)
-        }
-    }
     async completeConnect(): Promise<void> {
         this.keyRejected = false
         const isNative = Capacitor.isNativePlatform()
@@ -693,11 +674,36 @@ export class Gate {
             }
         }
         this.session.onStateChange = (state, failure?) => this.onSessionState(state, failure)
-        this.session.onCMD = msg => {
-            if (msg.type == "set_payload") {
-                this.setLayout(msg.args.payload, true)
-            } else {
-                this.t7.log(`got unknown message ${msg}`)
+        this.session.onCMD = (msg: ControlMessage) => {
+            // cast session to WebRTCSession
+            //
+            // @ts-ignore
+            // eslint-disable-next-line
+            let session: WebRTCSession = this.session
+            switch (msg.type) {
+                case "set_payload":
+                    this.setLayout(msg.args["payload"], true)
+                    break
+                case "get_clipboard":
+                    Clipboard.read().then(cb => {
+                        if (cb.type != 'text/plain') {
+                            this.t7.log("clipboard is not text")
+                            return
+                        }
+                        session.sendCTRLMsg(
+                            new ControlMessage("ack", {ref: msg.message_id, body: cb.value}))
+                    }).catch(e => session.sendCTRLMsg(
+                            new ControlMessage("nack", {ref: msg.message_id, body: e.message})))
+                    break
+                case "set_clipboard":
+                    if (msg.args["mimetype"].startsWith("text"))
+                        Clipboard.write({string: msg.args["data"]})
+                    else
+                        Clipboard.write({image: msg.args["data"]})
+                    session.sendCTRLMsg(new ControlMessage("ack", {ref: msg.message_id}))
+                    break
+                default:
+                    this.t7.log('got unknown message', msg)
             }
         }
         this.t7.log("opening session")

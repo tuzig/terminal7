@@ -1,11 +1,14 @@
-import { Channel, Failure } from "./session"
+import { Capacitor } from '@capacitor/core'
 import { Clipboard } from "@capacitor/clipboard"
 import { Terminal } from 'xterm'
+import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
+import Bowser from "bowser";
+
+import { Channel, Failure } from "./session"
 import { Command, loadCommands } from './commands'
 import { Fields, Form } from './form'
 import { Gate } from "./gate"
 import { T7Map } from './map'
-import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
 import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
 import { tomlMode } from '@tuzig/codemirror/mode/toml/toml.js'
 import { dialogAddOn } from '@tuzig/codemirror/addon/dialog/dialog.js'
@@ -251,6 +254,7 @@ export class Shell {
 
     printBelowForm(text: string, returnToForm = false) {
         if (!this.activeForm) return
+        console.log("printBelowForm", this.activeForm.fields)
         this.t.write(`\x1B[s\x1B[${this.activeForm.fields.length-this.activeForm.currentField}B\n\x1B[K${text}`)
         if (returnToForm)
             this.t.write(`\x1B[u`)
@@ -406,6 +410,43 @@ export class Shell {
         }
         return maybes[0]
     }
+    async onUnauthorized(gate: Gate) {
+        const fp = await terminal7.getFingerprint()
+        const suffix = Capacitor.isNativePlatform()?" and connect with SSH?":"?"
+        const browser = Bowser.getParser(window.navigator.userAgent)
+        const base = browser.getOS().name+"_"+browser.getBrowserName()
+        const cmd = `webexec client add "${fp} ${base}_terminal7"`
+        const fpForm = [{ 
+            prompt: `\n  ${gate.name || gate.addr} refused client's fingerprint. To add it run:
+  \n\x1B[1m    ${cmd}\x1B[0m\n
+  Copy to clipboard${suffix}`,
+            values: ["y", "n"],
+            default: "y"
+        }]
+        const reconnectForm = [
+            { prompt: "Reconnect" },
+            { prompt: "Close" }
+        ]
+
+        let ans: string
+        try {
+            ans = (await this.runForm(fpForm, "text"))[0]
+        } catch(e) { this.onFormError(e) }
+        if (ans != "y")
+            return
+        Clipboard.write({ string: cmd })
+        this.t.writeln("Command copied. Please paste in a server's terminal and reconnect.")
+        let res
+        try {
+            res = await this.runForm(reconnectForm, "menu")
+        } catch (err) {
+            gate.onFailure(Failure.Aborted)
+        }
+        if (res == "Reconnect")
+            await gate.connect()
+        this.map.showLog(false)
+
+    }
 
     /*
      * onDisconnect is called when a gate disconnects.
@@ -492,26 +533,25 @@ export class Shell {
 
         }
 
-        const reconnectForm = [
-            { prompt: "Reconnect" },
-            { prompt: "Close" }
-        ]
-
         if (gate.session) {
             gate.session.close()
             gate.session = null
         }
         let res
         try {
-            res = await this.runForm(reconnectForm, "menu")
+            res = await this.runForm([
+                { prompt: "Reconnect" },
+                { prompt: "Close" }
+            ], "menu")
         } catch (err) {
             gate.onFailure(Failure.Aborted)
         }
-        // TODO: needs refactoring
-        if (res == "Close")
-            gate.onFailure(Failure.Aborted)
         if (res == "Reconnect")
-            await this.runCommand("connect", [gate.name])
+            await gate.connect()
+        else {
+            gate.close()
+            this.map.showLog(false)
+        }
     }
     
     async askPass(): Promise<string> {

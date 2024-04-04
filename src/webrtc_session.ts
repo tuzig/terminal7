@@ -1,7 +1,6 @@
-import { CapacitorHttp, HttpHeaders } from '@capacitor/core';
-import { BaseChannel, BaseSession, Channel, ChannelID, Failure, Marker } from './session';
+import { CapacitorHttp, HttpHeaders } from '@capacitor/core'
+import { BaseChannel, BaseSession, Channel, ChannelID, Failure, Marker } from './session'
 import { IceServers } from "./terminal7"
-import { ServerPayload } from "./gate"
 
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
 type RTCStats = {
@@ -10,9 +9,20 @@ type RTCStats = {
     bytesReceived: number,
     roundTripTime: number,
 }
+export class ControlMessage {
+    message_id: number
+    time: number
+    type: string
+    args: object
+    constructor(type: string, args?: object) {
+        this.type = type
+        if (args)
+            this.args = args
+    }
+}
 
 export class WebRTCChannel extends BaseChannel {
-    dataChannel: RTCDataChannel
+    dataChannel: RTCDataChannel | null
     session: WebRTCSession
     constructor(session: WebRTCSession,
                 id: number,
@@ -38,17 +48,8 @@ export class WebRTCChannel extends BaseChannel {
         }
         this.dataChannel.send(data)
     }
-    resize(sx: number, sy: number): Promise<void> {
-        return new Promise((resolve, reject) => {
-            this.session.sendCTRLMsg({
-                type: "resize", 
-                args: {
-                       pane_id: this.id,
-                       sx: sx,
-                       sy: sy
-                }
-            }, resolve, reject)
-        })
+    resize(sx: number, sy: number): Promise<string> {
+        return this.session.sendCTRLMsg(new ControlMessage("resize", { pane_id: this.id, sx, sy }))
     }
     close(): void {
         const dc = this.dataChannel
@@ -155,8 +156,8 @@ export class WebRTCSession extends BaseSession {
             return
 
         if (marker != null) {
-            this.sendCTRLMsg({ type: "restore", args: { marker }},
-                () => this.onStateChange("connected"),
+            this.sendCTRLMsg(new ControlMessage("restore", { marker })).then(
+                () => this.onStateChange("connected")).catch(
                 () => this.onStateChange("failed", Failure.BadMarker)
             )
         }
@@ -193,48 +194,39 @@ export class WebRTCSession extends BaseSession {
     openChannel(cmdorid: number | string | string[], parent?: ChannelID, sx?: number, sy?: number):
          Promise<Channel> {
         return new Promise((resolve, reject) => {
-            let msgID: number
+            let msg: ControlMessage
             if (sx !== undefined) {
                 if (typeof cmdorid === "string")
                     cmdorid = [cmdorid] 
-                msgID = this.sendCTRLMsg({
-                    type: "add_pane", 
-                    args: { 
+                msg = new ControlMessage("add_pane", {
                         command: cmdorid,
                         rows: sy,
                         cols: sx,
                         parent: parent || 0
-                    }
-                }, Function.prototype(), Function.prototype())
+                    })
             } else {
                 terminal7.log("reconnect pane", cmdorid)
-                msgID = this.sendCTRLMsg({
-                    type: "reconnect_pane", 
-                    args: { id: cmdorid }
-                }, Function.prototype(), Function.prototype())
+                msg = new ControlMessage("reconnect_pane", { id: cmdorid })
             }
             const watchdog = setTimeout(() => reject("timeout"), this.t7.conf.net.timeout)
-            this.pendingChannels[msgID] = (dc: RTCDataChannel, id: ChannelID) => {
+            this.sendCTRLMsg(msg)
+            this.pendingChannels[msg.message_id] = (dc: RTCDataChannel, id: ChannelID) => {
                 clearTimeout(watchdog)
                 const channel = this.onDCOpened(dc, id)
                 resolve(channel)
             }
         })
     }
-    async reconnect(marker?: Marker , publicKey?: string, privateKey?: string): Promise<void> {
-        return new Promise((resolve, reject) => { 
+    async reconnect(marker?: Marker , publicKey?: string, privateKey?: string): Promise<string | void> {
             terminal7.log("in reconnect", this.cdc, this.cdc.readyState)
             if (marker != null) {
-                this.sendCTRLMsg({ type: "restore", args: { marker }}, resolve,
-                                 () => reject("Restore failed"))
+                return this.sendCTRLMsg(new ControlMessage("restore", { marker }))
             }
             if (!this.isOpen())
                 return this.connect(marker, publicKey, privateKey)
             else if (!this.cdc || this.cdc.readyState != "open")
                 this.openCDC()
-            this.getPayload().then(resolve).catch(reject)
-            
-        })
+            return this.getPayload()
     }
     openCDC(): Promise<void> {
         // stop listening for messages
@@ -251,7 +243,7 @@ export class WebRTCSession extends BaseSession {
                     this.t7.run(() => {
                         while (this.pendingCDCMsgs.length > 0) {    
                             const msg = this.pendingCDCMsgs.shift()
-                            this.sendCTRLMsg(msg[0], msg[1], msg[2])
+                            this.sendCTRLMsg(msg[0]).then(msg[1]).catch(msg[2])
                         }
                     }, 100)
                     resolve()
@@ -281,46 +273,34 @@ export class WebRTCSession extends BaseSession {
             }
        })
     }
-    sendCTRLMsg(msg, resolve, reject) {
-        // helps us ensure every message gets only one Id
-        if (msg.message_id === undefined) 
-            msg.message_id = this.lastMsgId++
-        // don't change the time if it's a retransmit
-        if (msg.time == undefined)
-            msg.time = Date.now()
-        this.msgHandlers.set(msg.message_id, [resolve, reject])
-        if (!this.cdc || this.cdc.readyState != "open") {
-            // message stays frozen when restarting
-            terminal7.log("cdc not open, queuing message", msg)
-            this.pendingCDCMsgs.push([msg, resolve, reject])
-        } else {
-            const s = msg.payload || JSON.stringify(msg)
-            this.t7.log("cdc open sending msg", msg)
-            msg.payload = s
-
-            try {
-                this.cdc.send(s)
-            } catch(err) {
-                this.t7.notify(`Sending ctrl message failed: ${err}`)
+    sendCTRLMsg(msg: ControlMessage): Promise<string> {
+        return new Promise((resolve, reject) => {
+            // helps us ensure every message gets only one Id
+            if (msg.message_id === undefined) 
+                msg.message_id = this.lastMsgId++
+            // don't change the time if it's a retransmit
+            if (msg.time == undefined)
+                msg.time = Date.now()
+            this.msgHandlers.set(msg.message_id, [resolve, reject])
+            if (!this.cdc || this.cdc.readyState != "open") {
+                // message stays frozen when restarting
+                terminal7.log("cdc not open, queuing message", msg)
+                this.pendingCDCMsgs.push([msg, resolve, reject])
+            } else {
+                this.t7.log("cdc open sending msg", msg)
+                try {
+                    this.cdc.send(JSON.stringify(msg))
+                } catch(err) {
+                    this.t7.notify(`Sending ctrl message failed: ${err}`)
+                }
             }
-        }
-        return msg.message_id
+        })
     }
-    getPayload(): Promise<unknown | void>{
-        return new Promise((resolve, reject) => 
-            this.sendCTRLMsg({
-                type: "get_payload",
-                args: {}
-            }, resolve, reject)
-        )
+    getPayload(): Promise<string>{
+        return this.sendCTRLMsg(new ControlMessage("get_payload"))
     }
-    setPayload(payload: string | ServerPayload): Promise<void>{
-        return new Promise((resolve, reject) =>
-            this.sendCTRLMsg({
-                type: "set_payload",
-                args: {Payload: payload}
-            }, resolve, reject)
-        )
+    setPayload(payload: string | object): Promise<string>{
+        return this.sendCTRLMsg(new ControlMessage("set_payload", { Payload: payload }))
     }
     closeChannels(): void {
         this.channels.forEach(c => c.close())
@@ -335,12 +315,12 @@ export class WebRTCSession extends BaseSession {
                 return
             }
             this.closeChannels()
-            this.sendCTRLMsg({
-                    type: "mark",
-                    args: null
-                }, (payload) => {
+            this.sendCTRLMsg(new ControlMessage("mark")).then(payload => {
+                if (typeof payload != "string") {
+                    reject("failed to get a marker")
+                    return
+                }
                 const marker = parseInt(payload)
-
                 this.t7.log("got a marker", marker)
                 this.closeChannels()
                 resolve(marker)
@@ -420,11 +400,8 @@ export class PeerbookSession extends WebRTCSession {
         if (ev.candidate && this.t7.pb) {
             try {
                 terminal7.log("sending candidate")
-                this.t7.pb.adminCommand({type: "candidate",
-                                         args: {
-                                             target: this.fp,
-                                             sdp: ev.candidate
-                                        }})
+                this.t7.pb.adminCommand(
+                    new ControlMessage("candidate", { target: this.fp, sdp: ev.candidate}))
             } catch(e) {
                 terminal7.log("failed to send candidate", e)
             }
@@ -450,11 +427,7 @@ export class PeerbookSession extends WebRTCSession {
 
         try {
             terminal7.log("sending offer", Date.now())
-            await pb.adminCommand({type: "offer",
-                                      args: {
-                                          target: this.fp,
-                                          sdp: d
-                                      }})
+            await pb.adminCommand(new ControlMessage( "offer", { target: this.fp, sdp: d }))
         } catch(e) {
             terminal7.log("failed to send offer", e)
             this.onStateChange("failed", e)

@@ -2323,6 +2323,11 @@ boolbase@^1.0.0:
   resolved "https://registry.yarnpkg.com/boolbase/-/boolbase-1.0.0.tgz#68dff5fbe60c51eb37725ea9e3ed310dcc1e776e"
   integrity sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==
 
+bowser@^2.11.0:
+  version "2.11.0"
+  resolved "https://registry.yarnpkg.com/bowser/-/bowser-2.11.0.tgz#5ca3c35757a7aa5771500c70a73a9f91ef420a8f"
+  integrity sha512-AlcaJBi/pqqJBIQ8U9Mcpc9i8Aqxn88Skv5d+xBX006BY5u8N3mGLHa5Lgppa7L/HfwgwLgZ6NYs+Ag6uUmJRA==
+
 bplist-creator@0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/bplist-creator/-/bplist-creator-0.1.0.tgz#018a2d1b587f769e379ef5519103730f8963ba1e"
@@ -2449,10 +2454,10 @@ capacitor-native-biometric@^4.1.3:
   dependencies:
     "@capacitor/core" "^3.4.3"
 
-capacitor-rate-app@^3.1.0-beta.1:
-  version "3.1.0-beta.1"
-  resolved "https://registry.yarnpkg.com/capacitor-rate-app/-/capacitor-rate-app-3.1.0-beta.1.tgz#3a2d6c306ffa138f7c6bce2fbadecfc693b89712"
-  integrity sha512-86MxZFldb6kG5Kz4C6NrMAmILodVHnkwVwOTs5aeteQ5z3gBSnk/IQO54+rGcWImnwGaZACkn1EFmb4gckBQfA==
+capacitor-rate-app@^4.0.3:
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/capacitor-rate-app/-/capacitor-rate-app-4.0.3.tgz#bcd564de0eb62aac2acd4e3d8b32b96fe5ca3efa"
+  integrity sha512-HdTftIzBSfcNfbjQFCtvdvFU83MPCt11H/QXV4t7jctLelA8jXu3qee9MiZ4dqDc+kwNoufcQ95ncoCvn5viig==
 
 capacitor-ssh-plugin@^0.5.0:
   version "0.5.4"

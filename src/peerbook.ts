@@ -14,8 +14,7 @@ import { Capacitor } from '@capacitor/core'
 import { Device } from '@capacitor/device'
 import { Failure } from './session'
 import { Gate } from './gate'
-import { HTTPWebRTCSession } from './webrtc_session'
-import { PeerbookSession } from "./webrtc_session"
+import { ControlMessage, HTTPWebRTCSession, PeerbookSession  } from './webrtc_session'
 import { Purchases } from '@revenuecat/purchases-capacitor'
 import { Shell } from './shell'
 import {OPEN_HTML_SYMBOL} from './terminal7'
@@ -41,7 +40,7 @@ interface Peer {
 
 interface ConnectParams {
     token?: string  // used as the Bearer token
-    firstMsg?: unknown  // first message to send, before all the pending ones
+    firstMsg?: ControlMessage
     count?: number  // internal use for retrying
 }
 export class PeerbookConnection {
@@ -67,13 +66,12 @@ export class PeerbookConnection {
         this.uid = ""
     }
 
-    async adminCommand(cmd: unknown): Promise<string> {
+    async adminCommand(cmd: ControlMessage): Promise<string> {
+        if (this.session)
+            return this.session.sendCTRLMsg(cmd)
         return new Promise((resolve, reject) => {
-            const complete = () => this.session.sendCTRLMsg(cmd, resolve, reject)
-            if (this.session)
-                complete()
-            else
-                terminal7.pbConnect().then(complete).catch(reject)
+            terminal7.pbConnect().then(()=>
+                this.session.sendCTRLMsg(cmd).then(resolve).catch(reject)).catch(reject)
         })
     }
 
@@ -95,13 +93,8 @@ export class PeerbookConnection {
             throw new Error("Cancelled")
         }
         try {
-            repStr = await this.adminCommand({
-                type: "register",
-                args: {
-                     email: email,
-                     peer_name: peerName
-                }
-            })
+            repStr = await this.adminCommand(
+                new ControlMessage("register",{ email: email, peer_name: peerName }))
         } catch (e) {
             this.shell.t.writeln(`${PB} Registration failed\n    Please try again and if persists, \`support\``)
             this.shell.printPrompt()
@@ -230,7 +223,7 @@ export class PeerbookConnection {
             if ((this.uid != "TBD") && (this.uid != "")) {
                 return(this.uid)
             }
-            this.uid = await this.adminCommand({type: "ping"})
+            this.uid = await this.adminCommand(new ControlMessage("ping", {}))
             return(this.uid)
     }
 
@@ -262,7 +255,7 @@ export class PeerbookConnection {
             const session = new HTTPWebRTCSession(url, this.headers)
             this.session = session
             if (params?.firstMsg)
-                session.sendCTRLMsg(params.firstMsg, resolve, reject)
+                session.sendCTRLMsg(params.firstMsg).then(() => resolve).catch(reject)
             session.onStateChange = (state, failure?) => {
                 terminal7.log("New PB connection state", state, failure)
                 if (state == 'connected') {
@@ -369,13 +362,7 @@ export class PeerbookConnection {
                 return
             }
             try {
-                await this.adminCommand({
-                    type: "verify",
-                    args: {
-                        target: fp, 
-                        otp: otp
-                    }
-                })
+                await this.adminCommand(new ControlMessage("verify", { target: fp, otp: otp }))
                 validated = true
             } catch(e) {
                 if (e.toString().match(/invalid/i)) 

@@ -15,7 +15,7 @@ Terminal7 is a terminal multiplexer re-designed for remote servers and
 hi-res touch screens. A reincaranation of tmux and screen, Terminal7 is a hybrid
 app that works best on the iPad.
 
-The code here is mainly ES6 with no framworks. We do use the following projects:
+The code here is in vanilla TypeSctipt. We do use the following projects:
 
 - capacitorjs for app packaging & plugins
 - xterm.js for terminal emulation
@@ -50,3 +50,27 @@ You can install it using the one line installer or from the [source](https://git
   bash <(curl -sL https://get.webexec.sh)
 ```
 
+## Clipboard integration
+
+Terminal7 has a clipboard integration that works with the WebRTC data channel.
+For the CLI you can use the `webexec copy` and `webexec paste` commands to copy to the
+active client's clipboard and paste from it.
+If no peer are actives, e.g. you're using a classic terminal, webexec will use the system clipboard.
+
+To integrate the clipboard with neovim so you can use `"+yy` to copy the current line to the clipboard
+add to your init.lua:
+
+```lua
+    vim.g.clipboard = {
+        name = 'webexec',
+        copy = {
+            ["+"] = {'webexec', 'copy'},
+            ["*"] = {'webexec', 'copy'},
+        },
+        paste = {
+            ["+"] = {'webexec', 'paste'},
+            ["*"] = {'webexec', 'paste'},
+        },
+        cache_enabled = true,
+    }
+```
