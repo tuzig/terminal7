@@ -750,8 +750,7 @@ audio { display: none; }
     padding-left: 1.5em;
     text-shadow: none;
     border-bottom: 1px solid var(--dark-border);
-    border-right: 0;
-    border-top: 0;
+    border-top-right-radius: 6px;
 }
 
 .gate > .gate-stats {
