@@ -304,7 +304,7 @@ nav::-webkit-scrollbar {
 }
 .windows-container {
     bottom: 85pt;
-    top: 22px ;
+    top: 0;
     left: 0;
     width: 100%;
     position: fixed;
@@ -532,20 +532,7 @@ label {
         max-width: 35vw;
     }
 }
-@media (max-width: 600px) {
-    #log {
-        width: 90vw;
-    }
-    #title-short {
-        display: block;
-    }
-    #title-long {
-        display: none;
-    }
-    #version {
-        max-width: 35vw;
-    }
-}
+
 .search-container {
     margin: 0 auto;
     width: 80%;
@@ -741,9 +728,12 @@ audio { display: none; }
     display: block;
     margin: 0 auto;
     height: 370px;
+    height: fit-content;
     background: right no-repeat url("/map/top.png");
     
 }
+
+
 .gate-pad, .empty-pad {
     width: 25%;
     height: 110px;
@@ -767,11 +757,21 @@ audio { display: none; }
     text-align: left;
     padding-left: 1.5em;
     text-shadow: none;
+    position: absolute;
+    z-index: 20;
+    border-bottom: 1px rgba(255, 255, 255, 0.7) solid;
+    border-right: 0;
+    border-top: 0;
+    -webkit-border-top-right-radius: 6px;
+    -moz-border-radius-topright: 6px;
+    border-top-right-radius: 6px;
+    background: rgba(255, 255, 255, 0.3)
 }
+
 .gate > .gate-stats {
-    position: fixed;
+
     top: 0;
-    right: 15%;
+    right: 0;
     font-size: 75%;
     color: #fff;
 }
@@ -898,3 +898,24 @@ video {
     z-index: 3;
 }
 
+/* media queries - max width 600px */
+
+@media (max-width: 600px) {
+    #log {
+        width: 90vw;
+    }
+    #title-short {
+        display: block;
+    }
+    #title-long {
+        display: none;
+    }
+    #version {
+        max-width: 35vw;
+    }
+
+    #map {
+        max-width: 90vw;
+    }
+
+}
