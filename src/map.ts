@@ -203,7 +203,8 @@ export class T7Map {
     }
     async updateStats() {
         terminal7.gates.forEach(async (g: Gate) => {
-            let html = ""
+            let onGate = ""
+            let onMap = ""
             if (g && g.session && (g.session as WebRTCSession).getStats) {
                 const stats = await (g.session as WebRTCSession).getStats()
                 if (!stats)
@@ -219,11 +220,13 @@ export class T7Map {
                 const pad = (s: string, n = 9) => s.padEnd(n, 'X').replace(/X/g, '&nbsp;')
                 const extraClass = stats.roundTripTime > 400 ? "error" : stats.roundTripTime > 100 ? "warning" : ""
 
-                html =
-                    '<i class="f7-icons">arrow_right_arrow_left_circle</i>' + pad(stats.roundTripTime + 'ms', 7) 
+                onGate = `<i class="f7-icons ${extraClass}">arrow_right_arrow_left_circle</i><span class=${extraClass}>` + pad(stats.roundTripTime + 'ms', 7) + '</span>'
+                onMap = onGate +
+                    '<i class="f7-icons">arrow_down_circle</i>' + pad(getBytes(stats.bytesReceived)) +
+                    '<i class="f7-icons">arrow_up_circle</i>' + pad(getBytes(stats.bytesSent))
             }
-            g.nameE.querySelector(".gate-stats").innerHTML = html
-            g.e.querySelector(".gate-stats").innerHTML = html
+            g.nameE.querySelector(".gate-stats").innerHTML = onMap
+            g.e.querySelector(".gate-stats").innerHTML = onGate
         })
     }
     /* 
