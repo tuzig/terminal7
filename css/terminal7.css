@@ -749,14 +749,9 @@ audio { display: none; }
     text-align: left;
     padding-left: 1.5em;
     text-shadow: none;
-    z-index: 20;
-    border-bottom: 1px rgba(255, 255, 255, 0.7) solid;
+    border-bottom: 1px solid var(--dark-border);
     border-right: 0;
     border-top: 0;
-    -webkit-border-top-right-radius: 6px;
-    -moz-border-radius-topright: 6px;
-    border-top-right-radius: 6px;
-    background: rgba(255, 255, 255, 0.3)
 }
 
 .gate > .gate-stats {
@@ -764,6 +759,7 @@ audio { display: none; }
     top: 0;
     right: 0;
     font-size: 75%;
+    z-index: 20;
     color: #fff;
 }
 .gate-stats > i {
