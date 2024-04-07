@@ -54,7 +54,7 @@
     "xterm-addon-webgl": "^0.16.0"
   },
   "devDependencies": {
-    "@capacitor/assets": "^2.0.4",
+    "@capacitor/assets": "^3.0.5",
     "@playwright/test": "^1.20.1",
     "@types/hammerjs": "^2.0.42",
     "@types/xterm": "^3.0.0",

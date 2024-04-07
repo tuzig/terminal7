@@ -401,7 +401,7 @@ async function resetCMD(shell: Shell, args: string[]) {
         switch (choice) {
             case "Fit my screen":
                 gate.setFitScreen()
-                gate.map.showLog(false)
+                shell.map.showLog(false)
                 return
 
             case "Reset connection":
@@ -428,7 +428,7 @@ async function resetCMD(shell: Shell, args: string[]) {
                 }
                 await shell.runCommand("connect", [gate.name])
                 gate.clear()
-                gate.map.showLog(false)
+                shell.map.showLog(false)
                 gate.activeW = gate.addWindow("", true)
                 gate.focus()
                 return
@@ -478,7 +478,7 @@ async function resetCMD(shell: Shell, args: string[]) {
                 terminal7.factoryReset()
             }
             else
-                this.map.showLog(false)
+                shell.map.showLog(false)
             break
     }
 }
@@ -761,10 +761,10 @@ export async function installCMD(shell: Shell, args: string[]) {
     const native = Capacitor.isNativePlatform()
     if (!native) {
         if (!terminal7.pb?.isOpen()) {
-            shell.t.writeln("If you are subscribed to PeerBook, please `login`")
+            shell.t.writeln("If you are subscribed to PeerBook please `login` first")
             const res = await shell.runForm([
-                { prompt: "Login" },
                 { prompt: "Just install" },
+                { prompt: "Login" },
                 { prompt: "Cancel" },
             ], "menu")
             if (res == "Cancel")
@@ -839,7 +839,7 @@ export async function installCMD(shell: Shell, args: string[]) {
     ]
     if (native)
         fields.unshift({ prompt: "Connect & send command" })
-    shell.t.writeln("To download and install the agent's binary run:")
+    shell.t.writeln("To download and install the WebRTC backend:")
     shell.t.writeln("")
     shell.t.writeln(`\t\x1B[1m${cmd}\x1B[0m`)
     shell.t.writeln("")
@@ -848,7 +848,20 @@ export async function installCMD(shell: Shell, args: string[]) {
         return
     if (choice == "Copy command") {
         Clipboard.write({ string: cmd })
-        shell.t.writeln("Command copied to clipboard")
+        shell.t.writeln("Next, open a legacy terminal and paste the command")
+        shell.t.writeln("When installation is done, reconect")
+        let res: string
+        try {
+            res = await shell.runForm(shell.reconnectForm, "menu")
+        } catch (err) {
+            gate.onFailure(Failure.Aborted)
+        }
+        if (res == "Reconnect")
+            await gate.connect()
+        else {
+            gate.close()
+            shell.map.showLog(false)
+        }
         return
     }
     const passConnect = async () => {

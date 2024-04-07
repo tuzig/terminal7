@@ -34,6 +34,11 @@ export class Shell {
     confEditor: CodeMirror.EditorFromTextArea
     exitConf: () => void
     lineAboveForm = 0
+    reconnectForm = [
+        { prompt: "Reconnect" },
+        { prompt: "Close" }
+    ]
+
 
     constructor(map: T7Map) {
         this.map = map
@@ -416,36 +421,34 @@ export class Shell {
         const browser = Bowser.getParser(window.navigator.userAgent)
         const base = browser.getOS().name+"_"+browser.getBrowserName()
         const cmd = `webexec client add "${fp} ${base}_terminal7"`
+        this.active = true
         const fpForm = [{ 
-            prompt: `\n  ${gate.name || gate.addr} refused client's fingerprint. To add it run:
+            prompt: `\n  ${gate.name || gate.addr} refused our fingerprint. To aprove it run:
   \n\x1B[1m    ${cmd}\x1B[0m\n
   Copy to clipboard${suffix}`,
             values: ["y", "n"],
             default: "y"
         }]
-        const reconnectForm = [
-            { prompt: "Reconnect" },
-            { prompt: "Close" }
-        ]
-
         let ans: string
         try {
             ans = (await this.runForm(fpForm, "text"))[0]
         } catch(e) { this.onFormError(e) }
-        if (ans != "y")
-            return
-        Clipboard.write({ string: cmd })
-        this.t.writeln("Command copied. Please paste in a server's terminal and reconnect.")
-        let res
-        try {
-            res = await this.runForm(reconnectForm, "menu")
-        } catch (err) {
-            gate.onFailure(Failure.Aborted)
+        if (ans == "y")  {
+            Clipboard.write({ string: cmd })
+            this.t.writeln("Next, paste the command in a legacy terminal and reconnect")
+            let res: string
+            try {
+                res = await this.runForm(this.reconnectForm, "menu")
+            } catch (err) {
+                gate.onFailure(Failure.Aborted)
+            }
+            if (res == "Reconnect") {
+                await gate.connect()
+                return
+            }
         }
-        if (res == "Reconnect")
-            await gate.connect()
-        this.map.showLog(false)
-
+        this.currentLine = ''
+        this.printPrompt()
     }
 
     /*
@@ -492,31 +495,35 @@ export class Shell {
                 terminal7.recovering = false
                 this.stopWatchdog()
             }
+            return
 
         }
+        gate.notify("❌  Connection failed")
         if (!terminal7.netConnected || (gate != terminal7.activeG))
             return
 
         if (gate.firstConnection) {
             let ans: string
-            const verifyForm = [{
-                prompt: `Does the address \x1B[1;37m${gate.addr}\x1B[0m seem correct?`,
-                    values: ["y", "n"],
-                    default: "y"
-            }]
-            try {
-                ans = (await this.runForm(verifyForm, "text"))[0]
-            } catch(e) {
-                return gate.onFailure(Failure.WrongAddress)
-            }
+            if (gate.addr != 'localhost') {
+                const verifyForm = [{
+                    prompt: `Does the address \x1B[1;37m${gate.addr}\x1B[0m seem correct?`,
+                        values: ["y", "n"],
+                        default: "y"
+                }]
+                try {
+                    ans = (await this.runForm(verifyForm, "text"))[0]
+                } catch(e) {
+                    return gate.onFailure(Failure.WrongAddress)
+                }
 
-            if (ans == "n") {
-                gate.delete()
-                setTimeout(() => this.handleLine("add"), 100)
-                // return gate.onFailure(Failure.WrongAddress)
+                if (ans == "n") {
+                    gate.delete()
+                    setTimeout(() => this.handleLine("add"), 100)
+                    return
+                }
             }
             const installForm = [{
-                prompt: "Do you have webexec running on the server?",
+                prompt: "Have you installed the backend - webexec?",
                     values: ["y", "n"],
                     default: "n"
             }]
@@ -537,12 +544,9 @@ export class Shell {
             gate.session.close()
             gate.session = null
         }
-        let res
+        let res: string
         try {
-            res = await this.runForm([
-                { prompt: "Reconnect" },
-                { prompt: "Close" }
-            ], "menu")
+            res = await this.runForm(this.reconnectForm, "menu")
         } catch (err) {
             gate.onFailure(Failure.Aborted)
         }
