@@ -298,6 +298,9 @@ nav::-webkit-scrollbar {
     color: var(--dark-border);
     position: fixed;
 }
+.ios .windows-container {
+    top: 22px;
+}
 .windows-container {
     bottom: 85pt;
     top: 0;
@@ -751,18 +754,21 @@ audio { display: none; }
     text-shadow: none;
 }
 
+.ios .gate > .gate-stats {
+    top: 22px;
+}
 .gate > .gate-stats {
     position: absolute;
     top: 1px;
     right: 1px;
     font-size: 75%;
-    z-index: 20;
+    z-index: 10;
     color: #fff;
-    border-bottom: 1px solid var(--dark-border);
-    border-left: 1px solid var(--dark-border);
-    border-top-right-radius: 6px;
-    background-color: var(--background);
-    opacity: 0.7;
+    border: 1px solid var(--dark-border);
+    border-radius: 2px;
+    background-color: rgba(var(--background-rgb), 0.7);
+    margin: 4px;
+
 }
 .gate-stats > i {
     font-size: 160%;

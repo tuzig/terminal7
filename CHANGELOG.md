@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- removed 22 empty pixel when running on the web
+- network stats are now only latency and are displayed in the top right corner
+
 ### Added
 
 - Support for webexec clipboard commands, e.g. use `webexec copy < file.txt` to copy a file to the client's clipboard
