@@ -66,6 +66,7 @@ export class Gate {
     sendStateTask?: number = null
     lastDisconnect?: number
     sshPort: number
+    reconnectCount: number
     constructor (props) {
         // given properties
         this.id = props.id
@@ -93,6 +94,7 @@ export class Gate {
         this.fontScale = props.fontScale || 1
         this.fitScreen = true
         this.sshPort = props.sshPort || 22
+        this.reconnectCount = 0
     }
 
     /*
@@ -282,6 +284,10 @@ export class Gate {
     reconnect(): Promise<void> {
         if (!this.session)
             return this.connect()
+        if (++this.reconnectCount == terminal7.conf.net.retries) {
+            this.notify(`Reconnect failed after ${this.reconnectCount} attempts`)
+            return Promise.reject("reconnect failed")
+        }
         this.connectionFailed = false
         const isSSH = this.session.isSSH
         const isNative = Capacitor.isNativePlatform()
@@ -350,6 +356,7 @@ export class Gate {
         
         if (this.session) {
             // TODO: check session's status
+            this.reconnectCount=0
             onConnected()
             return
         }
@@ -359,6 +366,7 @@ export class Gate {
             this.notify(`${PB} Connection failed: ${e}`)
             return
         } finally {
+            this.reconnectCount=0
             this.updateNameE()
         }
     }

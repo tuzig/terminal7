@@ -489,8 +489,7 @@ export class Shell {
                 if (e == Failure.Unauthorized) {
                     terminal7.pb.notify("Unauthorized, please `subscribe`")
                     return
-                } else
-                    gate.notify("Reconnect failed")
+                }
             } finally {
                 terminal7.recovering = false
                 this.stopWatchdog()
