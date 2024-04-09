@@ -303,7 +303,7 @@ nav::-webkit-scrollbar {
 }
 .windows-container {
     bottom: 85pt;
-    top: 0;
+    top: 2px;
     left: 0;
     width: 100%;
     position: fixed;
@@ -512,7 +512,7 @@ label {
     z-index: 5;
     opacity: 0.8;
     width: 540px;
-    border: 1px solid var(--local-border);
+    border: 4px outset var(--local-border);
     border-radius: 7px;
 }
 #log>div {
@@ -759,7 +759,7 @@ audio { display: none; }
 }
 .gate > .gate-stats {
     position: absolute;
-    top: 1px;
+    top: 3px;
     right: 1px;
     font-size: 75%;
     z-index: 10;
