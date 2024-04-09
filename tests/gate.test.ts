@@ -15,6 +15,7 @@ vi.mock('xterm')
 vi.mock('@revenuecat/purchases-capacitor')
 vi.mock('../src/webrtc_session.ts')
 vi.mock('../src/ssh_session.ts')
+vi.mock('@capacitor-community/native-audio')
 
 describe("gate", () => {
     var t, e

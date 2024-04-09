@@ -956,6 +956,11 @@
     "@babel/helper-validator-identifier" "^7.22.20"
     to-fast-properties "^2.0.0"
 
+"@capacitor-community/native-audio@^5.0.1":
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/@capacitor-community/native-audio/-/native-audio-5.0.1.tgz#2fdb3d4d7021bcc2cea4c4769bc68565590ff549"
+  integrity sha512-dqfjofwSg2MJXE/ADFLF/D/bCHLYCMUanwZi8pXJKN0PVkDXoAfUSAkyHCs1L1dNygfU4qbr+9NMrXBiQ9jdtQ==
+
 "@capacitor/android@^5.0.0":
   version "5.5.1"
   resolved "https://registry.npmjs.org/@capacitor/android/-/android-5.5.1.tgz"

@@ -17,6 +17,7 @@
     "publish": null
   },
   "dependencies": {
+    "@capacitor-community/native-audio": "^5.0.1",
     "@capacitor/android": "^5.0.0",
     "@capacitor/app": "^5.0.0",
     "@capacitor/browser": "^5.0.0",

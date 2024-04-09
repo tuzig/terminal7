@@ -9,6 +9,8 @@ PODS:
     - Capacitor
   - CapacitorClipboard (5.0.6):
     - Capacitor
+  - CapacitorCommunityNativeAudio (5.0.1):
+    - Capacitor
   - CapacitorCordova (5.5.1)
   - CapacitorDevice (5.0.6):
     - Capacitor
@@ -43,6 +45,7 @@ DEPENDENCIES:
   - "CapacitorBrowser (from `../../node_modules/@capacitor/browser`)"
   - "CapacitorCamera (from `../../node_modules/@capacitor/camera`)"
   - "CapacitorClipboard (from `../../node_modules/@capacitor/clipboard`)"
+  - "CapacitorCommunityNativeAudio (from `../../node_modules/@capacitor-community/native-audio`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorDevice (from `../../node_modules/@capacitor/device`)"
   - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
@@ -72,6 +75,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/camera"
   CapacitorClipboard:
     :path: "../../node_modules/@capacitor/clipboard"
+  CapacitorCommunityNativeAudio:
+    :path: "../../node_modules/@capacitor-community/native-audio"
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorDevice:
@@ -101,6 +106,7 @@ SPEC CHECKSUMS:
   CapacitorBrowser: 7a0fb6a1011abfaaf2dfedfd8248f942a8eda3d6
   CapacitorCamera: 084b0b228bba7d00587910337b1c89e93b1d32ab
   CapacitorClipboard: 77edf49827ea21da2a9c05c690a4a6a4d07199c4
+  CapacitorCommunityNativeAudio: 1a4d5490acb59f155602c0b6bcf1b42ee4efe91b
   CapacitorCordova: e128cc7688c070ca0bfa439898a5f609da8dbcfe
   CapacitorDevice: 2c968f98a1ec4d22357418c1521e7ddc46c675e6
   CapacitorFilesystem: 02f9a9053b96e1881ba1fc98d846869413c195c2
@@ -116,6 +122,6 @@ SPEC CHECKSUMS:
   RevenueCat: c1e33f4e1f1fd239ba461652f02928e220becc31
   RevenuecatPurchasesCapacitor: 03f2bdeeb445b37fcdd5ee9407ed650e1936d947
 
-PODFILE CHECKSUM: 584c2dd76accc566b6b2c0cf521c538c6d25f0ca
+PODFILE CHECKSUM: 0b234f47d92ce42f718c406e1f2c37447bc3c605
 
 COCOAPODS: 1.15.2

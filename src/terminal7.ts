@@ -23,6 +23,7 @@ import { App } from '@capacitor/app'
 import { Network } from '@capacitor/network'
 import { Preferences } from '@capacitor/preferences'
 import { Device } from '@capacitor/device'
+import { NativeAudio } from '@capacitor-community/native-audio'
 import { NativeBiometric } from "capacitor-native-biometric"
 import { RateApp } from 'capacitor-rate-app'
 
@@ -256,6 +257,8 @@ export class Terminal7 {
         this.loadConf(d)
 
 		this.loadChangelog()
+        NativeAudio.preload({ assetId: "bell", assetPath: "bell.mp3", isUrl: false })
+                   .catch(e => this.log("failed to preload bell", e))
 
         // buttons
         document.getElementById("trash-button")

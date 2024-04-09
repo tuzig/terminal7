@@ -14,9 +14,7 @@ import { WebglAddon } from 'xterm-addon-webgl'
 import { WebLinksAddon } from 'xterm-addon-web-links'
 import { ImageAddon } from 'xterm-addon-image'
 import { Camera } from '@capacitor/camera'
-/* restore the bell. commented as it silences all background audio
-import { BELL_SOUND } from './bell'
-*/
+import { NativeAudio } from '@capacitor-community/native-audio'
 
 import { Channel, Failure } from './session'
 
@@ -137,6 +135,7 @@ export class Pane extends Cell {
         this.t.loadAddon(this.searchAddon)
         this.t.loadAddon(this.WebLinksAddon)
         this.t.loadAddon(this.imageAddon)
+
         const webGLAddon = new WebglAddon()
         webGLAddon.onContextLoss(() => {
             terminal7.log("lost context")
@@ -194,6 +193,10 @@ export class Pane extends Cell {
                     this.t.clearSelection()
                 }
             })
+            this.t.onBell(() =>
+                NativeAudio.play({ assetId: "bell" })
+                           .catch(e => terminal7.log("failed to play bell",e ))
+            )
             this.resizeObserver.observe(this.e)
             this.fit(pane => { 
                if (pane != null)

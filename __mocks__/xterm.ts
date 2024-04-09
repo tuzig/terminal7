@@ -25,6 +25,7 @@ export class Terminal {
     keyHandler: (a:any) => void
     loadAddon = vi.fn()
     notify = vi.fn()
+    onBell = vi.fn()
     onData = vi.fn()
     onSelectionChange = vi.fn()
     open = vi.fn()
@@ -78,6 +79,6 @@ export class Terminal {
                 }
             }
         }
-    }
+    };
 }
 
