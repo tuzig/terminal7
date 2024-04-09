@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support for webexec clipboard commands, e.g. use `webexec copy < file.txt` to copy a file to the client's clipboard
+- Latency gets yellow when above 100ms and red when above 400ms
+
+### Fixed
+
+- stuck TWR when chossing not to copy the install command
+- bell is now working
+- latency display is on the gate
+- not asking if "localhost" is the right addresss
+- help text
+- gate reconnect now has a retry limit
 
 ## [1.9.2] - 2023/3/18
 

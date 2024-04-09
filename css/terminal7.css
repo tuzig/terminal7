@@ -780,6 +780,7 @@ audio { display: none; }
 }
 .peerbook-icon {
     position: relative;
+    text-shadow: 0;
     left: 10%;
 }
 .gate-edit {
