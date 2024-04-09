@@ -91,3 +91,4 @@ else
         echo ">>> $arg tests PASSED"
     done
 fi
+echo ">>> All tests PASSED"
