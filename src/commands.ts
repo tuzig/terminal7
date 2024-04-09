@@ -30,7 +30,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
         },
         clear: {
             name: "clear",
-            help: "Clear the screen",
+            help: "Clear the TWR",
             usage: "cle[ar]",
             execute: async () => void setTimeout(() => shell.t.clear(),10)
         },
@@ -90,7 +90,7 @@ export function loadCommands(shell: Shell): Map<string, Command> {
         },
         install: {
             name: "install",
-            help: "Install webexec",
+            help: "Install backend on a gate",
             usage: "i[nstall] [gatename]",
             execute: async args => installCMD(shell, args)
         },
