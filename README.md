@@ -11,18 +11,22 @@ src="https://user-images.githubusercontent.com/36852/148447779-959c7c92-d542-473
 Issue](https://img.shields.io/github/issues-closed/tuzig/terminal7?color=A0A0A0)
 ![Open Issues](https://img.shields.io/github/issues/tuzig/terminal7)
 
-Terminal7 is a terminal multiplexer re-designed for remote servers and 
-hi-res touch screens. A reincaranation of tmux and screen, Terminal7 is a hybrid
-app that works best on the iPad.
+Terminal7 is a terminal that includes a terminal multiplexer made for modern
+web clients and real time communications over WebRTC. 
+A reincaranation of tmux and screen, Terminal7 is a hybrid
+app that designed for smart clients.
 
-The code here is in vanilla TypeSctipt. We do use the following projects:
+The code here is in vanilla TypeSctipt, relying chiefly on the following projects:
 
-- capacitorjs for app packaging & plugins
-- xterm.js for terminal emulation
+- CapacitorJS for app packaging & plugins
+- Xterm.js for terminal emulation
 - noble-ed25519 for key generation
 - pion.ly for the WebRTC backend
-- vite for packaging
-- vitest for testing
+- Vite for packaging
+- Vitest for testing
+- Docker compose for acceptance tests
+- Playwright for end-to-end tests
+- MailHog for an SMRP test double
 
 For networking we use SSH or WebRTC, the web standard for real time
 communications. WebRTC is UDP based with wide support and a great
@@ -36,17 +40,19 @@ We welcome new contributors and are happy to help, talk to us on our
 [discord server](https://discord.com/invite/rDBj8k4tUE).
 
 ## Getting Started
-You can get Terminal7 from the [App Store](https://apps.apple.com/us/app/terminal7/id1581440136) or [Google Play](https://play.google.com/store/apps/details?id=io.terminal7.app).
+You can get Terminal7 for free from the 
+[App Store](https://apps.apple.com/il/app/terminal7/id1532882447) or
+[Google Play](https://play.google.com/store/apps/details?id=dev.terminal).
 
-To run from source, fork the repo, install the dependencies and run the tests:
+To run from source, run:
 
 ```console
 git clone git@github.com:<yourname>/terminal7.git
 cd terminal7
 yarn install
 yarn test
+yarn start
 ```
-To start terminal7 in the browser use `yarn start` 
 then point your browser at the printed URL, usually http://localhost:5173.
 
 ## Installing the server
@@ -61,7 +67,7 @@ If you have Go installed run:
 
 ```console
 go install github.com/tuzig/webexec@latest
-webecec start
+webexec start
 ```
 
 If you don't, you can also use our line installer to download the binary for your system and start it:
