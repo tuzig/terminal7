@@ -10,7 +10,7 @@ import { Capacitor } from '@capacitor/core'
 import { Clipboard } from '@capacitor/clipboard'
 import { Preferences } from '@capacitor/preferences'
 import { FitAddon } from 'xterm-addon-fit'
-import { SearchAddon } from 'xterm-addon-search'
+import { SearchAddon } from '@xterm/addon-search'
 import { WebglAddon } from 'xterm-addon-webgl'
 import { WebLinksAddon } from 'xterm-addon-web-links'
 import { ImageAddon } from 'xterm-addon-image'
@@ -33,6 +33,11 @@ const ABIT = 10,
         wholeWord: false,
         incremental: false,
         caseSensitive: true,
+        decorations: { 
+            //TODO: use real colors
+            matchBackground: 'rgba(240, 240, 0, 0.5)',
+            activeMatchBackground: 'rgba(240, 0, 240, 0.5)',
+        },
     }
 
 export interface SerializedPane extends SerializedCell {
@@ -546,6 +551,7 @@ export class Pane extends Cell {
         }
     }
     hideSearch() {
+        this.searchAddon.clearDecorations()
         const se = this.gate.e.querySelector(".search-box")
         if (se) {
             se.classList.remove("show")
