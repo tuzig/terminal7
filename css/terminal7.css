@@ -298,7 +298,7 @@ nav::-webkit-scrollbar {
     color: var(--dark-border);
     position: fixed;
 }
-.ios .windows-container {
+.native .windows-container {
     top: 22px;
 }
 .windows-container {
@@ -371,14 +371,18 @@ button.rename-close {
 .active {
     font-weight: bold;
 }
+.native .zoomed {
+    top: 22px;
+}
+
 .zoomed {
     margin: 0;
     padding: 0;
     position: fixed;
     z-index: 4;
-    left: 14px;
-    right: 14px;
-    top: 22px;
+    left: 0;
+    right: 0;
+    top: 3px;
     height: max-content;
 }
 .zoomed .pane {
@@ -754,7 +758,7 @@ audio { display: none; }
     text-shadow: none;
 }
 
-.ios .gate > .gate-stats {
+.native .gate > .gate-stats {
     top: 22px;
 }
 .gate > .gate-stats {

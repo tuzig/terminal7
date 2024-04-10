@@ -6,6 +6,7 @@
  */
 import { Cell, SerializedCell  } from './cell'
 import { ITheme, Terminal } from 'xterm'
+import { Capacitor } from '@capacitor/core'
 import { Clipboard } from '@capacitor/clipboard'
 import { Preferences } from '@capacitor/preferences'
 import { FitAddon } from 'xterm-addon-fit'
@@ -498,11 +499,12 @@ export class Pane extends Cell {
     styleZoomed(e = null) {
         e = e || this.t7.zoomedE.querySelector(".pane")
         const se = this.gate.e.querySelector(".search-box")
+        const verticalSpace = (Capacitor.isNative())?34:3
         let style
         if (se.classList.contains("show"))
             style = `${(document.querySelector('.windows-container') as HTMLDivElement).offsetHeight - 22}px`
         else
-            style = `${document.body.offsetHeight - 36}px`
+            style = `${document.body.offsetHeight - verticalSpace}px`
         e.style.height = style
         e.style.top = "0px"
         e.style.width = "100%"

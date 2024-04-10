@@ -232,8 +232,8 @@ export class Terminal7 {
      */
     async open() {
         const e = document.getElementById('terminal7')
-        if (Capacitor.getPlatform() === "ios")
-            e.classList.add('ios')
+        if (Capacitor.isNativePlatform())
+            document.body.classList.add('native')
         this.lastActiveState = true
         this.e = e as HTMLDivElement
         await Preferences.migrate()
