@@ -373,17 +373,20 @@ button.rename-close {
 }
 .native .zoomed {
     top: 22px;
+    /* make space for system resizer */
+    left: 14px;
+    right: 14px;
 }
 
 .zoomed {
-    margin: 0;
     padding: 0;
     position: fixed;
     z-index: 4;
-    left: 0;
-    right: 0;
+    left: 3px;
+    right: 3px;
     top: 3px;
-    height: max-content;
+    bottom: 3px;
+    /* height: max-content; */
 }
 .zoomed .pane {
     border-radius: 12px;
@@ -764,7 +767,7 @@ audio { display: none; }
 .gate > .gate-stats {
     position: absolute;
     top: 3px;
-    right: 1px;
+    right: 4px;
     font-size: 75%;
     z-index: 10;
     color: #fff;
