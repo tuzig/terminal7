@@ -226,7 +226,14 @@ export class T7Map {
                     '<i class="f7-icons">arrow_up_circle</i>' + pad(getBytes(stats.bytesSent))
             }
             g.nameE.querySelector(".gate-stats").innerHTML = onMap
-            g.e.querySelector(".gate-stats").innerHTML = onGate
+            if (terminal7.activeG === g) {
+                const e = g.e.querySelector(".gate-stats")
+                e.innerHTML = onGate
+                if (g.activeW && g.activeW.activeP.zoomed)
+                    e.classList.add("zoomed")
+                else    
+                    e.classList.remove("zoomed")
+            }
         })
     }
     /* 
