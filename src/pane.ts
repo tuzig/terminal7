@@ -276,7 +276,7 @@ export class Pane extends Cell {
         const c = document.createElement('div'),
             e = document.createElement('div'),
             te = this.e.removeChild(this.e.children[0])
-        c.classList.add("zoomed")
+        c.classList.add("zoomed", "pane-container")
         e.classList.add("pane", "focused")
         e.style.borderColor = FOCUSED_BORDER_COLOR
         e.appendChild(te)

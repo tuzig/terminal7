@@ -371,14 +371,14 @@ button.rename-close {
 .active {
     font-weight: bold;
 }
-.native .zoomed {
+.native .pane-container.zoomed {
     top: 22px;
     /* make space for system resizer */
     left: 14px;
     right: 14px;
 }
 
-.zoomed {
+.pane-container.zoomed {
     padding: 0;
     position: fixed;
     z-index: 4;
@@ -752,6 +752,9 @@ audio { display: none; }
     flex-direction: row;
     justify-content: space-around;
     padding-right: 0.5em;
+}
+.native .gate-stats.zoomed {
+    right: 18px;
 }
 .gate-stats {
     font-family: "FiraCode";
