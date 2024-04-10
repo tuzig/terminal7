@@ -508,7 +508,13 @@ export class HTTPWebRTCSession extends WebRTCSession {
                 return
             if (this.pc)
                 this.pc.setRemoteDescription({type: "answer", sdp: data})
-                    .catch (() => this.fail(Failure.BadRemoteDescription))
+                    .catch (() => {
+                        // on some machines (android), we need a newline at the end the answer
+                        terminal7.log("failed to set remote description, trying with a newline")
+                        data += "\n"
+                        this.pc.setRemoteDescription({type: "answer", sdp: data})
+                            .catch(() => this.fail(Failure.BadRemoteDescription))
+                    })
         }).catch(error => {
             terminal7.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
             if (error.message == 'unauthorized')
