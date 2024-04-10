@@ -3,7 +3,7 @@
 <img width="1559" alt="Screen Shot 2022-01-06 at 22 31 04"
 src="https://user-images.githubusercontent.com/36852/148447779-959c7c92-d542-4737-9161-bfe009dc746a.png">  
 
-![Test](https://github.com/tuzig/terminal7/actions/workflows/validate.yml/badge.svg)
+![Tests](https://github.com/tuzig/terminal7/actions/workflows/validate.yml/badge.svg)
 ![License](https://img.shields.io/badge/license-GPL-green)
 ![Platform](https://img.shields.io/badge/platform-web-blue)
 ![Languages](https://img.shields.io/github/languages/top/tuzig/terminal7)
@@ -63,18 +63,24 @@ open source WebRTC server written in go and based on [pion](https://pion.ly).
 Terminal7 should offer to install it for you, but if it doesn't,
 open TWR and run `install` to ensure your agent is up.
 
-If you have Go installed run:
+If you that doesn't work you can install webexec using go:
 
 ```console
 go install github.com/tuzig/webexec@latest
 webexec start
 ```
 
-If you don't, you can also use our line installer to download the binary for your system and start it:
+If you don't have go, you can use our line installer to download the binary for your system and start it:
 
 ```console
   bash <(curl -sL https://get.webexec.sh)
 ```
+
+webexec will start an HTTP WHIP server on port 7777, waiting for the client to connect.
+If pperbook user is set, webexec will also connect to peerbook.io so it can accept connections
+even when behind-the-NAT.
+
+webexec's CLI has a growing set of commands, use `webexec` to get help on the current set.
 
 ## Clipboard integration
 
