@@ -34,7 +34,7 @@ implmentation in go - [pion/webrtc](https://github.com/pion/webrtc) -
 that we use as a base for our server's agent.
 
 If you're having problems with your first connection, please refer to our 
-[troubleshooting guide](https://github.com/tuzig/terminal7/blob/master/docs/troubleshooting.md)
+[troubleshooting guide](https://github.com/tuzig/terminal7/blob/master/docs/troubleshooting.md).
 
 We welcome new contributors and are happy to help, talk to us on our
 [discord server](https://discord.com/invite/rDBj8k4tUE).
@@ -44,11 +44,10 @@ You can get Terminal7 for free from the
 [App Store](https://apps.apple.com/il/app/terminal7/id1532882447) or
 [Google Play](https://play.google.com/store/apps/details?id=dev.terminal).
 
-To run from source, run:
+To run from source, you should start by forking the repo 
+(or using tuzig/terminal7 if you just want to test), cloning it and from it's root run:
 
 ```console
-git clone git@github.com:<yourname>/terminal7.git
-cd terminal7
 yarn install
 yarn test
 yarn start
