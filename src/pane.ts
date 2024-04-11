@@ -504,7 +504,7 @@ export class Pane extends Cell {
     styleZoomed(e = null) {
         e = e || this.t7.zoomedE.querySelector(".pane")
         const se = this.gate.e.querySelector(".search-box")
-        const verticalSpace = (Capacitor.isNativePlatform()) ? 34 : 3
+        const verticalSpace = (Capacitor.isNativePlatform()) ? 40 : 3
         let style
         if (se.classList.contains("show"))
             style = `${(document.querySelector('.windows-container') as HTMLDivElement).offsetHeight - 22}px`
