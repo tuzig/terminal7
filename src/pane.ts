@@ -5,15 +5,15 @@
  *  License: GPLv3
  */
 import { Cell, SerializedCell  } from './cell'
-import { ITheme, Terminal } from 'xterm'
+import { ITheme, Terminal } from '@xterm/xterm'
 import { Capacitor } from '@capacitor/core'
 import { Clipboard } from '@capacitor/clipboard'
 import { Preferences } from '@capacitor/preferences'
-import { FitAddon } from 'xterm-addon-fit'
-import { SearchAddon } from '@xterm/addon-search'
-import { WebglAddon } from 'xterm-addon-webgl'
-import { WebLinksAddon } from 'xterm-addon-web-links'
-import { ImageAddon } from 'xterm-addon-image'
+import { FitAddon } from '@xterm/addon-fit'
+import { SearchAddon, ISearchOptions, ISearchDecorationOptions  } from '@xterm/addon-search'
+import { WebglAddon } from '@xterm/addon-webgl'
+import { WebLinksAddon } from '@xterm/addon-web-links'
+import { ImageAddon } from '@xterm/addon-image'
 import { Camera } from '@capacitor/camera'
 import { NativeAudio } from '@capacitor-community/native-audio'
 
@@ -28,16 +28,19 @@ const ABIT = 10,
     REGEX_SEARCH = false,
     COPYMODE_BORDER_COLOR = "#F952F9",
     FOCUSED_BORDER_COLOR = "#F4DB53",
-    SEARCH_OPTS = {
+    DECORATIONS: ISearchDecorationOptions = {
+        //TODO: add to theme
+        matchBackground: 'rgba(249, 82, 249, 0.5)',
+        activeMatchBackground: 'rgba(254, 219, 83, 0.5)',
+        matchOverviewRuler: "rgba(249, 82, 249, 0.5)",
+        activeMatchColorOverviewRuler: "rgba(254, 219, 83, 0.5)",
+    },
+    SEARCH_OPTS: ISearchOptions = {
         regex: REGEX_SEARCH,
         wholeWord: false,
         incremental: false,
         caseSensitive: true,
-        decorations: { 
-            //TODO: add to theme
-            matchBackground: 'rgba(249, 82, 249, 0.5)',
-            activeMatchBackground: 'rgba(254, 219, 83, 0.5)',
-        },
+        decorations: DECORATIONS,
     }
 
 export interface SerializedPane extends SerializedCell {
@@ -493,6 +496,7 @@ export class Pane extends Cell {
             }
 
         }
+        // TODO: move this to gate level as all panes are adding an event listener
         i.addEventListener("input", () => {
             this.searchTerm = i.value
             if (i.value) {
@@ -502,6 +506,7 @@ export class Pane extends Cell {
                 this.disableSearchButtons()
             }
         })
+        // TODO: move this to gate level as all panes are adding an event listener
         i.addEventListener('click', e => e.stopPropagation())
         i.focus()
     }
