@@ -44,7 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reconnect failure after a log sleep
 - Endless reconnect loop when network is down
 
-
 ## [1.9.1] - 2023/12/20
 
 ### Fixed
@@ -55,8 +54,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Option to set custom SSH port
 - A troubleshooting page an a dev site - https://dev.terminal7.dev
-
-### Fixed
 
 ## [1.9.0] - 2023/11/28
 

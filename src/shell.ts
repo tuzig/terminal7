@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import { Clipboard } from "@capacitor/clipboard"
-import { Terminal } from 'xterm'
+import { Terminal } from '@xterm/xterm'
 import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
 import Bowser from "bowser";
 

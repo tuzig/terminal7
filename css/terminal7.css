@@ -422,7 +422,6 @@ button.rename-close {
     list-style: none;
     text-align: left;
     padding-left: 0;
-
 }
 #version li .status {
     float: right;
@@ -834,8 +833,16 @@ div.boarding  {
 	border-radius: 5px;
     text-align: left;
 }
+#changelog ul {
+    list-style: tibetan;
+    text-align: left;
+    padding-left: 1em;
+}
+#changelog h2 {
+    margin: 0;
+}
 #changelog.show {
-	opacity: 0.8;
+	opacity: 0.9;
 	max-width: 96vw;
 	max-height: 60vh;
     border: 1px solid var(--local-border);

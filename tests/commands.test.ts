@@ -6,7 +6,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Terminal7Mock, sleep } from './infra'
-import { Terminal } from 'xterm'
+import { Terminal } from '@xterm/xterm'
 import { installCMD } from '../src/commands'
 import { T7Map } from '../src/map'
 

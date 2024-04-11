@@ -5,12 +5,12 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Terminal } from 'xterm'
+import { Terminal } from '@xterm/xterm'
 import { PeerbookConnection } from '../src/peerbook.ts'
 
 import { sleep } from './infra'
 
-vi.mock('xterm')
+vi.mock('@xterm/xterm')
 vi.mock('@revenuecat/purchases-capacitor')
 vi.mock('../src/ssh_session.ts')
 vi.mock('../src/webrtc_session.ts')

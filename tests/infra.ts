@@ -3,7 +3,7 @@ import { Terminal7 } from "../src/terminal7"
 import { Gate } from "../src/gate"
 import { T7Map } from "../src/map"
 import { vi } from "vitest";
-import { Terminal } from "xterm"
+import { Terminal } from '@xterm/xterm'
 
 vi.mock("xterm");
 vi.mock('@revenuecat/purchases-capacitor')
