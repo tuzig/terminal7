@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - support for webexec clipboard commands, e.g. use `webexec copy < file.txt` to copy a file to the client's clipboard
 - latency gets yellow when above 100ms and red when above 400ms
 - you can hear the bell
+- search highlights all matches
+- you can use escape to exit search
 
 ### Fixed
 
@@ -27,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - not asking if "localhost" is the right addresss
 - help text
 - gate reconnect now has a retry limit
+- search design and behavior
 
 ## [1.9.2] - 2023/3/18
 

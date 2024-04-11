@@ -319,12 +319,11 @@ nav::-webkit-scrollbar {
     padding: 6px;
     bottom: 51pt;
     left: 50%;
-    width: 80%;
+    width: 82%;
     max-width: 96%;
     transform: translate(-50%, 0);
     border-color: var(--local-border);
-    border-radius: 0 0 12px 12px;
-    border-top: 0;
+    border-radius: 8px;
 }
 
 .rename-box {
@@ -344,7 +343,6 @@ nav::-webkit-scrollbar {
 }
 
 nav.tabbar-search {
-    padding: 0 1em;
     display: flex;
     align-content: stretch;
 }
@@ -359,9 +357,9 @@ button.rename-close {
 .tabbar-search>input {
     padding: 0 0.5em;
     border: 0;
-    font-size: 16pt;
+    font-size: 15px;
     flex: 10 1 auto;
-    line-height: 24pt;
+    line-height: 26px;
     border: 1px solid var(--local-border);
     box-sizing: border-box;
     color: var(--text-color);

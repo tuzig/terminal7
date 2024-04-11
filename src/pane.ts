@@ -34,9 +34,9 @@ const ABIT = 10,
         incremental: false,
         caseSensitive: true,
         decorations: { 
-            //TODO: use real colors
-            matchBackground: 'rgba(240, 240, 0, 0.5)',
-            activeMatchBackground: 'rgba(240, 0, 240, 0.5)',
+            //TODO: add to theme
+            matchBackground: 'rgba(249, 82, 249, 0.5)',
+            activeMatchBackground: 'rgba(254, 219, 83, 0.5)',
         },
     }
 
@@ -471,7 +471,6 @@ export class Pane extends Cell {
         // show the search field
         this.searchDown = searchDown
         const se = this.gate.e.querySelector(".search-box")
-        se.classList.add("show")
         se.classList.remove("hidden")
         document.getElementById("search-button").classList.add("on")
         // TODO: restore regex search
@@ -480,14 +479,19 @@ export class Pane extends Cell {
         i.setAttribute("placeholder", "search string here")
         if (this.searchTerm)
             i.value = this.searchTerm
-        if (this.zoomed)
-            this.styleZoomed()
         i.onkeydown = ev => {
-            if (ev.keyCode == 13) {
+            switch (ev.key) {
+            case "Escape":
+                this.hideSearch()
+                this.t7.run(() => this.t.focus(), 10)
+                break
+            case "Enter":
                 this.findPrev(i.value)
                 this.enableSearchButtons()
                 this.t7.run(() => this.t.focus(), 10)
+                break
             }
+
         }
         i.addEventListener("input", () => {
             this.searchTerm = i.value
@@ -503,14 +507,8 @@ export class Pane extends Cell {
     }
     styleZoomed(e = null) {
         e = e || this.t7.zoomedE.querySelector(".pane")
-        const se = this.gate.e.querySelector(".search-box")
         const verticalSpace = (Capacitor.isNativePlatform()) ? 40 : 3
-        let style
-        if (se.classList.contains("show"))
-            style = `${(document.querySelector('.windows-container') as HTMLDivElement).offsetHeight - 22}px`
-        else
-            style = `${document.body.offsetHeight - verticalSpace}px`
-        e.style.height = style
+        e.style.height = `${document.body.offsetHeight - verticalSpace}px`
         e.style.top = "0px"
         e.style.width = "100%"
         this.fit()
@@ -554,7 +552,6 @@ export class Pane extends Cell {
         this.searchAddon.clearDecorations()
         const se = this.gate.e.querySelector(".search-box")
         if (se) {
-            se.classList.remove("show")
             se.classList.add("hidden")
         }
         const sb =  document.getElementById("search-button")
