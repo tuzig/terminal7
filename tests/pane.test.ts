@@ -10,9 +10,6 @@ import { Terminal7Mock } from './infra'
 import { Preferences } from '@capacitor/preferences'
 import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest'
 
-vi.mock('xterm')
-vi.mock('@revenuecat/purchases-capacitor')
-vi.mock('@capacitor-community/native-audio')
 
 describe("pane", () => {
     var t, e, h, w, p0

@@ -3,12 +3,6 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import { Terminal7Mock } from './infra'
-import { vi } from 'vitest'
-import { assert } from "chai"
-import { deleteDB } from 'idb'
-
-vi.mock('@capacitor-community/native-audio')
 
 test.skip("certificates", () => {
     var t, ns

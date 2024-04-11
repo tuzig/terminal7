@@ -11,9 +11,6 @@ import { Form } from '../src/form'
 import { T7Map } from '../src/map'
 import { IDisposable } from 'xterm'
 
-vi.mock('xterm')
-vi.mock('@revenuecat/purchases-capacitor')
-vi.mock('@capacitor-community/native-audio')
 
 describe("form", () => {
     let word

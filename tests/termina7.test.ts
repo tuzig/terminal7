@@ -5,22 +5,12 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
-import * as TOML from '@tuzig/toml'
-import { Layout } from '../src/layout'
 import { Cell } from '../src/cell'
-import { Gate } from '../src/gate'
-import { T7Map } from '../src/map'
-import { Terminal7Mock, sleep } from './infra'
+import { Terminal7Mock, sleep, mockXterm, mockNet } from './infra'
 import { assert } from "chai"
 import { Preferences } from '@capacitor/preferences'
 import { expect, vi } from 'vitest'
 import { HTTPWebRTCSession } from '../src/webrtc_session'
-
-vi.mock('xterm')
-vi.mock('@revenuecat/purchases-capacitor')
-vi.mock('../src/ssh_session.ts')
-vi.mock('../src/webrtc_session.ts')
-vi.mock('@capacitor-community/native-audio')
 
 describe("terminal7", function() {
     var t, e

@@ -5,9 +5,6 @@ import { T7Map } from "../src/map"
 import { vi } from "vitest";
 import { Terminal } from '@xterm/xterm'
 
-vi.mock("xterm");
-vi.mock('@revenuecat/purchases-capacitor')
-
 export class resizeObs {
     constructor(cb) {
         cb();
