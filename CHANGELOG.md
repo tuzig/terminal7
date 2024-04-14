@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### Changed
+### [1.10.0] - 2024/4/14
 
 - removed 22 empty pixels at the top when running on the web
 - network stats are now only latency and are displayed in the top right corner
