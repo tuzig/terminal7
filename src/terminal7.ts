@@ -489,13 +489,14 @@ export class Terminal7 {
      */
     // TOFO: add onMap to props
     addGate(props, onMap = true) {
+        const container = document.getElementById('gates-container')
         const p = props || {}
         // add the id
         p.id = p.fp || p.name
         const g = new Gate(p)
         g.onlySSH = p.onlySSH
         this.gates.push(g)
-        g.open(this.e)
+        g.open(container)
         if (onMap) {
             g.nameE = this.map.add(g)
             g.updateNameE()
