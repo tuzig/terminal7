@@ -357,6 +357,21 @@ export class Terminal7 {
                     RateApp.requestReview()
             }, 100)
         })
+        // search box
+        document.querySelector(".search-close").addEventListener('click', () =>  {
+                this.map.showLog(false)
+                this.activeG.activeW.activeP.exitSearch()
+                this.activeG.activeW.activeP.focus()
+            })
+        document.querySelector(".search-up").addEventListener('click', () =>
+                this.activeG.activeW.activeP.findPrev())
+
+        document.querySelector(".search-down").addEventListener('click', () => 
+                this.activeG.activeW.activeP.findNext())
+        //rename box
+        document.querySelector(".rename-close").addEventListener('click', () => 
+                this.e.querySelector(".rename-box").classList.add("hidden"))
+
         this.pbConnect()
             .catch(e => this.log("pbConnect failed", e))
             .finally(() =>

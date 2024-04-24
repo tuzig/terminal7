@@ -119,19 +119,6 @@ export class Gate {
             })
             t.querySelector(".add-tab").addEventListener(
                 'click', () => this.newTab())
-            t.querySelector(".search-close").addEventListener('click', () =>  {
-                this.map.showLog(false)
-                this.activeW.activeP.exitSearch()
-                this.activeW.activeP.focus()
-            })
-            t.querySelector(".search-up").addEventListener('click', () =>
-                this.activeW.activeP.findPrev())
-
-            t.querySelector(".search-down").addEventListener('click', () => 
-                this.activeW.activeP.findNext())
-
-            t.querySelector(".rename-close").addEventListener('click', () => 
-                this.e.querySelector(".rename-box").classList.add("hidden"))
             /* TODO: handle the bang
             let b = t.querySelector(".bang")
             b.addEventListener('click', (e) => {new window from active pane})
