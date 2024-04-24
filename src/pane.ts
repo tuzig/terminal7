@@ -20,8 +20,6 @@ import { NativeAudio } from '@capacitor-community/native-audio'
 import { Channel, Failure } from './session'
 
 import XtermWebfont from '@liveconfig/xterm-webfont'
-import * as Hammer from "hammerjs"
-import { Manager } from "hammerjs"
 import { TerminalWithAddons } from "./map"
 
 const ABIT = 10,
@@ -85,14 +83,18 @@ export class Pane extends Cell {
     WebLinksAddon: WebLinksAddon
     resizeObserver: ResizeObserver
     zoomed = false
+    // the pane is in transition - ignore resize events
+    transit = false
 
     constructor(props) {
         props.className = "pane"
         super(props)
-        this.catchFingers()
         this.fontSize = props.fontSize || 12
         this.theme = props.theme || this.t7.conf.theme
-        this.resizeObserver = new window.ResizeObserver(() => this.fit())
+        this.resizeObserver = new window.ResizeObserver(() => {
+            if (!this.transit)
+                this.fit()
+        })
         this.channelID = props.channelID
         this.needsResize = false
     }
@@ -206,13 +208,18 @@ export class Pane extends Cell {
                 NativeAudio.play({ assetId: "bell" })
                            .catch(e => terminal7.log("failed to play bell",e ))
             )
-            this.resizeObserver.observe(this.e)
+            if (this.resizeObserver)
+                this.resizeObserver.observe(this.e)
+            else
+                console.log("no resize observer on pane")
             this.fit(pane => { 
                if (pane != null)
                   pane.openChannel({parent: parentID, id: channelID})
                   .catch(e => 
                       this.gate.notify("Failed to open communication channel: "+e))
             })
+            if (this.zoomed && terminal7.activeG && (terminal7.isActive(this)))
+               this.zoom()
         })
         return this.t
     }
@@ -232,82 +239,32 @@ export class Pane extends Cell {
         this.gate.sendState()
     }
 
-    /*
-    * Catches gestures on an element using hammerjs.
-    * If an element is not passed in, `this.e` is used
-    */
-    catchFingers(elem = undefined) {
-        const e = (typeof elem == 'undefined')?this.e:elem,
-            h = new Manager(e, {}),
-            // h.options.domEvents=true; // enable dom events
-            singleTap = new Hammer.Tap({event: "tap"}),
-            doubleTap = new Hammer.Tap({event: "doubletap", taps: 2}),
-            pinch = new Hammer.Pinch({event: "pinch"})
-
-        h.add([singleTap,
-            doubleTap,
-            pinch,
-            new Hammer.Tap({event: "twofingerstap", pointers: 2})])
-
-        h.on('tap', () => {
-            if (this.w.activeP != this as unknown as Pane) {
-                this.focus()
-                this.gate.sendState()
-            }
-        })
-        h.on('twofingerstap', () => {
-            this.toggleZoom()
-        })
-        h.on('doubletap', () => {
-            this.toggleZoom()
-        })
-
-        h.on('pinch', (e: HammerInput) => {
-            // @ts-ignore additionalEvent is not in the .d.ts
-            this.t7.log(e.additionalEvent, e.distance, e.velocityX, e.velocityY, e.direction, e.isFinal)
-            if (e.deltaTime < this.lastEventT)
-                this.lastEventT = 0
-            if ((e.deltaTime - this.lastEventT < 200) ||
-                (e.velocityY > this.t7.conf.ui.pinchMaxYVelocity))
-                return
-            this.lastEventT = e.deltaTime
-
-            // @ts-ignore additionalEvent is not in the .d.ts
-            if (e.additionalEvent == "pinchout")
-                this.scale(1)
-            else
-                this.scale(-1)
-        })
-    }
-
     zoom() {
-        const c = document.createElement('div'),
+        const c = document.getElementById("zoomed-pane") as HTMLDivElement,
             e = document.createElement('div'),
-            te = this.e.removeChild(this.e.children[0])
-        c.classList.add("zoomed", "pane-container")
+            te = this.e.removeChild(this.e.firstElementChild)
         e.classList.add("pane", "focused")
         e.style.borderColor = FOCUSED_BORDER_COLOR
         e.appendChild(te)
         c.appendChild(e)
-        this.catchFingers(e)
-        document.body.appendChild(c)
-        this.t7.zoomedE = c
         this.w.e.classList.add("hidden")
         this.resizeObserver = new window.ResizeObserver(() => this.styleZoomed(e))
         this.resizeObserver.observe(e)
+        c.classList.remove("hidden")
         this.zoomed = true
     }
     unzoom() {
+        const zoomedPane = document.getElementById("zoomed-pane") as HTMLDivElement
         if (this.resizeObserver != null) {
             this.resizeObserver.disconnect()
             this.resizeObserver = null
         }
-        // TODO: recover from zoomedE is null
-        const te = this.t7.zoomedE.children[0].children[0]
-        this.e.appendChild(te)
-        document.body.removeChild(this.t7.zoomedE)
-        this.t7.zoomedE = null
-        this.w.e.classList.remove("hidden")
+        const terminalE = zoomedPane.removeChild(zoomedPane.firstElementChild)
+        if (terminalE) {
+            this.e.appendChild(terminalE.firstElementChild)
+            this.w.e.classList.remove("hidden")
+        }
+        zoomedPane.classList.add("hidden")
         this.zoomed = false
     }
 
@@ -511,7 +468,8 @@ export class Pane extends Cell {
         i.focus()
     }
     styleZoomed(e = null) {
-        e = e || this.t7.zoomedE.querySelector(".pane")
+        
+        e = e || document.getElementById("zoomed-pane").querySelector(".pane")
         const verticalSpace = (Capacitor.isNativePlatform()) ? 40 : 3
         e.style.height = `${document.body.offsetHeight - verticalSpace}px`
         e.style.top = "0px"
@@ -525,10 +483,8 @@ export class Pane extends Cell {
             this.copyMode = true
             this.cmInitCursor()
             this.cmAtEnd = null
-            if (this.zoomed)
-                (this.t7.zoomedE.children[0] as HTMLElement).style.borderColor = COPYMODE_BORDER_COLOR
-            else
-                this.e.style.borderColor = COPYMODE_BORDER_COLOR
+            const e = (this.zoomed) ? document.getElementById("zoomed-pane").firstElementChild as HTMLElement : this.e
+            e.style.borderColor = COPYMODE_BORDER_COLOR
             Preferences.get({key: "first_copymode"}).then(v => {
                 if (v.value != "1") {
                     // this.gate.map.shell.runCommand('help', ['copymode'])
@@ -546,10 +502,8 @@ export class Pane extends Cell {
             this.searchAddon.clearDecorations()
             this.t.clearSelection()
             this.t.scrollToBottom()
-            if (this.zoomed)
-                (this.t7.zoomedE.children[0] as HTMLElement).style.borderColor = FOCUSED_BORDER_COLOR
-            else
-                this.e.style.borderColor = FOCUSED_BORDER_COLOR
+            const e = (this.zoomed) ? document.getElementById("zoomed-pane").firstElementChild as HTMLElement : this.e
+            e.style.borderColor = FOCUSED_BORDER_COLOR
             this.focus()
         }
     }
@@ -1238,5 +1192,21 @@ export class Pane extends Cell {
             setTimeout(() => this.unzoom(), 100)
             console.log("will zoom in 100ms")
         }
+    }
+    onPinch(ev) {
+        if (ev.deltaTime < this.lastEventT)
+            this.lastEventT = 0
+        if ((ev.deltaTime - this.lastEventT < 100) ||
+            (ev.velocityY > terminal7.conf.ui.pinchMaxYVelocity))
+            return
+        this.lastEventT = ev.deltaTime
+
+        // @ts-ignore additionalEvent is not in the .d.ts
+        if (ev.additionalEvent == "pinchout")
+            this.scale(1)
+        else
+            this.scale(-1)
+        ev.srcEvent.preventDefault()
+        ev.srcEvent.stopPropagation()
     }
 }

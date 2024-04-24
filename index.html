@@ -73,79 +73,8 @@
               <footer>map inspired by Eero Saarinen's T5</footer>
           </div>
       </div>
-      <div id="manual-install" class="hidden modal border">
-          <h1 style="margin:1em;">Installation Instructions</h1>
-          <ul>
-              <li>On an iPad, press the share button and then "Add to Home Screen"</li>
-          <li>Firefox has poor PWA support, better use chrome or edge or safari
-              on the iPad</li>
-          <li>To install the app look for the PWA install icon at the edge
-              of the browser's url field</li>
-          </ul>
-            <nav>
-                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
-            </nav>
-      </div>
-      <div id="greetings-modal" class="hidden modal border">
-          <h1>🖖 Greetings & Salutations 🖖</h1>
-          <h2 style="margin-top:0.5em"> Thanks for trying Terminal7</h2>
-          <p>
-                Terminal7 is a progressive web terminal emulator and multiplexer
-                over WebRTC. Inspired by tmux, Terminal7 introduces
-                three novelties:
-        </p>
-        <div>
-        <ul>
-            <li>Running over a mobile network</li>
-            <li>Grpahics display output</li>
-            <li>Touchable interface</li>
-        </ul>
-        </div>
-        <p>
-        You can play with Terminal7 in your browser or
-        you can install it to enjoy full screen,
-            offline and playing better with other apps
-        </p>
-          <nav class="navtext">
-          <button type="button" class="play-button text-button">Play</button>
-          <button id="install-button" type="button" class="text-button">Install</button>
-          </nav>
-      </div>
-      <div id="onboarding" class="hidden modal border">
-          <h1>What is the local operating system type?</h1>
-          <nav class="navtext">
-              <button type="button" class="onmobile text-button">Mobile</button>
-              <button type="button" class="ongpos text-button">GPOS</button>
-          </nav>
-      </div>
-      <div id="peerbook-modal" class="hidden modal border">
-          <!--
-        <p>
-        Welcome to our beta. To start using Terminal7 you will need a server
-        with the webexec program running. You can use any *Nix machine as your
-        server. Installation is prety simple, just follow the
-        <a href="https://github.com/tuzig/webexec/#install">instructions</a>.
-        </p> -->
-          <h2>&#x1F4D6; PeerBook Registration &#x1F4D6;</h2>
-        <p>
-          peerbook.io is signalling server and an address book.
-          peerbook helps with fingerprints exchange,
-          ephermal IP hosts and behind-the-NAT servers.
-        </p><p>
-          Regsiter to get your peerbook and help us test the service:
-        </p>
-          <nav>
-              <button type="button" class="close"><i class="f7-icons">
-                      xmark</i></button>
-          </nav>
-      </div>
-      <div id="edit-unverified-pbhost" class="hidden modal border" >
-            <h1 class="Warning">Unverified Host</h1>
-            <p>Please visit <a target="_blank">PeerBook</a> to verify</p>
-            <nav>
-                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
-            </nav>
-      </div>
+      <div id="gates-container"> </div>
+      <div class="hidden zoomed pane-container" id="zoomed-pane"> </div>
       <div id="offline" class="hidden modal border non-clearable" >
           <h1 class="warning">Network is down</h1>
           <p>Terminal 7 will activate on reconnect</p>
@@ -240,9 +169,7 @@
     <template id="gate-template">
     <div class="windows-container">
     </div>
-    <div id="gates-container">
-        <div class="gate-stats">
-        </div>
+    <div class="gate-stats">
     </div>
     <div class="search-box border hidden">
       <nav class="tabbar-search">
@@ -266,7 +193,7 @@
 
     <template id="divider-template">
         <div class="divider hidden">
-            <img width="8" height="44" src="img/divider.png" alt="a divider">
+            <img width="8" height="44" draggable="false" src="img/divider.png" alt="a divider">
         </div>
     </template>
     <nav class="tabbar">

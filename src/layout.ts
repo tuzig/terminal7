@@ -293,8 +293,12 @@ export class Layout extends Cell {
     }
     /*
      * Layout.moveBorder moves a pane's border
+    * @param {Pane} pane - the pane to move the border in
+    * @param {string} border - the border to move
+    * @param {number} dest - the destination of the border
+    * @param {boolean} fit - if true, fit the panes after moving the border
      */
-    moveBorder(pane, border, dest) {
+    moveBorder(pane: Pane, border: string, dest: number, fit: boolean) {
         let s, off
         let p0 = null,
             p1 = null
@@ -318,9 +322,11 @@ export class Layout extends Cell {
             }
         }
         if (p0 == null || p1 == null) {
-            this.layout && this.layout.moveBorder(this, border, dest)
+            this.layout && this.layout.moveBorder(this, border, dest, fit)
             return
         }
+        // TODO: ensure pane is not forever in transit due to a lost event
+        p0.transit = p1.transit = !fit
         const max = this.findNext(p1)
         dest = Math.max(dest, p0[off] + 0.02)
         dest = Math.min(dest, (max?.[off] || 1) - 0.02)
@@ -330,6 +336,10 @@ export class Layout extends Cell {
         p1[off] = dest
         p0.refreshDividers()
         p1.refreshDividers()
+        if (fit) {
+            p0.fit()
+            p1.fit()
+        }
         this.w.updateDivideButtons()
     }
     findNext(c) {
