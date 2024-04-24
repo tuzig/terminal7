@@ -136,9 +136,6 @@ a {
     margin-top: 0; 
     margin-bottom: 1em;
 }
-.modal nav:not(.navtext) { 
-    border-top: 1px var(--dark-border) solid;
-}
 .modal nav { 
     clear: both;
     width: 100%; 
@@ -321,13 +318,8 @@ nav::-webkit-scrollbar {
 .search-box {
     position: fixed;
     display: inline-block;
-    box-sizing: border-box;
-    background-color: var(--background);
-    z-index: 5;
-    margin: 0 auto;
     padding: 6px;
     bottom: 53px;
-    left: 50%;
     width: 82%;
     max-width: 96%;
     transform: translate(-50%, 0);
@@ -354,6 +346,8 @@ nav::-webkit-scrollbar {
 nav.tabbar-search {
     display: flex;
     align-content: stretch;
+    margin: 0;
+    padding: 0;
 }
 .tabbar-search>button {
     padding: 0 0.5em;
@@ -369,7 +363,7 @@ button.rename-close {
     font-size: 15px;
     flex: 10 1 auto;
     line-height: 26px;
-    border: 1px solid var(--local-border);
+    border: 0;
     box-sizing: border-box;
     color: var(--text-color);
     background-color: var(--text-background);
@@ -863,7 +857,7 @@ div.boarding  {
     top: 50%;
     pointer-events: none;
 }
-.tabbar-search .not-found {
+#string-not-found {
     position: relative;
     left: -76px;
     width: 0;

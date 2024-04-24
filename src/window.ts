@@ -127,8 +127,8 @@ export class Window {
      */
     rename() {
         const e = this.nameE,
-              se = this.gate.e.querySelector(".rename-box"),
-              textbox = this.gate.e.querySelector("#name-input") as HTMLInputElement
+              se = document.querySelector(".rename-box"),
+              textbox = document.querySelector("#name-input") as HTMLInputElement
 
         se.classList.remove("hidden")
         textbox.value = e.innerHTML

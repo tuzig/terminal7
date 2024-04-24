@@ -418,7 +418,7 @@ export class Pane extends Cell {
         this.write(m)
     }
     toggleSearch() {
-        const se = this.gate.e.querySelector(".search-box")
+        const se = document.querySelector(".search-box")
         if (!se.classList.contains("show"))
             this.showSearch()
         else {
@@ -430,7 +430,7 @@ export class Pane extends Cell {
     showSearch(searchDown = false) {
         // show the search field
         this.searchDown = searchDown
-        const se = this.gate.e.querySelector(".search-box")
+        const se = document.querySelector(".search-box")
         se.classList.remove("hidden")
         document.getElementById("search-button").classList.add("on")
         // TODO: restore regex search
@@ -509,7 +509,7 @@ export class Pane extends Cell {
     }
     hideSearch() {
         this.searchAddon.clearDecorations()
-        const se = this.gate.e.querySelector(".search-box")
+        const se = document.querySelector(".search-box")
         if (se) {
             se.classList.add("hidden")
         }
@@ -611,7 +611,7 @@ export class Pane extends Cell {
         this.find(searchTerm, (st) => this.searchAddon.findPrevious(st, SEARCH_OPTS))
     }
     private find(searchTerm: string, findFunc: (string) => boolean): void {
-        const notFound = this.gate.e.querySelector(".not-found")
+        const notFound = document.getElementById("string-not-found")
         if (searchTerm) {
             this.cmAtEnd = null
             // this.t.options.selectionStyle = "plain"
@@ -1101,14 +1101,14 @@ export class Pane extends Cell {
         this.cmMark()
     }
     enableSearchButtons() {
-        const se = this.gate.e.querySelector(".search-box")
+        const se = document.querySelector(".search-box")
         const up = se.querySelector(".search-up"),
             down = se.querySelector(".search-down")
         up.classList.remove("off")
         down.classList.remove("off")
     }
     disableSearchButtons() {
-        const se = this.gate.e.querySelector(".search-box")
+        const se = document.querySelector(".search-box")
         const up = se.querySelector(".search-up"),
             down = se.querySelector(".search-down")
         up.classList.add("off")
