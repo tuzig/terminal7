@@ -26,6 +26,7 @@ import { Device } from '@capacitor/device'
 import { NativeAudio } from '@capacitor-community/native-audio'
 import { NativeBiometric } from "capacitor-native-biometric"
 import { RateApp } from 'capacitor-rate-app'
+import * as Hammer from 'hammerjs'
 
 
 import { PeerbookConnection, PB } from './peerbook'
@@ -140,7 +141,6 @@ export class Terminal7 {
     certificates?: RTCCertificate[] = null
     netConnected = true
     logBuffer: CyclicArray
-    zoomedE?: HTMLDivElement
     pendingPanes
     pb?: PeerbookConnection = null
     ignoreAppEvents = false
@@ -170,6 +170,7 @@ export class Terminal7 {
     }
     lastIdVerify: number
     keys: {publicKey: string, privateKey: string}
+    lastPointerUp: 0
 
     DEFAULT_KEY_TAG = "dev.terminal7.keys.default"
     /*
@@ -192,7 +193,6 @@ export class Terminal7 {
         this.borderHotSpotSize  = settings.borderHotSpotSize || 30
 
         this.logBuffer = new CyclicArray(settings.logLines || 101)
-        this.zoomedE = null
         this.pendingPanes = {}
 
         this.iceServers = settings.iceServers || null
@@ -314,8 +314,6 @@ export class Terminal7 {
             this.updateNetworkStatus(s))
         this.catchFingers()
         // setting up edit host events
-        document.getElementById("edit-unverified-pbhost").addEventListener(
-            "click", async() => await this.clear())
         document.addEventListener("keyup", async ev => {
             // hide the modals when releasing the meta key
             if ((ev.key == "Meta") &&
@@ -477,10 +475,52 @@ export class Terminal7 {
         })
     }
     catchFingers() {
-        this.e.addEventListener("pointerdown", ev => this.onPointerDown(ev))
-        this.e.addEventListener("pointerup", ev => this.onPointerUp(ev))
-        this.e.addEventListener("pointercancel", () => this.onPointerCancel())
-        this.e.addEventListener("pointermove", ev => this.onPointerMove(ev))
+        const map = document.getElementById("map")
+        map.addEventListener("pointerdown", ev => this.onPointerDown(ev))
+        map.addEventListener("pointerup", ev => this.onPointerUp(ev))
+        map.addEventListener("pointercancel", () => this.onPointerCancel())
+        map.addEventListener("pointermove", ev => this.onPointerMove(ev))
+        // Add gestures on the gates container
+        const gatesContainer = document.getElementById("gates-container")
+        const h = new Hammer.Manager(gatesContainer, {domEvents:true}) // enable dom events
+        h.add(new Hammer.Press({event: "press", pointers: 1}))
+        h.add(new Hammer.Tap({event: "tap", pointers: 1}))
+        h.add(new Hammer.Pan({event: "pan", pointers: 1, threshold: 10}))
+        h.add(new Hammer.Pinch({event: "pinch"}))
+        h.on("press", ev =>  {
+            // long press is used to rename the window
+            if (!this.activeG)
+                return 
+            const win = ev.target.closest(".window-name")
+            if (win && win.w) {
+                win.w.rename()
+                ev.srcEvent.preventDefault()
+                ev.srcEvent.stopPropagation()
+            }
+        })
+        h.on("tap", ev => {
+            if (this.activeG)
+                this.activeG.onTap(ev)
+        })
+        h.on("pinch", ev => {
+            const e = ev.target.closest(".cell")
+            if (e && e.cell) {
+                const pane = e.cell as Pane
+                pane.onPinch(ev)
+            }
+        })
+        h.on("pan", ev => {
+            if (this.activeG)
+                this.activeG.activeW.onPan(ev)
+        })
+        // capture double clicks on zoomed container
+        const zoomContainer = document.getElementById("zoomed-pane")
+        zoomContainer.addEventListener("pointerup", ev => {
+            if (Date.now() - this.lastPointerUp < 300) {
+                this.activeG.activeW.activeP.unzoom()
+            }
+            this.lastPointerUp = Date.now()
+        })
     }
     /*
      * Terminal7.addGate is used to add a new gate.
@@ -535,6 +575,8 @@ export class Terminal7 {
     async goHome() {
         await Preferences.remove({key: "last_state"})
         const s = document.getElementById('map-button')
+        const gatesContainer = document.getElementById('gates-container')
+        gatesContainer.classList.add('hidden')
         s.classList.add('off')
         if (this.activeG) {
             this.activeG.blur()
@@ -1263,5 +1305,13 @@ export class Terminal7 {
             this.storeGates()
         }
         this.map.refresh()
+    }
+    // isActive returns true if the component is active
+    // TODO: refactor the code to use this
+    isActive(com: Pane | Gate | Window) {
+        return (this.activeG == com) || (this.activeG && (
+            com == this.activeG.activeW || this.activeG.activeW && (
+                this.activeG.activeW.activeP == com)))
+
     }
 }

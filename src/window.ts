@@ -7,7 +7,6 @@
  */
 import { Layout, SerializedLayout } from './layout'
 import { Pane } from './pane'
-import * as Hammer from 'hammerjs'
 import { Gate } from "./gate"
 import { Terminal7 } from "./terminal7"
 
@@ -26,6 +25,7 @@ export class Window {
     name: string
     rootLayout: Layout
     e?: HTMLElement
+    draggedDivider: HTMLElement
     activeP?: Pane
     t7: Terminal7
     nameE: HTMLAnchorElement
@@ -53,13 +53,8 @@ export class Window {
         const a = document.createElement('a') as HTMLAnchorElement & {w: Window}
         a.id = this.e.id+'-name'
         a.w = this
+        a.className = "window-name"
         a.innerHTML = this.name
-        // Add gestures on the window name for rename and drag to trash
-        const h = new Hammer.Manager(a, {domEvents:true}) // enable dom events
-        h.add(new Hammer.Press({event: "rename", pointers: 1}))
-        h.add(new Hammer.Tap({event: "switch", pointers: 1}))
-        h.on("rename", () => this.rename())
-        h.on("switch", () => this.focus())
         this.nameE = a
         this.gate.e.querySelector(".tabbar-names").appendChild(a)
     }
@@ -75,8 +70,8 @@ export class Window {
             a.e.classList.add("hidden")
         }
         if (this.activeP && this.activeP.zoomed) {
+            this.activeP.unzoom()
             this.e.classList.add("hidden")
-            this.t7.zoomedE.classList.remove("hidden")
         }
         else
             this.e.classList.remove("hidden")
@@ -116,8 +111,6 @@ export class Window {
                 const p = l.addPane(cell)
                 if (cell.active)
                     this.activeP = p
-                if (cell.zoomed && activeWindow)
-                    p.zoom()
             }
         })
         return l
@@ -259,5 +252,30 @@ export class Window {
         })
         newLayout.refreshDividers()
         return newLayout
+    }
+    // used to recieve the hammerjs event from the gate
+    onPan(ev) {
+        const x  = ev.srcEvent.pageX,
+              y  = ev.srcEvent.pageY,
+              elements = document.elementsFromPoint(x, y);
+        let divider = ev.target.closest(".divider")
+        if (!divider) {
+            if (!this.draggedDivider)
+                return
+            divider = this.draggedDivider
+        }
+        if (ev.isFinal)
+            this.draggedDivider = null
+        else
+            this.draggedDivider = divider
+        const layout = divider.pane.layout
+        const where = divider.classList.contains("left-divider")? "left" : "top"
+        const dest = Math.min(1.0, (where == "top")
+                ? y / (document.querySelector('.windows-container') as HTMLDivElement).offsetHeight
+                : x / document.body.offsetWidth)
+        layout.moveBorder(divider.pane, where, dest, ev.isFinal)
+        ev.srcEvent.preventDefault()
+        ev.srcEvent.stopPropagation()
+
     }
 }
