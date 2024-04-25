@@ -59,12 +59,7 @@ export class Terminal7Mock extends Terminal7 {
 <div id='help-button'></div>
 <div id='help-gate'></div>
 <div id='map-button'></div>
-    <template id="gate-template">
-    <div class="windows-container">
-    </div>
-    <div class="gate-stats">
-    </div>
-    <div class="hidden search-box border">
+    <div id="search" class="hidden border">
       <nav class="tabbar-search">
         <button type="button" class="search-up"><i class="f7-icons">arrowtriangle_up</i></button>
         <button type="button" class="search-down"><i class="f7-icons">arrowtriangle_down</i></button>
@@ -76,11 +71,16 @@ export class Terminal7Mock extends Terminal7 {
         <button type="button" class="search-close"><i class="f7-icons">xmark</i></button>
       </nav>
     </div>
-    <div class="hidden rename-box border">
+    <div id="renanme" class="hidden">
       <nav class="tabbar-search">
         <button type="button" class="rename-close"><i class="f7-icons">xmark</i></button>
         <input type="text" name="new-name" id="name-input">
       </nav>
+    </div>
+    <template id="gate-template">
+    <div class="windows-container">
+    </div>
+    <div class="gate-stats">
     </div>
 
     <nav class="tabbar">

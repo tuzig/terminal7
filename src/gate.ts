@@ -791,34 +791,4 @@ export class Gate {
     blur() {
         this.e.classList.add("hidden")
     }
-    onTap(ev) {
-        // tap can either cahnge the active pane or the active window
-        const win = ev.target.closest(".window-name")
-        if (win && win.w) {
-            win.w.focus()
-            this.sendState()
-            ev.srcEvent.preventDefault()
-            ev.srcEvent.stopPropagation()
-            return
-        }
-        const cellE = ev.target.closest(".cell")
-        if (cellE && cellE.cell) {
-            // check if it's the second click in a double-click
-            // if so, toggle the zoom
-            const pane = cellE.cell as Pane,
-                  lastClick = this.lastClick
-            this.lastClick = Date.now()
-            if (Date.now() - lastClick < 300)
-                pane.toggleZoom()
-            else if (pane != this.activeW.activeP)
-                pane.focus()
-            else {
-                terminal7.clear()
-                return
-            }
-            this.sendState()
-            ev.srcEvent.preventDefault()
-            ev.srcEvent.stopPropagation()
-        }
-    }
 }

@@ -5,6 +5,7 @@
  *  Copyright: (c) 2020 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
+import interact from 'interactjs'
 import { Layout, SerializedLayout } from './layout'
 import { Pane } from './pane'
 import { Gate } from "./gate"
@@ -57,6 +58,20 @@ export class Window {
         a.innerHTML = this.name
         this.nameE = a
         this.gate.e.querySelector(".tabbar-names").appendChild(a)
+        interact(this.nameE)
+            .on("tap", ev => {
+                this.focus()
+                ev.preventDefault()
+                ev.stopPropagation()
+            })
+            .on("hold", ev => {
+                // Can rename only th active window
+                if (this.gate.activeW != this)
+                    return
+                this.rename()
+                ev.preventDefault()
+                ev.stopPropagation()
+            })
     }
     /*
      * Change the active window, all other windows and
@@ -64,10 +79,10 @@ export class Window {
      */
     focus() {
         // turn off the current active
-        const a = this.gate.activeW
-        if (a) {
-            a.nameE.classList.remove("on")
-            a.e.classList.add("hidden")
+        const last = this.gate.activeW
+        if (last) {
+            last.nameE.classList.remove("on")
+            last.e.classList.add("hidden")
         }
         if (this.activeP && this.activeP.zoomed) {
             this.activeP.unzoom()
@@ -121,40 +136,30 @@ export class Window {
             r.active = true
         return r
     }
+    onRenameEvent(event) {
+        const se = document.getElementById("rename")
+        if (event.keyCode == 13 || event.type != "keyup") {
+            se.classList.add("hidden")
+            this.t7.run(() => {
+                this.name = event.target.value
+                this.nameE.innerHTML = event.target.value
+                this.activeP.focus()
+            }, ABIT)
+            this.gate.sendState()
+        }
+    }
     /*
      * Replace the window name with an input field and updates the window
      * name when the field is changed. 
      */
     rename() {
-        const e = this.nameE,
-              se = document.querySelector(".rename-box"),
-              textbox = document.querySelector("#name-input") as HTMLInputElement
+        const se = document.getElementById("rename")
+        const textbox = document.querySelector("#name-input") as HTMLInputElement
 
         se.classList.remove("hidden")
-        textbox.value = e.innerHTML
+        textbox.value = this.nameE.innerHTML
         textbox.focus()
 
-        const handler = (event) => {
-            if (event.keyCode == 13 || event.type != "keyup") {
-                console.log(event)
-                textbox.removeEventListener('keyup', handler)
-                textbox.removeEventListener('change', handler)
-                textbox.removeEventListener('blur', handler)
-                se.classList.add("hidden")
-                this.t7.run(() => {
-                    this.name = event.target.value
-                    this.nameE.innerHTML = event.target.value
-                    this.activeP.focus()
-                }, ABIT)
-                this.gate.sendState()
-                event.preventDefault()
-                event.stopPropagation()
-            }
-        }
-
-        textbox.addEventListener('keyup', handler)
-        textbox.addEventListener('change', handler)
-        textbox.addEventListener('blur', handler)
     }
     close() {
         // remove the window name
@@ -253,29 +258,5 @@ export class Window {
         newLayout.refreshDividers()
         return newLayout
     }
-    // used to recieve the hammerjs event from the gate
-    onPan(ev) {
-        const x  = ev.srcEvent.pageX,
-              y  = ev.srcEvent.pageY,
-              elements = document.elementsFromPoint(x, y);
-        let divider = ev.target.closest(".divider")
-        if (!divider) {
-            if (!this.draggedDivider)
-                return
-            divider = this.draggedDivider
-        }
-        if (ev.isFinal)
-            this.draggedDivider = null
-        else
-            this.draggedDivider = divider
-        const layout = divider.pane.layout
-        const where = divider.classList.contains("left-divider")? "left" : "top"
-        const dest = Math.min(1.0, (where == "top")
-                ? y / (document.querySelector('.windows-container') as HTMLDivElement).offsetHeight
-                : x / document.body.offsetWidth)
-        layout.moveBorder(divider.pane, where, dest, ev.isFinal)
-        ev.srcEvent.preventDefault()
-        ev.srcEvent.stopPropagation()
-
-    }
+    // used to recieve the touch event from the gate
 }

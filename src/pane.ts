@@ -4,6 +4,10 @@
  *  Copyright: (c) 2021 Benny A. Daon - benny@tuzig.com
  *  License: GPLv3
  */
+import interact from 'interactjs'
+import XtermWebfont from '@liveconfig/xterm-webfont'
+import { TerminalWithAddons } from "./map"
+
 import { Cell, SerializedCell  } from './cell'
 import { ITheme, Terminal } from '@xterm/xterm'
 import { Capacitor } from '@capacitor/core'
@@ -16,11 +20,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links'
 import { ImageAddon } from '@xterm/addon-image'
 import { Camera } from '@capacitor/camera'
 import { NativeAudio } from '@capacitor-community/native-audio'
-
 import { Channel, Failure } from './session'
-
-import XtermWebfont from '@liveconfig/xterm-webfont'
-import { TerminalWithAddons } from "./map"
 
 const ABIT = 10,
     REGEX_SEARCH = false,
@@ -85,6 +85,7 @@ export class Pane extends Cell {
     zoomed = false
     // the pane is in transition - ignore resize events
     transit = false
+    draggedDivider = null
 
     constructor(props) {
         props.className = "pane"
@@ -208,20 +209,29 @@ export class Pane extends Cell {
                 NativeAudio.play({ assetId: "bell" })
                            .catch(e => terminal7.log("failed to play bell",e ))
             )
-            if (this.resizeObserver)
-                this.resizeObserver.observe(this.e)
-            else
-                console.log("no resize observer on pane")
+            this.resizeObserver.observe(this.e)
             this.fit(pane => { 
-               if (pane != null)
+              this.catchPinch()
+              if (pane != null)
                   pane.openChannel({parent: parentID, id: channelID})
                   .catch(e => 
                       this.gate.notify("Failed to open communication channel: "+e))
             })
-            if (this.zoomed && terminal7.activeG && (terminal7.isActive(this)))
-               this.zoom()
         })
+
         return this.t
+    }
+    catchPinch() {
+        interact(this.e)
+        .gesturable({
+            listeners: {
+                move(event) {
+                    this.onPinch(event)
+                    event.preventDefault()
+                    event.stopPropagation()
+                },
+            }
+        })
     }
     setTheme(theme) {
         this.t.options.theme = theme
@@ -353,7 +363,7 @@ export class Pane extends Cell {
             this.sx -= sx
             xoff = this.xoff + this.sx
         }
-        this.fit()
+        this.fit(() => this.t.scrollToBottom())
 
         // add the new pane
         const p = l.addPane({sx: sx, sy: sy, 
@@ -418,7 +428,7 @@ export class Pane extends Cell {
         this.write(m)
     }
     toggleSearch() {
-        const se = document.querySelector(".search-box")
+        const se = document.getElementById("search")
         if (!se.classList.contains("show"))
             this.showSearch()
         else {
@@ -430,7 +440,7 @@ export class Pane extends Cell {
     showSearch(searchDown = false) {
         // show the search field
         this.searchDown = searchDown
-        const se = document.querySelector(".search-box")
+        const se = document.getElementById("search")
         se.classList.remove("hidden")
         document.getElementById("search-button").classList.add("on")
         // TODO: restore regex search
@@ -509,7 +519,7 @@ export class Pane extends Cell {
     }
     hideSearch() {
         this.searchAddon.clearDecorations()
-        const se = document.querySelector(".search-box")
+        const se = document.getElementById("search")
         if (se) {
             se.classList.add("hidden")
         }
@@ -636,6 +646,34 @@ export class Pane extends Cell {
         this.cmSelectionUpdate({ startRow: selection.start.y, endRow: selection.end.y,
             startColumn: selection.start.x, endColumn: selection.end.x - 1 })
     }
+    onPan(event, final = false) {
+        console.log("pan", event)
+        const x = event.clientX
+        const y = event.clientY
+        let divider = event.target as HTMLElement
+
+        if (!divider) {
+            if (!this.draggedDivider) return
+            divider = this.draggedDivider
+        }
+
+        const where = divider.classList.contains("left-divider") ? "left" : "top"
+        const dest = Math.min(
+            1.0,
+            where === "top"
+                ? y / (document.querySelector(".windows-container") as HTMLDivElement).offsetHeight
+                : x / document.body.offsetWidth
+        )
+
+        this.layout.moveBorder(divider.pane, where, dest, final)
+        if (final) {
+            this.draggedDivider = null
+        } else {
+            this.draggedDivider = divider
+        }
+        event.preventDefault()
+        event.stopPropagation()
+    }
     /*
      * createDividers creates a top and left educationsl dividers.
      * The dividers are here because they're elegant and they let the user know
@@ -649,10 +687,44 @@ export class Pane extends Cell {
                      t.content.cloneNode(true)]
             d.forEach((e: HTMLElement & {pane?: Pane}, i) => {
                 this.w.e.prepend(e)
-                e = this.w.e.children[0] as HTMLElement
+                e = this.w.e.firstElementChild as HTMLElement
                 e.classList.add((i==0)?"left-divider":"top-divider")
                 e.pane = this
                 this.dividers.push(e)
+    interact(e)
+        .draggable({
+            listeners: {
+                move(event) {
+                    this.onPan(event)
+                },
+                end(event) {
+                    if (event.swipe) {
+                        const e = document.elementFromPoint(event.clientX, event.clientY).closest(".cell")
+                        if (!e) return
+                        console.log("swipe", event.swipe.speed)
+                        const pane = e.cell as Pane
+                        if (pane && !pane.zoomed)  {
+                            const x = event.clientX
+                            const y = event.clientY
+                            if (event.swipe.up || event.swipe.down) {
+                                if (event.swipe.speed < terminal7.conf.ui.cutMinSpeedX * 1000)
+                                    return
+                                pane.split("topbottom",
+                                    (x / document.body.offsetWidth - pane.xoff) / pane.sx)
+                            } else {
+                                if (event.swipe.speed < terminal7.conf.ui.cutMinSpeedY * 1000)
+                                pane.split("rightleft",
+                                    (y / document.body.offsetHeight - pane.yoff) / pane.sy)
+                                return
+                            }
+                            // event.stopPropagation()
+                            // event.preventDefault()
+                        }
+                    } else
+                        this.onPan(event, true)
+                },
+            }
+        })
             })
         }
     }
@@ -1101,14 +1173,14 @@ export class Pane extends Cell {
         this.cmMark()
     }
     enableSearchButtons() {
-        const se = document.querySelector(".search-box")
+        const se = document.getElementById("search")
         const up = se.querySelector(".search-up"),
             down = se.querySelector(".search-down")
         up.classList.remove("off")
         down.classList.remove("off")
     }
     disableSearchButtons() {
-        const se = document.querySelector(".search-box")
+        const se = document.getElementById("search")
         const up = se.querySelector(".search-up"),
             down = se.querySelector(".search-down")
         up.classList.add("off")
@@ -1194,19 +1266,23 @@ export class Pane extends Cell {
         }
     }
     onPinch(ev) {
-        if (ev.deltaTime < this.lastEventT)
-            this.lastEventT = 0
-        if ((ev.deltaTime - this.lastEventT < 100) ||
-            (ev.velocityY > terminal7.conf.ui.pinchMaxYVelocity))
-            return
-        this.lastEventT = ev.deltaTime
+        console.log('pinch', ev.scale);
+        if (ev.deltaTime < this.lastEventT) {
+            this.lastEventT = 0;
+        }
 
-        // @ts-ignore additionalEvent is not in the .d.ts
-        if (ev.additionalEvent == "pinchout")
-            this.scale(1)
-        else
-            this.scale(-1)
-        ev.srcEvent.preventDefault()
-        ev.srcEvent.stopPropagation()
+        if (
+            ev.deltaTime - this.lastEventT < 100 ||
+            ev.velocityY > terminal7.conf.ui.pinchMaxYVelocity
+        ) {
+            return;
+        }
+
+        this.lastEventT = ev.deltaTime;
+
+        this.scale(ev.ds*30);
+
+        ev.preventDefault();
+        ev.stopPropagation();
     }
 }
