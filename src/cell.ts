@@ -9,6 +9,8 @@ import { Layout } from "./layout"
 import { Terminal7 } from "./terminal7"
 import { Pane } from "./pane"
 
+import interact from 'interactjs'
+
 const FOCUSED_BORDER_COLOR = "#F4DB53",
       UNFOCUSED_BORDER_COLOR = "#373702"
 
@@ -52,6 +54,16 @@ export abstract class Cell {
         if (typeof className == "string")
             this.e.classList.add(className)
         this.w.e.appendChild(this.e)
+        interact(this.e)
+            .on("tap", () => {
+                if (this.w.activeP != this)
+                    this.focus()
+            })
+            .on("doubletap", (ev) => {
+                this.toggleZoom()
+                ev.preventDefault()
+                ev.stopPropagation()
+            })
         return this.e
     }
 

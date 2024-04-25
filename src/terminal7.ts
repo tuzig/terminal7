@@ -18,6 +18,7 @@ import changelogURL  from '../CHANGELOG.md?url'
 import ssh from 'ed25519-keygen/ssh'
 import { randomBytes } from 'ed25519-keygen/utils'
 
+import interact from 'interactjs'
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
 import { Network } from '@capacitor/network'
@@ -26,7 +27,6 @@ import { Device } from '@capacitor/device'
 import { NativeAudio } from '@capacitor-community/native-audio'
 import { NativeBiometric } from "capacitor-native-biometric"
 import { RateApp } from 'capacitor-rate-app'
-import * as Hammer from 'hammerjs'
 
 
 import { PeerbookConnection, PB } from './peerbook'
@@ -170,7 +170,6 @@ export class Terminal7 {
     }
     lastIdVerify: number
     keys: {publicKey: string, privateKey: string}
-    lastPointerUp: 0
 
     DEFAULT_KEY_TAG = "dev.terminal7.keys.default"
     /*
@@ -331,14 +330,6 @@ export class Terminal7 {
             App.addListener('appStateChange', state => this.onAppStateChange(state))
 
         }
-
-        e.addEventListener("click", e => {
-            this.map.showLog(false)
-            this.showChangelog(false)
-            e.stopPropagation()
-            e.preventDefault()
-        })
-
         // settings button and modal
         document.getElementById("dotfile-button")
                 .addEventListener("click", () => this.map.shell.confEditor ?
@@ -370,7 +361,18 @@ export class Terminal7 {
                 this.activeG.activeW.activeP.findNext())
         //rename box
         document.querySelector(".rename-close").addEventListener('click', () => 
-                this.e.querySelector(".rename-box").classList.add("hidden"))
+                document.getElementById("rename").classList.add("hidden"))
+        const textbox = document.querySelector("#name-input") as HTMLInputElement
+        const renameHandler = (event) => {
+            if (this.activeG) {
+                this.activeG.activeW.onRenameEvent(event)
+                event.preventDefault()
+                event.stopPropagation()
+            }
+        }
+        textbox.addEventListener('keyup', renameHandler)
+        textbox.addEventListener('change', renameHandler)
+        // textbox.addEventListener('blur', renameHandler)
 
         this.pbConnect()
             .catch(e => this.log("pbConnect failed", e))
@@ -489,60 +491,33 @@ export class Terminal7 {
             }
         })
     }
-    catchFingers() {
-        const map = document.getElementById("map")
-        map.addEventListener("pointerdown", ev => this.onPointerDown(ev))
-        map.addEventListener("pointerup", ev => this.onPointerUp(ev))
-        map.addEventListener("pointercancel", () => this.onPointerCancel())
-        map.addEventListener("pointermove", ev => this.onPointerMove(ev))
-        // Add gestures on the gates container
-        const gatesContainer = document.getElementById("gates-container")
-        const h = new Hammer.Manager(gatesContainer, {domEvents:true}) // enable dom events
-        h.add(new Hammer.Press({event: "press", pointers: 1}))
-        h.add(new Hammer.Tap({event: "tap", pointers: 1}))
-        h.add(new Hammer.Pan({event: "pan", pointers: 1, threshold: 10}))
-        h.add(new Hammer.Pinch({event: "pinch"}))
-        h.on("press", ev =>  {
-            // long press is used to rename the window
-            if (!this.activeG)
-                return 
-            const win = ev.target.closest(".window-name")
-            if (win && win.w) {
-                win.w.rename()
-                ev.srcEvent.preventDefault()
-                ev.srcEvent.stopPropagation()
-            }
-        })
-        h.on("tap", ev => {
-            if (this.activeG)
-                this.activeG.onTap(ev)
-        })
-        h.on("pinch", ev => {
-            const e = ev.target.closest(".cell")
-            if (e && e.cell) {
-                const pane = e.cell as Pane
-                pane.onPinch(ev)
-            }
-        })
-        h.on("pan", ev => {
-            if (this.activeG)
-                this.activeG.activeW.onPan(ev)
-        })
-        // capture double clicks on zoomed container
-        const zoomContainer = document.getElementById("zoomed-pane")
-        zoomContainer.addEventListener("pointerup", ev => {
-            if (Date.now() - this.lastPointerUp < 300) {
-                this.activeG.activeW.activeP.unzoom()
-            }
-            this.lastPointerUp = Date.now()
-        })
-    }
+catchFingers() {
+    const map = document.getElementById("map")
+    map.addEventListener("pointerdown", (ev) => this.onPointerDown(ev))
+    map.addEventListener("pointerup", (ev) => this.onPointerUp(ev))
+    map.addEventListener("pointercancel", () => this.onPointerCancel())
+    map.addEventListener("pointermove", (ev) => this.onPointerMove(ev))
+
+    // Add gestures on the gates container
+    const gatesContainer = document.getElementById("gates-container")
+
+
+    // Capture double clicks on zoomed container
+    const zoomContainer = document.getElementById("zoomed-pane")
+    interact(zoomContainer)
+    .on("doubletap", (ev) => {
+        console.log("double tap", ev)
+        if (this.activeG) {
+            this.activeG.activeW.activeP.toggleZoom()
+        }
+    })
+}
     /*
      * Terminal7.addGate is used to add a new gate.
      * the function ensures the gate has a unique name adds the gate to
      * the `gates` property, stores and returns it.
      */
-    // TOFO: add onMap to props
+    // TODO: add onMap to props
     addGate(props, onMap = true) {
         const container = document.getElementById('gates-container')
         const p = props || {}
@@ -898,12 +873,12 @@ export class Terminal7 {
     }
 
     private getModifierKey() {
-        let modifierKeyPrefix = "CTRL-A";
+        let modifierKeyPrefix = "CTRL-A"
         if (
             navigator.platform.indexOf("Mac") === 0 ||
             navigator.platform === "iPhone"
         ) {
-            modifierKeyPrefix = "⌘";
+            modifierKeyPrefix = "⌘"
         }
         return modifierKeyPrefix
     }

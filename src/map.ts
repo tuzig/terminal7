@@ -124,6 +124,12 @@ export class T7Map {
                 ev.stopPropagation()
                 ev.preventDefault()
             })
+        document.getElementById("map").addEventListener("click", (ev) => {
+            this.showLog(false)
+            terminal7.showChangelog(false)
+            e.stopPropagation()
+            e.preventDefault()
+        })
             setInterval(() => this.updateStats(), 1000)
         })
     }
