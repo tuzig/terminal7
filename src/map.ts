@@ -155,15 +155,22 @@ export class T7Map {
         d.appendChild(container)
         const gates = document.getElementById("gates")
         gates.prepend(d)
-        const pad = d.querySelector(".gate-status") as HTMLElement
+        const pad = d.querySelector(".text-button") as HTMLElement
         interact(pad)
-        .on("tap", ev => {
-            const g = ev.target.closest(".gate-pad").gate
-            if (ev.dt < 500) {
-                this.shell.runCommand("connect", [g.name])
-                ev.preventDefault()
-                ev.stopPropagation()
-            }
+        .on("pointerdown", () => {
+            pad.style.borderStyle = "inset"
+        })
+        .on("pointerup", () => {
+            // remove the inset border
+            pad.style.borderStyle = null
+        })
+        .on("tap", (ev) => {
+                const g = ev.target.closest(".gate-pad").gate
+                if (ev.dt < 500) {
+                    this.shell.runCommand("connect", [g.name])
+                    ev.preventDefault()
+                    ev.stopPropagation()
+                }
         })
         .on("hold", ev => {
             const g = ev.target.closest(".gate-pad").gate

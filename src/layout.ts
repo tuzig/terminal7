@@ -300,8 +300,8 @@ export class Layout extends Cell {
      */
     moveBorder(cell: Cell, border: string, dest: number, fit: boolean) {
         let s, off
-        let p0 = null,
-            p1 = null
+        let c0 = null,
+            c1 = null
         // first, check if it's a horizontal or vertical border we're moving
         if (border == "top" || border == "bottom") {
             s = "sy"
@@ -312,34 +312,34 @@ export class Layout extends Cell {
         }
         if (this.dir.indexOf(border) == -1) {
             if (border == "top" || border == "left") {
-                p0 = this.prevCell(cell)
-                p1 = cell
+                c0 = this.prevCell(cell)
+                c1 = cell
                 // if it's the first cell in the layout we need to get the layout's
                 // layout to move the borderg
             } else {
-                p0 = cell
-                p1 = this.nextCell(cell)
+                c0 = cell
+                c1 = this.nextCell(cell)
             }
         }
-        if (p0 == null || p1 == null) {
+        if (c0 == null || c1 == null) {
             if (this.layout)
                 this.layout.moveBorder(this, border, dest, fit)
             return
         }
         // TODO: ensure cell is not forever in transit due to a lost event
-        p0.transit = p1.transit = !fit
-        const max = this.findNext(p1)
-        dest = Math.max(dest, p0[off] + 0.02)
+        c0.transit = c1.transit = !fit
+        const max = this.findNext(c1)
+        dest = Math.max(dest, c0[off] + 0.02)
         dest = Math.min(dest, (max?.[off] || 1) - 0.02)
-        const by = p1[off] - dest
-        p0[s] -= by
-        p1[s] += by
-        p1[off] = dest
-        p0.refreshDividers()
-        p1.refreshDividers()
+        const by = c1[off] - dest
+        c0[s] -= by
+        c1[s] += by
+        c1[off] = dest
+        c0.refreshDividers()
+        c1.refreshDividers()
         if (fit) {
-            p0.fit()
-            p1.fit()
+            c0.fit()
+            c1.fit()
         }
         this.w.updateDivideButtons()
     }

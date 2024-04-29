@@ -67,7 +67,6 @@ export class Gate {
     lastDisconnect?: number
     sshPort: number
     reconnectCount: number
-    lastClick = 0
     constructor (props) {
         // given properties
         this.id = props.id

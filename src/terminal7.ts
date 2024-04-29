@@ -346,7 +346,23 @@ export class Terminal7 {
                     RateApp.requestReview()
             }, 100)
         })
-        // search box
+        this.initSearch()
+        this.pbConnect()
+            .catch(e => this.log("pbConnect failed", e))
+            .finally(() =>
+            Network.getStatus().then(s => {
+                this.updateNetworkStatus(s)
+                if (!s.connected) {
+                    this.goHome()
+                }
+            }))
+        const resizeObserver = new ResizeObserver(() => {
+            if (this.activeG)
+                this.activeG.setFitScreen()
+        })
+        resizeObserver.observe(document.body)
+    }
+    initSearch() {
         document.querySelector(".search-close").addEventListener('click', () =>  {
                 this.map.showLog(false)
                 this.activeG.activeW.activeP.exitSearch()
@@ -370,23 +386,8 @@ export class Terminal7 {
         }
         textbox.addEventListener('keyup', renameHandler)
         textbox.addEventListener('change', renameHandler)
-        // textbox.addEventListener('blur', renameHandler)
-
-        this.pbConnect()
-            .catch(e => this.log("pbConnect failed", e))
-            .finally(() =>
-            Network.getStatus().then(s => {
-                this.updateNetworkStatus(s)
-                if (!s.connected) {
-                    this.goHome()
-                }
-            }))
-        const resizeObserver = new ResizeObserver(() => {
-            if (this.activeG)
-                this.activeG.setFitScreen()
-        })
-        resizeObserver.observe(document.body)
     }
+
     /*
      * restoreState is a future feature that uses local storage to restore
      * terminal7 to it's last state

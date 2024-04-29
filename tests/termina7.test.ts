@@ -609,7 +609,6 @@ describe("terminal7", function() {
             // it should be restored without the zoomed pane
             // and the active pane should be the first one
             // and the window should be active
-
             // the layout is two window each with one pane
             h = t.addGate()
             h.open(e)
@@ -636,7 +635,7 @@ describe("terminal7", function() {
             }, false)
             expect(w.rootLayout.dir).to.equal("topbottom")
             expect(w.rootLayout.cells.length).to.equal(2)
-            expect(w.activeP.zoomed).to.equal(false)
+            expect(w.activeP.zoomed).to.be.false
         })
     })
     describe("gate", () => {
