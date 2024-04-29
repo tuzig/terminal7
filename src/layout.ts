@@ -298,7 +298,7 @@ export class Layout extends Cell {
     * @param {number} dest - the destination of the border
     * @param {boolean} fit - if true, fit the panes after moving the border
      */
-    moveBorder(pane: Pane, border: string, dest: number, fit: boolean) {
+    moveBorder(cell: Cell, border: string, dest: number, fit: boolean) {
         let s, off
         let p0 = null,
             p1 = null
@@ -312,21 +312,21 @@ export class Layout extends Cell {
         }
         if (this.dir.indexOf(border) == -1) {
             if (border == "top" || border == "left") {
-                p0 = this.prevCell(pane)
-                p1 = pane
+                p0 = this.prevCell(cell)
+                p1 = cell
                 // if it's the first cell in the layout we need to get the layout's
                 // layout to move the borderg
             } else {
-                p0 = pane
-                p1 = this.nextCell(pane)
+                p0 = cell
+                p1 = this.nextCell(cell)
             }
         }
         if (p0 == null || p1 == null) {
             if (this.layout)
-                this.layout.moveBorder(this, border, dest)
+                this.layout.moveBorder(this, border, dest, fit)
             return
         }
-        // TODO: ensure pane is not forever in transit due to a lost event
+        // TODO: ensure cell is not forever in transit due to a lost event
         p0.transit = p1.transit = !fit
         const max = this.findNext(p1)
         dest = Math.max(dest, p0[off] + 0.02)
