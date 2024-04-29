@@ -40,7 +40,7 @@ const ABIT = 10,
         caseSensitive: true,
         decorations: DECORATIONS,
     }
-
+type DividerHTMLElement = HTMLElement & { pane: Pane }
 export interface SerializedPane extends SerializedCell {
   fontSize: number,
   channelID: number,
@@ -72,7 +72,7 @@ export class Pane extends Cell {
     fontSize: number
     imageAddon: ImageAddon
     lastKey = ''
-    needsResize: boolean
+    needsResize = false
     searchAddon: SearchAddon
     searchDown = false
     searchTerm = ''
@@ -97,7 +97,7 @@ export class Pane extends Cell {
                 this.fit()
         })
         this.channelID = props.channelID
-        this.needsResize = false
+        this.catchGestures()
     }
 
     /*
@@ -211,27 +211,15 @@ export class Pane extends Cell {
             )
             this.resizeObserver.observe(this.e)
             this.fit(pane => { 
-              this.catchPinch()
-              if (pane != null)
+              if (pane != null) {
                   pane.openChannel({parent: parentID, id: channelID})
                   .catch(e => 
                       this.gate.notify("Failed to open communication channel: "+e))
+              }
             })
         })
 
         return this.t
-    }
-    catchPinch() {
-        interact(this.e)
-        .gesturable({
-            listeners: {
-                move(event) {
-                    this.onPinch(event)
-                    event.preventDefault()
-                    event.stopPropagation()
-                },
-            }
-        })
     }
     setTheme(theme) {
         this.t.options.theme = theme
@@ -262,6 +250,7 @@ export class Pane extends Cell {
         this.resizeObserver.observe(e)
         c.classList.remove("hidden")
         this.zoomed = true
+        this.catchGestures(c)
     }
     unzoom() {
         const zoomedPane = document.getElementById("zoomed-pane") as HTMLDivElement
@@ -276,6 +265,7 @@ export class Pane extends Cell {
         }
         zoomedPane.classList.add("hidden")
         this.zoomed = false
+        interact(document.getElementById("zoomed-pane")).unset()
     }
 
     toggleZoom() {
@@ -316,7 +306,7 @@ export class Pane extends Cell {
         if (this.t.rows != oldr || this.t.cols != oldc) {
             if (this.d && this.gate.fitScreen)
                 this.d.resize(this.t.cols, this.t.rows)
-            else if ((oldr != 4) && (oldc != 4))
+            else if ((oldr != 24) && (oldc != 80))
                 this.needsResize = true
         }
         if (cb instanceof Function) cb(this)
@@ -650,7 +640,7 @@ export class Pane extends Cell {
         console.log("pan", event)
         const x = event.clientX
         const y = event.clientY
-        let divider = event.target as HTMLElement
+        let divider = event.target as DividerHTMLElement
 
         if (!divider) {
             if (!this.draggedDivider) return
@@ -666,13 +656,22 @@ export class Pane extends Cell {
         )
 
         this.layout.moveBorder(divider.pane, where, dest, final)
-        if (final) {
-            this.draggedDivider = null
-        } else {
-            this.draggedDivider = divider
-        }
+        this.draggedDivider = final ? null : divider
         event.preventDefault()
         event.stopPropagation()
+    }
+    catchPan(e) {
+        interact(e)
+            .draggable({
+                listeners: {
+                    move: (event) => {
+                        this.onPan(event)
+                    },
+                    end: (event) => {
+                        this.onPan(event, true)
+                    },
+                }
+            })
     }
     /*
      * createDividers creates a top and left educationsl dividers.
@@ -690,42 +689,23 @@ export class Pane extends Cell {
                 e = this.w.e.firstElementChild as HTMLElement
                 e.classList.add((i==0)?"left-divider":"top-divider")
                 e.pane = this
+                this.catchPan(e)
                 this.dividers.push(e)
-    interact(e)
-        .draggable({
-            listeners: {
-                move(event) {
-                    this.onPan(event)
-                },
-                end(event) {
-                    if (event.swipe) {
-                        const e = document.elementFromPoint(event.clientX, event.clientY).closest(".cell")
-                        if (!e) return
-                        console.log("swipe", event.swipe.speed)
-                        const pane = e.cell as Pane
-                        if (pane && !pane.zoomed)  {
-                            const x = event.clientX
-                            const y = event.clientY
-                            if (event.swipe.up || event.swipe.down) {
-                                if (event.swipe.speed < terminal7.conf.ui.cutMinSpeedX * 1000)
-                                    return
-                                pane.split("topbottom",
-                                    (x / document.body.offsetWidth - pane.xoff) / pane.sx)
-                            } else {
-                                if (event.swipe.speed < terminal7.conf.ui.cutMinSpeedY * 1000)
-                                pane.split("rightleft",
-                                    (y / document.body.offsetHeight - pane.yoff) / pane.sy)
-                                return
-                            }
-                            // event.stopPropagation()
-                            // event.preventDefault()
-                        }
-                    } else
-                        this.onPan(event, true)
-                },
-            }
-        })
             })
+        }
+    }
+    onSwipe(event) {
+        const x = event.clientX
+        const y = event.clientY
+        if (event.swipe.up || event.swipe.down) {
+            if (event.swipe.speed < terminal7.conf.ui.cutMinSpeedX * 1000)
+                return
+            this.split("topbottom",
+                (x / document.body.offsetWidth - this.xoff) / this.sx)
+        } else {
+            if (event.swipe.speed < terminal7.conf.ui.cutMinSpeedY * 1000)
+            this.split("rightleft",
+                (y / document.body.offsetHeight - this.yoff) / this.sy)
         }
     }
     /*
@@ -1242,6 +1222,40 @@ export class Pane extends Cell {
             return this.sx >= min
         else if (dir == "rightleft")
             return this.sy >= min
+    }
+    catchGestures(e?: HTMLElement) {
+        if (!e)
+            e = this.e
+
+        interact(e)
+        .on("tap", () => {
+                if (this.w.activeP == this)
+                    return
+                this.focus()
+                this.gate.sendState()
+        })
+        .on("doubletap", (ev) => {
+                this.toggleZoom()
+                ev.preventDefault()
+                ev.stopPropagation()
+        })
+        .gesturable({
+            listeners: {
+                move: event =>  {
+                    if (event.swipe)
+                        return
+                    this.onPinch(event)
+                    event.preventDefault()
+                    event.stopPropagation()
+                },
+            }
+        })
+        .draggable(true)
+        .on('dragend', event => {
+            if (event.swipe) {
+                this.onSwipe(event)
+            }
+        })
     }
     adjustDimensions(target: SerializedPane): void {
         super.adjustDimensions(target)

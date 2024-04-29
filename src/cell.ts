@@ -9,8 +9,6 @@ import { Layout } from "./layout"
 import { Terminal7 } from "./terminal7"
 import { Pane } from "./pane"
 
-import interact from 'interactjs'
-
 const FOCUSED_BORDER_COLOR = "#F4DB53",
       UNFOCUSED_BORDER_COLOR = "#373702"
 
@@ -46,24 +44,14 @@ export abstract class Cell {
      * Creates the HTML elment that will store our dimensions and content
      * get an optional className to be added to the element
      */
-    createElement(className) {
+    createElement(className?: string) {
         // creates the div element that will hold the term
         this.e = document.createElement("div") as HTMLDivElement & {cell?: Cell}
         this.e.cell = this
         this.e.className = "cell"
-        if (typeof className == "string")
+        if (className)
             this.e.classList.add(className)
         this.w.e.appendChild(this.e)
-        interact(this.e)
-            .on("tap", () => {
-                if (this.w.activeP != this)
-                    this.focus()
-            })
-            .on("doubletap", (ev) => {
-                this.toggleZoom()
-                ev.preventDefault()
-                ev.stopPropagation()
-            })
         return this.e
     }
 

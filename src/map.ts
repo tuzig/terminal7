@@ -14,6 +14,7 @@ import { FitAddon } from "@xterm/addon-fit"
 import { WebglAddon } from '@xterm/addon-webgl'
 import { ImageAddon } from '@xterm/addon-image'
 import XtermWebfont from '@liveconfig/xterm-webfont'
+import interact from 'interactjs'
 
 import { Shell } from './shell'
 import { Capacitor } from '@capacitor/core'
@@ -23,6 +24,7 @@ export declare interface TerminalWithAddons extends Terminal {
     loadWebfontAndOpen(element): Promise<this>
 }
 
+type GatePadHTMLElement = HTMLDivElement & {gate: Gate}
 export class T7Map {
     t0: TerminalWithAddons
     ttyWait: number
@@ -124,24 +126,25 @@ export class T7Map {
                 ev.stopPropagation()
                 ev.preventDefault()
             })
-        document.getElementById("map").addEventListener("click", (ev) => {
+        document.getElementById("map").addEventListener("click", ev => {
             this.showLog(false)
             terminal7.showChangelog(false)
-            e.stopPropagation()
-            e.preventDefault()
+            ev.stopPropagation()
+            ev.preventDefault()
         })
             setInterval(() => this.updateStats(), 1000)
         })
     }
     add(g: Gate): Element {
-        const d = (document.createElement('div') as HTMLDivElement & {gate: Gate})
+
+        const d = (document.createElement('div') as GatePadHTMLElement)
         const container = document.createElement('div')
         d.className = "gate-pad"
+        d.gate = g
         if (g.fp)
             d.classList.add("from-peerbook")
         container.className = "text-button"
         container.setAttribute("data-test", "gateButton")
-        d.gate = g
         container.innerHTML = `
             <div class="gate-status">
             <div class="gate-name" data-test="gate-name">${g.name}</div>
@@ -152,11 +155,31 @@ export class T7Map {
         d.appendChild(container)
         const gates = document.getElementById("gates")
         gates.prepend(d)
-        this.refresh()
-        d.addEventListener("click", (ev) => {
+        const pad = d.querySelector(".gate-status") as HTMLElement
+        interact(pad)
+        .on("tap", ev => {
+            const g = ev.target.closest(".gate-pad").gate
+            if (ev.dt < 500) {
+                this.shell.runCommand("connect", [g.name])
+                ev.preventDefault()
+                ev.stopPropagation()
+            }
+        })
+        .on("hold", ev => {
+            const g = ev.target.closest(".gate-pad").gate
+            ev.preventDefault()
+            ev.stopPropagation()
+            this.shell.runCommand("edit", [g.name])
+        })
+        d.querySelector(".gate-edit").addEventListener("click", ev => {
+            const target = ev.target as  HTMLElement
+            const g = (target.closest(".gate-pad") as GatePadHTMLElement).gate
+            this.shell.runCommand("edit", [g.name])
             ev.stopPropagation()
             ev.preventDefault()
         })
+
+        this.refresh()
         return d
     }
     remove(g: Gate) {

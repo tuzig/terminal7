@@ -18,7 +18,6 @@ import changelogURL  from '../CHANGELOG.md?url'
 import ssh from 'ed25519-keygen/ssh'
 import { randomBytes } from 'ed25519-keygen/utils'
 
-import interact from 'interactjs'
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
 import { Network } from '@capacitor/network'
@@ -311,7 +310,6 @@ export class Terminal7 {
         // Handle network events for the indicator
         Network.addListener('networkStatusChange', s =>
             this.updateNetworkStatus(s))
-        this.catchFingers()
         // setting up edit host events
         document.addEventListener("keyup", async ev => {
             // hide the modals when releasing the meta key
@@ -491,27 +489,6 @@ export class Terminal7 {
             }
         })
     }
-catchFingers() {
-    const map = document.getElementById("map")
-    map.addEventListener("pointerdown", (ev) => this.onPointerDown(ev))
-    map.addEventListener("pointerup", (ev) => this.onPointerUp(ev))
-    map.addEventListener("pointercancel", () => this.onPointerCancel())
-    map.addEventListener("pointermove", (ev) => this.onPointerMove(ev))
-
-    // Add gestures on the gates container
-    const gatesContainer = document.getElementById("gates-container")
-
-
-    // Capture double clicks on zoomed container
-    const zoomContainer = document.getElementById("zoomed-pane")
-    interact(zoomContainer)
-    .on("doubletap", (ev) => {
-        console.log("double tap", ev)
-        if (this.activeG) {
-            this.activeG.activeW.activeP.toggleZoom()
-        }
-    })
-}
     /*
      * Terminal7.addGate is used to add a new gate.
      * the function ensures the gate has a unique name adds the gate to
@@ -960,131 +937,6 @@ catchFingers() {
         }
         return data
     }
-    onPointerCancel() {
-        this.pointer0 = null
-        this.firstPointer = null
-        this.gesture = null
-        if (this.longPressGate) {
-            clearTimeout(this.longPressGate)
-            this.longPressGate = null
-        }
-        return
-    }
-    onPointerDown(ev) {
-        const e = ev.target
-        const gatePad = e.closest(".gate-pad")
-        /*
-        if ((ev.pointerType == "mouse") && (ev.pressure == 0))
-            return
-            */
-        this.pointer0 = Date.now() 
-        this.firstPointer = {pageX: ev.pageX, pageY: ev.pageY}
-        if (gatePad) {
-            const gate = gatePad.gate
-            if (!this.longPressGate && gate)
-                this.longPressGate = this.run(() => {
-                    this.map.shell.runCommand("edit", [gate.name])
-                }, this.conf.ui.quickest_press)
-            ev.stopPropagation()
-            ev.preventDefault()
-            return
-        }
-        // only dividers know their panes
-        if (e.pane === undefined)
-            return
-        // identify pan gesture
-        if (e.classList.contains("left-divider"))
-            this.gesture = { where: "left", pane: e.pane}
-        else if (e.classList.contains("top-divider"))
-            this.gesture = { where: "top", pane: e.pane}
-        else  {
-            console.log("failed to identify pan directorion")
-            return
-        }
-        this.log(`identified: ${this.gesture}`)
-    }
-    onPointerMove(ev) {
-        const x  = ev.pageX,
-            y  = ev.pageY
-
-        /*
-        if ((ev.pointerType == "mouse") && (ev.pressure == 0))
-            return
-            */
-
-        if (this.gesture) {
-            const where = this.gesture.where,
-                dest = Math.min(1.0, (where == "top")
-                    ? y / (document.querySelector('.windows-container') as HTMLDivElement).offsetHeight
-                    : x / document.body.offsetWidth)
-            this.gesture.pane.layout.moveBorder(this.gesture.pane, where, dest)
-            ev.stopPropagation()
-            ev.preventDefault()
-        }
-    }
-    async onPointerUp(ev) {
-        const e = ev.target,
-            gatePad = e.closest(".gate-pad")
-
-        if (!this.pointer0)
-            return
-        if (gatePad) {
-            const gate = gatePad.gate
-            const isExpand = e.classList.contains("gate-edit")
-            if (!gate)
-                return
-            else {
-                const deltaT = Date.now() - this.pointer0
-                clearTimeout(this.longPressGate)
-                this.longPressGate = null
-                if (deltaT < this.conf.ui.quickest_press) {
-                    // that's for the refresh and static host add
-                    if (isExpand) {
-                        this.map.shell.runCommand("edit", [gate.name])
-                    } else {
-                        await this.map.shell.runCommand("connect", [gate.name])
-                    }
-                }
-            }
-            ev.stopPropagation()
-            ev.preventDefault()
-        } else if (this.gesture) {
-            if (this.activeG && this.activeG.fitScreen)
-                this.activeG.sendState()
-        } else if (this.firstPointer) {
-            const deltaT = Date.now() - this.pointer0,
-                    x  = ev.pageX,
-                    y  = ev.pageY,
-                    dx = this.firstPointer.pageX - x,
-                    dy = this.firstPointer.pageY - y,
-                    d  = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2)),
-                    s  = d/deltaT,
-                    r = Math.abs(dx / dy)
-
-            if (d > this.conf.ui.cutMinDistance) {
-                const minS = (dx > dy)?this.conf.ui.cutMinSpeedY:this.conf.ui.cutMinSpeedX
-                if  (s > minS) {
-                    // it's a cut!!
-                    const cell = ev.target.closest(".cell"),
-                        pane = (cell != null)?cell.cell:undefined
-                    if (pane && !pane.zoomed)  {
-                        if (r < 1.0)
-                            pane.split("topbottom",
-                                (x / document.body.offsetWidth - pane.xoff) / pane.sx)
-                        else
-                            pane.split("rightleft",
-                                (y / document.body.offsetHeight - pane.yoff) / pane.sy)
-                        ev.stopPropagation()
-                        ev.preventDefault()
-                        // t.focus()
-                    }
-                }
-            }
-        }
-        this.pointer0 = null
-        this.firstPointer = null
-        this.gesture = null
-    }
     async showGreetings() {
         const greeted = (await Preferences.get({key: 'greeted'})).value
         if (!greeted) {
@@ -1298,10 +1150,10 @@ catchFingers() {
     }
     // isActive returns true if the component is active
     // TODO: refactor the code to use this
-    isActive(com: Pane | Gate | Window) {
-        return (this.activeG == com) || (this.activeG && (
-            com == this.activeG.activeW || this.activeG.activeW && (
-                this.activeG.activeW.activeP == com)))
+    isActive(com: unknown) {
+        return (this.activeG == com)
+            || (this.activeG && (this.activeG.activeW==com))
+            || (this.activeG.activeW && (this.activeG.activeW.activeP == com))
 
     }
 }
