@@ -423,14 +423,12 @@ async function resetCMD(shell: Shell, args: string[]) {
 
             case "Reset connection & Layout":
                 if (gate.session) {
+                    await gate.session.setPayload("")
                     gate.session.close()
                     gate.session = null
                 }
-                await shell.runCommand("connect", [gate.name])
                 gate.clear()
-                shell.map.showLog(false)
-                gate.activeW = gate.addWindow("", true)
-                gate.focus()
+                await shell.runCommand("connect", [gate.name])
                 return
 
             case "Close gate":
