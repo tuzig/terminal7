@@ -739,7 +739,10 @@ export class Pane extends Cell {
 
         if (this.d)
             this.d.close()
-        this.dividers.forEach(d => d.classList.add("hidden"))
+        this.dividers.forEach(d => {
+            interact(d).unset()
+            d.remove()
+        })
         document.querySelector('.add-tab').classList.remove("off")
         if (this.zoomed)
             this.unzoom()
