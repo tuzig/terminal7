@@ -22,10 +22,7 @@ export async function connectFirstGate(page, gateName?) {
         btn = btns.first()
     else
         btn = btns.filter({ hasText: gateName }).first()
-    await btn.dispatchEvent('pointerdown')
-    await sleep(50)
-    await btn.dispatchEvent('pointerup')
-    // await expect(page.locator('.pane')).toBeVisible()
+    await btn.click()
 }
 export async function getTWRBuffer(page) {
     console.log("getting twr buffer")

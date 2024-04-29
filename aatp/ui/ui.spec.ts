@@ -58,9 +58,7 @@ insecure=true`)
 
     })
     test('a gate ssh port can be edited', async () => {
-        const btns = page.locator('[data-test="gateButton"]')
-        const btn = btns.first()
-        const editBtn = btn.locator('.gate-edit')
+        const editBtn = page.locator('.gate-edit')
         await editBtn.click()
         await sleep(200)
         await page.keyboard.press("Enter")
