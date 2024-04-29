@@ -74,6 +74,7 @@ then
             exit 4
         fi
     done
+    echo ">>> All tests PASSED"
 else
     for arg in $@
     do
@@ -91,4 +92,3 @@ else
         echo ">>> $arg tests PASSED"
     done
 fi
-echo ">>> All tests PASSED"
