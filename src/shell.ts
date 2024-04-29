@@ -259,7 +259,6 @@ export class Shell {
 
     printBelowForm(text: string, returnToForm = false) {
         if (!this.activeForm) return
-        console.log("printBelowForm", this.activeForm.fields)
         this.t.write(`\x1B[s\x1B[${this.activeForm.fields.length-this.activeForm.currentField}B\n\x1B[K${text}`)
         if (returnToForm)
             this.t.write(`\x1B[u`)

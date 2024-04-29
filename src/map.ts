@@ -159,10 +159,12 @@ export class T7Map {
         interact(pad)
         .on("pointerdown", () => {
             pad.style.borderStyle = "inset"
+            pad.style.width = "98%"
         })
         .on("pointerup", () => {
             // remove the inset border
             pad.style.borderStyle = null
+            pad.style.width = null
         })
         .on("tap", (ev) => {
                 const g = ev.target.closest(".gate-pad").gate

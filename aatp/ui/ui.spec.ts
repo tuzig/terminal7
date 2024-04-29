@@ -117,6 +117,7 @@ insecure=true`)
         expect(port).toEqual(1234)
         const name = await page.evaluate(() => terminal7.gates[2].name)
         expect(name).toEqual("baz")
+        await page.evaluate(async () => await terminal7.map.shell.escape())
     })
 
     test('gates can be deleteted', async () => {

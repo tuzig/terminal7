@@ -768,6 +768,7 @@ audio { display: none; }
 #map .text-button, .empty-pad div  {
     width: 100%;
     height: 70px;
+    margin: 0 auto;
 }
 #map .text-button {
     background-color: var(--text-background);
