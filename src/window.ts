@@ -85,7 +85,8 @@ export class Window {
             last.e.classList.add("hidden")
         }
         if (this.activeP && this.activeP.zoomed) {
-            this.activeP.unzoom()
+            const c = document.getElementById("zoomed-pane") as HTMLDivElement
+            c.classList.remove("hidden")
             this.e.classList.add("hidden")
         }
         else
@@ -126,6 +127,8 @@ export class Window {
                 const p = l.addPane(cell)
                 if (cell.active)
                     this.activeP = p
+                if (cell.zoomed && activeWindow)
+                    this.t7.run(() => p.zoom(), ABIT)
             }
         })
         return l

@@ -4,9 +4,6 @@ set -x
 
 HOME=/home/runner
 CONF=/conf
-
-
-
 /usr/sbin/sshd
 rm -rf $HOME/.local/state/webexec
 mkdir -p $HOME/.config/webexec

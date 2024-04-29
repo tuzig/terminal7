@@ -743,6 +743,7 @@ export class Pane extends Cell {
             interact(d).unset()
             d.remove()
         })
+        interact(this.e).unset()
         document.querySelector('.add-tab').classList.remove("off")
         if (this.zoomed)
             this.unzoom()
