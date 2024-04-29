@@ -322,6 +322,8 @@ export class Layout extends Cell {
             }
         }
         if (p0 == null || p1 == null) {
+            if (this.layout)
+                this.layout.moveBorder(this, border, dest)
             return
         }
         // TODO: ensure pane is not forever in transit due to a lost event
