@@ -157,12 +157,11 @@ export class Window {
      */
     rename() {
         const se = document.getElementById("rename")
-        const textbox = document.querySelector("#name-input") as HTMLInputElement
+        const textbox = document.getElementById("name-input") as HTMLInputElement
 
         se.classList.remove("hidden")
         textbox.value = this.nameE.innerHTML
-        textbox.focus()
-
+        terminal7.run(() => textbox.focus(), ABIT)
     }
     close() {
         // remove the window name
