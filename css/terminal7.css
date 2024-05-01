@@ -730,7 +730,7 @@ audio { display: none; }
     justify-content: space-around;
     padding-right: 0.5em;
 }
-.native .gate-stats.zoomed {
+.native #active-gate-stats.zoomed {
     right: 18px;
 }
 .gate-stats {
