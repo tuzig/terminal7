@@ -165,11 +165,19 @@ a {
     border-bottom: none;
 }
 #gates-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+.gate {
     width: 100%;
     position: fixed;
     bottom: 51px;
     top: 2px;
     left: 0;
+    z-index: 2;
 }
 .native #gates-container {
     top: 22px;
@@ -208,6 +216,7 @@ a {
 }
 #navbar {
     bottom: 0;
+    left: 0;
     padding: 9px 0 18px;
     position: fixed;
 }
@@ -257,7 +266,6 @@ nav {
     margin: 0;
     width: 100%;
     background-color: var(--background);
-    z-index: 3;
 }
 .tabbar button {
     flex: 1 0 10%;
@@ -733,7 +741,7 @@ audio { display: none; }
     text-shadow: none;
 }
 
-.gate > .gate-stats {
+#active-gate-stats {
     position: absolute;
     top: 3px;
     right: 4px;

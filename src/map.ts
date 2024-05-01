@@ -265,7 +265,7 @@ export class T7Map {
             }
             g.nameE.querySelector(".gate-stats").innerHTML = onMap
             if (terminal7.activeG === g) {
-                const e = g.e.querySelector(".gate-stats")
+                const e = document.getElementById("active-gate-stats")
                 e.innerHTML = onGate
                 if (g.activeW && g.activeW.activeP.zoomed)
                     e.classList.add("zoomed")

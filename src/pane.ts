@@ -240,12 +240,14 @@ export class Pane extends Cell {
     zoom() {
         const c = document.getElementById("zoomed-pane") as HTMLDivElement,
             e = document.createElement('div'),
-            te = this.e.removeChild(this.e.firstElementChild)
+            te = this.e.removeChild(this.e.firstElementChild),
+            navbar = document.getElementById("navbar")
         e.classList.add("pane", "focused")
         e.style.borderColor = FOCUSED_BORDER_COLOR
         e.appendChild(te)
         c.appendChild(e)
         this.w.e.classList.add("hidden")
+        navbar.classList.add("hidden")
         this.resizeObserver = new window.ResizeObserver(() => this.styleZoomed(e))
         this.resizeObserver.observe(e)
         c.classList.remove("hidden")
@@ -253,7 +255,8 @@ export class Pane extends Cell {
         this.catchGestures(c)
     }
     unzoom() {
-        const zoomedPane = document.getElementById("zoomed-pane") as HTMLDivElement
+        const zoomedPane = document.getElementById("zoomed-pane") as HTMLDivElement,
+              navbar = document.getElementById("navbar")
         if (this.resizeObserver != null) {
             this.resizeObserver.disconnect()
             this.resizeObserver = null
@@ -264,6 +267,7 @@ export class Pane extends Cell {
             this.w.e.classList.remove("hidden")
         }
         zoomedPane.classList.add("hidden")
+        navbar.classList.remove("hidden")
         this.zoomed = false
         interact(document.getElementById("zoomed-pane")).unset()
     }

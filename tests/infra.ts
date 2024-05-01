@@ -42,6 +42,7 @@ export class Terminal7Mock extends Terminal7 {
         
         document.body.innerHTML = `
 <div id='t7'></div>
+<div id="navbar"></div>
 <div id='map'>
     <div id='log-minimized'></div>
     <div id='gates'>
@@ -49,7 +50,7 @@ export class Terminal7Mock extends Terminal7 {
     </div>
 </div>
 <div id="gates-container">
-    <div class="gate-stats">
+    <div id="active-gate-stats" class="gate-stats">
     </div>
 <div>
 <div id="zoomed-pane"></div>
@@ -79,8 +80,6 @@ export class Terminal7Mock extends Terminal7 {
     </div>
     <template id="gate-template">
     <div class="windows-container">
-    </div>
-    <div class="gate-stats">
     </div>
 
     <nav class="tabbar">
