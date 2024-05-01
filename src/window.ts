@@ -141,7 +141,8 @@ export class Window {
     }
     onRenameEvent(event) {
         const se = document.getElementById("rename")
-        if (event.keyCode == 13 || event.type != "keyup") {
+        if (event.keyCode == 13) {
+            console.log("renaming", event.keyCode, event.type)
             se.classList.add("hidden")
             this.t7.run(() => {
                 this.name = event.target.value
@@ -149,6 +150,10 @@ export class Window {
                 this.activeP.focus()
             }, ABIT)
             this.gate.sendState()
+        }
+        if (event.keyCode == 27) {
+            se.classList.add("hidden")
+            this.activeP.focus()
         }
     }
     /*
