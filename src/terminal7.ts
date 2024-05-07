@@ -609,9 +609,9 @@ export class Terminal7 {
                 this.gates.forEach(g => {
                     if (g.boarding) {
                         count++
-                        g.disengage().then(() => {
-                            count--
-                        })
+                        g.disengage()
+                         .catch(e => terminal7.log("disengage failed", e))
+                         .finally(() => count-- )
                     }
                 })
             }
@@ -651,7 +651,6 @@ export class Terminal7 {
                         gate.notify("Timed out")
                     else
                         this.notify(`${PB} timed out, retrying...`)
-                    gate.stopBoarding()
                 })
                 try {
                     await gate.reconnect()
@@ -1152,9 +1151,9 @@ export class Terminal7 {
     // isActive returns true if the component is active
     // TODO: refactor the code to use this
     isActive(com: unknown) {
-        return (this.activeG == com)
-            || (this.activeG && (this.activeG.activeW==com))
-            || (this.activeG.activeW && (this.activeG.activeW.activeP == com))
-
+        return this.activeG 
+            && ((this.activeG == com)
+                || (this.activeG.activeW==com)
+                || (this.activeG.activeW && (this.activeG.activeW.activeP == com)))
     }
 }

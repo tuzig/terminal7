@@ -200,7 +200,7 @@ export class T7Map {
         this.refresh()
     }
 
-    update({ e, name, boarding, offline, unverified, peerbook }): void {
+    update({ e, name, online, offline, unverified, peerbook }): void {
 
         const b = e.children[0]
         const status = b.children[0]
@@ -216,10 +216,10 @@ export class T7Map {
                 nameE.innerHTML += `<i class="f7-icons peerbook-icon ${extraClass}">peerbook</i>`
         }
         // there's nothing more to update for static hosts
-        if (boarding)
-            b.classList.add("boarding")
+        if (online)
+            b.classList.add("online")
         else
-            b.classList.remove("boarding")
+            b.classList.remove("online")
     }
 
     refresh() {
@@ -263,6 +263,7 @@ export class T7Map {
                     '<i class="f7-icons">arrow_down_circle</i>' + pad(getBytes(stats.bytesReceived)) +
                     '<i class="f7-icons">arrow_up_circle</i>' + pad(getBytes(stats.bytesSent))
             }
+
             g.nameE.querySelector(".gate-stats").innerHTML = onMap
             if (terminal7.activeG === g) {
                 const e = document.getElementById("active-gate-stats")

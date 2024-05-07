@@ -251,7 +251,7 @@ async function connectCMD(shell:Shell, args: string[]) {
     const timeout = (firstGate == "nope") ? undefined : 10000
 
     shell.startWatchdog(timeout).catch(e => gate.handleFailure(e))
-    if (terminal7.activeG) {
+    if (terminal7.activeG && !terminal7.isActive(gate)) {
         terminal7.activeG.stopBoarding()
         terminal7.activeG.blur()
     }

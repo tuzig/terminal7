@@ -193,10 +193,8 @@ export class Gate {
     async handleFailure(failure: Failure) {
         // KeyRejected and WrongPassword are "light failure"
         const wasSSH = this.session?.isSSH && this.boarding
-        const firstGate = (await Preferences.get({key: "first_gate"})).value === null
         // this.map.showLog(true)
-        terminal7.log("handling failure", failure, terminal7.recovering)
-        this.stopBoarding()
+        terminal7.log("handling failure", this.name, failure, terminal7.recovering)
         this.map.shell.stopWatchdog()
         switch ( failure ) {
             case Failure.WrongPassword:
@@ -245,6 +243,7 @@ export class Gate {
                 await this.sshPassConnect()
                 return
             case Failure.FailedToConnect:
+                const firstGate = (await Preferences.get({key: "first_gate"})).value === null
                 if (firstGate && this.session?.isSSH) {
                     await this.sshPassConnect()
                     return
@@ -461,10 +460,7 @@ export class Gate {
                 scaledHeight = height * scale
             container.style.width = `${scaledWidth}px`
             container.style.height = `${scaledHeight}px`
-            container.style.left = "50%"
-            container.style.top = "calc(50% - 45px)"
-            container.style.transform = `translate(-50%, -50%)`
-            container.style.transformOrigin = "top left"
+            container.style.left = "0"
         }
         this.panes().forEach(p => {
             // NOTE: the step of changing the font size is 0.5, there is no visual change when doing smaller steps
@@ -756,7 +752,7 @@ export class Gate {
         this.map.update({
             e: e,
             name: this.name || this.addr,
-            boarding: this.boarding,
+            online: this.session!=null,
             offline: this.online === false,
             unverified: this.fp?!this.verified:this.firstConnection,
             peerbook: this.fp != null,

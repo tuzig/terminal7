@@ -477,6 +477,13 @@ export class Shell {
             this.printPrompt()
             return
         } 
+        if (!terminal7.netConnected)
+            return
+        if (!terminal7.isActive(gate)){
+            gate.stopBoarding()
+            return
+        }
+
         if (terminal7.recovering) {
             terminal7.log("retrying...")
             this.startWatchdog(terminal7.conf.net.timeout).catch(e => gate.handleFailure(e))
@@ -497,51 +504,11 @@ export class Shell {
 
         }
         gate.notify("❌  Connection failed")
-        if (!terminal7.netConnected || (gate != terminal7.activeG))
-            return
-
         if (gate.firstConnection) {
-            let ans: string
-            if (gate.addr != 'localhost') {
-                const verifyForm = [{
-                    prompt: `Does the address \x1B[1;37m${gate.addr}\x1B[0m seem correct?`,
-                        values: ["y", "n"],
-                        default: "y"
-                }]
-                try {
-                    ans = (await this.runForm(verifyForm, "text"))[0]
-                } catch(e) {
-                    return gate.onFailure(Failure.WrongAddress)
-                }
-
-                if (ans == "n") {
-                    gate.delete()
-                    setTimeout(() => this.handleLine("add"), 100)
-                    return
-                }
-            }
-            const installForm = [{
-                prompt: "Have you installed the backend - webexec?",
-                    values: ["y", "n"],
-                    default: "n"
-            }]
-            try {
-                ans = (await this.runForm(installForm, "text"))[0]
-            } catch(e) {
-                return gate.onFailure(Failure.WrongAddress)
-            }
-
-            if (ans == "n") {
-                setTimeout(() => this.handleLine("install "+gate.name), 100)
-                return
-            }
-
+            this.onFirstConnectionDisconnect(gate)
+            return
         }
 
-        if (gate.session) {
-            gate.session.close()
-            gate.session = null
-        }
         let res: string
         try {
             res = await this.runForm(this.reconnectForm, "menu")
@@ -553,6 +520,43 @@ export class Shell {
         else {
             gate.close()
             this.map.showLog(false)
+        }
+    }
+    async onFirstConnectionDisconnect(gate: Gate) {
+        let ans: string
+        if (gate.addr != 'localhost') {
+            const verifyForm = [{
+                prompt: `Does the address \x1B[1;37m${gate.addr}\x1B[0m seem correct?`,
+                    values: ["y", "n"],
+                    default: "y"
+            }]
+            try {
+                ans = (await this.runForm(verifyForm, "text"))[0]
+            } catch(e) {
+                gate.onFailure(Failure.WrongAddress)
+                return
+            }
+
+            if (ans == "n") {
+                gate.delete()
+                setTimeout(() => this.handleLine("add"), 100)
+                return
+            }
+        }
+        const installForm = [{
+            prompt: "Have you installed the backend - webexec?",
+                values: ["y", "n"],
+                default: "n"
+        }]
+        try {
+            ans = (await this.runForm(installForm, "text"))[0]
+        } catch(e) {
+            gate.onFailure(Failure.WrongAddress)
+        }
+
+        if (ans == "n") {
+            setTimeout(() => this.handleLine("install "+gate.name), 100)
+            
         }
     }
     
