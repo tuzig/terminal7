@@ -202,8 +202,6 @@ export class Gate {
                 await this.sshPassConnect()
                 return
             case Failure.BadRemoteDescription:
-                this.session.close()
-                this.session = null
                 terminal7.pbClose()
                 this.notify("Sync Error. Please try again")
                 break
@@ -218,6 +216,7 @@ export class Gate {
                 this.session = null
                 this.map.shell.onUnauthorized(this)
                 return
+
             case Failure.BadMarker:
                 this.notify("Sync Error. Starting fresh")
                 this.marker = null
@@ -228,10 +227,6 @@ export class Gate {
 
             case Failure.DataChannelLost:
             case undefined:
-                if (this.session) {
-                    this.session.close()
-                    this.session = null
-                }
                 if (!terminal7.recovering)  {
                     this.notify(failure?"Lost Data Channel":"Lost Connection")
                 }
@@ -253,21 +248,15 @@ export class Gate {
                 break
 
             case Failure.TimedOut:
-                if (this.session) {
-                    this.session.close()
-                    this.session = null
-                }
                 this.connectionFailed = true
-                break
-            case Failure.NotSupported:
-                if (this.session) {
-                    this.session.close()
-                    this.session = null
-                }
                 break
 
         }
-        await this.map.shell.onDisconnect(this, wasSSH)
+        if (this.session) {
+            this.session.close()
+            this.session = null
+        }
+        await this.map.shell.onDisconnect(this, wasSSH, failure)
     }
     reconnect(): Promise<void> {
         if (!this.session)
@@ -705,7 +694,7 @@ export class Gate {
                 await this.session.connect(this.marker)
             } catch(e) {
                 this.t7.log("error connecting", e)
-                this.notify(`${PB} Connection failed: ${e}`)
+                this.handleFailure(Failure.PBFailed)
             }
         } else {
             if (this.session.isSSH) {

@@ -24,6 +24,7 @@ export enum Failure {
     FailedToConnect="Failed To Connect",
     Overrun='Overrun',
     InternalError='Internal Error',
+    PBFailed='PeerBook Failure',
 }
 
 export interface Event {

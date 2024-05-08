@@ -12,6 +12,7 @@ import { T7Map } from './map'
 import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
 import { tomlMode } from '@tuzig/codemirror/mode/toml/toml.js'
 import { dialogAddOn } from '@tuzig/codemirror/addon/dialog/dialog.js'
+import { PB } from './peerbook'
 
 export class Shell {
 
@@ -453,7 +454,7 @@ export class Shell {
     /*
      * onDisconnect is called when a gate disconnects.
      */
-    async onDisconnect(gate: Gate, wasSSH?: boolean) {
+    async onDisconnect(gate: Gate, wasSSH?: boolean, failure?: Failure) {
         terminal7.log("onDisconnect", gate.name, wasSSH, gate.firstConnection)
         this.stopWatchdog()
         if (wasSSH) {
@@ -479,6 +480,10 @@ export class Shell {
         } 
         if (!terminal7.netConnected)
             return
+
+        if (failure == Failure.PBFailed)
+            terminal7.notify(`${PB} Connection failed`)
+        
         if (!terminal7.isActive(gate)){
             gate.stopBoarding()
             return
