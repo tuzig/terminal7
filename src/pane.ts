@@ -1187,12 +1187,9 @@ export class Pane extends Cell {
     // showVideo replace the terminal with a video and vice versa
     // if `show` is undefined the video is toggled
     showVideo(show = undefined) {
-        const video = document.querySelector("video")
-        if (show === undefined)
+        const video: HTMLVideoElement = document.querySelector("video")
+        if (show === undefined) {
             show = video === null
-        if (video) {
-            video.parentElement.querySelector("div").classList.remove("hidden")
-            video.remove()
         }
         const button = document.getElementById("video-button")
         if (show) {
@@ -1207,14 +1204,24 @@ export class Pane extends Cell {
                     terminal7.ignoreAppEvents = true
                 }
                 navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-                    .then((stream) => {
+                    .then((stream: MediaStream) => {
                         v.srcObject = stream
                         v.addEventListener("loadedmetadata", () => v.play())
                     })
                     .catch(e => this.t7.log("mediaDevices error", e))
             })
-		} else {
+        } else {
             button.classList.remove("on")
+            if (video) {
+                const stream = video.srcObject as MediaStream
+                if (stream) {
+                    const tracks = stream.getTracks()
+                    tracks.forEach(track => track.stop())
+                }
+                video.srcObject = null
+                video.parentElement.querySelector("div").classList.remove("hidden")
+                video.remove()
+            }
             this.e.querySelector("div").classList.remove("hidden")
             this.focus()
         }
