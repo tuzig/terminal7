@@ -96,16 +96,6 @@ export class Terminal7Mock extends Terminal7 {
             <img width="8" height="44" src="img/divider.png" alt="a divider">
         </div>
     </template>
-    <template id="lose-state-template">
-       <div class="lose-state modal border temporal">
-          <pre></pre>
-          <nav>
-              <button type="button" class="close"></button>
-              <button type="button" class="continue"></button>
-              <button type="button" class="copy"></button>
-          </nav>
-       </div>
-    </template>
     <button id="add-static-host"></button>
     <div id="add-host" class="hidden"></div>
     <div id="divide-v"></div>

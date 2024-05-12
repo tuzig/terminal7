@@ -669,17 +669,11 @@ footer pre { font-size: 14px; }
     flex: 1;
     margin: 0 1em;
 }
-.lose-state pre {
-    font-size: 14px;
-}
 .warning {
     color: var(--warning);
 }
 .error {
     color: var(--error);
-}
-.lose-state p {
-    text-align: left;
 }
 .webexec-install div {
     position: relative;
