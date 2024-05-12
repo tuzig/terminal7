@@ -1,43 +1,43 @@
 PODS:
-  - Capacitor (5.7.4):
+  - Capacitor (6.0.0):
     - CapacitorCordova
-  - CapacitorApp (5.0.7):
+  - CapacitorApp (6.0.0):
     - Capacitor
-  - CapacitorBrowser (5.2.0):
+  - CapacitorBrowser (6.0.0):
     - Capacitor
-  - CapacitorCamera (5.0.9):
+  - CapacitorCamera (6.0.0):
     - Capacitor
-  - CapacitorClipboard (5.0.7):
+  - CapacitorClipboard (6.0.0):
     - Capacitor
   - CapacitorCommunityNativeAudio (5.0.1):
     - Capacitor
-  - CapacitorCordova (5.7.4)
-  - CapacitorDevice (5.0.7):
+  - CapacitorCordova (6.0.0)
+  - CapacitorDevice (6.0.0):
     - Capacitor
-  - CapacitorFilesystem (5.2.1):
+  - CapacitorFilesystem (6.0.0):
     - Capacitor
-  - CapacitorKeyboard (5.0.8):
+  - CapacitorKeyboard (6.0.0):
     - Capacitor
   - CapacitorNativeBiometric (0.0.1):
     - Capacitor
-  - CapacitorNetwork (5.0.7):
+  - CapacitorNetwork (6.0.0):
     - Capacitor
-  - CapacitorPreferences (5.0.7):
+  - CapacitorPreferences (6.0.0):
     - Capacitor
   - CapacitorRateApp (4.0.3):
     - Capacitor
   - CapacitorSshPlugin (0.5.4):
     - Capacitor
     - NMSSHT7 (~> 2.9)
-  - CapacitorStatusBar (5.0.7):
+  - CapacitorStatusBar (6.0.0):
     - Capacitor
   - NMSSHT7 (2.9.1)
-  - PurchasesHybridCommon (10.4.0):
-    - RevenueCat (= 4.40.0)
-  - RevenueCat (4.40.0)
-  - RevenuecatPurchasesCapacitor (7.5.7):
+  - PurchasesHybridCommon (10.6.1):
+    - RevenueCat (= 4.41.2)
+  - RevenueCat (4.41.2)
+  - RevenuecatPurchasesCapacitor (7.5.9):
     - Capacitor
-    - PurchasesHybridCommon (= 10.4.0)
+    - PurchasesHybridCommon (= 10.6.1)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
@@ -101,26 +101,26 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@revenuecat/purchases-capacitor"
 
 SPEC CHECKSUMS:
-  Capacitor: 4fe9adf012caceb4c71ffea2f1f4d005cdcbeea7
-  CapacitorApp: 17fecd0e6cb23feafac7eb0939417389038b0979
-  CapacitorBrowser: a6deae9e5bf87f62b62a753cff7992c5def9e771
-  CapacitorCamera: 4892c5c392f60039d853dde78bc50ba19fbd113e
-  CapacitorClipboard: 45e5e25f2271f98712985d422776cdc5a779cca1
+  Capacitor: 559d073c4ca6c27f8e7002c807eea94c3ba435a9
+  CapacitorApp: 9d53aec7101f7b030a950c5bdc4df8612576b279
+  CapacitorBrowser: 7e1e2cdbb3e372f09f0bad0c4c21a6d187b679ad
+  CapacitorCamera: b61f125d92a0ef75d7becb7956fed7dd13187ee0
+  CapacitorClipboard: 80282f684154124b9019ebf401235b70b0cf4994
   CapacitorCommunityNativeAudio: 1a4d5490acb59f155602c0b6bcf1b42ee4efe91b
-  CapacitorCordova: a6e87fccc0307dee7aec1560ec9398485f2b0ce7
-  CapacitorDevice: fc91bdb484dc0e70755e9b621cd557afe642613a
-  CapacitorFilesystem: 9f3e3c7fea2fff12f46dd5b07a2914f2103e4cfc
-  CapacitorKeyboard: aec619a578235c6ce279075009a2689c2cf5c42c
+  CapacitorCordova: 8c4bfdf69368512e85b1d8b724dd7546abeb30af
+  CapacitorDevice: f8fd88f9edd1261c55a109f32015b09bbbfdc4a0
+  CapacitorFilesystem: 60e59ba274c234a979e7a3be2552feaadcee4263
+  CapacitorKeyboard: deacbd09d8d1029c3681197fb05d206b721d5f73
   CapacitorNativeBiometric: b47637a8cd349bdac014424bb4ddcae9ee5d4919
-  CapacitorNetwork: 81ef9728aa7a65cac8c1181ce79e578162b57b57
-  CapacitorPreferences: 77ac427e98db83bace772455f8ba447430382c4c
+  CapacitorNetwork: f15a94c16a33cba7c47a17814cb6bcfe3ea34ded
+  CapacitorPreferences: c9b839a80baa72e4ed4bdb117618e1950d3046b5
   CapacitorRateApp: 896df7ec6a237fea72d1955e0cb26394654b00db
   CapacitorSshPlugin: 79f67cb26d40bd0c07cec6dda93d93d5faf7b614
-  CapacitorStatusBar: f390fbb49b82ffb754ea4b3cf71dc8b048baf3e7
+  CapacitorStatusBar: 2e4369f99166125435641b1908d05f561eaba6f6
   NMSSHT7: 67f9d8f43b40b997728761b4cf2aa7ea660ba7c2
-  PurchasesHybridCommon: 70b93acd428e5f67a4d2f13de4c4eb229e4ff39f
-  RevenueCat: f33d2bb58e75afc68d3a8cf193971f008f553a2c
-  RevenuecatPurchasesCapacitor: 1815d4081763a3ce80c657c33143368079900f13
+  PurchasesHybridCommon: 465af21945a10dda051b725933a1fd7b7c2d2a07
+  RevenueCat: 0250867579677899de94f96ad9be342be865560f
+  RevenuecatPurchasesCapacitor: 3356d0d375cf40dcde55555cbcff43eb9a99e7c0
 
 PODFILE CHECKSUM: 0b234f47d92ce42f718c406e1f2c37447bc3c605
 
