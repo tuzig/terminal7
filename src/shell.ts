@@ -526,6 +526,7 @@ export class Shell {
             gate.close()
             this.map.showLog(false)
         }
+        this.printPrompt()
     }
     async onFirstConnectionDisconnect(gate: Gate) {
         let ans: string
