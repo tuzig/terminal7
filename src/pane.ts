@@ -664,12 +664,17 @@ export class Pane extends Cell {
         event.preventDefault()
         event.stopPropagation()
     }
-    catchPan(e) {
+    /*
+     * catchPan makes an element draggable
+     * @param e: HTMLElement
+     * @returns void
+     */
+    catchPan(e: HTMLElement) {
         interact(e)
             .draggable({
                 listeners: {
                     move: (event) => {
-                        this.onPan(event)
+                        this.onPan(event, false)
                     },
                     end: (event) => {
                         this.onPan(event, true)
@@ -679,9 +684,9 @@ export class Pane extends Cell {
     }
     /*
      * createDividers creates a top and left educationsl dividers.
-     * The dividers are here because they're elegant and they let the user know
-     * he can move the borders
-     * */
+     * The dividers are here because they're elegant and they let
+     * the user know he can move the borders
+     */
     createDividers() {
         // create the dividers
         const t = document.getElementById("divider-template") as HTMLTemplateElement
