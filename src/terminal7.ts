@@ -699,6 +699,7 @@ export class Terminal7 {
         this.conf.net.timeout = this.conf.net.timeout || 5000
         this.conf.net.retries = this.conf.net.retries || 3
         this.conf.net.recoveryTime = this.conf.net.recovery_time || 4000
+        this.conf.theme = this.conf.theme || {}
         this.conf.theme.foreground = this.conf.theme.foreground || "#00FAFA"
         this.conf.theme.background = this.conf.theme.background || "#000"
         this.conf.theme.selectionBackground = this.conf.theme.selection_background 
@@ -1093,8 +1094,11 @@ export class Terminal7 {
             if (c instanceof Pane)
                 c.setTheme(this.conf.theme)
         })
-        this.map.t0.options.fontFamily = this.conf.theme.fontFamily
-        setTimeout(() => this.map.fitAddon.fit(), 100)
+        // resize TWR
+        if (this.map.t0.options.fontFamily != this.conf.theme.fontFamily) {
+            this.map.t0.options.fontFamily = this.conf.theme.fontFamily
+            setTimeout(() => this.map.fitAddon.fit(), 100)
+        }
         if (this.pb &&
             ((this.pb.host != this.conf.net.peerbook)
                 // TODO: is bug?
