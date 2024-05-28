@@ -20,17 +20,20 @@ import { Shell } from './shell'
 import { Capacitor } from '@capacitor/core'
 import { WebRTCSession } from "./webrtc_session"
 
-type GatePadHTMLElement = HTMLDivElement & {gate: Gate}
-
+// openXterm loads the font and opens the given terminal
 export async function openXterm(e: HTMLElement, t: Terminal) {
-    const fontFamily = t.options.fontFamily
+    let fontFamily
+    try {
+        fontFamily = window.terminal7.conf.theme.fontFamily
+    } catch (e) { 
+        fontFamily = "FiraCode"
+    }
     if (fontFamily === "FiraCode") {
         try {
             await new FontFaceObserver(fontFamily).load(null, 200)
             await new FontFaceObserver(fontFamily, { weight: "bold" }).load(null, 200)
             t.open(e)
         } catch (e) {
-            terminal7.log("FiraCode not found, using monospace")
             t.options.fontFamily = "monospace"
             t.open(e)
         }   
@@ -38,6 +41,7 @@ export async function openXterm(e: HTMLElement, t: Terminal) {
         t.open(e)
 }
 
+type GatePadHTMLElement = HTMLDivElement & {gate: Gate}
 export class T7Map {
     t0: Terminal
     ttyWait: number
@@ -46,15 +50,10 @@ export class T7Map {
 
     open(): Promise<void> {
         return new Promise(resolve => {
-            let fontFamily = "FiraCode"
-            try {
-                fontFamily = window.terminal7.conf.theme.fontFamily
-            } catch (e) { }
             this.t0 = new Terminal({
                 cursorBlink: true,
                 cursorStyle: "block",
                 theme: window.terminal7?.conf.theme,
-                fontFamily: fontFamily,
                 fontSize: 14,
                 convertEol: true,
                 rows: 20,

@@ -89,7 +89,11 @@ export class Pane extends Cell {
     constructor(props) {
         props.className = "pane"
         super(props)
-        this.fontSize = props.fontSize || terminal7.conf.theme?.fontSize || 12
+        try {
+            this.fontSize = props.fontSize || terminal7.conf.theme.fontSize
+        } catch (e) {
+            this.fontSize = 14
+        }
         this.theme = props.theme || this.t7.conf.theme
         this.resizeObserver = new window.ResizeObserver(() => {
             if (!this.transit)
@@ -114,7 +118,6 @@ export class Pane extends Cell {
         const e = document.createElement("div")
         const terminalProps = {
             convertEol: false,
-            fontFamily: terminal7.conf.theme?.fontFamily || "FiraCode",
             fontSize: this.fontSize * this.gate.fontScale,
             theme: this.theme,
             rows: props["rows"] || 24,
@@ -149,8 +152,9 @@ export class Pane extends Cell {
 
         this.createDividers()
         this.t.onSelectionChange(() => this.selectionChanged())
-        openXterm(e, this.t).catch(e => terminal7.log("failed to open terminal", e))
-            .finally(() => {
+        openXterm(e, this.t)
+        .catch(e => terminal7.log("failed to open terminal", e))
+        .finally(() => {
             this.t.loadAddon(webGLAddon)
             if (this.t.textarea)
                 this.t.textarea.tabIndex = -1
