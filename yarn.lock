@@ -1638,13 +1638,6 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@liveconfig/xterm-webfont@^2.1.0":
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/@liveconfig/xterm-webfont/-/xterm-webfont-2.1.0.tgz#f13b2739ed95031da6fd21fbb111a9208f0bc068"
-  integrity sha512-qPtgxCBzEX4EfYNLgdsfSHtV3zn03co1k+EyF3ffN+ySXdOjTxRT9Itd97IkRF3V8tmUxZ0eGiLm6lMOj1rB4A==
-  dependencies:
-    fontfaceobserver "2.*"
-
 "@noble/ed25519@~1.7.0":
   version "1.7.3"
   resolved "https://registry.yarnpkg.com/@noble/ed25519/-/ed25519-1.7.3.tgz#57e1677bf6885354b466c38e2b620c62f45a7123"
@@ -3753,7 +3746,7 @@ flatted@^3.2.9:
   resolved "https://registry.yarnpkg.com/flatted/-/flatted-3.3.1.tgz#21db470729a6734d4997002f439cb308987f567a"
   integrity sha512-X8cqMLLie7KsNUDSdzeN8FYK9rEt4Dt67OsG/DNGnYTSDBG4uFAJFBnUeiV+zCVAvwFy56IjM9sH51jVaEhNxw==
 
-fontfaceobserver@2.*:
+fontfaceobserver@^2.3.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/fontfaceobserver/-/fontfaceobserver-2.3.0.tgz#5fb392116e75d5024b7ec8e4f2ce92106d1488c8"
   integrity sha512-6FPvD/IVyT4ZlNe7Wcn5Fb/4ChigpucKYSvD6a+0iMoLn2inpo711eyIcKjmDtE5XNcgAkSH9uN/nfAeZzHEfg==

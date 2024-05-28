@@ -5,10 +5,8 @@
  *  License: GPLv3
  */
 import interact from 'interactjs'
-import XtermWebfont from '@liveconfig/xterm-webfont'
-import { TerminalWithAddons } from "./map"
-
 import { Cell, SerializedCell  } from './cell'
+import { openXterm } from './map'
 import { ITheme, Terminal } from '@xterm/xterm'
 import { Capacitor } from '@capacitor/core'
 import { Clipboard } from '@capacitor/clipboard'
@@ -20,6 +18,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links'
 import { ImageAddon } from '@xterm/addon-image'
 import { Camera } from '@capacitor/camera'
 import { NativeAudio } from '@capacitor-community/native-audio'
+
 import { Channel, Failure } from './session'
 
 const ABIT = 10,
@@ -76,7 +75,7 @@ export class Pane extends Cell {
     searchAddon: SearchAddon
     searchDown = false
     searchTerm = ''
-    t: TerminalWithAddons
+    t: Terminal
     theme: ITheme
     repetition = 0
     retries = 0
@@ -90,7 +89,7 @@ export class Pane extends Cell {
     constructor(props) {
         props.className = "pane"
         super(props)
-        this.fontSize = props.fontSize || 12
+        this.fontSize = props.fontSize || terminal7.conf.theme?.fontSize || 12
         this.theme = props.theme || this.t7.conf.theme
         this.resizeObserver = new window.ResizeObserver(() => {
             if (!this.transit)
@@ -106,30 +105,26 @@ export class Pane extends Cell {
     write(data) {
         this.t.write(data)
     }
-                
     /*
      * Pane.openTerminal opens an xtermjs terminal on our element
      */
     openTerminal(parentID, props = {}) {
         const channelID = props["channelID"] || null
         this.channelID = channelID
-        const con = document.createElement("div")
+        const e = document.createElement("div")
         const terminalProps = {
             convertEol: false,
-            fontFamily: "FiraCode",
+            fontFamily: terminal7.conf.theme?.fontFamily || "FiraCode",
             fontSize: this.fontSize * this.gate.fontScale,
             theme: this.theme,
             rows: props["rows"] || 24,
             cols: props["cols"] || 80,
             allowProposedApi: true,
             scrollback: terminal7.conf.ui.scrollback,
-            /* TODO: restore this. commented because it silences spotify
-            bellStyle: "sound",
-            bellSound: BELL_SOUND, */
         }
 
         terminal7.log("openeing an xterm with props", this.fontSize, terminalProps.fontSize)
-        this.t = new Terminal(terminalProps) as TerminalWithAddons
+        this.t = new Terminal(terminalProps)
         this.fitAddon = new FitAddon()
         this.searchAddon = new SearchAddon()
         this.WebLinksAddon = new WebLinksAddon((MouseEvent, url) => {
@@ -138,11 +133,9 @@ export class Pane extends Cell {
         this.imageAddon = new ImageAddon()
 
         // there's a container div we need to get xtermjs to fit properly
-        this.e.appendChild(con)
-        con.style.height = "100%"
-        con.style.width = "100%"
-        this.t.loadAddon(new XtermWebfont())
-        // the canvas gets the touch event and the nadler needs to get back here
+        this.e.appendChild(e)
+        e.style.height = "100%"
+        e.style.width = "100%"
         this.t.loadAddon(this.fitAddon)
         this.t.loadAddon(this.searchAddon)
         this.t.loadAddon(this.WebLinksAddon)
@@ -156,9 +149,11 @@ export class Pane extends Cell {
 
         this.createDividers()
         this.t.onSelectionChange(() => this.selectionChanged())
-        this.t.loadWebfontAndOpen(con).then(() => {
+        openXterm(e, this.t).catch(e => terminal7.log("failed to open terminal", e))
+            .finally(() => {
             this.t.loadAddon(webGLAddon)
-            this.t.textarea.tabIndex = -1
+            if (this.t.textarea)
+                this.t.textarea.tabIndex = -1
             this.t.attachCustomKeyEventHandler(ev => {
                 let toDo = true
                 // ctrl c is a special case 
@@ -223,6 +218,10 @@ export class Pane extends Cell {
     }
     setTheme(theme) {
         this.t.options.theme = theme
+        if (this.t.options.fontFamily != terminal7.conf.theme.fontFamily) {
+            this.t.options.fontFamily = terminal7.conf.theme.fontFamily
+            this.fit()
+        }
     }
     /*
      * Pane.scale is used to change the pane's font size

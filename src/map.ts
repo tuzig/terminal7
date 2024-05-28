@@ -13,30 +13,48 @@ import { WebLinksAddon } from '@xterm/addon-web-links'
 import { FitAddon } from "@xterm/addon-fit"
 import { WebglAddon } from '@xterm/addon-webgl'
 import { ImageAddon } from '@xterm/addon-image'
-import XtermWebfont from '@liveconfig/xterm-webfont'
 import interact from 'interactjs'
+import FontFaceObserver from "fontfaceobserver"
 
 import { Shell } from './shell'
 import { Capacitor } from '@capacitor/core'
 import { WebRTCSession } from "./webrtc_session"
 
-export declare interface TerminalWithAddons extends Terminal {
-    loadWebfontAndOpen(element): Promise<this>
+type GatePadHTMLElement = HTMLDivElement & {gate: Gate}
+
+export async function openXterm(e: HTMLElement, t: Terminal) {
+    const fontFamily = t.options.fontFamily
+    if (fontFamily === "FiraCode") {
+        try {
+            await new FontFaceObserver(fontFamily).load(null, 200)
+            await new FontFaceObserver(fontFamily, { weight: "bold" }).load(null, 200)
+            t.open(e)
+        } catch (e) {
+            terminal7.log("FiraCode not found, using monospace")
+            t.options.fontFamily = "monospace"
+            t.open(e)
+        }   
+    } else
+        t.open(e)
 }
 
-type GatePadHTMLElement = HTMLDivElement & {gate: Gate}
 export class T7Map {
-    t0: TerminalWithAddons
+    t0: Terminal
     ttyWait: number
     shell: Shell
     fitAddon: FitAddon
+
     open(): Promise<void> {
         return new Promise(resolve => {
+            let fontFamily = "FiraCode"
+            try {
+                fontFamily = window.terminal7.conf.theme.fontFamily
+            } catch (e) { }
             this.t0 = new Terminal({
                 cursorBlink: true,
                 cursorStyle: "block",
                 theme: window.terminal7?.conf.theme,
-                fontFamily: "FiraCode",
+                fontFamily: fontFamily,
                 fontSize: 14,
                 convertEol: true,
                 rows: 20,
@@ -46,7 +64,7 @@ export class T7Map {
                         window.open(url, "_blank", "noopener")
                     }
                 }
-            }) as TerminalWithAddons
+            })
             this.shell = new Shell(this)
             const e = document.getElementById("t0")
             this.fitAddon = new FitAddon()
@@ -61,7 +79,6 @@ export class T7Map {
                 this.fitAddon.fit()
                 console.log("TWR size", this.t0.cols, this.t0.rows)
             }, 100)
-            this.t0.loadAddon(new XtermWebfont())
             this.t0.attachCustomKeyEventHandler(ev => {
                 if (ev.ctrlKey && ev.key === "c") {
                     if (this.shell.masterChannel)
@@ -97,7 +114,7 @@ export class T7Map {
             try {
                 this.t0.loadAddon(webGLAddon)
             } catch (e) { console.log("no webgl: " +e.toString()) }
-            this.t0.loadWebfontAndOpen(e).then(() => {
+            openXterm(e, this.t0).finally(() => {
                 if (Capacitor.getPlatform() === "android") {
                     // hack for android spacebar & virtual keyboard
                     this.t0.element.addEventListener("input", (ev: Event & {data?}) => {
@@ -111,27 +128,27 @@ export class T7Map {
             this.refresh()
             // handle the tower
             const log = document.getElementById("log")
-            if (!log)
-                return
-            const resizeObserver = new window.ResizeObserver(() =>
-                setTimeout(() => this.fitAddon.fit(), 100)
-            )
-            resizeObserver.observe(terminal7.e)
-            log.addEventListener("click", (ev) => {
-                ev.stopPropagation()
-                ev.preventDefault()
-            })
-            document.getElementById("log-minimized").addEventListener("click", (ev) => {
-                this.showLog(true)
-                ev.stopPropagation()
-                ev.preventDefault()
-            })
-        document.getElementById("map").addEventListener("click", ev => {
-            this.showLog(false)
-            terminal7.showChangelog(false)
-            ev.stopPropagation()
-            ev.preventDefault()
-        })
+            if (log) {
+                const resizeObserver = new window.ResizeObserver(() =>
+                    setTimeout(() => this.fitAddon.fit(), 100)
+                )
+                resizeObserver.observe(terminal7.e)
+                log.addEventListener("click", (ev) => {
+                    ev.stopPropagation()
+                    ev.preventDefault()
+                })
+                document.getElementById("log-minimized").addEventListener("click", (ev) => {
+                    this.showLog(true)
+                    ev.stopPropagation()
+                    ev.preventDefault()
+                })
+                document.getElementById("map").addEventListener("click", ev => {
+                    this.showLog(false)
+                    terminal7.showChangelog(false)
+                    ev.stopPropagation()
+                    ev.preventDefault()
+                })
+            }
             setInterval(() => this.updateStats(), 1000)
         })
     }
