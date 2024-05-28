@@ -75,12 +75,15 @@ If you are a PeerBook subscriber, please \`login\`.
 (Sorry, no way to subscribe from here yet)
 `  + WELCOME_FOOTER
 
+// DEFAULT_DOTFILE is the default configuration file for Terminal7
 export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 [theme]
 # foreground = "#00FAFA"
 # background = "#000"
-# selectionBackground = "#D9F505"
-# selectionForeground = "#271D30"
+# selection_background = "#D9F505"
+# selection_foreground = "#271D30"
+# font_family = "FiraCode"
+# font_size = 14
 
 [exec]
 # shell = "*"
@@ -696,11 +699,14 @@ export class Terminal7 {
         this.conf.net.timeout = this.conf.net.timeout || 5000
         this.conf.net.retries = this.conf.net.retries || 3
         this.conf.net.recoveryTime = this.conf.net.recovery_time || 4000
-        this.conf.theme = this.conf.theme || {}
         this.conf.theme.foreground = this.conf.theme.foreground || "#00FAFA"
         this.conf.theme.background = this.conf.theme.background || "#000"
-        this.conf.theme.selectionBackground = this.conf.theme.selectionBackground || "#D9F505"
-        this.conf.theme.selectionForeground = this.conf.theme.selectionForeground || "#271D30"
+        this.conf.theme.selectionBackground = this.conf.theme.selection_background 
+            || this.conf.theme.selectionBackground || "#D9F505"
+        this.conf.theme.selectionForeground = this.conf.theme.selection_foreground
+            || this.conf.theme.selectionForeground || "#271D30"
+        this.conf.theme.fontFamily = this.conf.theme.font_family || "FiraCode"
+        this.conf.theme.fontSize =  this.conf.theme.font_size || 14
         if (conf.peerbook) {
             this.conf.peerbook = {
                 insecure: conf.peerbook.insecure || false,
@@ -1081,11 +1087,14 @@ export class Terminal7 {
         return (await Preferences.get({key: "dotfile"})).value || DEFAULT_DOTFILE
     }
     saveDotfile(text) {
+        // first, reload the conf
+        terminal7.loadConf(TOML.parse(text))
         this.cells.forEach(c => {
             if (c instanceof Pane)
                 c.setTheme(this.conf.theme)
         })
-        terminal7.loadConf(TOML.parse(text))
+        this.map.t0.options.fontFamily = this.conf.theme.fontFamily
+        setTimeout(() => this.map.fitAddon.fit(), 100)
         if (this.pb &&
             ((this.pb.host != this.conf.net.peerbook)
                 // TODO: is bug?
