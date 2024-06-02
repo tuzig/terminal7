@@ -195,8 +195,14 @@ test.describe('peerbook administration', ()  => {
         await page.keyboard.press("Enter")
         await sleep(100)
         await page.keyboard.type(" ")
-        await page.keyboard.press("Enter")
         await sleep(100)
+        await page.keyboard.press("Enter")
+        let ready = false
+        while (!ready) {
+            await sleep(100)
+            const twr = await getTWRBuffer(page)
+            ready = twr.match(/Name \[webexec\]:/)
+        }
         await page.keyboard.type("bar")
         await page.keyboard.press("Enter")
         await sleep(100)
