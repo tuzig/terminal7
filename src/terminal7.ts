@@ -438,7 +438,7 @@ export class Terminal7 {
             const callReject = (e, symbol = ERROR_HTML_SYMBOL) => {
                 statusE.style.opacity = "1"
                 statusE.innerHTML = symbol
-                console.log("pbConnect failed", e)
+                terminal7.log("pbConnect failed", e)
                 reject(e)
             }
             const catchConnect = (e: string) => {

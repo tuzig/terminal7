@@ -20,9 +20,9 @@ import { Shell } from './shell'
 import { Capacitor } from '@capacitor/core'
 import { WebRTCSession } from "./webrtc_session"
 
-// openXterm loads the font and opens the given terminal
-export async function openXterm(e: HTMLElement, t: Terminal) {
-    let fontFamily
+// openEmulator loads the font and opens the given terminal
+export async function openEmulator(e: HTMLElement, t: Terminal) {
+    let fontFamily: string
     try {
         fontFamily = window.terminal7.conf.theme.fontFamily
     } catch (e) { 
@@ -112,8 +112,8 @@ export class T7Map {
             })
             try {
                 this.t0.loadAddon(webGLAddon)
-            } catch (e) { console.log("no webgl: " +e.toString()) }
-            openXterm(e, this.t0).finally(() => {
+            } catch (e) { console.log("no webgl: ",e) }
+            openEmulator(e, this.t0).finally(() => {
                 if (Capacitor.getPlatform() === "android") {
                     // hack for android spacebar & virtual keyboard
                     this.t0.element.addEventListener("input", (ev: Event & {data?}) => {

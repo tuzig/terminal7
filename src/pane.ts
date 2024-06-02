@@ -6,7 +6,7 @@
  */
 import interact from 'interactjs'
 import { Cell, SerializedCell  } from './cell'
-import { openXterm } from './map'
+import { openEmulator  } from './map'
 import { ITheme, Terminal } from '@xterm/xterm'
 import { Capacitor } from '@capacitor/core'
 import { Clipboard } from '@capacitor/clipboard'
@@ -152,7 +152,7 @@ export class Pane extends Cell {
 
         this.createDividers()
         this.t.onSelectionChange(() => this.selectionChanged())
-        openXterm(e, this.t)
+        openEmulator(e, this.t)
         .catch(e => terminal7.log("failed to open terminal", e))
         .finally(() => {
             this.t.loadAddon(webGLAddon)
@@ -673,17 +673,12 @@ export class Pane extends Cell {
      * @returns void
      */
     catchPan(e: HTMLElement) {
-        interact(e)
-            .draggable({
-                listeners: {
-                    move: (event) => {
-                        this.onPan(event, false)
-                    },
-                    end: (event) => {
-                        this.onPan(event, true)
-                    },
-                }
-            })
+        interact(e).draggable({
+            listeners: {
+                move: (event) => this.onPan(event, false),
+                end: (event) => this.onPan(event, true),
+            }
+        })
     }
     /*
      * createDividers creates a top and left educationsl dividers.
