@@ -28,6 +28,7 @@ export async function openEmulator(e: HTMLElement, t: Terminal) {
     } catch (e) { 
         fontFamily = "FiraCode"
     }
+    t.options.fontFamily = fontFamily
     if (fontFamily === "FiraCode") {
         try {
             await new FontFaceObserver(fontFamily).load(null, 200)
