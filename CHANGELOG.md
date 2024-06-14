@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configurable font family and size. Under `[theme]` in the dotfile,
 you can now set `font_family` and `font_size`.
 
+### Fixed
+
+- Handling of unverified gates
+
 ## [1.10.1] - 2024/5/7
 
 ### Fixed

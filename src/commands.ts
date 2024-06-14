@@ -194,45 +194,42 @@ async function connectCMD(shell:Shell, args: string[]) {
     }
     const pbOpen = terminal7.pb && terminal7.pb.isOpen()
     const overPB = pbOpen && gate.fp && (gate.fp.length > 0) && gate.online
-    if (overPB) {
-        if (!gate.verified) {
-            const answer = await shell.askValue("Gate unverified, would you like to verify it?", "y")
-            if (answer == "y" || answer == "Y" || answer == "") {
-                await terminal7.pb.verifyFP(gate.fp)
-            } else {
-                shell.t.writeln("Doing nothing")
+    if (overPB && !gate.verified) {
+        const answer = await shell.askValue("Gate unverified, would you like to verify it?", "y")
+        if (answer == "y" || answer == "Y" || answer == "") {
+            await terminal7.pb.verifyFP(gate.fp)
+        } else {
+            if (Capacitor.isNativePlatform())
+                shell.t.writeln("Falling back to SSH")
+            else {
+                shell.t.writeln("Please verify the gate before connecting")
                 return
             }
         }
-        if (!gate.online) {
-            shell.t.writeln("Host is offline, better try another host")
-            return
+    }
+    if (Capacitor.isNativePlatform())  {
+        let dirty = false
+        if (!gate.addr) {
+            try {
+                gate.addr = await shell.askValue("Host address")
+            } catch (e) {
+                shell.t.writeln("Failed to get host address")
+                return  
+            }
+            dirty = true
         }
-    } else {
-        if (Capacitor.isNativePlatform())  {
-            let dirty = false
-            if (!gate.addr) {
-                try {
-                    gate.addr = await shell.askValue("Host address")
-                } catch (e) {
-                    shell.t.writeln("Failed to get host address")
-                    return  
-                }
-                dirty = true
+        if (!gate.username) {
+            try {
+                gate.username = await shell.askValue("Username")
+            } catch (e) {
+                shell.t.writeln("Failed to get username")
+                return
             }
-            if (!gate.username) {
-                try {
-                    gate.username = await shell.askValue("Username")
-                } catch (e) {
-                    shell.t.writeln("Failed to get username")
-                    return
-                }
-                dirty = true
-            }
-            if (dirty) {
-                gate.store = true
-                terminal7.storeGates()
-            }
+            dirty = true
+        }
+        if (dirty) {
+            gate.store = true
+            terminal7.storeGates()
         }
     }
     let done = false

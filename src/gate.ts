@@ -640,7 +640,7 @@ export class Gate {
     async completeConnect(): Promise<void> {
         this.keyRejected = false
         const isNative = Capacitor.isNativePlatform()
-        const overPB = this.fp && !this.onlySSH && this.online
+        const overPB = this.fp && !this.onlySSH && this.online && this.verified
         if (overPB) {
             this.notify("🎌  PeerBook")
             if (this.session)
