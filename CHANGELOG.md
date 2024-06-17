@@ -17,6 +17,7 @@ you can now set `font_family` and `font_size`.
 
 - Handling of unverified hosts
 - Multi client layout sync
+- The font in rename and search is set to Fira Sans like the rest of the app
 
 ## [1.10.1] - 2024/5/7
 
