@@ -360,8 +360,7 @@ export class Terminal7 {
                 }
             }))
         const resizeObserver = new ResizeObserver(() => {
-            if (this.activeG)
-                this.activeG.setFitScreen()
+            this.gates.forEach(g => g.onResize())
         })
         resizeObserver.observe(document.body)
     }
