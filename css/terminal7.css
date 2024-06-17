@@ -367,6 +367,7 @@ button.rename-close {
     color: var(--text-color);
     background-color: var(--text-background);
     border-radius: 5px;
+    font-family: 'FiraSans';
 }
 .active {
     font-weight: bold;
