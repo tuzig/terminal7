@@ -20,7 +20,7 @@ import { Preferences } from '@capacitor/preferences'
 
 
 const FAILED_COLOR = "red"// ashort period of time, in milli
-const TOOLBAR_HEIGHT = 135
+const TOOLBAR_HEIGHT = 93
 
 export interface ServerPayload {
     height: number
@@ -57,8 +57,6 @@ export class Gate {
     firstConnection: boolean
     keyRejected: boolean
     connectionFailed: boolean
-    layoutWidth: number
-    layoutHeight: number
     fontScale: number
     fitScreen: boolean
     windows: Window[]
@@ -67,6 +65,7 @@ export class Gate {
     lastDisconnect?: number
     sshPort: number
     reconnectCount: number
+    lastState: ServerPayload
     constructor (props) {
         // given properties
         this.id = props.id
@@ -92,7 +91,7 @@ export class Gate {
         this.onFailure = Function.prototype()
         this.firstConnection = props.firstConnection || false
         this.fontScale = props.fontScale || 1
-        this.fitScreen = true
+        this.fitScreen = false
         this.sshPort = props.sshPort || 22
         this.reconnectCount = 0
     }
@@ -124,8 +123,6 @@ export class Gate {
             */
             this.e.appendChild(t)
         }
-        this.layoutWidth = document.body.clientWidth
-        this.layoutHeight = document.body.clientHeight - TOOLBAR_HEIGHT
     }
     // deletes removes the gate from terminal7 and the map
     delete() {
@@ -369,37 +366,39 @@ export class Gate {
         this.t7.map.shell.runCommand("reset", [this.name])
     }
     setLayout(state: ServerPayload | null = null, fromPresenter = false) {
-        console.log("in setLayout", state)
+        terminal7.log("in setLayout", state)
+        this.lastState = state
         const winLen = this.windows.length
-        if(this.fitScreen)
-            this.fontScale = 1
+        const container = this.e.querySelector(".windows-container") as HTMLDivElement
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
             this.clear()
+            this.fitScreen = true
             this.activeW = this.addWindow("", true)
-        } else if (winLen > 0) {
-            this.t7.log("Restoring to an existing layout")
-            if (this.activeW && this.activeW.activeP.zoomed)
-                this.activeW.activeP.unzoom()
-            this.syncLayout(state)
-            this.panes().forEach(p => p.openChannel({id: p.channelID}))
         } else {
-            this.t7.log("Setting layout: ", state)
-            this.clear()
-            if (this.layoutWidth != state.width || this.layoutHeight != state.height) {
-                this.layoutWidth = state.width
-                this.layoutHeight = state.height
-                if (fromPresenter) this.fitScreen = false
-                this.scaleContainer()
+            try {
+                this.fitScreen = (container.clientWidth == state.width) && (container.clientHeight == state.height)
+            } catch(e) {
+                this.fitScreen = true
             }
-            state.windows.forEach(w =>  {
-                const win = this.addWindow(w.name, false, w.id)
-                if (w.active) 
-                    this.activeW = win
-                win.restoreLayout(w.layout, w.active)
-                win.nameE?.setAttribute("href", `#pane-${win.activeP?.id}`)
-            })
+            if (winLen > 0) {
+                this.t7.log("Restoring to an existing layout")
+                if (this.activeW && this.activeW.activeP.zoomed)
+                    this.activeW.activeP.unzoom()
+                this.syncLayout(state)
+                this.panes().forEach(p => p.openChannel({id: p.channelID}))
+            } else {
+                this.t7.log("Setting layout: ", state)
+                this.clear()
+                state.windows.forEach(w =>  {
+                    const win = this.addWindow(w.name, false, w.id)
+                    if (w.active) 
+                        this.activeW = win
+                    win.restoreLayout(w.layout, w.active)
+                    win.nameE?.setAttribute("href", `#pane-${win.activeP?.id}`)
+                })
+            }
         }
 
         if (!this.activeW)
@@ -422,50 +421,41 @@ export class Gate {
                 this.updateNameE()
             }
         }, 400)
+        this.scaleContainer(state?.width, state?.height)
         this.focus()
     }
-    scaleContainer() {
+    // scaleContainer scales the container to fit the screen, defaulting to 100%
+    scaleContainer(width?, height?) {
         const container = this.e.querySelector(".windows-container") as HTMLDivElement
-        let scale
-
         if (this.fitScreen) {
             container.style.width = "100%"
             container.style.removeProperty("height")
-            scale = 1
+            this.fontScale = 1
+            container.style.top = "0"
             container.style.left = "0"
             container.style.removeProperty("transform")
-        } else {
-
-            const width = this.layoutWidth,
-                height = this.layoutHeight
-            if (!width || !height)
-                return
-            const maxWidth = document.body.clientWidth,
-                maxHeight = document.body.clientHeight - TOOLBAR_HEIGHT
-            const sx = maxWidth / width,
-                sy = maxHeight / height
-            scale = Math.min(sx, sy, 1)
-            const scaledWidth = width * scale,
-                scaledHeight = height * scale
-            container.style.width = `${scaledWidth}px`
-            container.style.height = `${scaledHeight}px`
-            container.style.left = "0"
+            return
         }
-        this.panes().forEach(p => {
-            // NOTE: the step of changing the font size is 0.5, there is no visual change when doing smaller steps
-            const fontSize = p.fontSize * scale
-            p.t.options.fontSize = Math.floor(fontSize) + (String(fontSize).includes('.') ? .5 : 0)
-        })
-        this.fontScale = scale
+        if (!width || !height) {
+            width = document.body.clientWidth
+            height = document.body.clientHeight - TOOLBAR_HEIGHT
+        }
+        const maxWidth = document.body.clientWidth,
+            maxHeight = document.body.clientHeight - TOOLBAR_HEIGHT
+        const sx = maxWidth / width,
+            sy = maxHeight / height
+        const scale = Math.min(sx, sy, 1),
+              scaledWidth = width * scale,
+              scaledHeight = height * scale
+       container.style.width = `${scaledWidth}px`
+       container.style.height = `${scaledHeight}px`
+       container.style.left = (maxWidth - scaledWidth) / 2 + "px"
+       container.style.top = (maxHeight - scaledHeight) / 2 + "px"
+       this.fontScale = scale
     }
     syncLayout(state: ServerPayload) {
-        if (state.width != this.layoutWidth || state.height != this.layoutHeight) {
-            this.layoutWidth = state.width
-            this.layoutHeight = state.height
-            this.scaleContainer()
-            console.log("setting fitScreen to false")
-            this.fitScreen = false
-        }
+        this.lastState = state
+        this.scaleContainer(state.width, state.height)
         state.windows.forEach(w => {
             const win = this.windows.find(win => win.id == w.id)
             if (!win) {
@@ -521,8 +511,6 @@ export class Gate {
             this.activeW.activeP.unzoom()
         this.windows = []
         this.breadcrumbs = []
-        this.layoutWidth = 0
-        this.layoutHeight = 0
         this.t7.cells.forEach((c, i, cells) => {
             if (c instanceof Pane && (c.gate == this))
                 cells.splice(i, 1)
@@ -543,11 +531,10 @@ export class Gate {
                 win.active = true
             windows.push(win)
         })
-        if (!this.fitScreen)
-            return {windows, width: this.layoutWidth, height: this.layoutHeight}
-        const width = document.body.clientWidth,
-            height = document.body.clientHeight - TOOLBAR_HEIGHT
-        return { windows, width, height }
+        const container = this.e.querySelector(".windows-container") as HTMLDivElement
+        return { windows: windows,
+                 width: container.clientWidth,
+                 height: container.clientHeight }
     }
     storeState() {
         /* TODO: restore the restore to last state
@@ -565,7 +552,7 @@ export class Gate {
     }
 
     sendState() {
-        if ((this.sendStateTask != null) || !this.session)
+        if ((this.sendStateTask != null) || !this.session || !this.fitScreen)
             return
        // @ts-ignore
         this.sendStateTask = setTimeout(() => {
@@ -765,14 +752,30 @@ export class Gate {
         }
     }
     setFitScreen() {
-        this.layoutWidth = document.body.clientWidth
-        this.layoutHeight = document.body.clientHeight - TOOLBAR_HEIGHT
         this.fitScreen = true
         this.scaleContainer()
+        this.panes().forEach(p => {
+            p.scaleCanvas()
+            p.dividers.forEach(d => d.classList.remove("hidden"))
+        })
         this.fit()
         this.sendState()
     }
     blur() {
         this.e.classList.add("hidden")
+    }
+    onResize() {
+        if (this.fitScreen) {
+            this.panes().forEach(p => {
+                if (!p.transit)
+                    if (p.zoomed)
+                        p.styleZoomed()
+                    else
+                        p.fit()
+            })
+        } else if (this.lastState) {
+            this.scaleContainer(this.lastState.width, this.lastState.height)
+            this.panes().forEach(p => p.scaleCanvas())
+        }
     }
 }

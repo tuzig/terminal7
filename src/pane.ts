@@ -95,10 +95,6 @@ export class Pane extends Cell {
             this.fontSize = 14
         }
         this.theme = props.theme || this.t7.conf.theme
-        this.resizeObserver = new window.ResizeObserver(() => {
-            if (!this.transit)
-                this.fit()
-        })
         this.channelID = props.channelID
         this.catchGestures()
     }
@@ -118,7 +114,7 @@ export class Pane extends Cell {
         const e = document.createElement("div")
         const terminalProps = {
             convertEol: false,
-            fontSize: this.fontSize * this.gate.fontScale,
+            fontSize: this.fontSize,
             theme: this.theme,
             rows: props["rows"] || 24,
             cols: props["cols"] || 80,
@@ -208,7 +204,6 @@ export class Pane extends Cell {
                 NativeAudio.play({ assetId: "bell" })
                            .catch(e => terminal7.log("failed to play bell",e ))
             )
-            this.resizeObserver.observe(this.e)
             this.fit(pane => { 
               if (pane != null) {
                   pane.openChannel({parent: parentID, id: channelID})
@@ -216,9 +211,15 @@ export class Pane extends Cell {
                       this.gate.notify("Failed to open communication channel: "+e))
               }
             })
+            this.scaleCanvas()
         })
-
         return this.t
+    }
+    scaleCanvas() {
+        this.e.querySelectorAll("canvas").forEach(c => {
+            c.style.transform = `scale(${this.gate.fontScale})`
+            c.style.transformOrigin = "top left"
+        })
     }
     setTheme(theme) {
         this.t.options.theme = theme
@@ -234,8 +235,7 @@ export class Pane extends Cell {
         this.fontSize += by
         if (this.fontSize < 6) this.fontSize = 6
         else if (this.fontSize > 30) this.fontSize = 30
-        const fontSize = this.fontSize * this.gate.fontScale
-        this.t.options.fontSize = Math.floor(fontSize) + (String(fontSize).includes('.') ? .5 : 0)
+        this.t.options.fontSize = this.fontSize
         this.fit()
         this.gate.sendState()
     }
@@ -251,8 +251,7 @@ export class Pane extends Cell {
         c.appendChild(e)
         this.w.e.classList.add("hidden")
         navbar.classList.add("hidden")
-        this.resizeObserver = new window.ResizeObserver(() => this.styleZoomed(e))
-        this.resizeObserver.observe(e)
+        this.styleZoomed(e)
         c.classList.remove("hidden")
         this.zoomed = true
         this.catchGestures(c)
@@ -260,10 +259,6 @@ export class Pane extends Cell {
     unzoom() {
         const zoomedPane = document.getElementById("zoomed-pane") as HTMLDivElement,
               navbar = document.getElementById("navbar")
-        if (this.resizeObserver != null) {
-            this.resizeObserver.disconnect()
-            this.resizeObserver = null
-        }
         const terminalE = zoomedPane.removeChild(zoomedPane.firstElementChild)
         if (terminalE) {
             this.e.appendChild(terminalE.firstElementChild)
@@ -475,8 +470,8 @@ export class Pane extends Cell {
         i.focus()
     }
     styleZoomed(e = null) {
-        
         e = e || document.getElementById("zoomed-pane").querySelector(".pane")
+        if (!e) return
         const verticalSpace = (Capacitor.isNativePlatform()) ? 40 : 3
         e.style.height = `${document.body.offsetHeight - verticalSpace}px`
         e.style.top = "0px"
@@ -664,6 +659,8 @@ export class Pane extends Cell {
 
         this.layout.moveBorder(divider.pane, where, dest, final)
         this.draggedDivider = final ? null : divider
+        if (final)
+            this.gate.sendState()
         event.preventDefault()
         event.stopPropagation()
     }
@@ -695,6 +692,8 @@ export class Pane extends Cell {
                 this.w.e.prepend(e)
                 e = this.w.e.firstElementChild as HTMLElement
                 e.classList.add((i==0)?"left-divider":"top-divider")
+                if (!this.gate.fitScreen)
+                    e.classList.add("hidden")
                 e.pane = this
                 this.catchPan(e)
                 this.dividers.push(e)
@@ -721,13 +720,21 @@ export class Pane extends Cell {
      */
     refreshDividers() {
         const W = this.w.e.offsetWidth,
-            H = this.w.e.offsetHeight
+            H = this.w.e.offsetHeight,
+            gate = this.gate
         let d = this.dividers[0]
+        function setVisibility(e: HTMLElement) {
+            if (gate.fitScreen)
+                e.classList.remove("hidden")
+            else
+                e.classList.add("hidden")
+        }
+
         if (this.xoff > 0.001 && this.sy * H > 50) {
             // refresh left divider position
             d.style.left = `${this.xoff * W - 4 - 20 }px`
             d.style.top = `${(this.yoff + this.sy/2)* H - 22 - 40}px`
-            d.classList.remove("hidden")
+            setVisibility(d)
         } else
             d.classList.add("hidden")
         d = this.dividers[1]
@@ -735,15 +742,11 @@ export class Pane extends Cell {
             // refresh top divider position
             d.style.top = `${this.yoff * H - 25 - 20 }px`
             d.style.left = `${(this.xoff + this.sx/2)* W - 22 - 40}px`
-            d.classList.remove("hidden")
+            setVisibility(d)
         } else
             d.classList.add("hidden")
     }
     close() {
-        try {
-            this.resizeObserver.unobserve(this.e)
-        } catch (e) {}
-
         if (this.d)
             this.d.close()
         this.dividers.forEach(d => {
@@ -1280,21 +1283,16 @@ export class Pane extends Cell {
         if (!this.t) return
 
         this.fontSize = target.fontSize
-        // NOTE: the step of changing the font size is 0.5, there is no visual change when doing smaller steps
-        const fontSize = target.fontSize * this.gate.fontScale
-        if (this.t.rows != target.rows || this.t.cols != target.cols) {
-            this.t.options.fontSize = Math.floor(fontSize) + (String(fontSize).includes('.') ? .5 : 0)
+        this.scaleCanvas()
+        if (this.t.rows != target.rows || this.t.cols != target.cols) 
             this.t.resize(target.cols, target.rows)
-        }
         if (target.active)
             this.focus()
         if (target.zoomed && !this.zoomed) {
             setTimeout(() => this.zoom(), 100)
-            console.log("will zoom in 100ms")
         }
         if (!target.zoomed && this.zoomed) {
             setTimeout(() => this.unzoom(), 100)
-            console.log("will zoom in 100ms")
         }
     }
     onPinch(ev) {

@@ -15,7 +15,8 @@ you can now set `font_family` and `font_size`.
 
 ### Fixed
 
-- Handling of unverified gates
+- Handling of unverified hosts
+- Multi client layout sync
 
 ## [1.10.1] - 2024/5/7
 
