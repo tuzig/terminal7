@@ -365,7 +365,7 @@ export class Gate {
     reset() {
         this.t7.map.shell.runCommand("reset", [this.name])
     }
-    setLayout(state: ServerPayload | null = null, fromPresenter = false) {
+    setLayout(state: ServerPayload | null = null) {
         terminal7.log("in setLayout", state)
         this.lastState = state
         const winLen = this.windows.length
@@ -384,7 +384,7 @@ export class Gate {
             }
             if (winLen > 0) {
                 this.t7.log("Restoring to an existing layout")
-                if (this.activeW && this.activeW.activeP.zoomed)
+                if (this.activeW?.activeP?.zoomed)
                     this.activeW.activeP.unzoom()
                 this.syncLayout(state)
                 this.panes().forEach(p => p.openChannel({id: p.channelID}))
@@ -507,7 +507,7 @@ export class Gate {
         this.e.querySelectorAll(".window").forEach(e => e.remove())
         this.e.querySelectorAll(".modal").forEach(e => e.classList.add("hidden"))
         this.e.querySelector(".windows-container").removeAttribute("style")
-        if (this.activeW && this.activeW.activeP.zoomed)
+        if (this.activeW?.activeP?.zoomed)
             this.activeW.activeP.unzoom()
         this.windows = []
         this.breadcrumbs = []
@@ -651,7 +651,7 @@ export class Gate {
             let session: WebRTCSession = this.session
             switch (msg.type) {
                 case "set_payload":
-                    this.setLayout(msg.args["payload"], true)
+                    this.setLayout(msg.args["payload"])
                     break
                 case "get_clipboard":
                     Clipboard.read().then(cb => {
