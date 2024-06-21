@@ -745,11 +745,11 @@ export class Gate {
                 terminal7.activeG = null
             }
         }, 10)
-        this.stopBoarding()
         if (this.session) {
             this.session.close()
             this.session = null
         }
+        this.stopBoarding()
     }
     setFitScreen() {
         this.fitScreen = true
