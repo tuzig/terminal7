@@ -99,6 +99,7 @@ export class Layout extends Cell {
                 if (c.xoff < p.xoff)
                     p.xoff = c.xoff
             }
+            p.fit()
             p.focus()
             // remove this from the layout
             this.cells.splice(i, 1)
