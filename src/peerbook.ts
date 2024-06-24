@@ -441,6 +441,10 @@ export class PeerbookConnection {
                 this.notify(`Unverified client. Please check you email.`)
             return
         }
+        if (m["ice_servers"] !== undefined) {
+            terminal7.setIceServers(JSON.parse(m.ice_servers))
+            return
+        }
         const fp = m.source_fp
         // look for a gate where g.fp == fp
         const myFP = await terminal7.getFingerprint()
