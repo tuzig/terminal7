@@ -29,7 +29,7 @@ import { RateApp } from 'capacitor-rate-app'
 
 
 import { PeerbookConnection, PB } from './peerbook'
-import { PeerbookSession } from './webrtc_session'
+import { PeerbookSession, ControlMessage } from './webrtc_session'
 import { Failure } from './session'
 import { Cell } from "./cell"
 import { Pane } from "./pane"
@@ -1167,5 +1167,31 @@ export class Terminal7 {
             && ((this.activeG == com)
                 || (this.activeG.activeW==com)
                 || (this.activeG.activeW && (this.activeG.activeW.activeP == com)))
+    }
+    getIceServers(): Promise<IceServers[]> {
+        return new Promise((resolve, reject) => {
+            if (this.iceServers) {
+                resolve(this.iceServers)
+                return
+            }
+            if (!this.pb.session || !this.pb.session.isOpen() ) {
+                resolve([])
+                return
+            }
+            this.pb.session.sendCTRLMsg(new ControlMessage("ice_servers"))
+            .then(resp => JSON.parse(resp))
+            .then(servers => {
+                this.setIceServers(servers)
+                resolve(this.iceServer)
+            }).catch(err =>
+                reject("failed to get ice servers " + err.toString())
+            )
+        })
+    }
+    setIceServers(servers) {
+        const iceServer = this.conf.net.iceServer
+        if (iceServer?.length > 0)
+            servers.unshift({ urls: iceServer })
+        this.iceServers = servers
     }
 }
