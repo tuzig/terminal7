@@ -288,7 +288,7 @@ async function connectCMD(shell:Shell, args: string[]) {
             }
             if (publicKey) {
                 const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
-                shell.t.writeln(`\n To use face id please copy the ES25519 key by running:\n\n\x1B[1m${cmd}\x1B[0m\n`)
+                shell.t.writeln(`\n To use the 🔑 instead of password run:\n\n\x1B[1m${cmd}\x1B[0m\n`)
                 let res = ""
                 try {
                     res = await shell.runForm(keyForm, "menu")
