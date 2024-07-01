@@ -442,7 +442,7 @@ export class PeerbookConnection {
             return
         }
         if (m["ice_servers"] !== undefined) {
-            terminal7.setIceServers(JSON.parse(m.ice_servers))
+            terminal7.setIceServers(m["ice_servers"])
             return
         }
         const fp = m.source_fp
