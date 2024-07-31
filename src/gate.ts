@@ -200,13 +200,13 @@ export class Gate {
                 return
             case Failure.BadRemoteDescription:
                 terminal7.pbClose()
-                this.notify("Sync Error. Please try again")
+                this.notify("Connection Sync Error. Retrying")
                 break
             case Failure.NotImplemented:
                 this.session.close()
                 this.session = null
                 this.notify("Not Implemented. Please try again")
-                break
+                return
             case Failure.Unauthorized:
                 // TODO: handle HTTP based authorization failure
                 this.session.close()
@@ -215,7 +215,6 @@ export class Gate {
                 return
 
             case Failure.BadMarker:
-                this.notify("Sync Error. Starting fresh")
                 this.marker = null
                 this.session.close()
                 this.session = null

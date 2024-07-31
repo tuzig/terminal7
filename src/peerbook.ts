@@ -355,12 +355,7 @@ export class PeerbookConnection {
         // TODO:gAdd biometrics verification
         while (!validated) {
             console.log("Verifying FP", fp)
-            let otp: string
-            try {
-                otp = await this.shell.askValue(prompt || "Enter OTP to verify gate")
-            } catch(e) {
-                return
-            }
+            const otp = await this.shell.askValue(prompt || "Enter OTP to verify gate")
             try {
                 await this.adminCommand(new ControlMessage("verify", { target: fp, otp: otp }))
                 validated = true

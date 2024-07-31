@@ -192,22 +192,24 @@ async function connectCMD(shell:Shell, args: string[]) {
         shell.t.writeln(`Host not found: ${hostname}`)
         return
     }
+    const native = Capacitor.isNativePlatform()
     const pbOpen = terminal7.pb && terminal7.pb.isOpen()
-    const overPB = pbOpen && gate.fp && (gate.fp.length > 0) && gate.online
+    let overPB = pbOpen && gate.fp && (gate.fp.length > 0) && gate.online
     if (overPB && !gate.verified) {
-        const answer = await shell.askValue("Gate unverified, would you like to verify it?", "y")
-        if (answer == "y" || answer == "Y" || answer == "") {
-            await terminal7.pb.verifyFP(gate.fp)
-        } else {
-            if (Capacitor.isNativePlatform())
+        try {
+            await terminal7.pb.verifyFP(gate.fp, "Unverified peer. Please enter OTP to verify")
+        } catch(e) {
+            if (native) {
                 shell.t.writeln("Falling back to SSH")
+                overPB = false
+            }
             else {
                 shell.t.writeln("Please verify the gate before connecting")
                 return
             }
         }
     }
-    if (Capacitor.isNativePlatform())  {
+    if (native && !overPB)  {
         let dirty = false
         if (!gate.addr) {
             try {
@@ -711,6 +713,12 @@ async function subscribeCMD(shell: Shell) {
     }
     if (!terminal7.pb.isOpen()) {
         if (!Capacitor.isNativePlatform()) {
+            // we can't add a new subscriber on the web.
+            // the user has to buy a subscription from the app store
+            // on the weeb all he can do is login
+            shell.t.writeln("Subscribing is still WIP for web client")
+            shell.t.writeln("If you subscribed on the app, please login")
+            shell.t.writeln("")
             await loginCMD(shell);
             return
         }
@@ -1071,7 +1079,7 @@ async function supportCMD(shell: Shell) {
     }
  }
 async function loginCMD(shell: Shell) {
-    if (terminal7.pb.isOpen()) {
+    if (terminal7.pb?.isOpen()) {
         shell.t.writeln("You are already logged in")
         return
     }

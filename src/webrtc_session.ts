@@ -515,9 +515,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
                     this.fail(Failure.NotSupported)
                 else
                     this.fail()
-            } else
-                return response.data
-            return null
+            }
         }).catch(error => {
             terminal7.log(`FAILED: PATCH to ${this.address} with ${JSON.stringify(this.headers)}`, error)
             if (error.message == 'unauthorized')

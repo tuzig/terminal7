@@ -20,7 +20,6 @@
 	},
 	"packageClassList": [
 		"NativeAudio",
-		"NativeAudio",
 		"AppPlugin",
 		"CAPBrowserPlugin",
 		"CAPCameraPlugin",
@@ -32,12 +31,8 @@
 		"PreferencesPlugin",
 		"StatusBarPlugin",
 		"PurchasesPlugin",
-		"PurchasesPlugin",
-		"NativeBiometric",
 		"NativeBiometric",
 		"CapacitorRateAppPlugin",
-		"CapacitorRateAppPlugin",
-		"SSHPlugin",
 		"SSHPlugin"
 	]
 }
