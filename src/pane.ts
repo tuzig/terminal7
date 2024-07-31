@@ -590,13 +590,14 @@ export class Pane extends Cell {
             f = () => this.t7.dumpLog()
             break
         default:
-            if (ev.key >= "1" && ev.key <= "9") {
-                const win = this.gate.windows[ev.key - 1]
-                if (this.zoomed)
-                    this.toggleZoom()
-                if (win)
-                    win.focus()
-            }
+            if (ev.key >= "1" && ev.key <= "9")
+                f = () => {
+                    const win = this.gate.windows[ev.key - 1]
+                    if (this.zoomed)
+                        this.toggleZoom()
+                    if (win)
+                        win.focus()
+                }
             break
         }
 
