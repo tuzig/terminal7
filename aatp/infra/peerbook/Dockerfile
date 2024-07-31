@@ -13,4 +13,4 @@ RUN go get ./...
 ENV REDIS_HOST=redis:6379
 ENV PB_STATIC_ROOT=/home/peerbook/src/peerbook/html
 EXPOSE 17777
-CMD go run .
+CMD go run . -addr 0.0.0.0:17777
