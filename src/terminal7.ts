@@ -1180,7 +1180,7 @@ export class Terminal7 {
             .then(resp => JSON.parse(resp))
             .then(servers => {
                 this.setIceServers(servers)
-                resolve(this.iceServer)
+                resolve(this.iceServers)
             }).catch(err =>
                 reject("failed to get ice servers " + err.toString())
             )
