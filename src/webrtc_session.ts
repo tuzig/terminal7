@@ -1,6 +1,5 @@
 import { CapacitorHttp, HttpHeaders } from '@capacitor/core'
 import { BaseChannel, BaseSession, Channel, ChannelID, Failure, Marker } from './session'
-import { IceServers } from "./terminal7"
 
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
 type RTCStats = {
