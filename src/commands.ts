@@ -193,7 +193,7 @@ async function connectCMD(shell:Shell, args: string[]) {
         return
     }
     const native = Capacitor.isNativePlatform()
-    const pbOpen = terminal7.pb && terminal7.pb.isOpen()
+    const pbOpen = terminal7.pb?.isOpen()
     let overPB = pbOpen && gate.fp?.length > 0 && gate.online
     if (overPB && !gate.verified) {
         try {
