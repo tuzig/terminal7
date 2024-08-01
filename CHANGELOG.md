@@ -18,6 +18,7 @@ you can now set `font_family` and `font_size`.
 - Handling of unverified hosts
 - Multi client layout sync
 - Fixing the font used in rename and search
+- Handling of out-of-band peerbook answers
 
 ## [1.10.1] - 2024/5/7
 
