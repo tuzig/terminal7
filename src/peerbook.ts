@@ -291,6 +291,7 @@ export class PeerbookConnection {
                             np.count = 1
                         else if (np?.count > terminal7.conf.net.retries) {
                             terminal7.log("Failed to connect to PeerBook")
+                            this.close()
                             reject(failure)
                             return
                         }
