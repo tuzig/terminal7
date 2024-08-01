@@ -396,9 +396,8 @@ export class PeerbookSession extends WebRTCSession {
     async peerAnswer(offer) {
         const sd = new RTCSessionDescription(offer)
         if (this.pc.signalingState == "stable") {
-            terminal7.log("got an answer but we're stable, setting remote description")
-            await this.pc.setLocalDescription(this.offer)
-            terminal7.log("current signaling state", this.pc.signalingState)
+            terminal7.log("got an answer but we're stable, ignoring answer")
+            return
         }
         try {
             await this.pc.setRemoteDescription(sd)

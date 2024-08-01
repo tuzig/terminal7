@@ -105,7 +105,7 @@ insecure=true`)
         await page.reload({ waitUntil: "networkidle" })
         const addBtn = page.locator('[data-test="addButton"]').first()
         await addBtn.click()
-        await sleep(100)
+        await waitForTWROutput(page, "Enter destination", 500)
         await page.keyboard.type("baz:1234")
         await page.keyboard.press("Enter")
         const port = await page.evaluate(async () => {
