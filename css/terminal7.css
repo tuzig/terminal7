@@ -55,7 +55,6 @@ body {
 }
 * {
     box-sizing: border-box; 
-    /* touch-action: none; */
 }
 *:focus { outline: none; } 
 
