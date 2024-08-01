@@ -55,7 +55,6 @@ body {
 }
 * {
     box-sizing: border-box; 
-    touch-action: none;
 }
 *:focus { outline: none; } 
 
@@ -325,6 +324,7 @@ nav::-webkit-scrollbar {
     width: 100%;
     position: absolute;
     z-index: 3;
+    touch-action: none;
 }
 .oneline-box {
     color: var(--text-color);

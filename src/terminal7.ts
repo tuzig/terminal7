@@ -29,7 +29,7 @@ import { RateApp } from 'capacitor-rate-app'
 
 
 import { PeerbookConnection, PB } from './peerbook'
-import { PeerbookSession } from './webrtc_session'
+import { PeerbookSession, ControlMessage } from './webrtc_session'
 import { Failure } from './session'
 import { Cell } from "./cell"
 import { Pane } from "./pane"
@@ -429,7 +429,7 @@ export class Terminal7 {
     async pbConnect(): Promise<void> {
         const statusE = document.getElementById("peerbook-status") as HTMLSpanElement
         // TODO: refactor this to an sync function
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             const callResolve = () => {
                 statusE.style.opacity = "1"
                 resolve()
@@ -437,15 +437,14 @@ export class Terminal7 {
             const callReject = (e, symbol = ERROR_HTML_SYMBOL) => {
                 statusE.style.opacity = "1"
                 statusE.innerHTML = symbol
+                this.pb.close()
                 terminal7.log("pbConnect failed", e)
                 reject(e)
             }
             const catchConnect = (e: string) => {
                 let symbol = LOCK_HTML_SYMBOL
                 if (e =="Unregistered")
-                    this.notify(Capacitor.isNativePlatform()?
-                        `${PB} You need to register, please \`subscribe\``:
-                        `${PB} You need to regisrer, please \`subscribe\` on your tablet`)
+                    this.notify(`${PB} Unregistered, please \`subscribe\``)
 
                 else if (e == Failure.NotSupported) {
                     // TODO: this should be changed to a notification
@@ -454,11 +453,9 @@ export class Terminal7 {
                     console.log("PB not supported")
                 }
                 else if (e != "Unauthorized") {
-                    terminal7.log("PB connect failed", e)
-                    this.notify(Capacitor.isNativePlatform()?
-                        `${PB} Failed to connect, please try \`subscribe\``:
-                        `${PB} Failed to connect, please try \`login\``)
-                    this.notify("If the problem persists, `support`")
+                    this.log("PB connect failed", e)
+                    this.notify(`${PB} Failed to connect, please try \`subscribe\``)
+                    this.notify("If the problem persists, \`support\`")
                     symbol = ERROR_HTML_SYMBOL
                 }
                 callReject(e, symbol)
@@ -689,7 +686,7 @@ export class Terminal7 {
         this.conf.ui.scrollback = this.conf.ui.scrollback || 10000
 
         this.conf.net = this.conf.net || {}
-        this.conf.net.iceServer = this.conf.net.ice_server || []
+        this.conf.net.iceServer = this.conf.net.ice_server || [ "stun:stun2.l.google.com:19302" ]
         this.conf.net.peerbook = this.conf.net.peerbook ||
             "api.peerbook.io"
         if (this.conf.net.peerbook == "pb.terminal7.dev")
@@ -1167,5 +1164,32 @@ export class Terminal7 {
             && ((this.activeG == com)
                 || (this.activeG.activeW==com)
                 || (this.activeG.activeW && (this.activeG.activeW.activeP == com)))
+    }
+    getIceServers(): Promise<IceServers[]> {
+        return new Promise((resolve, reject) => {
+            if (this.iceServers) {
+                resolve(this.iceServers)
+                return
+            }
+            if (!this.pb.session || !this.pb.session.isOpen() ) {
+                this.setIceServers([])
+                resolve(this.iceServers)
+                return
+            }
+            this.pb.session.sendCTRLMsg(new ControlMessage("ice_servers"))
+            .then(resp => JSON.parse(resp))
+            .then(servers => {
+                this.setIceServers(servers)
+                resolve(this.iceServers)
+            }).catch(err =>
+                reject("failed to get ice servers " + err.toString())
+            )
+        })
+    }
+    setIceServers(servers) {
+        const iceServer = this.conf.net.iceServer
+        if (iceServer?.length > 0)
+            servers.unshift({ urls: iceServer })
+        this.iceServers = servers
     }
 }

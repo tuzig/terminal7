@@ -355,12 +355,7 @@ export class PeerbookConnection {
         // TODO:gAdd biometrics verification
         while (!validated) {
             console.log("Verifying FP", fp)
-            let otp: string
-            try {
-                otp = await this.shell.askValue(prompt || "Enter OTP to verify gate")
-            } catch(e) {
-                return
-            }
+            const otp = await this.shell.askValue(prompt || "Enter OTP to verify gate")
             try {
                 await this.adminCommand(new ControlMessage("verify", { target: fp, otp: otp }))
                 validated = true
@@ -439,6 +434,10 @@ export class PeerbookConnection {
         if (m["verified"] !== undefined) {
             if (!m["verified"])
                 this.notify(`Unverified client. Please check you email.`)
+            return
+        }
+        if (m["ice_servers"] !== undefined) {
+            terminal7.setIceServers(m["ice_servers"])
             return
         }
         const fp = m.source_fp

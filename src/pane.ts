@@ -249,7 +249,7 @@ export class Pane extends Cell {
         e.style.borderColor = FOCUSED_BORDER_COLOR
         e.appendChild(te)
         c.appendChild(e)
-        this.w.e.classList.add("hidden")
+        this.gate.e.classList.add("hidden")
         navbar.classList.add("hidden")
         this.styleZoomed(e)
         c.classList.remove("hidden")
@@ -262,7 +262,7 @@ export class Pane extends Cell {
         const terminalE = zoomedPane.removeChild(zoomedPane.firstElementChild)
         if (terminalE) {
             this.e.appendChild(terminalE.firstElementChild)
-            this.w.e.classList.remove("hidden")
+            this.gate.e.classList.remove("hidden")
         }
         zoomedPane.classList.add("hidden")
         navbar.classList.remove("hidden")
@@ -590,13 +590,14 @@ export class Pane extends Cell {
             f = () => this.t7.dumpLog()
             break
         default:
-            if (ev.key >= "1" && ev.key <= "9") {
-                const win = this.gate.windows[ev.key - 1]
-                if (this.zoomed)
-                    this.toggleZoom()
-                if (win)
-                    win.focus()
-            }
+            if (ev.key >= "1" && ev.key <= "9")
+                f = () => {
+                    const win = this.gate.windows[ev.key - 1]
+                    if (this.zoomed)
+                        this.toggleZoom()
+                    if (win)
+                        win.focus()
+                }
             break
         }
 

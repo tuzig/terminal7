@@ -1,6 +1,5 @@
 import { CapacitorHttp, HttpHeaders } from '@capacitor/core'
 import { BaseChannel, BaseSession, Channel, ChannelID, Failure, Marker } from './session'
-import { IceServers } from "./terminal7"
 
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
 type RTCStats = {
@@ -92,18 +91,11 @@ export class WebRTCSession extends BaseSession {
     }
 
     // eslint-disable-next-line
-    async connect(marker?: Marker, noCDC?: boolean | string, privateKey?: string): Promise<void> {
+    async connect(marker?: Marker, noCDC?: boolean | string, privateKey?: string) {
         terminal7.log("in connect", marker, noCDC)
 
-        if (this.t7.iceServers == null) {
-            try {
-                this.t7.iceServers = await this.getIceServers()
-            } catch(e) {
-                this.t7.iceServers = []
-                terminal7.log("error getting iceservers", e)
-            }
-        }
-        this.t7.log("using ice server", JSON.stringify(this.t7.iceServers))
+        const iceServers =  await terminal7.getIceServers()
+        this.t7.log("using ice server", JSON.stringify(iceServers))
         try {
             await this.t7.getFingerprint()
         } catch (e) {
@@ -112,7 +104,7 @@ export class WebRTCSession extends BaseSession {
             return
         }
         this.pc = new RTCPeerConnection({
-            iceServers: this.t7.iceServers,
+            iceServers: iceServers,
             certificates: this.t7.certificates})
         this.pc.onconnectionstatechange = () => {
             if (!this.pc)
@@ -337,39 +329,6 @@ export class WebRTCSession extends BaseSession {
             this.pc = null
         }
     }
-    getIceServers(): Promise<IceServers[]> {
-        return new Promise((resolve, reject) => {
-            const ctrl = new AbortController(),
-                  tId = setTimeout(() => ctrl.abort(), 1000),
-                  insecure = this.t7.conf.peerbook.insecure,
-                  schema = insecure?"http":"https"
-
-            fetch(`${schema}://${this.t7.conf.net.peerbook}/turn`,
-                  {method: 'POST', signal: ctrl.signal })
-            .then(response => {
-                if (!response.ok)
-                    return null
-                else
-                    return response.json()
-            }).then(servers => {
-                clearTimeout(tId)
-                if (!servers) {
-                    reject("failed to get ice servers")
-                    return
-                }
-                // return an array with the conf's server and subspace's
-                const iceServer = this.t7.conf.net.iceServer
-                if (iceServer?.length > 0)
-                    servers.unshift({ urls: iceServer })
-                resolve(servers)
-
-            }).catch(err => {
-                clearTimeout(tId)
-                reject("failed to get ice servers " + err.toString())
-                return
-            })
-        })
-    }
     async getStats(): Promise<RTCStats | null> {
         const stats = await this.pc.getStats()
         let candidatePair
@@ -555,9 +514,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
                     this.fail(Failure.NotSupported)
                 else
                     this.fail()
-            } else
-                return response.data
-            return null
+            }
         }).catch(error => {
             terminal7.log(`FAILED: PATCH to ${this.address} with ${JSON.stringify(this.headers)}`, error)
             if (error.message == 'unauthorized')
