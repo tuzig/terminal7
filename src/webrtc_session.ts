@@ -201,7 +201,7 @@ export class WebRTCSession extends BaseSession {
                 msg = new ControlMessage("reconnect_pane", { id: cmdorid })
             }
             const watchdog = setTimeout(() => reject("timeout"), this.t7.conf.net.timeout)
-            this.sendCTRLMsg(msg)
+            this.sendCTRLMsg(msg).catch(reject)
             this.pendingChannels[msg.message_id] = (dc: RTCDataChannel, id: ChannelID) => {
                 clearTimeout(watchdog)
                 const channel = this.onDCOpened(dc, id)
