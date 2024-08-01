@@ -141,10 +141,12 @@ export class Pane extends Cell {
         this.t.loadAddon(this.imageAddon)
 
         const webGLAddon = new WebglAddon()
+        /* Not capturing context loss as we do it in TWR
         webGLAddon.onContextLoss(() => {
             terminal7.log("lost context")
             webGLAddon.dispose()
         })
+        */
 
         this.createDividers()
         this.t.onSelectionChange(() => this.selectionChanged())

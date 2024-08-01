@@ -48,6 +48,7 @@ export class T7Map {
     ttyWait: number
     shell: Shell
     fitAddon: FitAddon
+    webGLAddon: WebglAddon
 
     open(): Promise<void> {
         return new Promise(resolve => {
@@ -105,15 +106,13 @@ export class T7Map {
                 ev.preventDefault()
             })
             this.t0.onData(d =>  this.shell.onTWRData(d))
-            const webGLAddon = new WebglAddon()
-            webGLAddon.onContextLoss(() => {
-                console.log("lost context")
-                webGLAddon.dispose()
-                this.t0.loadAddon(webGLAddon)
-            })
+            this.webGLAddon = new WebglAddon()
+            this.webGLAddon.onContextLoss(() => this.outOfMemory())
             try {
-                this.t0.loadAddon(webGLAddon)
-            } catch (e) { console.log("no webgl: ",e) }
+                this.t0.loadAddon(this.webGLAddon)
+            } catch (e) { 
+                terminal7.notify("WebGL not supported, using fallback")
+            }
             openEmulator(e, this.t0).finally(() => {
                 if (Capacitor.getPlatform() === "android") {
                     // hack for android spacebar & virtual keyboard
@@ -342,4 +341,14 @@ export class T7Map {
             this.shell.printPrompt()
         }
     }
+    outOfMemory() {
+        console.log("lost context")
+        this.webGLAddon.dispose()
+        terminal7.gates.forEach(g => g.close())
+        this.webGLAddon = new WebglAddon()
+        this.t0.loadAddon(this.webGLAddon)
+        this.webGLAddon.onContextLoss(() => this.outOfMemory())
+        terminal7.notify("App out of memory, closed all gates.")
+    }
+
 }
