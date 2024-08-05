@@ -255,6 +255,7 @@ async function connectCMD(shell:Shell, args: string[]) {
         terminal7.activeG.blur()
     }
     terminal7.activeG = gate
+    gate.fitScreen = true
     gate.connect(async () => {
         shell.stopWatchdog()
         if (gate.firstConnection) {

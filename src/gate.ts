@@ -368,19 +368,12 @@ export class Gate {
         terminal7.log("in setLayout", state)
         this.lastState = state
         const winLen = this.windows.length
-        const container = this.e.querySelector(".windows-container") as HTMLDivElement
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
             // create the first window and pane
             this.t7.log("Fresh state, creating the first pane")
             this.clear()
-            this.fitScreen = true
             this.activeW = this.addWindow("", true)
         } else {
-            try {
-                this.fitScreen = (container.clientWidth == state.width) && (container.clientHeight == state.height)
-            } catch(e) {
-                this.fitScreen = true
-            }
             if (winLen > 0) {
                 this.t7.log("Restoring to an existing layout")
                 if (this.activeW?.activeP?.zoomed)
@@ -650,7 +643,10 @@ export class Gate {
             let session: WebRTCSession = this.session
             switch (msg.type) {
                 case "set_payload":
-                    this.setLayout(msg.args["payload"])
+                    const layout = msg.args["payload"]
+                    const container = this.e.querySelector(".windows-container") as HTMLDivElement
+                    this.fitScreen = (container.clientWidth == layout.width) && (container.clientHeight == layout.height)
+                    this.setLayout(layout)
                     break
                 case "get_clipboard":
                     Clipboard.read().then(cb => {
