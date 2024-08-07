@@ -258,32 +258,35 @@ export class PeerbookConnection {
                 session.sendCTRLMsg(params.firstMsg).then(() => resolve).catch(reject)
             session.onStateChange = (state, failure?) => {
                 terminal7.log("New PB connection state", state, failure)
-                if (state == 'connected') {
-                    // send a ping to get the uid
-                    this.getUID().then(uid => {
-                        if (uid == "TBD") {
-                            terminal7.log("Got TBD as uid")
-                            reject("Unregistered")
-                        } else {
-                            terminal7.run(() => Purchases.logIn({ appUserID: uid }), 10)
-                            resolve()
-                        }
-                    }).catch(e => {
+                switch (state) {
+                    case 'connected':
+                        // send a ping to get the uid
+                        this.getUID().then(uid => {
+                            if (uid == "TBD") {
+                                terminal7.log("Got TBD as uid")
+                                reject("Unregistered")
+                            } else {
+                                terminal7.run(() => Purchases.logIn({ appUserID: uid }), 10)
+                                resolve()
+                            }
+                        }).catch(e => {
+                            this.session = null
+                            terminal7.log("Failed to get user id", e.toString())
+                            reject(e)
+                        }).finally(() => this.stopSpinner())
+                        break
+                    case 'disconnected':
+                    case 'failed':
+                    case 'closed':
+                        if (this.session)
+                            this.session.close()
                         this.session = null
-                        terminal7.log("Failed to get user id", e.toString())
-                        reject(e)
-                    }).finally(() => this.stopSpinner())
-                    return
-                }
-                else if (state == 'disconnected' || state == 'failed' || state == 'closed') {
-                    if (this.session)
-                        this.session.close()
-                    this.session = null
-                    this.stopSpinner()
-                    terminal7.log("PB webrtc connection failed", failure, this.uid)
-                    if (failure == Failure.Unauthorized) {
-                        reject(failure)
-                    } else {
+                        this.stopSpinner()
+                        terminal7.log("PB webrtc connection failed", failure, this.uid)
+                        if ((failure == Failure.Unauthorized)) { //  || (failure == Failure.Unsupported)) {
+                            reject(failure)
+                            return
+                        }
                         let np: ConnectParams = {}
                         if (params)
                             np = {...params}
@@ -300,8 +303,7 @@ export class PeerbookConnection {
                             np.count++
                             this.connect(np).then(resolve).catch(reject)
                         }, 100)
-                    }
-                    return
+                        break
                 }
             }
             session.onCMD = (msg) => this.onMessage(msg)
