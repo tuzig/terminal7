@@ -1197,8 +1197,12 @@ export class Terminal7 {
     }
     setIceServers(servers) {
         const iceServer = this.conf.net.iceServer
-        if (iceServer?.length > 0)
-            servers.unshift({ urls: iceServer })
+        if (iceServer?.length > 0) {
+            if (servers && servers.length > 0)
+                servers.unshift({ urls: iceServer })
+            else
+                servers = [{ urls: iceServer }]
+        }
         this.iceServers = servers
     }
 }
