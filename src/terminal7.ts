@@ -76,6 +76,7 @@ If you are a PeerBook subscriber, please \`login\`.
 `  + WELCOME_FOOTER
 
 // DEFAULT_DOTFILE is the default configuration file for Terminal7
+const DEFAULT_PB_HOST = "api.peerbook.io"
 export const DEFAULT_DOTFILE = `# Terminal7's configurations file
 [theme]
 # foreground = "#00FAFA"
@@ -451,10 +452,20 @@ export class Terminal7 {
                     // after we upgrade peerbook
                     symbol = "🚱"
                     console.log("PB not supported")
+                    const pbHost = this.conf.net.peerbook
+                    if (pbHost == DEFAULT_PB_HOST) {
+                        this.notify(`${PB} Failed to connect, please try again later`)
+                    } else {
+                        const url = (this.conf.peerbook.insecure ? "http://" : "https://") + pbHost
+                        this.notify(`${PB} Failed to connect to server at:`)
+                        this.notify(`    ${url}`)
+                    }
+                    this.notify("If the problem persists, please \`support\`")
+
                 }
                 else if (e != "Unauthorized") {
                     this.log("PB connect failed", e)
-                    this.notify(`${PB} Failed to connect, please try \`subscribe\``)
+                    this.notify(`${PB} Failed to connect, please try again later`)
                     this.notify("If the problem persists, \`support\`")
                     symbol = ERROR_HTML_SYMBOL
                 }
@@ -647,14 +658,15 @@ export class Terminal7 {
                 this.notify("🌞 Reconnecting")
                 this.map.shell.startWatchdog().catch(() => {
                     if (this.pb.isOpen())
-                        gate.notify("Timed out")
+                        gate.notify("Timed out, please try again")
                     else
                         this.notify(`${PB} timed out, retrying...`)
+                    this.map.shell.printPrompt()
                 })
                 try {
                     await gate.reconnect()
                 } catch(e) {
-                    console.log("recoonect failed", e)
+                    this.notify("Reconnect failed")
                     this.map.shell.runCommand("reset", [gate.name])
                 } finally {
                         this.recovering = false
@@ -688,10 +700,7 @@ export class Terminal7 {
         this.conf.net = this.conf.net || {}
         this.conf.net.iceServer = this.conf.net.ice_server || [ "stun:stun2.l.google.com:19302" ]
         this.conf.net.peerbook = this.conf.net.peerbook ||
-            "api.peerbook.io"
-        if (this.conf.net.peerbook == "pb.terminal7.dev")
-            terminal7.notify(`\uD83D\uDCD6 Your setting include an old peerbook addres.<br/>
-                              Please click <i class="f7-icons">gear</i> and change net.peerbook to "api.peerbook.io"`)
+            DEFAULT_PB_HOST
         this.conf.net.timeout = this.conf.net.timeout || 5000
         this.conf.net.retries = this.conf.net.retries || 3
         this.conf.net.recoveryTime = this.conf.net.recovery_time || 4000
