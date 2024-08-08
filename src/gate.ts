@@ -199,8 +199,7 @@ export class Gate {
                 await this.sshPassConnect()
                 return
             case Failure.BadRemoteDescription:
-                terminal7.pbClose()
-                this.notify("Connection Sync Error. Retrying")
+                this.notify("Connection Sync Error")
                 break
             case Failure.NotImplemented:
                 this.session.close()

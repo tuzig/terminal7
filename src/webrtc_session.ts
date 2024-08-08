@@ -147,13 +147,13 @@ export class WebRTCSession extends BaseSession {
         if (noCDC)
             return
 
+        await this.openCDC()
         if (marker != null) {
             this.sendCTRLMsg(new ControlMessage("restore", { marker })).then(
                 () => this.onStateChange("connected")).catch(
                 () => this.onStateChange("failed", Failure.BadMarker)
             )
         }
-        await this.openCDC()
     }
     isOpen(): boolean {
         return this.pc != null && this.pc.connectionState == "connected"
@@ -369,7 +369,7 @@ export class PeerbookSession extends WebRTCSession {
         }
     }
     async onNegotiationNeeded(e) {
-        terminal7.log("on negotiation needed", e)
+        terminal7.log("gate needs negotiation", this.fp)
         let d: RTCSessionDescriptionInit
         try {
             d = await this.pc.createOffer()
@@ -380,7 +380,7 @@ export class PeerbookSession extends WebRTCSession {
         }
         const pb = terminal7.pb
         if (pb?.session)
-            this.pc.setLocalDescription(d)
+            await this.pc.setLocalDescription(d)
         else
            this.offer = d
 
@@ -396,7 +396,8 @@ export class PeerbookSession extends WebRTCSession {
     async peerAnswer(offer) {
         const sd = new RTCSessionDescription(offer)
         if (this.pc.signalingState == "stable") {
-            terminal7.log("got an answer but we're stable, ignoring answer")
+            terminal7.log("got an answer but signla're stable, ignoring answer")
+            this.onStateChange("failed", Failure.BadRemoteDescription)
             return
         }
         try {

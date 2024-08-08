@@ -29,7 +29,7 @@ import { RateApp } from 'capacitor-rate-app'
 
 
 import { PeerbookConnection, PB } from './peerbook'
-import { PeerbookSession, ControlMessage } from './webrtc_session'
+import { ControlMessage } from './webrtc_session'
 import { Failure } from './session'
 import { Cell } from "./cell"
 import { Pane } from "./pane"
@@ -220,12 +220,18 @@ export class Terminal7 {
             return
         }
         if (!active)
-            this.updateNetworkStatus({connected: false}, false)
+            this.updateNetworkStatus({connected: false}, false).finally(() =>
+                this.recovering = true)
+
         else {
             // We're back! puts us in recovery mode so that it'll
             // quietly reconnect to the active gate on failure
             this.clearTimeouts()
-            Network.getStatus().then(s => this.updateNetworkStatus(s))
+            Network.getStatus().then(async s => await this.updateNetworkStatus(s))
+                               .finally(() => {
+                this.log("recoverd and updated network status")
+                this.recovering = false
+                               })
         }
     }
     /*
@@ -669,13 +675,13 @@ export class Terminal7 {
                     this.notify("Reconnect failed")
                     this.map.shell.runCommand("reset", [gate.name])
                 } finally {
-                        this.recovering = false
-                        this.map.shell.stopWatchdog()
-                        this.map.shell.printPrompt()
+                    this.log("Reconnect done")
+                    this.map.shell.stopWatchdog()
+                    this.map.shell.printPrompt()
                 }
             }
         } else {
-            this.disengage().finally(() => this.recovering = true)
+            await this.disengage()
         }
     }
     loadConf(conf) {
@@ -872,70 +878,6 @@ export class Terminal7 {
         return modifierKeyPrefix
     }
 
-    // handle incomming peerbook messages (coming over sebsocket)
-    async onPBMessage(m) {
-        const statusE = document.getElementById("peerbook-status")
-        this.log("got pb message", m)
-        if (m["code"] !== undefined) {
-            if (m["code"] == 200) {
-                statusE.innerHTML = OPEN_HTML_SYMBOL
-                this.pb.uid = m["text"]
-            } else
-                // TODO: update statusE
-                this.notify(`\uD83D\uDCD6  ${m["text"]}`)
-            return
-        }
-        if (m["peers"] !== undefined) {
-            this.gates = this.pb.syncPeers(this.gates, m.peers)
-            this.map.refresh()
-            return
-        }
-        if (m["verified"] !== undefined) {
-            if (!m["verified"])
-                this.notify("\uD83D\uDCD6 UNVERIFIED. Please check you email.")
-            return
-        }
-        const fp = m.source_fp
-        // look for a gate where g.fp == fp
-        const myFP = await this.getFingerprint()
-        if (fp == myFP) {
-            return
-        }
-        let lookup =  this.gates.filter(g => g.fp == fp)
-
-        if (!lookup || (lookup.length != 1)) {
-            if (m["peer_update"] !== undefined) {
-                lookup =  this.gates.filter(g => g.name == m.peer_update.name)
-            }
-            if (!lookup || (lookup.length != 1)) {
-                terminal7.log("Got a pb message with unknown peer: ", fp)
-                return
-            }
-        }
-        const g = lookup[0]
-
-        if (m["peer_update"] !== undefined) {
-            g.online = m.peer_update.online
-            g.verified = m.peer_update.verified
-            g.fp = m.source_fp
-            await g.updateNameE()
-            return
-        }
-        if (!g.session) {
-            console.log("session is close ignoring message", m)
-            return
-        }
-        const session = g.session as PeerbookSession
-        if (m.candidate !== undefined) {
-            session.peerCandidate(m.candidate)
-            return
-        }
-        if (m.answer !== undefined ) {
-            const answer = JSON.parse(atob(m.answer))
-            session.peerAnswer(answer)
-            return
-        }
-    }
     log(...args) {
         let line = ""
         args.forEach(a => line += JSON.stringify(a) + " ")
