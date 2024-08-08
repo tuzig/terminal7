@@ -324,7 +324,7 @@ export class PeerbookConnection {
         }
     }
     isOpen() {
-        return (this.session && this.session.isOpen())
+        return (this.session?.isOpen())
     }
     syncPeers(gates: Array<Gate>, nPeers: Array<Peer>) {
         const ret = []
