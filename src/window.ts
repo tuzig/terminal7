@@ -61,6 +61,7 @@ export class Window {
         interact(this.nameE)
             .on("tap", ev => {
                 this.focus()
+                this.gate.sendState()
                 ev.preventDefault()
                 ev.stopPropagation()
             })
