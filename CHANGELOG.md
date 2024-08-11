@@ -15,6 +15,7 @@ you can now set `font_family` and `font_size`.
 
 ### Fixed
 
+- CMD-[1-9] in the web now switches to the corresponding tab
 - Handling of unverified hosts
 - Multi client layout sync
 - Fixing the font used in rename and search

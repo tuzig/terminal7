@@ -117,10 +117,6 @@ export class Gate {
             })
             t.querySelector(".add-tab").addEventListener(
                 'click', () => this.newTab())
-            /* TODO: handle the bang
-            let b = t.querySelector(".bang")
-            b.addEventListener('click', (e) => {new window from active pane})
-            */
             this.e.appendChild(t)
         }
     }
@@ -171,10 +167,8 @@ export class Gate {
             this.notify(`🥂  over ${this.session.isSSH?"SSH":"WebRTC"}`)
             this.setIndicatorColor("unset")
             this.map.shell.stopWatchdog()
-            // first onConnected is special if it's a new gate but once
-            // connected, we're back to loading the gate
+            this.load()
             this.onConnected()
-            this.onConnected = this.load
         } else if (state == "disconnected") {
             // TODO: add warn class
             this.lastDisconnect = Date.now()
@@ -217,7 +211,7 @@ export class Gate {
                 this.marker = null
                 this.session.close()
                 this.session = null
-                this.connect(this.onConnected)
+                await this.connect()
                 return
 
             case Failure.DataChannelLost:
@@ -256,24 +250,22 @@ export class Gate {
     reconnect(): Promise<void> {
         if (!this.session)
             return this.connect()
-        if (++this.reconnectCount == terminal7.conf.net.retries) {
-            this.notify(`Reconnect failed after ${this.reconnectCount} attempts`)
-            return Promise.reject("reconnect failed")
-        }
         this.connectionFailed = false
         const isSSH = this.session.isSSH
         const isNative = Capacitor.isNativePlatform()
         return new Promise((resolve, reject) => {
-            const handleLauout = (layout) => {
+            if (++this.reconnectCount >= terminal7.conf.net.retries) {
+                this.notify(`Reconnect failed after ${this.reconnectCount} attempts`)
+                return reject("reconnect failed")
+            }
+            const finish = (layout) => {
                 this.setLayout(JSON.parse(layout as string) as ServerPayload)
                 resolve()
             }
             if (!isSSH && !isNative) {
                 this.session.reconnect(this.marker)
-                .then(layout => {
-                    handleLauout(layout)
-                     resolve()
-                }).catch(() => {
+                .then(layout => finish(layout)
+                ).catch(() => {
                     if (this.session) {
                         this.session.close()
                         this.session = null
@@ -283,26 +275,26 @@ export class Gate {
                 })
                 return
             }
-            const closeSessionAndDisconnect = () => {
+            const closeSessionAndDisconnect = (e) => {
                 if (this.session && !this.session.isSSH) {
                     this.session.close()
                     this.session = null
                 }
                 this.t7.log("reconnect failed, calling the shell to handle it", isSSH)
-                this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
+                reject(e)
+                // this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
             }
             this.t7.readId().then(({publicKey, privateKey}) => {
                 this.session.reconnect(this.marker, publicKey, privateKey)
-                .then(layout => handleLauout(layout))
-                .catch(() => {
-                    closeSessionAndDisconnect()
+                .then(layout => finish(layout))
+                .catch(e => {
+                    closeSessionAndDisconnect(e)
                     return
                 })
-            }).catch((e) => {
+            }).catch(e => {
                 this.t7.log("failed to read id", e)
-                closeSessionAndDisconnect()
+                closeSessionAndDisconnect(e)
                 this.t7.log("reconnect failed, calling the shell to handle it", isSSH, e)
-                reject(e)
             })
         })
     }
@@ -320,27 +312,26 @@ export class Gate {
     /*
      * connect connects to the gate
      */
-    async connect(onConnected = () => this.load()) {
-        
-        this.onConnected = onConnected
-        this.connectionFailed = false
-        document.title = `${this.name} :: Terminal7`
-        
-        if (this.session) {
-            // TODO: check session's status
-            this.reconnectCount=0
-            onConnected()
-            return
-        }
-        try {
-            await this.completeConnect()
-        } catch(e) {
-            this.notify(`${PB} Connection failed: ${e}`)
-            return
-        } finally {
-            this.reconnectCount=0
-            this.updateNameE()
-        }
+    connect(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.connectionFailed = false
+            document.title = `${this.name} :: Terminal7`
+            
+            if (this.session) {
+                // TODO: check session's status
+                this.reconnectCount=0
+                resolve()
+                return
+            }
+            this.onConnected = resolve
+            this.completeConnect().catch(e => {
+                this.notify(`Connection failed: ${e}`)
+                reject(e)
+            }).finally(() => {
+                this.reconnectCount=0
+                this.updateNameE()
+            })
+        })
     }
 
     notify(message) {

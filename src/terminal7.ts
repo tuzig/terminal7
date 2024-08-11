@@ -397,7 +397,7 @@ export class Terminal7 {
         textbox.addEventListener('change', renameHandler)
     }
 
-    /*
+    /* FFU
      * restoreState is a future feature that uses local storage to restore
      * terminal7 to it's last state
      */
@@ -677,7 +677,6 @@ export class Terminal7 {
                 } finally {
                     this.log("Reconnect done")
                     this.map.shell.stopWatchdog()
-                    this.map.shell.printPrompt()
                 }
             }
         } else {

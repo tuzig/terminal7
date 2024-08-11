@@ -256,67 +256,73 @@ async function connectCMD(shell:Shell, args: string[]) {
     }
     terminal7.activeG = gate
     gate.fitScreen = true
-    gate.connect(async () => {
+    try {
+        await gate.connect()
+    } catch(e) {
+        gate.notify("Failed to connect")
+        gate.notify("Please try again and if it keeps failing, `support`")
+        return
+    } finally {
         shell.stopWatchdog()
-        if (gate.firstConnection) {
-            if (!gate.name) {
-                const fields: Fields = [{
-                    prompt: "Gate's name",
-                    validator: (a) => gate.t7.validateHostName(a),
-                    default: gate.addr,
-                }]
-                const res = await shell.runForm(fields, "text")
-                const name = res[0]
-                gate.name = name
-            }
-            gate.verified = true
-            gate.updateNameE()
-            gate.store = true
-            gate.firstConnection = false
-            await terminal7.storeGates()
+    }
+    if (gate.firstConnection) {
+        if (!gate.name) {
+            const fields: Fields = [{
+                prompt: "Gate's name",
+                validator: (a) => gate.t7.validateHostName(a),
+                default: gate.addr,
+            }]
+            const res = await shell.runForm(fields, "text")
+            const name = res[0]
+            gate.name = name
         }
-        let clipboardFilled = false
-        if (gate.keyRejected && !overPB) {
-            const keyForm = [
-                { prompt: "Just let me in" },
-                { prompt: "Copy command to clipboard" },
-            ]
-            let publicKey = ""  
+        gate.verified = true
+        gate.updateNameE()
+        gate.store = true
+        gate.firstConnection = false
+        await terminal7.storeGates()
+    }
+    let clipboardFilled = false
+    if (gate.keyRejected && !overPB) {
+        const keyForm = [
+            { prompt: "Just let me in" },
+            { prompt: "Copy command to clipboard" },
+        ]
+        let publicKey = ""  
+        try {
+            publicKey = (await terminal7.readId()).publicKey
+        } catch (e) {
+            terminal7.log("oops readId failed")
+        }
+        if (publicKey) {
+            const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
+            shell.t.writeln(`\n To use the 🔑 instead of password run:\n\n\x1B[1m${cmd}\x1B[0m\n`)
+            let res = ""
             try {
-                publicKey = (await terminal7.readId()).publicKey
-            } catch (e) {
-                terminal7.log("oops readId failed")
-            }
-            if (publicKey) {
-                const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
-                shell.t.writeln(`\n To use the 🔑 instead of password run:\n\n\x1B[1m${cmd}\x1B[0m\n`)
-                let res = ""
-                try {
-                    res = await shell.runForm(keyForm, "menu")
-                } catch (e) {}
-                switch(res) {
-                    case "Copy command to clipboard":
-                        Clipboard.write({ string: cmd })
-                        clipboardFilled = true
-                        break
-                }
-            }
-        } 
-        if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH && pbOpen) {
-            let toConnect: boolean
-            try {
-                toConnect = await shell.offerInstall(gate)
-            } catch (e) {
-                toConnect = true
-            }
-            if (!toConnect) {
-                gate.close()
-                done = true
-                return
+                res = await shell.runForm(keyForm, "menu")
+            } catch (e) {}
+            switch(res) {
+                case "Copy command to clipboard":
+                    Clipboard.write({ string: cmd })
+                    clipboardFilled = true
+                    break
             }
         }
-        gate.load()
-        Preferences.get({key: "first_gate"}).then(v => {
+    } 
+    if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH && pbOpen) {
+        let toConnect: boolean
+        try {
+            toConnect = await shell.offerInstall(gate)
+        } catch (e) {
+            toConnect = true
+        }
+        if (!toConnect) {
+            gate.close()
+            done = true
+            return
+        }
+    }
+    Preferences.get({key: "first_gate"}).then(v => {
             if (v.value != "nope")
                 setTimeout(() => {
                     Preferences.set({key: "first_gate", value: "nope"})
@@ -324,7 +330,6 @@ async function connectCMD(shell:Shell, args: string[]) {
                 }, 200)
         })
         done = true
-    })
     terminal7.ignoreAppEvents = true
     while (!done) {
         await new Promise(r => setTimeout(r, 100))

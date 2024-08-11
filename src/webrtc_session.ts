@@ -113,8 +113,7 @@ export class WebRTCSession extends BaseSession {
             terminal7.log("new connection state", state, marker)
             if (state === 'failed')
                 this.closeChannels()
-            if ((state !== "connected") || (marker == null))
-                this.onStateChange(state)
+            this.onStateChange(state)
         }
         this.pc.onicecandidateerror = (ev: RTCPeerConnectionIceErrorEvent) => {
             terminal7.log("icecandidate error", ev.errorCode, ev.errorText)
@@ -392,6 +391,7 @@ export class PeerbookSession extends WebRTCSession {
             this.onStateChange("failed", e)
             return
         }
+        terminal7.log("sent offer, current state", this.pc.signalingState)
     }
     async peerAnswer(offer) {
         const sd = new RTCSessionDescription(offer)
