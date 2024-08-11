@@ -343,7 +343,7 @@ export class PeerbookConnection {
                 gate = new Gate(p)
                 gate.id = ret.length
                 gate.nameE = terminal7.map.add(gate)
-                gate.open(terminal7.e)
+                gate.open(document.getElementById("gates-container"))
                 ret.push(gate)
             }
             for (const k in p) {
