@@ -213,8 +213,6 @@ export class Shell {
         this.stopWatchdog()
         if (terminal7.activeG)
             terminal7.activeG.onFailure(Failure.Overrun)
-        await new Promise(r => setTimeout(r, 100))
-        this.printPrompt()
     }
     
     onTWRData(data: string) {
@@ -323,10 +321,12 @@ export class Shell {
     }
 
     stopWatchdog() {
-        if (!this.watchdog) return
-        clearTimeout(this.watchdog)
-        this.watchdog = 0
-        this.stopHourglass()
+        if (this.watchdog) {
+            clearTimeout(this.watchdog)
+            this.watchdog = 0
+            this.stopHourglass()
+        }
+        this.map.shell.printPrompt()
     }
 
     startHourglass(timeout: number) {
@@ -455,7 +455,7 @@ export class Shell {
      * onDisconnect is called when a gate disconnects.
      */
     async onDisconnect(gate: Gate, wasSSH?: boolean, failure?: Failure) {
-        terminal7.log("onDisconnect", gate.name, wasSSH, gate.firstConnection)
+        terminal7.log("onDisconnect", gate.name, wasSSH, terminal7.recovering)
         this.stopWatchdog()
         if (wasSSH) {
             this.escapeActiveForm()
@@ -478,8 +478,10 @@ export class Shell {
             this.printPrompt()
             return
         } 
-        if (!terminal7.netConnected)
+        if (!terminal7.netConnected) {
+            terminal7.log("onDisconnect: net not connected")
             return
+        }
 
         if (failure == Failure.PBFailed)
             terminal7.notify(`${PB} Connection failed`)
