@@ -510,7 +510,11 @@ export class Shell {
             return
 
         }
-        gate.notify("❌  Connection failed")
+        if (failure == Failure.TimedOut)
+            // hourglass emojy: 🍒
+            gate.notify("🍒 Connection timed out")
+        else
+            gate.notify("❌ Connect failed")
         if (gate.firstConnection) {
             this.onFirstConnectionDisconnect(gate)
             return

@@ -262,6 +262,7 @@ export class PeerbookConnection {
                     case 'connected':
                         // send a ping to get the uid
                         this.getUID().then(uid => {
+                            this.notify("🥂 over WebRTC")
                             if (uid == "TBD") {
                                 terminal7.log("Got TBD as uid")
                                 reject("Unregistered")
@@ -343,7 +344,7 @@ export class PeerbookConnection {
                 gate = new Gate(p)
                 gate.id = ret.length
                 gate.nameE = terminal7.map.add(gate)
-                gate.open(document.getElementById("gates-container"))
+                gate.open(terminal7.e.querySelector(".gates-container"))
                 ret.push(gate)
             }
             for (const k in p) {
