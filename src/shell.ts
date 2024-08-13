@@ -478,10 +478,12 @@ export class Shell {
             this.printPrompt()
             return
         } 
+        /*
         if (!terminal7.netConnected) {
             terminal7.log("onDisconnect: net not connected")
             return
         }
+        */
 
         if (failure == Failure.PBFailed)
             terminal7.notify(`${PB} Connection failed`)
@@ -493,20 +495,19 @@ export class Shell {
 
         if (terminal7.recovering) {
             terminal7.log("retrying...")
-            this.startWatchdog(terminal7.conf.net.timeout).catch(e => gate.handleFailure(e))
+            // this.startWatchdog(terminal7.conf.net.timeout).catch(e => gate.handleFailure(e))
             try {
                 await gate.reconnect()
-                return
             } catch (e) {
                 terminal7.log("reconnect failed", e)
                 if (e == Failure.Unauthorized) {
                     terminal7.pb.notify("Unauthorized, please `subscribe`")
                     return
                 }
-            } finally {
-                terminal7.recovering = false
+            } /* finally {
+                erminal7.recovering = false
                 this.stopWatchdog()
-            }
+            } */
             return
 
         }
