@@ -264,8 +264,8 @@ export class Gate {
             }
             if (!isSSH && !isNative) {
                 this.session.reconnect(this.marker)
-                .then(layout => finish(layout)
-                ).catch(() => {
+                .then(layout => finish(layout))
+                .catch(() => {
                     if (this.session) {
                         this.session.close()
                         this.session = null
@@ -391,17 +391,13 @@ export class Gate {
             this.panes().forEach((p, i) => {
                 if (p.d) {
                     if (p.needsResize && this.fitScreen) {
-                    // TODO: fix webexec so there's no need for this
                         this.t7.run(() => p.d.resize(p.t.cols, p.t.rows), i*10)
                         p.needsResize = false
                     }
                 } else
                     foundNull = true
             })
-            if (!foundNull) {
-                this.t7.log(`${this.name} is boarding`)
-                this.updateNameE()
-            }
+            this.updateNameE()
         }, 400)
         this.scaleContainer(state?.width, state?.height)
         this.focus()

@@ -1253,15 +1253,17 @@ export class Pane extends Cell {
 
         interact(e)
         .on("tap", () => {
-                if (this.w.activeP == this)
-                    return
-                this.focus()
-                this.gate.sendState()
+            terminal7.map.showLog(false)
+            if (this.w.activeP == this)
+                return
+            this.focus()
+            this.gate.sendState()
         })
         .on("doubletap", (ev) => {
-                this.toggleZoom()
-                ev.preventDefault()
-                ev.stopPropagation()
+            terminal7.map.showLog(false)
+            this.toggleZoom()
+            ev.preventDefault()
+            ev.stopPropagation()
         })
         .gesturable({
             listeners: {
