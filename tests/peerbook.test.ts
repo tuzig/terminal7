@@ -23,9 +23,13 @@ describe("peerbook interface", function() {
             updateNameE: vi.fn(),
         }
         beforeAll(() => {
+            const t7E = document.createElement("div"),
+                  gContainer = document.createElement("div")
+            gContainer.classList.add("gates-container")
+            t7E.appendChild(gContainer)
             window.terminal7 = {
                 map: { add: vi.fn() },
-                e: document.createElement("div")
+                e: t7E,
             }
         })
         it ("doesn't change on empty peers", () => {

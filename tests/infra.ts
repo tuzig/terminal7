@@ -41,7 +41,12 @@ export class Terminal7Mock extends Terminal7 {
         window.ResizeObserver = resizeObs
         
         document.body.innerHTML = `
-<div id='t7'></div>
+<div id='t7'>
+<div class="gates-container">
+    <!-- TODO: change id to class -->
+    <div id="active-gate-stats" class="gate-stats">
+</div>
+</div>
 <div id="navbar"></div>
 <div id='map'>
     <div id='log-minimized'></div>
@@ -49,9 +54,6 @@ export class Terminal7Mock extends Terminal7 {
         <div id='add-gate'></div>
     </div>
 </div>
-<div id="gates-container">
-    <div id="active-gate-stats" class="gate-stats">
-    </div>
 <div>
 <div id="zoomed-pane"></div>
 <div id='log'><div id="t0"><div id="capslock-indicator"></div></div></div>

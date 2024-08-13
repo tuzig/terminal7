@@ -367,7 +367,7 @@ export class PeerbookSession extends WebRTCSession {
             terminal7.log("ignoring ice candidate", JSON.stringify(ev.candidate))
         }
     }
-    async onNegotiationNeeded(e) {
+    async onNegotiationNeeded() {
         terminal7.log("gate needs negotiation", this.fp)
         let d: RTCSessionDescriptionInit
         try {

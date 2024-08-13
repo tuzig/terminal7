@@ -8,7 +8,6 @@
 import { Pane } from './pane'
 import { T7Map } from './map'
 import { Failure, Session, Marker } from './session'
-import { PB } from './peerbook'
 import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
 
@@ -127,7 +126,7 @@ export class Gate {
 		this.map.remove(this)
     }
     focus() {
-        const gatesContainer = document.getElementById('gates-container')
+        const gatesContainer = this.t7.e.querySelector('.gates-container')
         gatesContainer.classList.remove('hidden')
         terminal7.activeG = this
         this.boarding = true
@@ -387,15 +386,13 @@ export class Gate {
             this.activeW = this.windows[0]
         // wait for the sizes to settle and update the server if needed
         setTimeout(() => {
-            let foundNull = false
             this.panes().forEach((p, i) => {
                 if (p.d) {
                     if (p.needsResize && this.fitScreen) {
                         this.t7.run(() => p.d.resize(p.t.cols, p.t.rows), i*10)
                         p.needsResize = false
                     }
-                } else
-                    foundNull = true
+                }
             })
             this.updateNameE()
         }, 400)

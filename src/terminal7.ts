@@ -513,7 +513,7 @@ export class Terminal7 {
      */
     // TODO: add onMap to props
     addGate(props, onMap = true) {
-        const container = document.getElementById('gates-container')
+        const container = this.e.querySelector(".gates-container")
         const p = props || {}
         // add the id
         p.id = p.fp || p.name
@@ -559,7 +559,7 @@ export class Terminal7 {
     async goHome() {
         await Preferences.remove({key: "last_state"})
         const s = document.getElementById('map-button')
-        const gatesContainer = document.getElementById('gates-container')
+        const gatesContainer = this.e.querySelector(".gates-container")
         gatesContainer.classList.add('hidden')
         s.classList.add('off')
         if (this.activeG) {
