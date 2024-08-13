@@ -146,13 +146,9 @@ export class WebRTCSession extends BaseSession {
         if (noCDC)
             return
 
-        await this.openCDC()
-        if (marker != null) {
-            this.sendCTRLMsg(new ControlMessage("restore", { marker })).then(
-                () => this.onStateChange("connected")).catch(
-                () => this.onStateChange("failed", Failure.BadMarker)
-            )
-        }
+        this.openCDC()
+        if (marker !== null)
+            this.sendCTRLMsg(new ControlMessage("restore", { marker }))
     }
     isOpen(): boolean {
         return this.pc != null && this.pc.connectionState == "connected"

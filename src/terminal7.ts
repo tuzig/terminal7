@@ -219,19 +219,15 @@ export class Terminal7 {
             terminal7.log("ignoring app event", active)
             return
         }
-        if (!active)
+        this.clearTimeouts()
+        if (!active) {
             this.updateNetworkStatus({connected: false}, false).finally(() =>
                 this.recovering = true)
-
+        }
         else {
-            // We're back! puts us in recovery mode so that it'll
-            // quietly reconnect to the active gate on failure
-            this.clearTimeouts()
+            // We're back! puts us in recovery mode and retrying connections
+            this.run(() => this.recovering=false, this.conf.net.timeout)
             Network.getStatus().then(async s => await this.updateNetworkStatus(s))
-                               .finally(() => {
-                this.log("recoverd and updated network status")
-                this.recovering = false
-                               })
         }
     }
     /*
