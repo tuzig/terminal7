@@ -3,7 +3,7 @@ import { Terminal7 } from "./terminal7"
 export type CallbackType = (e: unknown) => void
 export type ChannelID = number
 export type State = "new" | "connecting" | "connected" | "reconnected" | "disconnected" | "failed" |
-    "unauthorized" | "wrong password" | "closed"
+    "unauthorized" | "wrong password" | "closed" | "gotlayout"
 
 export type Marker = number | null
 
@@ -25,6 +25,7 @@ export enum Failure {
     Overrun='Overrun',
     InternalError='Internal Error',
     PBFailed='PeerBook Failure',
+    Exhausted='Exhausted',
 }
 
 export interface Event {
@@ -45,6 +46,7 @@ export interface Channel {
 
 export interface Session {
     readonly isSSH: boolean
+    lastPayload: string
     onStateChange : (state: State, failure?: Failure) => void
     onCMD: (payload: unknown) => void
     // for reconnect
@@ -57,6 +59,7 @@ export interface Session {
     connect(marker?: Marker, publicKey?: string, privateKey?: string): Promise<void>
     connect(marker?: Marker, noCDC?: boolean): Promise<void>
     fail(failure?: Failure): void
+    isOpen(): boolean
 }
 
 export abstract class BaseChannel implements Channel {
@@ -81,6 +84,7 @@ export abstract class BaseChannel implements Channel {
 export abstract class BaseSession implements Session {
     t7: Terminal7
     watchdog: number
+    lastPayload: string
     onStateChange : (state: State, failure?: Failure) => void
     onCMD: (payload: string) => void
     protected constructor() {
@@ -121,5 +125,8 @@ export abstract class BaseSession implements Session {
 
     abstract connect(marker?: Marker, publicKey?: string, privateKey?: string): Promise<void>
     abstract connect(marker?: Marker, noCDC?: boolean): Promise<void>
+    isOpen(): boolean {
+        return false
+    }
 
 }

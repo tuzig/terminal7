@@ -50,10 +50,10 @@ declare let window: {
 
 declare let navigator: NavType
 
-export const OPEN_HTML_SYMBOL = "📡"
-export const ERROR_HTML_SYMBOL = "🤕"
-export const CLOSED_HTML_SYMBOL = "🙁"
-export const LOCK_HTML_SYMBOL = "🔒"
+export const OPEN_ICON = "📡"
+export const ERROR_ICON = "🤕"
+export const CLOSED_ICON = "🙁"
+export const LOCK_ICON = "🔒"
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
 Thanks for choosing Terminal7. This is TWR, a local
@@ -214,18 +214,33 @@ export class Terminal7 {
             return
         }
         this.lastActiveState = active
-        this.log("app state changed", this.lastActiveState, this.ignoreAppEvents)
         if (this.ignoreAppEvents) {
             terminal7.log("ignoring app event", active)
             return
         }
+        this.log("app state changed", this.lastActiveState, this.ignoreAppEvents)
         this.clearTimeouts()
         if (!active) {
             this.updateNetworkStatus({connected: false}, false).finally(() =>
                 this.recovering = true)
         }
         else {
-            // We're back! puts us in recovery mode and retrying connections
+            // We're back!
+            const gate = this.activeG
+            if (gate)
+                // the watchdog is stopped by the gate when it connects
+                this.map.shell.startWatchdog().catch(() => {
+                    if (!gate.session) {
+                        terminal7.log("ignoring watchdos as session is closed")
+                        return
+                    }
+                    if (!gate.session.isOpen()) {
+                        gate.session = null
+                        this.map.shell.onDisconnect(gate, false, Failure.TimedOut)
+                    } else if (!this.pb.isOpen())
+                        this.pb.notify("Timed out, please refresh app and `support`")
+                    this.map.shell.printPrompt()
+                })
             this.run(() => this.recovering=false, this.conf.net.timeout)
             Network.getStatus().then(async s => await this.updateNetworkStatus(s))
         }
@@ -429,15 +444,22 @@ export class Terminal7 {
             this.pb.close()
         }
     }
-    async pbConnect(): Promise<void> {
+    // TODO: move to Shell
+    async pbConnect(firstMsg?: ControlMessage): Promise<void> {
         const statusE = document.getElementById("peerbook-status") as HTMLSpanElement
         // TODO: refactor this to an sync function
+        if (!this.netConnected) {
+            statusE.style.opacity = "1"
+            statusE.innerHTML = CLOSED_ICON
+            return
+        }
         return new Promise<void>((resolve, reject) => {
             const callResolve = () => {
                 statusE.style.opacity = "1"
+                statusE.innerHTML = OPEN_ICON
                 resolve()
             }
-            const callReject = (e, symbol = ERROR_HTML_SYMBOL) => {
+            const callReject = (e, symbol = ERROR_ICON) => {
                 statusE.style.opacity = "1"
                 statusE.innerHTML = symbol
                 this.pb.close()
@@ -445,7 +467,7 @@ export class Terminal7 {
                 reject(e)
             }
             const catchConnect = (e: string) => {
-                let symbol = LOCK_HTML_SYMBOL
+                let symbol = LOCK_ICON
                 if (e =="Unregistered")
                     this.notify(`${PB} Unregistered, please \`subscribe\``)
 
@@ -469,37 +491,42 @@ export class Terminal7 {
                     this.log("PB connect failed", e)
                     this.notify(`${PB} Failed to connect, please try again later`)
                     this.notify("If the problem persists, \`support\`")
-                    symbol = ERROR_HTML_SYMBOL
+                    symbol = ERROR_ICON
                 }
                 callReject(e, symbol)
             }
 
-            const complete = () => this.pb.connect()
+            const complete = () => this.pb.connect({firstMsg})
                 .then(callResolve)
                 .catch(catchConnect)
 
-            if (!this.netConnected)
-                callReject("No network")
-
-            if (this.pb) {
-                if (this.pb.isOpen())
-                    callResolve()
-                else
-                    complete()
-                return
-            } else {
-                this.getFingerprint().then(fp => {
-                    this.pb = new PeerbookConnection({
-                        fp: fp,
-                        host: this.conf.net.peerbook,
-                        insecure: this.conf.peerbook && this.conf.peerbook.insecure,
-                        shell: this.map.shell
+            Network.getStatus().then(s => {
+                if (!s.connected) {
+                    callReject("No network")
+                    return
+                }
+                if (this.pb) {
+                    if ((this.pb.session?.pc?.connectionState == "connected") ||
+                        (this.pb.session?.pc?.connectionState == "connecting") ||
+                        (this.pb.session?.pc?.connectionState == "new"))
+                        callResolve()
+                    else
+                        complete()
+                    return
+                } else {
+                    this.getFingerprint().then(fp => {
+                        this.pb = new PeerbookConnection({
+                            fp: fp,
+                            host: this.conf.net.peerbook,
+                            insecure: this.conf.peerbook && this.conf.peerbook.insecure,
+                            shell: this.map.shell
+                        })
+                        this.pb.startPurchases()
+                            .then(complete)
+                            .catch(callReject)
                     })
-                    this.pb.startPurchases()
-                        .then(complete)
-                        .catch(callReject)
-                })
-            }
+                }
+            })
         })
     }
     /*
@@ -654,25 +681,16 @@ export class Terminal7 {
                 off.add("hidden")
             const gate = this.activeG
             const firstGate = (await Preferences.get({key: "first_gate"})).value
-            const toReconnect = gate && gate.boarding && (firstGate == "nope") && this.recovering
+            const toReconnect = gate?.boarding && (firstGate == "nope") && this.recovering && (gate.reconnectCount == 0)
             console.log("toReconnect", toReconnect, "firstGate", firstGate)
             if (toReconnect ) {
                 this.notify("🌞 Reconnecting")
-                this.map.shell.startWatchdog().catch(() => {
-                    if (this.pb.isOpen())
-                        gate.notify("Timed out, please try again")
-                    else
-                        this.notify(`${PB} timed out, retrying...`)
-                    this.map.shell.printPrompt()
-                })
                 try {
                     await gate.reconnect()
                 } catch(e) {
-                    this.notify("Reconnect failed")
-                    this.map.shell.runCommand("reset", [gate.name])
+                    this.log("Reconnect failed", e)
                 } finally {
-                    this.log("Reconnect done")
-                    this.map.shell.stopWatchdog()
+                    this.log("Reconnect finalized")
                 }
             }
         } else {

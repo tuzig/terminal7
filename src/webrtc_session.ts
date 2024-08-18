@@ -68,9 +68,9 @@ export class WebRTCChannel extends BaseChannel {
 
 export class WebRTCSession extends BaseSession {
     channels: Map<number, WebRTCChannel>
-    pendingCDCMsgs: Array<object>
+    pendingCDCMsgs: Array<{msg: ControlMessage, handlers: {ack, nack, timeout }}>
     pendingChannels: Map<ChannelID, ChannelOpenedCB>
-    msgHandlers: Map<ChannelID, Array<(unknown)=>void>>
+    msgHandlers: Map<ChannelID, {ack, nack, timeout}>
     cdc: RTCDataChannel
     pc: RTCPeerConnection
     lastMsgId: number
@@ -103,9 +103,12 @@ export class WebRTCSession extends BaseSession {
             this.t7.certificates = undefined
             return
         }
+        // A new RTCPeerConnection is created below
         this.pc = new RTCPeerConnection({
             iceServers: iceServers,
-            certificates: this.t7.certificates})
+            certificates: this.t7.certificates},
+        )
+
         this.pc.onconnectionstatechange = () => {
             if (!this.pc)
                 return
@@ -113,10 +116,8 @@ export class WebRTCSession extends BaseSession {
             terminal7.log("new connection state", state, marker)
             if (state === 'failed')
                 this.closeChannels()
-            this.onStateChange(state)
-        }
-        this.pc.onicecandidateerror = (ev: RTCPeerConnectionIceErrorEvent) => {
-            terminal7.log("icecandidate error", ev.errorCode, ev.errorText)
+            if ((state !== "connected") || (marker == null))
+                this.onStateChange(state)
         }
         this.pc.onicecandidate = (ev: RTCPeerConnectionIceEvent) => this.onIceCandidate(ev)
 
@@ -146,9 +147,18 @@ export class WebRTCSession extends BaseSession {
         if (noCDC)
             return
 
-        this.openCDC()
-        if (marker !== null)
+        await this.openCDC()
+        if (marker != null) {
             this.sendCTRLMsg(new ControlMessage("restore", { marker }))
+                .then(layout => {
+                    this.lastPayload = layout
+                    this.onStateChange("gotlayout")
+                })
+                .catch(e =>  {
+                       if (e != Failure.TimedOut)
+                           this.onStateChange("failed", e)
+                })
+        }
     }
     isOpen(): boolean {
         return this.pc != null && this.pc.connectionState == "connected"
@@ -204,21 +214,31 @@ export class WebRTCSession extends BaseSession {
             }
         })
     }
+    // reconnects to an existing session returns the payload
     async reconnect(marker?: Marker , publicKey?: string, privateKey?: string): Promise<string | void> {
-            terminal7.log("in reconnect", this.cdc, this.cdc.readyState)
-            if (marker != null) {
-                return this.sendCTRLMsg(new ControlMessage("restore", { marker }))
+        terminal7.log("in reconnect", this.cdc, this.cdc.readyState)
+        if (!this.isOpen())
+            await this.connect(marker, publicKey, privateKey)
+        else if (!this.cdc || this.cdc.readyState != "open")
+            await this.openCDC()
+        if (marker != null) {
+            let layout: string
+            try {
+                layout = await this.sendCTRLMsg(new ControlMessage("restore", { marker }))
+            } catch(e) {
+                if (e != Failure.TimedOut)
+                    throw e
             }
-            if (!this.isOpen())
-                return this.connect(marker, publicKey, privateKey)
-            else if (!this.cdc || this.cdc.readyState != "open")
-                this.openCDC()
+            return layout
+        } else
             return this.getPayload()
     }
     openCDC(): Promise<void> {
         // stop listening for messages
-       if (this.cdc)
+       if (this.cdc) {
            this.cdc.onmessage = undefined
+           this.cdc.close()
+       }
        // TODO: improve error handling and add a reject
        return new Promise((resolve) => {
            terminal7.log(">>> opening cdc")
@@ -229,11 +249,11 @@ export class WebRTCSession extends BaseSession {
                     // This needs a bit of timeout or messages are not sent
                     this.t7.run(() => {
                         while (this.pendingCDCMsgs.length > 0) {    
-                            const msg = this.pendingCDCMsgs.shift()
-                            this.sendCTRLMsg(msg[0]).then(msg[1]).catch(msg[2])
+                            const { msg, handlers } = this.pendingCDCMsgs.shift()
+                            this.sendCTRLMsg(msg).then(handlers.ack).catch(handlers.nack)
                         }
-                    }, 100)
-                    resolve()
+                        resolve()
+                    }, 10)
             }
             cdc.onmessage = m => {
                 const d = new TextDecoder("utf-8"),
@@ -242,16 +262,18 @@ export class WebRTCSession extends BaseSession {
                 if ((msg.type == "ack") || (msg.type == "nack")) {
                     const i = msg.args.ref
                     const handlers = this.msgHandlers.get(i)
+                    if (handlers?.timeout)
+                        clearTimeout(handlers.timeout)
                     this.msgHandlers.delete(msg.args.ref)
                     this.t7.log("got cdc message:",  msg)
                     if (msg.type == "nack") {
-                        if (handlers && (typeof handlers[1] == "function"))
-                            handlers[1](msg.args.desc)
+                        if (handlers && (typeof handlers.nack == "function"))
+                            handlers.nack(msg.args.desc)
                         else
                             terminal7.log("A nack is unhandled", msg)
                     } else {
-                        if (handlers && (typeof handlers[0] == "function"))
-                            handlers[0](msg.args.body)
+                        if (handlers && (typeof handlers.ack == "function"))
+                            handlers.ack(msg.args.body)
                         else
                             terminal7.log("an ack is unhandled", msg)
                     }
@@ -262,17 +284,30 @@ export class WebRTCSession extends BaseSession {
     }
     sendCTRLMsg(msg: ControlMessage): Promise<string> {
         return new Promise((resolve, reject) => {
-            // helps us ensure every message gets only one Id
+            const timeout = terminal7.run(() => {
+                terminal7.log("timeout on ctrl message", msg)
+                reject(Failure.TimedOut)
+            }, this.t7.conf.net.timeout)
+            const ack = (s) => { 
+                clearTimeout(timeout)
+                resolve(s)
+            }
+            const nack = (s) => {
+                clearTimeout(timeout)
+                reject(s)
+            }
+
             if (msg.message_id === undefined) 
                 msg.message_id = this.lastMsgId++
             // don't change the time if it's a retransmit
             if (msg.time == undefined)
                 msg.time = Date.now()
-            this.msgHandlers.set(msg.message_id, [resolve, reject])
+            const handlers = {ack, nack, timeout}
+            this.msgHandlers.set(msg.message_id, handlers)
             if (!this.cdc || this.cdc.readyState != "open") {
                 // message stays frozen when restarting
                 terminal7.log("cdc not open, queuing message", msg)
-                this.pendingCDCMsgs.push([msg, resolve, reject])
+                this.pendingCDCMsgs.push({msg, handlers})
             } else {
                 this.t7.log("cdc open sending msg", msg)
                 try {
@@ -319,10 +354,13 @@ export class WebRTCSession extends BaseSession {
         if (this.pc != null) {
             this.pc.onconnectionstatechange = undefined
             this.pc.onnegotiationneeded = undefined
+            this.cdc.onopen = undefined
+            this.cdc.onmessage = undefined
             this.cdc.close()
             this.pc.close()
             this.pc = null
         }
+        this.msgHandlers.forEach(h => clearTimeout(h.timeout))
     }
     async getStats(): Promise<RTCStats | null> {
         const stats = await this.pc.getStats()
@@ -345,20 +383,15 @@ export class WebRTCSession extends BaseSession {
 
 export class PeerbookSession extends WebRTCSession {
     fp: string
-    offer: RTCSessionDescriptionInit
     constructor(fp: string) {
         super()
         this.fp = fp
     }
     onIceCandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate && this.t7.pb) {
-            try {
-                terminal7.log("sending candidate")
-                this.t7.pb.adminCommand(
+            this.t7.pb.adminCommand(
                     new ControlMessage("candidate", { target: this.fp, sdp: ev.candidate}))
-            } catch(e) {
-                terminal7.log("failed to send candidate", e)
-            }
+            .catch(e => terminal7.log("failed to send candidate", e))
         } else {
             terminal7.log("ignoring ice candidate", JSON.stringify(ev.candidate))
         }
@@ -373,21 +406,18 @@ export class PeerbookSession extends WebRTCSession {
             this.onStateChange("failed", Failure.InternalError)
             return
         }
-        const pb = terminal7.pb
-        if (pb?.session)
-            await this.pc.setLocalDescription(d)
-        else
-           this.offer = d
 
+        await this.pc.setLocalDescription(d)
+
+        terminal7.log("sending offer", Date.now())
         try {
-            terminal7.log("sending offer", Date.now())
-            await pb.adminCommand(new ControlMessage( "offer", { target: this.fp, sdp: d }))
+            await this.t7.pb.adminCommand(new ControlMessage( "offer", { target: this.fp, sdp: d }))
         } catch(e) {
             terminal7.log("failed to send offer", e)
             this.onStateChange("failed", e)
             return
         }
-        terminal7.log("sent offer, current state", this.pc.signalingState)
+        terminal7.log("sent offer", Date.now())
     }
     async peerAnswer(offer) {
         const sd = new RTCSessionDescription(offer)
@@ -396,11 +426,13 @@ export class PeerbookSession extends WebRTCSession {
             this.onStateChange("failed", Failure.BadRemoteDescription)
             return
         }
+        terminal7.log("got an answer", sd)
+
         try {
             await this.pc.setRemoteDescription(sd)
         } catch (e) {
-            terminal7.log(`Failed to set remote description: ${e}`)
-            this.onStateChange("failed", Failure.BadRemoteDescription)
+            terminal7.log(`Ignoring failure to set remote description: ${e}`)
+            // this.onStateChange("failed", Failure.BadRemoteDescription)
         }
     }
     peerCandidate(candidate) {
