@@ -1,0 +1,125 @@
+{
+  "windows": [
+    {
+      "name": "Tab 1",
+      "id": 0,
+      "layout": {
+        "dir": "topbottom",
+        "sx": 1,
+        "sy": 1,
+        "xoff": 0,
+        "yoff": 0,
+        "cells": [
+          {
+            "dir": "rightleft",
+            "sx": 0.6470629999999999,
+            "sy": 1,
+            "xoff": 0,
+            "yoff": 0,
+            "cells": [
+              {
+                "sx": 0.6470629999999999,
+                "sy": 1,
+                "xoff": 0,
+                "yoff": 0,
+                "fontSize": 14,
+                "channelID": 6,
+                "active": true,
+                "zoomed": false,
+                "rows": 46,
+                "cols": 118
+              }
+            ]
+          },
+          {
+            "dir": "rightleft",
+            "sx": 0.352937,
+            "sy": 1,
+            "xoff": 0.6470629999999999,
+            "yoff": 0,
+            "cells": [
+              {
+                "sx": 0.352937,
+                "sy": 1,
+                "xoff": 0.6470629999999999,
+                "yoff": 0,
+                "fontSize": 23,
+                "channelID": 2,
+                "active": false,
+                "zoomed": false,
+                "rows": 27,
+                "cols": 37
+              }
+            ]
+          }
+        ]
+      },
+      "active": true
+    },
+    {
+      "name": "Terminal7",
+      "id": 1,
+      "layout": {
+        "dir": "TBD",
+        "sx": 1,
+        "sy": 1,
+        "xoff": 0,
+        "yoff": 0,
+        "cells": [
+          {
+            "sx": 1,
+            "sy": 1,
+            "xoff": 0,
+            "yoff": 0,
+            "fontSize": 14,
+            "channelID": 7,
+            "active": true,
+            "zoomed": false,
+            "rows": 46,
+            "cols": 185
+          }
+        ]
+      }
+    },
+    {
+      "name": "Tab 3",
+      "id": 2,
+      "layout": {
+        "dir": "topbottom",
+        "sx": 1,
+        "sy": 1,
+        "xoff": 0,
+        "yoff": 0,
+        "cells": [
+          {
+            "sx": 0.615578,
+            "sy": 1,
+            "xoff": 0,
+            "yoff": 0,
+            "fontSize": 14,
+            "channelID": 8,
+            "active": true,
+            "zoomed": false,
+            "rows": 46,
+            "cols": 113
+          },
+          {
+            "sx": 0.384422,
+            "sy": 1,
+            "xoff": 0.615578,
+            "yoff": 0,
+            "fontSize": 14,
+            "channelID": 9,
+            "active": false,
+            "zoomed": false,
+            "rows": 46,
+            "cols": 69
+          }
+        ]
+      }
+    }
+  ],
+  "width": 1571,
+  "height": 792
+}
+

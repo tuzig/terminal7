@@ -177,6 +177,10 @@ export class Gate {
                 this.handleFailure(failure)
         } else if (state == "failed")  {
             this.handleFailure(failure)
+        } else if (state == "gotlayout") {
+            const layout = JSON.parse(this.session.lastPayload)
+            this.setLayout(layout)
+            this.onConnected()
         }
     }
     // handle connection failures
@@ -247,17 +251,23 @@ export class Gate {
         await this.map.shell.onDisconnect(this, wasSSH, failure)
     }
     reconnect(): Promise<void> {
-        if (!this.session)
-            return this.connect()
+        const session = this.session
         this.connectionFailed = false
-        const isSSH = this.session.isSSH
+        const isSSH = this.session?.isSSH
         const isNative = Capacitor.isNativePlatform()
         return new Promise((resolve, reject) => {
-            if (++this.reconnectCount >= terminal7.conf.net.retries) {
+            console.log("reconnecting #", this.reconnectCount)
+            if (++this.reconnectCount > terminal7.conf.net.retries) {
                 this.notify(`Reconnect failed after ${this.reconnectCount} attempts`)
-                return reject("reconnect failed")
+                this.reconnectCount = 0
+                return reject("retries exceeded")
             }
-            const finish = (layout) => {
+            if (session == null) {
+                this.connect().then(resolve).catch(reject)
+                return
+            }
+
+            const finish = layout => {
                 this.setLayout(JSON.parse(layout as string) as ServerPayload)
                 resolve()
             }
@@ -279,16 +289,19 @@ export class Gate {
                     this.session.close()
                     this.session = null
                 }
-                this.t7.log("reconnect failed, calling the shell to handle it", isSSH)
+                this.t7.log("reconnect rejected", isSSH)
                 reject(e)
-                // this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
             }
             this.t7.readId().then(({publicKey, privateKey}) => {
+                console.log("got private ssh key, reconnecting session")
                 this.session.reconnect(this.marker, publicKey, privateKey)
                 .then(layout => finish(layout))
                 .catch(e => {
-                    closeSessionAndDisconnect(e)
-                    return
+                    if (this.session != session)
+                        // session changed, ignore the failure
+                        return
+                    console.log("session reconnect failed", e)
+                    this.reconnect().then(resolve).catch(reject)
                 })
             }).catch(e => {
                 this.t7.log("failed to read id", e)

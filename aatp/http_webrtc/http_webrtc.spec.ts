@@ -166,6 +166,18 @@ pinch_max_y_velocity = 0.1`
         await expect(page.locator('.windows-container')).toBeVisible()
         await expect(page.locator('.pane')).toHaveCount(1)
     })
+    test('handling background events', async() => {
+        await page.evaluate(async() =>
+            window.terminal7.onAppStateChange({isActive: false}))
+        await sleep(500)
+        await page.screenshot({ path: `/result/7.png` })
+        await page.evaluate(async() =>
+            window.terminal7.onAppStateChange({isActive: true}))
+        await expect(page.locator('.windows-container')).toBeVisible()
+        await expect(page.locator('.pane')).toHaveCount(1)
+        await expect(page.locator('#twr')).toBeHidden()
+
+    })
     test.skip('auto restore gate', async() => {
         connectFirstGate(page)
         await expect(page.locator('.pane')).toHaveCount(1)
@@ -177,7 +189,6 @@ pinch_max_y_velocity = 0.1`
         })
         await reloadPage()
         await sleep(1000)
-        await page.screenshot({ path: `/result/7.png` })
         await expect(page.locator('.pane')).toHaveCount(1)
         const inGate = await page.evaluate(() => window.terminal7.activeG != null)
         expect(inGate).toBeTruthy()

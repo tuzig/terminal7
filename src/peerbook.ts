@@ -17,7 +17,7 @@ import { Gate } from './gate'
 import { ControlMessage, HTTPWebRTCSession, PeerbookSession  } from './webrtc_session'
 import { Purchases } from '@revenuecat/purchases-capacitor'
 import { Shell } from './shell'
-import {OPEN_HTML_SYMBOL} from './terminal7'
+import {OPEN_ICON} from './terminal7'
 
 interface PeerbookProps {
     fp: string,
@@ -57,6 +57,8 @@ export class PeerbookConnection {
     spinnerInterval = null
     headers: Map<string,string>
     purchasesStarted = false
+    canary: ControlMessage | null = null
+    stateUnknown: boolean
 
     constructor(props:PeerbookProps) {
         // copy all props to this
@@ -67,12 +69,32 @@ export class PeerbookConnection {
     }
 
     async adminCommand(cmd: ControlMessage): Promise<string> {
-        if (this.session)
-            return this.session.sendCTRLMsg(cmd)
-        return new Promise((resolve, reject) => {
-            terminal7.pbConnect().then(()=>
-                this.session.sendCTRLMsg(cmd).then(resolve).catch(reject)).catch(reject)
-        })
+        const orgSession = this.session
+        let pbConnect = false
+        if (this.session) {
+            if (terminal7.recovering && !this.canary) {
+                try {
+                    this.canary = new ControlMessage("ping", {})
+                    this.uid = await this.session.sendCTRLMsg(this.canary)
+                } catch (e) {
+                    // could be an old timeout expiring
+                    if (this.session != orgSession) 
+                        return
+                    terminal7.log("Failed to recover session", e)
+                    pbConnect = true
+                } finally {
+                    this.canary = null
+                }
+            }
+        } else {
+            pbConnect = true
+        }
+        if (pbConnect) {
+            this.close()
+            await terminal7.pbConnect(cmd)
+            return this.uid
+        } else
+            return await this.session.sendCTRLMsg(cmd)
     }
 
     async register() {
@@ -167,9 +189,7 @@ export class PeerbookConnection {
         }
     }
 
-    /*
-     * gets customer info from revenuecat and act on it
-    */
+    // gets customer info from revenuecat and act on it
     async updateCustomerInfo() {
         let data: {
             customerInfo: CustomerInfo;
@@ -183,6 +203,7 @@ export class PeerbookConnection {
         await this.onPurchasesUpdate(data)
     }
 
+    // handle the purchases update event from revenuecat
     async onPurchasesUpdate(data) {
         console.log("onPurchasesUpdate", data)
         if (this.updatingStore) {
@@ -215,10 +236,14 @@ export class PeerbookConnection {
             this.updatingStore = false
         }
     }
+
+    // write a message to the terminal
+    // TODO: move to shell
     async echo(data: string) {
         this.shell.t.writeln(data)
     }
 
+    // get the user id from peerbook
     async getUID(): Promise<string> {
             if ((this.uid != "TBD") && (this.uid != "")) {
                 return(this.uid)
@@ -227,12 +252,14 @@ export class PeerbookConnection {
             return(this.uid)
     }
 
+    // connect to PeerBook
     async connect(params?: ConnectParams) {
         return new Promise<void>((resolve, reject) =>{
             if (this.session) {
                 const state = this.session.pc.connectionState
                 // check is connection in progress 
                 if ((state == "new") || (state == "connecting")) {
+                    // TODO: find a way to queue the connection requests
                     resolve()
                     return
                 }
@@ -244,8 +271,7 @@ export class PeerbookConnection {
                     return
                 }
                 console.log("Closing existing session connection state:", this.session.pc.connectionState)
-                this.session.close()
-                this.session = null
+                this.close()
             }
             this.startSpinner()
             const schema = terminal7.conf.peerbook.insecure? "http" : "https"
@@ -255,7 +281,9 @@ export class PeerbookConnection {
             const session = new HTTPWebRTCSession(url, this.headers)
             this.session = session
             if (params?.firstMsg)
-                session.sendCTRLMsg(params.firstMsg).then(() => resolve).catch(reject)
+                // need to wait a bit
+                terminal7.run(() =>
+                    session.sendCTRLMsg(params.firstMsg).then(() => resolve).catch(reject), 20)
             session.onStateChange = (state, failure?) => {
                 terminal7.log("New PB connection state", state, failure)
                 switch (state) {
@@ -265,8 +293,10 @@ export class PeerbookConnection {
                             this.notify("🥂 over WebRTC")
                             if (uid == "TBD") {
                                 terminal7.log("Got TBD as uid")
+                                // TODO: refactor to failure.Unauthorized
                                 reject("Unregistered")
                             } else {
+                                // TODO: do we need this timer?
                                 terminal7.run(() => Purchases.logIn({ appUserID: uid }), 10)
                                 resolve()
                             }
@@ -296,14 +326,15 @@ export class PeerbookConnection {
                         else if (np?.count > terminal7.conf.net.retries) {
                             terminal7.log("Failed to connect to PeerBook")
                             this.close()
-                            reject(failure)
+                            reject(Failure.Exhausted)
                             return
                         }
-                        setTimeout(() => {
-                            terminal7.log("Retrying connection to PeerBook")
-                            np.count++
-                            this.connect(np).then(resolve).catch(reject)
-                        }, 100)
+                        if (terminal7.netConnected)
+                            terminal7.run(() => {
+                                terminal7.log("Retrying connection to PeerBook")
+                                np.count++
+                                this.connect(np).then(resolve).catch(reject)
+                            }, 10)
                         break
                 }
             }
@@ -314,9 +345,11 @@ export class PeerbookConnection {
             })
         })
     }
+    // print a notification on TWR
     notify(msg: string) {
         terminal7.notify(PB + " " + msg)
     }
+    // close the connection
     close() {
         if (this.session) {
             this.session.onStateChange = undefined
@@ -324,9 +357,12 @@ export class PeerbookConnection {
             this.session = null
         }
     }
+    // check if the connection is open
     isOpen() {
         return (this.session?.isOpen())
     }
+    // sync exiting gates with the peers
+    // TODO: move to Map
     syncPeers(gates: Array<Gate>, nPeers: Array<Peer>) {
         const ret = []
         const index = {}
@@ -381,6 +417,7 @@ export class PeerbookConnection {
             terminal7.gates.forEach((g,i: number) => terminal7.log(`gate ${i}:`, g.fp))
         }
     }
+    // purchase a package using revenuecat
     purchase(aPackage): Promise<void> {
         return new Promise((resolve, reject) => {
             // ensure there's only one listener
@@ -392,6 +429,7 @@ export class PeerbookConnection {
             })
         })
     }   
+    // stop flashing the satellite icon
     stopSpinner() {
         const statusE = document.getElementById("peerbook-status") as HTMLElement
         statusE.style.opacity = "1"
@@ -400,6 +438,7 @@ export class PeerbookConnection {
             this.spinnerInterval = null
         }
     }
+    // start flashing the satellite icon
     startSpinner() {
         const statusE = document.getElementById("peerbook-status")
         let i = 0.1, change = 0.1
@@ -413,7 +452,7 @@ export class PeerbookConnection {
             }
             statusE.style.opacity = String(i)
         }, 200)
-        statusE.innerHTML = OPEN_HTML_SYMBOL
+        statusE.innerHTML = OPEN_ICON
         statusE.style.opacity = "0"
     }
     // handle incomming peerbook messages
@@ -422,7 +461,7 @@ export class PeerbookConnection {
         terminal7.log("got pb message", m)
         if (m["code"] !== undefined) {
             if (m["code"] == 200) {
-                statusE.innerHTML = OPEN_HTML_SYMBOL
+                statusE.innerHTML = OPEN_ICON
                 this.uid = m["text"]
             } else
                 // TODO: update statusE

@@ -312,8 +312,8 @@ export class Shell {
             timeout = terminal7.conf.net.timeout
         return new Promise((_, reject) => {
             this.startHourglass(timeout)
-            this.watchdog = window.setTimeout(() => {
-                console.log("WATCHDOG TIMEOUT")
+            this.watchdog = terminal7.run(() => {
+                terminal7.log("shell watchdog timeout")
                 this.stopWatchdog()
                 reject(Failure.TimedOut)
             }, timeout)
@@ -456,8 +456,8 @@ export class Shell {
      */
     async onDisconnect(gate: Gate, wasSSH?: boolean, failure?: Failure) {
         terminal7.log("onDisconnect", gate.name, wasSSH, terminal7.recovering)
-        this.stopWatchdog()
         if (wasSSH) {
+            this.stopWatchdog()
             this.escapeActiveForm()
             terminal7.notify("⚠️ SSH Session might be lost")
             let toConnect: boolean
@@ -478,18 +478,17 @@ export class Shell {
             this.printPrompt()
             return
         } 
-        /*
         if (!terminal7.netConnected) {
-            terminal7.log("onDisconnect: net not connected")
+            terminal7.log("onDisconnect: net not connected, doing nothing")
             return
         }
-        */
 
         if (failure == Failure.PBFailed)
             terminal7.notify(`${PB} Connection failed`)
         
         if (!terminal7.isActive(gate)){
             gate.stopBoarding()
+            this.stopWatchdog()
             return
         }
 
@@ -504,10 +503,7 @@ export class Shell {
                     terminal7.pb.notify("Unauthorized, please `subscribe`")
                     return
                 }
-            } /* finally {
-                erminal7.recovering = false
-                this.stopWatchdog()
-            } */
+            } 
             return
 
         }
@@ -515,20 +511,24 @@ export class Shell {
             // hourglass emojy: 🍒
             gate.notify("🍒 Connection timed out")
         else
-            gate.notify("❌ Connect failed")
+            gate.notify(`❌ Connect failed: ${failure}`)
         if (gate.firstConnection) {
             this.onFirstConnectionDisconnect(gate)
             return
         }
 
+        this.stopWatchdog()
         let res: string
         try {
             res = await this.runForm(this.reconnectForm, "menu")
         } catch (err) {
             gate.onFailure(Failure.Aborted)
         }
-        if (res == "Reconnect")
+        if (res == "Reconnect") {
+            this.startWatchdog().then(() => gate.onFailure(Failure.TimedOut) )
             await gate.connect()
+            this.stopWatchdog()
+        }
         else {
             gate.close()
             this.map.showLog(false)
