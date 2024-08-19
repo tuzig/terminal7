@@ -216,7 +216,7 @@ export class WebRTCSession extends BaseSession {
     }
     // reconnects to an existing session returns the payload
     async reconnect(marker?: Marker , publicKey?: string, privateKey?: string): Promise<string | void> {
-        terminal7.log("in reconnect", this.cdc, this.cdc.readyState)
+        terminal7.log("in reconnect")
         if (!this.isOpen())
             await this.connect(marker, publicKey, privateKey)
         else if (!this.cdc || this.cdc.readyState != "open")
