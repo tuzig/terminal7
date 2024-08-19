@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import { Clipboard } from "@capacitor/clipboard"
+import { Network } from '@capacitor/network'
 import { Terminal } from '@xterm/xterm'
 import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
 import Bowser from "bowser";
@@ -478,7 +479,8 @@ export class Shell {
             this.printPrompt()
             return
         } 
-        if (!terminal7.netConnected) {
+        const status = await Network.getStatus()
+        if (!status.connected) {
             terminal7.log("onDisconnect: net not connected, doing nothing")
             return
         }
@@ -494,7 +496,6 @@ export class Shell {
 
         if (terminal7.recovering) {
             terminal7.log("retrying...")
-            // this.startWatchdog(terminal7.conf.net.timeout).catch(e => gate.handleFailure(e))
             try {
                 await gate.reconnect()
             } catch (e) {
@@ -511,7 +512,7 @@ export class Shell {
             // hourglass emojy: 🍒
             gate.notify("🍒 Connection timed out")
         else
-            gate.notify(`❌ Connect failed: ${failure}`)
+            gate.notify(`Connect failed: ${failure || "Connection lost"}`)
         if (gate.firstConnection) {
             this.onFirstConnectionDisconnect(gate)
             return

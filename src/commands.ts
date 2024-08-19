@@ -197,7 +197,7 @@ async function connectCMD(shell:Shell, args: string[]) {
     let overPB = pbOpen && gate.fp?.length > 0 && gate.online
     if (overPB && !gate.verified) {
         try {
-            await terminal7.pb.verifyFP(gate.fp, "Unverified peer. Please enter OTP to verify or ^-C")
+            await terminal7.pb.verifyFP(gate.fp, "Unverified peer. Please enter OTP to verify or CTRL-C")
         } catch(e) {
             if (native) {
                 shell.t.writeln("Falling back to SSH")

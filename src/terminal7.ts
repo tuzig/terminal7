@@ -219,8 +219,8 @@ export class Terminal7 {
             return
         }
         this.log("app state changed", this.lastActiveState, this.ignoreAppEvents)
-        this.clearTimeouts()
         if (!active) {
+            this.clearTimeouts()
             this.updateNetworkStatus({connected: false}, false).finally(() =>
                 this.recovering = true)
         }
@@ -447,12 +447,6 @@ export class Terminal7 {
     // TODO: move to Shell
     async pbConnect(firstMsg?: ControlMessage): Promise<void> {
         const statusE = document.getElementById("peerbook-status") as HTMLSpanElement
-        // TODO: refactor this to an sync function
-        if (!this.netConnected) {
-            statusE.style.opacity = "1"
-            statusE.innerHTML = CLOSED_ICON
-            return
-        }
         return new Promise<void>((resolve, reject) => {
             const callResolve = () => {
                 statusE.style.opacity = "1"
@@ -475,7 +469,7 @@ export class Terminal7 {
                     // TODO: this should be changed to a notification
                     // after we upgrade peerbook
                     symbol = "🚱"
-                    console.log("PB not supported")
+                    this.log("PB not supported")
                     const pbHost = this.conf.net.peerbook
                     if (pbHost == DEFAULT_PB_HOST) {
                         this.notify(`${PB} Failed to connect, please try again later`)
@@ -509,7 +503,7 @@ export class Terminal7 {
                     if ((this.pb.session?.pc?.connectionState == "connected") ||
                         (this.pb.session?.pc?.connectionState == "connecting") ||
                         (this.pb.session?.pc?.connectionState == "new"))
-                        callResolve()
+                        resolve()
                     else
                         complete()
                     return

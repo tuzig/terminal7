@@ -72,6 +72,7 @@ insecure=true`)
         await page.keyboard.type("1234")
         await page.keyboard.press("Enter")
         await sleep(100)
+        await page.screenshot({path: '/result/1.png'})
         let port = await page.evaluate(() => terminal7.gates[0].sshPort)
         expect(port).toEqual(1234)
         await page.reload({ waitUntil: "networkidle" })
@@ -81,10 +82,9 @@ insecure=true`)
             return terminal7.gates[0].sshPort
         })
         expect(port).toEqual(1234)
-        // hide TWR
+        // hide TWR for next test
         await page.keyboard.type("hide")
         await page.keyboard.press("Enter")
-        await page.screenshot({path: '/result/1.png'})
     })
 
     test('a host with no port can added', async () => {
@@ -232,7 +232,7 @@ insecure=true`)
         await expect(page.locator('#t0')).toBeHidden()
         await expect(page.locator('.pane')).toHaveCount(1)
         await expect(page.locator('.windows-container')).toBeVisible()
-        await waitForTWROutput(page, /foo:.* over WebRTC/, 2000)
+        await waitForTWROutput(page, /foo:.* over WebRTC/, 1000)
     })
     test('how a gate handles disconnect', async() => {
         await page.evaluate(async () => 

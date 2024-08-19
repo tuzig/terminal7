@@ -214,13 +214,16 @@ export class Gate {
                 this.marker = null
                 this.session.close()
                 this.session = null
+                // We should probably replace the next to lines with a break
                 await this.connect()
                 return
 
             case Failure.DataChannelLost:
+                break
+
             case undefined:
                 if (!terminal7.recovering)  {
-                    this.notify(failure?"Lost Data Channel":"Lost Connection")
+                    this.notify("Lost Connection")
                 }
                 break
 
@@ -252,8 +255,8 @@ export class Gate {
     }
     reconnect(): Promise<void> {
         const session = this.session
+        const isSSH = session?.isSSH
         this.connectionFailed = false
-        const isSSH = this.session?.isSSH
         const isNative = Capacitor.isNativePlatform()
         return new Promise((resolve, reject) => {
             console.log("reconnecting #", this.reconnectCount)
@@ -268,7 +271,7 @@ export class Gate {
             }
 
             const finish = layout => {
-                this.setLayout(JSON.parse(layout as string) as ServerPayload)
+                this.setLayout(JSON.parse(layout) as ServerPayload)
                 resolve()
             }
             if (!isSSH && !isNative) {
@@ -336,7 +339,9 @@ export class Gate {
                 return
             }
             this.onConnected = resolve
-            this.completeConnect().catch(e => {
+            this.completeConnect()
+            .then(() => resolve())
+            .catch(e => {
                 this.notify(`Connection failed: ${e}`)
                 reject(e)
             }).finally(() => {
@@ -408,7 +413,7 @@ export class Gate {
                 }
             })
             this.updateNameE()
-        }, 400)
+        }, 200)
         this.scaleContainer(state?.width, state?.height)
         this.focus()
     }
@@ -636,11 +641,11 @@ export class Gate {
             //
             // @ts-ignore
             // eslint-disable-next-line
-            let session: WebRTCSession = this.session
+            const layout = msg.args.payload
+            const container = this.e.querySelector(".windows-container") as HTMLDivElement
+            const session = this.session as WebRTCSession
             switch (msg.type) {
                 case "set_payload":
-                    const layout = msg.args["payload"]
-                    const container = this.e.querySelector(".windows-container") as HTMLDivElement
                     this.fitScreen = (container.clientWidth == layout.width) && (container.clientHeight == layout.height)
                     this.setLayout(layout)
                     break

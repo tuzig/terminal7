@@ -12,6 +12,7 @@ import { CustomerInfo } from "@revenuecat/purchases-typescript-internal-esm"
 export const PB = "\uD83D\uDCD6"
 import { Capacitor } from '@capacitor/core'
 import { Device } from '@capacitor/device'
+import { Network } from '@capacitor/network'
 import { Failure } from './session'
 import { Gate } from './gate'
 import { ControlMessage, HTTPWebRTCSession, PeerbookSession  } from './webrtc_session'
@@ -284,7 +285,7 @@ export class PeerbookConnection {
                 // need to wait a bit
                 terminal7.run(() =>
                     session.sendCTRLMsg(params.firstMsg).then(() => resolve).catch(reject), 20)
-            session.onStateChange = (state, failure?) => {
+            session.onStateChange = async (state, failure?) => {
                 terminal7.log("New PB connection state", state, failure)
                 switch (state) {
                     case 'connected':
@@ -313,7 +314,7 @@ export class PeerbookConnection {
                             this.session.close()
                         this.session = null
                         this.stopSpinner()
-                        terminal7.log("PB webrtc connection failed", failure, this.uid)
+                        terminal7.log("PB webrtc connection failed", failure, this.uid, params.count)
                         if ((failure == Failure.Unauthorized)) { //  || (failure == Failure.Unsupported)) {
                             reject(failure)
                             return
@@ -329,7 +330,8 @@ export class PeerbookConnection {
                             reject(Failure.Exhausted)
                             return
                         }
-                        if (terminal7.netConnected)
+                        const status = await Network.getStatus()
+                        if (status.connected) 
                             terminal7.run(() => {
                                 terminal7.log("Retrying connection to PeerBook")
                                 np.count++
