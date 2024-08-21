@@ -219,12 +219,7 @@ export class Gate {
                 return
 
             case Failure.DataChannelLost:
-                break
-
             case undefined:
-                if (!terminal7.recovering)  {
-                    this.notify("Lost Connection")
-                }
                 break
 
             case Failure.KeyRejected:
