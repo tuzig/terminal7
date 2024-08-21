@@ -58,7 +58,6 @@ export class PeerbookConnection {
     spinnerInterval = null
     headers: Map<string,string>
     purchasesStarted = false
-    canary: ControlMessage | null = null
     stateUnknown: boolean
 
     constructor(props:PeerbookProps) {
@@ -70,32 +69,19 @@ export class PeerbookConnection {
     }
 
     async adminCommand(cmd: ControlMessage): Promise<string> {
-        const orgSession = this.session
-        let pbConnect = false
-        if (this.session) {
-            if (terminal7.recovering && !this.canary) {
-                try {
-                    this.canary = new ControlMessage("ping", {})
-                    this.uid = await this.session.sendCTRLMsg(this.canary)
-                } catch (e) {
-                    // could be an old timeout expiring
-                    if (this.session != orgSession) 
-                        return
-                    terminal7.log("Failed to recover session", e)
-                    pbConnect = true
-                } finally {
-                    this.canary = null
-                }
-            }
-        } else {
-            pbConnect = true
-        }
-        if (pbConnect) {
-            this.close()
-            await terminal7.pbConnect(cmd)
-            return this.uid
-        } else
-            return await this.session.sendCTRLMsg(cmd)
+        cmd.message_id = this.lastMsgId++
+        if (this.session)
+            return this.session.sendCTRLMsg(cmd)
+        return new Promise((resolve, reject) => {
+            terminal7.log("Admin command reconnects to pb", cmd.type)
+            this.connect({firstMsg: 
+                {msg: cmd ,
+                 handlers: {
+                    ack: s => resolve(s),
+                    nack: s => reject(s),
+                }}
+            })
+        })
     }
 
     async register() {
