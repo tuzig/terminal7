@@ -886,7 +886,12 @@ export class Terminal7 {
     }
 
     log(...args) {
-        let line = ""
+        const now = new Date()
+        const hours = now.getHours().toString().padStart(2, '0')
+        const minutes = now.getMinutes().toString().padStart(2, '0')
+        const seconds = now.getSeconds().toString().padStart(2, '0')
+        const millis = now.getMilliseconds().toString().padStart(3, '0')
+        let line = `${hours}:${minutes}:${seconds}.${millis} `
         args.forEach(a => line += JSON.stringify(a) + " ")
         console.log(line)
         this.logBuffer.push(line)
