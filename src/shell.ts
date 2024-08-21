@@ -1,6 +1,5 @@
 import { Capacitor } from '@capacitor/core'
 import { Clipboard } from "@capacitor/clipboard"
-import { Network } from '@capacitor/network'
 import { Terminal } from '@xterm/xterm'
 import CodeMirror from '@tuzig/codemirror/src/codemirror.js'
 import Bowser from "bowser";
@@ -214,6 +213,8 @@ export class Shell {
         this.stopWatchdog()
         if (terminal7.activeG)
             terminal7.activeG.onFailure(Failure.Overrun)
+        await new Promise(r => setTimeout(r, 100))
+        this.printPrompt()
     }
     
     onTWRData(data: string) {
@@ -311,6 +312,9 @@ export class Shell {
     startWatchdog(timeout? : number): Promise<void> {
         if (!timeout)
             timeout = terminal7.conf.net.timeout
+        // only one watchdog, the last one
+        if (this.watchdog)
+            this.stopWatchdog()
         return new Promise((_, reject) => {
             this.startHourglass(timeout)
             this.watchdog = terminal7.run(() => {
@@ -327,7 +331,7 @@ export class Shell {
             this.watchdog = 0
             this.stopHourglass()
         }
-        this.map.shell.printPrompt()
+        this.printPrompt()
     }
 
     startHourglass(timeout: number) {
@@ -457,8 +461,8 @@ export class Shell {
      */
     async onDisconnect(gate: Gate, wasSSH?: boolean, failure?: Failure) {
         terminal7.log("onDisconnect", gate.name, wasSSH, terminal7.recovering)
+        this.stopWatchdog()
         if (wasSSH) {
-            this.stopWatchdog()
             this.escapeActiveForm()
             terminal7.notify("⚠️ SSH Session might be lost")
             let toConnect: boolean
@@ -479,23 +483,19 @@ export class Shell {
             this.printPrompt()
             return
         } 
-        const status = await Network.getStatus()
-        if (!status.connected) {
-            terminal7.log("onDisconnect: net not connected, doing nothing")
-            return
-        }
 
         if (failure == Failure.PBFailed)
             terminal7.notify(`${PB} Connection failed`)
         
         if (!terminal7.isActive(gate)){
             gate.stopBoarding()
-            this.stopWatchdog()
             return
         }
 
         if (terminal7.recovering) {
             terminal7.log("retrying...")
+            // TODO: keep the watchodg at terminal7
+            this.startWatchdog().catch(() => gate.onFailure(Failure.TimedOut) )
             try {
                 await gate.reconnect()
             } catch (e) {
@@ -504,7 +504,10 @@ export class Shell {
                     terminal7.pb.notify("Unauthorized, please `subscribe`")
                     return
                 }
-            } 
+            } finally {
+                terminal7.log("reconnect done")
+                this.stopWatchdog()
+            }
             return
 
         }
@@ -512,7 +515,7 @@ export class Shell {
             // hourglass emojy: 🍒
             gate.notify("🍒 Connection timed out")
         else
-            gate.notify(`Connect failed: ${failure || "Connection lost"}`)
+            gate.notify(`Connect failed: ${failure || "Lost Connection"}`)
         if (gate.firstConnection) {
             this.onFirstConnectionDisconnect(gate)
             return
@@ -522,9 +525,7 @@ export class Shell {
         let res: string
         try {
             res = await this.runForm(this.reconnectForm, "menu")
-        } catch (err) {
-            gate.onFailure(Failure.Aborted)
-        }
+        } catch (err) { }
         if (res == "Reconnect") {
             this.startWatchdog().then(() => gate.onFailure(Failure.TimedOut) )
             await gate.connect()
