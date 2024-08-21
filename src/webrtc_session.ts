@@ -68,7 +68,7 @@ export class WebRTCChannel extends BaseChannel {
 
 export class WebRTCSession extends BaseSession {
     channels: Map<number, WebRTCChannel>
-    pendingCDCMsgs: Array<{msg: ControlMessage, handlers: {ack, nack, timeout }}>
+    pendingCDCMsgs: Array<{msg: ControlMessage, handlers: {ack, nack, timeout? }}>
     pendingChannels: Map<ChannelID, ChannelOpenedCB>
     msgHandlers: Map<ChannelID, {ack, nack, timeout}>
     cdc: RTCDataChannel
@@ -163,6 +163,14 @@ export class WebRTCSession extends BaseSession {
     isOpen(): boolean {
         return this.pc != null && this.pc.connectionState == "connected"
     }
+    isOpenish(): boolean {
+        const state = this.pc?.connectionState
+        // This are WebRTC states that are not "closed"
+        return (
+            state == "new" ||
+            state == "connecting" ||
+            state == "connected")
+    }
 
     // dcOpened is called when a data channel has been opened
     onDCOpened(dc: RTCDataChannel, id: number):  WebRTCChannel {
@@ -222,14 +230,14 @@ export class WebRTCSession extends BaseSession {
         else if (!this.cdc || this.cdc.readyState != "open")
             await this.openCDC()
         if (marker != null) {
-            let layout: string
+            let payload: string
             try {
-                layout = await this.sendCTRLMsg(new ControlMessage("restore", { marker }))
+                payload = await this.sendCTRLMsg(new ControlMessage("restore", { marker }))
             } catch(e) {
                 if (e != Failure.TimedOut)
                     throw e
             }
-            return layout
+            return payload
         } else
             return this.getPayload()
     }
@@ -253,7 +261,7 @@ export class WebRTCSession extends BaseSession {
                             this.sendCTRLMsg(msg).then(handlers.ack).catch(handlers.nack)
                         }
                         resolve()
-                    }, 10)
+                    }, 100)
             }
             cdc.onmessage = m => {
                 const d = new TextDecoder("utf-8"),
@@ -414,7 +422,9 @@ export class PeerbookSession extends WebRTCSession {
             await this.t7.pb.adminCommand(new ControlMessage( "offer", { target: this.fp, sdp: d }))
         } catch(e) {
             terminal7.log("failed to send offer", e)
-            this.onStateChange("failed", e)
+            // ensure it's not an old session
+            if (this.pc != null)
+                this.onStateChange("failed", e)
             return
         }
         terminal7.log("sent offer", Date.now())
@@ -423,7 +433,6 @@ export class PeerbookSession extends WebRTCSession {
         const sd = new RTCSessionDescription(offer)
         if (this.pc.signalingState == "stable") {
             terminal7.log("got an answer but signla're stable, ignoring answer")
-            this.onStateChange("failed", Failure.BadRemoteDescription)
             return
         }
         terminal7.log("got an answer", sd)
@@ -436,6 +445,10 @@ export class PeerbookSession extends WebRTCSession {
         }
     }
     peerCandidate(candidate) {
+        if (this.pc.signalingState == "stable") {
+            terminal7.log("ignoring candidate as signaling state is stable")
+            return
+        }
         this.pc.addIceCandidate(candidate).catch(e => {
             terminal7.log(`ICE candidate error: ${e}`)
             if (e.errorCode == 701)
