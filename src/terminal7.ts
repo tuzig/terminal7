@@ -445,7 +445,7 @@ export class Terminal7 {
         }
     }
     // TODO: move to Shell
-    async pbConnect(firstMsg?: ControlMessage): Promise<void> {
+    async pbConnect(): Promise<void> {
         const statusE = document.getElementById("peerbook-status") as HTMLSpanElement
         return new Promise<void>((resolve, reject) => {
             const callResolve = () => {
@@ -490,37 +490,31 @@ export class Terminal7 {
                 callReject(e, symbol)
             }
 
-            const complete = () => this.pb.connect({firstMsg})
+            const complete = () => this.pb.connect()
                 .then(callResolve)
                 .catch(catchConnect)
 
-            Network.getStatus().then(s => {
-                if (!s.connected) {
-                    callReject("No network")
-                    return
-                }
-                if (this.pb) {
-                    if ((this.pb.session?.pc?.connectionState == "connected") ||
-                        (this.pb.session?.pc?.connectionState == "connecting") ||
-                        (this.pb.session?.pc?.connectionState == "new"))
-                        resolve()
-                    else
-                        complete()
-                    return
-                } else {
-                    this.getFingerprint().then(fp => {
-                        this.pb = new PeerbookConnection({
-                            fp: fp,
-                            host: this.conf.net.peerbook,
-                            insecure: this.conf.peerbook && this.conf.peerbook.insecure,
-                            shell: this.map.shell
-                        })
-                        this.pb.startPurchases()
-                            .then(complete)
-                            .catch(callReject)
+            if (this.pb) {
+                if ((this.pb.session?.pc?.connectionState == "connected") ||
+                    (this.pb.session?.pc?.connectionState == "connecting") ||
+                    (this.pb.session?.pc?.connectionState == "new"))
+                    resolve()
+                else
+                    complete()
+                return
+            } else {
+                this.getFingerprint().then(fp => {
+                    this.pb = new PeerbookConnection({
+                        fp: fp,
+                        host: this.conf.net.peerbook,
+                        insecure: this.conf.peerbook && this.conf.peerbook.insecure,
+                        shell: this.map.shell
                     })
-                }
-            })
+                    this.pb.startPurchases()
+                        .then(complete)
+                        .catch(callReject)
+                })
+            }
         })
     }
     /*
