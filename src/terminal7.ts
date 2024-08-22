@@ -495,9 +495,7 @@ export class Terminal7 {
                 .catch(catchConnect)
 
             if (this.pb) {
-                if ((this.pb.session?.pc?.connectionState == "connected") ||
-                    (this.pb.session?.pc?.connectionState == "connecting") ||
-                    (this.pb.session?.pc?.connectionState == "new"))
+                if (this.pb.session.isOpenish())
                     resolve()
                 else
                     complete()

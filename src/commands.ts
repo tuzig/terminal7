@@ -1075,7 +1075,7 @@ async function supportCMD(shell: Shell) {
     }
  }
 async function loginCMD(shell: Shell) {
-    if (terminal7.pb?.isOpen()) {
+    if (terminal7.pb.isOpen()) {
         shell.t.writeln("You are already logged in")
         return
     }
