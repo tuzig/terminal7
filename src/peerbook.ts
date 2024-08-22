@@ -187,7 +187,7 @@ export class PeerbookConnection {
             console.log("error verifying OTP", e.toString())
             this.shell.t.writeln("Failed to verify OTP")
             this.shell.printPrompt()
-            throw new Error("ORP Verification failed")
+            throw new Error("OTP Verification failed")
         } finally {
             this.shell.stopWatchdog()
         }
@@ -407,8 +407,12 @@ export class PeerbookConnection {
         let validated = false
         // TODO:gAdd biometrics verification
         while (!validated) {
-            console.log("Verifying FP", fp)
-            const otp = await this.shell.askValue(prompt || "Enter OTP to verify gate")
+            let otp: string
+            try {
+                otp = await this.shell.askValue(prompt || "Enter OTP to verify gate")
+            } catch(e) {
+                throw e
+            }
             try {
                 await this.adminCommand(new ControlMessage("verify", { target: fp, otp: otp }))
                 validated = true

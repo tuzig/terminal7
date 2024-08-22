@@ -211,6 +211,7 @@ export class Gate {
                 return
 
             case Failure.BadMarker:
+                this.notify("Bad restore maker, starting fresh")
                 this.marker = null
                 this.session.close()
                 this.session = null
@@ -291,9 +292,8 @@ export class Gate {
                 reject(e)
             }
             this.t7.readId().then(({publicKey, privateKey}) => {
-                console.log("got private ssh key, reconnecting session")
                 this.session.reconnect(this.marker, publicKey, privateKey)
-                .then(layout => finish(layout))
+                .then(finish)
                 .catch(e => {
                     if (this.session != session)
                         // session changed, ignore the failure
