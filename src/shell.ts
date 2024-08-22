@@ -495,7 +495,6 @@ export class Shell {
         if (terminal7.recovering) {
             terminal7.log("retrying...")
             // TODO: keep the watchodg at terminal7
-            this.startWatchdog().catch(() => gate.onFailure(Failure.TimedOut) )
             try {
                 await gate.reconnect()
             } catch (e) {
@@ -506,7 +505,6 @@ export class Shell {
                 }
             } finally {
                 terminal7.log("reconnect done")
-                this.stopWatchdog()
             }
             return
 
