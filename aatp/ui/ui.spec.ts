@@ -151,7 +151,7 @@ insecure=true`)
         await page.keyboard.type("hide")
         await page.keyboard.press("Enter")
     })
-    test('connect to gate with no webexec', async () => {
+    test('connect to gate with no webexec, get install command', async () => {
         await runSSHCommand(webexecSSHConfig, "webexec stop")
         await connectFirstGate(page)
         await sleep(1000)

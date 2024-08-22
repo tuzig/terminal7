@@ -512,14 +512,18 @@ export class Shell {
         if (failure == Failure.TimedOut)
             // hourglass emojy: 🍒
             gate.notify("🍒 Connection timed out")
-        else
+        else if (failure == Failure.NotSupported) {
+            gate.notify("WebRTC agent unreachable")
+        } else
             gate.notify(`Connect failed: ${failure || "Lost Connection"}`)
+
+        this.stopWatchdog()
+        console.log("onDisconnect", gate.firstConnection)
         if (gate.firstConnection) {
             this.onFirstConnectionDisconnect(gate)
             return
         }
 
-        this.stopWatchdog()
         let res: string
         try {
             res = await this.runForm(this.reconnectForm, "menu")
