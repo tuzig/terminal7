@@ -36,10 +36,9 @@ export async function getTWRBuffer(page) {
         }
         return ret.trimEnd()
     })
-    console.log("--> b4 trimming:", ret)
     ret = ret.substring(checkedC)
+    console.log("TWR: ", ret)
     checkedC = ret.length
-    console.log("TWR", ret)
     return ret
 }
 export function webexecReset(uid: string) {

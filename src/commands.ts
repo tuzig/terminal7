@@ -786,17 +786,7 @@ export async function installCMD(shell: Shell, args: string[]) {
         return
     }
 
-    let uid = ""
-    try {
-        uid  = await terminal7.pb.getUID()
-    } catch(e) {
-        terminal7.log("getUID returned an error", e)
-    }
-    if (!uid && native) {
-        shell.t.writeln("Error connecting to PeerBook")
-        shell.t.writeln("Please try again or `support`")
-        return
-    }
+    const uid = terminal7.pb.uid
     let gate: Gate
 
     if (args[0]) {
