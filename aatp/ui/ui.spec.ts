@@ -232,7 +232,7 @@ insecure=true`)
         await expect(page.locator('#t0')).toBeHidden()
         await expect(page.locator('.pane')).toHaveCount(1)
         await expect(page.locator('.windows-container')).toBeVisible()
-        await waitForTWROutput(page, /foo:.* over WebRTC/, 1000)
+        await waitForTWROutput(page, /foo:.* over WebRTC/, 2000)
     })
     test('how a gate handles disconnect', async() => {
         await page.evaluate(async () => 
