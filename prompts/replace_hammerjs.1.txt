@@ -1,0 +1,2 @@
+We need to replace hammerjs package as it's not maintained anymore.
+What package should we use? We currently use hammerjs for tap, pan, cut , press and pinch events.
