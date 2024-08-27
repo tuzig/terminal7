@@ -107,7 +107,6 @@ export class PeerbookConnection {
             if (params)
                 np = {...params}
             // remove the first message 
-            // WIP: delete np.firstMsg
             if (!np.count)
                 np.count = 1
             else if (np?.count > terminal7.conf.net.retries) {
@@ -410,12 +409,7 @@ export class PeerbookConnection {
         let validated = false
         // TODO:gAdd biometrics verification
         while (!validated) {
-            let otp: string
-            try {
-                otp = await this.shell.askValue(prompt || "Enter OTP to verify gate")
-            } catch(e) {
-                throw e
-            }
+            const otp = await this.shell.askValue(prompt || "Enter OTP to verify gate")
             try {
                 await this.adminCommand(new ControlMessage("verify", { target: fp, otp: otp }))
                 validated = true
