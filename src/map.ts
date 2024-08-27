@@ -149,7 +149,7 @@ export class T7Map {
                     ev.preventDefault()
                 })
             }
-            this.updateTask = setInterval(() => this.updateStats(), 1000)
+            this.updateTask = window.setInterval(() => this.updateStats(), 1000)
         })
     }
     add(g: Gate): Element {
