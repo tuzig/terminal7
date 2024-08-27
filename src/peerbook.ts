@@ -347,6 +347,8 @@ export class PeerbookConnection {
                             await this.onDisconnect({params, failure})
                         } catch(e) {
                             terminal7.log("onDisconnect failed", e)
+                            reject(e)
+                            return
                         }
                         break
                 }

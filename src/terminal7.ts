@@ -495,7 +495,7 @@ export class Terminal7 {
                 .catch(catchConnect)
 
             if (this.pb) {
-                if (this.pb.session.isOpenish())
+                if (this.pb.isOpen())
                     resolve()
                 else
                     complete()
