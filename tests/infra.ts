@@ -108,6 +108,7 @@ export class Terminal7Mock extends Terminal7 {
     clearTempGates() {
     }
     clearTimeouts() {
+        this.map.close()
     }
     open(e) {
         this.e = e
