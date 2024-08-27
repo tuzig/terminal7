@@ -305,6 +305,14 @@ export class WebRTCSession extends BaseSession {
                 reject(s)
             }
 
+            const send = async () => {
+                try {
+                    this.cdc.send(JSON.stringify(msg))
+                } catch(err) {
+                    this.t7.notify(`Sending ctrl message failed: ${err}`)
+                }
+            }
+
             if (msg.message_id === undefined) 
                 msg.message_id = this.lastMsgId++
             // don't change the time if it's a retransmit
@@ -320,11 +328,7 @@ export class WebRTCSession extends BaseSession {
                     this.openCDC()
             } else {
                 this.t7.log("cdc open sending msg", msg)
-                try {
-                    this.cdc.send(JSON.stringify(msg))
-                } catch(err) {
-                    this.t7.notify(`Sending ctrl message failed: ${err}`)
-                }
+                send()
             }
         })
     }
@@ -447,10 +451,6 @@ export class PeerbookSession extends WebRTCSession {
         }
     }
     peerCandidate(candidate) {
-        if (this.pc.signalingState == "stable") {
-            terminal7.log("ignoring candidate as signaling state is stable")
-            return
-        }
         this.pc.addIceCandidate(candidate).catch(e => {
             terminal7.log(`ICE candidate error: ${e}`)
             if (e.errorCode == 701)
