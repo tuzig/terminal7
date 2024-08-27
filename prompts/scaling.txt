@@ -1,0 +1,1 @@
+We need to write a js function that will receive a scale factor and a container element that includes on or more WebGL canvases. the function should the container element and a ll the canvases.

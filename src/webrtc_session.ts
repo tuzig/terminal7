@@ -316,6 +316,8 @@ export class WebRTCSession extends BaseSession {
                 // message stays frozen when restarting
                 terminal7.log("cdc not open, queuing message", msg)
                 this.pendingCDCMsgs.push({msg, handlers})
+                if (this.cdc && this.cdc.readyState != "connecting")
+                    this.openCDC()
             } else {
                 this.t7.log("cdc open sending msg", msg)
                 try {
