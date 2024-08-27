@@ -25,7 +25,6 @@ export async function connectFirstGate(page, gateName?) {
     await btn.click()
 }
 export async function getTWRBuffer(page) {
-    console.log("getting twr buffer")
     let ret = await page.evaluate(() => {
         const t = window.terminal7.map.t0
         const b = t.buffer.active
