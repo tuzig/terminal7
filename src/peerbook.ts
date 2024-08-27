@@ -93,7 +93,6 @@ export class PeerbookConnection {
             if (this.session) {
                 // storing pending messages for the new session
                 msgs = this.session.pendingCDCMsgs
-                terminal7.log("pb disconneected. msgs:", msgs)
                 this.session.pendingCDCMsgs = [] 
                 this.session.close()
             }
