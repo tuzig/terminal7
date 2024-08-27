@@ -49,6 +49,7 @@ export class T7Map {
     shell: Shell
     fitAddon: FitAddon
     webGLAddon: WebglAddon
+    updateTask = 0
 
     open(): Promise<void> {
         return new Promise(resolve => {
@@ -148,7 +149,7 @@ export class T7Map {
                     ev.preventDefault()
                 })
             }
-            setInterval(() => this.updateStats(), 1000)
+            this.updateTask = setInterval(() => this.updateStats(), 1000)
         })
     }
     add(g: Gate): Element {
@@ -349,6 +350,10 @@ export class T7Map {
         this.t0.loadAddon(this.webGLAddon)
         this.webGLAddon.onContextLoss(() => this.outOfMemory())
         terminal7.notify("App out of memory, closed all gates.")
+    }
+    close() {
+        if (this.updateTask != 0)
+            clearInterval(this.updateTask)
     }
 
 }
