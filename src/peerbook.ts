@@ -324,7 +324,6 @@ export class PeerbookConnection {
                     case 'connected':
                         // send a ping to get the uid
                         this.getUID().then(uid => {
-                            this.notify("🥂 over WebRTC")
                             if (uid == "TBD") {
                                 terminal7.log("Got TBD as uid")
                                 // TODO: refactor to failure.Unauthorized
