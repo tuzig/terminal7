@@ -29,17 +29,17 @@ export async function openEmulator(e: HTMLElement, t: Terminal) {
         fontFamily = "FiraCode"
     }
     t.options.fontFamily = fontFamily
-    if (fontFamily === "FiraCode") {
+    // @ts-ignore
+    if (!import.meta.env.TEST) {
         try {
             await new FontFaceObserver(fontFamily).load(null, 200)
             await new FontFaceObserver(fontFamily, { weight: "bold" }).load(null, 200)
-            t.open(e)
         } catch (e) {
-            t.options.fontFamily = "monospace"
-            t.open(e)
+            this.notify(`Font ${fontFamily} not found, using FiraCode`)
+            t.options.fontFamily = "FiraCode"
         }   
-    } else
-        t.open(e)
+    }
+    t.open(e)
 }
 
 type GatePadHTMLElement = HTMLDivElement & {gate: Gate}

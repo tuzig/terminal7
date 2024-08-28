@@ -6,10 +6,11 @@
         "src/__mocks__/**/*.ts"
     ],
    "compilerOptions": {
-       "target": "es6",
+       "target": "ES2022", 
+       "module": "ES2022", 
        "allowSyntheticDefaultImports": true,
-       "module": "es6",
-       "lib": ["es6", "dom"],
-       "moduleResolution": "node"
+       "lib": ["es2022", "dom"],
+       "moduleResolution": "node",
+       "skipLibCheck": true
    }
 }

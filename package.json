@@ -67,9 +67,9 @@
     "native-run": "^1.7.4",
     "typescript": "<5",
     "vi-canvas-mock": "^1.0.0",
-    "vite": "^4.5.3",
-    "vite-plugin-pwa": "^0.16.4",
-    "vitest": "<1.0.0",
+    "vite": "^5.4.2",
+    "vite-plugin-pwa": "^0.20.1",
+    "vitest": "^2.0.5",
     "workbox-build": "^7.0.0",
     "workbox-window": "^7.0.0",
     "yarn": "^1.22.17"
