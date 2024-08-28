@@ -1034,7 +1034,8 @@ async function supportCMD(shell: Shell) {
                 shell.t.writeln("Invalid email address")
                 email = await shell.askValue("Enter your email address")
             }
-            const description = await shell.askValue("Please explain how to recreate the issue: \n")
+            let description = `User agent: ${navigator.userAgent}\n`
+            description += await shell.askValue("Please explain how to recreate the issue: \n")
             shell.t.writeln("Sending...")
             shell.startWatchdog(5000).catch(() => sendFailed())
             const res = await fetch(`${schema}://${terminal7.conf.net.peerbook}/support`, {
