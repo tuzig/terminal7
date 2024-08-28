@@ -652,8 +652,15 @@ export class Gate {
                         }
                         session.sendCTRLMsg(
                             new ControlMessage("ack", {ref: msg.message_id, body: cb.value}))
-                    }).catch(e => session.sendCTRLMsg(
-                            new ControlMessage("nack", {ref: msg.message_id, body: e.message})))
+                    }).catch(e => {
+                        // when the clipboard is empty send an ack with an empty body
+                        if (e.message.includes("no data"))
+                            session.sendCTRLMsg(
+                                new ControlMessage("ack", {ref: msg.message_id, body: ""}))
+                        else
+                            session.sendCTRLMsg(
+                                new ControlMessage("nack", {ref: msg.message_id, body: e.message}))
+                    })
                     break
                 case "set_clipboard":
                     if (msg.args["mimetype"].startsWith("text"))
