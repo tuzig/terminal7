@@ -636,11 +636,11 @@ export class Gate {
             //
             // @ts-ignore
             // eslint-disable-next-line
-            const layout = msg.args.payload
             const container = this.e.querySelector(".windows-container") as HTMLDivElement
             const session = this.session as WebRTCSession
             switch (msg.type) {
                 case "set_payload":
+                    const layout = msg.args["payload"]
                     this.fitScreen = (container.clientWidth == layout.width) && (container.clientHeight == layout.height)
                     this.setLayout(layout)
                     break
