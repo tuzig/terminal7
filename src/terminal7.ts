@@ -50,16 +50,17 @@ declare let window: {
 
 declare let navigator: NavType
 
+export const DEFAULT_STUN_SERVER = "stun:stun2.l.google.com:19302"
 export const OPEN_ICON = "📡"
 export const ERROR_ICON = "🤕"
 export const CLOSED_ICON = "🙁"
 export const LOCK_ICON = "🔒"
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
-Thanks for choosing Terminal7. This is TWR, a local
+Thanks for trying Terminal7. This is TWR, a local
 terminal used to control the terminal and log messages.
-Most buttons launch a TWR command so you don't need to 
-use \`help\`, just \`hide\`.
+Most buttons launch a TWR command so there's no need to 
+use \`help\` and you can just \`hide\`.
 If some characters looks off try CTRL-l.`
 
 const WELCOME_FOOTER=`
@@ -703,7 +704,7 @@ export class Terminal7 {
         this.conf.ui.scrollback = this.conf.ui.scrollback || 10000
 
         this.conf.net = this.conf.net || {}
-        this.conf.net.iceServer = this.conf.net.ice_server || [ "stun:stun2.l.google.com:19302" ]
+        this.conf.net.iceServer = this.conf.net.ice_server || [ DEFAULT_STUN_SERVER ]
         this.conf.net.peerbook = this.conf.net.peerbook ||
             DEFAULT_PB_HOST
         this.conf.net.timeout = this.conf.net.timeout || 5000
