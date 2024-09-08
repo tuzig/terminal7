@@ -22,7 +22,7 @@ import { NativeAudio } from '@capacitor-community/native-audio'
 import { Channel, Failure } from './session'
 
 const ABIT = 10,
-    REGEX_SEARCH = false,
+    REGEX_SEARCH = true,
     COPYMODE_BORDER_COLOR = "#F952F9",
     FOCUSED_BORDER_COLOR = "#F4DB53",
     DECORATIONS: ISearchDecorationOptions = {
