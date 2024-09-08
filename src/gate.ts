@@ -222,7 +222,6 @@ export class Gate {
 
             case Failure.NoKey:
                 this.notify("🔑 Disabled")
-                this.keyRejected = true
                 await this.sshPassConnect()
                 return
 
@@ -345,7 +344,7 @@ export class Gate {
                 resolve()
             }
             this.completeConnect()
-            .then(() => resolve())
+            .then(resolve)
             .catch(e => {
                 this.notify(`Connection failed: ${e}`)
                 reject(e)
@@ -635,7 +634,7 @@ export class Gate {
             if (isNative)  {
                 this.session = new SSHSession(this.addr, this.username, this.sshPort)
             } else {
-                this.notify("🎌  webexec WHIP server")
+                this.notify("🎌  WebExec HTTP server")
                 const addr = `http://${this.addr}:7777/offer`
                 this.session = new HTTPWebRTCSession(addr)
             }

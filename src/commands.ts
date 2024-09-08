@@ -307,6 +307,7 @@ async function connectCMD(shell:Shell, args: string[]) {
                     clipboardFilled = true
                     break
             }
+            shell.map.showLog(false)
         }
     } 
     if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH && pbOpen) {

@@ -23,7 +23,7 @@ export class SSHChannel extends BaseChannel {
             this.onMessage(m.data)
         else {
             this.t7.log("ssh read got error ", m)
-            if (this.onClose)
+            if (this.onClose && (!terminal7.recovering || m.error != "EOF"))
                 this.onClose(m && m.error)
         }
     }
@@ -34,6 +34,9 @@ export class SSHSession extends BaseSession {
     address: string
     username: string
     port: number
+    connectResolve: () => void
+    connectReject: (reason: unknown) => void
+
     constructor(address: string, username: string, port=22) {
         super()
         this.username = username
@@ -43,29 +46,39 @@ export class SSHSession extends BaseSession {
     onSSHSession(session) {
         console.log("Got ssh session", session)
         this.id = session
+        if (this.connectResolve) {
+            this.connectResolve()
+            this.connectResolve = null
+        }
         this.onStateChange("connected")
     }
     async connect(marker?:Marker, publicKey?: string | boolean, privateKey?: string): Promise<void> {
         terminal7.log("Connecting using SSH", this.address, this.username, this.port)
-        SSH.startSessionByKey({
-            address: this.address,
-            port: this.port,
-            username: this.username,
-            // @ts-ignore
-            publicKey: publicKey,
-            privateKey: privateKey
-        }).then(args => {
-                this.onSSHSession(args.session)
-        }).catch(e => {
-                const msg = e.toString()
-                terminal7.log("SSH key startSession failed", msg)
-                if (msg.match(/(Error: UNAUTHORIZED|Auth fail)/))
-                    this.onStateChange("failed", Failure.KeyRejected)
-                else if (msg.startsWith("Error: Failed to connect"))
-                    this.onStateChange("failed", Failure.FailedToConnect)
-                else
-                    this.onStateChange("failed", Failure.Aborted)
-           })
+        return new Promise((resolve, reject) => {
+            this.connectResolve = resolve
+            this.connectReject = reject
+            SSH.startSessionByKey({
+                address: this.address,
+                port: this.port,
+                username: this.username,
+                // @ts-ignore
+                publicKey: publicKey,
+                privateKey: privateKey
+            }).then(args => {
+                    this.onSSHSession(args.session)
+            }).catch(e => {
+                    const msg = e.toString()
+                    terminal7.log("SSH key startSession failed", msg)
+                    if (msg.match(/(Error: UNAUTHORIZED|Auth fail)/)) {
+                        this.onStateChange("failed", Failure.KeyRejected)
+                        return
+                    } else if (msg.startsWith("Error: Failed to connect"))
+                        this.onStateChange("failed", Failure.FailedToConnect)
+                    else
+                        this.onStateChange("failed", Failure.Aborted)
+                    reject(e)
+               })
+       })
     }
     passConnect(marker?:Marker, password?: string) {
         const args: StartByPasswd = {
@@ -81,13 +94,17 @@ export class SSHSession extends BaseSession {
            }).catch(e => {
                 const msg = e.toString()
                 terminal7.log("SSH pass startSession failed", msg)
-                if (msg.startsWith("Error: Not imp"))
-                    this.onStateChange("failed", Failure.NotImplemented)
-                else if (msg.match(/(Error: Wrong password|Auth fail)/))
+                if (msg.match(/(Error: Wrong password|Auth fail)/)) {
                     this.onStateChange("failed", Failure.WrongPassword)
+                    return
+                } else if (msg.startsWith("Error: Not imp"))
+                    this.onStateChange("failed", Failure.NotImplemented)
                 else
                     this.onStateChange("failed", Failure.FailedToConnect)
-
+                if (this.connectReject) {
+                    this.connectReject(e)
+                    this.connectReject = null
+                }
            })
     }
 
@@ -123,7 +140,6 @@ export class SSHSession extends BaseSession {
             const channel = new SSHChannel()
             const { id } = await SSH.newChannel({session: this.id})
             channel.id = id
-            // channel.onClose = onClose
             try {
                 await SSH.startShell({channel: channel.id, command: cmd },
                     m => onData(channel.id, m))
