@@ -1,4 +1,4 @@
-/* Terminal 7Gate
+/* Terminal 7 Gate
   This file contains the code that makes a terminal 7 gate. The gate class
  *  represents a server and it may be boarding - aka connected - or not.
  *
@@ -163,9 +163,6 @@ export class Gate {
         this.t7.log(`updating ${this.name} state to ${state} ${failure}`)
         if (state == "connected") {
             this.marker = null
-            this.notify(`🥂  over ${this.session.isSSH?"SSH":"WebRTC"}`)
-            this.setIndicatorColor("unset")
-            this.map.shell.stopWatchdog()
             this.load()
             this.onConnected()
         } else if (state == "disconnected") {
@@ -223,6 +220,12 @@ export class Gate {
             case undefined:
                 break
 
+            case Failure.NoKey:
+                this.notify("🔑 Disabled")
+                this.keyRejected = true
+                await this.sshPassConnect()
+                return
+
             case Failure.KeyRejected:
                 this.notify("🔑 Rejected")
                 this.keyRejected = true
@@ -239,6 +242,7 @@ export class Gate {
                 break
 
             case Failure.TimedOut:
+                this.notify("Timed out")
                 this.connectionFailed = true
                 break
 
@@ -305,6 +309,7 @@ export class Gate {
                 this.t7.log("failed to read id", e)
                 closeSessionAndDisconnect(e)
                 this.t7.log("reconnect failed, calling the shell to handle it", isSSH, e)
+                this.t7.notify(e)
             })
         })
     }
@@ -333,7 +338,12 @@ export class Gate {
                 resolve()
                 return
             }
-            this.onConnected = resolve
+            this.onConnected = () => { 
+                this.notify(`🥂  over ${this.session.isSSH?"SSH":"WebRTC"}`, true)
+                this.map.shell.stopWatchdog()
+                this.setIndicatorColor("unset")
+                resolve()
+            }
             this.completeConnect()
             .then(() => resolve())
             .catch(e => {
@@ -346,10 +356,10 @@ export class Gate {
         })
     }
 
-    notify(message) {
+    notify(message, dontShow = false) {
         const prefix = this.name || this.addr || ""
         message = `\x1B[4m${prefix}\x1B[0m: ${message}`
-        this.t7.notify(message)
+        this.t7.notify(message, dontShow)
     }
     /*
      * returns an array of panes
@@ -625,7 +635,7 @@ export class Gate {
             if (isNative)  {
                 this.session = new SSHSession(this.addr, this.username, this.sshPort)
             } else {
-                this.notify("🎌  WebExec HTTP server")
+                this.notify("🎌  webexec WHIP server")
                 const addr = `http://${this.addr}:7777/offer`
                 this.session = new HTTPWebRTCSession(addr)
             }
@@ -683,13 +693,20 @@ export class Gate {
             }
         } else {
             if (this.session.isSSH) {
+                let publicKey: string, privateKey: string
                 try {
-                    const {publicKey, privateKey} = await this.t7.readId()
-                    const firstGate = (await Preferences.get({key: "first_gate"})).value
-                    if (firstGate)
-                        terminal7.ignoreAppEvents = true
+                    ({ publicKey, privateKey } = await this.t7.readId())
+                } catch(e) {
+                    this.t7.notify(e)
+                    this.handleFailure(Failure.NoKey)
+                    return
+                }
+                const firstGate = (await Preferences.get({key: "first_gate"})).value
+                if (firstGate)
+                    terminal7.ignoreAppEvents = true
 
-                    const session = this.session as SSHSession
+                const session = this.session as SSHSession
+                try {
                     await session.connect(this.marker, publicKey, privateKey)
                 } catch(e) {
                     terminal7.log("error connecting with keys", e)
@@ -706,7 +723,6 @@ export class Gate {
             try {
                 layout = JSON.parse(payload)
             } catch(e) {
-                this.notify("Failed to load layout")
                 layout = null
             }
             console.log("got payload", layout)

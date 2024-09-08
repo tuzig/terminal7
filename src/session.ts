@@ -19,6 +19,7 @@ export enum Failure {
     TimedOut='Timeout',
     Aborted='Aborted',
     KeyRejected='Key Rejected',
+    NoKey='No Key',
     WrongAddress='Wrong Address',
     DataChannelLost="Data Channel Lost",
     FailedToConnect="Failed To Connect",

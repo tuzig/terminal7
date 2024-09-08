@@ -622,7 +622,7 @@ async function copyKeyCMD(shell: Shell) {
         publicKey = ret.publicKey
     } catch(e) {
         terminal7.log("readId error", e)
-        return shell.t.writeln("Error reading key")
+        return shell.t.writeln(`Error reading key: ${e}`)
     }
     Clipboard.write({ string: publicKey })
     return shell.t.writeln(`${publicKey}\n☝️ copied to 📋`)
@@ -879,7 +879,8 @@ export async function installCMD(shell: Shell, args: string[]) {
         publicKey = ids.publicKey
         privateKey = ids.privateKey
     } catch(e) {
-        console.log("readId error", e)
+        terminal7.log("readId error", e)
+        terminal7.notify(`Error reading key: ${e}`)
     }
 
     const session = new SSHSession(gate.addr, gate.username)

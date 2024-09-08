@@ -505,6 +505,7 @@ export class Shell {
                 }
             } finally {
                 terminal7.log("reconnect done")
+                this.stopWatchdog()
             }
             return
 

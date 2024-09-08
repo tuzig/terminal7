@@ -1004,12 +1004,11 @@ export class Terminal7 {
                 title: "Access Private Key",
             })
         } catch(e) {
-            this.notify(`Biometric failed: ${e.message}`)
             throw "Biometric failed: " + e.message
         } finally {
             this.ignoreAppEvents = false
         }
-        console.log("Got biometric verified ", verified)
+        this.log("Got biometric verified ", verified)
         this.lastActiveState = false
 
         let publicKey
