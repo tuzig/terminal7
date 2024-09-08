@@ -646,8 +646,14 @@ async function subscribeCMD(shell: Shell) {
             "SIX_MONTH": "6 Months",
             "ANNUAL": "Year",
         }
-        const offerings = await Purchases.getOfferings(),
-            offer = offerings.current
+        let offerings
+        try {
+            offerings = await Purchases.getOfferings()
+        } catch(e) {
+            shell.t.writeln(e)
+            return
+        }
+        const offer = offerings.current
         const packages = offer.availablePackages.map(p => {
             const price = p.product.priceString,
                 period = TYPES[p.packageType],
