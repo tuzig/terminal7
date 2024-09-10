@@ -232,6 +232,8 @@ insecure=true`)
         await expect(page.locator('#t0')).toBeHidden()
         await expect(page.locator('.pane')).toHaveCount(1)
         await expect(page.locator('.windows-container')).toBeVisible()
+        await sleep(100)
+        await page.screenshot({path: '/result/connection_reseted.png'})
         await waitForTWROutput(page, /foo:.* over WebRTC/, 2000)
     })
     test('how a gate handles disconnect', async() => {

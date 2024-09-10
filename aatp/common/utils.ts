@@ -36,7 +36,7 @@ export async function getTWRBuffer(page) {
         return ret.trimEnd()
     })
     ret = ret.substring(checkedC)
-    console.log("TWR: ", ret)
+    console.log(`TWR.substring(${checkedC}):`, ret)
     checkedC = ret.length
     return ret
 }
