@@ -79,8 +79,6 @@ export class T7Map {
             this.t0.loadAddon(this.fitAddon)
             setTimeout(() => {
                 this.fitAddon.fit()
-                // set line wrapping
-                this.t0.write("\x1b[?7h")
                 console.log("TWR size", this.t0.cols, this.t0.rows)
             }, 100)
             this.t0.attachCustomKeyEventHandler(ev => {
@@ -117,6 +115,8 @@ export class T7Map {
                 terminal7.notify("WebGL not supported, using fallback")
             }
             openEmulator(e, this.t0).finally(() => {
+                // set line wrap
+                this.t0.write("\x1b[?7h")
                 if (Capacitor.getPlatform() === "android") {
                     // hack for android spacebar & virtual keyboard
                     this.t0.element.addEventListener("input", (ev: Event & {data?}) => {
