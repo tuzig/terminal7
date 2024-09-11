@@ -32,3 +32,4 @@ aatp/**/authorized_fingerprints
 .idea/
 # doc site
 site/
+.aider*
