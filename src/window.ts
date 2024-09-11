@@ -88,10 +88,8 @@ export class Window {
         if (this.activeP && this.activeP.zoomed) {
             const c = document.getElementById("zoomed-pane") as HTMLDivElement
             c.classList.remove("hidden")
-            this.e.classList.add("hidden")
         }
-        else
-            this.e.classList.remove("hidden")
+        this.e.classList.remove("hidden")
         this.nameE.classList.add("on")
         this.gate.activeW = this
         if (this.activeP)
@@ -238,6 +236,7 @@ export class Window {
         thatLayout.w = this
         thatLayout.gate = this.gate
         const newLayout = new Layout(thatLayout.dir, thatLayout)
+
         thatLayout.cells.forEach(thatCell => {
             let thisCell = null
             if (thatCell.dir) {
@@ -252,7 +251,6 @@ export class Window {
                 const thisI = theseCells.findIndex(c => c.channelID == thatCell.channelID)
                 if (thisI >= 0) {
                     console.log("found pane in ", thisI)
-                    // found it, sync it
                     thisCell = theseCells.splice(thisI, 1)[0]
                     thisCell.layout = newLayout
                     newLayout.cells?.push(thisCell)
@@ -263,6 +261,7 @@ export class Window {
             }
             thisCell.adjustDimensions(thatCell)
         })
+
         newLayout.refreshDividers()
         return newLayout
     }

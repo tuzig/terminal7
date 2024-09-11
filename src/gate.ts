@@ -18,7 +18,7 @@ import { SerializedWindow, Window } from './window'
 import { Preferences } from '@capacitor/preferences'
 
 
-const FAILED_COLOR = "red"// ashort period of time, in milli
+const FAILED_COLOR = "red"
 const TOOLBAR_HEIGHT = 93
 
 export interface ServerPayload {
@@ -136,10 +136,16 @@ export class Gate {
         document.getElementById("map-button").classList.remove("off")
         document.querySelectorAll(".pane-buttons").forEach(
             e => e.classList.remove("off"))
-        this.e.classList.remove("hidden")
-        this.e.querySelectorAll(".window")
-              .forEach(w => w.classList.add("hidden"))
-        this.activeW.focus()
+        if (this.activeW?.activeP?.zoomed)
+            this.e.classList.add("hidden")
+        else
+            this.e.classList.remove("hidden")
+        this.e.querySelectorAll(".window").forEach(w => {
+            if (w != this.activeW.e)
+                w.classList.add("hidden")
+            else
+                this.activeW.focus()
+        })
         this.storeState()
     }
     // stops all communication null
@@ -387,8 +393,6 @@ export class Gate {
         } else {
             if (winLen > 0) {
                 this.t7.log("Restoring to an existing layout")
-                if (this.activeW?.activeP?.zoomed)
-                    this.activeW.activeP.unzoom()
                 this.syncLayout(state)
                 this.panes().forEach(p => p.openChannel({id: p.channelID}))
             } else {
