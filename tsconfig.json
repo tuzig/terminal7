@@ -6,13 +6,13 @@
         "src/__mocks__/**/*.ts"
     ],
    "compilerOptions": {
-       "target": "ES2022", 
-       "module": "ES2022", 
-       "allowSyntheticDefaultImports": true,
-       "lib": ["es2022", "dom"],
-       "moduleResolution": "node16",
-       "esModuleInterop": true,
-       "outDir": "./dist",
-       "skipLibCheck": true
+        "target": "ES2017",
+        "module": "ESNext",
+        "lib": ["DOM", "DOM.Iterable", "ESNext"],
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "outDir": "./dist",
+        "rootDir": "./src",
+        "skipLibCheck": true
    }
 }
