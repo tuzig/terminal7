@@ -1,5 +1,4 @@
 /* Terminal 7
-
  *  This file contains the code that makes terminal 7 - a webrtc based
  *  touchable terminal multiplexer.
  *

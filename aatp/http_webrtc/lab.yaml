@@ -31,5 +31,7 @@ services:
     volumes:
       - ./aatp/http_webrtc/webexec_conf:/conf
       - webexec_auth:/auth
+    stop_grace_period: 1s
+    init: true
 volumes:
   webexec_auth:

@@ -36,6 +36,8 @@ services:
     volumes:
       - ./aatp/peerbook_webrtc/webexec_conf:/conf
       - ./aatp/result:/result
+    stop_grace_period: 1s
+    init: true
   peerbook:
     build:
       context: .
