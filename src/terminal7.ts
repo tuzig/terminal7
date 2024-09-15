@@ -55,6 +55,7 @@ export const OPEN_ICON = "📡"
 export const ERROR_ICON = "🤕"
 export const CLOSED_ICON = "🙁"
 export const LOCK_ICON = "🔒"
+const DEFAULT_LOG_LINES = 200
 const WELCOME=`    🖖 Greetings & Salutations 🖖
 
 Thanks for trying Terminal7. This is TWR, a local
@@ -195,7 +196,7 @@ export class Terminal7 {
         this.shortestLongPress  = settings.shortestLongPress || 1000
         this.borderHotSpotSize  = settings.borderHotSpotSize || 30
 
-        this.logBuffer = new CyclicArray(settings.logLines || 101)
+        this.logBuffer = new CyclicArray(settings.logLines || DEFAULT_LOG_LINES)
         this.pendingPanes = {}
 
         this.iceServers = settings.iceServers || null
