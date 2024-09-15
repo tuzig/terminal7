@@ -322,6 +322,9 @@ export class PeerbookConnection {
                 terminal7.log("New PB connection state", state, failure)
                 switch (state) {
                     case 'connected':
+                        // remove the first message so it won't be sent again
+                        if (params)
+                            params.firstMsg = undefined
                         // send a ping to get the uid
                         this.getUID().then(uid => {
                             if (uid == "TBD") {
