@@ -341,15 +341,16 @@ export class Shell {
         let i = 0
         this.timer = window.setInterval(() => {
             const dots = Math.max(0, len - i) // i should never be > len, but just in case
-            this.t.write(`\r\x1B[KTWR ${" ".repeat(i)}ᗧ${"·".repeat(dots)}🍒\x1B[?25l`)
+            this.t.write(`\r\x1B[K${" ".repeat(i)}ᗧ${"·".repeat(dots)}🍒\x1B[?25l`)
             i++
         }, interval)
     }
 
     stopHourglass() {
-        if (!this.timer) return
-        clearInterval(this.timer)
-        this.timer = null
+        if (this.timer) {
+            clearInterval(this.timer)
+            this.timer = null
+        }
         this.t.write(`\r\x1B[K\x1B[?25h`)
     }
 
