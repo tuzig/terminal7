@@ -13,12 +13,13 @@ import { WebLinksAddon } from '@xterm/addon-web-links'
 import { FitAddon } from "@xterm/addon-fit"
 import { WebglAddon } from '@xterm/addon-webgl'
 import { ImageAddon } from '@xterm/addon-image'
-import interact from 'interactjs'
-import FontFaceObserver from "fontfaceobserver"
 
 import { Shell } from './shell'
 import { Capacitor } from '@capacitor/core'
 import { WebRTCSession } from "./webrtc_session"
+
+import interact from 'interactjs'
+import FontFaceObserver from "fontfaceobserver"
 
 // openEmulator loads the font and opens the given terminal
 export async function openEmulator(e: HTMLElement, t: Terminal) {

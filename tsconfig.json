@@ -10,7 +10,9 @@
        "module": "ES2022", 
        "allowSyntheticDefaultImports": true,
        "lib": ["es2022", "dom"],
-       "moduleResolution": "node",
+       "moduleResolution": "node16",
+       "esModuleInterop": true,
+       "outDir": "./dist",
        "skipLibCheck": true
    }
 }
