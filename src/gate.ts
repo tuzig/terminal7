@@ -10,6 +10,7 @@ import { T7Map } from './map'
 import { Failure, Session, Marker } from './session'
 import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
+import { PB } from './peerbook'
 
 import { Capacitor } from '@capacitor/core'
 import { Clipboard } from '@capacitor/clipboard'
@@ -186,42 +187,38 @@ export class Gate {
     // handle connection failures
     async handleFailure(failure: Failure) {
         // KeyRejected and WrongPassword are "light failure"
+        const shell = this.map.shell
         const wasSSH = this.session?.isSSH && this.boarding
+        const closeSession = () => {
+            if (this.session) {
+                this.session.close()
+                this.session = null
+            }
+        }
         // this.map.showLog(true)
         terminal7.log("handling failure", this.name, failure, terminal7.recovering)
-        this.map.shell.stopWatchdog()
+        shell.stopWatchdog()
         switch ( failure ) {
             case Failure.WrongPassword:
                 this.notify("Sorry, wrong password")
                 await this.sshPassConnect()
                 return
-            case Failure.BadRemoteDescription:
-                this.notify("Connection Sync Error")
-                break
             case Failure.NotImplemented:
-                this.session.close()
-                this.session = null
+                closeSession()
                 this.notify("Not Implemented. Please try again")
                 return
             case Failure.Unauthorized:
-                // TODO: handle HTTP based authorization failure
-                this.session.close()
-                this.session = null
+                closeSession()
                 this.map.shell.onUnauthorized(this)
                 return
 
             case Failure.BadMarker:
                 this.notify("Bad restore maker, starting fresh")
                 this.marker = null
-                this.session.close()
-                this.session = null
-                // We should probably replace the next to lines with a break
+                closeSession()
                 await this.connect()
+                // We should probably replace the next to lines with a break
                 return
-
-            case Failure.DataChannelLost:
-            case undefined:
-                break
 
             case Failure.NoKey:
                 this.notify("🔑 Disabled")
@@ -231,6 +228,26 @@ export class Gate {
             case Failure.KeyRejected:
                 this.handleRejectedKey()
                 return
+
+            case Failure.NotSupported:
+                this.notify("WebRTC agent unreachable")
+                break
+                
+            case Failure.PBFailed:
+                terminal7.notify(`${PB} Connection failed`)
+                break
+
+            case Failure.BadRemoteDescription:
+                this.notify("Connection Sync Error")
+                break
+
+            case Failure.DataChannelLost:
+                this.notify("Data channel lost")
+                break
+
+            case undefined:
+                this.notify("Lost Connection")
+                break
 
             case Failure.FailedToConnect:
                 const firstGate = (await Preferences.get({key: "first_gate"})).value === null
@@ -243,17 +260,120 @@ export class Gate {
                 break
 
             case Failure.TimedOut:
-                this.notify("Timed out")
+                this.notify("🍒 Connection timed out")
                 this.connectionFailed = true
                 break
 
         }
-        if (this.session) {
-            this.session.close()
-            this.session = null
+        closeSession()
+        if (wasSSH) {
+            terminal7.notify("⚠️ SSH Session might be lost")
+            let toConnect: boolean
+            try {
+                toConnect = terminal7.pb.isOpen()?await shell.offerInstall(this, "I'm feeling lucky"):
+                    await shell.offerSub(this)
+            } catch(e) {
+                terminal7.log("offer & connect failed", e)
+                return
+            }
+            if (toConnect) {
+                try {
+                    await shell.runCommand("connect", [this.name])
+                } catch(e) {
+                    console.log("connect failed", e)
+                }
+            }
+            shell.printPrompt()
+            return
+        } 
+        // TODO: move thgis to the top
+        if (!terminal7.isActive(this)){
+            this.stopBoarding()
+            return
         }
-        await this.map.shell.onDisconnect(this, wasSSH, failure)
+        if (terminal7.recovering) {
+            terminal7.log("retrying...")
+            try {
+                await this.reconnect()
+            } catch (e) {
+                terminal7.log("reconnect failed", e)
+                this.notify("reconnect failed: " + e)
+
+            } finally {
+                terminal7.log("reconnect done")
+            }
+            return
+        }
+
+        if (this.firstConnection) {
+            this.onFirstConnectionDisconnect()
+            return
+        }
+
+        if (failure == Failure.NotSupported) {
+            closeSession()
+            const toConnect = await shell.offerInstall(this)
+            if (toConnect)
+                await shell.runCommand("connect", [this.name])
+            return
+        }
+
+        let res: string
+        try {
+            res = await shell.runForm(shell.reconnectForm, "menu")
+        } catch (err) { 
+            terminal7.log("reconnect form failed", err)
+        }
+        if (res == "Reconnect") {
+            shell.startWatchdog().then(() => this.handleFailure(Failure.TimedOut) )
+            await this.connect()
+            shell.stopWatchdog()
+        } else {
+            this.close()
+            this.map.showLog(false)
+        }
+        shell.printPrompt()
     }
+
+    async onFirstConnectionDisconnect() {
+        const shell = this.map.shell
+        let ans: string
+        if (this.addr != 'localhost') {
+            const verifyForm = [{
+                prompt: `Does the address \x1B[1;37m${this.addr}\x1B[0m seem correct?`,
+                    values: ["y", "n"],
+                    default: "y"
+            }]
+            try {
+                ans = (await shell.runForm(verifyForm, "text"))[0]
+            } catch(e) {
+                this.handleFailure(Failure.Aborted)
+                return
+            }
+
+            if (ans == "n") {
+                this.delete()
+                setTimeout(() => shell.handleLine("add"), 100)
+                return
+            }
+        }
+        const installForm = [{
+            prompt: "Have you installed the backend - webexec?",
+                values: ["y", "n"],
+                default: "n"
+        }]
+        try {
+            ans = (await shell.runForm(installForm, "text"))[0]
+        } catch(e) {
+            this.handleFailure(Failure.Aborted)
+        }
+
+        if (ans == "n") {
+            setTimeout(() => shell.handleLine("install "+this.name), 100)
+            
+        }
+    }
+    
     reconnect(): Promise<void> {
         const session = this.session
         const isSSH = session?.isSSH
@@ -278,13 +398,14 @@ export class Gate {
             if (!isSSH && !isNative) {
                 this.session.reconnect(this.marker)
                 .then(layout => finish(layout))
-                .catch(() => {
+                .catch(e  => {
                     if (this.session) {
                         this.session.close()
                         this.session = null
                     }
                     terminal7.log("reconnect failed, calling the shell to handle it", isSSH)
-                    this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
+                    reject(e)
+                    // this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
                 })
                 return
             }

@@ -12,7 +12,6 @@ import { T7Map } from './map'
 import { vimMode } from '@tuzig/codemirror/keymap/vim.js'
 import { tomlMode } from '@tuzig/codemirror/mode/toml/toml.js'
 import { dialogAddOn } from '@tuzig/codemirror/addon/dialog/dialog.js'
-import { PB } from './peerbook'
 
 export class Shell {
 
@@ -337,8 +336,7 @@ export class Shell {
             interval = timeout / len
         let i = 0
         this.timer = window.setInterval(() => {
-            // i should never be > len, but just in case
-            const dots = Math.max(0, len - i) 
+            const dots = Math.max(0, len - i) // i should never be > len, but just in case
             this.t.write(`\r\x1B[K${" ".repeat(i)}ᗧ${"·".repeat(dots)}🍒\x1B[?25l`)
             i++
         }, interval)
@@ -455,134 +453,6 @@ export class Shell {
         this.printPrompt()
     }
 
-    /*
-     * onDisconnect is called when a gate disconnects.
-     */
-    async onDisconnect(gate: Gate, wasSSH?: boolean, failure?: Failure) {
-        terminal7.log("onDisconnect", gate.name, wasSSH, terminal7.recovering)
-        this.stopWatchdog()
-        if (wasSSH) {
-            this.escapeActiveForm()
-            terminal7.notify("⚠️ SSH Session might be lost")
-            let toConnect: boolean
-            try {
-                toConnect = terminal7.pb.isOpen()?await this.offerInstall(gate, "I'm feeling lucky"):
-                    await this.offerSub(gate)
-            } catch(e) {
-                terminal7.log("offer & connect failed", e)
-                return
-            }
-            if (toConnect) {
-                try {
-                    await this.runCommand("connect", [gate.name])
-                } catch(e) {
-                    console.log("connect failed", e)
-                }
-            }
-            this.printPrompt()
-            return
-        } 
-
-        if (failure == Failure.PBFailed)
-            terminal7.notify(`${PB} Connection failed`)
-        
-        if (!terminal7.isActive(gate)){
-            gate.stopBoarding()
-            return
-        }
-
-        if (terminal7.recovering) {
-            terminal7.log("retrying...")
-            // TODO: keep the watchodg at terminal7
-            try {
-                await gate.reconnect()
-            } catch (e) {
-                terminal7.log("reconnect failed", e)
-                if (e == Failure.Unauthorized) {
-                    terminal7.pb.notify("Unauthorized, please `subscribe`")
-                    return
-                }
-            } finally {
-                terminal7.log("reconnect done")
-                this.stopWatchdog()
-            }
-            return
-
-        }
-        if (failure == Failure.TimedOut)
-            // hourglass emojy: 🍒
-            gate.notify("🍒 Connection timed out")
-        else if (failure == Failure.NotSupported) {
-            gate.notify("WebRTC server unreachable")
-        } else
-            gate.notify(`Connect failed: ${failure || "Lost Connection"}`)
-
-        this.stopWatchdog()
-        console.log("onDisconnect", gate.firstConnection)
-        if (gate.firstConnection) {
-            this.onFirstConnectionDisconnect(gate)
-            return
-        }
-
-        if (failure == Failure.NotSupported) {
-            const toConnect = await this.offerInstall(gate)
-            if (toConnect)
-                await this.runCommand("connect", [gate.name])
-            return
-        }
-        let res: string
-        try {
-            res = await this.runForm(this.reconnectForm, "menu")
-        } catch (err) { }
-        if (res == "Reconnect") {
-            this.startWatchdog().then(() => gate.handleFailure(Failure.TimedOut) )
-            await gate.connect()
-            this.stopWatchdog()
-        }
-        else {
-            gate.close()
-            this.map.showLog(false)
-        }
-        this.printPrompt()
-    }
-    async onFirstConnectionDisconnect(gate: Gate) {
-        let ans: string
-        if (gate.addr != 'localhost') {
-            const verifyForm = [{
-                prompt: `Does the address \x1B[1;37m${gate.addr}\x1B[0m seem correct?`,
-                    values: ["y", "n"],
-                    default: "y"
-            }]
-            try {
-                ans = (await this.runForm(verifyForm, "text"))[0]
-            } catch(e) {
-                gate.handleFailure(Failure.Aborted)
-                return
-            }
-
-            if (ans == "n") {
-                gate.delete()
-                setTimeout(() => this.handleLine("add"), 100)
-                return
-            }
-        }
-        const installForm = [{
-            prompt: "Have you installed the backend - webexec?",
-                values: ["y", "n"],
-                default: "n"
-        }]
-        try {
-            ans = (await this.runForm(installForm, "text"))[0]
-        } catch(e) {
-            gate.handleFailure(Failure.Aborted)
-        }
-
-        if (ans == "n") {
-            setTimeout(() => this.handleLine("install "+gate.name), 100)
-            
-        }
-    }
-    
     async askPass(): Promise<string> {
         const res = await this.runForm(
             [{ prompt: "Password", password: true }], "text")
