@@ -150,9 +150,9 @@ export class Shell {
     }
 
     async runCommand(cmd: string, args: string[] = []) {
-        this.map.showLog(true)
         await this.escapeActiveForm()
         await this.escapeWatchdog()
+        this.map.showLog(true)
         this.map.interruptTTY()
         this.currentLine = [cmd, ...args].join(' ')
         this.printPrompt()
@@ -164,7 +164,6 @@ export class Shell {
         await this.escapeActiveForm()
         this.stopWatchdog()
         this.map.showLog(true)
-        await new Promise(resolve => setTimeout(resolve, 0))
         this.lineAboveForm = this.t.buffer.active.baseY + this.t.buffer.active.cursorY
         this.t.write("\r\x1B[K")
         this.t.scrollToBottom()
@@ -211,8 +210,6 @@ export class Shell {
     async escapeWatchdog() {
         if (!this.watchdog) return
         this.stopWatchdog()
-        if (terminal7.activeG)
-            terminal7.activeG.onFailure(Failure.Overrun)
         await new Promise(r => setTimeout(r, 100))
         this.printPrompt()
     }
@@ -340,7 +337,8 @@ export class Shell {
             interval = timeout / len
         let i = 0
         this.timer = window.setInterval(() => {
-            const dots = Math.max(0, len - i) // i should never be > len, but just in case
+            // i should never be > len, but just in case
+            const dots = Math.max(0, len - i) 
             this.t.write(`\r\x1B[K${" ".repeat(i)}ᗧ${"·".repeat(dots)}🍒\x1B[?25l`)
             i++
         }, interval)
@@ -446,7 +444,7 @@ export class Shell {
             try {
                 res = await this.runForm(this.reconnectForm, "menu")
             } catch (err) {
-                gate.onFailure(Failure.Aborted)
+                gate.handleFailure(Failure.Aborted)
             }
             if (res == "Reconnect") {
                 await gate.connect()
@@ -515,7 +513,7 @@ export class Shell {
             // hourglass emojy: 🍒
             gate.notify("🍒 Connection timed out")
         else if (failure == Failure.NotSupported) {
-            gate.notify("WebRTC agent unreachable")
+            gate.notify("WebRTC server unreachable")
         } else
             gate.notify(`Connect failed: ${failure || "Lost Connection"}`)
 
@@ -526,12 +524,18 @@ export class Shell {
             return
         }
 
+        if (failure == Failure.NotSupported) {
+            const toConnect = await this.offerInstall(gate)
+            if (toConnect)
+                await this.runCommand("connect", [gate.name])
+            return
+        }
         let res: string
         try {
             res = await this.runForm(this.reconnectForm, "menu")
         } catch (err) { }
         if (res == "Reconnect") {
-            this.startWatchdog().then(() => gate.onFailure(Failure.TimedOut) )
+            this.startWatchdog().then(() => gate.handleFailure(Failure.TimedOut) )
             await gate.connect()
             this.stopWatchdog()
         }
@@ -552,7 +556,7 @@ export class Shell {
             try {
                 ans = (await this.runForm(verifyForm, "text"))[0]
             } catch(e) {
-                gate.onFailure(Failure.WrongAddress)
+                gate.handleFailure(Failure.Aborted)
                 return
             }
 
@@ -570,7 +574,7 @@ export class Shell {
         try {
             ans = (await this.runForm(installForm, "text"))[0]
         } catch(e) {
-            gate.onFailure(Failure.WrongAddress)
+            gate.handleFailure(Failure.Aborted)
         }
 
         if (ans == "n") {
@@ -602,7 +606,9 @@ export class Shell {
         } else {
             this.t.writeln("\n For persistent sessions & WebRTC 🍯 please install webexec")
             install.splice(1, 0, { prompt: "Install" })
-            install.splice(2, 0, { prompt: "Always use SSH" })
+            // only for native platforms
+            if (Capacitor.isNativePlatform())
+                install.splice(2, 0, { prompt: "Always use SSH" })
         }
         const res = await this.runForm(install, "menu")
         switch (res) {

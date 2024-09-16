@@ -145,7 +145,8 @@ export class T7Map {
                     ev.stopPropagation()
                     ev.preventDefault()
                 })
-                document.getElementById("map").addEventListener("click", ev => {
+                interact(document.getElementById("map"))
+                .on("tap", ev => {
                     this.showLog(false)
                     terminal7.showChangelog(false)
                     ev.stopPropagation()
@@ -156,7 +157,6 @@ export class T7Map {
         })
     }
     add(g: Gate): Element {
-
         const d = (document.createElement('div') as GatePadHTMLElement)
         const container = document.createElement('div')
         d.className = "gate-pad"
@@ -189,9 +189,12 @@ export class T7Map {
         .on("tap", (ev) => {
                 const g = ev.target.closest(".gate-pad").gate
                 if (ev.dt < 500) {
-                    this.shell.runCommand("connect", [g.name])
-                    ev.preventDefault()
                     ev.stopPropagation()
+                    const command = (ev.target.closest(".gate-edit"))? "edit" : "connect"
+                    console.log("tap", command)
+                    this.shell.runCommand(command, [g.name])
+                    .then(() => this.showLog(false))
+                    .catch(e => terminal7.notify(e))
                 }
         })
         .on("hold", ev => {
@@ -200,14 +203,6 @@ export class T7Map {
             ev.stopPropagation()
             this.shell.runCommand("edit", [g.name])
         })
-        d.querySelector(".gate-edit").addEventListener("click", ev => {
-            const target = ev.target as  HTMLElement
-            const g = (target.closest(".gate-pad") as GatePadHTMLElement).gate
-            this.shell.runCommand("edit", [g.name])
-            ev.stopPropagation()
-            ev.preventDefault()
-        })
-
         this.refresh()
         return d
     }
