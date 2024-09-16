@@ -234,7 +234,6 @@ async function connectCMD(shell:Shell, args: string[]) {
             terminal7.storeGates()
         }
     }
-    let done = false
     if (gate.session) {
         gate.focus()
         return
@@ -275,8 +274,7 @@ async function connectCMD(shell:Shell, args: string[]) {
         gate.firstConnection = false
         await terminal7.storeGates()
     }
-    let clipboardFilled = false
-    if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH && pbOpen) {
+    if (gate.session.isSSH && !gate.onlySSH && pbOpen) {
         let toConnect: boolean
         try {
             toConnect = await shell.offerInstall(gate)
@@ -285,7 +283,6 @@ async function connectCMD(shell:Shell, args: string[]) {
         }
         if (!toConnect) {
             gate.close()
-            done = true
             return
         }
     }
