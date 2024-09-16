@@ -236,9 +236,7 @@ export class Terminal7 {
                         return
                     }
                     if (!gate.session.isOpen()) {
-                        const wasSSH = gate.session.isSSH
-                        gate.session = null
-                        this.map.shell.onDisconnect(gate, wasSSH, Failure.TimedOut)
+                        gate.handleFailure(Failure.TimedOut)
                     } else if (!this.pb.isOpen())
                         this.pb.notify("Timed out, please refresh app and `support`")
                     this.map.shell.printPrompt()
@@ -670,7 +668,7 @@ export class Terminal7 {
             const gate = this.activeG
             const firstGate = (await Preferences.get({key: "first_gate"})).value
             if (gate?.session?.isSSH) {
-                await this.map.shell.onDisconnect(gate, true, Failure.TimedOut)
+                await gate.handleFailure(Failure.TimedOut)
                 return
             }
             const toReconnect = gate?.boarding && (firstGate == "nope") && this.recovering && (gate.reconnectCount == 0)

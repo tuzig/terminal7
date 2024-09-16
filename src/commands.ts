@@ -292,10 +292,8 @@ async function connectCMD(shell:Shell, args: string[]) {
     Preferences.get({key: "first_gate"}).then(v => {
             if (v.value != "nope")
                 setTimeout(() => {
-                    if (gate.session?.isSSH || gate.session?.isOpen()) {
-                        Preferences.set({key: "first_gate", value: "nope"})
-                        terminal7.toggleHelp()
-                    }
+                    Preferences.set({key: "first_gate", value: "nope"})
+                    terminal7.toggleHelp()
                 }, 200)
         })
 }
