@@ -235,13 +235,6 @@ async function connectCMD(shell:Shell, args: string[]) {
         }
     }
     let done = false
-    gate.onFailure = reason => {
-        terminal7.log(`Connect command got failure ${reason}`) 
-        shell.stopWatchdog()
-        gate.close()
-        terminal7.storeGates()
-        done = true
-    }
     if (gate.session) {
         gate.focus()
         return
@@ -283,33 +276,6 @@ async function connectCMD(shell:Shell, args: string[]) {
         await terminal7.storeGates()
     }
     let clipboardFilled = false
-    if (gate.keyRejected && !overPB) {
-        const keyForm = [
-            { prompt: "Just let me in" },
-            { prompt: "Copy command to clipboard" },
-        ]
-        let publicKey = ""  
-        try {
-            publicKey = (await terminal7.readId()).publicKey
-        } catch (e) {
-            terminal7.log("oops readId failed")
-        }
-        if (publicKey) {
-            const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
-            shell.t.writeln(`\n To use the 🔑 instead of password run:\n\n\x1B[1m${cmd}\x1B[0m\n`)
-            let res = ""
-            try {
-                res = await shell.runForm(keyForm, "menu")
-            } catch (e) {}
-            switch(res) {
-                case "Copy command to clipboard":
-                    Clipboard.write({ string: cmd })
-                    clipboardFilled = true
-                    break
-            }
-            shell.map.showLog(false)
-        }
-    } 
     if (!clipboardFilled && gate.session.isSSH && !gate.onlySSH && pbOpen) {
         let toConnect: boolean
         try {
@@ -326,16 +292,12 @@ async function connectCMD(shell:Shell, args: string[]) {
     Preferences.get({key: "first_gate"}).then(v => {
             if (v.value != "nope")
                 setTimeout(() => {
-                    Preferences.set({key: "first_gate", value: "nope"})
-                    terminal7.toggleHelp()
+                    if (gate.session?.isSSH || gate.session?.isOpen()) {
+                        Preferences.set({key: "first_gate", value: "nope"})
+                        terminal7.toggleHelp()
+                    }
                 }, 200)
         })
-        done = true
-    terminal7.ignoreAppEvents = true
-    while (!done) {
-        await new Promise(r => setTimeout(r, 100))
-    }
-    terminal7.ignoreAppEvents = false
 }
 
 async function addCMD(shell: Shell) {
@@ -860,7 +822,7 @@ export async function installCMD(shell: Shell, args: string[]) {
         try {
             res = await shell.runForm(shell.reconnectForm, "menu")
         } catch (err) {
-            gate.onFailure(Failure.Aborted)
+            gate.handleFailure(Failure.Aborted)
         }
         if (res == "Reconnect")
             await gate.connect()

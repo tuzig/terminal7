@@ -46,7 +46,6 @@ export class Gate {
     nameE: Element
     t7: Terminal7
     onConnected: () => void
-    onFailure: (failure: Failure) => void
     fp: string | undefined
     verified: boolean
     online: boolean
@@ -54,7 +53,6 @@ export class Gate {
     map: T7Map
     onlySSH: boolean
     firstConnection: boolean
-    keyRejected: boolean
     connectionFailed: boolean
     fontScale: number
     fitScreen: boolean
@@ -87,7 +85,6 @@ export class Gate {
         this.map = this.t7.map
         this.session = null
         this.onlySSH = props.onlySSH || false
-        this.onFailure = Function.prototype()
         this.firstConnection = props.firstConnection || false
         this.fontScale = props.fontScale || 1
         this.fitScreen = false
@@ -232,10 +229,9 @@ export class Gate {
                 return
 
             case Failure.KeyRejected:
-                this.notify("🔑 Rejected")
-                this.keyRejected = true
-                await this.sshPassConnect()
+                this.handleRejectedKey()
                 return
+
             case Failure.FailedToConnect:
                 const firstGate = (await Preferences.get({key: "first_gate"})).value === null
                 if (firstGate && this.session?.isSSH) {
@@ -318,12 +314,48 @@ export class Gate {
             })
         })
     }
+    async handleRejectedKey(): Promise<boolean> {
+        const shell = this.map.shell
+        let ret = false
+        this.notify("🔑 Rejected")
+        try {
+            await this.sshPassConnect()
+        } catch(e) {
+            this.handleFailure(Failure.Aborted)
+        }
+        const keyForm = [
+            { prompt: "Just let me in" },
+            { prompt: "Copy command to clipboard" },
+        ]
+        let publicKey = ""  
+        try {
+            publicKey = (await terminal7.readId()).publicKey
+        } catch (e) {
+            terminal7.log("oops readId failed")
+        }
+        if (publicKey) {
+            const cmd = `echo "${publicKey}" >> "$HOME/.ssh/authorized_keys"`
+            shell.t.writeln(`\n To use the 🔑 instead of password run:\n\n\x1B[1m${cmd}\x1B[0m\n`)
+            let res = ""
+            try {
+                res = await shell.runForm(keyForm, "menu")
+            } catch (e) {}
+            switch(res) {
+                case "Copy command to clipboard":
+                    Clipboard.write({ string: cmd })
+                    ret = true
+                    break
+            }
+            shell.map.showLog(false)
+        }
+        return ret
+    }
     async sshPassConnect() {
         let password: string
         try {
             password = await this.map.shell.askPass()
         } catch (e) { 
-            this.onFailure(Failure.Aborted)
+            this.handleFailure(Failure.Aborted)
             return 
         }
         const session = this.session as SSHSession
@@ -626,7 +658,6 @@ export class Gate {
         }
     }
     async completeConnect(): Promise<void> {
-        this.keyRejected = false
         const isNative = Capacitor.isNativePlatform()
         const overPB = this.fp && !this.onlySSH && this.online && this.verified
         if (overPB) {
