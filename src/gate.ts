@@ -54,7 +54,6 @@ export class Gate {
     map: T7Map
     onlySSH: boolean
     firstConnection: boolean
-    connectionFailed: boolean
     fontScale: number
     fitScreen: boolean
     windows: Window[]
@@ -184,6 +183,26 @@ export class Gate {
             this.onConnected()
         }
     }
+    async handleSSHFailure() {
+        const shell = this.map.shell
+        terminal7.notify("⚠️ SSH Session might be lost")
+        let toConnect: boolean
+        try {
+            toConnect = terminal7.pb.isOpen()?await shell.offerInstall(this, "I'm feeling lucky"):
+                await shell.offerSub(this)
+        } catch(e) {
+            terminal7.log("offer & connect failed", e)
+            return
+        }
+        if (toConnect) {
+            try {
+                await shell.runCommand("connect", [this.name])
+            } catch(e) {
+                console.log("connect failed", e)
+            }
+        }
+        shell.printPrompt()
+    }
     // handle connection failures
     async handleFailure(failure: Failure) {
         // KeyRejected and WrongPassword are "light failure"
@@ -261,7 +280,6 @@ export class Gate {
 
             case Failure.TimedOut:
                 this.notify("🍒 Connection timed out")
-                this.connectionFailed = true
                 break
 
         }
@@ -487,7 +505,6 @@ export class Gate {
      */
     connect(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.connectionFailed = false
             document.title = `${this.name} :: Terminal7`
             
             if (this.session) {
