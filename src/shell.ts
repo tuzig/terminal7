@@ -467,7 +467,7 @@ export class Shell {
         if (gate.onlySSH)
             return true
         const install = [
-            { prompt: firstOption || "Connect over SSH" },
+            { prompt: firstOption || "Use SSH" },
             { prompt: "Close Gate" },
         ]
         if (gate.fp && !gate.online) {
