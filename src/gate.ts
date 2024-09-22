@@ -207,7 +207,6 @@ export class Gate {
     async handleFailure(failure: Failure) {
         // KeyRejected and WrongPassword are "light failure"
         const shell = this.map.shell
-        const wasSSH = this.session?.isSSH && this.boarding
         const closeSession = () => {
             if (this.session) {
                 this.session.close()
@@ -249,7 +248,10 @@ export class Gate {
                 return
 
             case Failure.NotSupported:
-                this.notify("WebRTC agent unreachable")
+                if (!this.tryPB) {
+                    this.notify("SSH status unknown")
+                } else
+                    this.notify("WebRTC agent unreachable")
                 break
                 
             case Failure.PBFailed:
@@ -284,24 +286,8 @@ export class Gate {
 
         }
         closeSession()
-        if (wasSSH) {
-            terminal7.notify("⚠️ SSH Session might be lost")
-            let toConnect: boolean
-            try {
-                toConnect = terminal7.pb.isOpen()?await shell.offerInstall(this, "I'm feeling lucky"):
-                    await shell.offerSub(this)
-            } catch(e) {
-                terminal7.log("offer & connect failed", e)
-                return
-            }
-            if (toConnect) {
-                try {
-                    await shell.runCommand("connect", [this.name])
-                } catch(e) {
-                    console.log("connect failed", e)
-                }
-            }
-            shell.printPrompt()
+        if (!this.tryPB) {
+            await this.handleSSHFailure()
             return
         } 
         // TODO: move thgis to the top
@@ -325,14 +311,6 @@ export class Gate {
 
         if (this.firstConnection) {
             this.onFirstConnectionDisconnect()
-            return
-        }
-
-        if (failure == Failure.NotSupported) {
-            closeSession()
-            const toConnect = await shell.offerInstall(this)
-            if (toConnect)
-                await shell.runCommand("connect", [this.name])
             return
         }
 
@@ -393,19 +371,28 @@ export class Gate {
     }
     
     reconnect(): Promise<void> {
-        const session = this.session
-        const isSSH = session?.isSSH
-        this.connectionFailed = false
-        const isNative = Capacitor.isNativePlatform()
         return new Promise((resolve, reject) => {
-            console.log("reconnecting #", this.reconnectCount)
+            const session = this.session
+            const isSSH = session?.isSSH
+            const isNative = Capacitor.isNativePlatform()
+            console.log(`reconnecting: # ${this.reconnectCount} ${(session===null)?"null session ":"has session "} \
+                        ${isSSH?"is ssh":"is webrtc"}`)
             if (++this.reconnectCount > terminal7.conf.net.retries) {
                 this.notify(`Reconnect failed after ${this.reconnectCount} attempts`)
                 this.reconnectCount = 0
                 return reject("retries exceeded")
             }
             if (session == null) {
-                this.connect().then(resolve).catch(reject)
+                terminal7.log("reconnect with null session. connectin")
+                if (this.tryPB)
+                    this.connect().then(resolve).catch(reject)
+                else
+                    this.handleFailure(Failure.NotSupported)
+                return
+            }
+
+            if (isSSH) {
+                this.handleSSHFailure().then(resolve).catch(reject)
                 return
             }
 
@@ -795,10 +782,14 @@ export class Gate {
             w.focus()
         }
     }
+    
+    // tryPB is an accessor that returns true if the gate is a peerbook gate
+    get tryPB() {
+        return this.fp && !this.onlySSH && this.online && this.verified
+    }
     async completeConnect(): Promise<void> {
         const isNative = Capacitor.isNativePlatform()
-        const overPB = this.fp && !this.onlySSH && this.online && this.verified
-        if (overPB) {
+        if (this.tryPB) {
             this.notify("🎌  PeerBook")
             if (this.session)
                 this.session.close()
@@ -856,7 +847,7 @@ export class Gate {
             }
         }
         this.t7.log("opening session")
-        if (overPB) {
+        if (this.tryPB) {
             try {
                 await this.session.connect(this.marker)
             } catch(e) {
@@ -883,6 +874,8 @@ export class Gate {
                 } catch(e) {
                     terminal7.log("error connecting with keys", e)
                     this.handleFailure(Failure.KeyRejected)
+                } finally {
+                    terminal7.ignoreAppEvents = false
                 }
             } else
                 await this.session.connect(this.marker)

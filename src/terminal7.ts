@@ -225,7 +225,7 @@ export class Terminal7 {
             this.updateNetworkStatus({connected: false}, false).finally(() =>
                 this.recovering = true)
         }
-        else {
+        else if (this.recovering) {
             // We're back!
             const gate = this.activeG
             if (gate)
@@ -242,6 +242,7 @@ export class Terminal7 {
                     this.map.shell.printPrompt()
                 })
             this.run(() => this.recovering=false, this.conf.net.timeout)
+            // real work is done in updateNetworkStatus
             Network.getStatus().then(async s => await this.updateNetworkStatus(s))
         }
     }
@@ -663,16 +664,17 @@ export class Terminal7 {
         this.netConnected = status.connected
         this.log(`updateNetworkStatus: ${status.connected}`)
         if (status.connected) {
-            if (updateNetPopup)
-                off.add("hidden")
             const gate = this.activeG
             const firstGate = (await Preferences.get({key: "first_gate"})).value
-            if (gate?.session?.isSSH) {
-                await gate.handleFailure(Failure.TimedOut)
+            const wasSSH = gate?.session?.isSSH
+            if (updateNetPopup)
+                off.add("hidden")
+            if (wasSSH) {
+                await gate.handleFailure(Failure.NotSupported)
                 return
             }
             const toReconnect = gate?.boarding && (firstGate == "nope") && this.recovering && (gate.reconnectCount == 0)
-            console.log("toReconnect", toReconnect, "firstGate", firstGate)
+            console.log("toReconnect", toReconnect, "firstGate", firstGate, this.recovering, gate.reconnectCount)
             if (toReconnect ) {
                 try {
                     await gate.reconnect()
