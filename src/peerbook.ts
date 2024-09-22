@@ -7,8 +7,6 @@
  *  License: GPLv3
  */
 
-import { CustomerInfo } from "@revenuecat/purchases-typescript-internal-esm"
-
 export const PB = "\uD83D\uDCD6"
 import { Capacitor } from '@capacitor/core'
 import { Device } from '@capacitor/device'
@@ -217,20 +215,6 @@ export class PeerbookConnection {
             this.purchasesStarted = false
             return
         }
-    }
-
-    // gets customer info from revenuecat and act on it
-    async updateCustomerInfo() {
-        let data: {
-            customerInfo: CustomerInfo;
-        }
-        try {
-            data = await Purchases.getCustomerInfo()
-        } catch (e) {
-            terminal7.log("Failed to get customer info", e)
-            return
-        }
-        await this.onPurchasesUpdate(data)
     }
 
     // handle the purchases update event from revenuecat
