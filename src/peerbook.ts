@@ -104,7 +104,6 @@ export class PeerbookConnection {
             let np: ConnectParams = {}
             if (params)
                 np = {...params}
-            // remove the first message 
             if (!np.count)
                 np.count = 1
             /* TODO: remove the count and figure a way to stop endless retries
@@ -117,13 +116,15 @@ export class PeerbookConnection {
             */
             terminal7.run(() => {
                 terminal7.log("Retrying connection to PeerBook")
-                np.count++
+                if (np.count < 5) {
+                    np.count++
+                }
                 this.connect(np).then(resolve).catch(reject)
                     .finally(() => {
                         if (this.session && msgs.length)
                             this.session.pendingCDCMsgs = msgs
                     })
-            }, 10)
+            }, np.count * 1000)
         })
     }
 
