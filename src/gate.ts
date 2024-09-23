@@ -62,6 +62,7 @@ export class Gate {
     sshPort: number
     reconnectCount: number
     lastState: ServerPayload
+    wasSSH: boolean | undefined
     constructor (props) {
         // given properties
         this.id = props.id
@@ -206,9 +207,9 @@ export class Gate {
     async handleFailure(failure: Failure) {
         // KeyRejected and WrongPassword are "light failure"
         const shell = this.map.shell
-        const wasSSH = this.session?.isSSH
         const closeSession = () => {
             if (this.session) {
+                this.wasSSH = this.session.isSSH
                 this.session.close()
                 this.session = null
             }
@@ -235,7 +236,6 @@ export class Gate {
                 this.marker = null
                 closeSession()
                 await this.connect()
-                // We should probably replace the next to lines with a break
                 return
 
             case Failure.NoKey:
@@ -248,7 +248,7 @@ export class Gate {
                 return
 
             case Failure.NotSupported:
-                if (wasSSH) {
+                if (this.wasSSH) {
                     this.notify("SSH status unknown")
                 } else
                     this.notify("WebRTC agent unreachable")
@@ -282,31 +282,27 @@ export class Gate {
 
         }
         closeSession()
-        if (wasSSH) {
-            await this.handleSSHFailure()
-            return
-        } 
-        // TODO: move thgis to the top
         if (!terminal7.isActive(this)){
             this.stopBoarding()
             return
         }
+        if (this.firstConnection) {
+            this.onFirstConnectionDisconnect()
+            return
+        }
+
+        if (this.wasSSH) {
+            await this.handleSSHFailure()
+            return
+        } 
         if (terminal7.recovering) {
             terminal7.log("retrying...")
             try {
                 await this.reconnect()
             } catch (e) {
                 terminal7.log("reconnect failed", e)
-                this.notify("reconnect failed: " + e)
-
-            } finally {
-                terminal7.log("reconnect done")
+                this.notify("Reconnect failed: " + e)
             }
-            return
-        }
-
-        if (this.firstConnection) {
-            this.onFirstConnectionDisconnect()
             return
         }
 
@@ -369,7 +365,7 @@ export class Gate {
     reconnect(): Promise<void> {
         return new Promise((resolve, reject) => {
             const session = this.session
-            const isSSH = session?.isSSH
+            const isSSH = session?session.isSSH:this.wasSSH
             const isNative = Capacitor.isNativePlatform()
             console.log(`reconnecting: # ${this.reconnectCount} ${(session===null)?"null session ":"has session "} \
                         ${isSSH?"is ssh":"is webrtc"}`)
@@ -396,22 +392,23 @@ export class Gate {
                 this.setLayout(JSON.parse(layout) as ServerPayload)
                 resolve()
             }
-            if (!isSSH && !isNative) {
+            if (!isNative) {
                 this.session.reconnect(this.marker)
                 .then(layout => finish(layout))
                 .catch(e  => {
                     if (this.session) {
+                        this.wasSSH = this.session.isSSH
                         this.session.close()
                         this.session = null
                     }
-                    terminal7.log("reconnect failed, calling the shell to handle it", isSSH)
+                    terminal7.log("reconnect failed:", e)
                     reject(e)
-                    // this.map.shell.onDisconnect(this, isSSH).then(resolve).catch(reject)
                 })
                 return
             }
             const closeSessionAndDisconnect = (e) => {
-                if (this.session && !this.session.isSSH) {
+                if (this.session) {
+                    this.wasSSH = this.session.isSSH
                     this.session.close()
                     this.session = null
                 }
@@ -918,6 +915,7 @@ export class Gate {
             }
         }, 10)
         if (this.session) {
+            this.wasSSH = this.session.isSSH
             this.session.close()
             this.session = null
         }

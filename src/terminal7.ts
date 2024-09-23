@@ -244,7 +244,8 @@ export class Terminal7 {
             this.run(() => this.recovering=false, this.conf.net.timeout)
             // real work is done in updateNetworkStatus
             Network.getStatus().then(async s => await this.updateNetworkStatus(s))
-        }
+        } else 
+            this.log("app state change ignored")
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,

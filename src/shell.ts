@@ -483,7 +483,6 @@ export class Shell {
         } else {
             this.t.writeln("\n For persistent sessions & WebRTC 🍯 please install webexec")
             install.splice(1, 0, { prompt: "Install" })
-            // only for native platforms
             if (Capacitor.isNativePlatform())
                 install.splice(2, 0, { prompt: "Always use SSH" })
         }
