@@ -107,12 +107,14 @@ export class PeerbookConnection {
             // remove the first message 
             if (!np.count)
                 np.count = 1
+            /* TODO: remove the count and figure a way to stop endless retries
             else if (np?.count > terminal7.conf.net.retries) {
                 terminal7.log("Failed to connect to PeerBook")
                 this.close()
                 reject(Failure.Exhausted)
                 return
             }
+            */
             terminal7.run(() => {
                 terminal7.log("Retrying connection to PeerBook")
                 np.count++
