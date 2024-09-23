@@ -667,10 +667,9 @@ export class Terminal7 {
         if (status.connected) {
             const gate = this.activeG
             const firstGate = (await Preferences.get({key: "first_gate"})).value
-            const wasSSH = gate?.session?.isSSH
             if (updateNetPopup)
                 off.add("hidden")
-            if (wasSSH) {
+            if (gate?.wasSSH) {
                 await gate.handleFailure(Failure.NotSupported)
                 return
             }
