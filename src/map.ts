@@ -191,7 +191,6 @@ export class T7Map {
                 if (ev.dt < 500) {
                     ev.stopPropagation()
                     const command = (ev.target.closest(".gate-edit"))? "edit" : "connect"
-                    console.log("tap", command)
                     this.shell.runCommand(command, [g.name])
                     .then(() => this.showLog(false))
                     .catch(e => terminal7.notify(e))
