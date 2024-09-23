@@ -6,7 +6,7 @@
         "src/__mocks__/**/*.ts"
     ],
    "compilerOptions": {
-        "target": "ES2017",
+        "target": "ES2022",
         "module": "ESNext",
         "lib": ["DOM", "DOM.Iterable", "ESNext"],
         "moduleResolution": "node",
