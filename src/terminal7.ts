@@ -238,7 +238,7 @@ export class Terminal7 {
                     if (!gate.session.isOpen()) {
                         gate.handleFailure(Failure.TimedOut)
                     } else if (!this.pb.isOpen())
-                        this.pb.notify("Timed out, please refresh app and `support`")
+                        this.pb.notify("Connection timed out")
                     this.map.shell.printPrompt()
                 })
             this.run(() => this.recovering=false, this.conf.net.timeout)
