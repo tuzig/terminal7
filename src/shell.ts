@@ -33,6 +33,7 @@ export class Shell {
     historyIndex = 0
     confEditor: CodeMirror.EditorFromTextArea
     exitConf: () => void
+    watchdogResolve: () => void
     lineAboveForm = 0
     reconnectForm = [
         { prompt: "Reconnect" },
@@ -311,7 +312,8 @@ export class Shell {
         // only one watchdog, the last one
         if (this.watchdog)
             this.stopWatchdog()
-        return new Promise((_, reject) => {
+        return new Promise((resolve, reject) => {
+            this.watchdogResolve = resolve
             this.startHourglass(timeout)
             this.watchdog = terminal7.run(() => {
                 terminal7.log("shell watchdog timeout")
@@ -327,11 +329,16 @@ export class Shell {
             this.watchdog = 0
             this.stopHourglass()
         }
+        if (this.watchdogResolve) {
+            this.watchdogResolve()
+            this.watchdogResolve = null
+        }
         this.printPrompt()
     }
 
     startHourglass(timeout: number) {
         if (this.timer) return
+        this.map.showLog(true)
         const len = 20,
             interval = timeout / len
         let i = 0
