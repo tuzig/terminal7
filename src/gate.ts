@@ -207,6 +207,7 @@ export class Gate {
     async handleFailure(failure: Failure) {
         // KeyRejected and WrongPassword are "light failure"
         const shell = this.map.shell
+        const wasSSH = this.session?.isSSH
         const closeSession = () => {
             if (this.session) {
                 this.session.close()
@@ -248,16 +249,12 @@ export class Gate {
                 return
 
             case Failure.NotSupported:
-                if (!this.tryPB) {
+                if (wasSSH) {
                     this.notify("SSH status unknown")
                 } else
                     this.notify("WebRTC agent unreachable")
                 break
                 
-            case Failure.PBFailed:
-                terminal7.notify(`${PB} Connection failed`)
-                break
-
             case Failure.BadRemoteDescription:
                 this.notify("Connection Sync Error")
                 break
@@ -286,7 +283,7 @@ export class Gate {
 
         }
         closeSession()
-        if (!this.tryPB) {
+        if (wasSSH) {
             await this.handleSSHFailure()
             return
         } 
@@ -787,22 +784,27 @@ export class Gate {
     get tryPB() {
         return this.fp && !this.onlySSH && this.online && this.verified
     }
-    async completeConnect(): Promise<void> {
+    // get new session returns a new session
+    // if the gate is a peerbook gate it's a peerbook session
+    // otherwise it's a WHIP or SSH session
+    newSession() {
         const isNative = Capacitor.isNativePlatform()
         if (this.tryPB) {
             this.notify("🎌  PeerBook")
-            if (this.session)
-                this.session.close()
-            this.session = new PeerbookSession(this.fp)
-        } else {
-            if (isNative)  {
-                this.session = new SSHSession(this.addr, this.username, this.sshPort)
-            } else {
-                this.notify("🎌  WebExec HTTP server")
-                const addr = `http://${this.addr}:7777/offer`
-                this.session = new HTTPWebRTCSession(addr)
-            }
+            return new PeerbookSession(this.fp)
+        } else if (isNative) {
+            this.notify("🖇️ Over SSH")
+            return new SSHSession(this.addr, this.username, this.sshPort)
+        } else {    
+            this.notify("🎌  WebExec WHIP server")
+            const addr = `http://${this.addr}:7777/offer`
+            return new HTTPWebRTCSession(addr)
         }
+    }
+    async completeConnect(): Promise<void> {
+        if (this.session)
+            this.session.close()
+        this.session = this.newSession()
         this.session.onStateChange = (state, failure?) => this.onSessionState(state, failure)
         this.session.onCMD = (msg: ControlMessage) => {
             // cast session to WebRTCSession
@@ -847,39 +849,31 @@ export class Gate {
             }
         }
         this.t7.log("opening session")
-        if (this.tryPB) {
+        if (this.session.isSSH) {
+            let publicKey: string, privateKey: string
             try {
-                await this.session.connect(this.marker)
+                ({ publicKey, privateKey } = await this.t7.readId())
             } catch(e) {
-                this.t7.log("error connecting", e)
-                this.handleFailure(Failure.PBFailed)
+                this.t7.notify(e)
+                this.handleFailure(Failure.NoKey)
+                return
             }
-        } else {
-            if (this.session.isSSH) {
-                let publicKey: string, privateKey: string
-                try {
-                    ({ publicKey, privateKey } = await this.t7.readId())
-                } catch(e) {
-                    this.t7.notify(e)
-                    this.handleFailure(Failure.NoKey)
-                    return
-                }
-                const firstGate = (await Preferences.get({key: "first_gate"})).value
-                if (firstGate)
-                    terminal7.ignoreAppEvents = true
+            const firstGate = (await Preferences.get({key: "first_gate"})).value
+            if (firstGate)
+                terminal7.ignoreAppEvents = true
 
-                const session = this.session as SSHSession
-                try {
-                    await session.connect(this.marker, publicKey, privateKey)
-                } catch(e) {
-                    terminal7.log("error connecting with keys", e)
-                    this.handleFailure(Failure.KeyRejected)
-                } finally {
-                    terminal7.ignoreAppEvents = false
-                }
-            } else
-                await this.session.connect(this.marker)
+            const session = this.session as SSHSession
+            try {
+                await session.connect(this.marker, publicKey, privateKey)
+            } catch(e) {
+                terminal7.log("error connecting with keys", e)
+                this.handleFailure(Failure.KeyRejected)
+            } finally {
+                terminal7.ignoreAppEvents = false
+            }
+            return
         }
+        await this.session.connect(this.marker)
     }
     load() {
         this.t7.log("loading gate")
