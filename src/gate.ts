@@ -10,7 +10,6 @@ import { T7Map } from './map'
 import { Failure, Session, Marker } from './session'
 import { SSHSession } from './ssh_session'
 import { Terminal7 } from './terminal7'
-import { PB } from './peerbook'
 
 import { Capacitor } from '@capacitor/core'
 import { Clipboard } from '@capacitor/clipboard'
