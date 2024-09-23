@@ -2,7 +2,7 @@ import { CapacitorHttp, HttpHeaders } from '@capacitor/core'
 import { BaseChannel, BaseSession, Channel, ChannelID, Failure, Marker } from './session'
 
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
-type RTCStats = {
+export type RTCStats = {
     timestamp: number,
     bytesSent: number,
     bytesReceived: number,
@@ -226,7 +226,7 @@ export class WebRTCSession extends BaseSession {
     async reconnect(marker?: Marker , publicKey?: string, privateKey?: string): Promise<string | void> {
         terminal7.log("in reconnect")
         if (!this.isOpen())
-            await this.connect(marker, publicKey, privateKey)
+            await this.connect(marker, false, privateKey)
         else if (!this.cdc || this.cdc.readyState != "open")
             await this.openCDC()
         if (marker != null) {
@@ -377,6 +377,8 @@ export class WebRTCSession extends BaseSession {
         this.msgHandlers.forEach(h => clearTimeout(h.timeout))
     }
     async getStats(): Promise<RTCStats | null> {
+        if (this.pc == null)
+            return null
         const stats = await this.pc.getStats()
         let candidatePair
         stats.forEach(s => {
