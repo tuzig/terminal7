@@ -313,13 +313,18 @@ export class Gate {
             terminal7.log("reconnect form failed", err)
         }
         if (res == "Reconnect") {
-            shell.startWatchdog().then(() => this.handleFailure(Failure.TimedOut) )
-            await this.connect()
-            shell.stopWatchdog()
+            shell.startWatchdog().catch(() => this.handleFailure(Failure.TimedOut) )
+            try {
+                await this.connect()
+            } catch(e) {
+                terminal7.log("connect failed on reconnect", e)
+            } finally {
+                shell.stopWatchdog()
+            }
         } else {
             this.close()
             this.map.showLog(false)
-        }
+        } 
         shell.printPrompt()
     }
 
@@ -365,14 +370,17 @@ export class Gate {
     reconnect(): Promise<void> {
         return new Promise((resolve, reject) => {
             const session = this.session
-            const isSSH = session?session.isSSH:this.wasSSH
             const isNative = Capacitor.isNativePlatform()
             console.log(`reconnecting: # ${this.reconnectCount} ${(session===null)?"null session ":"has session "} \
-                        ${isSSH?"is ssh":"is webrtc"}`)
+                        ${this.wasSSH?"is ssh":"is webrtc"}`)
             if (++this.reconnectCount > terminal7.conf.net.retries) {
                 this.notify(`Reconnect failed after ${this.reconnectCount} attempts`)
                 this.reconnectCount = 0
                 return reject("retries exceeded")
+            }
+            if (this.wasSSH) {
+                this.handleSSHFailure().then(resolve).catch(reject)
+                return
             }
             if (session == null) {
                 terminal7.log("reconnect with null session. connectin")
@@ -383,13 +391,9 @@ export class Gate {
                 return
             }
 
-            if (isSSH) {
-                this.handleSSHFailure().then(resolve).catch(reject)
-                return
-            }
-
             const finish = layout => {
                 this.setLayout(JSON.parse(layout) as ServerPayload)
+                this.reconnectCount = 0
                 resolve()
             }
             if (!isNative) {
@@ -412,7 +416,7 @@ export class Gate {
                     this.session.close()
                     this.session = null
                 }
-                this.t7.log("reconnect rejected", isSSH)
+                this.t7.log("reconnect rejected", this.wasSSH)
                 reject(e)
             }
             this.t7.readId().then(({publicKey, privateKey}) => {
@@ -428,7 +432,7 @@ export class Gate {
             }).catch(e => {
                 this.t7.log("failed to read id", e)
                 closeSessionAndDisconnect(e)
-                this.t7.log("reconnect failed, calling the shell to handle it", isSSH, e)
+                this.t7.log("reconnect failed, calling the shell to handle it", this.wasSSH, e)
                 this.t7.notify(e)
             })
         })
@@ -495,7 +499,9 @@ export class Gate {
             }
             this.onConnected = () => { 
                 this.notify(`🥂  over ${this.session.isSSH?"SSH":"WebRTC"}`, true)
+                this.wasSSH = this.session.isSSH
                 this.map.shell.stopWatchdog()
+                this.map.showLog(false)
                 this.setIndicatorColor("unset")
                 resolve()
             }

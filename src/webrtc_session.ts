@@ -155,6 +155,7 @@ export class WebRTCSession extends BaseSession {
                     this.onStateChange("gotlayout")
                 })
                 .catch(e =>  {
+                    terminal7.log("failed to restore", e)
                        if (e != Failure.TimedOut)
                            this.onStateChange("failed", e)
                 })
