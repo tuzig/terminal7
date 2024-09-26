@@ -674,7 +674,7 @@ export class Terminal7 {
                 return
             }
             const toReconnect = gate?.boarding && (firstGate == "nope") && this.recovering && (gate.reconnectCount == 0)
-            console.log("toReconnect", toReconnect, "firstGate", firstGate, this.recovering, gate.reconnectCount)
+            this.log("toReconnect", toReconnect, "firstGate", firstGate, this.recovering, gate.reconnectCount)
             if (toReconnect ) {
                 try {
                     await gate.reconnect()

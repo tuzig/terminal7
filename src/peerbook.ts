@@ -278,6 +278,7 @@ export class PeerbookConnection {
     connect(params?: ConnectParams) {
         return new Promise<void>((resolve, reject) =>{
             //TODO: firstMsg should be an array
+            const reconnectParams: ConnectParams = {...(params ?? {})}
             let msgs = (params?.firstMsg)? [params?.firstMsg] : []
             if (this.session) {
                 // check is connection in progress 
@@ -310,8 +311,8 @@ export class PeerbookConnection {
                 switch (state) {
                     case 'connected':
                         // remove the first message so it won't be sent again
-                        if (params)
-                            params.firstMsg = undefined
+                        if (reconnectParams)
+                            reconnectParams.firstMsg = undefined
                         // send a ping to get the uid
                         this.getUID().then(uid => {
                             if (uid == "TBD") {
@@ -333,7 +334,7 @@ export class PeerbookConnection {
                     case 'failed':
                     case 'closed':
                         try {
-                            await this.onDisconnect({params, failure})
+                            await this.onDisconnect({params: reconnectParams, failure})
                         } catch(e) {
                             terminal7.log("onDisconnect failed", e)
                             reject(e)
