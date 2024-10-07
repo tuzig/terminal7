@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.22.2-focal 
+FROM mcr.microsoft.com/playwright:v1.47.1-focal 
 WORKDIR /app
 ENV NODE_PATH="/usr/lib/node_modules"
 ADD ./aatp/infra/runner/package.json .
