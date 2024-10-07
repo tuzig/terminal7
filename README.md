@@ -13,7 +13,7 @@ Issue](https://img.shields.io/github/issues-closed/tuzig/terminal7?color=A0A0A0)
 
 Terminal7 is a terminal that includes a terminal multiplexer made for modern
 web clients and real time communications over WebRTC. 
-A reincaranation of tmux and screen, Terminal7 is a hybrid
+A reincaranation of screen and tmux, Terminal7 is a hybrid
 app that designed for smart clients.
 
 The code here is in vanilla TypeSctipt, relying chiefly on the following projects:
@@ -28,31 +28,22 @@ The code here is in vanilla TypeSctipt, relying chiefly on the following project
 - Playwright for end-to-end tests
 - MailHog for an SMRP test double
 
-For networking we use SSH or WebRTC, the web standard for real time
-communications. WebRTC is UDP based with wide support and a great
-implmentation in go - [pion/webrtc](https://github.com/pion/webrtc) -
-that we use as a base for our server's agent.
+For networking on native clients, we support SSH as a fallback.
+On the web, only WebRTC servers are supported.
+Our WebRTC server is writtten in go and is based on 
+[pion/webrtc](https://github.com/pion/webrtc).
+It supports both direct and relayed connections, and can be used with or without a TURN server.
 
 If you're having problems with your first connection, please refer to our 
 [troubleshooting guide](https://github.com/tuzig/terminal7/blob/master/docs/troubleshooting.md).
 
-We welcome new contributors and are happy to help, talk to us on our
-[discord server](https://discord.com/invite/rDBj8k4tUE).
+## Installation
+For web platforms, Terminal7 is packaged as a Progressive Web App (PWA) and can be installed from the browser.
+Click [here](https://pwa.terminal7.dev) for the latest version.
 
-## Getting Started
-You can get Terminal7 for free from the 
+For tablers, you can get Terminal7 for free from the 
 [App Store](https://apps.apple.com/il/app/terminal7/id1532882447) or
 [Google Play](https://play.google.com/store/apps/details?id=dev.terminal).
-
-To run from source, you should start by forking the repo 
-(or using tuzig/terminal7 if you just want to test), cloning it and from it's root run:
-
-```console
-yarn install
-yarn test
-yarn start
-```
-then point your browser at the printed URL, usually http://localhost:5173.
 
 ## Installing the server
 
@@ -114,10 +105,7 @@ to copy to and from the clipboard. Just 12 lines in your init.lua:
 
 When webexec is not install, neovim will try the default clipboard tools like xclip or pbcopy.
 
-## Running the acceptance tests
+## Contributing
 
- TL;DR: run docker and `./aatp/run` 
-
-Terminal7 has a suite of acceptance tests that run over a docker compose virtual lab.
-They include end-to-end tests and run on PRs to ensure the code is solid.
-To learn more about the tests, please refer to [./aatp/README.md](./aatp/README.md) documentation.
+We are looking for contributors to help us improve Terminal7.
+Please read our [contributing guide](./CONTRIBUTING.md) before rolling your sleeves.

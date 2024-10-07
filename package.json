@@ -80,7 +80,7 @@
     "stage": "vite build --sourcemap && vite preview",
     "run": "vite build -c vite.dev.config.js && cap run ios",
     "runa": "vite build -c vite.dev.config.js && cap run android",
-    "test": "vitest",
+    "test": "vitest run && ./aatp/run",
     "build": "vite build -c vite.dev.config.js",
     "clean": "rm -rf dist ios/App/App/public/*",
     "aatp": "bash ./aatp/run",
