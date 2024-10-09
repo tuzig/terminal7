@@ -306,7 +306,7 @@ export class Shell {
     /* 
      * Starts a watchdog that will reject if not stopped within the given time
     */
-    startWatchdog(timeout? : number): Promise<void> {
+    startWatchdog({ timeout, prefix = 'Waiting' }: { timeout?: number; prefix?: string } = {} ): Promise<void> {
         if (!timeout)
             timeout = terminal7.conf.net.timeout
         // only one watchdog, the last one
@@ -316,7 +316,7 @@ export class Shell {
             this.watchdogResolve = resolve
             this.startHourglass(timeout)
             this.watchdog = terminal7.run(() => {
-                terminal7.log("shell watchdog timeout")
+                terminal7.log(`${prefix} shell watchdog timeout`)
                 this.stopWatchdog()
                 reject(Failure.TimedOut)
             }, timeout)
