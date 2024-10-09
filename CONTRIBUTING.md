@@ -5,8 +5,12 @@ We welcome new contributors and are happy to help, talk to us on our
 
 ## Getting Started
 
-Please fork and clone this repo. Terminal7 tests require a running docker daemon.
-So if `docker ps` works, you can install, test and run Terminal7 with:
+If you're on Windows you'd better install WSL2 and use it to run Terminal7.
+If you're on Linux or MacOS you should be fine.
+Start by forkng the repo and clone it locally.
+Terminal7 tests require a running docker daemon.
+You can use `docker ps` to ensure it's up and running.
+To install, test and run Terminal7 with:
 
 ```console
 yarn install
