@@ -171,7 +171,7 @@ export class PeerbookConnection {
         this.echo("and use it to generate a One Time Password")
         // verify ourselves - it's the first time and we were approved thanks 
         // to the revenuecat's user id
-        this.shell.startWatchdog(3000).catch(() => {
+        this.shell.startWatchdog({ timeout: 3000 }).catch(() => {
             this.shell.t.writeln("Timed out waiting for OTP")
             this.shell.printPrompt()
         })

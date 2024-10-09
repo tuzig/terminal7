@@ -241,7 +241,7 @@ async function connectCMD(shell:Shell, args: string[]) {
     const  firstGate = (await Preferences.get({key: "first_gate"})).value
     const timeout = (firstGate == "nope") ? undefined : 10000
 
-    shell.startWatchdog(timeout).catch(e => gate.handleFailure(e))
+    shell.startWatchdog({ timeout }).catch(e => gate.handleFailure(e))
     if (terminal7.activeG && !terminal7.isActive(gate)) {
         terminal7.activeG.stopBoarding()
         terminal7.activeG.blur()
@@ -638,7 +638,7 @@ async function subscribeCMD(shell: Shell) {
             return
         if (choice == "Restore Purchases") {
             shell.t.writeln("Restoring purchases")
-            shell.startWatchdog(10000).catch(e => {
+            shell.startWatchdog({ timeout: 10000 }).catch(e => {
                 shell.t.writeln("Sorry, restore command timed out")
                 shell.t.writeln("Please try again or `support`")
                 throw e
@@ -661,7 +661,7 @@ async function subscribeCMD(shell: Shell) {
         } else {
             const p = packages.find(p => p.prompt == choice)
             shell.t.writeln("Thank you 🙏 directing you to the store")
-            shell.startWatchdog(120000).catch(e => {
+            shell.startWatchdog({ timeout : 120000 }).catch(e => {
                 shell.t.writeln("Sorry, subscribe command timed out")
                 shell.t.writeln("Please try again or `support`")
                 throw e
@@ -939,7 +939,7 @@ export async function installCMD(shell: Shell, args: string[]) {
     if (done) {
         // wait for the gate to get an fp
         let timedOut = false
-        shell.startWatchdog(terminal7.conf.net.timeout)
+        shell.startWatchdog({ timeout: terminal7.conf.net.timeout })
             .catch(() => timedOut = true)
         while (!gate.fp && ! timedOut)
             await (new Promise(r => setTimeout(r, 100)))
@@ -1002,7 +1002,7 @@ async function supportCMD(shell: Shell) {
             let description = await shell.askValue("Please explain how to recreate the issue: \n")
             description += `\n\nOn: ${navigator.userAgent}\n`
             shell.t.writeln("Sending...")
-            shell.startWatchdog(5000).catch(() => sendFailed())
+            shell.startWatchdog({ timeout: 5000 }).catch(() => sendFailed())
             const res = await fetch(`${schema}://${terminal7.conf.net.peerbook}/support`, {
                 method: "POST",
                 body: JSON.stringify({
@@ -1081,7 +1081,7 @@ async function loginCMD(shell: Shell) {
     }
     shell.t.writeln(`PeerBook response: ${await res.text()}`)
     let timedOut = false
-    shell.startWatchdog(180000).catch(() => timedOut = true)
+    shell.startWatchdog({ timeout: 180000 }).catch(() => timedOut = true)
     while (!terminal7.pb.uid && !timedOut) {
         await new Promise(r => setTimeout(r, 2000))
         try {
