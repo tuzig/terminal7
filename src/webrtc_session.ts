@@ -1,4 +1,3 @@
-import { CapacitorHttp, HttpHeaders } from '@capacitor/core'
 import { BaseChannel, BaseSession, Channel, ChannelID, Failure, Marker } from './session'
 
 type ChannelOpenedCB = (channel: Channel, id: ChannelID) => void 
@@ -467,7 +466,7 @@ export class PeerbookSession extends WebRTCSession {
 // HTTPWebRTCSession is a WebRTCSession that connects to a WHIP server
 export class HTTPWebRTCSession extends WebRTCSession {
     address: string
-    headers: HttpHeaders = {}
+    headers: HeadersInit = {}
     sessionURL: string | null = null
     pendingCandidates: Array<RTCIceCandidate>
     // storing the setTimeout id so we can cancel it
@@ -479,18 +478,31 @@ export class HTTPWebRTCSession extends WebRTCSession {
         terminal7.log("new http webrtc session", address, JSON.stringify(this.headers))
     }
 
+    async _fetch(url: string, method: string, body: any) {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 3000)
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: this.headers,
+                body: body,
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            return response;
+        } catch (error) {
+            clearTimeout(timeoutId);
+            throw error;
+        }
+    }
+
     sendOffer(offer: RTCSessionDescriptionInit) {
         const headers = this.headers
-        this.pendingCandidates = []
         headers['Content-Type'] = 'application/sdp'
-        CapacitorHttp.post({
-            url: this.address, 
-            headers: headers,
-            readTimeout: 3000,
-            connectTimeout: 3000,
-            data: offer.sdp,
-            // webFetchExtra: { mode: 'no-cors' }
-        }).then(response => {
+        this.pendingCandidates = []
+        this._fetch(this.address, 'POST', offer.sdp)
+        .then(response => {
             if (response.status == 401)
                 this.fail(Failure.Unauthorized)
             else if (response.status >= 300) {
@@ -505,7 +517,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
                 terminal7.log("--> penfing candidates", this.pendingCandidates)
                 this.pendingCandidates.forEach(c => this.sendCandidate(c))
                 this.pendingCandidates = []
-                return response.data
+                return response.text()
             }
             return null
         }).then(data => {
@@ -544,14 +556,8 @@ export class HTTPWebRTCSession extends WebRTCSession {
         const headers = {}
         Object.assign(headers, this.headers)
         headers['Content-Type'] = 'application/json'
-        CapacitorHttp.patch({
-            url: this.sessionURL, 
-            headers: headers,
-            readTimeout: 3000,
-            connectTimeout: 3000,
-            data: candidate.toJSON(),
-            // webFetchExtra: { mode: 'no-cors' }
-        }).then(response => {
+        this._fetch(this.sessionURL, 'PATCH', JSON.stringify(candidate.toJSON()))
+        .then(response => {
             if (response.status == 401)
                 this.fail(Failure.Unauthorized)
             else if (response.status >= 300) {
