@@ -1,36 +1,38 @@
 PODS:
-  - Capacitor (6.1.2):
+  - Capacitor (7.4.1):
     - CapacitorCordova
-  - CapacitorApp (6.0.1):
+  - CapacitorApp (7.0.1):
     - Capacitor
-  - CapacitorBrowser (6.0.2):
+  - CapacitorBrowser (7.0.1):
     - Capacitor
-  - CapacitorCamera (6.0.2):
+  - CapacitorCamera (7.0.1):
     - Capacitor
-  - CapacitorClipboard (6.0.1):
+  - CapacitorClipboard (7.0.1):
     - Capacitor
   - CapacitorCommunityNativeAudio (5.0.1):
     - Capacitor
-  - CapacitorCordova (6.1.2)
-  - CapacitorDevice (6.0.1):
+  - CapacitorCordova (7.4.1)
+  - CapacitorDevice (7.0.1):
     - Capacitor
-  - CapacitorFilesystem (6.0.1):
+  - CapacitorFilesystem (7.1.2):
     - Capacitor
-  - CapacitorKeyboard (6.0.2):
+    - IONFilesystemLib (~> 1.0)
+  - CapacitorKeyboard (7.0.1):
     - Capacitor
   - CapacitorNativeBiometric (0.0.1):
     - Capacitor
-  - CapacitorNetwork (6.0.2):
+  - CapacitorNetwork (7.0.1):
     - Capacitor
-  - CapacitorPreferences (6.0.2):
+  - CapacitorPreferences (7.0.1):
     - Capacitor
   - CapacitorRateApp (4.0.3):
     - Capacitor
   - CapacitorSshPlugin (0.5.4):
     - Capacitor
     - NMSSHT7 (~> 2.9)
-  - CapacitorStatusBar (6.0.1):
+  - CapacitorStatusBar (7.0.1):
     - Capacitor
+  - IONFilesystemLib (1.0.0)
   - NMSSHT7 (2.9.1)
   - PurchasesHybridCommon (11.1.1):
     - RevenueCat (= 4.43.2)
@@ -60,6 +62,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
+    - IONFilesystemLib
     - NMSSHT7
     - PurchasesHybridCommon
     - RevenueCat
@@ -101,27 +104,28 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@revenuecat/purchases-capacitor"
 
 SPEC CHECKSUMS:
-  Capacitor: 679f9673fdf30597493a6362a5d5bf233d46abc2
-  CapacitorApp: 0bc633b4eae40a1f32cd2834788fad3bc42da6a1
-  CapacitorBrowser: 83ec661a9ccd56c28a6851e4dd1ac33b181227ec
-  CapacitorCamera: ed022171dbf3853e68eec877b4d78995378af6b7
-  CapacitorClipboard: 756cd7e83e8d5d19b0c74f40b57517c287bd5fe2
-  CapacitorCommunityNativeAudio: 1a4d5490acb59f155602c0b6bcf1b42ee4efe91b
-  CapacitorCordova: f48c89f96c319101cd2f0ce8a2b7449b5fb8b3dd
-  CapacitorDevice: 7097a1deb4224b77fd13a6e60a355d0062a5d772
-  CapacitorFilesystem: 37fb3aa5c945b4539ab11c74a5c57925a302bf24
-  CapacitorKeyboard: 2700f9b18687be021e28b5a09b59eb151a46d5e0
-  CapacitorNativeBiometric: b47637a8cd349bdac014424bb4ddcae9ee5d4919
-  CapacitorNetwork: 8796cf1f1104a00b289957b6150b7c60e1c2a8d3
-  CapacitorPreferences: e8284bf740cf8c6d3f25409af3c01df87dfeb5a1
-  CapacitorRateApp: 896df7ec6a237fea72d1955e0cb26394654b00db
-  CapacitorSshPlugin: 79f67cb26d40bd0c07cec6dda93d93d5faf7b614
-  CapacitorStatusBar: b81d4fb5d4e0064c712018071b3ab4b810b39a63
+  Capacitor: 78ad32d4b0d9dfa25402eb8b0ac46c2b8a4696b8
+  CapacitorApp: febecbb9582cb353aed037e18ec765141f880fe9
+  CapacitorBrowser: 6299776d496e968505464884d565992faa20444a
+  CapacitorCamera: 6e73f1fc6c629a672658705a02409b60854bc0f1
+  CapacitorClipboard: 70bfdb42b877b320a6e511ab94fa7a6a55d57ecb
+  CapacitorCommunityNativeAudio: 242e305c1d7bf6e3f26c3c110807d1582bcf69e5
+  CapacitorCordova: 34618fa1b14b6b091fd60a7658f7654044ae8d8a
+  CapacitorDevice: c6f6d587dd310527f8a48bf09c4e7b4a4cf14329
+  CapacitorFilesystem: 337eeaf16a9fa5a44d2329df411523fa3a9a6ee9
+  CapacitorKeyboard: 09fd91dcde4f8a37313e7f11bde553ad1ed52036
+  CapacitorNativeBiometric: 78cf21304251a512e4597437325b5e9b0cd9f7b3
+  CapacitorNetwork: 15cb4385f0913a8ceb5e9a4d7af1ec554bdb8de8
+  CapacitorPreferences: 6c98117d4d7508034a4af9db64d6b26fc75d7b94
+  CapacitorRateApp: 20928fa996851647e912bbf119af59a48a171712
+  CapacitorSshPlugin: 739498cc3ee15a04aa4b716838c958749e402d7f
+  CapacitorStatusBar: 6e7af040d8fc4dd655999819625cae9c2d74c36f
+  IONFilesystemLib: ceacae793975039530458eabab0c495c70515a0d
   NMSSHT7: 67f9d8f43b40b997728761b4cf2aa7ea660ba7c2
   PurchasesHybridCommon: 73f4f2c6e4ec3487b4219bf60e1661100fb85da3
   RevenueCat: 3d934653b7e8b09af88fd47e9e84cfaf5d0a89ba
-  RevenuecatPurchasesCapacitor: 180baf04b08c3bd1aac2abe60f536aa35196cbc3
+  RevenuecatPurchasesCapacitor: 70ecf4905bbbce9b6d6bd243504a7001b6054ac0
 
 PODFILE CHECKSUM: 0b234f47d92ce42f718c406e1f2c37447bc3c605
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2

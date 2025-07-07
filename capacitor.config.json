@@ -1,7 +1,6 @@
 {
   "appId": "dev.terminal7",
   "appName": "Terminal7",
-  "bundledWebRuntime": false,
   "npmClient": "yarn",
   "webDir": "dist",
   "plugins": {

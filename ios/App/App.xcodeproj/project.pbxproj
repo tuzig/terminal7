@@ -224,7 +224,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "export LANG=en_US.UTF-8\ncd ../..\n/usr/local/bin/npx cap sync ios\n";
+			shellScript = "# export LANG=en_US.UTF-8\n# export PATH=/opt/homebrew/bin:$PATH\n# cd ../..\n# /opt/homebrew/bin/npx cap sync ios\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
