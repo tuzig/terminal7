@@ -480,14 +480,18 @@ export class HTTPWebRTCSession extends WebRTCSession {
 
     async _fetch(url: string, method: string, body: any) {
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 3000)
+        const timeoutId = setTimeout(() => {
+            terminal7.log("fetch timed out", method, url)
+            controller.abort()
+        }, this.t7.conf.net.timeout)
 
         try {
             const response = await fetch(url, {
                 method: method,
                 headers: this.headers,
                 body: body,
-                signal: controller.signal
+                signal: controller.signal,
+                mode: 'cors',
             });
             clearTimeout(timeoutId);
             return response;
@@ -512,9 +516,8 @@ export class HTTPWebRTCSession extends WebRTCSession {
                 else
                     this.fail()
             } else if (response.status == 201) {
-                this.sessionURL = response.headers['location'] || response.headers['Location']
+                this.sessionURL = response.headers.get('location')
                 terminal7.log("got a session url", this.sessionURL)
-                terminal7.log("--> penfing candidates", this.pendingCandidates)
                 this.pendingCandidates.forEach(c => this.sendCandidate(c))
                 this.pendingCandidates = []
                 return response.text()
