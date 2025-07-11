@@ -411,7 +411,7 @@ export class Gate {
             }
         }
         const installForm = [{
-            prompt: "Have you installed the backend - webexec?",
+            prompt: "WHIP server unavailable. Please run `webexec start`.\nIs webexec installed?",
                 values: ["y", "n"],
                 default: "n"
         }]

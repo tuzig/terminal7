@@ -302,10 +302,11 @@ nav::-webkit-scrollbar {
     font-size: 18px;
     line-height: 34px;
     text-decoration: none; 
-    color: inherit;
+    color: var(--indicator-color);
+    opacity: 0.4;
     width: max-content;
 }
-.tabbar-names .on { color: var(--indicator-color) !important; }
+.tabbar-names .on { opacity: 1; font-weight: bold; }
 #navbar .on { text-shadow: var(--remote-border) 1px 0 10px; }
 .failed { color: var(--local-border) !important; }
 .warn { color: #FAFA00 !important; }

@@ -478,7 +478,7 @@ export class HTTPWebRTCSession extends WebRTCSession {
         terminal7.log("new http webrtc session", address, JSON.stringify(this.headers))
     }
 
-    async _fetch(url: string, method: string, body: any) {
+    async _fetch(url: string, method: string, body: string | null) {
         const controller = new AbortController()
         const timeoutId = setTimeout(() => {
             terminal7.log("fetch timed out", method, url)

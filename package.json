@@ -58,7 +58,6 @@
     "@capacitor/assets": "^3.0.5",
     "@interactjs/types": "^1.10.27",
     "@playwright/test": "^1.20.1",
-    "@types/xterm": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "<6",
     "@typescript-eslint/parser": "<6",
     "eslint": "<9",

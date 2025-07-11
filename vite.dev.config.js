@@ -12,6 +12,11 @@ export default defineConfig({
       sourcemap: true,
       minify: false
     },
+  server: {
+    watch: {
+      paths: ['css']
+    }
+  },
 
   plugins: [
     VitePWA({
