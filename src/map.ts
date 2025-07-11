@@ -36,7 +36,7 @@ export async function openEmulator(e: HTMLElement, t: Terminal) {
             await new FontFaceObserver(fontFamily).load(null, 200)
             await new FontFaceObserver(fontFamily, { weight: "bold" }).load(null, 200)
         } catch (e) {
-            this.notify(`Font ${fontFamily} not found, using FiraCode`)
+            terminal7.notify(`Font ${fontFamily} not found, using FiraCode`)
             t.options.fontFamily = "FiraCode"
         }   
     }
