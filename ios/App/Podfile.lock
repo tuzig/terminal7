@@ -1,5 +1,5 @@
 PODS:
-  - Capacitor (7.4.1):
+  - Capacitor (7.4.2):
     - CapacitorCordova
   - CapacitorApp (7.0.1):
     - Capacitor
@@ -11,7 +11,7 @@ PODS:
     - Capacitor
   - CapacitorCommunityNativeAudio (5.0.1):
     - Capacitor
-  - CapacitorCordova (7.4.1)
+  - CapacitorCordova (7.4.2)
   - CapacitorDevice (7.0.1):
     - Capacitor
   - CapacitorFilesystem (7.1.2):
@@ -104,13 +104,13 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@revenuecat/purchases-capacitor"
 
 SPEC CHECKSUMS:
-  Capacitor: 78ad32d4b0d9dfa25402eb8b0ac46c2b8a4696b8
+  Capacitor: 9d9e481b79ffaeacaf7a85d6a11adec32bd33b59
   CapacitorApp: febecbb9582cb353aed037e18ec765141f880fe9
   CapacitorBrowser: 6299776d496e968505464884d565992faa20444a
   CapacitorCamera: 6e73f1fc6c629a672658705a02409b60854bc0f1
   CapacitorClipboard: 70bfdb42b877b320a6e511ab94fa7a6a55d57ecb
   CapacitorCommunityNativeAudio: 242e305c1d7bf6e3f26c3c110807d1582bcf69e5
-  CapacitorCordova: 34618fa1b14b6b091fd60a7658f7654044ae8d8a
+  CapacitorCordova: 5e58d04631bc5094894ac106e2bf1da18a9e6151
   CapacitorDevice: c6f6d587dd310527f8a48bf09c4e7b4a4cf14329
   CapacitorFilesystem: 337eeaf16a9fa5a44d2329df411523fa3a9a6ee9
   CapacitorKeyboard: 09fd91dcde4f8a37313e7f11bde553ad1ed52036

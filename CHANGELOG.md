@@ -6,6 +6,17 @@ will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.2] - 2025/07/11
+
+### Changed
+
+- Upgraded to Capacitor v7, removing `CapacitorHttp`
+
+### Fixed
+
+- PeerBook connection after sleep
+- A bug where `this` was undefined
+
 ## [1.11.1] - 2024/9/29
 
 ### Fixed
