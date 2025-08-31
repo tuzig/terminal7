@@ -59,5 +59,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>voip</string>
+	</array>
 </dict>
 </plist>
