@@ -392,7 +392,14 @@ export class Gate {
             }
 
             const finish = layout => {
-                this.setLayout(JSON.parse(layout) as ServerPayload)
+                let parsed: ServerPayload | null = null
+                try {
+                    parsed = layout ? JSON.parse(layout) as ServerPayload : null
+                } catch (e) {
+                    terminal7.log("failed to parse restored layout, starting fresh", e)
+                    this.notify("fresh webexec session")
+                }
+                this.setLayout(parsed)
                 this.reconnectCount = 0
                 resolve()
             }

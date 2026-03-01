@@ -231,16 +231,16 @@ export class WebRTCSession extends BaseSession {
         else if (!this.cdc || this.cdc.readyState != "open")
             await this.openCDC()
         if (marker != null) {
-            let payload: string
             try {
-                payload = await this.sendCTRLMsg(new ControlMessage("restore", { marker }))
+                return await this.sendCTRLMsg(new ControlMessage("restore", { marker }))
             } catch(e) {
-                if (e != Failure.TimedOut)
-                    throw e
+                // If the backend session was reset, old markers can become stale.
+                // Fall back to current payload and let the caller treat it as a fresh session.
+                terminal7.log("restore failed, falling back to get_payload", e)
+                return this.getPayload()
             }
-            return payload
-        } else
-            return this.getPayload()
+        }
+        return this.getPayload()
     }
     openCDC(): Promise<void> {
         // stop listening for messages
