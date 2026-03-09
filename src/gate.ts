@@ -166,6 +166,56 @@ export class Gate {
         return Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2)
     }
 
+    private async applyServerPayload(rawPayload: string | null) {
+        let layout: ServerPayload | null = null
+        try {
+            if (rawPayload)
+                layout = JSON.parse(rawPayload)
+        } catch(e) {
+            layout = null
+        }
+
+        const incomingSession = layout?.session
+        const hadSession = !!this.sessionId
+        let freshSession = false
+        let needsPersist = false
+
+        if (hadSession) {
+            if (!incomingSession || incomingSession !== this.sessionId) {
+                freshSession = true
+                this.sessionId = incomingSession || this.newSessionId()
+                if (layout)
+                    layout.session = this.sessionId
+                else
+                    layout = null
+                this.clear()
+                needsPersist = true
+            }
+        } else {
+            if (incomingSession) {
+                this.sessionId = incomingSession
+            } else {
+                this.sessionId = this.newSessionId()
+                if (layout)
+                    layout.session = this.sessionId
+                needsPersist = true
+            }
+        }
+
+        if (freshSession)
+            this.notify("fresh webexec session")
+
+        this.setLayout(layout)
+
+        if (needsPersist && this.session) {
+            try {
+                await this.session.setPayload(this.dump())
+            } catch(e) {
+                this.t7.log("failed to persist session payload", e)
+            }
+        }
+    }
+
     /*
      * onSessionState(state) is called when the connection
      * state changes.
@@ -190,48 +240,7 @@ export class Gate {
         } else if (state == "failed")  {
             this.handleFailure(failure)
         } else if (state == "gotlayout") {
-            let layout: ServerPayload | null = null
-            try {
-                layout = JSON.parse(this.session.lastPayload)
-            } catch(e) {
-                layout = null
-            }
-
-            const incomingSession = layout?.session
-            const hadSession = !!this.sessionId
-            let freshSession = false
-            let needsPersist = false
-
-            if (hadSession) {
-                if (!incomingSession || incomingSession !== this.sessionId) {
-                    freshSession = true
-                    this.sessionId = incomingSession || this.newSessionId()
-                    if (layout)
-                        layout.session = this.sessionId
-                    else
-                        layout = null
-                    this.clear()
-                    needsPersist = true
-                }
-            } else {
-                if (incomingSession) {
-                    this.sessionId = incomingSession
-                } else {
-                    this.sessionId = this.newSessionId()
-                    if (layout)
-                        layout.session = this.sessionId
-                    needsPersist = true
-                }
-            }
-
-            if (freshSession)
-                this.notify("fresh webexec session")
-
-            this.setLayout(layout)
-
-            if (needsPersist && this.session)
-                this.session.setPayload(this.dump())
-
+            void this.applyServerPayload(this.session?.lastPayload ?? null)
             this.onConnected()
         }
     }
@@ -443,8 +452,8 @@ export class Gate {
                 return
             }
 
-            const finish = layout => {
-                this.setLayout(JSON.parse(layout) as ServerPayload)
+            const finish = async layout => {
+                await this.applyServerPayload(layout)
                 this.reconnectCount = 0
                 resolve()
             }
@@ -932,55 +941,13 @@ export class Gate {
     }
     async load() {
         this.t7.log("loading gate")
-        let layout: ServerPayload | null = null
+        let payload: string | null = null
         try {
-            const payload = await this.session.getPayload()
-            try {
-                layout = JSON.parse(payload)
-            } catch(e) {
-                layout = null
-            }
+            payload = await this.session.getPayload()
         } catch(e) {
             this.t7.log("failed to get payload", e)
-            layout = null
         }
-        console.log("got payload", layout)
-
-        const incomingSession = layout?.session
-        const hadSession = !!this.sessionId
-        let freshSession = false
-        let needsPersist = false
-
-        if (hadSession) {
-            if (!incomingSession || incomingSession !== this.sessionId) {
-                freshSession = true
-                this.sessionId = incomingSession || this.newSessionId()
-                if (layout)
-                    layout.session = this.sessionId
-                else
-                    layout = null
-                this.clear()
-                needsPersist = true
-            }
-        } else {
-            if (incomingSession) {
-                this.sessionId = incomingSession
-            } else {
-                this.sessionId = this.newSessionId()
-                if (layout)
-                    layout.session = this.sessionId
-                needsPersist = true
-            }
-        }
-
-        if (freshSession)
-            this.notify("fresh webexec session")
-
-        this.setLayout(layout)
-
-        if (needsPersist && this.session)
-            this.session.setPayload(this.dump())
-
+        await this.applyServerPayload(payload)
         document.getElementById("map").classList.add("hidden")
     }
     onFormError(err) {
