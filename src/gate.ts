@@ -25,6 +25,7 @@ export interface ServerPayload {
     height: number
     width: number
     windows: SerializedWindow[]
+    session?: string
     active?: boolean
 }
 
@@ -32,6 +33,7 @@ export interface ServerPayload {
  * The gate class abstracts a host connection
  */
 export class Gate {
+    sessionId?: string
     activeW: Window
     addr: string
     boarding: boolean
@@ -154,6 +156,16 @@ export class Gate {
             const e = this.e.querySelector(".tabbar-names") as HTMLElement
             e.style.setProperty("--indicator-color", color)
     }
+
+    private newSessionId(): string {
+        if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+            const bytes = new Uint8Array(16)
+            crypto.getRandomValues(bytes)
+            return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("")
+        }
+        return Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2)
+    }
+
     /*
      * onSessionState(state) is called when the connection
      * state changes.
@@ -691,7 +703,8 @@ export class Gate {
         const container = this.e.querySelector(".windows-container") as HTMLDivElement
         return { windows: windows,
                  width: container.clientWidth,
-                 height: container.clientHeight }
+                 height: container.clientHeight,
+                 session: this.sessionId }
     }
     storeState() {
         /* TODO: restore the restore to last state
