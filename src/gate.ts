@@ -163,7 +163,10 @@ export class Gate {
             crypto.getRandomValues(bytes)
             return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("")
         }
-        return Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2)
+        const bytes = []
+        for (let i = 0; i < 16; i++)
+            bytes.push(Math.floor(Math.random() * 256))
+        return bytes.map(b => b.toString(16).padStart(2, "0")).join("")
     }
 
     private async applyServerPayload(rawPayload: string | null) {
@@ -186,8 +189,6 @@ export class Gate {
                 this.sessionId = incomingSession || this.newSessionId()
                 if (layout)
                     layout.session = this.sessionId
-                else
-                    layout = null
                 this.clear()
                 needsPersist = true
             }
@@ -228,8 +229,7 @@ export class Gate {
         this.t7.log(`updating ${this.name} state to ${state} ${failure}`)
         if (state == "connected") {
             this.marker = null
-            this.load()
-            this.onConnected()
+            void this.load().then(() => this.onConnected())
         } else if (state == "disconnected") {
             // TODO: add warn class
             this.lastDisconnect = Date.now()
@@ -240,8 +240,7 @@ export class Gate {
         } else if (state == "failed")  {
             this.handleFailure(failure)
         } else if (state == "gotlayout") {
-            void this.applyServerPayload(this.session?.lastPayload ?? null)
-            this.onConnected()
+            void this.applyServerPayload(this.session?.lastPayload ?? null).then(() => this.onConnected())
         }
     }
     async handleSSHFailure() {
