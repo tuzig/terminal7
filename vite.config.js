@@ -10,7 +10,7 @@ export default defineConfig({
       environment: "jsdom",
       reporters: "verbose",
       globals: true,
-      exclude: [ ...configDefaults.exclude, "aatp/*/*" ],
+      exclude: [ ...configDefaults.exclude, "aatp/*/*", "**/.asimi/**", "**/.opencode/**", "**/out/**", "**/infra/**" ],
       setupFiles: "vitest.setup.ts"
   },
   plugins: [

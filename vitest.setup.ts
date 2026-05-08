@@ -2,6 +2,7 @@ import { vi } from 'vitest'
 
 vi.mock("@xterm/xterm");
 vi.mock('@capacitor-community/native-audio')
+vi.mock('@capacitor/preferences')
 vi.mock('@xterm/addon-fit')
 vi.mock('@xterm/addon-search')
 vi.mock('@xterm/addon-web-links')
