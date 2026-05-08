@@ -91,12 +91,28 @@ export class PeerbookConnection {
             if (this.session) {
                 // storing pending messages for the new session
                 msgs = this.session.pendingCDCMsgs
-                this.session.pendingCDCMsgs = [] 
+                this.session.pendingCDCMsgs = []
                 this.session.close()
             }
             this.session = null
             this.stopSpinner()
             terminal7.log("PB webrtc connection failed", failure, this.uid, params)
+
+            // Handle certificate expiration
+            if (failure == Failure.CertificateExpired) {
+                terminal7.log("Certificate expired, regenerating and reconnecting")
+                terminal7.notify("Security certificate expired. Generating new certificate...")
+                terminal7.generateCertificate().then(() => {
+                    terminal7.log("Certificate regenerated, reconnecting to PeerBook")
+                    // TODO: This will surely fail. We need to authorize the new cert with peerbook
+                    this.connect(params).then(resolve).catch(reject)
+                }).catch(e => {
+                    terminal7.log("Failed to regenerate certificate", e)
+                    reject(e)
+                })
+                return
+            }
+
             if (failure == Failure.Unauthorized) {
                 reject(failure)
                 return
@@ -276,10 +292,21 @@ export class PeerbookConnection {
 
     // connect to PeerBook
     connect(params?: ConnectParams) {
-        return new Promise<void>((resolve, reject) =>{
+        return new Promise<void>(async (resolve, reject) =>{
             //TODO: firstMsg should be an array
             const reconnectParams: ConnectParams = {...(params ?? {})}
             let msgs = (params?.firstMsg)? [params?.firstMsg] : []
+
+            // Check certificate expiration before connecting
+            try {
+                const renewed = await terminal7.checkAndRenewCertificate()
+                if (renewed) {
+                    terminal7.log("Certificate renewed before PeerBook connection")
+                }
+            } catch (e) {
+                terminal7.log("Error checking certificate before connection", e)
+            }
+
             if (this.session) {
                 // check is connection in progress 
                 if (this.session?.isOpenish()) {

@@ -370,6 +370,10 @@ export class Terminal7 {
             }, 100)
         })
         this.initSearch()
+
+        // Check for certificate expiration on startup
+        this.checkCertificateOnStartup()
+
         this.pbConnect()
             .catch(e => this.log("pbConnect failed", e))
             .finally(() =>
@@ -474,7 +478,7 @@ export class Terminal7 {
                     this.log("PB not supported")
                     const pbHost = this.conf.net.peerbook
                     if (pbHost == DEFAULT_PB_HOST) {
-                        this.notify(`${PB} Failed to connect, please try again later`)
+                        this.notify(`${PB} Failed to connect: ${e}`)
                     } else {
                         const url = (this.conf.peerbook.insecure ? "http://" : "https://") + pbHost
                         this.notify(`${PB} Failed to connect to server at:`)
@@ -485,7 +489,7 @@ export class Terminal7 {
                 }
                 else if (e != "Unauthorized") {
                     this.log("PB connect failed", e)
-                    this.notify(`${PB} Failed to connect, please try again later`)
+                    this.notify(`${PB} Failed to connect: ${e}`)
                     this.notify("If the problem persists, \`support\`")
                     symbol = ERROR_ICON
                 }
@@ -745,10 +749,20 @@ export class Terminal7 {
         // gets the certificate from indexDB. If they are not there, create them
         return new Promise((resolve, reject) => {
             if (this.certificates) {
+                // Check for expiration even if we have certificates cached
+                const cert = this.certificates[0]
+                if (this.isCertificateExpired(cert)) {
+                    this.log("Cached certificate expired, regenerating")
+                    this.notify("Security certificate expired. Generating new certificate...")
+                    this.generateCertificate()
+                        .then(cert => resolve(compactCert(cert)))
+                        .catch(reject)
+                    return
+                }
                 resolve(compactCert(this.certificates[0]))
                 return
             }
-            openDB("t7", 1, { 
+            openDB("t7", 1, {
                     upgrade(db) {
                         db.createObjectStore('certificates', {keyPath: 'id',
                             autoIncrement: true})
@@ -765,6 +779,18 @@ export class Terminal7 {
                          return
                      }
                      db.close()
+
+                     // Check if loaded certificate is expired
+                     const cert = certificates[0]
+                     if (this.isCertificateExpired(cert)) {
+                         this.log("Stored certificate expired, regenerating")
+                         this.notify("Security certificate expired. Generating new certificate...")
+                         this.generateCertificate()
+                             .then(cert => resolve(compactCert(cert)))
+                             .catch(reject)
+                         return
+                     }
+
                      this.certificates = certificates
                      resolve(compactCert(certificates[0]))
                  }).catch(e => {
@@ -800,6 +826,62 @@ export class Terminal7 {
                 reject(e)
             })
         })
+    }
+
+    isCertificateExpired(cert: RTCCertificate): boolean {
+        if (!cert || !cert.expires) {
+            return true
+        }
+        const now = Date.now()
+        const expires = new Date(cert.expires).getTime()
+        return now >= expires
+    }
+
+    isCertificateExpiringSoon(cert: RTCCertificate, daysBeforeExpiry = 30): boolean {
+        if (!cert || !cert.expires) {
+            return true
+        }
+        const now = Date.now()
+        const expires = new Date(cert.expires).getTime()
+        const thirtyDaysInMs = daysBeforeExpiry * 24 * 60 * 60 * 1000
+        return (expires - now) <= thirtyDaysInMs
+    }
+
+    async checkAndRenewCertificate(): Promise<RTCCertificate | null> {
+        if (!this.certificates || this.certificates.length === 0) {
+            return null
+        }
+
+        const cert = this.certificates[0]
+
+        if (this.isCertificateExpired(cert)) {
+            this.log("Certificate has expired, generating new one")
+            this.notify("Security certificate expired. Generating new certificate...")
+            return await this.generateCertificate() as RTCCertificate
+        }
+
+        if (this.isCertificateExpiringSoon(cert)) {
+            this.log("Certificate expiring soon, generating new one")
+            this.notify("Security certificate expiring soon. Renewing...")
+            return await this.generateCertificate() as RTCCertificate
+        }
+
+        return null
+    }
+
+    async checkCertificateOnStartup(): Promise<void> {
+        try {
+            // Load certificates first
+            await this.getFingerprint()
+
+            // Then check if they need renewal
+            const renewed = await this.checkAndRenewCertificate()
+            if (renewed) {
+                this.log("Certificate renewed on startup")
+            }
+        } catch (e) {
+            this.log("Error checking certificate on startup", e)
+        }
     }
     storeCertificate(): Promise<RTCCertificate | void> {
         return new Promise((resolve, reject) => {

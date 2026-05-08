@@ -26,6 +26,7 @@ export enum Failure {
     Overrun='Overrun',
     InternalError='Internal Error',
     Exhausted='Exhausted',
+    CertificateExpired='Certificate Expired',
 }
 
 export interface Event {

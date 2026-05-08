@@ -539,6 +539,14 @@ export class HTTPWebRTCSession extends WebRTCSession {
             terminal7.log(`FAILED: POST to ${this.address} with ${JSON.stringify(this.headers)}`, error)
             if (error.message == 'unauthorized')
                 this.fail(Failure.Unauthorized)
+            // Check for certificate-related errors (often manifest as network/TLS errors)
+            else if (error.message && (error.message.includes('certificate') ||
+                     error.message.includes('TLS') ||
+                     error.message.includes('SSL') ||
+                     error.message.includes('ERR_CERT'))) {
+                terminal7.log("Detected certificate-related error", error.message)
+                this.fail(Failure.CertificateExpired)
+            }
             else
                 this.fail(Failure.NotSupported)
         })
@@ -574,6 +582,14 @@ export class HTTPWebRTCSession extends WebRTCSession {
             terminal7.log(`FAILED: PATCH to ${this.address} with ${JSON.stringify(this.headers)}`, error)
             if (error.message == 'unauthorized')
                 this.fail(Failure.Unauthorized)
+            // Check for certificate-related errors
+            else if (error.message && (error.message.includes('certificate') ||
+                     error.message.includes('TLS') ||
+                     error.message.includes('SSL') ||
+                     error.message.includes('ERR_CERT'))) {
+                terminal7.log("Detected certificate-related error", error.message)
+                this.fail(Failure.CertificateExpired)
+            }
             else
                 this.fail(Failure.NotSupported)
         })

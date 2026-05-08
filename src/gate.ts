@@ -322,6 +322,19 @@ export class Gate {
                 this.notify("Data channel lost")
                 break
 
+            case Failure.CertificateExpired:
+                this.notify("Security certificate expired. Generating new certificate...")
+                terminal7.generateCertificate().then(() => {
+                    terminal7.log("Certificate regenerated after failure, reconnecting")
+                    this.connect().catch(e => {
+                        terminal7.log("Failed to reconnect after certificate renewal", e)
+                    })
+                }).catch(e => {
+                    terminal7.log("Failed to regenerate certificate after failure", e)
+                    this.notify("Failed to renew certificate. Please try again.")
+                })
+                return
+
             case undefined:
                 this.notify("Lost Connection")
                 break
