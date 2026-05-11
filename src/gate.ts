@@ -23,6 +23,7 @@ const TOOLBAR_HEIGHT = 93
 
 export interface ServerPayload {
     height: number
+    session?: string
     width: number
     windows: SerializedWindow[]
     active?: boolean
@@ -62,6 +63,7 @@ export class Gate {
     sshPort: number
     reconnectCount: number
     lastState: ServerPayload
+    sessionHash?: string
     wasSSH: boolean | undefined
     constructor (props) {
         // given properties
@@ -178,8 +180,8 @@ export class Gate {
         } else if (state == "failed")  {
             this.handleFailure(failure)
         } else if (state == "gotlayout") {
-            const layout = JSON.parse(this.session.lastPayload)
-            this.setLayout(layout)
+            const layout = this.parseServerPayload(this.session.lastPayload)
+            this.applyServerState(layout, this.isFreshWebexecSession(layout))
             this.onConnected()
         }
     }
@@ -392,13 +394,26 @@ export class Gate {
             }
 
             const finish = layout => {
-                this.setLayout(JSON.parse(layout) as ServerPayload)
+                const state = this.parseServerPayload(layout)
+                this.applyServerState(state, this.isFreshWebexecSession(state))
                 this.reconnectCount = 0
                 resolve()
             }
+            const checkSessionAndRestore = (layout) => {
+                const state = this.parseServerPayload(layout)
+                if (this.isFreshWebexecSession(state)) {
+                    this.applyServerState(state, true)
+                    this.reconnectCount = 0
+                    resolve()
+                    return
+                }
+                if (this.marker != null)
+                    return this.session.reconnect(this.marker).then(finish)
+                finish(layout)
+            }
             if (!isNative) {
-                this.session.reconnect(this.marker)
-                .then(layout => finish(layout))
+                this.session.reconnect(null)
+                .then(checkSessionAndRestore)
                 .catch(e  => {
                     if (this.session) {
                         this.wasSSH = this.session.isSSH
@@ -420,8 +435,19 @@ export class Gate {
                 reject(e)
             }
             this.t7.readId().then(({publicKey, privateKey}) => {
-                this.session.reconnect(this.marker, publicKey, privateKey)
-                .then(finish)
+                this.session.reconnect(null, publicKey, privateKey)
+                .then(layout => {
+                    const state = this.parseServerPayload(layout as string)
+                    if (this.isFreshWebexecSession(state)) {
+                        this.applyServerState(state, true)
+                        this.reconnectCount = 0
+                        resolve()
+                        return
+                    }
+                    if (this.marker != null)
+                        return this.session.reconnect(this.marker, publicKey, privateKey).then(finish)
+                    finish(layout as string)
+                })
                 .catch(e => {
                     if (this.session != session)
                         // session changed, ignore the failure
@@ -522,6 +548,45 @@ export class Gate {
         message = `\x1B[4m${prefix}\x1B[0m: ${message}`
         this.t7.notify(message, dontShow)
     }
+    newSessionHash(): string {
+        return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+    }
+    ensureSessionHash(): string {
+        if (!this.sessionHash)
+            this.sessionHash = this.newSessionHash()
+        return this.sessionHash
+    }
+    parseServerPayload(payload: string | ServerPayload | null | undefined): ServerPayload | null {
+        if (!payload)
+            return null
+        if (typeof payload != "string")
+            return payload
+        try {
+            return JSON.parse(payload) as ServerPayload
+        } catch(e) {
+            return null
+        }
+    }
+    isFreshWebexecSession(state: ServerPayload | null): boolean {
+        if (!state?.session)
+            return true
+        return !!this.sessionHash && state.session != this.sessionHash
+    }
+    applyServerState(state: ServerPayload | null, fresh = false) {
+        if (fresh) {
+            this.clear()
+            this.marker = null
+            this.sessionHash = state?.session || this.newSessionHash()
+            if (state)
+                state.session = this.sessionHash
+            this.notify("fresh webexec session")
+        } else if (state?.session) {
+            this.sessionHash = state.session
+        } else if (!this.sessionHash) {
+            this.sessionHash = this.newSessionHash()
+        }
+        this.setLayout(state)
+    }
     /*
      * returns an array of panes
      */
@@ -539,6 +604,10 @@ export class Gate {
     }
     setLayout(state: ServerPayload | null = null) {
         terminal7.log("in setLayout", state)
+        if (state?.session)
+            this.sessionHash = state.session
+        else
+            this.ensureSessionHash()
         this.lastState = state
         const winLen = this.windows.length
         if ((state == null) || !(state.windows instanceof Array) || (state.windows.length == 0)) {
@@ -690,6 +759,7 @@ export class Gate {
         })
         const container = this.e.querySelector(".windows-container") as HTMLDivElement
         return { windows: windows,
+                 session: this.ensureSessionHash(),
                  width: container.clientWidth,
                  height: container.clientHeight }
     }
@@ -819,7 +889,7 @@ export class Gate {
                 case "set_payload":
                     const layout = msg.args["payload"]
                     this.fitScreen = (container.clientWidth == layout.width) && (container.clientHeight == layout.height)
-                    this.setLayout(layout)
+                    this.applyServerState(layout, this.isFreshWebexecSession(layout))
                     break
                 case "get_clipboard":
                     Clipboard.read().then(cb => {
@@ -880,14 +950,9 @@ export class Gate {
     load() {
         this.t7.log("loading gate")
         this.session.getPayload().then((payload: string) => {
-            let layout: ServerPayload | null = null
-            try {
-                layout = JSON.parse(payload)
-            } catch(e) {
-                layout = null
-            }
+            const layout = this.parseServerPayload(payload)
             console.log("got payload", layout)
-            this.setLayout(layout)
+            this.applyServerState(layout, this.isFreshWebexecSession(layout))
         })
         document.getElementById("map").classList.add("hidden")
     }

@@ -95,11 +95,52 @@ describe("gate", () => {
         expect(w.rootLayout.cells[1].xoff).to.equal(0.5)
         expect(w.activeP.xoff).to.equal(0.5)
         let d = h.dump()
+        expect(d.session.length).toBeGreaterThan(0)
         expect(d.windows.length).to.equal(2)
         expect(d.windows[0].layout.dir).to.equal("topbottom")
         expect(d.windows[0].layout.cells.length).to.equal(2)
         expect(d.windows[0].layout.cells[0].yoff).to.equal(0.2)
         expect(d.windows[0].layout.cells[1].yoff).to.equal(0.5)
+    })
+    it("starts fresh when the server payload has no session", async () => {
+        const oldState = {
+            session: "old-session",
+            width: 100,
+            height: 100,
+            windows: [{
+                name: "old",
+                active: true,
+                layout: {
+                    dir: "topbottom",
+                    sx: 1,
+                    sy: 1,
+                    xoff: 0,
+                    yoff: 0,
+                    cells: [{
+                        sx: 1,
+                        sy: 1,
+                        xoff: 0,
+                        yoff: 0,
+                        active: true,
+                    }],
+                },
+            }],
+        }
+        const serverState = {
+            width: 100,
+            height: 100,
+            windows: [],
+        }
+        let h = t.addGate()
+        h.open(e)
+        h.applyServerState(oldState)
+        expect(h.dump().session).to.equal("old-session")
+
+        h.applyServerState(serverState, h.isFreshWebexecSession(serverState))
+
+        expect(h.windows.length).to.equal(1)
+        expect(h.dump().session).not.to.equal("old-session")
+        expect(t.map.t0.out).toContain("fresh webexec session")
     })
     it("can create a gate", async () => {
         let addHost = document.getElementById("add-host")
