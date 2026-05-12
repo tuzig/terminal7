@@ -350,4 +350,7 @@ export class HybridSession extends SSHSession {
     public get isSSH() {
         return !this.webrtcSession 
     }
+    isOpen(): boolean {
+        return this.webrtcSession?.isOpen() || false
+    }
 }
