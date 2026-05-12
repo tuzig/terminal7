@@ -130,7 +130,7 @@ describe("gate", () => {
         expect(panes[0].d.resize).toHaveBeenCalledTimes(0)
     })
     it("stores a session hash on first empty webexec payload", async () => {
-        let g = t.addGate()
+        const g = t.addGate()
         g.open(e)
         await g.connect()
         await sleep(100)
@@ -141,7 +141,7 @@ describe("gate", () => {
     it("starts fresh when the webexec session hash changes before marker restore", async () => {
         t.map.t0.out = ""
         HTTPWebRTCSession.payload = JSON.stringify({session: "new", windows: [], width: 1280, height: 627})
-        let g = t.addGate()
+        const g = t.addGate()
         g.open(e)
         g.session = new HTTPWebRTCSession("http://example.com:7777/offer", "", "")
         g.sessionId = "old"
@@ -159,7 +159,7 @@ describe("gate", () => {
     it("starts fresh when the webexec payload is missing a session hash", async () => {
         t.map.t0.out = ""
         HTTPWebRTCSession.payload = JSON.stringify({windows: [], width: 1280, height: 627})
-        let g = t.addGate()
+        const g = t.addGate()
         g.open(e)
         g.session = new HTTPWebRTCSession("http://example.com:7777/offer", "", "")
         g.sessionId = "old"

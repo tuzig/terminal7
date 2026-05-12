@@ -488,6 +488,9 @@ export class Gate {
                     session.reconnect(this.marker)
                     .then(layout => finish(layout))
                     .catch(e  => {
+                        if (this.session != session)
+                            // session changed, ignore the failure
+                            return
                         if (this.session) {
                             this.wasSSH = this.session.isSSH
                             this.session.close()
