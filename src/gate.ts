@@ -25,6 +25,7 @@ export interface ServerPayload {
     height: number
     width: number
     windows: SerializedWindow[]
+    session?: string
     active?: boolean
 }
 
@@ -32,6 +33,7 @@ export interface ServerPayload {
  * The gate class abstracts a host connection
  */
 export class Gate {
+    sessionId?: string
     activeW: Window
     addr: string
     boarding: boolean
@@ -154,6 +156,67 @@ export class Gate {
             const e = this.e.querySelector(".tabbar-names") as HTMLElement
             e.style.setProperty("--indicator-color", color)
     }
+
+    private newSessionId(): string {
+        if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+            const bytes = new Uint8Array(16)
+            crypto.getRandomValues(bytes)
+            return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("")
+        }
+        const bytes = []
+        for (let i = 0; i < 16; i++)
+            bytes.push(Math.floor(Math.random() * 256))
+        return bytes.map(b => b.toString(16).padStart(2, "0")).join("")
+    }
+
+    private async applyServerPayload(rawPayload: string | null) {
+        let layout: ServerPayload | null = null
+        try {
+            if (rawPayload)
+                layout = JSON.parse(rawPayload)
+        } catch(e) {
+            layout = null
+        }
+
+        const incomingSession = layout?.session
+        const hadSession = !!this.sessionId
+        let freshSession = false
+        let needsPersist = false
+
+        if (hadSession) {
+            if (!incomingSession || incomingSession !== this.sessionId) {
+                freshSession = true
+                this.sessionId = incomingSession || this.newSessionId()
+                if (layout)
+                    layout.session = this.sessionId
+                this.clear()
+                needsPersist = true
+            }
+        } else {
+            if (incomingSession) {
+                this.sessionId = incomingSession
+            } else {
+                this.sessionId = this.newSessionId()
+                if (layout)
+                    layout.session = this.sessionId
+                needsPersist = true
+            }
+        }
+
+        if (freshSession)
+            this.notify("fresh webexec session")
+
+        this.setLayout(layout)
+
+        if (needsPersist && this.session) {
+            try {
+                await this.session.setPayload(this.dump())
+            } catch(e) {
+                this.t7.log("failed to persist session payload", e)
+            }
+        }
+    }
+
     /*
      * onSessionState(state) is called when the connection
      * state changes.
@@ -166,8 +229,7 @@ export class Gate {
         this.t7.log(`updating ${this.name} state to ${state} ${failure}`)
         if (state == "connected") {
             this.marker = null
-            this.load()
-            this.onConnected()
+            void this.load().then(() => this.onConnected())
         } else if (state == "disconnected") {
             // TODO: add warn class
             this.lastDisconnect = Date.now()
@@ -178,9 +240,7 @@ export class Gate {
         } else if (state == "failed")  {
             this.handleFailure(failure)
         } else if (state == "gotlayout") {
-            const layout = JSON.parse(this.session.lastPayload)
-            this.setLayout(layout)
-            this.onConnected()
+            void this.applyServerPayload(this.session?.lastPayload ?? null).then(() => this.onConnected())
         }
     }
     async handleSSHFailure() {
@@ -391,8 +451,8 @@ export class Gate {
                 return
             }
 
-            const finish = layout => {
-                this.setLayout(JSON.parse(layout) as ServerPayload)
+            const finish = async layout => {
+                await this.applyServerPayload(layout)
                 this.reconnectCount = 0
                 resolve()
             }
@@ -691,7 +751,8 @@ export class Gate {
         const container = this.e.querySelector(".windows-container") as HTMLDivElement
         return { windows: windows,
                  width: container.clientWidth,
-                 height: container.clientHeight }
+                 height: container.clientHeight,
+                 session: this.sessionId }
     }
     storeState() {
         /* TODO: restore the restore to last state
@@ -877,18 +938,15 @@ export class Gate {
         }
         await this.session.connect(this.marker)
     }
-    load() {
+    async load() {
         this.t7.log("loading gate")
-        this.session.getPayload().then((payload: string) => {
-            let layout: ServerPayload | null = null
-            try {
-                layout = JSON.parse(payload)
-            } catch(e) {
-                layout = null
-            }
-            console.log("got payload", layout)
-            this.setLayout(layout)
-        })
+        let payload: string | null = null
+        try {
+            payload = await this.session.getPayload()
+        } catch(e) {
+            this.t7.log("failed to get payload", e)
+        }
+        await this.applyServerPayload(payload)
         document.getElementById("map").classList.add("hidden")
     }
     onFormError(err) {
