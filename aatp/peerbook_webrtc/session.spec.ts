@@ -4,7 +4,7 @@ import * as redis from 'redis'
 
 import { reloadPage, connectFirstGate, sleep, webexecReset } from '../common/utils'
 
-const url = process.env.LOCALDEV?"http://localhost:3000":"http://terminal7"
+const url = process.env.LOCALDEV?"http://localhost:3000":"http://terminal7:8080"
 
 test.describe('terminal7 session', ()  => {
 
@@ -25,7 +25,7 @@ test.describe('terminal7 session', ()  => {
         page = await context.newPage()
         page.on('console', (msg) => console.log('console log:', msg.text()))
         page.on('pageerror', (err: Error) => console.log('PAGEERROR', err.message))
-        await waitPort({host:'terminal7', port:80})
+        await waitPort({host:'terminal7', port:8080})
         const response = await page.goto(url)
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
         await context.addInitScript(async () => {

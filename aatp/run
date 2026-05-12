@@ -1,18 +1,45 @@
 #!/usr/bin/env bash
 BUILD=1
+if command -v podman >/dev/null 2>&1; then
+    # podman compose delegates to docker-compose; point DOCKER_HOST at the
+    # host-side podman socket so it can connect.
+    DARWIN_TMP=$(getconf DARWIN_USER_TEMP_DIR 2>/dev/null)
+    for candidate in \
+        "${DARWIN_TMP}podman/podman-machine-default-api.sock" \
+        "${XDG_RUNTIME_DIR}/podman/podman.sock" \
+        "/run/user/$(id -u)/podman/podman.sock" \
+        "/var/run/podman/podman.sock"; do
+        if [ -S "$candidate" ]; then
+            export DOCKER_HOST="unix://$candidate"
+            break
+        fi
+    done
+    COMPOSE="podman compose"
+elif command -v docker >/dev/null 2>&1; then
+    COMPOSE="docker compose"
+else
+    echo ">>> Neither podman nor docker found. Please install podman: https://podman.io/" >&2
+    exit 2
+fi
+echo ">>> Using container engine: $COMPOSE"
 build_n_run() {
     if [ $BUILD -eq 1 ]
     then
         echo ">>> Building a lab based on $1"
-        docker compose -f $1  --project-directory . build $BUILD_OPTIONS
+        $COMPOSE -f $1  --project-directory . build $BUILD_OPTIONS
         if [ $? -ne 0 ]
         then
-            exit "docker compose build failed"
+            exit "$COMPOSE build failed"
         fi
     fi
     echo ">>> Running a lab based on $1"
-    docker compose -f $1  --project-directory . up $UPFLAGS | sed 's/\.\.\//aatp\//g'
-    return ${PIPESTATUS[0]}
+    $COMPOSE -f $1  --project-directory . up $UPFLAGS | sed 's/\.\.\//aatp\//g'
+    rc=${PIPESTATUS[0]}
+    if [ -n "$UPFLAGS" ]
+    then
+        $COMPOSE -f $1  --project-directory . down -v 2>&1 | sed 's/\.\.\//aatp\//g'
+    fi
+    return $rc
 }
 usage() {
    cat <<EOS

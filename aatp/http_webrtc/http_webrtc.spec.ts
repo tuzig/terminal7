@@ -5,7 +5,7 @@ import { connectFirstGate, reloadPage, getLines, sleep } from '../common/utils'
 
 
 const local = process.env.LOCALDEV !== undefined,
-      url = local?"http://localhost:3000":"http://terminal7"
+      url = local?"http://localhost:3000":"http://terminal7:8080"
 
 test.describe('terminal7 direct WebRTC session', ()  => {
 
@@ -23,7 +23,7 @@ test.describe('terminal7 direct WebRTC session', ()  => {
                 console.log('console log:', msg.text())
         })
         page.on('pageerror', (err: Error) => console.log('PAGEERROR', err.message))
-        await waitPort({host:'terminal7', port:80})
+        await waitPort({host:'terminal7', port:8080})
         const response = await page.goto(url)
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
         await context.addInitScript(async () => {

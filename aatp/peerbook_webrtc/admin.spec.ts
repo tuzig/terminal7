@@ -4,7 +4,7 @@ import waitPort from 'wait-port'
 import * as redis from 'redis'
 import { reloadPage, getTWRBuffer } from '../common/utils'
 
-const url = process.env.LOCALDEV?"http://localhost:3000":"http://terminal7"
+const url = process.env.LOCALDEV?"http://localhost:3000":"http://terminal7:8080"
 
 const CONF = 
 `[theme]
@@ -49,7 +49,7 @@ test.describe('peerbook administration', ()  => {
         page.on('console', (msg) => console.log('console log:', msg.text()))
         page.on('pageerror', (err: Error) => console.trace('PAGEERROR', err))
         await waitPort({host:'peerbook', port:17777})
-        await waitPort({host:'terminal7', port:80})
+        await waitPort({host:'terminal7', port:8080})
         const response = await page.goto(url)
         await expect(response.ok(), `got error ${response.status()}`).toBeTruthy()
         await page.evaluate(async CONF => {

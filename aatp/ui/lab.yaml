@@ -17,7 +17,7 @@ services:
   terminal7:
     image: halverneus/static-file-server:latest
     environment:
-      PORT: 80
+      PORT: 8080
     volumes:
       - ./dist:/web
   webexec:
