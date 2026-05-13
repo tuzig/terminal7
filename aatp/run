@@ -22,22 +22,34 @@ else
     exit 2
 fi
 echo ">>> Using container engine: $COMPOSE"
+EXTRA_FILES=()
+if [ -n "$WEBEXEC_BIN" ]; then
+    if [ ! -x "$WEBEXEC_BIN" ]; then
+        echo ">>> WEBEXEC_BIN=$WEBEXEC_BIN is not an executable file" >&2
+        exit 2
+    fi
+    export WEBEXEC_BIN
+    EXTRA_FILES+=(-f aatp/infra/webexec/local-bin.override.yaml)
+    echo ">>> Using webexec: local binary $WEBEXEC_BIN"
+else
+    echo ">>> Using webexec: github.com/tuzig/webexec@${WEBEXEC_REF:-master}"
+fi
 build_n_run() {
     if [ $BUILD -eq 1 ]
     then
         echo ">>> Building a lab based on $1"
-        $COMPOSE -f $1  --project-directory . build $BUILD_OPTIONS
+        $COMPOSE -f $1 "${EXTRA_FILES[@]}" --project-directory . build $BUILD_OPTIONS
         if [ $? -ne 0 ]
         then
             exit "$COMPOSE build failed"
         fi
     fi
     echo ">>> Running a lab based on $1"
-    $COMPOSE -f $1  --project-directory . up $UPFLAGS | sed 's/\.\.\//aatp\//g'
+    $COMPOSE -f $1 "${EXTRA_FILES[@]}" --project-directory . up $UPFLAGS | sed 's/\.\.\//aatp\//g'
     rc=${PIPESTATUS[0]}
     if [ -n "$UPFLAGS" ]
     then
-        $COMPOSE -f $1  --project-directory . down -v 2>&1 | sed 's/\.\.\//aatp\//g'
+        $COMPOSE -f $1 "${EXTRA_FILES[@]}" --project-directory . down -v 2>&1 | sed 's/\.\.\//aatp\//g'
     fi
     return $rc
 }
