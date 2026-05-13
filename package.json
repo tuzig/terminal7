@@ -1,137 +1,139 @@
 {
-  "name": "Terminal7",
-  "version": "1.11.2",
-  "description": "A touchable terminal emulator & multiplexer tablet app",
-  "main": "src/index.js",
-  "homepage": "https://terminal7.dev",
-  "private": false,
-  "build": {
-    "appId": "dev.terminal7",
-    "files": [
-      "index.html",
-      "css/*"
+    "name": "Terminal7",
+    "version": "1.11.2",
+    "description": "A touchable terminal emulator & multiplexer tablet app",
+    "main": "src/index.js",
+    "homepage": "https://terminal7.dev",
+    "private": false,
+    "build": {
+        "appId": "dev.terminal7",
+        "files": [
+            "index.html",
+            "css/*"
+        ],
+        "directories": {
+            "buildResources": "resources"
+        },
+        "publish": null
+    },
+    "dependencies": {
+        "@capacitor-community/native-audio": "^5.0.1",
+        "@capacitor/android": "^7.4.0",
+        "@capacitor/app": "^7.0.1",
+        "@capacitor/browser": "^7.0.1",
+        "@capacitor/camera": "^7.0.1",
+        "@capacitor/cli": "^7.4.1",
+        "@capacitor/clipboard": "^7.0.1",
+        "@capacitor/core": "^7.4.1",
+        "@capacitor/device": "^7.0.1",
+        "@capacitor/filesystem": "^7.1.1",
+        "@capacitor/ios": "^7.4.1",
+        "@capacitor/keyboard": "^7.0.1",
+        "@capacitor/network": "^7.0.1",
+        "@capacitor/preferences": "^7.0.1",
+        "@capacitor/status-bar": "^7.0.1",
+        "@revenuecat/purchases-capacitor": "^7.7.1",
+        "@tuzig/codemirror": "5.65.5-mods",
+        "@tuzig/toml": "^3.0.0-browser",
+        "@types/marked": "^4.0.7",
+        "@xterm/addon-fit": "^0.11.0",
+        "@xterm/addon-image": "^0.9.0",
+        "@xterm/addon-search": "^0.16.0",
+        "@xterm/addon-web-links": "^0.12.0",
+        "@xterm/addon-webgl": "^0.19.0",
+        "@xterm/xterm": "^6.0.0",
+        "bowser": "^2.11.0",
+        "capacitor-native-biometric": "^4.1.3",
+        "capacitor-rate-app": "^4.0.3",
+        "capacitor-ssh-plugin": "^0.5.0",
+        "ed25519-keygen": "^0.2.4",
+        "fontfaceobserver": "^2.3.0",
+        "glob": "<8",
+        "idb": "7.1.1",
+        "interactjs": "^1.10.27",
+        "marked": "^4.1.0",
+        "uuid": "^8.3.2"
+    },
+    "devDependencies": {
+        "@capacitor/assets": "^3.0.5",
+        "@interactjs/types": "^1.10.27",
+        "@playwright/test": "^1.20.1",
+        "@typescript-eslint/eslint-plugin": "<6",
+        "@typescript-eslint/parser": "<6",
+        "eslint": "<9",
+        "interactjs": "^1.10.27",
+        "jsdom": "^19.0.0",
+        "native-run": "^1.7.4",
+        "prettier": "^3.8.3",
+        "typescript": "<5",
+        "vi-canvas-mock": "^1.0.0",
+        "vite": "^5.4.2",
+        "vite-plugin-pwa": "^0.20.1",
+        "vitest": "^2.0.5",
+        "workbox-build": "^7.0.0",
+        "workbox-window": "^7.0.0",
+        "yarn": "^1.22.17"
+    },
+    "scripts": {
+        "start": "npm run dev",
+        "dev": "vite",
+        "stage": "vite build --sourcemap && vite preview",
+        "run": "vite build -c vite.dev.config.js && cap run ios",
+        "runa": "vite build -c vite.dev.config.js && cap run android",
+        "test": "vitest run && ./aatp/run",
+        "build": "vite build -c vite.dev.config.js",
+        "clean": "rm -rf dist ios/App/App/public/*",
+        "aatp": "bash ./aatp/run",
+        "lint": "npx eslint aatp src --ext .js,.ts && npx tsc --noEmit",
+        "postinstall": "git config core.hooksPath .githooks 2>/dev/null || true"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/tuzig/terminal7.git"
+    },
+    "keywords": [
+        "terminal",
+        "tmux",
+        "webrtc"
     ],
-    "directories": {
-      "buildResources": "resources"
+    "author": "Benny Daon",
+    "license": "GPL-3.0-only",
+    "bugs": {
+        "url": "https://github.com/tuzig/terminal7/issues"
     },
-    "publish": null
-  },
-  "dependencies": {
-    "@capacitor-community/native-audio": "^5.0.1",
-    "@capacitor/android": "^7.4.0",
-    "@capacitor/app": "^7.0.1",
-    "@capacitor/browser": "^7.0.1",
-    "@capacitor/camera": "^7.0.1",
-    "@capacitor/cli": "^7.4.1",
-    "@capacitor/clipboard": "^7.0.1",
-    "@capacitor/core": "^7.4.1",
-    "@capacitor/device": "^7.0.1",
-    "@capacitor/filesystem": "^7.1.1",
-    "@capacitor/ios": "^7.4.1",
-    "@capacitor/keyboard": "^7.0.1",
-    "@capacitor/network": "^7.0.1",
-    "@capacitor/preferences": "^7.0.1",
-    "@capacitor/status-bar": "^7.0.1",
-    "@revenuecat/purchases-capacitor": "^7.7.1",
-    "@tuzig/codemirror": "5.65.5-mods",
-    "@tuzig/toml": "^3.0.0-browser",
-    "@types/marked": "^4.0.7",
-    "@xterm/addon-fit": "^0.10.0",
-    "@xterm/addon-image": "^0.8.0",
-    "@xterm/addon-search": "^0.15.0",
-    "@xterm/addon-web-links": "^0.11.0",
-    "@xterm/addon-webgl": "^0.18.0",
-    "@xterm/xterm": "^5.5.0",
-    "bowser": "^2.11.0",
-    "capacitor-native-biometric": "^4.1.3",
-    "capacitor-rate-app": "^4.0.3",
-    "capacitor-ssh-plugin": "^0.5.0",
-    "ed25519-keygen": "^0.2.4",
-    "fontfaceobserver": "^2.3.0",
-    "glob": "<8",
-    "idb": "7.1.1",
-    "interactjs": "^1.10.27",
-    "marked": "^4.1.0",
-    "uuid": "^8.3.2"
-  },
-  "devDependencies": {
-    "@capacitor/assets": "^3.0.5",
-    "@interactjs/types": "^1.10.27",
-    "@playwright/test": "^1.20.1",
-    "@typescript-eslint/eslint-plugin": "<6",
-    "@typescript-eslint/parser": "<6",
-    "eslint": "<9",
-    "interactjs": "^1.10.27",
-    "jsdom": "^19.0.0",
-    "native-run": "^1.7.4",
-    "typescript": "<5",
-    "vi-canvas-mock": "^1.0.0",
-    "vite": "^5.4.6",
-    "vite-plugin-pwa": "^0.20.1",
-    "vitest": "^2.0.5",
-    "workbox-build": "^7.0.0",
-    "workbox-window": "^7.0.0",
-    "yarn": "^1.22.17"
-  },
-  "scripts": {
-    "start": "npm run dev",
-    "dev": "vite",
-    "stage": "vite build --sourcemap && vite preview",
-    "run": "vite build -c vite.dev.config.js && cap run ios",
-    "runa": "vite build -c vite.dev.config.js && cap run android",
-    "test": "vitest run && ./aatp/run",
-    "build": "vite build -c vite.dev.config.js",
-    "clean": "rm -rf dist ios/App/App/public/*",
-    "aatp": "bash ./aatp/run",
-    "lint": "npx eslint aatp src --ext .js,.ts && npx tsc --noEmit"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/tuzig/terminal7.git"
-  },
-  "keywords": [
-    "terminal",
-    "tmux",
-    "webrtc"
-  ],
-  "author": "Benny Daon",
-  "license": "GPL-3.0-only",
-  "bugs": {
-    "url": "https://github.com/tuzig/terminal7/issues"
-  },
-  "eslintConfig": {
-    "root": true,
-    "parser": "@typescript-eslint/parser",
-    "parserOptions": {
-      "project": "./tsconfig.json"
-    },
-    "plugins": [
-      "@typescript-eslint/eslint-plugin"
-    ],
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended"
-    ],
-    "env": {
-      "browser": true
-    },
-    "globals": {
-      "db": true,
-      "terminal7": true
-    },
-    "rules": {
-      "no-empty": [
-        "error",
-        {
-          "allowEmptyCatch": true
+    "eslintConfig": {
+        "root": true,
+        "parser": "@typescript-eslint/parser",
+        "parserOptions": {
+            "project": "./tsconfig.json"
+        },
+        "plugins": [
+            "@typescript-eslint/eslint-plugin"
+        ],
+        "extends": [
+            "eslint:recommended",
+            "plugin:@typescript-eslint/recommended"
+        ],
+        "env": {
+            "browser": true
+        },
+        "globals": {
+            "db": true,
+            "terminal7": true
+        },
+        "rules": {
+            "no-empty": [
+                "error",
+                {
+                    "allowEmptyCatch": true
+                }
+            ],
+            "no-constant-condition": [
+                "error",
+                {
+                    "checkLoops": false
+                }
+            ]
         }
-      ],
-      "no-constant-condition": [
-        "error",
-        {
-          "checkLoops": false
-        }
-      ]
     }
-  }
 }

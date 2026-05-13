@@ -17,13 +17,14 @@ yarn install
 yarn test
 yarn start
 ```
+
 Then point your browser at the printed URL, usually http://localhost:5173.
 
 ## Fixing a bug
 
 Found an annoying bug? Great!
 Please start by creating an issue with detailed instructions
-on how to recreate it. 
+on how to recreate it.
 If you'd like to help fix it, please assign the issue to yourself.
 Start by writing a test that recreates the bug and fails.
 If it's a low hanging fruit, you can fix it right away.
@@ -39,7 +40,7 @@ For example, "Adding zapping #123" or "Fixing bug #345".
 
 If you're missing a feature, please first search the open issues to see if it's already been requested.
 If so, please add a comment to the issue to show your interest.
-If you'd like to code a feature, please assign it to yourself and open a PR with the 
+If you'd like to code a feature, please assign it to yourself and open a PR with the
 feature's tests. You can and should keep developing the feature and update the PR once the
 tests pass anf the feature is done.
 
@@ -54,3 +55,13 @@ yarn test
 
 A GitHub workflow runs the tests on PRs to ensure the code is solid.
 To learn more about the acceptance test, please refer to [./aatp/README.md](./aatp/README.md).
+
+## Git Hooks
+
+Hooks live under `.githooks/` and are wired up automatically by `yarn install`
+(via a `postinstall` script that sets `core.hooksPath`).
+
+- **pre-commit** runs `prettier --write` on the staged files and re-stages them.
+- **pre-push** runs lint, unit tests, and the acceptance suite.
+
+To bypass a hook for a single git command, pass `--no-verify`.

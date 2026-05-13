@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Format staged files with prettier and re-stage them.
+set -e
+
+files=()
+while IFS= read -r f; do
+  [ -n "$f" ] && files+=("$f")
+done < <(git diff --cached --name-only --diff-filter=ACMR \
+  | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|css|scss|html|json|md|yml|yaml)$' || true)
+
+if [ ${#files[@]} -eq 0 ]; then
+  exit 0
+fi
+
+npx --no-install prettier --write "${files[@]}"
+git add "${files[@]}"
