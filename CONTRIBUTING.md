@@ -20,6 +20,23 @@ yarn start
 
 Then point your browser at the printed URL, usually http://localhost:5173.
 
+### Building for iOS / Android
+
+Terminal7 ships as a native app via [Capacitor](https://capacitorjs.com/).
+To package or live-run on a device or simulator, use the wrapper scripts
+(they call `vite build` first so `dist/` is always fresh before Capacitor
+copies it into the native project):
+
+```console
+yarn build:ios       # produce an iOS IPA
+yarn build:android   # produce an Android APK
+yarn run:ios         # build + launch on a connected device/simulator
+yarn run:android
+```
+
+iOS builds require Xcode with a valid signing identity. The iOS native
+project lives under `ios/`, the Android one under `android/`.
+
 ## Fixing a bug
 
 Found an annoying bug? Great!

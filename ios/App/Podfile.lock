@@ -34,12 +34,12 @@ PODS:
     - Capacitor
   - IONFilesystemLib (1.0.0)
   - NMSSHT7 (2.9.1)
-  - PurchasesHybridCommon (11.1.1):
-    - RevenueCat (= 4.43.2)
-  - RevenueCat (4.43.2)
-  - RevenuecatPurchasesCapacitor (7.7.1):
+  - PurchasesHybridCommon (17.25.0):
+    - RevenueCat (= 5.51.1)
+  - RevenueCat (5.51.1)
+  - RevenuecatPurchasesCapacitor (11.3.2):
     - Capacitor
-    - PurchasesHybridCommon (= 11.1.1)
+    - PurchasesHybridCommon (= 17.25.0)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
@@ -122,9 +122,9 @@ SPEC CHECKSUMS:
   CapacitorStatusBar: 6e7af040d8fc4dd655999819625cae9c2d74c36f
   IONFilesystemLib: ceacae793975039530458eabab0c495c70515a0d
   NMSSHT7: 67f9d8f43b40b997728761b4cf2aa7ea660ba7c2
-  PurchasesHybridCommon: 73f4f2c6e4ec3487b4219bf60e1661100fb85da3
-  RevenueCat: 3d934653b7e8b09af88fd47e9e84cfaf5d0a89ba
-  RevenuecatPurchasesCapacitor: 70ecf4905bbbce9b6d6bd243504a7001b6054ac0
+  PurchasesHybridCommon: 6a79a873ab52f777bfa36e9516f3fcd84d3b3428
+  RevenueCat: eab035bbab271faccfef5c36eaff2a1ffef14dc0
+  RevenuecatPurchasesCapacitor: fa376932f9967c7ab4b5eac477e824d90393b91a
 
 PODFILE CHECKSUM: 0b234f47d92ce42f718c406e1f2c37447bc3c605
 

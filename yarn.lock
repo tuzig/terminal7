@@ -1396,17 +1396,17 @@
     "@xml-tools/parser" "^1.0.11"
     prettier ">=2.4.0"
 
-"@revenuecat/purchases-capacitor@^7.7.1":
-  version "7.7.1"
-  resolved "https://registry.yarnpkg.com/@revenuecat/purchases-capacitor/-/purchases-capacitor-7.7.1.tgz#b8e7a974abfe1154da8ef59a0649788258357924"
-  integrity sha512-dfTVmlfRnJw4M1Qq/9Q6fSGbKL22nFAAqhj+MnIvVV2RXLeTpRVb/Fm6VYWROwrbGB7qolsResQZy8qXLgPn/g==
+"@revenuecat/purchases-capacitor@^11.3.2":
+  version "11.3.2"
+  resolved "https://registry.yarnpkg.com/@revenuecat/purchases-capacitor/-/purchases-capacitor-11.3.2.tgz#d629283cfc3da7959aba00f39878cb050619e863"
+  integrity sha512-3T4/lcAwpbPagrT4DuXvJ+8RewzFmHf3fQJQuhVy+uTQk5HGMHNlXcm2A/UdyHtWqU+/VqWbCClPFYGnpnNXAQ==
   dependencies:
-    "@revenuecat/purchases-typescript-internal-esm" "11.1.1"
+    "@revenuecat/purchases-typescript-internal-esm" "17.25.0"
 
-"@revenuecat/purchases-typescript-internal-esm@11.1.1":
-  version "11.1.1"
-  resolved "https://registry.yarnpkg.com/@revenuecat/purchases-typescript-internal-esm/-/purchases-typescript-internal-esm-11.1.1.tgz#5d339470df0c650bdcf8f407ab7c2f12cbe3d649"
-  integrity sha512-If0SFXSPBwBlEJ3bx23FY/+qo1GmQDQlMNIxGGYesC/BdBD+fEzb4O8qmtLTAhZI+B5jZBtx8rrIWDQuSJihHg==
+"@revenuecat/purchases-typescript-internal-esm@17.25.0":
+  version "17.25.0"
+  resolved "https://registry.yarnpkg.com/@revenuecat/purchases-typescript-internal-esm/-/purchases-typescript-internal-esm-17.25.0.tgz#7c104c8a98fa9121fc80398e5895d7bb22e4f32d"
+  integrity sha512-KC4BjFaQclXqFafG1Enh7t8GSwdg8p905by7UrHq0WSJmLhOR6yXSj6WDv1iwsFSAZxPPwgozNxt+U6IOFTdCA==
 
 "@rollup/plugin-babel@^5.2.0":
   version "5.3.1"

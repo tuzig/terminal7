@@ -7,18 +7,18 @@
  * background - #271D30
  */
 :root {
-    --indicator-color: #00FA00;
-    --local-border: #F952F9;
-    --text-color: #01FAFA;
-    --remote-border: #F4DB53;
-    --warning: #F4DB53;
-    --error: #F54545;
-    --background: #271D30;
-    --text-background: #11051E;
+    --indicator-color: #00fa00;
+    --local-border: #f952f9;
+    --text-color: #01fafa;
+    --remote-border: #f4db53;
+    --warning: #f4db53;
+    --error: #f54545;
+    --background: #271d30;
+    --text-background: #11051e;
     --text-offline: #004444;
     --pane-background: black;
     --dark-border: #373702;
-    --help-bubble-bg-color: rgba(55, 55, 2, .7);
+    --help-bubble-bg-color: rgba(55, 55, 2, 0.7);
 }
 @font-face {
     font-family: "FiraSans";
@@ -34,52 +34,62 @@
 }
 html,
 body {
-  position: fixed;
-  width: 100%;
-  max-width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  font-family: 'FiraSans';
-  color: #00FAFA;
-  background-color: var(--background);
-  overflow: auto;
+    position: fixed;
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-family: "FiraSans";
+    color: #00fafa;
+    background-color: var(--background);
+    overflow: auto;
 }
 body {
-  scrollbar-width: thin;
-  scrollbar-color: var(--local-border) var(--background);
+    scrollbar-width: thin;
+    scrollbar-color: var(--local-border) var(--background);
 }
 * {
-    box-sizing: border-box; 
+    box-sizing: border-box;
 }
-*:focus { outline: none; } 
+*:focus {
+    outline: none;
+}
 
-.modal h1, .modal h2, .modal h3 {
-  text-align: center;
+.modal h1,
+.modal h2,
+.modal h3 {
+    text-align: center;
 }
 .modal h1 {
     font-size: 22pt;
     /* margin: 0; */
 }
-h2 { margin: 0.3em;}
-h3 { margin: 0.2em; color: var(--local-border); }
+h2 {
+    margin: 0.3em;
+}
+h3 {
+    margin: 0.2em;
+    color: var(--local-border);
+}
 
 #terminal7 {
-    height: 100%; 
-	overflow-x: auto;
+    height: 100%;
+    overflow-x: auto;
 }
-#terminal7 *, #navbar * {
+#terminal7 *,
+#navbar * {
     user-select: none;
     -ms-user-select: none;
     -webkit-user-select: none;
 }
 button {
     border: 0;
-    padding:0;
+    padding: 0;
     background-color: var(--background);
     color: #00fafa;
     /*
@@ -91,7 +101,8 @@ button {
   font-family: Courier new;
   */
 }
-.text-button, #gates button {
+.text-button,
+#gates button {
     display: flex;
     cursor: pointer;
     margin: 0 0.3em 0.3em 0;
@@ -101,20 +112,26 @@ button {
     font-size: 20px;
     justify-content: center;
     align-items: center;
-} 
-dd { display: visible; }
-.border, .text-button {
+}
+  dd {
+    display: visible;
+}
+.border,
+.text-button {
     border-width: 3px;
     border-style: outset;
     border-radius: 6px;
 }
-footer { padding-top: 1em; }
-p a, footer a {
+footer {
+    padding-top: 1em;
+}
+p a,
+footer a {
     text-decoration: underline;
 }
 a {
     text-decoration: none;
-    color: #00FAFA;
+    color: #00fafa;
 }
 .modal {
     z-index: 5;
@@ -128,23 +145,24 @@ a {
     max-width: 80%;
     border-color: var(--local-border);
 }
-.modal p, .modal td {
+.modal p,
+.modal td {
     font-size: 16pt;
 }
-.modal h2 { 
-    margin-top: 0; 
+.modal h2 {
+    margin-top: 0;
     margin-bottom: 1em;
 }
-.modal nav { 
+.modal nav {
     clear: both;
-    width: 100%; 
+    width: 100%;
     margin: 1.5em auto 0;
     padding-top: 2%;
 }
 .keys-help.modal {
     bottom: 180px;
 }
-.keys-help>div {
+.keys-help > div {
     width: 100%;
     overflow-x: auto;
     display: flex;
@@ -201,6 +219,9 @@ a {
     border-radius: 6px;
     text-align: left;
 }
+.xterm-scrollable-element > .scrollbar {
+    display: none !important;
+}
 .layout {
     position: absolute;
     margin: 0;
@@ -209,8 +230,8 @@ a {
 }
 
 .full {
-    top:0;
-    left:0;
+    top: 0;
+    left: 0;
     height: 78%;
 }
 .fas {
@@ -233,7 +254,7 @@ nav button {
 }
 .help-bubble-text {
     font-size: 1rem;
-    font-family: 'FiraSans', serif;
+    font-family: "FiraSans", serif;
     background-color: var(--help-bubble-bg-color);
     color: var(--text-color);
     text-align: center;
@@ -253,9 +274,10 @@ nav button {
     left: 50%;
     margin-left: -10px;
     border-width: 10px;
-    transform: scale(1,5);
+    transform: scale(1, 5);
     border-style: solid;
-    border-color: var(--help-bubble-bg-color) transparent transparent transparent;
+    border-color: var(--help-bubble-bg-color) transparent transparent
+        transparent;
 }
 nav:not(.navtext) button:last-child {
     border: none;
@@ -296,24 +318,35 @@ nav::-webkit-scrollbar {
     display: none; /*Safari and Chrome*/
 }
 .tabbar a {
-    flex: 1 0 auto; 
+    flex: 1 0 auto;
     border-right: 1px solid var(--dark-border);
     text-align: center;
     font-size: 18px;
     line-height: 34px;
-    text-decoration: none; 
+    text-decoration: none;
     color: var(--indicator-color);
     opacity: 0.4;
     width: max-content;
 }
-.tabbar-names .on { opacity: 1; font-weight: bold; }
-#navbar .on { text-shadow: var(--remote-border) 1px 0 10px; }
-.failed { color: var(--local-border) !important; }
-.warn { color: #FAFA00 !important; }
-.off { color: var(--dark-border); }
+.tabbar-names .on {
+    opacity: 1;
+    font-weight: bold;
+}
+#navbar .on {
+    text-shadow: var(--remote-border) 1px 0 10px;
+}
+.failed {
+    color: var(--local-border) !important;
+}
+.warn {
+    color: #fafa00 !important;
+}
+.off {
+    color: var(--dark-border);
+}
 /* vertical align the nav bar buttons */
 .tabbar {
-    left: 0; 
+    left: 0;
     bottom: 2px;
     color: var(--dark-border);
     position: absolute;
@@ -352,7 +385,6 @@ nav::-webkit-scrollbar {
     flex: 1 1 0;
     border: 0;
     background-color: var(--pane-background);
-
 }
 button.rename-close {
     border-right: 0;
@@ -368,7 +400,7 @@ button.rename-close {
     color: var(--text-color);
     background-color: var(--text-background);
     border-radius: 5px;
-    font-family: 'FiraSans';
+    font-family: "FiraSans";
 }
 .active {
     font-weight: bold;
@@ -420,7 +452,7 @@ button.rename-close {
 #version a {
     text-decoration-style: dashed;
     text-decoration-line: underline;
-	cursor: pointer;
+    cursor: pointer;
 }
 #version ul {
     list-style: none;
@@ -467,20 +499,23 @@ label {
     line-height: 24px;
     font-weight: 600;
 }
-.modal form input[type=text], .modal form input[type=password],
+.modal form input[type="text"],
+.modal form input[type="password"],
 .modal form textarea {
-  width: 100%;
-  padding: 12px 20px;
-  margin: 8px 0;
-  display: block;
-  border: 1px solid var(--local-border);
-  box-sizing: border-box;
-  color: var(--text-color);
-  background-color: var(--text-background);
-  border-radius: 5px;
-  font-size: 18px;
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: block;
+    border: 1px solid var(--local-border);
+    box-sizing: border-box;
+    color: var(--text-color);
+    background-color: var(--text-background);
+    border-radius: 5px;
+    font-size: 18px;
 }
-.hidden { visibility: hidden; }
+.hidden {
+    visibility: hidden;
+}
 .host {
     width: 100%;
     max-width: 100%;
@@ -504,7 +539,7 @@ label {
     margin: 0;
     padding: 0;
     width: 42px;
-    height:42px;
+    height: 42px;
     line-height: 42px;
     border: 1px solid var(--local-border);
     border-radius: 3px;
@@ -523,7 +558,7 @@ label {
     border: 4px outset var(--local-border);
     border-radius: 7px;
 }
-#log>div {
+#log > div {
     padding: 0.4em;
     height: 100%;
     width: 100%;
@@ -554,59 +589,68 @@ label {
     z-index: 10;
     opacity: 0.6;
 }
-#indicators i, #indicators p {
+#indicators i,
+#indicators p {
     cursor: pointer;
     border: 1px solid var(--dark-border);
     float: right;
     text-align: center;
     padding: 0.2em;
-    color: var(--indicator-color); 
+    color: var(--indicator-color);
 }
 #indicators p {
     margin: 0;
 }
 #indicators .off {
-    color: #003F00;
+    color: #003f00;
 }
-#help-copymode, #keys-help {
+#help-copymode,
+#keys-help {
     width: 50em;
 }
 
 td {
     text-align: left;
-    padding:0.5em 0;
+    padding: 0.5em 0;
 }
 .divider {
     position: absolute;
     z-index: 3;
-}    
+}
 .divider * {
     pointer-events: none;
 }
-.top-divider { 
+.top-divider {
     transform: rotate(90deg);
     cursor: row-resize;
     padding: 20px 40px;
 }
-.left-divider {  
-    cursor: col-resize; 
+.left-divider {
+    cursor: col-resize;
     padding: 40px 20px;
 }
 
 .offline {
     color: var(--text-offline);
 }
-.tabbar-names .on::before { content: "❲ "; color: var(--indicator-color);}
-.tabbar-names .on::after { content: " ❳"; color: var(--indicator-color);}
+.tabbar-names .on::before {
+    content: "❲ ";
+    color: var(--indicator-color);
+}
+.tabbar-names .on::after {
+    content: " ❳";
+    color: var(--indicator-color);
+}
 #offline {
     bottom: unset;
     top: 50%;
-    transform: translate(-50%, -50%)
+    transform: translate(-50%, -50%);
 }
 #offline p {
     margin-top: 2em;
 }
-#help-home, #help-gate {
+#help-home,
+#help-gate {
     opacity: 0.7;
     height: calc(100% - 300px);
     width: 94%;
@@ -636,7 +680,7 @@ td {
     margin: 0 auto;
 }
 .modal li {
-    font-size:20px;
+    font-size: 20px;
     text-align: left;
     line-height: 30px;
     padding-bottom: 0.5em;
@@ -645,7 +689,7 @@ td {
     text-align: left;
 }
 input[name="fingerprint"] {
-    width: 25em; 
+    width: 25em;
     margin: 8px auto;
 }
 pre {
@@ -662,12 +706,14 @@ pre {
     border: 1px solid var(--local-border);
     border-radius: 5px;
 }
-footer pre { font-size: 14px; }
+footer pre {
+    font-size: 14px;
+}
 .navtext button {
     flex: 1;
     margin: 1em;
 }
-.navtext>div {
+.navtext > div {
     flex: 1;
     margin: 0 1em;
 }
@@ -697,9 +743,11 @@ footer pre { font-size: 14px; }
     top: 0;
     right: 0;
     margin: 6px;
-    padding:8px;
+    padding: 8px;
 }
-audio { display: none; }
+audio {
+    display: none;
+}
 .edit-gate {
     position: fixed;
     top: 20%;
@@ -712,7 +760,8 @@ audio { display: none; }
     height: 370px;
     background: right no-repeat url("/map/top.png");
 }
-.gate-pad, .empty-pad {
+.gate-pad,
+.empty-pad {
     width: 25%;
     height: 110px;
     float: left;
@@ -751,7 +800,6 @@ audio { display: none; }
     border-radius: 2px;
     background-color: rgba(var(--background-rgb), 0.7);
     margin: 4px;
-
 }
 .gate-stats > i {
     font-size: 160%;
@@ -772,7 +820,8 @@ audio { display: none; }
     position: relative;
     padding-right: 20%;
 }
-#map .text-button, .empty-pad div  {
+#map .text-button,
+.empty-pad div {
     width: 100%;
     height: 70px;
     margin: 0 auto;
@@ -786,28 +835,28 @@ audio { display: none; }
 }
 #map-footer {
     clear: both;
-    background: top no-repeat url("/map/bottom.png")
+    background: top no-repeat url("/map/bottom.png");
 }
 .line-break {
     margin: 0;
     padding: 0;
     clear: both;
 }
-div.online  {
+div.online {
     text-shadow: var(--remote-border) 1px 0 10px;
 }
 #changelog {
-	opacity: 0;
-	position: relative;
-	max-width: 10vw;
-	max-height: 0;
-	padding: 0.2em 1em;
-	line-height: 1.5em;
-	overflow-x: hidden;
-	overflow-y: scroll;
-	transition: all 0.75s ease;
-	background-color: var(--text-background);
-	border-radius: 5px;
+    opacity: 0;
+    position: relative;
+    max-width: 10vw;
+    max-height: 0;
+    padding: 0.2em 1em;
+    line-height: 1.5em;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    transition: all 0.75s ease;
+    background-color: var(--text-background);
+    border-radius: 5px;
     text-align: left;
 }
 #changelog ul {
@@ -819,9 +868,9 @@ div.online  {
     margin: 0;
 }
 #changelog.show {
-	opacity: 0.9;
-	max-width: 96vw;
-	max-height: 60vh;
+    opacity: 0.9;
+    max-width: 96vw;
+    max-height: 60vh;
     border: 1px solid var(--local-border);
 }
 #changelog::-webkit-scrollbar-thumb {
@@ -835,19 +884,19 @@ div.online  {
 #changelog::-webkit-scrollbar {
     height: 14px;
 }
-#changelog>a {
-	position: absolute;
-	top: 3%;
-	right: 2%;
-	text-decoration: none;
+#changelog > a {
+    position: absolute;
+    top: 3%;
+    right: 2%;
+    text-decoration: none;
 }
 #title-short {
-  letter-spacing: 0.1em;
+    letter-spacing: 0.1em;
 }
 .expand-gate {
     display: block;
     position: absolute;
-    float:right;
+    float: right;
     text-shadow: none;
     transform: translate(50%, -50%);
     top: 50%;
