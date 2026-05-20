@@ -1,10 +1,11 @@
-import { vi } from "vitest"
+import { vi } from "vitest";
 
 export class FitAddon {
     constructor() {
-        vi.fn()
+        vi.fn();
     }
-    activate = vi.fn()
-    deactivate = vi.fn()
-    fit = vi.fn()
+    activate = vi.fn();
+    deactivate = vi.fn();
+    fit = vi.fn();
+    proposeDimensions = vi.fn();
 }

@@ -1,10 +1,11 @@
-import { vi } from 'vitest'
+import { vi } from "vitest";
 
 export class WebglAddon {
     constructor() {
-        vi.fn()
+        vi.fn();
     }
-    activate = vi.fn()
-    deactivate = vi.fn()
-    onContextLoss = vi.fn()
+    activate = vi.fn();
+    deactivate = vi.fn();
+    onContextLoss = vi.fn();
+    dispose = vi.fn();
 }

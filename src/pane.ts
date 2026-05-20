@@ -81,6 +81,7 @@ export class Pane extends Cell {
     searchTerm = "";
     t: Terminal;
     theme: ITheme;
+    webGLAddon: WebglAddon;
     repetition = 0;
     retries = 0;
     WebLinksAddon: WebLinksAddon;
@@ -182,13 +183,13 @@ export class Pane extends Cell {
         this.t.loadAddon(this.WebLinksAddon);
         this.t.loadAddon(this.imageAddon);
 
-        const webGLAddon = new WebglAddon();
+        this.webGLAddon = new WebglAddon();
         this.createDividers();
         this.t.onSelectionChange(() => this.selectionChanged());
         openEmulator(e, this.t)
             .catch((e) => terminal7.log("failed to open terminal", e))
             .finally(() => {
-                this.t.loadAddon(webGLAddon);
+                this.t.loadAddon(this.webGLAddon);
                 if (this.t.textarea) this.t.textarea.tabIndex = -1;
                 this.t.attachCustomKeyEventHandler((ev) => {
                     let toDo = true;
@@ -252,6 +253,20 @@ export class Pane extends Cell {
                     }
                 });
                 this.scaleCanvas();
+                const mem = (
+                    performance as Performance & {
+                        memory?: {
+                            usedJSHeapSize: number;
+                            jsHeapSizeLimit: number;
+                        };
+                    }
+                ).memory;
+                if (mem)
+                    terminal7.log(
+                        `pane opened - JS heap: ${Math.round(mem.usedJSHeapSize / 1048576)}MB / ` +
+                            `${Math.round(mem.jsHeapSizeLimit / 1048576)}MB`,
+                    );
+                else terminal7.log("pane opened - memory stats unavailable");
             });
         return this.t;
     }
@@ -626,7 +641,11 @@ export class Pane extends Cell {
                 f = () => this.w.moveFocus("down");
                 break;
             case "p":
-                f = () => this.t7.dumpLog();
+                f = () =>
+                    this.t7.dumpLog().then((log) => {
+                        Clipboard.write({ string: log });
+                        this.t7.notify("Log copied to clipboard");
+                    });
                 break;
             default:
                 if (ev.key >= "1" && ev.key <= "9")
@@ -805,6 +824,8 @@ export class Pane extends Cell {
         interact(this.e).unset();
         document.querySelector(".add-tab").classList.remove("off");
         if (this.zoomed) this.unzoom();
+        this.webGLAddon?.dispose();
+        this.t.dispose();
         super.close();
     }
     dump(): SerializedPane {
