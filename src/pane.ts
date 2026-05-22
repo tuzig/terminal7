@@ -563,23 +563,52 @@ export class Pane extends Cell {
             f = () => this.gate.newTab()
             break
         case "r":
-            f = () => this.gate.reset()
+            if(ev.shiftKey){
+                this.layout.cells.forEach(c => console.log(c))
+                f = () => this.layout.changeDir()
+            }else {
+                f = () => this.gate.reset()
+            }
             break
         // this key is at terminal level
         case "l":
             f = () => this.t7.map.showLog()
             break
         case "ArrowLeft":
-            f = () => this.w.moveFocus("left")
+            if(ev.shiftKey){
+                const pane = this.w.getPane("left")
+                if(!pane) return;
+                this.w.swapPanes(this,pane)
+            }else {
+                f = () => this.w.moveFocus("left")
+            }
             break
         case "ArrowRight":
-            f = () => this.w.moveFocus("right")
+            if(ev.shiftKey){
+                const pane = this.w.getPane("right")
+                if(!pane) return;
+                this.w.swapPanes(this,pane)
+            }else {
+                f = () => this.w.moveFocus("right")
+            }
             break
         case "ArrowUp":
-            f = () => this.w.moveFocus("up")
+            if(ev.shiftKey){
+                const pane = this.w.getPane("up")
+                if(!pane) return;
+                this.w.swapPanes(this,pane)
+            }else {
+                f = () => this.w.moveFocus("up")
+            }
             break
         case "ArrowDown":
-            f = () => this.w.moveFocus("down")
+            if(ev.shiftKey){
+                const pane = this.w.getPane("down")
+                if(!pane) return;
+                this.w.swapPanes(this,pane)
+            }else {
+                f = () => this.w.moveFocus("down")
+            }
             break
         case "p":
             f = () => this.t7.dumpLog()

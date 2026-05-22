@@ -313,6 +313,12 @@ export class Terminal7 {
         dV.addEventListener("click", () =>  {
                     if (this.activeG)
                         this.activeG.activeW.activeP.split("topbottom", 0.5)})
+        const rotateLayout = document.getElementById("rotate-layout")
+        rotateLayout.addEventListener("click", () =>  {
+            if(this.activeG){
+                this.activeG.activeW.activeP.layout.changeDir()
+            }
+        })
         document.getElementById('add-gate').addEventListener(
             'click', async (ev) => {
                 setTimeout(() => this.map.shell.runCommand('add', []), 50)

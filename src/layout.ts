@@ -363,4 +363,60 @@ export class Layout extends Cell {
         })
         return cells
     }
+    changeDir(){
+        if(this.dir === "TBD") return;
+        const parentDir = this.layout?.dir
+        const newDir = this.dir === 'rightleft' ? 'topbottom' : 'rightleft'
+        let keepXoff = false;
+        let keepYoff = false;
+        let cellSize;
+        console.log('origdir',this.dir)
+        if(this.dir === 'topbottom'){
+            keepYoff = true
+            cellSize = this.sy / this.cells.length
+        }else if(this.dir === 'rightleft') {
+            keepXoff = true
+            cellSize = this.sx / this.cells.length
+        }
+        this.cells.forEach((c, i) => {
+            const oldXoff = c.xoff
+            const oldYoff = c.yoff
+            const oldSx = c.sx;
+            const oldSy = c.sy;
+            c.yoff = oldXoff
+            c.xoff = oldYoff
+            c.sx = oldSy
+            c.sy = oldSx
+            // console.log('c',{
+            //     xoff: c.xoff,
+            //     yoff: c.yoff,
+            //     sx: c.sx,
+            //     sy: c.sy,
+            // })
+            if(keepYoff){
+                c.yoff = this.yoff + cellSize * i
+                c.xoff = this.xoff
+                c.sy = cellSize
+                c.sx = this.sx
+            }else if(keepXoff){
+                c.yoff = this.yoff
+                c.xoff = this.xoff + cellSize * i
+                c.sy = this.sy
+                c.sx = cellSize
+            }
+            // console.log('c2',{
+            //     xoff: c.xoff,
+            //     yoff: c.yoff,
+            //     sx: c.sx,
+            //     sy: c.sy,
+            // })
+        });
+        this.dir = newDir
+        this.refreshDividers()
+        if(this.dir === parentDir){
+            const replaceIndex = this.layout.cells.findIndex(c => c.id === this.id)
+            this.layout.cells.splice(replaceIndex, 1, ...this.cells)
+            this.layout.refreshDividers()
+        }
+    }
 }
