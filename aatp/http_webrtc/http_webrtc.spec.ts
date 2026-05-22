@@ -116,6 +116,31 @@ pinch_max_y_velocity = 0.1`
         expect(exitState).toEqual("success")
         await expect(page.locator('.pane')).toHaveCount(1)
     })
+    test('stale server session starts fresh instead of restoring old panes', async() => {
+        const sessionState = await page.evaluate(async() => {
+            const gate = window.terminal7.activeG,
+                  staleSession = gate.sessionId
+            gate.fitScreen = false
+            if (gate.sendStateTask != null) {
+                clearTimeout(gate.sendStateTask)
+                gate.sendStateTask = null
+            }
+            await gate.session.setPayload({windows: [], width: 1280, height: 627})
+            gate.marker = 123
+            await gate.reconnect()
+            const payload = JSON.parse(await gate.session.getPayload())
+            return {
+                marker: gate.marker,
+                oldSession: staleSession,
+                payloadSession: payload.session,
+                sessionId: gate.sessionId,
+            }
+        })
+        await expect(page.locator('.pane')).toHaveCount(1)
+        expect(sessionState.marker).toBeNull()
+        expect(sessionState.sessionId).not.toEqual(sessionState.oldSession)
+        expect(sessionState.payloadSession).toEqual(sessionState.sessionId)
+    })
     test('disengage and reconnect', async() => {
 
         await reloadPage(page)

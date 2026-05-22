@@ -169,7 +169,7 @@ export class Gate {
         return bytes.map(b => b.toString(16).padStart(2, "0")).join("")
     }
 
-    private async applyServerPayload(rawPayload: string | null) {
+    private parseServerPayload(rawPayload: string | null): ServerPayload | null {
         let layout: ServerPayload | null = null
         try {
             if (rawPayload)
@@ -177,7 +177,11 @@ export class Gate {
         } catch(e) {
             layout = null
         }
+        return layout
+    }
 
+    private async applyServerPayload(rawPayload: string | null): Promise<boolean> {
+        const layout = this.parseServerPayload(rawPayload)
         const incomingSession = layout?.session
         const hadSession = !!this.sessionId
         let freshSession = false
@@ -215,6 +219,24 @@ export class Gate {
                 this.t7.log("failed to persist session payload", e)
             }
         }
+        return freshSession
+    }
+
+    private async shouldRestoreSession(session: Session, publicKey?: string, privateKey?: string): Promise<boolean> {
+        if (session.isSSH)
+            return true
+
+        const payload = session.isOpen() ?
+              await session.getPayload() :
+              await session.reconnect(null, publicKey, privateKey)
+        const freshSession = await this.applyServerPayload(
+            typeof payload == "string" ? payload : null)
+        if (!freshSession)
+            return true
+
+        this.marker = null
+        this.reconnectCount = 0
+        return false
     }
 
     /*
@@ -465,20 +487,34 @@ export class Gate {
             }
 
             const finish = async layout => {
-                await this.applyServerPayload(layout)
+                await this.applyServerPayload(typeof layout == "string" ? layout : null)
                 this.reconnectCount = 0
                 resolve()
             }
             if (!isNative) {
-                this.session.reconnect(this.marker)
-                .then(layout => finish(layout))
-                .catch(e  => {
-                    if (this.session) {
-                        this.wasSSH = this.session.isSSH
-                        this.session.close()
-                        this.session = null
+                this.shouldRestoreSession(session)
+                .then(restore => {
+                    if (!restore) {
+                        resolve()
+                        return
                     }
-                    terminal7.log("reconnect failed:", e)
+                    session.reconnect(this.marker)
+                    .then(layout => finish(layout))
+                    .catch(e  => {
+                        if (this.session != session)
+                            // session changed, ignore the failure
+                            return
+                        if (this.session) {
+                            this.wasSSH = this.session.isSSH
+                            this.session.close()
+                            this.session = null
+                        }
+                        terminal7.log("reconnect failed:", e)
+                        reject(e)
+                    })
+                })
+                .catch(e  => {
+                    terminal7.log("reconnect session check failed:", e)
                     reject(e)
                 })
                 return
@@ -493,15 +529,23 @@ export class Gate {
                 reject(e)
             }
             this.t7.readId().then(({publicKey, privateKey}) => {
-                this.session.reconnect(this.marker, publicKey, privateKey)
-                .then(finish)
-                .catch(e => {
-                    if (this.session != session)
-                        // session changed, ignore the failure
+                this.shouldRestoreSession(session, publicKey, privateKey)
+                .then(restore => {
+                    if (!restore) {
+                        resolve()
                         return
-                    console.log("session reconnect failed", e)
-                    this.reconnect().then(resolve).catch(reject)
+                    }
+                    session.reconnect(this.marker, publicKey, privateKey)
+                    .then(finish)
+                    .catch(e => {
+                        if (this.session != session)
+                            // session changed, ignore the failure
+                            return
+                        console.log("session reconnect failed", e)
+                        this.reconnect().then(resolve).catch(reject)
+                    })
                 })
+                .catch(closeSessionAndDisconnect)
             }).catch(e => {
                 this.t7.log("failed to read id", e)
                 closeSessionAndDisconnect(e)

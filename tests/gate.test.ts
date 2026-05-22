@@ -30,6 +30,8 @@ describe("gate", () => {
         t.clearTimeouts()
         t.gates = new Array()
         t.pendingPanes = {}
+        HTTPWebRTCSession.fail = false
+        HTTPWebRTCSession.payload = null
     })
     it("starts with no gates", () => {
         expect(t.gates.length).to.equal(0)
@@ -126,6 +128,50 @@ describe("gate", () => {
         expect(panes[0].t).not.toBeNull()
         expect(panes[0].d).not.toBeNull()
         expect(panes[0].d.resize).toHaveBeenCalledTimes(0)
+    })
+    it("stores a session hash on first empty webexec payload", async () => {
+        const g = t.addGate()
+        g.open(e)
+        await g.connect()
+        await sleep(100)
+        const stored = JSON.parse(HTTPWebRTCSession.payload)
+        expect(stored.session).toEqual(expect.any(String))
+        expect(g.dump().session).toEqual(stored.session)
+    })
+    it("starts fresh when the webexec session hash changes before marker restore", async () => {
+        t.map.t0.out = ""
+        HTTPWebRTCSession.payload = JSON.stringify({session: "new", windows: [], width: 1280, height: 627})
+        const g = t.addGate()
+        g.open(e)
+        g.session = new HTTPWebRTCSession("http://example.com:7777/offer", "", "")
+        g.sessionId = "old"
+        g.marker = 123
+
+        await g.reconnect()
+
+        expect(g.session.getPayload).toHaveBeenCalledTimes(1)
+        expect(g.session.reconnect).not.toHaveBeenCalled()
+        expect(g.marker).toBeNull()
+        expect(g.dump().session).toEqual("new")
+        expect(g.panes().length).toEqual(1)
+        expect(t.map.t0.out).toContain("fresh webexec session")
+    })
+    it("starts fresh when the webexec payload is missing a session hash", async () => {
+        t.map.t0.out = ""
+        HTTPWebRTCSession.payload = JSON.stringify({windows: [], width: 1280, height: 627})
+        const g = t.addGate()
+        g.open(e)
+        g.session = new HTTPWebRTCSession("http://example.com:7777/offer", "", "")
+        g.sessionId = "old"
+        g.marker = 123
+
+        await g.reconnect()
+
+        expect(g.session.getPayload).toHaveBeenCalledTimes(1)
+        expect(g.session.reconnect).not.toHaveBeenCalled()
+        expect(g.marker).toBeNull()
+        expect(g.dump().session).not.toEqual("old")
+        expect(t.map.t0.out).toContain("fresh webexec session")
     })
 	it("remembers username", async () => {
 		let g = t.addGate({name:"foo", addr: "foo", username: "eyal"})

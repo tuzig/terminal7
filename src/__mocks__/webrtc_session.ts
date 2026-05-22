@@ -1,5 +1,5 @@
 import { Failure } from "../session"
-import { Session, Channel, State, CallbackType } from "../session.ts"
+import { Session, Channel, State, CallbackType, ChannelID } from "../session.ts"
 
 const returnLater = (ret: unknown) => 
     vi.fn(() => new Promise( resolve => setTimeout(() => resolve(ret), 0)))
@@ -20,6 +20,7 @@ export class HTTPWebRTCSession implements Session {
     onStateChange: (state: State) => void
     onCMD: (payload: string) => void
     static fail = false
+    static payload: string | null = null
     constructor(address: string, username: string, password: string, port?=22) {
         console.log("New seesion", address, username, password, port)
     }
@@ -38,9 +39,14 @@ export class HTTPWebRTCSession implements Session {
         })
     )
     close = returnLater(undefined)
-    getPayload = returnLater(null)
-    setPayload = returnLater(null)
+    getPayload = vi.fn(() => Promise.resolve(HTTPWebRTCSession.payload))
+    setPayload = vi.fn(payload => {
+        HTTPWebRTCSession.payload = typeof payload == "string" ? payload : JSON.stringify(payload)
+        return Promise.resolve(HTTPWebRTCSession.payload)
+    })
+    reconnect = vi.fn(() => Promise.resolve(HTTPWebRTCSession.payload))
     disconnect = returnLater(null)
+    isOpen = vi.fn(() => true)
     public get isSSH() {
         return false
     }
