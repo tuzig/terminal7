@@ -306,7 +306,7 @@ export class Shell {
     /* 
      * Starts a watchdog that will reject if not stopped within the given time
     */
-    startWatchdog(timeout? : number): Promise<void> {
+    startWatchdog({ timeout, prefix = 'Waiting' }: { timeout?: number; prefix?: string } = {} ): Promise<void> {
         if (!timeout)
             timeout = terminal7.conf.net.timeout
         // only one watchdog, the last one
@@ -314,9 +314,9 @@ export class Shell {
             this.stopWatchdog()
         return new Promise((resolve, reject) => {
             this.watchdogResolve = resolve
-            this.startHourglass(timeout)
+            this.startHourglass({timeout , prefix})
             this.watchdog = terminal7.run(() => {
-                terminal7.log("shell watchdog timeout")
+                terminal7.log(`shell watchdog timeout`)
                 this.stopWatchdog()
                 reject(Failure.TimedOut)
             }, timeout)
@@ -336,7 +336,7 @@ export class Shell {
         this.printPrompt()
     }
 
-    startHourglass(timeout: number) {
+    startHourglass({ timeout, prefix = 'Waiting' } : { timeout?: number; prefix?: string } ) {
         if (this.timer) return
         this.map.showLog(true)
         const len = 20,
@@ -344,7 +344,7 @@ export class Shell {
         let i = 0
         this.timer = window.setInterval(() => {
             const dots = Math.max(0, len - i) // i should never be > len, but just in case
-            this.t.write(`\r\x1B[K${" ".repeat(i)}ᗧ${"·".repeat(dots)}🍒\x1B[?25l`)
+            this.t.write(`\r\x1B[K${prefix}${" ".repeat(i)}ᗧ${"·".repeat(dots)}🍒\x1B[?25l`)
             i++
         }, interval)
     }
