@@ -52,7 +52,7 @@
         "idb": "7.1.1",
         "interactjs": "^1.10.27",
         "marked": "^4.1.0",
-        "uuid": "^8.3.2"
+        "uuid": "^14.0.0"
     },
     "devDependencies": {
         "@capacitor/assets": "^3.0.5",
