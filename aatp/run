@@ -38,18 +38,18 @@ build_n_run() {
     if [ $BUILD -eq 1 ]
     then
         echo ">>> Building a lab based on $1"
-        $COMPOSE -f $1 "${EXTRA_FILES[@]}" --project-directory . build $BUILD_OPTIONS
+        $COMPOSE -f $1 "${EXTRA_FILES[@]}" build $BUILD_OPTIONS
         if [ $? -ne 0 ]
         then
             exit "$COMPOSE build failed"
         fi
     fi
     echo ">>> Running a lab based on $1"
-    $COMPOSE -f $1 "${EXTRA_FILES[@]}" --project-directory . up $UPFLAGS | sed 's/\.\.\//aatp\//g'
+    $COMPOSE -f $1 "${EXTRA_FILES[@]}" up $UPFLAGS | sed 's/\.\.\//aatp\//g'
     rc=${PIPESTATUS[0]}
     if [ -n "$UPFLAGS" ]
     then
-        $COMPOSE -f $1 "${EXTRA_FILES[@]}" --project-directory . down -v 2>&1 | sed 's/\.\.\//aatp\//g'
+        $COMPOSE -f $1 "${EXTRA_FILES[@]}" down -v 2>&1 | sed 's/\.\.\//aatp\//g'
     fi
     return $rc
 }
