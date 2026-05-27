@@ -40,52 +40,46 @@
     "@otplib/plugin-crypto" "^12.0.1"
     "@otplib/plugin-thirty-two" "^12.0.1"
 
-"@playwright/test@^1.22.2":
-  version "1.26.1"
-  resolved "https://registry.yarnpkg.com/@playwright/test/-/test-1.26.1.tgz#73ada4e70f618bca69ba7509c4ba65b5a41c4b10"
-  integrity sha512-bNxyZASVt2adSZ9gbD7NCydzcb5JaI0OR9hc7s+nmPeH604gwp0zp17NNpwXY4c8nvuBGQQ9oGDx72LE+cUWvw==
+"@playwright/test@1.60.0":
+  version "1.60.0"
+  resolved "https://registry.yarnpkg.com/@playwright/test/-/test-1.60.0.tgz#e696c31427e8882851235cd556dc2490c3206d97"
+  integrity sha512-O71yZIbAh/PxDMNGns37GHBIfrVkEVyn+AXyIa5dOTfb4/xNvRWV+Vv/NMbNCtODB/pO7vLlF2OTmMVLhmr7Ag==
   dependencies:
-    "@types/node" "*"
-    playwright-core "1.26.1"
+    playwright "1.60.0"
 
-"@redis/bloom@1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@redis/bloom/-/bloom-1.0.2.tgz#42b82ec399a92db05e29fffcdfd9235a5fc15cdf"
-  integrity sha512-EBw7Ag1hPgFzdznK2PBblc1kdlj5B5Cw3XwI9/oG7tSn85/HKy3X9xHy/8tm/eNXJYHLXHJL/pkwBpFMVVefkw==
+"@redis/bloom@1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@redis/bloom/-/bloom-1.2.0.tgz#d3fd6d3c0af3ef92f26767b56414a370c7b63b71"
+  integrity sha512-HG2DFjYKbpNmVXsa0keLHp/3leGJz1mjh09f2RLGGLQZzSHpkmZWuwJbAvo3QcRY8p80m5+ZdXZdYOSBLlp7Cg==
 
-"@redis/client@1.3.0":
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/@redis/client/-/client-1.3.0.tgz#c62ccd707f16370a2dc2f9e158a28b7da049fa77"
-  integrity sha512-XCFV60nloXAefDsPnYMjHGtvbtHR8fV5Om8cQ0JYqTNbWcQo/4AryzJ2luRj4blveWazRK/j40gES8M7Cp6cfQ==
+"@redis/client@1.6.1":
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/@redis/client/-/client-1.6.1.tgz#c4636b7cb34e96008a988409b7e787364ae761a2"
+  integrity sha512-/KCsg3xSlR+nCK8/8ZYSknYxvXHwubJrU82F3Lm1Fp6789VQ0/3RJKfsmRXjqfaTA++23CvC3hqmqe/2GEt6Kw==
   dependencies:
-    cluster-key-slot "1.1.0"
-    generic-pool "3.8.2"
+    cluster-key-slot "1.1.2"
+    generic-pool "3.9.0"
     yallist "4.0.0"
 
-"@redis/graph@1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@redis/graph/-/graph-1.0.1.tgz#eabc58ba99cd70d0c907169c02b55497e4ec8a99"
-  integrity sha512-oDE4myMCJOCVKYMygEMWuriBgqlS5FqdWerikMoJxzmmTUErnTRRgmIDa2VcgytACZMFqpAOWDzops4DOlnkfQ==
+"@redis/graph@1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@redis/graph/-/graph-1.1.1.tgz#8c10df2df7f7d02741866751764031a957a170ea"
+  integrity sha512-FEMTcTHZozZciLRl6GiiIB4zGm5z5F3F6a6FZCyrfxdKOhFlGkiAqlexWMBzCi4DcRoyiOsuLfW+cjlGWyExOw==
 
-"@redis/json@1.0.4":
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/@redis/json/-/json-1.0.4.tgz#f372b5f93324e6ffb7f16aadcbcb4e5c3d39bda1"
-  integrity sha512-LUZE2Gdrhg0Rx7AN+cZkb1e6HjoSKaeeW8rYnt89Tly13GBI5eP4CwDVr+MY8BAYfCg4/N15OUrtLoona9uSgw==
+"@redis/json@1.0.7":
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/@redis/json/-/json-1.0.7.tgz#016257fcd933c4cbcb9c49cde8a0961375c6893b"
+  integrity sha512-6UyXfjVaTBTJtKNG4/9Z8PSpKE6XgSyEb8iwaqDcy+uKrd/DGYHTWkUdnQDyzm727V7p21WUMhsqz5oy65kPcQ==
 
-"@redis/search@1.1.0":
+"@redis/search@1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@redis/search/-/search-1.2.0.tgz#50976fd3f31168f585666f7922dde111c74567b8"
+  integrity sha512-tYoDBbtqOVigEDMAcTGsRlMycIIjwMCgD8eR2t0NANeQmgK/lvxNAvYyb6bZDD4frHRhIHkJu2TBRvB0ERkOmw==
+
+"@redis/time-series@1.1.0":
   version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@redis/search/-/search-1.1.0.tgz#7abb18d431f27ceafe6bcb4dd83a3fa67e9ab4df"
-  integrity sha512-NyFZEVnxIJEybpy+YskjgOJRNsfTYqaPbK/Buv6W2kmFNaRk85JiqjJZA5QkRmWvGbyQYwoO5QfDi2wHskKrQQ==
-
-"@redis/time-series@1.0.3":
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/@redis/time-series/-/time-series-1.0.3.tgz#4cfca8e564228c0bddcdf4418cba60c20b224ac4"
-  integrity sha512-OFp0q4SGrTH0Mruf6oFsHGea58u8vS/iI5+NpYdicaM+7BgqBZH8FFvNZ8rYYLrUO/QRqMq72NpXmxLVNcdmjA==
-
-"@types/node@*":
-  version "18.8.2"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.8.2.tgz#17d42c6322d917764dd3d2d3a10d7884925de067"
-  integrity sha512-cRMwIgdDN43GO4xMWAfJAecYn8wV4JbsOGHNfNUIDiuYkUYAR5ec4Rj7IO2SAhFPEfpPtLtUTbbny/TCT7aDwA==
+  resolved "https://registry.yarnpkg.com/@redis/time-series/-/time-series-1.1.0.tgz#cba454c05ec201bd5547aaf55286d44682ac8eb5"
+  integrity sha512-c1Q99M5ljsIuc4YdaCwfUEXsofakb9c8+Zse2qxTadu8TalLXuAESzLvFAvNVbkmSlvlzIQOLpBCmWI9wTOt+g==
 
 ansi-styles@^3.2.1:
   version "3.2.1"
@@ -108,10 +102,10 @@ bcrypt-pbkdf@^1.0.2:
   dependencies:
     tweetnacl "^0.14.3"
 
-buildcheck@0.0.3:
-  version "0.0.3"
-  resolved "https://registry.yarnpkg.com/buildcheck/-/buildcheck-0.0.3.tgz#70451897a95d80f7807e68fc412eb2e7e35ff4d5"
-  integrity sha512-pziaA+p/wdVImfcbsZLNF32EiWyujlQLwolMqUQE8xpKNOH7KmZQaY8sXN7DGOEzPAElo9QTaeNRfGnf3iOJbA==
+buildcheck@~0.0.6:
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/buildcheck/-/buildcheck-0.0.7.tgz#07a5e76c10ead8fa67d9e4c587b68f49e8f29d61"
+  integrity sha512-lHblz4ahamxpTmnsk+MNTRWsjYKv965MwOrSJyeD588rR3Jcu7swE+0wN5F+PbL5cjgu/9ObkhfzEPuofEMwLA==
 
 chalk@^2.4.2:
   version "2.4.2"
@@ -122,10 +116,10 @@ chalk@^2.4.2:
     escape-string-regexp "^1.0.5"
     supports-color "^5.3.0"
 
-cluster-key-slot@1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/cluster-key-slot/-/cluster-key-slot-1.1.0.tgz#30474b2a981fb12172695833052bc0d01336d10d"
-  integrity sha512-2Nii8p3RwAPiFwsnZvukotvow2rIHM+yQ6ZcBXGHdniadkYGZYiGmkHJIbZPIV9nfv7m/U1IPMVVcAhoWFeklw==
+cluster-key-slot@1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/cluster-key-slot/-/cluster-key-slot-1.1.2.tgz#88ddaa46906e303b5de30d3153b7d9fe0a0c19ac"
+  integrity sha512-RMr0FhtfXemyinomL4hrWcYJxmX6deFdCxpJzhDttxgO1+bcCnkk+9drydLVDmAMG7NE6aN/fl4F7ucU/90gAA==
 
 color-convert@^1.9.0:
   version "1.9.3"
@@ -145,44 +139,49 @@ commander@^3.0.2:
   integrity sha512-Gar0ASD4BDyKC4hl4DwHqDrmvjoxWKZigVnAbn5H1owvm4CxCPdb0HQDehwNYMJpla5+M2tPmPARzhtYuwpHow==
 
 cpu-features@~0.0.4:
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/cpu-features/-/cpu-features-0.0.4.tgz#0023475bb4f4c525869c162e4108099e35bf19d8"
-  integrity sha512-fKiZ/zp1mUwQbnzb9IghXtHtDoTMtNeb8oYGx6kX2SYfhnG0HNdBEBIzB9b5KlXu5DQPhfy3mInbBxFcgwAr3A==
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/cpu-features/-/cpu-features-0.0.10.tgz#9aae536db2710c7254d7ed67cb3cbc7d29ad79c5"
+  integrity sha512-9IkYqtX3YHPCzoVg1Py+o9057a3i0fp7S530UWokCSaFVTc7CwXPRiOjRjBQQ18ZCNafx78YfnG+HALxtVmOGA==
   dependencies:
-    buildcheck "0.0.3"
-    nan "^2.15.0"
+    buildcheck "~0.0.6"
+    nan "^2.19.0"
 
 debug@^4.1.1:
-  version "4.3.4"
-  resolved "https://registry.yarnpkg.com/debug/-/debug-4.3.4.tgz#1319f6579357f2338d3337d2cdd4914bb5dcc865"
-  integrity sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==
+  version "4.4.3"
+  resolved "https://registry.yarnpkg.com/debug/-/debug-4.4.3.tgz#c6ae432d9bd9662582fce08709b038c58e9e3d6a"
+  integrity sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==
   dependencies:
-    ms "2.1.2"
+    ms "^2.1.3"
 
 escape-string-regexp@^1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/escape-string-regexp/-/escape-string-regexp-1.0.5.tgz#1b61c0562190a8dff6ae3bb2cf0200ca130b86d4"
   integrity sha512-vbRorB5FUQWvla16U8R/qgaFIya2qGzwDrNmCZuYKrbdSUMG6I1ZCGQRefkRVhuOkIGVne7BQ35DSfo1qvJqFg==
 
-generic-pool@3.8.2:
-  version "3.8.2"
-  resolved "https://registry.yarnpkg.com/generic-pool/-/generic-pool-3.8.2.tgz#aab4f280adb522fdfbdc5e5b64d718d3683f04e9"
-  integrity sha512-nGToKy6p3PAbYQ7p1UlWl6vSPwfwU6TMSWK7TTu+WUY4ZjyZQGniGGt2oNVvyNSpyZYSB43zMXVLcBm08MTMkg==
+fsevents@2.3.2:
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-2.3.2.tgz#8a526f78b8fdf4623b709e0b975c52c24c02fd1a"
+  integrity sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==
+
+generic-pool@3.9.0:
+  version "3.9.0"
+  resolved "https://registry.yarnpkg.com/generic-pool/-/generic-pool-3.9.0.tgz#36f4a678e963f4fdb8707eab050823abc4e8f5e4"
+  integrity sha512-hymDOu5B53XvN4QT9dBmZxPX4CWhBPPLguTZ9MMFeFa/Kg0xWVfylOVNlJji/E7yTZWFd/q9GO5TxDLq156D7g==
 
 has-flag@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/has-flag/-/has-flag-3.0.0.tgz#b5d454dc2199ae225699f3467e5a07f3b955bafd"
   integrity sha512-sKJf1+ceQBr4SMkvQnBDNDtf4TXpVhVGateu0t918bl30FnbE2m4vNLX+VWe/dpjlb+HugGYzW7uQXH98HPEYw==
 
-ms@2.1.2:
-  version "2.1.2"
-  resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.2.tgz#d09d1f357b443f493382a8eb3ccd183872ae6009"
-  integrity sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==
+ms@^2.1.3:
+  version "2.1.3"
+  resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.3.tgz#574c8138ce1d2b5861f0b44579dbadd60c6615b2"
+  integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
 
-nan@^2.15.0, nan@^2.16.0:
-  version "2.16.0"
-  resolved "https://registry.yarnpkg.com/nan/-/nan-2.16.0.tgz#664f43e45460fb98faf00edca0bb0d7b8dce7916"
-  integrity sha512-UdAqHyFngu7TfQKsCBgAA6pWDkT8MAO7d0jyOecVhN5354xbLqdn8mV9Tat9gepAupm0bt2DbeaSC8vS52MuFA==
+nan@^2.16.0, nan@^2.19.0:
+  version "2.27.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.27.0.tgz#804e389f4c0e39b729a17eca85c80ebc4355c4c4"
+  integrity sha512-hC+0LidcL3XE4rp1C4H54KujgXKzbfyTngZTwBByQxsOxCEKZT0MPQ4hOKUH2jU1OYstqdDH4onyHPDzcV0XdQ==
 
 otplib@^12.0.1:
   version "12.0.1"
@@ -193,43 +192,31 @@ otplib@^12.0.1:
     "@otplib/preset-default" "^12.0.1"
     "@otplib/preset-v11" "^12.0.1"
 
-playwright-chromium@^1.22.2:
-  version "1.26.1"
-  resolved "https://registry.yarnpkg.com/playwright-chromium/-/playwright-chromium-1.26.1.tgz#c0a3b7100032c52aeb983c95fcd80d3b6fdd2577"
-  integrity sha512-F38TvJWkrP7aLJ99AeZFSad0FKjOjudhdBsFr91cJkO28sEEy2VEiUJtk3ezu3a55S9Ka/kMJ1gM1msM3hDkGA==
-  dependencies:
-    playwright-core "1.26.1"
+playwright-core@1.60.0:
+  version "1.60.0"
+  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-1.60.0.tgz#24e0d9cc4730713db5dffcace29b5e4696b1907a"
+  integrity sha512-9bW6zvX/m0lEbgTKJ6YppOKx8H3VOPBMOCFh2irXFOT4BbHgrx5hPjwJYLT40Lu+4qtD36qKc/Hn56StUW57IA==
 
-playwright-core@1.26.1:
-  version "1.26.1"
-  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-1.26.1.tgz#a162f476488312dcf12638d97685144de6ada512"
-  integrity sha512-hzFchhhxnEiPc4qVPs9q2ZR+5eKNifY2hQDHtg1HnTTUuphYCBP8ZRb2si+B1TR7BHirgXaPi48LIye5SgrLAA==
-
-playwright-firefox@^1.22.2:
-  version "1.26.1"
-  resolved "https://registry.yarnpkg.com/playwright-firefox/-/playwright-firefox-1.26.1.tgz#5dc52f535929364d205f0edd183567f705cffd72"
-  integrity sha512-HyAqLOPKiwhNZjWW+oggIdo3VzTONcenR9VV7nBxdEtpG43iSrvc8EqshaY9V3Kze12u3tOaR+5Z6z9ohcKmWw==
+playwright@1.60.0:
+  version "1.60.0"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.60.0.tgz#89710863a51f21112633ef8b6b182594d3bfd7b5"
+  integrity sha512-hheHdokM8cdqCb0lcE3s+zT4t4W+vvjpGxsZlDnikarzx8tSzMebh3UiFtgqwFwnTnjYQcsyMF8ei2mCO/tpeA==
   dependencies:
-    playwright-core "1.26.1"
-
-playwright-webkit@^1.22.2:
-  version "1.26.1"
-  resolved "https://registry.yarnpkg.com/playwright-webkit/-/playwright-webkit-1.26.1.tgz#f65abf358acb35696964cfbb33513ab332aa6f3e"
-  integrity sha512-SWdExktVOwTu9EcqDR5PR7EjS9Opc5jipBWn3lJkL7vcnVoYJmDajY+s9aZ+8vnQE7GdF3bwu16voH7BVEaqkA==
-  dependencies:
-    playwright-core "1.26.1"
+    playwright-core "1.60.0"
+  optionalDependencies:
+    fsevents "2.3.2"
 
 redis@<5:
-  version "4.3.1"
-  resolved "https://registry.yarnpkg.com/redis/-/redis-4.3.1.tgz#290532a0c22221e05e991162ac4dca1e1b2ff6da"
-  integrity sha512-cM7yFU5CA6zyCF7N/+SSTcSJQSRMEKN0k0Whhu6J7n9mmXRoXugfWDBo5iOzGwABmsWKSwGPTU5J4Bxbl+0mrA==
+  version "4.7.1"
+  resolved "https://registry.yarnpkg.com/redis/-/redis-4.7.1.tgz#08588a30936be0e7ad9c0f3e1ac6a85ccaf73e94"
+  integrity sha512-S1bJDnqLftzHXHP8JsT5II/CtHWQrASX5K96REjWjlmWKrviSOLWmM7QnRLstAWsu1VBBV1ffV6DzCvxNP0UJQ==
   dependencies:
-    "@redis/bloom" "1.0.2"
-    "@redis/client" "1.3.0"
-    "@redis/graph" "1.0.1"
-    "@redis/json" "1.0.4"
-    "@redis/search" "1.1.0"
-    "@redis/time-series" "1.0.3"
+    "@redis/bloom" "1.2.0"
+    "@redis/client" "1.6.1"
+    "@redis/graph" "1.1.1"
+    "@redis/json" "1.0.7"
+    "@redis/search" "1.2.0"
+    "@redis/time-series" "1.1.0"
 
 safer-buffer@~2.1.0:
   version "2.1.2"

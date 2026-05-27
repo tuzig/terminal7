@@ -102,7 +102,7 @@ The runner verifies the file is executable, then layers in
 `aatp/infra/webexec/local-bin.override.yaml`, which bind-mounts it over
 `/usr/local/bin/webexec` inside the container. The binary must be
 Linux-compatible (the image is `golang:alpine`); cross-compile from macOS
-with `GOOS=linux GOARCH=amd64 go build`.
+with `GOOS=linux go build`.
 
 There is no equivalent override for `peerbook` yet — use `PEERBOOK_REF`
 pointing at your branch/commit.

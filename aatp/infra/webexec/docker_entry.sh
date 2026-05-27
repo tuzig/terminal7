@@ -5,6 +5,9 @@ set -x
 HOME=/home/runner
 CONF=/conf
 /usr/sbin/sshd
+
+echo "Container arch: $(uname -m)"
+echo "Binary header: $(head -c 20 /usr/local/bin/webexec | od -A n -t x1 | head -1)"                                                                                                                                       
 rm -rf $HOME/.local/state/webexec
 mkdir -p $HOME/.config/webexec
 cp -r $CONF/* /home/runner/.config/webexec
