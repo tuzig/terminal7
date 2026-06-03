@@ -3,28 +3,28 @@ name: Validate
 on: [push, pull_request]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Node setup
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.8.1
-      - name: Install yarn
-        run: npm install --global yarn
-      - name: Install dependecies
-        run: yarn install --frozen-lockfile
-      - name: lint
-        run: yarn lint
-      - name: Unit Tests
-        run: yarn test
-      - name: Acceptance Tests
-        run: bash -x aatp/run
-      - name: Upload acceptance test results
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: aatp-result
-          path: aatp/result
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Node setup
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+            - name: Install yarn
+              run: npm install --global yarn
+            - name: Install dependecies
+              run: yarn install --frozen-lockfile
+            - name: lint
+              run: yarn lint
+            - name: Unit Tests
+              run: yarn test
+            - name: Acceptance Tests
+              run: bash -x aatp/run
+            - name: Upload acceptance test results
+              if: ${{ failure() }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: aatp-result
+                  path: aatp/result
