@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
 BUILD=1
 if command -v podman >/dev/null 2>&1; then
-    # podman compose delegates to docker-compose; point DOCKER_HOST at the
-    # host-side podman socket so it can connect.
-    DARWIN_TMP=$(getconf DARWIN_USER_TEMP_DIR 2>/dev/null)
-    for candidate in \
-        "${DARWIN_TMP}podman/podman-machine-default-api.sock" \
-        "${XDG_RUNTIME_DIR}/podman/podman.sock" \
-        "/run/user/$(id -u)/podman/podman.sock" \
-        "/var/run/podman/podman.sock"; do
-        if [ -S "$candidate" ]; then
-            export DOCKER_HOST="unix://$candidate"
-            break
-        fi
-    done
     COMPOSE="podman compose"
+    # On macOS podman runs in a VM and needs a socket. Find and set DOCKER_HOST.
+    if [ "$(uname -s)" = "Darwin" ]; then
+        DARWIN_TMP=$(getconf DARWIN_USER_TEMP_DIR 2>/dev/null)
+        for candidate in \
+            "${DARWIN_TMP}podman/podman-machine-default-api.sock" \
+            "${XDG_RUNTIME_DIR}/podman/podman.sock" \
+            "/run/user/$(id -u)/podman/podman.sock" \
+            "/var/run/podman/podman.sock"; do
+            if [ -S "$candidate" ]; then
+                export DOCKER_HOST="unix://$candidate"
+                break
+            fi
+        done
+    fi
 elif command -v docker >/dev/null 2>&1; then
     COMPOSE="docker compose"
 else
@@ -41,7 +42,8 @@ build_n_run() {
         $COMPOSE -f $1 "${EXTRA_FILES[@]}" build $BUILD_OPTIONS
         if [ $? -ne 0 ]
         then
-            exit "$COMPOSE build failed"
+            echo ">>> $COMPOSE build failed" >&2
+            exit 1
         fi
     fi
     echo ">>> Running a lab based on $1"
