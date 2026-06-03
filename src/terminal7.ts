@@ -857,7 +857,9 @@ export class Terminal7 {
             .finally(() => {
                 this.fingerprintPromise = null;
             })
-            .catch(() => {});
+            .catch(() => {
+                /* ignore */
+            });
         return this.fingerprintPromise;
     }
 
@@ -1056,12 +1058,22 @@ export class Terminal7 {
         });
     }
 
-    toggleHelp(doShow: boolean = null) {
+    async toggleHelp(doShow: boolean = null) {
         if (doShow == null) {
             this.isHelpShown = !this.isHelpShown;
         } else {
             this.isHelpShown = doShow;
         }
+        // Guard: on non-first connections, don't auto-show help bubbles
+        // unless explicitly requested (doShow === true)
+        /*
+        const { value: firstGate } = await Preferences.get({
+            key: "first_gate",
+        });
+        if (firstGate === "nope" && doShow !== true) {
+            this.isHelpShown = false;
+        }
+        */
         const isPaneShown = terminal7.activeG?.boarding;
         if (!this.buttonHelpBubbles) this.createHelpBubbles();
         const funcName = this.isHelpShown ? "remove" : "add";

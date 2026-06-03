@@ -138,6 +138,7 @@ export class Gate {
     focus() {
         const gatesContainer = this.t7.e.querySelector(".gates-container");
         gatesContainer.classList.remove("hidden");
+        this.e.classList.remove("hidden");
         terminal7.activeG = this;
         this.boarding = true;
         this.updateNameE();
@@ -147,10 +148,10 @@ export class Gate {
         document
             .querySelectorAll(".pane-buttons")
             .forEach((e) => e.classList.remove("off"));
-        if (this.activeW?.activeP?.zoomed) this.e.classList.add("hidden");
-        else this.e.classList.remove("hidden");
+        if (this.activeW?.activeP?.zoomed) this.e.classList.add("invisible");
+        else this.e.classList.remove("invisible");
         this.e.querySelectorAll(".window").forEach((w) => {
-            if (w != this.activeW.e) w.classList.add("hidden");
+            if (w != this.activeW.e) w.classList.add("invisible");
             else this.activeW.focus();
         });
         this.storeState();
@@ -275,12 +276,6 @@ export class Gate {
             if (terminal7.recovering) this.handleFailure(failure);
         } else if (state == "failed") {
             this.handleFailure(failure);
-        } else if (state == "closed") {
-            // WebRTC v4: DTLS Close is now respected immediately
-            // Clean up and notify user
-            this.t7.log(`Peer closed connection to ${this.name}`);
-            this.setIndicatorColor(FAILED_COLOR);
-            this.handleFailure(failure ?? Failure.FailedToConnect);
         } else if (state == "gotlayout") {
             void this.applyServerPayload(
                 this.session?.lastPayload ?? null,
