@@ -138,8 +138,11 @@ test.describe("peerbook administration", () => {
         // change the user id of foo@bar.com to 123456
         let fp = "";
         let keys = [];
-        reloadPage(page);
+        await reloadPage(page);
+        const validateDeadline = Date.now() + 10000;
         while (keys.length < 2) {
+            if (Date.now() > validateDeadline)
+                throw new Error("Timeout waiting for peer keys in redis");
             await sleep(200);
             keys = await redisClient.keys("peer*");
         }
@@ -167,13 +170,11 @@ test.describe("peerbook administration", () => {
             "email",
             "foo@bar.com",
         );
-        await page.reload();
-        await sleep(500);
+        await reloadPage(page);
     });
     test("peers are properly displayed", async () => {
-        await sleep(500);
         const btns = page.locator('[data-test="gateButton"]');
-        await expect(btns).toHaveCount(1);
+        await expect(btns).toHaveCount(1, { timeout: 15000 });
         const isOpen = await page.evaluate(() => window.terminal7.pb.isOpen());
         await expect(isOpen).toBeTruthy();
         const btn = btns.first();
@@ -213,7 +214,10 @@ test.describe("peerbook administration", () => {
         await sleep(100);
         await page.keyboard.press("Enter");
         let ready = false;
+        const renameDeadline = Date.now() + 10000;
         while (!ready) {
+            if (Date.now() > renameDeadline)
+                throw new Error("Timeout waiting for rename prompt");
             await sleep(100);
             const twr = await getTWRBuffer(page);
             ready = twr.match(/Name \[webexec\]:/);
@@ -348,7 +352,10 @@ test.describe("peerbook administration", () => {
         await page.keyboard.press("Enter");
         const fp = await page.evaluate(() => terminal7.getFingerprint());
         let peerUID = await redisClient.hGet(`peer:${fp}`, "user");
+        const peerDeadline = Date.now() + 10000;
         while (!peerUID) {
+            if (Date.now() > peerDeadline)
+                throw new Error("Timeout waiting for peer UID in redis");
             await sleep(100);
             peerUID = await redisClient.hGet(`peer:${fp}`, "user");
         }
@@ -400,7 +407,10 @@ test.describe("peerbook administration", () => {
 
         let count = 0;
         let msg;
+        const emailDeadline = Date.now() + 10000;
         while (count < 2) {
+            if (Date.now() > emailDeadline)
+                throw new Error("Timeout waiting for support email");
             await sleep(100);
             const res = await request.get("http://smtp:8025/api/v2/messages");
             msg = await res.json();
