@@ -15,6 +15,11 @@ if command -v podman >/dev/null 2>&1; then
                 break
             fi
         done
+    else
+        # On Linux podman is daemonless. Unset DOCKER_HOST so that
+        # docker-compose (delegated by podman compose) doesn't try
+        # to connect to a stale podman socket.
+        unset DOCKER_HOST
     fi
 elif command -v docker >/dev/null 2>&1; then
     COMPOSE="docker compose"

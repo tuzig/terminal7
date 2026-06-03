@@ -20,6 +20,8 @@ jobs:
               run: yarn lint
             - name: Unit Tests
               run: yarn test
+            - name: Start podman socket
+              run: systemctl --user start podman.socket
             - name: Acceptance Tests
               run: bash -x aatp/run
             - name: Upload acceptance test results

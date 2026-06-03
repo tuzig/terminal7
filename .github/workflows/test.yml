@@ -30,6 +30,8 @@ jobs:
               run: yarn lint
             - name: Unit Tests
               run: yarn test
+            - name: Start podman socket
+              run: systemctl --user start podman.socket
             - name: Acceptance Tests
               run: >
                   PEERBOOK_REF="${{ github.event.inputs.pbRef }}"
