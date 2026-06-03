@@ -1,37 +1,36 @@
 {
-	"appId": "dev.terminal7",
-	"appName": "Terminal7",
-	"npmClient": "yarn",
-	"webDir": "dist",
-	"plugins": {
-		"SplashScreen": {
-			"launchShowDuration": 0
-		},
-		"Keyboard": {
-			"resize": "native"
-		},
-		"CapacitorHttp": {
-			"enabled": true
-		}
-	},
-	"cordova": {
-		"preferences": {}
-	},
-	"packageClassList": [
-		"NativeAudio",
-		"AppPlugin",
-		"CAPBrowserPlugin",
-		"CAPCameraPlugin",
-		"ClipboardPlugin",
-		"DevicePlugin",
-		"FilesystemPlugin",
-		"KeyboardPlugin",
-		"CAPNetworkPlugin",
-		"PreferencesPlugin",
-		"StatusBarPlugin",
-		"PurchasesPlugin",
-		"NativeBiometric",
-		"CapacitorRateAppPlugin",
-		"SSHPlugin"
-	]
+    "appId": "dev.terminal7",
+    "appName": "Terminal7",
+    "webDir": "dist",
+    "plugins": {
+        "SplashScreen": {
+            "launchShowDuration": 0
+        },
+        "Keyboard": {
+            "resize": "native"
+        },
+        "CapacitorHttp": {
+            "enabled": true
+        }
+    },
+    "cordova": {
+        "preferences": {}
+    },
+    "packageClassList": [
+        "NativeAudio",
+        "AppPlugin",
+        "CAPBrowserPlugin",
+        "CAPCameraPlugin",
+        "ClipboardPlugin",
+        "DevicePlugin",
+        "FilesystemPlugin",
+        "KeyboardPlugin",
+        "CAPNetworkPlugin",
+        "PreferencesPlugin",
+        "StatusBarPlugin",
+        "PurchasesPlugin",
+        "NativeBiometric",
+        "CapacitorRateAppPlugin",
+        "SSHPlugin"
+    ]
 }

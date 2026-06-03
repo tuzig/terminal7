@@ -1,13 +1,20 @@
-import { vi } from 'vitest'
+import { vi } from "vitest";
 
 vi.mock("@xterm/xterm");
-vi.mock('@capacitor-community/native-audio')
-vi.mock('@capacitor/preferences')
-vi.mock('@xterm/addon-fit')
-vi.mock('@xterm/addon-search')
-vi.mock('@xterm/addon-web-links')
-vi.mock('@xterm/addon-webgl')
-vi.mock('@xterm/addon-image')
-vi.mock('@revenuecat/purchases-capacitor')
-vi.mock('./src/ssh_session.ts')
-vi.mock('./src/webrtc_session.ts')
+vi.mock("@capacitor-community/native-audio");
+vi.mock("@capacitor/preferences");
+vi.mock("@capacitor/clipboard");
+vi.mock("@capacitor/core");
+vi.mock("@capacitor/filesystem");
+vi.mock("@capacitor/device");
+vi.mock("@capacitor/network");
+vi.mock("@capacitor/app");
+vi.mock("@capacitor/camera");
+vi.mock("@xterm/addon-fit");
+vi.mock("@xterm/addon-search");
+vi.mock("@xterm/addon-web-links");
+vi.mock("@xterm/addon-webgl");
+vi.mock("@xterm/addon-image");
+vi.mock("@revenuecat/purchases-capacitor");
+vi.mock("./src/ssh_session.ts");
+vi.mock("./src/webrtc_session.ts");

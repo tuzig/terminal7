@@ -1,20 +1,19 @@
 {
-  "appId": "dev.terminal7",
-  "appName": "Terminal7",
-  "npmClient": "yarn",
-  "webDir": "dist",
-  "plugins": {
-    "SplashScreen": {
-      "launchShowDuration": 0
+    "appId": "dev.terminal7",
+    "appName": "Terminal7",
+    "webDir": "dist",
+    "plugins": {
+        "SplashScreen": {
+            "launchShowDuration": 0
+        },
+        "Keyboard": {
+            "resize": "native"
+        },
+        "CapacitorHttp": {
+            "enabled": true
+        }
     },
-    "Keyboard" : {
-      "resize": "native"
-    },
-    "CapacitorHttp": {
-      "enabled": true
+    "cordova": {
+        "preferences": {}
     }
-  },
-  "cordova": {
-    "preferences": {}
-  }
 }
