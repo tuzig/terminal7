@@ -4,7 +4,7 @@
     "description": "A touchable terminal emulator & multiplexer tablet app",
     "main": "src/index.js",
     "homepage": "https://terminal7.dev",
-    "private": false,
+    "private": true,
     "build": {
         "appId": "dev.terminal7",
         "files": [
@@ -52,23 +52,23 @@
         "idb": "7.1.1",
         "interactjs": "^1.10.27",
         "marked": "^4.1.0",
-        "uuid": "^14.0.0"
+        "uuid": "^14.0.0",
+        "vite": "^7.3.5"
     },
     "devDependencies": {
         "@capacitor/assets": "^3.0.5",
         "@interactjs/types": "^1.10.27",
         "@playwright/test": "^1.20.1",
-        "@typescript-eslint/eslint-plugin": "<6",
-        "@typescript-eslint/parser": "<6",
-        "eslint": "<9",
+        "@typescript-eslint/eslint-plugin": "^5.62.0",
+        "@typescript-eslint/parser": "^5.62.0",
+        "eslint": "^8.57.1",
         "interactjs": "^1.10.27",
         "jsdom": "^19.0.0",
         "native-run": "^1.7.4",
         "prettier": "^3.8.3",
         "typescript": "^5.0.0",
         "vi-canvas-mock": "^1.0.0",
-        "vite": "^6.4.2",
-        "vite-plugin-pwa": "^0.20.1",
+        "vite-plugin-pwa": "^1.0.0",
         "vitest": "^4.0.0",
         "workbox-build": "^7.0.0",
         "workbox-window": "^7.0.0",
@@ -78,7 +78,8 @@
         "@capacitor/assets/@capacitor/cli": "^8.0.0",
         "tmp": "^0.2.6",
         "minimatch": "^3.1.4",
-        "@capacitor/assets/@trapezedev/project/xcode/uuid": "^11.1.1"
+        "@capacitor/assets/@trapezedev/project/xcode/uuid": "^11.1.1",
+        "vite": "^7.3.5"
     },
     "scripts": {
         "start": "npm run dev",

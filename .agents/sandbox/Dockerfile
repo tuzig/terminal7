@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim
+FROM node:24-bookworm-slim
 
 # Install system dependencies (git, curl, ca-certificates, python3, make, g++, ripgrep)
 RUN apt-get update && apt-get install -y --no-install-recommends \
