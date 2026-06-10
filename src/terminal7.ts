@@ -166,11 +166,12 @@ export class Terminal7 {
     pb?: PeerbookConnection = null;
     ignoreAppEvents = false;
     iceServers?: IceServers[];
-    recovering?: boolean;
+    autoReconnect: boolean = false;
+    private recoveryScheduled = false;
     private fingerprintPromise: Promise<string> | null = null;
     metaPressStart: number;
     map: T7Map;
-    lastActiveState: boolean;
+    appState: "active" | "background" = "active";
     e: HTMLDivElement;
     conf: {
         theme;
@@ -230,49 +231,95 @@ export class Terminal7 {
                 document.getElementById("keys-help").classList.remove("hidden");
         }
     }
-    onAppStateChange(state) {
+    exitAutoReconnect() {
+        this.autoReconnect = false;
+        this.recoveryScheduled = false;
+        this.map.shell.stopWatchdog();
+    }
+
+    async recoverActiveGate() {
+        const gate = this.activeG;
+        if (!gate?.boarding) return;
+        if (gate.wasSSH) {
+            await gate.handleFailure(Failure.NotSupported);
+            return;
+        }
+        if (gate.reconnectCount > 0) return; // reconnection already in progress
+        try {
+            await gate.reconnect();
+            this.exitAutoReconnect(); // success: leave auto-reconnect mode
+        } catch (e) {
+            this.log("Reconnect failed", e);
+            // autoReconnect is still true — handleFailure will auto-retry
+        }
+    }
+
+    scheduleRecovery() {
+        if (this.recoveryScheduled) return;
+        this.recoveryScheduled = true;
+
+        // Watchdog: if nothing connects within timeout, exit auto-reconnect mode
+        this.map.shell.startWatchdog().catch(() => {
+            this.exitAutoReconnect();
+            const gate = this.activeG;
+            if (!gate?.session) {
+                this.log("ignoring watchdog as session is closed");
+                return;
+            }
+            if (!gate.session.isOpen()) {
+                gate.handleFailure(Failure.TimedOut);
+            } else if (this.pb && !this.pb.isOpen()) {
+                this.pb.notify("Connection timed out");
+            }
+            this.map.shell.printPrompt();
+        });
+
+        // Max lifespan for auto-reconnect: after this, show UI on failure
+        this.run(() => {
+            if (this.autoReconnect) {
+                this.log(
+                    "auto-reconnect timeout expired, exiting auto-reconnect mode",
+                );
+                this.exitAutoReconnect();
+            }
+        }, this.conf.net.recoveryTime);
+
+        // Debounce: let stale network events drain before acting
+        this.run(async () => {
+            this.recoveryScheduled = false;
+            const status = await Network.getStatus();
+            if (!status.connected) {
+                this.log("no network on recovery, waiting for network event");
+                return;
+            }
+            this.recoverActiveGate();
+        }, 200);
+    }
+
+    onAppStateChange(state: { isActive: boolean }) {
         const active = state.isActive;
-        if (this.lastActiveState == active) {
+        if (this.appState === (active ? "active" : "background")) {
             this.log("app state event on unchanged state ignored");
             return;
         }
-        this.lastActiveState = active;
         if (this.ignoreAppEvents) {
-            terminal7.log("ignoring app event", active);
+            this.log("ignoring app event", active);
             return;
         }
-        this.log(
-            "app state changed",
-            this.lastActiveState,
-            this.ignoreAppEvents,
-        );
+        this.appState = active ? "active" : "background";
+        this.log("app state changed", this.appState);
+
         if (!active) {
+            // Going to background: clear timeouts, disengage, enable auto-reconnect
             this.clearTimeouts();
-            this.updateNetworkStatus({ connected: false }, false).finally(
-                () => (this.recovering = true),
-            );
-        } else if (this.recovering) {
-            // We're back!
-            const gate = this.activeG;
-            if (gate)
-                // the watchdog is stopped by the gate when it connects
-                this.map.shell.startWatchdog().catch(() => {
-                    if (!gate.session) {
-                        terminal7.log("ignoring watchdos as session is closed");
-                        return;
-                    }
-                    if (!gate.session.isOpen()) {
-                        gate.handleFailure(Failure.TimedOut);
-                    } else if (!this.pb.isOpen())
-                        this.pb.notify("Connection timed out");
-                    this.map.shell.printPrompt();
-                });
-            this.run(() => (this.recovering = false), this.conf.net.timeout);
-            // real work is done in updateNetworkStatus
-            Network.getStatus().then(
-                async (s) => await this.updateNetworkStatus(s),
-            );
-        } else this.log("app state change ignored");
+            this.autoReconnect = true;
+            this.updateNetworkStatus({ connected: false }, false);
+        } else if (this.autoReconnect) {
+            // Returning to foreground with auto-reconnect active: schedule recovery
+            this.scheduleRecovery();
+        } else {
+            this.log("app state change ignored (no reconnect needed)");
+        }
     }
     /*
      * Terminal7.open opens terminal on the given DOM element,
@@ -281,7 +328,7 @@ export class Terminal7 {
     async open() {
         const e = document.getElementById("terminal7");
         if (Capacitor.isNativePlatform()) document.body.classList.add("native");
-        this.lastActiveState = true;
+        this.appState = "active";
         this.e = e as HTMLDivElement;
         await Preferences.migrate();
         // reading conf
@@ -738,8 +785,12 @@ export class Terminal7 {
             callCB();
         });
     }
-    async updateNetworkStatus(status, updateNetPopup = true) {
+    async updateNetworkStatus(
+        status: { connected: boolean },
+        updateNetPopup = true,
+    ) {
         const off = document.getElementById("offline").classList;
+
         if (this.netConnected == status.connected) {
             if (updateNetPopup) {
                 if (this.netConnected) off.add("hidden");
@@ -749,38 +800,15 @@ export class Terminal7 {
         }
         this.netConnected = status.connected;
         this.log(`updateNetworkStatus: ${status.connected}`);
+
         if (status.connected) {
-            const gate = this.activeG;
-            const firstGate = (await Preferences.get({ key: "first_gate" }))
-                .value;
             if (updateNetPopup) off.add("hidden");
-            if (gate?.wasSSH) {
-                await gate.handleFailure(Failure.NotSupported);
-                return;
-            }
-            const toReconnect =
-                gate?.boarding &&
-                firstGate == "nope" &&
-                this.recovering &&
-                gate.reconnectCount == 0;
-            this.log(
-                "toReconnect",
-                toReconnect,
-                "firstGate",
-                firstGate,
-                this.recovering,
-                gate.reconnectCount,
-            );
-            if (toReconnect) {
-                try {
-                    await gate.reconnect();
-                } catch (e) {
-                    this.log("Reconnect failed", e);
-                } finally {
-                    this.log("Reconnect finalized");
-                }
+            // Network came back — recover gate if auto-reconnect is active
+            if (this.autoReconnect && this.activeG?.boarding) {
+                this.recoverActiveGate();
             }
         } else {
+            // Network actually went down
             await this.disengage();
         }
     }
@@ -1261,7 +1289,6 @@ export class Terminal7 {
             this.ignoreAppEvents = false;
         }
         this.log("Got biometric verified ", verified);
-        this.lastActiveState = false;
 
         let publicKey;
         let privateKey;

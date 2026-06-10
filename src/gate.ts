@@ -273,7 +273,7 @@ export class Gate {
             this.lastDisconnect = Date.now();
             // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR);
-            if (terminal7.recovering) this.handleFailure(failure);
+            if (terminal7.autoReconnect) this.handleFailure(failure);
         } else if (state == "failed") {
             this.handleFailure(failure);
         } else if (state == "gotlayout") {
@@ -319,9 +319,8 @@ export class Gate {
             "handling failure",
             this.name,
             failure,
-            terminal7.recovering,
+            terminal7.autoReconnect,
         );
-        shell.stopWatchdog();
         switch (failure) {
             case Failure.WrongPassword:
                 this.notify("Sorry, wrong password");
@@ -428,7 +427,7 @@ export class Gate {
             await this.handleSSHFailure();
             return;
         }
-        if (terminal7.recovering) {
+        if (terminal7.autoReconnect) {
             terminal7.log("retrying...");
             try {
                 await this.reconnect();
@@ -454,7 +453,7 @@ export class Gate {
             } catch (e) {
                 terminal7.log("connect failed on reconnect", e);
             } finally {
-                shell.stopWatchdog();
+                terminal7.exitAutoReconnect();
             }
         } else {
             this.close();
