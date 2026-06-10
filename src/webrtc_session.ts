@@ -119,6 +119,14 @@ export class WebRTCSession extends BaseSession {
             this.t7.certificates = undefined;
             return;
         }
+        // Close the old peer connection before creating a new one to prevent
+        // stale onconnectionstatechange handlers from firing on the old pc.
+        if (this.pc) {
+            this.pc.onconnectionstatechange = undefined;
+            this.pc.onnegotiationneeded = undefined;
+            this.pc.close();
+            this.pc = null;
+        }
         // A new RTCPeerConnection is created below
         this.pc = new RTCPeerConnection({
             iceServers: iceServers,
