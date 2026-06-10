@@ -59,8 +59,8 @@
         "@capacitor/assets": "^3.0.5",
         "@interactjs/types": "^1.10.27",
         "@playwright/test": "^1.20.1",
-        "@typescript-eslint/eslint-plugin": "^5.62.0",
-        "@typescript-eslint/parser": "^5.62.0",
+        "@typescript-eslint/eslint-plugin": "^8.39.0",
+        "@typescript-eslint/parser": "^8.39.0",
         "eslint": "^8.57.1",
         "interactjs": "^1.10.27",
         "jsdom": "^19.0.0",
@@ -95,7 +95,7 @@
         "run:android": "vite build -c vite.dev.config.js && cap run android",
         "clean": "rm -rf dist ios/App/App/public/*",
         "aatp": "bash ./aatp/run",
-        "lint": "npx eslint aatp src --ext .js,.ts && npx tsc --noEmit",
+        "lint": "eslint aatp src --ext .js,.ts && tsc --noEmit",
         "postinstall": "git config core.hooksPath .githooks 2>/dev/null || true"
     },
     "repository": {
@@ -111,40 +111,5 @@
     "license": "GPL-3.0-only",
     "bugs": {
         "url": "https://github.com/tuzig/terminal7/issues"
-    },
-    "eslintConfig": {
-        "root": true,
-        "parser": "@typescript-eslint/parser",
-        "parserOptions": {
-            "project": "./tsconfig.json"
-        },
-        "plugins": [
-            "@typescript-eslint/eslint-plugin"
-        ],
-        "extends": [
-            "eslint:recommended",
-            "plugin:@typescript-eslint/recommended"
-        ],
-        "env": {
-            "browser": true
-        },
-        "globals": {
-            "db": true,
-            "terminal7": true
-        },
-        "rules": {
-            "no-empty": [
-                "error",
-                {
-                    "allowEmptyCatch": true
-                }
-            ],
-            "no-constant-condition": [
-                "error",
-                {
-                    "checkLoops": false
-                }
-            ]
-        }
     }
 }

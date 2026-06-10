@@ -22,8 +22,7 @@ export class SSHChannel extends BaseChannel {
     }
     send(data: string | ArrayBuffer): void {
         //TODO: remove next line when fixed - https://github.com/tuzig/capacitor-ssh-plugin/issues/15
-        //@ts-ignore the field is actually called "message" not "s"
-        SSH.writeToChannel({ channel: this.id, message: data }).catch((e) =>
+        SSH.writeToChannel({ channel: this.id, s: data as string }).catch((e) =>
             console.log("error from writeToChannel", e),
         );
     }
@@ -343,10 +342,9 @@ export class HybridSession extends SSHSession {
             this.webrtcSession.onIceCandidate = (e) => {
                 const candidate = JSON.stringify(e.candidate);
                 this.sentMessages.push(candidate);
-                //@ts-ignore bug in the .d.ts
                 SSH.writeToChannel({
                     channel: channelId,
-                    message: candidate + "\n",
+                    s: candidate + "\n",
                 });
             };
             this.webrtcSession.onNegotiationNeeded = () => {
@@ -355,10 +353,9 @@ export class HybridSession extends SSHSession {
                     const offer = JSON.stringify(d);
                     this.webrtcSession.pc.setLocalDescription(d);
                     this.sentMessages.push(offer);
-                    //@ts-ignore a .d.ts bug
                     SSH.writeToChannel({
                         channel: channelId,
-                        message: offer + "\n",
+                        s: offer + "\n",
                     });
                 });
             };

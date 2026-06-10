@@ -166,7 +166,7 @@ export class Terminal7 {
     pb?: PeerbookConnection = null;
     ignoreAppEvents = false;
     iceServers?: IceServers[];
-    autoReconnect: boolean = false;
+    autoReconnect = false;
     private recoveryScheduled = false;
     private fingerprintPromise: Promise<string> | null = null;
     metaPressStart: number;
