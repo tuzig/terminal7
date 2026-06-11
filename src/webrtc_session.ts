@@ -195,8 +195,16 @@ export class WebRTCSession extends BaseSession {
     onDCOpened(dc: RTCDataChannel, id: number): WebRTCChannel {
         this.t7.log("dcOpened", dc);
         let channel = this.channels.get(id);
-        if (channel) channel.dataChannel = dc;
-        else {
+        if (channel) {
+            // Clear handlers on the old DC to prevent stale callbacks
+            const oldDC = channel.dataChannel;
+            if (oldDC) {
+                oldDC.onmessage = null;
+                oldDC.onclose = null;
+                oldDC.close();
+            }
+            channel.dataChannel = dc;
+        } else {
             channel = new WebRTCChannel(this, id, dc);
             this.channels.set(id, channel);
         }

@@ -238,6 +238,7 @@ export class Terminal7 {
     }
 
     async recoverActiveGate() {
+        if (!this.autoReconnect) return;
         const gate = this.activeG;
         if (!gate?.boarding) return;
         if (gate.wasSSH) {
@@ -292,6 +293,7 @@ export class Terminal7 {
                 this.log("no network on recovery, waiting for network event");
                 return;
             }
+            if (!this.autoReconnect) return;
             this.recoverActiveGate();
         }, 200);
     }

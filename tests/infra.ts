@@ -1,45 +1,43 @@
-import { RTSession, RTChannel } from "../src//rtsession.ts"
-import { Terminal7 } from "../src/terminal7"
-import { Gate } from "../src/gate"
-import { T7Map } from "../src/map"
+import { RTSession, RTChannel } from "../src//rtsession.ts";
+import { Terminal7 } from "../src/terminal7";
+import { Gate } from "../src/gate";
+import { T7Map } from "../src/map";
 import { vi } from "vitest";
-import { Terminal } from '@xterm/xterm'
+import { Terminal } from "@xterm/xterm";
 
 export class resizeObs {
     constructor(cb) {
         cb();
     }
-    observe() {
-    }
-    disconnect() {
-    }
+    observe() {}
+    disconnect() {}
 }
 
-export function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
+export function sleep(ms) {
+    return new Promise((r) => setTimeout(r, ms));
+}
 
 export function returnLater(ret: unknown) {
-    vi.fn(() => new Promise( resolve => setTimeout(() => resolve(ret), 0)))
+    vi.fn(() => new Promise((resolve) => setTimeout(() => resolve(ret), 0)));
 }
 
 export class Terminal7Mock extends Terminal7 {
-    conf = { ui: {max_tabs: 10,
-                    max_panes: 10,
-                    min_pane_size: 0.01},
-             net: {timeout: 1000,
-                   iceServer: ""}, 
-             exec: {shell: "bash" },
-             peerbook: { insecure: true },
-           }
-    keys = {default: { public: "TBD", private: "TBD" }}
-    netConnected = true
-    notifications: string[] = []
+    conf = {
+        ui: { max_tabs: 10, max_panes: 10, min_pane_size: 0.01 },
+        net: { timeout: 1000, iceServer: "", recoveryTime: 60000 },
+        exec: { shell: "bash" },
+        peerbook: { insecure: true },
+    };
+    keys = { default: { public: "TBD", private: "TBD" } };
+    netConnected = true;
+    notifications: string[] = [];
     notify(message: string) {
-        this.map.t0.out += message
+        this.map.t0.out += message;
     }
     constructor() {
-        super({})
-        window.ResizeObserver = resizeObs
-        
+        super({});
+        window.ResizeObserver = resizeObs;
+
         document.body.innerHTML = `
 <div id='t7'>
 <div class="gates-container">
@@ -102,28 +100,26 @@ export class Terminal7Mock extends Terminal7 {
     <div id="add-host" class="hidden"></div>
     <div id="divide-v"></div>
     <div id="divide-h"></div>
-`
-
+`;
     }
-    clearTempGates() {
-    }
+    clearTempGates() {}
     clearTimeouts() {
-        this.map.close()
+        this.map.close();
     }
     open(e) {
-        this.e = e
-        this.map = new T7Map()
-        this.map.open()
+        this.e = e;
+        this.map = new T7Map();
+        this.map.open();
     }
     getFingerprint() {
         return new Promise((resolve, reject) => {
-            resolve("BADFACE")
-        })
+            resolve("BADFACE");
+        });
     }
     async readId() {
         return {
             publicKey: "foo",
-            privateKey: "bar"
-        }
+            privateKey: "bar",
+        };
     }
 }

@@ -416,7 +416,7 @@ export class Pane extends Cell {
     }
     onChannelConnected(channel) {
         const reconnect = typeof this.channelID == "number";
-        if (this.d) {
+        if (this.d && this.d !== channel) {
             this.d.onMessage = undefined;
             this.d.onClose = undefined;
             this.d.close();
