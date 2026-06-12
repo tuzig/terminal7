@@ -70,7 +70,6 @@ export class Gate {
     windows: Window[];
     breadcrumbs: Window[];
     sendStateTask?: number = null;
-    lastDisconnect?: number;
     sshPort: number;
     reconnectCount: number;
     lastState: ServerPayload;
@@ -268,13 +267,9 @@ export class Gate {
         if (state == "connected") {
             this.marker = null;
             void this.load().then(() => this.onConnected());
-        } else if (state == "disconnected") {
-            // TODO: add warn class
-            this.lastDisconnect = Date.now();
+        } else if (state == "disconnected" || state == "failed") {
             // TODO: start the rain
             this.setIndicatorColor(FAILED_COLOR);
-            if (terminal7.autoReconnect) this.handleFailure(failure);
-        } else if (state == "failed") {
             this.handleFailure(failure);
         } else if (state == "gotlayout") {
             void this.applyServerPayload(

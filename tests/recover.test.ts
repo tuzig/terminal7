@@ -33,6 +33,7 @@ describe("recoverActiveGate", () => {
         t.gates = [];
         t.autoReconnect = false;
         t.recoveryScheduled = false;
+        t.recoverPromise = null;
     });
 
     it("returns immediately when autoReconnect is false", async () => {
@@ -87,6 +88,38 @@ describe("recoverActiveGate", () => {
 
         // Second call should be a no-op since autoReconnect is now false
         await t.recoverActiveGate();
+        expect(gate.reconnect).toHaveBeenCalledOnce();
+    });
+
+    it("dedupes concurrent calls: second call returns same promise without double reconnection", async () => {
+        const gate = t.addGate();
+        gate.open(e);
+        gate.boarding = true;
+        gate.wasSSH = false;
+        gate.reconnectCount = 0;
+        t.activeG = gate;
+        t.autoReconnect = true;
+
+        let resolveReconnect;
+        const reconnectPromise = new Promise<void>((resolve) => {
+            resolveReconnect = resolve;
+        });
+        gate.reconnect = vi.fn().mockImplementation(() => reconnectPromise);
+
+        // Fire two concurrent calls before the first resolves
+        const call1 = t.recoverActiveGate();
+        const call2 = t.recoverActiveGate();
+
+        // Both should be in-flight; reconnect called only once
+        expect(gate.reconnect).toHaveBeenCalledOnce();
+
+        // Now resolve the reconnect
+        resolveReconnect();
+
+        // Await both calls
+        await Promise.all([call1, call2]);
+
+        // Still only one reconnect call
         expect(gate.reconnect).toHaveBeenCalledOnce();
     });
 });
@@ -168,5 +201,49 @@ describe("scheduleRecovery debounce callback", () => {
         await sleep(250);
 
         expect(gate.reconnect).toHaveBeenCalledOnce();
+    });
+});
+
+describe("onAppStateChange", () => {
+    let t, e;
+
+    beforeEach(async () => {
+        await Preferences.clear();
+        t = new Terminal7Mock();
+        e = document.getElementById("t7");
+        terminal7 = t;
+        t.open(e);
+        t.appState = "active";
+    });
+
+    afterEach(() => {
+        t.clearTimeouts();
+        t.gates = [];
+        t.autoReconnect = false;
+        t.recoveryScheduled = false;
+    });
+
+    it("sets autoReconnect only after disengage completes (not before)", async () => {
+        let resolveUpdate;
+        const updatePromise = new Promise<void>((resolve) => {
+            resolveUpdate = resolve;
+        });
+
+        // Mock updateNetworkStatus to take time, simulating disengage delay
+        t.updateNetworkStatus = vi.fn().mockImplementation(() => updatePromise);
+
+        // Go to background — this chains autoReconnect = true after updateNetworkStatus resolves
+        t.onAppStateChange({ isActive: false });
+
+        // Immediately after, autoReconnect should still be false
+        // because the .then() hasn't fired yet
+        expect(t.autoReconnect).toBe(false);
+
+        // Now resolve updateNetworkStatus (simulating disengage completing)
+        resolveUpdate();
+        await sleep(10);
+
+        // After updateNetworkStatus completes, autoReconnect should be true
+        expect(t.autoReconnect).toBe(true);
     });
 });

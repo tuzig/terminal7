@@ -308,7 +308,8 @@ insecure=true`,
         );
         // TODO: sleep and verify TWR came up while the windows-container
         // remained visible
-        await sleep(15000);
+        await page.keyboard.type("a");
+        await sleep(5000);
         await expect(page.locator("#t0")).toBeVisible();
         await waitForTWROutput(page, "Reconnect", 1000);
     });

@@ -1,0 +1,4 @@
+services:
+    webexec:
+        volumes:
+            - ${WEBEXEC_BIN}:/usr/local/bin/webexec:ro

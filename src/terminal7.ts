@@ -168,6 +168,7 @@ export class Terminal7 {
     iceServers?: IceServers[];
     autoReconnect = false;
     private recoveryScheduled = false;
+    private recoverPromise: Promise<void> | null = null;
     private fingerprintPromise: Promise<string> | null = null;
     metaPressStart: number;
     map: T7Map;
@@ -234,11 +235,23 @@ export class Terminal7 {
     exitAutoReconnect() {
         this.autoReconnect = false;
         this.recoveryScheduled = false;
+        this.recoverPromise = null;
         this.map.shell.stopWatchdog();
     }
 
     async recoverActiveGate() {
         if (!this.autoReconnect) return;
+        if (this.recoverPromise) return this.recoverPromise;
+
+        this.recoverPromise = this._doRecoverActiveGate();
+        try {
+            await this.recoverPromise;
+        } finally {
+            this.recoverPromise = null;
+        }
+    }
+
+    private async _doRecoverActiveGate() {
         const gate = this.activeG;
         if (!gate?.boarding) return;
         if (gate.wasSSH) {
@@ -314,8 +327,9 @@ export class Terminal7 {
         if (!active) {
             // Going to background: clear timeouts, disengage, enable auto-reconnect
             this.clearTimeouts();
-            this.autoReconnect = true;
-            this.updateNetworkStatus({ connected: false }, false);
+            this.updateNetworkStatus({ connected: false }, false).then(() => {
+                this.autoReconnect = true;
+            });
         } else if (this.autoReconnect) {
             // Returning to foreground with auto-reconnect active: schedule recovery
             this.scheduleRecovery();
