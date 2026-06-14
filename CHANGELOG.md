@@ -1,10 +1,30 @@
 # ChangeLog
 
-All notable changes to Terminal Seven - the touchable terminal multiplexer 
+All notable changes to Terminal Seven - the touchable terminal multiplexer
 will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.12.0] - 2026/06/14
+
+### Added
+
+- WebRTC certificate auto-renewal on expiration
+- VoIP background mode to prevent disconnects on iOS
+- Watchdog prefix for clearer reconnect messages
+- Support for running acceptance tests using podman compose
+
+### Changed
+
+- Upgraded to WebRTC v4
+- Refactored hidden and invisible pane handling
+
+### Fixed
+
+- Reconnect reliability — reconnection now starts with a clean slate, network and app disconnects are handled separately, and null peer connection guards prevent crashes
+- WebGL memory overflow
+- iOS build after dependency updates
 
 ## [1.11.2] - 2025/07/11
 
@@ -29,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Configurable font family and size. Under `[theme]` in the dotfile,
-you can now set `font_family` and `font_size`.
+  you can now set `font_family` and `font_size`.
 - Search now uses regex
 
 ### Fixed
@@ -114,10 +134,10 @@ you can now set `font_family` and `font_size`.
 
 ## [1.8.0] - 2023/9/10
 
-### Added 
+### Added
 
 - dashed underline to link on the map - just like in TWR
-- Progressive Web App support 
+- Progressive Web App support
 - synchronizing layout across all connected client
 - the login command for web clients
 - peerbook spinner and indicator
@@ -130,9 +150,9 @@ you can now set `font_family` and `font_size`.
 
 ## 1.7.0 - 2023/8/24
 
-### Added 
+### Added
 
-- Images supported through sixel - requires imgcat 
+- Images supported through sixel - requires imgcat
 - WebRTC real time stats
 
 ### Fixed
@@ -143,7 +163,7 @@ you can now set `font_family` and `font_size`.
 
 ## 1.6.0 - 2023/8/17
 
-### Added 
+### Added
 
 - PeerBook gates edit
 - Displaying Introductory offer
@@ -172,11 +192,11 @@ you can now set `font_family` and `font_size`.
 
 ### Added
 
-- Cmd-V support in TWR 
+- Cmd-V support in TWR
 
 ### Fixed
 
-- Reconnect is more silient 
+- Reconnect is more silient
 - First run permission handling
 - The close command
 - Messaging
@@ -185,7 +205,7 @@ you can now set `font_family` and `font_size`.
 
 ### Fixed
 
-- TWR prompt is no longer disappearing 
+- TWR prompt is no longer disappearing
 - notifications don't interfare with TWR forms
 
 ### Added
@@ -212,7 +232,7 @@ you can now set `font_family` and `font_size`.
 
 ## 1.4.1 - 2023/1/26
 
-### Added 
+### Added
 
 - gate name completion
 
@@ -227,10 +247,10 @@ you can now set `font_family` and `font_size`.
 
 - hourglass
 - Restored peerbook support. Now in beta, peerbook service includes
-behind-the-NAT connection and 2FA protected address book and a
-websocket signaling server.
+  behind-the-NAT connection and 2FA protected address book and a
+  websocket signaling server.
 
-## 1.3.2 - 2023/1/10 
+## 1.3.2 - 2023/1/10
 
 ### Fixed
 
@@ -238,7 +258,7 @@ websocket signaling server.
 
 ## 1.3.1 - 2022/12/29
 
-### Added 
+### Added
 
 - Biometric verification once every 15 minutes or `ui.verification_ttl` in milliseconds
 - Request to rate the app
@@ -296,8 +316,8 @@ websocket signaling server.
 
 ### Added
 
-- WebRTC signaling over SSH. By default connection start with ssh and then try to 
-upgrade the connection to WebRTC.
+- WebRTC signaling over SSH. By default connection start with ssh and then try to
+  upgrade the connection to WebRTC.
 - TWR has a tiny shell and some basic command. Type `help` to get going.
 - Support for different shells under SSH - just set the conf
 
@@ -307,7 +327,7 @@ upgrade the connection to WebRTC.
 
 ## 1.0 - 2022/10/2
 
-### Fixed 
+### Fixed
 
 - A nav bar only screen was display when wakeing up
 - Default network dtimeout is up to 5 seconds
@@ -315,7 +335,7 @@ upgrade the connection to WebRTC.
 
 ## [1.0-rc.5] - 2022/9/29
 
-### Fixed 
+### Fixed
 
 - TWR used to get stuck with tiny font
 - TWR used to have to many columns
@@ -404,6 +424,7 @@ Lost in a release naming vortex
 ## [0.20.5] - 2022/5/18
 
 ### Fixed
+
 - Session are more resilent thanks to better connection watchdog clearing
 - Reset button now works without a modal dialog
 - Modal dialogs border is back
@@ -427,18 +448,17 @@ Lost in a release naming vortex
 - Placing modals in front of the log
 - Connection watchdog streamlined
 
-### Added 
+### Added
 
-- support for webexec 0.17.0 
+- support for webexec 0.17.0
 
 ## [0.20.2] - 2022/5/1
 
 ### Fixed
 
 - Added shell commands to install server and add fingerprint on related problmes
-- Default configuration to use "*" for `shell` so you get the default shell 
+- Default configuration to use "\*" for `shell` so you get the default shell
 - "Gate ins not open..." notification fixed
-
 
 ## [0.20.1] - 2022/4/12
 
@@ -455,22 +475,22 @@ Lost in a release naming vortex
 - Using vite & vitest to package and test
 - Font is now nerdy patched for special icons
 
-### Fixed 
+### Fixed
 
-- Network connections remain open on !mobile 
+- Network connections remain open on !mobile
 - Spaces are trimmed from the end of lines copied to clipboard
 - Turn servers fetch now has a watchdog
 
 ## [0.19.3] - 2022/2/6
 
-### Fixed 
+### Fixed
 
 - iPad app now working properly
 - Improved webexec installation instructions
 
 ## [0.19.2] - 2022/1/2
 
-### Fixed 
+### Fixed
 
 - Focusing on active pane after return from the background
 - Panes size freezes even though the layout changes
@@ -506,7 +526,7 @@ Lost in a release naming vortex
 
 ## [0.18.1] - 2021/12/07
 
-### Changed 
+### Changed
 
 - Updated webexec installation instructions
 
@@ -529,14 +549,13 @@ Lost in a release naming vortex
 - CTRL-c is working again
 - help modals go away when releasing meta
 
-##  [0.17.2] - 2021/10/13
+## [0.17.2] - 2021/10/13
 
 ### Fixed
 
 - touch gestures outside the terminal are also recognized
 - search box look
 - updated version number
-
 
 ## [0.17.1] - 2021/10/13
 
@@ -571,7 +590,7 @@ Lost in a release naming vortex
 
 ## [0.16.1] - 2021/8/15
 
-### Fixed 
+### Fixed
 
 - exiting from zoom
 
@@ -582,7 +601,7 @@ Lost in a release naming vortex
 - dump debug log to clipboard using META-\`
 - watchdog when connection through peerbook
 
-### Fixed 
+### Fixed
 
 - starting up with no gates
 - hiding disconnect model on connect
@@ -605,7 +624,7 @@ Lost in a release naming vortex
 ### Fixed
 
 - improved handling of reseted servers
-- latest peerbook protocol 
+- latest peerbook protocol
 - improved messages
 
 ## [0.15.4] - 2021/5/4
@@ -631,13 +650,13 @@ Lost in a release naming vortex
 
 ## [0.15.2] - 2021/4/26
 
-### Fixed 
+### Fixed
 
 - welcome dialog
 
 ## [0.15.1] - 2021/4/26
 
-### Fixed 
+### Fixed
 
 - welcome dialog should show now
 - crashing when dotfile had errors
@@ -645,7 +664,7 @@ Lost in a release naming vortex
 
 ## [0.15.0] - 2021/4/20
 
-### Added 
+### Added
 
 - supporting peerbook, a signaling server and adderss book
 
@@ -667,7 +686,7 @@ Lost in a release naming vortex
 - first usage welcome message
 - help is shown after first succesfull connection
 
-### Changed 
+### Changed
 
 - log messages moved to the side
 - same help shown in home and inside a gate
@@ -679,15 +698,14 @@ Lost in a release naming vortex
 
 ## [0.14.0] - 2021/1/21
 
-### Changed 
+### Changed
 
 - generating a webrtc certificate on first run and using it's fingerprint to
   authenticate
 
-
 ## [0.13.1] - 2021/1/17
 
-### Fixed 
+### Fixed
 
 - pane not closing on shell exit
 - panes not resizing properly when changing to portrait and back
@@ -703,7 +721,7 @@ Lost in a release naming vortex
 
 - Using the Fira font family
 
-### Fixed 
+### Fixed
 
 - The reset button cleans the gate before connecting
 - Improoved notification wording
@@ -711,13 +729,13 @@ Lost in a release naming vortex
 
 ## [0.12.2] - 2021/1/3
 
-### Fixed 
+### Fixed
 
 - fixing first time connection, just after copying the token
 
 ## [0.12.1] - 2020/12/31
 
-### Fixed 
+### Fixed
 
 - sending state only when changes are made and preventing retry loops
 
@@ -762,7 +780,7 @@ Lost in a release naming vortex
 
 - dividers that show border can move
 - version information and link to the change log
-- resending control messages on timeout 
+- resending control messages on timeout
 - tactile fedback for lng press
 - pane navigation keys
 
@@ -770,7 +788,7 @@ Lost in a release naming vortex
 
 - Mutitasking resizing now works as expected
 - replacing cordova with capacitor
-- `npm run build` works 
+- `npm run build` works
 - "remember host" label look
 - notifications look
 - complex layout resizing
@@ -795,10 +813,9 @@ Lost in a release naming vortex
 - Copy mode had limited but complete functionality
 - Like always, reconnect is a bit better should be working fine on single window
 
-
 ## [0.9.1] - 2020/11/08
 
-### Added 
+### Added
 
 - Multitasking support
 
@@ -840,10 +857,9 @@ Lost in a release naming vortex
 - Saving and restoring entire layout
 - Search
 
-### Fixed 
+### Fixed
 
 - ?reconnect?
-
 
 ## [0.5.1] - 2020/07/29
 
@@ -856,7 +872,6 @@ Lost in a release naming vortex
 - Improved icon look & colors
 - Thinner border for a cleaner look
 - Evenly distributed icons on the navigation bars
-
 
 ## [0.3.2] - 2020/07/20
 
@@ -879,7 +894,7 @@ Lost in a release naming vortex
 
 ## [0.3.0] - 2020/07/08
 
-### Added 
+### Added
 
 - App icons
 - Host disconnected view with reconnect and shutdown buttons

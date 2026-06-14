@@ -1,191 +1,387 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Terminal 7</title>
-    <!-- Cache control meta tags -->
-    <meta http-equiv="Cache-Control" content="public, max-age=86400" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no,  shrink-to-fit=no" />
-    <meta name="description" content="A touchable terminal multiplexer & emulator running over WebRTC">
-    <link rel="icon" href="/logo.svg" type="image/svg+xml">
-    <link rel="alternate icon" href="/favicon.ico" type="image/png" sizes="48x48 32x32">
-    <link rel="mask-icon" href="/logo.svg" color="#271D30">
-    <link rel="apple-touch-icon" href="/logo192.png">
-    <meta name="theme-color" content="#271D30">
-    <meta name="apple-touch-fullscreen" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Terminal7" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <script src="/virtual-webgl2.js"></script>
-    <script type="module" src="/main.ts" defer></script>
-    
-</head>
-<body>
-  <div id="terminal7">
-      <div id="log" class="hidden">
-          <div> <div id="t0">
-                  <div id="capslock-indicator" class="hidden"><i class="f7-icons">exclamationmark_triangle</i> CAPS</div>
-                  <div id="settings" class="hidden">
-                  <textarea id="edit-conf">
-                  </textarea>
-                  </div>
-              </div> </div>
-      </div>
-      <div id="map">
-          <div id="log-minimized">
-               <div id="twr" class="has-help" aria-label="Control Tower" data-test="twr-minimized">TWR</div>
-          </div>
-          <div class="map-header-wide"></div>
-          <div id="gates">
-              <div class="gate-pad" id="add-gate" data-test="addButton">
-                  <button type="button" class="text-button">
-                      <i class="f7-icons has-help" aria-label="Add Host">plus</i>
-                  </button>
-             </div>
-             <div class="line-break"></div>
-          </div>
-          <div id="map-footer">
-              <div class="empty-pad"><div></div></div>
-              <div class="empty-pad"><div></div></div>
-              <div class="empty-pad"><div></div></div>
-              <div class="empty-pad"><div></div></div>
-             <div class="line-break"></div>
-          </div>
-          <div id="version">
-              <h1 id="title-long">Terminal 7</h1>
-              <h1 id="title-short">T7</h1>
-              <p><a id="toggle-changelog" class="has-help" aria-label="Change log">version 1.11.2</a></p>
-			  <div id="changelog">
-				  <a href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md" target="_blank">
-					  <i class="f7-icons">logo_github</i>
-				  </a>
-				  <div id="changelog-content"></div>
-			  </div>
-              <ul>
-                  <li>
-                      &#x1F4D6; &nbsp;
-                      <a id="peerbook-legend">
-                      PeerBook
-                      <span id="peerbook-status" class="status has-help" aria-label="Peer Book Status">🚧</span>
-                      </a>
-                    </li>
-                </ul>
+    <head>
+        <meta charset="utf-8" />
+        <title>Terminal 7</title>
+        <!-- Cache control meta tags -->
+        <meta http-equiv="Cache-Control" content="public, max-age=86400" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no,  shrink-to-fit=no"
+        />
+        <meta
+            name="description"
+            content="A touchable terminal multiplexer & emulator running over WebRTC"
+        />
+        <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+        <link
+            rel="alternate icon"
+            href="/favicon.ico"
+            type="image/png"
+            sizes="48x48 32x32"
+        />
+        <link rel="mask-icon" href="/logo.svg" color="#271D30" />
+        <link rel="apple-touch-icon" href="/logo192.png" />
+        <meta name="theme-color" content="#271D30" />
+        <meta name="apple-touch-fullscreen" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="Terminal7" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <script src="/virtual-webgl2.js"></script>
+        <script type="module" src="/main.ts" defer></script>
+    </head>
+    <body>
+        <div id="terminal7">
+            <div id="log" class="hidden">
+                <div>
+                    <div id="t0">
+                        <div id="capslock-indicator" class="hidden">
+                            <i class="f7-icons">exclamationmark_triangle</i>
+                            CAPS
+                        </div>
+                        <div id="settings" class="hidden">
+                            <textarea id="edit-conf"> </textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="map">
+                <div id="log-minimized">
+                    <div
+                        id="twr"
+                        class="has-help"
+                        aria-label="Control Tower"
+                        data-test="twr-minimized"
+                    >
+                        TWR
+                    </div>
+                </div>
+                <div class="map-header-wide"></div>
+                <div id="gates">
+                    <div class="gate-pad" id="add-gate" data-test="addButton">
+                        <button type="button" class="text-button">
+                            <i class="f7-icons has-help" aria-label="Add Host"
+                                >plus</i
+                            >
+                        </button>
+                    </div>
+                    <div class="line-break"></div>
+                </div>
+                <div id="map-footer">
+                    <div class="empty-pad"><div></div></div>
+                    <div class="empty-pad"><div></div></div>
+                    <div class="empty-pad"><div></div></div>
+                    <div class="empty-pad"><div></div></div>
+                    <div class="line-break"></div>
+                </div>
+                <div id="version">
+                    <h1 id="title-long">Terminal 7</h1>
+                    <h1 id="title-short">T7</h1>
+                    <p>
+                        <a
+                            id="toggle-changelog"
+                            class="has-help"
+                            aria-label="Change log"
+                            >version 1.12.0</a
+                        >
+                    </p>
+                    <div id="changelog">
+                        <a
+                            href="https://github.com/tuzig/terminal7/blob/master/CHANGELOG.md"
+                            target="_blank"
+                        >
+                            <i class="f7-icons">logo_github</i>
+                        </a>
+                        <div id="changelog-content"></div>
+                    </div>
+                    <ul>
+                        <li>
+                            &#x1F4D6; &nbsp;
+                            <a id="peerbook-legend">
+                                PeerBook
+                                <span
+                                    id="peerbook-status"
+                                    class="status has-help"
+                                    aria-label="Peer Book Status"
+                                    >🚧</span
+                                >
+                            </a>
+                        </li>
+                    </ul>
 
-
-              <footer>map inspired by Eero Saarinen's T5</footer>
-          </div>
-      </div>
-      <div class="gates-container">
-          <div id="active-gate-stats" class="gate-stats"></div>
-          <div class="hidden zoomed pane-container" id="zoomed-pane"> </div>
-      </div>
-      <div id="offline" class="hidden modal border non-clearable" >
-          <h1 class="warning">Network is down</h1>
-          <p>Terminal 7 will activate on reconnect</p>
-      </div>
-      <div id="help-gate" class="hidden">
-          <img src="img/help.png" alt="gate help screen">
-      </div>
-      <div id="keys-help" class="keys-help hidden modal border" >
-          <p>Use CTRL-A if your keyboard has no ⌘</p>
-          <div>
-          <table><tbody>
-        <tr> <td>Toggle Fullscreen</td> <td>⌘&nbsp;Z</td> </tr>
-        <tr> <td>Move Focus</td> <td>⌘&nbsp;&larr;&uarr;&darr;&rarr;</td> </tr>
-        <tr> <td>Search Pane Buffer</td> <td>⌘&nbsp;F</td> </tr>
-        <tr class="copy_mode"> <td>Enter Copy Mode</td> <td>⌘&nbsp;[</td> </tr>
-        <tr> <td>Bigger Font</td> <td>⌘&nbsp;+</td> </tr>
-        <tr> <td>Smaller Font</td> <td>⌘&nbsp;-</td> </tr>
-        <tr> <td>Reset Font</td> <td>⌘&nbsp;0</td> </tr>
-        <tr> <td>Split Top to Bottom</td> <td>⌘&nbsp;\</td> </tr>
-          </tbody></table>
-          <table><tbody>
-        <tr> <td>Split Right to Left</td> <td>⌘&nbsp;'</td> </tr>
-        <tr> <td>Rename Tab</td> <td>⌘&nbsp;,</td> </tr>
-        <tr> <td>New Tab</td> <td>⌘&nbsp;T</td> </tr>
-        <tr> <td>Toggle Log</td> <td>⌘&nbsp;L</td> </tr>
-        <tr> <td>Close Pane</td> <td>⌘&nbsp;D</td> </tr>
-        <tr> <td>Reset</td> <td>⌘&nbsp;R</td> </tr>
-        <tr> <td>Dump log to clipboard</td> <td>⌘&nbsp;9</td> </tr>
-        <tr> <td>Hide This</td> <td>Tap This</td> </tr>
-              </tbody></table>
-          </div>
-      </div>
-      <div id="reset-cert" class="hidden modal border" >
-        <p>peerbook returned an error:</p>
-        <code id="reset-cert-error"> </code>
-        <p>
-            Please edit the settings and change the email or press the
-            reset button to generate a new certificate.
-            </p>
-            <nav>
-                <button type="button" class="close"><i class="f7-icons">xmark</i></button>
-                <button type="button" class="reset"><i class="f7-icons">arrow_2_circlepath</i></button>
-            </nav>
-      </div>
-      <div id="search" class="oneline-box border hidden modal">
-          <nav class="tabbar-search">
-            <button type="button" class="search-close"><i class="f7-icons">xmark</i></button>
-            <input type="text" name="search-term">
-            <div id="string-not-found" class="hidden">Not found</div>
-            <button type="button" class="search-up off"><i class="f7-icons">chevron_up</i></button>
-            <button type="button" class="search-down off"><i class="f7-icons">chevron_down</i></button>
-            <!-- TODO: implment the url & file buttons
+                    <footer>map inspired by Eero Saarinen's T5</footer>
+                </div>
+            </div>
+            <div class="gates-container">
+                <div id="active-gate-stats" class="gate-stats"></div>
+                <div
+                    class="hidden zoomed pane-container"
+                    id="zoomed-pane"
+                ></div>
+            </div>
+            <div id="offline" class="hidden modal border non-clearable">
+                <h1 class="warning">Network is down</h1>
+                <p>Terminal 7 will activate on reconnect</p>
+            </div>
+            <div id="help-gate" class="hidden">
+                <img src="img/help.png" alt="gate help screen" />
+            </div>
+            <div id="keys-help" class="keys-help hidden modal border">
+                <p>Use CTRL-A if your keyboard has no ⌘</p>
+                <div>
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td>Toggle Fullscreen</td>
+                                <td>⌘&nbsp;Z</td>
+                            </tr>
+                            <tr>
+                                <td>Move Focus</td>
+                                <td>⌘&nbsp;&larr;&uarr;&darr;&rarr;</td>
+                            </tr>
+                            <tr>
+                                <td>Search Pane Buffer</td>
+                                <td>⌘&nbsp;F</td>
+                            </tr>
+                            <tr class="copy_mode">
+                                <td>Enter Copy Mode</td>
+                                <td>⌘&nbsp;[</td>
+                            </tr>
+                            <tr>
+                                <td>Bigger Font</td>
+                                <td>⌘&nbsp;+</td>
+                            </tr>
+                            <tr>
+                                <td>Smaller Font</td>
+                                <td>⌘&nbsp;-</td>
+                            </tr>
+                            <tr>
+                                <td>Reset Font</td>
+                                <td>⌘&nbsp;0</td>
+                            </tr>
+                            <tr>
+                                <td>Split Top to Bottom</td>
+                                <td>⌘&nbsp;\</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td>Split Right to Left</td>
+                                <td>⌘&nbsp;'</td>
+                            </tr>
+                            <tr>
+                                <td>Rename Tab</td>
+                                <td>⌘&nbsp;,</td>
+                            </tr>
+                            <tr>
+                                <td>New Tab</td>
+                                <td>⌘&nbsp;T</td>
+                            </tr>
+                            <tr>
+                                <td>Toggle Log</td>
+                                <td>⌘&nbsp;L</td>
+                            </tr>
+                            <tr>
+                                <td>Close Pane</td>
+                                <td>⌘&nbsp;D</td>
+                            </tr>
+                            <tr>
+                                <td>Reset</td>
+                                <td>⌘&nbsp;R</td>
+                            </tr>
+                            <tr>
+                                <td>Dump log to clipboard</td>
+                                <td>⌘&nbsp;9</td>
+                            </tr>
+                            <tr>
+                                <td>Hide This</td>
+                                <td>Tap This</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="reset-cert" class="hidden modal border">
+                <p>peerbook returned an error:</p>
+                <code id="reset-cert-error"> </code>
+                <p>
+                    Please edit the settings and change the email or press the
+                    reset button to generate a new certificate.
+                </p>
+                <nav>
+                    <button type="button" class="close">
+                        <i class="f7-icons">xmark</i>
+                    </button>
+                    <button type="button" class="reset">
+                        <i class="f7-icons">arrow_2_circlepath</i>
+                    </button>
+                </nav>
+            </div>
+            <div id="search" class="oneline-box border hidden modal">
+                <nav class="tabbar-search">
+                    <button type="button" class="search-close">
+                        <i class="f7-icons">xmark</i>
+                    </button>
+                    <input type="text" name="search-term" />
+                    <div id="string-not-found" class="hidden">Not found</div>
+                    <button type="button" class="search-up off">
+                        <i class="f7-icons">chevron_up</i>
+                    </button>
+                    <button type="button" class="search-down off">
+                        <i class="f7-icons">chevron_down</i>
+                    </button>
+                    <!-- TODO: implment the url & file buttons
             <a href="#find-url" class="hidden">URL</a>
             <a href="#find-file" class="hidden">File</a>
             -->
-          </nav>
+                </nav>
+            </div>
+            <div id="rename" class="oneline-box border hidden modal">
+                <nav class="tabbar-search">
+                    <button type="button" class="rename-close">
+                        <i class="f7-icons">xmark</i>
+                    </button>
+                    <input type="text" name="new-name" id="name-input" />
+                </nav>
+            </div>
+            <nav id="navbar" class="bar">
+                <button
+                    type="button"
+                    aria-label="Map"
+                    id="map-button"
+                    class="off has-help"
+                >
+                    <i class="f7-icons">map</i>
+                </button>
+                <button
+                    type="button"
+                    aria-label="Open Tower"
+                    data-sc="L"
+                    id="log-button"
+                    class="has-help"
+                >
+                    <i class="f7-icons">greaterthan</i>
+                </button>
+                <button
+                    type="button"
+                    aria-label="Close Pane"
+                    data-sc="D"
+                    id="trash-button"
+                    class="pane-buttons off has-help"
+                >
+                    <i class="f7-icons">rectangle_badge_xmark</i>
+                </button>
+                <button
+                    type="button"
+                    aria-label="Split Right to Left"
+                    data-sc="'"
+                    id="divide-h"
+                    class="pane-buttons off has-help"
+                >
+                    <i class="f7-icons">divide</i>
+                </button>
+                <button
+                    type="button"
+                    aria-label="Split Top to Bottom"
+                    data-sc="\"
+                    id="divide-v"
+                    class="pane-buttons off has-help"
+                >
+                    <i
+                        class="f7-icons"
+                        style="display: inline-block; transform: rotate(90deg)"
+                        >divide</i
+                    >
+                </button>
+                <button
+                    type="button"
+                    aria-label="Search Pane Buffer"
+                    data-sc="F"
+                    id="search-button"
+                    class="pane-buttons off has-help"
+                >
+                    <i class="f7-icons">doc_text_search</i>
+                </button>
+                <button
+                    type="button"
+                    aria-label="Video"
+                    id="video-button"
+                    class="pane-buttons off has-help"
+                >
+                    <i class="f7-icons">videocam</i>
+                </button>
+                <button
+                    type="button"
+                    aria-label="Help"
+                    id="help-button"
+                    class="has-help"
+                >
+                    <i class="f7-icons">question</i>
+                </button>
+                <button
+                    type="button"
+                    aria-label="dotfile"
+                    id="dotfile-button"
+                    class="has-help"
+                >
+                    <i class="f7-icons">gear</i>
+                </button>
+            </nav>
         </div>
-      <div id="rename" class="oneline-box border hidden modal">
-          <nav class="tabbar-search">
-            <button type="button" class="rename-close"><i class="f7-icons">xmark</i></button>
-            <input type="text" name="new-name" id="name-input">
-          </nav>
-      </div>
-      <nav id="navbar" class="bar">
-              <button type="button" aria-label="Map" id="map-button" class="off has-help"><i class="f7-icons">map</i></button>
-              <button type="button" aria-label="Open Tower" data-sc="L" id="log-button" class="has-help"><i class="f7-icons">greaterthan</i></button>
-              <button type="button" aria-label="Close Pane" data-sc="D" id="trash-button" class="pane-buttons off has-help"><i class="f7-icons">rectangle_badge_xmark</i></button>
-              <button type="button" aria-label="Split Right to Left" data-sc="'" id="divide-h" class="pane-buttons off has-help"><i class="f7-icons">divide</i></button>
-              <button type="button" aria-label="Split Top to Bottom" data-sc="\" id="divide-v" class="pane-buttons off has-help">
-                  <i class="f7-icons" style="display: inline-block; transform: rotate(90deg);">divide</i></button>
-              <button type="button" aria-label="Search Pane Buffer" data-sc="F" id="search-button" class="pane-buttons off has-help"><i class="f7-icons">doc_text_search</i></button>
-              <button type="button" aria-label="Video" id="video-button" class="pane-buttons off has-help"><i class="f7-icons">videocam</i></button>
-              <button type="button" aria-label="Help" id="help-button" class="has-help"><i class="f7-icons">question</i></button>
-              <button type="button" aria-label="dotfile" id="dotfile-button" class="has-help"><i class="f7-icons">gear</i></button>
-      </nav>
-  </div>
 
-    <template id="divider-template">
-        <div class="divider hidden">
-            <img width="8" height="44" draggable="false" src="img/divider.png" alt="a divider">
-        </div>
-    </template>
+        <template id="divider-template">
+            <div class="divider hidden">
+                <img
+                    width="8"
+                    height="44"
+                    draggable="false"
+                    src="img/divider.png"
+                    alt="a divider"
+                />
+            </div>
+        </template>
 
-    <template id="nosignal-template">
-        <div class="modal border temporal">
-          <h1><span class="name"></span> Error</h1>
-          <p id="nosignal-wrong-address" style="display:none;">
-            If <span class="address"></span> is the wrong address click
-              <a href="#" class="edit-link">here</a>.</p>
-          <p class="server-error"></p>
-          <nav>
-              <button type="button" class="close"><i class="f7-icons">xmark</i></button>
-              <button type="button" class="reconnect"><i class="f7-icons">arrow_2_circlepath</i></button>
-          </nav>
-      </div>
-    </template>
-    <!-- every gate creates his own tabbar based on the template below -->
-    <template id="gate-template">
-    <div class="windows-container">
-    </div>
-    <nav class="tabbar">
-          <button type="button" aria-label="New Tab" data-sc="T" class="add-tab has-help"><i class="f7-icons">
-                  plus</i></button>
-          <nav class="tabbar-names">
-          </nav>
-          <button type="button" aria-label="Reset" data-sc="R" class="reset has-help"><i class="f7-icons">
-                  arrow_2_circlepath</i></button>
-    </nav>
-</template>
-</body>
+        <template id="nosignal-template">
+            <div class="modal border temporal">
+                <h1><span class="name"></span> Error</h1>
+                <p id="nosignal-wrong-address" style="display: none">
+                    If <span class="address"></span> is the wrong address click
+                    <a href="#" class="edit-link">here</a>.
+                </p>
+                <p class="server-error"></p>
+                <nav>
+                    <button type="button" class="close">
+                        <i class="f7-icons">xmark</i>
+                    </button>
+                    <button type="button" class="reconnect">
+                        <i class="f7-icons">arrow_2_circlepath</i>
+                    </button>
+                </nav>
+            </div>
+        </template>
+        <!-- every gate creates his own tabbar based on the template below -->
+        <template id="gate-template">
+            <div class="windows-container"></div>
+            <nav class="tabbar">
+                <button
+                    type="button"
+                    aria-label="New Tab"
+                    data-sc="T"
+                    class="add-tab has-help"
+                >
+                    <i class="f7-icons"> plus</i>
+                </button>
+                <nav class="tabbar-names"></nav>
+                <button
+                    type="button"
+                    aria-label="Reset"
+                    data-sc="R"
+                    class="reset has-help"
+                >
+                    <i class="f7-icons"> arrow_2_circlepath</i>
+                </button>
+            </nav>
+        </template>
+    </body>
 </html>
