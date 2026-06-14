@@ -282,4 +282,93 @@ describe("gate", () => {
         expect(w1.e.classList.contains("invisible")).toBeTruthy();
         expect(w2.e.classList.contains("invisible")).toBeFalsy();
     });
+    it("skips load and marker reset in onSessionState during reconnect", async () => {
+        const g = t.addGate();
+        g.open(e);
+        g.session = new HTTPWebRTCSession(
+            "http://example.com:7777/offer",
+            "",
+            "",
+        );
+        g.marker = 42;
+        g.reconnectCount = 1;
+        const loadSpy = vi.spyOn(g, "load");
+
+        g.onSessionState("connected", undefined);
+
+        expect(loadSpy).not.toHaveBeenCalled();
+        expect(g.marker).toBe(42);
+    });
+    it("calls load and resets marker in onSessionState when not reconnecting", async () => {
+        const g = t.addGate();
+        g.open(e);
+        g.session = new HTTPWebRTCSession(
+            "http://example.com:7777/offer",
+            "",
+            "",
+        );
+        g.marker = 42;
+        g.reconnectCount = 0;
+        g.onConnected = () => {};
+        const loadSpy = vi.spyOn(g, "load");
+
+        g.onSessionState("connected", undefined);
+
+        expect(loadSpy).toHaveBeenCalledTimes(1);
+        expect(g.marker).toBeNull();
+    });
+    it("shouldRestoreSession skips applyServerPayload when session IDs match", async () => {
+        HTTPWebRTCSession.payload = JSON.stringify({
+            session: "same-session",
+            windows: [],
+            width: 1280,
+            height: 627,
+        });
+        const g = t.addGate();
+        g.open(e);
+        const session = new HTTPWebRTCSession(
+            "http://example.com:7777/offer",
+            "",
+            "",
+        );
+        g.session = session;
+        g.sessionId = "same-session";
+        g.marker = 99;
+        const applySpy = vi.spyOn(g, "applyServerPayload");
+
+        const result = await g.shouldRestoreSession(session);
+
+        expect(result).toBe(true);
+        expect(applySpy).not.toHaveBeenCalled();
+        // marker should be preserved — finish() will use it
+        expect(g.marker).toBe(99);
+    });
+    it("shouldRestoreSession calls applyServerPayload for fresh session", async () => {
+        t.map.t0.out = "";
+        HTTPWebRTCSession.payload = JSON.stringify({
+            session: "new-session",
+            windows: [],
+            width: 1280,
+            height: 627,
+        });
+        const g = t.addGate();
+        g.open(e);
+        const session = new HTTPWebRTCSession(
+            "http://example.com:7777/offer",
+            "",
+            "",
+        );
+        g.session = session;
+        g.sessionId = "old-session";
+        g.marker = 99;
+        g.reconnectCount = 1;
+
+        const result = await g.shouldRestoreSession(session);
+
+        expect(result).toBe(false);
+        expect(g.marker).toBeNull();
+        expect(g.reconnectCount).toBe(0);
+        expect(g.dump().session).toEqual("new-session");
+        expect(t.map.t0.out).toContain("fresh webexec session");
+    });
 });

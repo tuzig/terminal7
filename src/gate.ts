@@ -242,9 +242,16 @@ export class Gate {
         const payload = session.isOpen()
             ? await session.getPayload()
             : await session.reconnect(null, publicKey, privateKey);
-        const freshSession = await this.applyServerPayload(
-            typeof payload == "string" ? payload : null,
-        );
+        const rawPayload = typeof payload == "string" ? payload : null;
+
+        // If we already have a session and the incoming payload matches,
+        // skip applyServerPayload — finish() will apply the layout later.
+        const layout = this.parseServerPayload(rawPayload);
+        if (this.sessionId && layout?.session === this.sessionId) {
+            return true;
+        }
+
+        const freshSession = await this.applyServerPayload(rawPayload);
         if (!freshSession) return true;
 
         this.marker = null;
@@ -265,6 +272,10 @@ export class Gate {
         }
         this.t7.log(`updating ${this.name} state to ${state} ${failure}`);
         if (state == "connected") {
+            if (this.reconnectCount > 0) {
+                this.t7.log("skipping load during reconnect");
+                return;
+            }
             this.marker = null;
             void this.load().then(() => this.onConnected());
         } else if (state == "disconnected" || state == "failed") {
