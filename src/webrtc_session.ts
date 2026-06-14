@@ -107,6 +107,7 @@ export class WebRTCSession extends BaseSession {
         noCDC?: boolean | string,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         privateKey?: string,
+        skipRestore?: boolean,
     ) {
         terminal7.log("in connect", marker, noCDC);
 
@@ -170,7 +171,7 @@ export class WebRTCSession extends BaseSession {
         if (noCDC) return;
 
         await this.openCDC();
-        if (marker != null) {
+        if (marker != null && !skipRestore) {
             this.sendCTRLMsg(new ControlMessage("restore", { marker }))
                 .then((layout) => {
                     this.lastPayload = layout;
@@ -265,7 +266,7 @@ export class WebRTCSession extends BaseSession {
         privateKey?: string,
     ): Promise<string | void> {
         terminal7.log("in reconnect");
-        if (!this.isOpen()) await this.connect(marker, false, privateKey);
+        if (!this.isOpen()) await this.connect(marker, false, privateKey, true);
         else if (!this.cdc || this.cdc.readyState != "open")
             await this.openCDC();
         if (marker != null) {

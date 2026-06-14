@@ -330,4 +330,77 @@ describe("WebRTCSession onconnectionstatechange", () => {
             expect(session.pendingCDCMsgs.length).toBe(0);
         });
     });
+
+    describe("reconnect does not send duplicate restore", () => {
+        it("passes skipRestore=true to connect() when connection is not open", async () => {
+            // Verify that reconnect() tells connect() to skip the restore
+            // so that restore is only sent once (by reconnect() itself)
+            const connectSpy = vi.spyOn(session, "connect");
+            session.isOpen = vi.fn().mockReturnValue(false);
+            session.openCDC = vi.fn().mockResolvedValue(undefined);
+            session.sendCTRLMsg = vi.fn().mockResolvedValue('{"windows":[]}');
+
+            await session.reconnect(42);
+
+            // connect() should have been called with (marker, false, undefined, true)
+            // The 4th arg (skipRestore) must be true
+            expect(connectSpy).toHaveBeenCalledWith(42, false, undefined, true);
+        });
+
+        it("sends restore exactly once when connection is not open", async () => {
+            session.isOpen = vi.fn().mockReturnValue(false);
+            // Mock connect to set up pc but skip the restore
+            const originalConnect = session.connect.bind(session);
+            session.connect = vi.fn().mockImplementation(async (marker, noCDC, privateKey, skipRestore) => {
+                // Call the real connect with noCDC=true to set up pc without CDC
+                await originalConnect(marker, true, privateKey);
+            });
+            session.openCDC = vi.fn().mockResolvedValue(undefined);
+            const sendCTRLMsgSpy = vi.fn().mockResolvedValue('{"windows":[]}');
+            session.sendCTRLMsg = sendCTRLMsgSpy;
+
+            await session.reconnect(42);
+
+            // sendCTRLMsg should be called exactly once for the "restore" message
+            const restoreCalls = sendCTRLMsgSpy.mock.calls.filter(
+                (call) => call[0].type === "restore",
+            );
+            expect(restoreCalls.length).toBe(1);
+            expect(restoreCalls[0][0].args).toEqual({ marker: 42 });
+        });
+
+        it("sends restore when connection is already open", async () => {
+            session.isOpen = vi.fn().mockReturnValue(true);
+            session.openCDC = vi.fn().mockResolvedValue(undefined);
+            const sendCTRLMsgSpy = vi.fn().mockResolvedValue('{"windows":[]}');
+            session.sendCTRLMsg = sendCTRLMsgSpy;
+
+            await session.reconnect(42);
+
+            // sendCTRLMsg should be called once for the "restore" message
+            const restoreCalls = sendCTRLMsgSpy.mock.calls.filter(
+                (call) => call[0].type === "restore",
+            );
+            expect(restoreCalls.length).toBe(1);
+        });
+
+        it("does not send restore when marker is null", async () => {
+            session.isOpen = vi.fn().mockReturnValue(false);
+            const originalConnect = session.connect.bind(session);
+            session.connect = vi.fn().mockImplementation(async (marker, noCDC, privateKey, skipRestore) => {
+                await originalConnect(marker, true, privateKey);
+            });
+            session.openCDC = vi.fn().mockResolvedValue(undefined);
+            const sendCTRLMsgSpy = vi.fn().mockResolvedValue('{"windows":[]}');
+            session.sendCTRLMsg = sendCTRLMsgSpy;
+
+            await session.reconnect(null);
+
+            // No "restore" messages should be sent
+            const restoreCalls = sendCTRLMsgSpy.mock.calls.filter(
+                (call) => call[0].type === "restore",
+            );
+            expect(restoreCalls.length).toBe(0);
+        });
+    });
 });
