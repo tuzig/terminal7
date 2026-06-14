@@ -281,6 +281,9 @@ export class WebRTCSession extends BaseSession {
         } else return this.getPayload();
     }
     openCDC(): Promise<void> {
+        if (!this.pc) {
+            return Promise.reject("peer connection closed");
+        }
         // stop listening for messages
         if (this.cdc) {
             this.cdc.onmessage = undefined;
@@ -329,6 +332,10 @@ export class WebRTCSession extends BaseSession {
     }
     sendCTRLMsg(msg: ControlMessage): Promise<string> {
         return new Promise((resolve, reject) => {
+            if (!this.pc) {
+                reject("peer connection closed");
+                return;
+            }
             const timeout = terminal7.run(() => {
                 terminal7.log("timeout on ctrl message", msg);
                 reject(Failure.TimedOut);

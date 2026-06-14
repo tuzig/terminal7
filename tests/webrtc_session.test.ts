@@ -284,4 +284,50 @@ describe("WebRTCSession onconnectionstatechange", () => {
         // closeChannels SHOULD have been called, channels map should be empty
         expect(session.channels.has(1)).toBe(false);
     });
+
+    describe("null-guard: openCDC rejects when pc is null", () => {
+        it("openCDC rejects with 'peer connection closed' when pc is null", async () => {
+            session.pc = null;
+            await expect(session.openCDC()).rejects.toBe(
+                "peer connection closed",
+            );
+        });
+
+        it("openCDC resolves normally when pc is not null", async () => {
+            await session.connect(undefined, true);
+            // Spy on createDataChannel to simulate CDC open
+            const createDcSpy = vi.spyOn(
+                session.pc as MockRTCPeerConnection,
+                "createDataChannel",
+            );
+            const openCDCPromise = session.openCDC();
+            // Simulate the CDC opening
+            const cdc = createDcSpy.mock.results[0].value as MockRTCDataChannel;
+            cdc.readyState = "open";
+            cdc.onopen!();
+            await expect(openCDCPromise).resolves.toBeUndefined();
+        });
+    });
+
+    describe("null-guard: sendCTRLMsg rejects when pc is null", () => {
+        it("sendCTRLMsg rejects with 'peer connection closed' when pc is null", async () => {
+            session.pc = null;
+            const msg = { type: "resize", args: {} };
+            await expect(session.sendCTRLMsg(msg as any)).rejects.toBe(
+                "peer connection closed",
+            );
+        });
+
+        it("sendCTRLMsg does not queue message when pc is null", async () => {
+            session.pc = null;
+            const msg = { type: "resize", args: {} };
+            try {
+                await session.sendCTRLMsg(msg as any);
+            } catch {
+                // expected rejection
+            }
+            // No message should be queued
+            expect(session.pendingCDCMsgs.length).toBe(0);
+        });
+    });
 });
