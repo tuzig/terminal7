@@ -76,6 +76,7 @@
     },
     "resolutions": {
         "@capacitor/assets/@capacitor/cli": "^8.0.0",
+        "esbuild": "^0.28.1",
         "tmp": "^0.2.6",
         "minimatch": "^3.1.4",
         "@capacitor/assets/@trapezedev/project/xcode/uuid": "^11.1.1",
