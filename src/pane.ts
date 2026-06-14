@@ -320,6 +320,7 @@ export class Pane extends Cell {
         if (terminalE) {
             this.e.appendChild(terminalE.firstElementChild);
             this.gate.e.classList.remove("hidden");
+            this.gate.e.classList.remove("invisible");
         }
         zoomedPane.classList.add("hidden");
         navbar.classList.remove("hidden");
