@@ -306,8 +306,8 @@ export class Pane extends Cell {
         c.appendChild(e);
         this.gate.e.classList.add("hidden");
         navbar.classList.add("hidden");
-        this.styleZoomed(e);
         c.classList.remove("hidden");
+        this.styleZoomed(e);
         this.zoomed = true;
         this.catchGestures(c);
     }
@@ -329,12 +329,14 @@ export class Pane extends Cell {
     }
 
     toggleZoom() {
-        if (this.zoomed) this.unzoom();
-        else this.zoom();
+        if (this.zoomed) {
+            this.unzoom();
+            this.fit();
+        } else {
+            this.zoom();
+        }
         this.gate.sendState();
         this.t7.run(() => this.focus(), ABIT);
-
-        this.fit();
     }
     // fit a pane to the display area. If it was resized, the server is updated.
     // returns true is size was changed
