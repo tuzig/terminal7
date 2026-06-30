@@ -45,6 +45,49 @@ describe("pane", () => {
         expect(p0.gate.e.classList.contains("hidden")).toBeFalsy();
         expect(p0.gate.e.classList.contains("invisible")).toBeFalsy();
     });
+    it("zoomed-pane is visible before fit runs during zoom", () => {
+        // Track whether #zoomed-pane was visible when fit() was called
+        const fitCalls: boolean[] = [];
+        const origFit = p0.fit.bind(p0);
+        p0.fit = (cb?) => {
+            const zp = document.getElementById("zoomed-pane");
+            fitCalls.push(zp ? !zp.classList.contains("hidden") : false);
+            origFit(cb);
+        };
+        p0.zoom();
+        // fit() was called at least once via styleZoomed
+        expect(fitCalls.length).toBeGreaterThanOrEqual(1);
+        // The zoomed-pane must have been visible when fit ran
+        expect(fitCalls.every((v) => v === true)).toBe(true);
+        p0.unzoom();
+    });
+    it("toggleZoom to zoom calls fit only once", () => {
+        let fitCount = 0;
+        const origFit = p0.fit.bind(p0);
+        p0.fit = (cb?) => {
+            fitCount++;
+            origFit(cb);
+        };
+        p0.toggleZoom();
+        expect(p0.zoomed).toBeTruthy();
+        // zoom() calls styleZoomed() which calls fit() once.
+        // toggleZoom must NOT call fit() again on the zoom path.
+        expect(fitCount).toBe(1);
+        p0.unzoom();
+    });
+    it("toggleZoom to unzoom still calls fit", () => {
+        p0.zoom();
+        let fitCount = 0;
+        const origFit = p0.fit.bind(p0);
+        p0.fit = (cb?) => {
+            fitCount++;
+            origFit(cb);
+        };
+        p0.toggleZoom();
+        expect(p0.zoomed).toBeFalsy();
+        // unzoom() does not call fit(), so toggleZoom must call it.
+        expect(fitCount).toBe(1);
+    });
     it("can forward jump words in copy mode", () => {
         p0.t.setBuffer(["aaa aa  a--.a,,  -a ", "aa a"]);
         p0.enterCopyMode(false);

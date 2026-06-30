@@ -112,5 +112,8 @@
     "license": "GPL-3.0-only",
     "bugs": {
         "url": "https://github.com/tuzig/terminal7/issues"
+    },
+    "optionalDependencies": {
+        "@rollup/rollup-linux-arm64-gnu": "^4.62.2"
     }
 }

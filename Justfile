@@ -1,7 +1,7 @@
 # This template is customized by project-init ritual based on the project's language
 # and tool set. 
 
-PROJECT_NAME := "tuzig/terminal7"
+PROJECT_NAME := "daonb/terminal7"
 
 list:
     @just --list
