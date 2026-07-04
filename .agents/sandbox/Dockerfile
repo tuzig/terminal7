@@ -1,17 +1,16 @@
-FROM node:24-bookworm-slim
+FROM node:24-slim
 
-# Install system dependencies (git, curl, ca-certificates, python3, make, g++, ripgrep)
+# Install common development tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
-    ca-certificates \
-    python3 \
-    make \
-    g++ \
     ripgrep \
+    build-essential \
+    python3 \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install just (universal build tool)
+# Install just (not in Debian bookworm apt repos)
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
 COPY Justfile .

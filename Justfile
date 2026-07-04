@@ -1,7 +1,7 @@
 # This template is customized by project-init ritual based on the project's language
 # and tool set. 
 
-PROJECT_NAME := "daonb/terminal7"
+PROJECT_NAME := `git config --get remote.origin.url | sed -E 's/.*[:\/]([^\/]+)\/([^\/]+)\.git$/\1\/\2/'`
 
 list:
     @just --list
@@ -10,37 +10,37 @@ list:
 build-sandbox:
     podman machine init --disk-size 30 >/dev/null 2>&1 || true
     podman machine start >/dev/null 2>&1 || true
-    podman build -t localhost/asimi-sandbox-{{PROJECT_NAME}}:latest -f .agents/sandbox/Dockerfile .
+    podman rmi localhost/asimi/sandbox/{{PROJECT_NAME}}:latest 2>/dev/null || true
+    podman build -t localhost/asimi/sandbox/{{PROJECT_NAME}}:latest -f .agents/sandbox/Dockerfile .
 
 # Clean up the sandbox container
 clean-sandbox:
-    podman rmi localhost/asimi-sandbox-{{PROJECT_NAME}}:latest
+    podman rmi localhost/asimi/sandbox/{{PROJECT_NAME}}:latest
 
-# Install project dependencies (Node.js / Yarn)
+# Install project dependencies (language-specific) — customize for your project
 install:
-    yarn install
+    yarn install --frozen-lockfile
 
-# Run linter & type checker (ESLint + tsc --noEmit)
+# Run linter & formatter (language-specific) — customize for your project
 lint:
     yarn lint
 
-# Run tests (Vitest unit tests + AATP acceptance tests)
+# Run tests (language-specific) — customize for your project
 test:
-    yarn test | tee test.out
-    ./aatp/run | tee aatp.out
+    yarn test
 
-# Start the Vite development server
+# Start the program or server — customize for your project
 run:
     yarn dev
 
-# Build the project for production (Vite)
-build:
+# Build the project — customize for your project
+build: install
     yarn build
 
-# Clean build artifacts and caches
+# Clean build artifacts and caches — customize for your project
 clean:
     yarn clean
 
-# Install system dependencies — already present in node:20-bookworm-slim base image
+# Install system dependencies — customize for your project
 bootstrap:
-    node --version && npm --version && yarn --version
+    @echo "yarn already available in node base image"

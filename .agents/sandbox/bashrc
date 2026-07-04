@@ -31,10 +31,18 @@ git() {
 alias ll="ls -l"
 export TERM="dumb"
 export GIT_TERMINAL_PROMPT=0
+# Disable interactive features that could block shell
+set +m  # Disable job control
+bind 'set disable-completion on' 2>/dev/null || true  # Disable tab completion
+bind 'set pagination off' 2>/dev/null || true  # Disable pagination in readline
 # for ruby projects:
 # export BUNDLE_RETRY=0
 
-# Node.js project setup
-export PATH="$(npm prefix -g)/bin:$PATH"
+# Node.js / Yarn environment
 export NODE_ENV=development
-export VITE_HMR_HOST=host.containers.internal
+export PATH="/usr/local/bin:/usr/bin:/bin:node_modules/.bin:$PATH"
+
+# Rewrite localhost:3000 to host.containers.internal:3000 so the sandbox
+# can reach the aatp acceptance test server running on the host.
+export LOCALDEV=1
+export AATP_URL="http://host.containers.internal:3000"

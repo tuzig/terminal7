@@ -1,108 +1,73 @@
-# Agent Context: Terminal7
-
-This document provides context for AI coding agents operating within the Terminal7 repository.
+# Agent Documentation: Terminal7
 
 ## Project Overview
 
-Terminal7 is a touch-friendly terminal multiplexer, similar to `tmux` or `screen`, designed for modern web and mobile clients. It primarily uses WebRTC for real-time communication. The application is built as a hybrid app using CapacitorJS, allowing it to be deployed as a PWA on the web and as a native app on iOS and Android.
+Terminal7 is a touch-friendly terminal multiplexer built as a hybrid web/mobile
+app using CapacitorJS. The client is written in vanilla TypeScript. The backend
+counterpart is `webexec`, a WebRTC server written in Go.
 
-The client-side is written in vanilla TypeScript. The backend counterpart is `webexec`, a WebRTC server written in Go, which is based on `pion/webrtc`.
+## Language & Runtime
 
-## Key Technologies
+- **Primary language:** TypeScript (vanilla — no React/Vue/etc.)
+- **Runtime:** Node.js 24 (see `.nvmrc`)
+- **Package manager:** Yarn 1.x (classic)
+- **Module system:** ES modules (`"type"` is not set; Vite handles bundling)
 
-- **Framework/Platform:** CapacitorJS for building the hybrid app.
-- **Language:** TypeScript
-- **UI/Terminal Emulation:** Xterm.js
-- **Build Tool:** Vite
-- **Testing:**
-    - **Unit/Component Tests:** Vitest
-    - **End-to-End/Acceptance Tests:** Playwright and a custom test runner in `aatp/`.
-- **Linting & Type-checking:** ESLint and TypeScript (`tsc`).
-- **Package Manager:** Yarn (inferred from `yarn.lock`).
+## Build & Development Commands
 
-## Dependencies
+| Task             | Command          | Notes                                    |
+|------------------|------------------|------------------------------------------|
+| Install deps     | `yarn install`   | Uses `yarn.lock`; `postinstall` wires git hooks |
+| Dev server       | `yarn dev`       | Vite dev server, usually `localhost:5173`|
+| Build            | `yarn build`     | Vite build using `vite.dev.config.js`    |
+| Lint             | `yarn lint`      | ESLint + `tsc --noEmit`                  |
+| Unit tests       | `vitest run`     | Vitest with jsdom environment            |
+| Acceptance tests | `yarn aatp`      | Playwright-based; requires Docker/Podman |
+| All tests        | `yarn test`      | Runs `vitest run` then `./aatp/run`      |
+| Clean            | `yarn clean`     | Removes `dist/` and copied iOS assets    |
 
-A Vanilla TypeScript project, we do use xtermjs for emulation and capacitorjs for packaging as iOS and Android apps. We keep our dependencies to a minimum and always prefer built-in alternatives if they exist.
+## Coding Style
+
+- **Indentation:** 4 spaces (see `.editorconfig`)
+- **Line endings:** LF
+- **Charset:** UTF-8
+- **Trailing whitespace:** Trimmed (except in Markdown)
+- **Prettier** runs on staged files via pre-commit hook
+- **ESLint** config in `.eslintrc.cjs`; extends `eslint:recommended` and
+  `plugin:@typescript-eslint/recommended`
+- Unused variables prefixed with `_` are allowed (config rule)
+- Empty catch blocks are allowed
 
 ## Project Structure
 
-- `src/`: Main application source code (TypeScript).
-- `tests/`: Unit tests for the application.
-- `aatp/`: Acceptance tests, including Docker-based infrastructure setup.
-- `css/`: Stylesheets for the application.
-- `index.html`: Main entry point for the web app.
-- `vite.config.js`: Vite build configuration.
-- `package.json`: Project dependencies and scripts.
-- `tsconfig.json`: TypeScript configuration.
+- `src/`           — Main application TypeScript source
+- `tests/`         — Unit test files
+- `aatp/`          — Acceptance test procedures (Playwright + Docker labs)
+- `css/`           — Stylesheets
+- `fonts/`         — Font assets
+- `hooks/`         — Git hooks (wired via `.githooks/`)
+- `index.html`     — Web entry point
+- `vite.config.js` — Vite configuration
+- `tsconfig.json`  — TypeScript configuration (target ES2022, module ESNext)
 
-## Important Commands
+## Testing Conventions
 
-- **Install Dependencies:**
+- Unit tests use **Vitest** with jsdom; mocks are set up in `vitest.setup.ts`
+- Acceptance tests (`aatp/`) use Playwright and run against Docker-compose labs
+  — they require a running Docker/Podman daemon and are not run inside the sandbox
+- The `aatp/run` script handles lab setup, build, and teardown
+- Always write a failing test first when fixing a bug
 
-    ```bash
-    yarn install
-    ```
+## Git Conventions
 
-- **Run Development Server:**
+- Commit messages start with a capital letter, present progressive tense
+  (e.g., "Adding zapping #123", "Fixing bug #345")
+- Pre-commit hook runs `prettier --write` on staged files and re-stages them
+- Pre-push hook runs lint, unit tests, and acceptance suite
+- Stage files explicitly by path — never `git add -A` or `git add .`
 
-    ```bash
-    yarn dev
-    ```
+## Dependencies Philosophy
 
-- **Build to Test Integrity:**
-
-    ```bash
-    yarn build
-    ```
-
-- **Build / Run the Native Apps:**
-  These wrappers run `vite build` first so the web bundle in `dist/` is always
-  fresh before Capacitor copies it into the native project. Use these instead
-  of calling `npx cap build|run` directly.
-
-    ```bash
-    yarn build:ios       # produce an iOS IPA
-    yarn build:android   # produce an Android APK
-    yarn run:ios         # build + launch on a connected device/simulator
-    yarn run:android
-    ```
-
-- **Run Tests:**
-    - **Run all tests (Unit and Acceptance):**
-        ```bash
-        yarn test
-        ```
-    - **Run only unit tests:**
-        ```bash
-        vitest run
-        ```
-    - **Run only acceptance tests:**
-        ```bash
-        yarn aatp
-        ```
-
-- **Linting and Type Checking:**
-    - This command checks for code style issues and type errors. It should be run after making changes to ensure code quality.
-    ```bash
-    yarn lint
-    ```
-
-## Development Conventions
-
-- **Package Manager:** Yarn (v1). All commands should use `yarn`, not `npm`.
-- **Language:** Vanilla TypeScript. Keep dependencies minimal; prefer built-in alternatives.
-- **Build Tool:** Vite. The dev server runs on port 5173 (`yarn dev`).
-- **Formatting:** Prettier (enforced via pre-commit hook).
-- **Linting:** ESLint + TypeScript (`tsc --noEmit`).
-- **Testing:**
-    - Unit tests: Vitest with jsdom environment.
-    - E2E / Acceptance tests: Custom AATP runner under `aatp/` (uses Playwright + Docker infra).
-- **Git Hooks:** Configured via `.githooks/`. Pre-commit runs prettier; pre-push runs lint + tests.
-- **Commit Style:** Present progressive tense, starts with a capital letter (e.g. "Adding zapping #123").
-- **Code Style:**
-    - Prefer explicit types over `any`.
-    - Use `const` / `let`; avoid `var`.
-    - Keep functions small and focused.
-    - `yarn test` runs everything before pushing is recommended.
-- **Native builds** (iOS/Android) are done via Capacitor wrapper scripts (`yarn build:ios`, `yarn run:android`, etc.) which always rebuild the web bundle first.
-- **`vite` in `dependencies`:** Yarn v1 has a known bug where it fails to link a peer dependency that's only in `devDependencies` when a package (vitest 4.x) declares it in both `dependencies` and `peerDependencies`. Moving `vite` to `dependencies` ensures it's hoisted at the top level. Do NOT move `vite` back to `devDependencies` without also switching to a package manager that handles peer deps correctly (e.g., yarn v3+ or pnpm).
+Keep dependencies to a minimum; prefer built-in/browser-native alternatives
+when they exist. Key libraries: xterm.js (terminal emulation), CapacitorJS
+(native packaging), interactjs (touch interactions), marked (Markdown).
