@@ -11,6 +11,7 @@
  */
 import { vi, describe, beforeEach, afterEach, it, expect } from "vitest";
 import { WebRTCSession } from "../src/webrtc_session";
+import { Failure } from "../src/session";
 
 // We need the real WebRTCSession, not the mock
 vi.unmock("../src/webrtc_session.ts");
@@ -332,41 +333,27 @@ describe("WebRTCSession onconnectionstatechange", () => {
     });
 
     describe("reconnect does not send duplicate restore", () => {
-        it("passes skipRestore=true to connect() when connection is not open", async () => {
-            // Verify that reconnect() tells connect() to skip the restore
-            // so that restore is only sent once (by reconnect() itself)
-            const connectSpy = vi.spyOn(session, "connect");
+        it("throws NotSupported when connection is not open", async () => {
+            // reconnect() must not fall through to connect() when the PC is
+            // not open — that would destroy the old PC and create a new one,
+            // leaving callers with two sessions of unknown status.
             session.isOpen = vi.fn().mockReturnValue(false);
-            session.openCDC = vi.fn().mockResolvedValue(undefined);
-            session.sendCTRLMsg = vi.fn().mockResolvedValue('{"windows":[]}');
+            const connectSpy = vi.spyOn(session, "connect");
 
-            await session.reconnect(42);
-
-            // connect() should have been called with (marker, false, undefined, true)
-            // The 4th arg (skipRestore) must be true
-            expect(connectSpy).toHaveBeenCalledWith(42, false, undefined, true);
+            await expect(session.reconnect(42)).rejects.toBe(
+                Failure.NotSupported,
+            );
+            expect(connectSpy).not.toHaveBeenCalled();
         });
 
-        it("sends restore exactly once when connection is not open", async () => {
+        it("throws NotSupported when connection is not open and marker is null", async () => {
             session.isOpen = vi.fn().mockReturnValue(false);
-            // Mock connect to set up pc but skip the restore
-            const originalConnect = session.connect.bind(session);
-            session.connect = vi.fn().mockImplementation(async (marker, noCDC, privateKey, skipRestore) => {
-                // Call the real connect with noCDC=true to set up pc without CDC
-                await originalConnect(marker, true, privateKey);
-            });
-            session.openCDC = vi.fn().mockResolvedValue(undefined);
-            const sendCTRLMsgSpy = vi.fn().mockResolvedValue('{"windows":[]}');
-            session.sendCTRLMsg = sendCTRLMsgSpy;
+            const connectSpy = vi.spyOn(session, "connect");
 
-            await session.reconnect(42);
-
-            // sendCTRLMsg should be called exactly once for the "restore" message
-            const restoreCalls = sendCTRLMsgSpy.mock.calls.filter(
-                (call) => call[0].type === "restore",
+            await expect(session.reconnect(null)).rejects.toBe(
+                Failure.NotSupported,
             );
-            expect(restoreCalls.length).toBe(1);
-            expect(restoreCalls[0][0].args).toEqual({ marker: 42 });
+            expect(connectSpy).not.toHaveBeenCalled();
         });
 
         it("sends restore when connection is already open", async () => {
@@ -384,12 +371,8 @@ describe("WebRTCSession onconnectionstatechange", () => {
             expect(restoreCalls.length).toBe(1);
         });
 
-        it("does not send restore when marker is null", async () => {
-            session.isOpen = vi.fn().mockReturnValue(false);
-            const originalConnect = session.connect.bind(session);
-            session.connect = vi.fn().mockImplementation(async (marker, noCDC, privateKey, skipRestore) => {
-                await originalConnect(marker, true, privateKey);
-            });
+        it("does not send restore when marker is null and connection is open", async () => {
+            session.isOpen = vi.fn().mockReturnValue(true);
             session.openCDC = vi.fn().mockResolvedValue(undefined);
             const sendCTRLMsgSpy = vi.fn().mockResolvedValue('{"windows":[]}');
             session.sendCTRLMsg = sendCTRLMsgSpy;

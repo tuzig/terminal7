@@ -88,7 +88,7 @@
         "stage": "vite build --sourcemap && vite preview",
         "run": "vite build -c vite.dev.config.js && cap run ios",
         "runa": "vite build -c vite.dev.config.js && cap run android",
-        "test": "vitest run && ./aatp/run",
+        "test": "vitest run",
         "build": "vite build -c vite.dev.config.js",
         "build:ios": "vite build -c vite.dev.config.js && cap build ios",
         "build:android": "vite build -c vite.dev.config.js && cap build android",

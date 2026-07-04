@@ -266,7 +266,7 @@ export class WebRTCSession extends BaseSession {
         privateKey?: string,
     ): Promise<string | void> {
         terminal7.log("in reconnect");
-        if (!this.isOpen()) await this.connect(marker, false, privateKey, true);
+        if (!this.isOpen()) throw Failure.NotSupported;
         else if (!this.cdc || this.cdc.readyState != "open")
             await this.openCDC();
         if (marker != null) {
