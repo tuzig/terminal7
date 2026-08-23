@@ -326,6 +326,7 @@ export class Pane extends Cell {
         navbar.classList.remove("hidden");
         this.zoomed = false;
         interact(document.getElementById("zoomed-pane")).unset();
+        if (!this.gate.fitScreen) this.scaleCanvas();
     }
 
     toggleZoom() {
@@ -531,7 +532,45 @@ export class Pane extends Cell {
         e.style.height = `${document.body.offsetHeight - verticalSpace}px`;
         e.style.top = "0px";
         e.style.width = "100%";
-        this.fit();
+        if (this.gate.fitScreen) {
+            this.fit();
+        } else {
+            // Mismatched-resolution client: scale the canvas via CSS transform
+            // to fit the server's rows/cols within the full-screen zoomed pane,
+            // consistent with scaleCanvas() which uses the same technique for
+            // the non-zoomed container.
+            const cell = (
+                this.t as unknown as {
+                    _core?: {
+                        _renderService?: {
+                            dimensions?: {
+                                css?: {
+                                    cell?: {
+                                        width?: number;
+                                        height?: number;
+                                    };
+                                };
+                            };
+                        };
+                    };
+                }
+            )._core?._renderService?.dimensions?.css?.cell;
+            const cellW = cell?.width;
+            const cellH = cell?.height;
+            if (!cellW || !cellH || cellW <= 0 || cellH <= 0) return;
+            const naturalWidth = this.t.cols * cellW;
+            const naturalHeight = this.t.rows * cellH;
+            const scale = Math.min(
+                e.clientWidth / naturalWidth,
+                e.clientHeight / naturalHeight,
+                1,
+            );
+            // TODO: don't we need to remove the transform sometime?
+            e.querySelectorAll("canvas").forEach((c) => {
+                c.style.transform = `scale(${scale})`;
+                c.style.transformOrigin = "top left";
+            });
+        }
     }
     enterCopyMode(marking = false) {
         if (marking) this.cmMarking = true;
@@ -1409,16 +1448,21 @@ export class Pane extends Cell {
         if (!this.t) return;
 
         this.fontSize = target.fontSize;
+        // Zoom/unzoom must happen BEFORE resize so the terminal element
+        // is in the correct container when t.resize() runs and before
+        // any buffered data is written.  Previously the zoom was deferred
+        // via setTimeout, creating a window where data written to the
+        // terminal was rendered at the non-zoomed container size.
+        if (target.zoomed && !this.zoomed) this.zoom();
+        if (!target.zoomed && this.zoomed) this.unzoom();
         this.scaleCanvas();
         if (this.t.rows != target.rows || this.t.cols != target.cols)
             this.t.resize(target.cols, target.rows);
+        // After resize, recompute the zoomed CSS scale so the canvas
+        // transform matches the new rows/cols (styleZoomed computed its
+        // scale with the old dimensions before resize happened).
+        if (this.zoomed && !this.gate.fitScreen) this.styleZoomed();
         if (target.active) this.focus();
-        if (target.zoomed && !this.zoomed) {
-            setTimeout(() => this.zoom(), 100);
-        }
-        if (!target.zoomed && this.zoomed) {
-            setTimeout(() => this.unzoom(), 100);
-        }
     }
     onPinch(ev) {
         console.log("pinch", ev.scale);

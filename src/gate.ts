@@ -1160,7 +1160,10 @@ export class Gate {
             });
         } else if (this.lastState) {
             this.scaleContainer(this.lastState.width, this.lastState.height);
-            this.panes().forEach((p) => p.scaleCanvas());
+            this.panes().forEach((p) => {
+                if (p.zoomed) p.styleZoomed();
+                else p.scaleCanvas();
+            });
         }
     }
 }

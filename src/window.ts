@@ -123,8 +123,7 @@ export class Window {
             } else {
                 const p = l.addPane(cell);
                 if (cell.active) this.activeP = p;
-                if (cell.zoomed && activeWindow)
-                    this.t7.run(() => p.zoom(), ABIT);
+                if (cell.zoomed && activeWindow) p.zoom();
             }
         });
         return l;
