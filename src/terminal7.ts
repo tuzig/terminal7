@@ -170,6 +170,10 @@ export class Terminal7 {
     private recoveryScheduled = false;
     private recoverPromise: Promise<void> | null = null;
     private fingerprintPromise: Promise<string> | null = null;
+    // Single-flight guard for certificate generation so startup and connect
+    // don't each fire their own RTCPeerConnection.generateCertificate and race
+    // to orphan the PeerBook account with two different fingerprints.
+    private certificatePromise: Promise<RTCCertificate> | null = null;
     metaPressStart: number;
     map: T7Map;
     appState: "active" | "background" = "active";
@@ -633,6 +637,14 @@ export class Terminal7 {
                     this.notify(`${PB} Failed to connect: ${e}`);
                     this.notify("If the problem persists, \`support\`");
                     symbol = ERROR_ICON;
+                } else {
+                    // PeerBook rejected the connection fingerprint. This usually
+                    // means a renewed certificate orphaned the account.
+                    this.log("PB connect rejected as Unauthorized");
+                    this.notify(`${PB} PeerBook rejected your certificate.`);
+                    this.notify(
+                        "Please run `subscribe renew` to reauthorize it.",
+                    );
                 }
                 callReject(e, symbol);
             };
@@ -912,27 +924,47 @@ export class Terminal7 {
         // gets the certificate from indexDB. If they are not there, create them
         return new Promise((resolve, reject) => {
             if (this.certificates) {
-                // Check for expiration even if we have certificates cached
+                // Check for expiration even if we have certificates cached.
+                // A true expiry is rotated through the reauthorization flow —
+                // never a bare generateCertificate() that would orphan the
+                // PeerBook account with an unbound fingerprint.
                 const cert = this.certificates[0];
                 if (this.isCertificateExpired(cert)) {
-                    this.log("Cached certificate expired, regenerating");
-                    this.notify(
-                        "Security certificate expired. Generating new certificate...",
-                    );
-                    this.generateCertificate()
-                        .then((cert) => resolve(compactCert(cert)))
+                    this.log("Cached certificate expired, renewing");
+                    // the cache is already bound, so checkAndRenewCertificate
+                    // can see the cert; resolve the renewed cert, never the
+                    // stale one
+                    this.checkAndRenewCertificate()
+                        .then((renewed) => {
+                            if (renewed)
+                                resolve(compactCert(this.certificates[0]));
+                            else {
+                                this.notify(
+                                    "Please run `subscribe renew` to reauthorize.",
+                                );
+                                reject("certificate expired");
+                            }
+                        })
                         .catch(reject);
                     return;
                 }
                 resolve(compactCert(this.certificates[0]));
                 return;
             }
-            openDB("t7", 1, {
-                upgrade(db) {
-                    db.createObjectStore("certificates", {
-                        keyPath: "id",
-                        autoIncrement: true,
-                    });
+            openDB("t7", 2, {
+                upgrade(db, oldVersion, _newVersion, tx) {
+                    if (oldVersion < 1)
+                        db.createObjectStore("certificates", {
+                            keyPath: "id",
+                            autoIncrement: true,
+                        });
+                    if (oldVersion < 2)
+                        db.createObjectStore("cert_meta", {
+                            keyPath: "id",
+                        });
+                    // migrate: clear legacy rows added by the old `.add`
+                    // implementation which threw ConstraintError on re-store
+                    if (oldVersion >= 1) tx.objectStore("certificates").clear();
                 },
             })
                 .then((db) => {
@@ -951,25 +983,37 @@ export class Terminal7 {
                                     .catch(reject);
                                 return;
                             }
-                            db.close();
 
-                            // Check if loaded certificate is expired
+                            // Restore expiry metadata if the structured-clone
+                            // round-trip dropped it (WKWebView/IndexedDB)
                             const cert = certificates[0];
-                            if (this.isCertificateExpired(cert)) {
-                                this.log(
-                                    "Stored certificate expired, regenerating",
-                                );
-                                this.notify(
-                                    "Security certificate expired. Generating new certificate...",
-                                );
-                                this.generateCertificate()
-                                    .then((cert) => resolve(compactCert(cert)))
-                                    .catch(reject);
-                                return;
-                            }
-
-                            this.certificates = certificates;
-                            resolve(compactCert(certificates[0]));
+                            const restoreMeta = cert.expires
+                                ? Promise.resolve()
+                                : db
+                                      .transaction("cert_meta")
+                                      .objectStore("cert_meta")
+                                      .getAll()
+                                      .then((metas) => {
+                                          if (metas.length > 0) {
+                                              this.log(
+                                                  "restoring lost certificate expiry metadata",
+                                              );
+                                              cert.expires = metas[0].expires;
+                                          }
+                                      })
+                                      .catch(() => {
+                                          this.log("no cert_meta record found");
+                                      });
+                            restoreMeta
+                                .then(() => {
+                                    db.close();
+                                    this._resolveStoredFingerprint(
+                                        certificates,
+                                        resolve,
+                                        reject,
+                                    );
+                                })
+                                .catch(reject);
                         })
                         .catch((e) => {
                             this.log("caught an error reading store", e);
@@ -986,51 +1030,152 @@ export class Terminal7 {
                 });
         });
     }
-    generateCertificate() {
-        return new Promise((resolve, reject) => {
-            this.log("generating the certificate");
-            RTCPeerConnection.generateCertificate({
-                name: "ECDSA",
-                // @ts-ignore
-                namedCurve: "P-256",
-                expires: 31536000000,
-            })
-                .then((cert) => {
-                    this.log("Generated cert");
-                    this.certificates = [cert];
-                    this.storeCertificate()
-                        .then(() => resolve(cert))
-                        .catch(reject);
+    // Shared tail of _getFingerprint: check expiry of a freshly loaded
+    // certificate and either resolve the fingerprint or go through the
+    // gated renewal flow (never a bare, ungated regeneration).
+    _resolveStoredFingerprint(
+        certificates: RTCCertificate[],
+        resolve: (fp: string) => void,
+        reject: (e: unknown) => void,
+    ) {
+        // Bind the stored certs to the cache BEFORE the expiry check:
+        // checkAndRenewCertificate reads this.certificates, and a renewal
+        // installs the fresh cert here via generateCertificate — the stored
+        // array must never clobber it afterwards.
+        this.certificates = certificates;
+        if (this.isCertificateExpired(certificates[0])) {
+            this.log("Stored certificate expired, renewing");
+            this.checkAndRenewCertificate()
+                .then((renewed) => {
+                    if (renewed)
+                        // resolve the renewed cert, not the stale stored one
+                        resolve(compactCert(this.certificates[0]));
+                    else {
+                        this.notify(
+                            "Please run `subscribe renew` to reauthorize.",
+                        );
+                        reject("certificate expired");
+                    }
                 })
-                .catch((e) => {
-                    this.log(`failed generating cert ${e}`);
-                    reject(e);
-                });
+                .catch(reject);
+            return;
+        }
+        resolve(compactCert(certificates[0]));
+    }
+    // Single-flight certificate generation. Callers that need the *current*
+    // certificate (e.g. before connecting) use this directly so we never
+    // generate twice concurrently and race to orphan the PeerBook account
+    // with two fresh fingerprints.
+    generateCertificate(): Promise<RTCCertificate> {
+        if (this.certificatePromise) {
+            return this.certificatePromise;
+        }
+        this.log("generating the certificate");
+        this.certificatePromise = new Promise<RTCCertificate>(
+            (resolve, reject) => {
+                RTCPeerConnection.generateCertificate({
+                    name: "ECDSA",
+                    // @ts-ignore
+                    namedCurve: "P-256",
+                    expires: 31536000000,
+                })
+                    .then((cert) => {
+                        this.log("Generated cert");
+                        this.certificates = [cert];
+                        this.storeCertificate()
+                            .then(() => resolve(cert))
+                            .catch(reject);
+                    })
+                    .catch((e) => {
+                        this.log(`failed generating cert ${e}`);
+                        reject(e);
+                    });
+            },
+        ).finally(() => {
+            // Clear the single-flight guard once settled so a later
+            // generation attempt can start fresh.
+            this.certificatePromise = null;
         });
+        return this.certificatePromise;
+    }
+
+    // Reauthorize a freshly rotated fingerprint with PeerBook. Preferred path
+    // rotates over the still-valid old session using the admin "renew"
+    // ControlMessage while the old fingerprint is still bound & valid.
+    //
+    // Returns true when the new fingerprint has been bound to the account,
+    // or false when rotation must be done manually (e.g. cert already expired
+    // and no valid session remains).
+    async renewCertificate(): Promise<boolean> {
+        const oldCert = this.certificates?.[0];
+        const oldFp = oldCert ? compactCert(oldCert) : null;
+
+        this.log("renewCertificate: rotating certificate");
+        this.notify("Security certificate renewing. Generating a fresh one…");
+        const newCert = await this.generateCertificate();
+        const newFp = compactCert(newCert);
+        this.log("renewCertificate: new fingerprint", newFp);
+
+        if (!this.pb || !this.pb.isOpen()) {
+            this.log(
+                "renewCertificate: PeerBook not connected, can't reauthorize",
+            );
+            return false;
+        }
+
+        try {
+            // Preferred: rotate over the still-valid old session.
+            await this.pb.adminCommand(
+                new ControlMessage("renew", {
+                    old_fp: oldFp,
+                    fp: newFp,
+                }),
+            );
+            this.log("renewCertificate: rotated old fingerprint");
+            return true;
+        } catch (e) {
+            // Fallback: no valid session-bound old fingerprint (e.g. expired),
+            // so fall back to the OTP/register path.
+            this.log("renewCertificate: rotate failed, falling back", e);
+        }
+        return false;
     }
 
     isCertificateExpired(cert: RTCCertificate): boolean {
-        if (!cert || !cert.expires) {
-            return true;
-        }
-        const now = Date.now();
+        if (!cert) return true;
         const expires = new Date(cert.expires).getTime();
-        return now >= expires;
+        if (!cert.expires || isNaN(expires)) {
+            // WKWebView's structured-clone through IndexedDB drops the
+            // `expires` metadata. A missing/NaN expires is UNKNOWN, not
+            // expired — the fingerprint is likely still bound at PeerBook
+            // and must never be silently discarded.
+            this.log("certificate expires metadata lost; assuming still valid");
+            return false;
+        }
+        return Date.now() >= expires;
     }
 
     isCertificateExpiringSoon(
         cert: RTCCertificate,
         daysBeforeExpiry = 30,
     ): boolean {
-        if (!cert || !cert.expires) {
-            return true;
-        }
-        const now = Date.now();
+        if (!cert) return true;
         const expires = new Date(cert.expires).getTime();
+        if (!cert.expires || isNaN(expires)) {
+            // unknown metadata: treat as valid, never auto-renew on a guess
+            this.log(
+                "certificate expires metadata lost; assuming not expiring soon",
+            );
+            return false;
+        }
         const thirtyDaysInMs = daysBeforeExpiry * 24 * 60 * 60 * 1000;
-        return expires - now <= thirtyDaysInMs;
+        return expires - Date.now() <= thirtyDaysInMs;
     }
 
+    // Only auto-renew when rotation can be re-authorized online. If PeerBook
+    // is not connected (so the renew handshake can't bind the new fp), we do
+    // NOT silently generate a cert that would orphan the account — instead we
+    // notify the user to run `subscribe renew`.
     async checkAndRenewCertificate(): Promise<RTCCertificate | null> {
         if (!this.certificates || this.certificates.length === 0) {
             return null;
@@ -1039,17 +1184,39 @@ export class Terminal7 {
         const cert = this.certificates[0];
 
         if (this.isCertificateExpired(cert)) {
-            this.log("Certificate has expired, generating new one");
+            this.log("Certificate has expired");
+            if (this.pb && this.pb.isOpen()) {
+                this.notify(
+                    "Security certificate expired. Renewing over PeerBook…",
+                );
+                try {
+                    const ok = await this.renewCertificate();
+                    if (ok) return this.certificates[0];
+                } catch (e) {
+                    this.log("Certificate renewal failed", e);
+                }
+            }
             this.notify(
-                "Security certificate expired. Generating new certificate...",
+                "Certificate expired. Please run `subscribe renew` to reauthorize.",
             );
-            return (await this.generateCertificate()) as RTCCertificate;
+            return null;
         }
 
         if (this.isCertificateExpiringSoon(cert)) {
-            this.log("Certificate expiring soon, generating new one");
-            this.notify("Security certificate expiring soon. Renewing...");
-            return (await this.generateCertificate()) as RTCCertificate;
+            this.log("Certificate expiring soon");
+            if (this.pb && this.pb.isOpen()) {
+                this.notify("Security certificate expiring soon. Renewing…");
+                try {
+                    const ok = await this.renewCertificate();
+                    if (ok) return this.certificates[0];
+                } catch (e) {
+                    this.log("Certificate renewal failed", e);
+                }
+            }
+            this.notify(
+                "Certificate expiring soon. Please run `subscribe renew` to reauthorize.",
+            );
+            return null;
         }
 
         return null;
@@ -1071,23 +1238,47 @@ export class Terminal7 {
     }
     storeCertificate(): Promise<RTCCertificate | void> {
         return new Promise((resolve, reject) => {
-            openDB("t7", 1, {
-                upgrade(db) {
-                    db.createObjectStore("certificates", {
-                        keyPath: "id",
-                        autoIncrement: true,
-                    });
+            openDB("t7", 2, {
+                upgrade(db, oldVersion, _newVersion, tx) {
+                    if (oldVersion < 1)
+                        db.createObjectStore("certificates", {
+                            keyPath: "id",
+                            autoIncrement: true,
+                        });
+                    if (oldVersion < 2)
+                        db.createObjectStore("cert_meta", {
+                            keyPath: "id",
+                        });
+                    // migrate: clear legacy rows added by the old `.add`
+                    // implementation which threw ConstraintError on re-store
+                    if (oldVersion >= 1) tx.objectStore("certificates").clear();
                 },
             })
                 .then((db) => {
-                    const tx = db.transaction("certificates", "readwrite"),
+                    const tx = db.transaction(
+                            ["certificates", "cert_meta"],
+                            "readwrite",
+                        ),
                         store = tx.objectStore("certificates"),
+                        metaStore = tx.objectStore("cert_meta"),
                         c = this.certificates[0] as RTCCertificate & {
                             id: number;
                         };
                     c.id = 1;
+                    // Persist a plain-JSON record alongside the cert object:
+                    // WKWebView's structured-clone through IndexedDB drops
+                    // RTCCertificate.expires, so we keep a clone-safe copy of
+                    // the metadata to restore on read-back.
+                    const meta = {
+                        id: "meta",
+                        fp: compactCert(c),
+                        expires: c.expires,
+                    };
+                    // put, not add: overwrites instead of throwing
+                    // ConstraintError on every renewal
                     store
-                        .add(c)
+                        .put(c)
+                        .then(() => metaStore.put(meta))
                         .then(() => {
                             db.close();
                             console.log("stored certificate");
@@ -1239,10 +1430,12 @@ export class Terminal7 {
         this.storeGates();
     }
     async deleteFingerprint() {
-        const db = await openDB("t7", 1);
-        const tx = db.transaction("certificates", "readwrite"),
-            store = tx.objectStore("certificates");
+        const db = await openDB("t7", 2);
+        const tx = db.transaction(["certificates", "cert_meta"], "readwrite"),
+            store = tx.objectStore("certificates"),
+            metaStore = tx.objectStore("cert_meta");
         await store.clear();
+        await metaStore.clear();
     }
     async factoryReset() {
         // setting up reset cert events

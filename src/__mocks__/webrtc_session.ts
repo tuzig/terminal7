@@ -1,53 +1,87 @@
-import { Failure } from "../session"
-import { Session, Channel, State, CallbackType, ChannelID } from "../session.ts"
+import { Failure } from "../session";
+import {
+    Session,
+    Channel,
+    State,
+    CallbackType,
+    ChannelID,
+} from "../session.ts";
 
-const returnLater = (ret: unknown) => 
-    vi.fn(() => new Promise( resolve => setTimeout(() => resolve(ret), 0)))
+const returnLater = (ret: unknown) =>
+    vi.fn(() => new Promise((resolve) => setTimeout(() => resolve(ret), 0)));
+
+export class ControlMessage {
+    message_id: number;
+    time: number;
+    type: string;
+    args: object;
+    constructor(type: string, args?: object) {
+        this.type = type;
+        if (args) this.args = args;
+    }
+}
 
 export class MockChannel implements Channel {
-    id = 1
-    onClose: CallbackType
-    onMessage: CallbackType
-    close = returnLater(undefined)
-    send = vi.fn()
-    resize = returnLater(undefined)
+    id = 1;
+    onClose: CallbackType;
+    onMessage: CallbackType;
+    close = returnLater(undefined);
+    send = vi.fn();
+    resize = returnLater(undefined);
     get readyState(): string {
-        return "open"
+        return "open";
     }
 }
 
 export class HTTPWebRTCSession implements Session {
-    onStateChange: (state: State) => void
-    onCMD: (payload: string) => void
-    static fail = false
-    static payload: string | null = null
-    constructor(address: string, username: string, password: string, port?=22) {
-        console.log("New seesion", address, username, password, port)
+    onStateChange: (state: State) => void;
+    onCMD: (payload: string) => void;
+    static fail = false;
+    static payload: string | null = null;
+    constructor(
+        address: string,
+        username: string,
+        password: string,
+        port? = 22,
+    ) {
+        console.log("New seesion", address, username, password, port);
     }
-    connect = vi.fn(() => setTimeout(() =>
-        HTTPWebRTCSession.fail ? this.onStateChange("failed", Failure.TimedOut)
-            : this.onStateChange("connected"), 0))
+    connect = vi.fn(() =>
+        setTimeout(
+            () =>
+                HTTPWebRTCSession.fail
+                    ? this.onStateChange("failed", Failure.TimedOut)
+                    : this.onStateChange("connected"),
+            0,
+        ),
+    );
     openChannel = vi.fn(
-        (cmd: string, parent: ChannelID, sx?: number, sy?: number) => // eslint-disable-line
-        new Promise(resolve => {
-            setTimeout(() => {
-                const c = new MockChannel()
-                vi.stubGlobal('lastHTTPWebRTCChannel', c)
-                console.log("openChannel", cmd, parent, sx, sy)
-                resolve(c)
-            }, 0)
-        })
-    )
-    close = returnLater(undefined)
-    getPayload = vi.fn(() => Promise.resolve(HTTPWebRTCSession.payload))
-    setPayload = vi.fn(payload => {
-        HTTPWebRTCSession.payload = typeof payload == "string" ? payload : JSON.stringify(payload)
-        return Promise.resolve(HTTPWebRTCSession.payload)
-    })
-    reconnect = vi.fn(() => Promise.resolve(HTTPWebRTCSession.payload))
-    disconnect = returnLater(null)
-    isOpen = vi.fn(() => true)
+        (
+            cmd: string,
+            parent: ChannelID,
+            sx?: number,
+            sy?: number, // eslint-disable-line
+        ) =>
+            new Promise((resolve) => {
+                setTimeout(() => {
+                    const c = new MockChannel();
+                    vi.stubGlobal("lastHTTPWebRTCChannel", c);
+                    console.log("openChannel", cmd, parent, sx, sy);
+                    resolve(c);
+                }, 0);
+            }),
+    );
+    close = returnLater(undefined);
+    getPayload = vi.fn(() => Promise.resolve(HTTPWebRTCSession.payload));
+    setPayload = vi.fn((payload) => {
+        HTTPWebRTCSession.payload =
+            typeof payload == "string" ? payload : JSON.stringify(payload);
+        return Promise.resolve(HTTPWebRTCSession.payload);
+    });
+    reconnect = vi.fn(() => Promise.resolve(HTTPWebRTCSession.payload));
+    disconnect = returnLater(null);
+    isOpen = vi.fn(() => true);
     public get isSSH() {
-        return false
+        return false;
     }
 }

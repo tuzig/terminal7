@@ -121,9 +121,9 @@ export function loadCommands(shell: Shell): Map<string, Command> {
             },
             subscribe: {
                 name: "subscribe",
-                help: "Subscripte to PeerBook",
-                usage: "sub[scribe]",
-                execute: async () => subscribeCMD(shell),
+                help: "Subscribe to PeerBook or renew a certificate",
+                usage: "sub[scribe] [renew]",
+                execute: async (args) => subscribeCMD(shell, args),
             },
         }),
     );
@@ -633,7 +633,13 @@ async function copyKeyCMD(shell: Shell) {
     Clipboard.write({ string: publicKey });
     return shell.t.writeln(`${publicKey}\n☝️ copied to 📋`);
 }
-async function subscribeCMD(shell: Shell) {
+async function subscribeCMD(shell: Shell, args: string[]) {
+    // `subscribe renew` — rotate a fresh certificate and (re)authorize its new
+    // fingerprint with PeerBook so a renewed cert no longer orphans the account.
+    if (args[0] == "renew") {
+        await renewCMD(shell);
+        return;
+    }
     const { customerInfo } = await Purchases.getCustomerInfo();
     if (
         Capacitor.isNativePlatform() &&
@@ -795,6 +801,73 @@ async function subscribeCMD(shell: Shell) {
     if (answer.toLowerCase() == "y") {
         Clipboard.write({ string: uid });
         shell.t.writeln("UID copied to clipboard");
+    }
+}
+
+// `subscribe renew` — rotate the certificate and reauthorize it with PeerBook.
+// Gates on NativeBiometric.verifyIdentity (like readId) and uses single-flight
+// certificate generation so it never races with an auto-renew.
+export async function renewCMD(shell: Shell) {
+    const pb = terminal7.pb;
+    if (!pb) {
+        shell.t.writeln(
+            "PeerBook is not initialized. Please `subscribe` first.",
+        );
+        return;
+    }
+    // Gate on biometric identity before rotating the certificate.
+    let verified;
+    terminal7.ignoreAppEvents = true;
+    try {
+        verified = await NativeBiometric.verifyIdentity({
+            reason: "Rotate security certificate",
+            title: "Access Private Key",
+        });
+    } catch (e) {
+        terminal7.log("renew: biometric failed", e);
+        shell.t.writeln("Biometric verification failed. Please try again.");
+        return;
+    } finally {
+        terminal7.ignoreAppEvents = false;
+    }
+    if (!verified) {
+        shell.t.writeln("Biometric verification cancelled.");
+        return;
+    }
+
+    // Ensure we're connected to PeerBook so the renew handshake can bind the
+    // new fingerprint. If not connected, try to connect first.
+    if (!pb.isOpen()) {
+        shell.t.writeln(
+            "Connecting to PeerBook to reauthorize your certificate...",
+        );
+        try {
+            await terminal7.pbConnect();
+        } catch (e) {
+            shell.t.writeln(
+                "Failed to connect to PeerBook. Please try again or `support`.",
+            );
+            return;
+        }
+    }
+
+    shell.t.writeln("Renewing your security certificate...");
+    try {
+        const ok = await terminal7.renewCertificate();
+        if (ok) {
+            shell.t.writeln(
+                "Certificate renewed and reauthorized with PeerBook ✓",
+            );
+        } else {
+            shell.t.writeln(
+                "Could not automatically reauthorize. Please try again or `support`.",
+            );
+        }
+    } catch (e) {
+        terminal7.log("renew failed", e);
+        shell.t.writeln(
+            "Certificate renewal failed. Please try again or `support`.",
+        );
     }
 }
 export async function installCMD(shell: Shell, args: string[]) {

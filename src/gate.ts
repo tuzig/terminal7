@@ -372,14 +372,24 @@ export class Gate {
                 break;
 
             case Failure.CertificateExpired:
-                this.notify(
-                    "Security certificate expired. Generating new certificate...",
-                );
+                // Rotate through the gated reauthorization flow only — a bare
+                // generateCertificate() here would orphan the PeerBook account
+                // with an unbound fingerprint.
+                this.notify("Security certificate expired. Renewing...");
                 terminal7
-                    .generateCertificate()
-                    .then(() => {
+                    .renewCertificate()
+                    .then((ok) => {
+                        if (!ok) {
+                            terminal7.log(
+                                "Certificate renewal not reauthorized",
+                            );
+                            this.notify(
+                                "Please run `subscribe renew` to reauthorize your certificate.",
+                            );
+                            return;
+                        }
                         terminal7.log(
-                            "Certificate regenerated after failure, reconnecting",
+                            "Certificate renewed & reauthorized, reconnecting",
                         );
                         this.connect().catch((e) => {
                             terminal7.log(
@@ -390,11 +400,11 @@ export class Gate {
                     })
                     .catch((e) => {
                         terminal7.log(
-                            "Failed to regenerate certificate after failure",
+                            "Failed to renew certificate after failure",
                             e,
                         );
                         this.notify(
-                            "Failed to renew certificate. Please try again.",
+                            "Failed to renew certificate. Please run `subscribe renew`.",
                         );
                     });
                 return;
